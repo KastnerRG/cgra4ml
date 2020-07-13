@@ -94,7 +94,6 @@ module axis_shift_buffer#(
 
     wire insert;
     wire remove;
-
     wire slice_M_AXIS_tvalid;
         
     assign insert = slice_M_AXIS_tvalid && M_AXIS_tready;
@@ -152,12 +151,19 @@ module axis_shift_buffer#(
     );
     
     /*
-    Reg slice to skid the input AXI stream
+    REG SLICE
+    
+    * Skids the input AXI stream if m_ready goes down in same cycle as the insert handshake
+    * M_ready is AND'ed with (state=0) => last shift data is being accepted downstream in this clock, 
+        next is first data (zero shift).
+    * If skid_m_valid stays high in this clock, they together form a "remove" handshake, data gets copied
+        from reg slice into data_out at, at next rising edge and will be available throughout next clock
+
     */
 
     wire [DATA_WIDTH * (CONV_UNITS + (KERNEL_H_MAX-1)) - 1 : 0]  slice_M_AXIS_tdata;
-//    wire                                        slice_M_AXIS_tvalid; // Defined above slice to avoid warning
     wire                                        slice_M_AXIS_tready;
+//  wire                                        slice_M_AXIS_tvalid;              // Defined above slice to avoid warning
 
     assign slice_M_AXIS_tready = (state==0) && M_AXIS_tready;
     
@@ -194,8 +200,8 @@ module axis_shift_buffer#(
     /*
     DATA REGISTERS
 
-    * There are 10 (=8 + (KERNEL_H_MAX-1)) data registers
-    * First 8 are connected to m_data
+    * There are 10 (= CONV_UNITS + (KERNEL_H_MAX-1)) data registers
+    * First CONV_UNITS (=8) are connected to m_data
     * selected_data[-1] is only from d_in[-1]
     * all other selected_data[i] are muxed between data[i+1] and d_in[i]
 
@@ -250,102 +256,106 @@ module axis_shift_buffer#(
 
     endgenerate
 
-    // /*
-    // TLAST GENERATON
+    /*
+    TLAST GENERATON ---------------------------------------------------------------------
 
-    // * For every IM_CH_IN groups of input data beats, passes a single tlast bit at the
-    //   last output data beat (every IM_CH_IN * KERNEL_H_MAX beats).
-    // * IM_CH_IN is not given, but (IM_CH_IN_1 = IM_CH_IN-1) is give
-    // * This is why inital value is kept at (-1). Else, it counts only IM_CH_IN-1 beats
+    * For every IM_CH_IN groups of input data beats, passes a single tlast bit at the
+      last shifted data beat (every IM_CH_IN * KERNEL_H_MAX beats).
+    * IM_CH_IN is not given, but (IM_CH_IN_1 = IM_CH_IN-1) is given.
 
-    // * Last data beat is delayed by KERNEL_H_MAX (>3). Hence Tlast can be calculated by at least 3 regs
+    */
 
-    // */
 
-    // wire [CH_IN_COUNTER_WIDTH -1 : 0] im_channels_1_reg_out;
+    /*
+    * Register im_channels_1 for performance (and why not?)
+    * clken
+        - slave side handshake
+        - im_channels_1 is tied to the S_AXIS_tdata beats
+    */
 
-    // register
-    // #(
-    //     .WORD_WIDTH     (CH_IN_COUNTER_WIDTH),
-    //     .RESET_VALUE    (1'b0)
-    // )
-    // im_channels_1_reg
-    // (
-    //     .clock          (aclk),
-    //     .clock_enable   (1'b1),
-    //     .resetn         (aresetn),
-    //     .data_in        (im_channels_1),
-    //     .data_out       (im_channels_1_reg_out)
-    // );
+    wire [CH_IN_COUNTER_WIDTH -1 : 0]   im_channels_1_reg_out;
+    wire                                im_channels_1_reg_clken;
 
-    // // wire insert_reg_out;
+    assign im_channels_1_reg_clken = S_AXIS_tready && S_AXIS_tvalid;
 
-    // // register
-    // // #(
-    // //     .WORD_WIDTH     (1),
-    // //     .RESET_VALUE    (1'b0)         // Initial state
-    // // )
-    // // insert_reg
-    // // (
-    // //     .clock          (aclk),
-    // //     .clock_enable   (1'b1),
-    // //     .resetn         (aresetn),
-    // //     .data_in        (insert),
-    // //     .data_out       (insert_reg_out)
-    // // );
+    register
+    #(
+        .WORD_WIDTH     (CH_IN_COUNTER_WIDTH),
+        .RESET_VALUE    (1'b0)
+    )
+    im_channels_1_reg
+    (
+        .clock          (aclk),
+        .clock_enable   (im_channels_1_reg_clken),
+        .resetn         (aresetn),
+        .data_in        (im_channels_in_1),
+        .data_out       (im_channels_1_reg_out)
+    );
 
-    // wire [CH_IN_COUNTER_WIDTH-1 : 0] ch_in_counter_out;
-    // wire [CH_IN_COUNTER_WIDTH-1 : 0] ch_in_counter_in;
+    /*
+    Counter
 
-    // assign ch_in_counter_in = tlast_delays[1] ? COUNTER_START : (ch_in_counter_out + insert);
+    * Starts at 0, counts upto (=) IM_CH_IN_1 and resets to zero
+    * clken:
+        - remove & (particular state) rises for one clock only for an input data beat. Hence "counting"
+        - (state = 0) ensures count_out stays tied to d_out in all (0,1,2..) shifts of same input data beat
+        - count_out points to the ch_in of the data available at M_AXIS_tdata at this clock
+    */
 
-    // register
-    // #(
-    //     .WORD_WIDTH     (CH_IN_COUNTER_WIDTH),
-    //     .RESET_VALUE    (COUNTER_START)         // Initial state
-    // )
-    // ch_in_counter_reg
-    // (
-    //     .clock          (aclk),
-    //     .clock_enable   (1'b1),
-    //     .resetn         (aresetn),
-    //     .data_in        (ch_in_counter_in),
-    //     .data_out       (ch_in_counter_out)
-    // );
+    wire [CH_IN_COUNTER_WIDTH-1 : 0] count;
+    reg  [CH_IN_COUNTER_WIDTH-1 : 0] count_next;
+    wire                             counter_clken;
 
-    // /*
-    // Tlast is asserted based on 3 things:
+    assign counter_clken = remove && (state == 0);
 
-    // 1. Counter gets full : Checks if all channels have been received at input side (KERNEL_H_MAX clocks long)
-    // 2. State = 2, since tlast compute takes 3 clocks already, to tie to that data
-    // 3. remove: Previous data is being removed from m_data (output handshake).
-    //     If not, if ready goes down in this clock, tlast=1 will be written in and 
-    //     will get tied to second_to_last data as well (which wouldnt change).
-    // */
+    always @(*)begin
+        case(count)
+            im_channels_1_reg_out : count_next <= 0;
+            default               : count_next <= count + 1;
+        endcase
+    end
 
-    // localparam FURTHUR_DELAY = KERNEL_H_MAX - 3;    
+    register
+    #(
+        .WORD_WIDTH     (CH_IN_COUNTER_WIDTH),
+        .RESET_VALUE    (0) 
+    )
+    ch_in_counter_reg
+    (
+        .clock          (aclk),
+        .clock_enable   (counter_clken),
+        .resetn         (aresetn),
+        .data_in        (count_next),
+        .data_out       (count)
+    );
 
-    // wire [FURTHUR_DELAY+1 :0] tlast_delays;
-    // assign tlast_delays[0]  = (ch_in_counter_out == im_channels_1_reg_out) && (state==2);
-    // assign M_AXIS_tlast     = tlast_delays[FURTHUR_DELAY+1];
+    /*
+    TLAST REGISTER
 
-    // generate
-    //     for(i=0; i<FURTHUR_DELAY+1; i=i+1) begin: tlast_delay_regs
-    //         register
-    //         #(
-    //             .WORD_WIDTH     (1),
-    //             .RESET_VALUE    (1'b0)         // Initial state
-    //         )
-    //         ch_in_compare_reg
-    //         (
-    //             .clock          (aclk),
-    //             .clock_enable   (remove),
-    //             .resetn         (aresetn),
-    //             .data_in        (tlast_delays[i]),
-    //             .data_out       (tlast_delays[i+1])
-    //         );
-    //     end
-    // endgenerate
+    * Registered output for performance
+    * clken = remove
+        - register is updated at every handshake.
+        - Ensures TLAST are naturally tied to data beats (asserted until a handshake occurs)
+    * last_in
+        - (count == im_channels_1) checks if 
+    */
+
+    wire tlast_in;
+    assign tlast_in    = (count == im_channels_1_reg_out) && (state == kernel_h_1);
+
+    register
+    #(
+        .WORD_WIDTH     (1),
+        .RESET_VALUE    (1'b0)
+    )
+    tlast_reg
+    (
+        .clock          (aclk),
+        .clock_enable   (remove),
+        .resetn         (aresetn),
+        .data_in        (tlast_in),
+        .data_out       (M_AXIS_tlast)
+    );
 
 
 endmodule
