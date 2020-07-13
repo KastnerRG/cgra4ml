@@ -5,8 +5,9 @@ module axis_shift_buffer_tb();
     parameter DATA_WIDTH            = 16;
     parameter CONV_UNITS            = 8;
     parameter KERNEL_H_MAX          = 5;
-    parameter KERNEL_H_1            = 4;
     parameter CH_IN_COUNTER_WIDTH   = 5;
+
+    parameter KERNEL_H_1            = 2;
     parameter IM_CH_IN_1            = 5'd5 - 5'd1;
 
     reg                                         aclk                    = 0;
@@ -63,7 +64,7 @@ axis_shift_buffer_dut
         aclk <= ~aclk;
     end
 
-    integer k = 1;
+    integer k = 0;
     integer m = 0;
     integer n = 0;
 
@@ -79,7 +80,7 @@ axis_shift_buffer_dut
             @(posedge aclk);
 
             // Turn off ready in this region
-            if (n > 22 && n < 24)
+            if (n > 24 && n < 29)
                 M_AXIS_tready <= 0;
             else
                 M_AXIS_tready <= 1;
