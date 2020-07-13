@@ -7,7 +7,7 @@ module axis_shift_buffer_tb();
     parameter KERNEL_H_MAX          = 5;
     parameter CH_IN_COUNTER_WIDTH   = 5;
 
-    parameter KERNEL_H_1            = 2;
+    parameter KERNEL_H_1            = 0;
     parameter IM_CH_IN_1            = 5'd5 - 5'd1;
 
     reg                                         aclk                    = 0;
