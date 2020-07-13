@@ -2,8 +2,8 @@ set PROJ_NAME support
 set PROJ_FOLDER ./support
 set SOURCE_FOLDER ../../src
 
-create_project $PROJ_NAME $PROJ_FOLDER -part xc7z045ffg900-2
-set_property board_part xilinx.com:zc706:part0:1.4 [current_project]
+create_project $PROJ_NAME $PROJ_FOLDER -part xc7z020clg484-1
+set_property board_part xilinx.com:zc702:part0:1.4 [current_project]
 
 
 # Add Design Sources
@@ -14,6 +14,7 @@ add_files -norecurse $SOURCE_FOLDER/axis_shift_buffer.sv
 add_files -norecurse $SOURCE_FOLDER/axis_skid_reg.v
 add_files -norecurse $SOURCE_FOLDER/n_delay.sv
 add_files -norecurse $SOURCE_FOLDER/register.v
+add_files -norecurse $SOURCE_FOLDER/axis_shift_buffer_tlast.sv
 
 # Add Simulation Sources
 
@@ -23,6 +24,7 @@ add_files -fileset sim_1 -norecurse $SOURCE_FOLDER/axis_shift_buffer_tb.sv
 add_files -fileset sim_1 -norecurse $SOURCE_FOLDER/axis_skid_reg_tb.v
 add_files -fileset sim_1 -norecurse $SOURCE_FOLDER/n_delay_tb.sv
 add_files -fileset sim_1 -norecurse $SOURCE_FOLDER/register_tb.v
+add_files -fileset sim_1 -norecurse $SOURCE_FOLDER/axis_shift_buffer_tlast_tb.sv
 
 
 # Generate IPs
