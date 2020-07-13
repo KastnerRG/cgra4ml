@@ -17,7 +17,8 @@ Description: * Pipelined module that takes in AXIS of padded rows and releases k
                         - 14 pixels will be shifted down 3 times
                         - First 10 (=8+2) words of 14 (=8+6) should be the valid 
                             padded inputs for 3x3
-             
+             * Tlast is not pipelined - couldnt get it working for both (1 x *) and
+                (K x *). So for now it works for both cases as combinational            
 
 Dependencies: * axis_register_slice_data_buffer 
                     - Type: IP (axis_register_slice) configured
@@ -329,33 +330,7 @@ module axis_shift_buffer#(
         .data_out       (count)
     );
 
-    /*
-    TLAST REGISTER
-
-    * Registered output for performance
-    * clken = remove
-        - register is updated at every handshake.
-        - Ensures TLAST are naturally tied to data beats (asserted until a handshake occurs)
-    * last_in
-        - (count == im_channels_1) checks if 
-    */
-
-    wire tlast_in;
-    assign tlast_in    = (count == im_channels_1_reg_out) && (state == kernel_h_1);
-
-    register
-    #(
-        .WORD_WIDTH     (1),
-        .RESET_VALUE    (1'b0)
-    )
-    tlast_reg
-    (
-        .clock          (aclk),
-        .clock_enable   (remove),
-        .resetn         (aresetn),
-        .data_in        (tlast_in),
-        .data_out       (M_AXIS_tlast)
-    );
+    assign M_AXIS_tlast = (state == 0) && (count==im_channels_1_reg_out);
 
 
 endmodule
