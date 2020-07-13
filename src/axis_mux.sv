@@ -49,8 +49,8 @@ input  wire                     M_AXIS_tready;
 output wire [KEEP_SIZE-1 : 0]   M_AXIS_tkeep;
 output wire                     M_AXIS_tlast;
 
-assign S0_AXIS_tready   = M_AXIS_tready;
-assign S1_AXIS_tready   = M_AXIS_tready;
+assign S0_AXIS_tready   = (sel==0) ? M_AXIS_tready  : 0;
+assign S1_AXIS_tready   = (sel==0) ? 0              : M_AXIS_tready;
 
 assign M_AXIS_tdata     = (sel==0) ? S0_AXIS_tdata  : S1_AXIS_tdata;
 assign M_AXIS_tvalid    = (sel==0) ? S0_AXIS_tvalid : S1_AXIS_tvalid;
