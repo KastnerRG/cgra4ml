@@ -10,41 +10,35 @@ module step_buffer  #(
 
     is_1x1,
 
-    v_s_valid,
-    v_s_data,
-    v_s_last,
-    v_s_user,
+    s_valid,
+    s_data,
+    s_last,
+    s_user,
 
-    v_m_tvalid,
-    v_m_tdata,
-    v_m_tlast,
-    v_m_tuser
+    m_valid,
+    m_data,
+    m_last,
+    m_user
 );
 
     input  wire aclk;
     input  wire aclken;
     input  wire aresetn;
     input  wire is_1x1;
-
-    input  wire [STEPS               - 1: 0] v_s_valid;
-    input  wire [STEPS * DATA_WIDTH  - 1: 0] v_s_data;
-    input  wire [STEPS               - 1: 0] v_s_last;
-    input  wire [STEPS * TUSER_WIDTH - 1: 0] v_s_user;
-
-    output wire [STEPS               - 1: 0] v_m_tvalid;
-    output wire [STEPS * DATA_WIDTH  - 1: 0] v_m_tdata;
-    output wire [STEPS               - 1: 0] v_m_tlast;
-    output wire [STEPS * TUSER_WIDTH - 1: 0] v_m_tuser;
-
-
-
-    
+  
     // N-delay'i slaves
 
-    wire                      s_valid   [STEPS-1 : 0];
-    wire [DATA_WIDTH  - 1: 0] s_data    [STEPS-1 : 0];
-    wire                      s_last    [STEPS-1 : 0];
-    wire [TUSER_WIDTH - 1: 0] s_user    [STEPS-1 : 0];
+    input wire                      s_valid   [STEPS-1 : 0];
+    input wire [DATA_WIDTH  - 1: 0] s_data    [STEPS-1 : 0];
+    input wire                      s_last    [STEPS-1 : 0];
+    input wire [TUSER_WIDTH - 1: 0] s_user    [STEPS-1 : 0];
+
+    // Hold'i master
+    
+    output wire                      m_valid [STEPS-1 : 0];
+    output wire [DATA_WIDTH  - 1: 0] m_data  [STEPS-1 : 0];
+    output wire                      m_last  [STEPS-1 : 0];
+    output wire [TUSER_WIDTH - 1: 0] m_user  [STEPS-1 : 0];
     
     // N-delay'i master
 
@@ -60,12 +54,7 @@ module step_buffer  #(
     wire                      hold_s_last    [STEPS-1 : 0];
     wire [TUSER_WIDTH - 1: 0] hold_s_user    [STEPS-1 : 0];
 
-    // Hold'i master
-    
-    wire                      m_valid   [STEPS-1 : 0];
-    wire [DATA_WIDTH  - 1: 0] m_data    [STEPS-1 : 0];
-    wire                      m_last    [STEPS-1 : 0];
-    wire [TUSER_WIDTH - 1: 0] m_user    [STEPS-1 : 0];
+
 
     genvar i;
     generate

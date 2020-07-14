@@ -3,8 +3,6 @@ module axis_mux #(
     parameter TUSER_WIDTH
 )
 (
-    aclk,
-    aresetn,
     sel,
 
     S0_AXIS_tdata,
@@ -31,8 +29,6 @@ module axis_mux #(
 
 localparam KEEP_SIZE = DATA_WIDTH/8;
 
-input wire aclk;
-input wire aresetn;
 input wire sel;
 
 input  wire [DATA_WIDTH-1 : 0]  S0_AXIS_tdata;
