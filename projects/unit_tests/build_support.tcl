@@ -28,6 +28,7 @@ add_files -fileset sim_1 -norecurse $SOURCE_FOLDER/axis_skid_reg_tb.v
 add_files -fileset sim_1 -norecurse $SOURCE_FOLDER/n_delay_tb.sv
 add_files -fileset sim_1 -norecurse $SOURCE_FOLDER/register_tb.v
 add_files -fileset sim_1 -norecurse $SOURCE_FOLDER/axis_shift_buffer_tlast_tb.sv
+add_files -fileset sim_1 -norecurse $SOURCE_FOLDER/conv_unit_tb.sv
 
 
 #--------------- Generate IPs
