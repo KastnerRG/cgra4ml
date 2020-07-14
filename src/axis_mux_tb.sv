@@ -1,6 +1,7 @@
 module axis_mux_tb();
 
 parameter DATA_WIDTH = 16;
+parameter TUSER_WIDTH = 5;
 parameter KEEP_SIZE  = DATA_WIDTH/8;
 parameter CLK_PERIOD = 10;
 
@@ -12,11 +13,13 @@ reg [DATA_WIDTH-1 : 0]  S0_AXIS_tdata   = 1;
 reg                     S0_AXIS_tvalid  = 1;
 reg [KEEP_SIZE-1 : 0]   S0_AXIS_tkeep   = 1;
 reg                     S0_AXIS_tlast   = 1;
+reg [TUSER_WIDTH-1 : 0] S0_AXIS_tuser   = 1;
 
 reg [DATA_WIDTH-1 : 0]  S1_AXIS_tdata   = 0;
 reg                     S1_AXIS_tvalid  = 0;
 reg [KEEP_SIZE-1 : 0]   S1_AXIS_tkeep   = 0;
 reg                     S1_AXIS_tlast   = 0;
+reg [TUSER_WIDTH-1 : 0] S1_AXIS_tuser   = 0;
 
 reg                     M_AXIS_tready   = 1;
 
@@ -25,7 +28,8 @@ wire                     S0_AXIS_tready;
 wire                     S1_AXIS_tready;
 wire [DATA_WIDTH-1 : 0]  M_AXIS_tdata;
 wire                     M_AXIS_tvalid;
-wire [KEEP_SIZE-1 : 0]   M_AXIS_tkeep;
+wire [KEEP_SIZE-1   : 0] M_AXIS_tkeep;
+wire [TUSER_WIDTH-1 : 0] M_AXIS_tuser;
 
 axis_mux 
 #(
@@ -41,16 +45,21 @@ axis_mux_dut
     .S0_AXIS_tready(S0_AXIS_tready),
     .S0_AXIS_tkeep(S0_AXIS_tkeep),
     .S0_AXIS_tlast(S0_AXIS_tlast),
+    .S0_AXIS_tuser(S0_AXIS_tuser),
+    
     .S1_AXIS_tdata(S1_AXIS_tdata),
     .S1_AXIS_tvalid(S1_AXIS_tvalid),
     .S1_AXIS_tready(S1_AXIS_tready),
     .S1_AXIS_tkeep(S1_AXIS_tkeep),
     .S1_AXIS_tlast(S1_AXIS_tlast),
+    .S1_AXIS_tuser(S0_AXIS_tuser),
+    
     .M_AXIS_tdata(M_AXIS_tdata),
     .M_AXIS_tvalid(M_AXIS_tvalid),
     .M_AXIS_tready(M_AXIS_tready),
     .M_AXIS_tkeep(M_AXIS_tkeep),
-    .M_AXIS_tlast(M_AXIS_tlast)
+    .M_AXIS_tlast(M_AXIS_tlast),
+    .M_AXIS_tuser(M_AXIS_tuser)
 );
 
 always begin
