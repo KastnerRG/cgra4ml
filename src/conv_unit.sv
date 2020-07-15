@@ -57,10 +57,17 @@ Additional Comments:
     */
 
 module conv_unit # (
-    parameter DATA_WIDTH   = 16,
-    parameter KERNEL_W_MAX = 3,
-    parameter TUSER_WIDTH  = 5,
-    parameter ACCUMULATOR_DELAY = 21
+    parameter DATA_WIDTH            = 16,
+    parameter KERNEL_W_MAX          = 3,
+    parameter TUSER_WIDTH           = 5,
+    parameter ACCUMULATOR_DELAY     = 21,
+    parameter MULTIPLIER_DELAY      = 6,
+
+    parameter IS_1x1_INDEX          = 0,
+    parameter IS_MAX_INDEX          = 1,
+    parameter IS_RELU_INDEX         = 2,
+    parameter IS_BLOCK_LAST_INDEX   = 3,
+    parameter IS_CIN_FIRST_INDEX    = 4
 )(
     aclk,
     aclken,
@@ -220,12 +227,12 @@ module conv_unit # (
 
 
 
-    wire   [DATA_WIDTH - 1 : 0] mul_s_data          [KERNEL_W_MAX - 1 : 0];
+    wire   [DATA_WIDTH - 1 : 0] mul_s_data  [KERNEL_W_MAX - 1 : 0];
 
-    wire   [DATA_WIDTH - 1 : 0] mul_m_data          [KERNEL_W_MAX - 1 : 0];
-    wire                        mul_m_valid         [KERNEL_W_MAX - 1 : 0];
-    wire                        mul_m_last          [KERNEL_W_MAX - 1 : 0];
-    wire   [TUSER_WIDTH - 1: 0] mul_m_user          [TUSER_WIDTH  - 1 : 0];
+    wire   [DATA_WIDTH - 1 : 0] mul_m_data  [KERNEL_W_MAX - 1 : 0];
+    wire                        mul_m_valid [KERNEL_W_MAX - 1 : 0];
+    wire                        mul_m_last  [KERNEL_W_MAX - 1 : 0];
+    wire   [TUSER_WIDTH - 1: 0] mul_m_user  [TUSER_WIDTH  - 1 : 0];
     
     wire   [DATA_WIDTH - 1 : 0] acc_s_data  [KERNEL_W_MAX - 1 : 0];
     wire                        acc_s_valid [KERNEL_W_MAX - 1 : 0];
@@ -246,6 +253,65 @@ module conv_unit # (
 
     genvar i;
     generate
+
+        // Bias Delay
+
+        wire                       mul_1_delay_m_valid_bias   ;
+        wire [DATA_WIDTH   - 1: 0] mul_1_delay_m_data_bias    ;
+        wire [TUSER_WIDTH  - 1: 0] mul_1_delay_m_user_bias    ;
+
+        wire                       mul_delay_m_valid_bias   ;
+        wire [DATA_WIDTH   - 1: 0] mul_delay_m_data_bias    ;
+        wire [TUSER_WIDTH  - 1: 0] mul_delay_m_user_bias    ;
+
+        n_delay_stream #(
+            .N (MULTIPLIER_DELAY-1),
+            .DATA_WIDTH     (DATA_WIDTH),
+            .TUSER_WIDTH    (TUSER_WIDTH)
+        )
+        bias_mul_1_hold
+        (
+            .aclk    (aclk),
+            .aresetn (aresetn),
+            .aclken  (clken_mul),
+
+            .data_in (buffer_m_data_bias[0]),
+            .valid_in(buffer_m_valid_bias[0]),
+            .last_in (0),
+            .keep_in (0),
+            .user_in (buffer_m_user_bias[0]),
+
+            .data_out(mul_1_delay_m_data_bias ),
+            .valid_out(mul_1_delay_m_valid_bias),
+            .last_out(),
+            .keep_out(),
+            .user_out(mul_1_delay_m_user_bias)
+        );
+
+        n_delay_stream #(
+            .N (1),
+            .DATA_WIDTH     (DATA_WIDTH),
+            .TUSER_WIDTH    (TUSER_WIDTH)
+        )
+        bias_mul_hold_data_valid
+        (
+            .aclk    (aclk),
+            .aresetn (aresetn),
+            .aclken  (clken_mul),
+
+            .data_in (mul_1_delay_m_data_bias),
+            .valid_in(mul_1_delay_m_valid_bias),
+            .last_in (0),
+            .keep_in (0),
+            .user_in (buffer_m_user_bias[0]),
+
+            .data_out (mul_delay_m_data_bias),
+            .valid_out(mul_delay_m_valid_bias),
+            .last_out (),
+            .keep_out (),
+            .user_out (mul_delay_m_user_bias)
+        );
+
         for (i=0; i < KERNEL_W_MAX; i++) begin : multipliers_gen
 
             floating_point_multiplier multiplier (
@@ -283,10 +349,36 @@ module conv_unit # (
             );
         end
 
-        for (i=0; i < KERNEL_W_MAX; i++) begin : sel_regs_gen
+        /*
+        SEL BITS
+        */
 
-            wire   update_tlast;
-            assign update_tlast = acc_s_valid[i] && aclken;
+        // SEL[0]
+        wire update_switch_0;
+        assign update_switch_0 = aclken && mul_1_delay_m_valid_bias;
+
+        register #(
+            .WORD_WIDTH     (DATA_WIDTH),
+            .RESET_VALUE    (0)
+        )
+        bias_mul_is_first
+        (
+            .clock          (aclk                                        ),
+            .clock_enable   (update_switch_0                             ),
+            .resetn         (aresetn                                     ),
+            .data_in        (mul_1_delay_m_user_bias [IS_CIN_FIRST_INDEX]),
+            .data_out       (mux_sel                 [0]                 )
+        );
+
+        //SEL[1,2]
+
+        for (i=1; i < KERNEL_W_MAX; i++) begin : sel_regs_gen
+
+            wire   update_switch;
+            assign update_switch = acc_s_valid[i] && aclken;
+            
+            wire  sel_in;
+            assign sel_in = mul_m_last [i];
             
             register #(
                 .WORD_WIDTH     (DATA_WIDTH),
@@ -295,12 +387,28 @@ module conv_unit # (
             sel_registers
             (
                 .clock          (aclk),
-                .clock_enable   (update_tlast),
+                .clock_enable   (update_switch),
                 .resetn         (aresetn),
-                .data_in        (mul_m_last [i]),
+                .data_in        (sel_in        ),
                 .data_out       (mux_sel    [i])
             );
         end
+
+        // MUX inputs
+
+        assign mux_s2_data   [0]    = mul_delay_m_data_bias    ;
+        assign mux_s2_valid  [0]    = mul_delay_m_valid_bias   ;
+        assign mux_s2_user   [0]    = mul_delay_m_user_bias    ;
+
+        for (i=1; i < KERNEL_W_MAX; i++) begin : mul_s2
+
+            assign mux_s2_data   [i]    = acc_m_data    [i-1];
+            assign mux_s2_valid  [i]    = acc_m_valid   [i-1];
+            assign mux_s2_user   [i]    = acc_m_user    [i-1];
+
+        end
+
+        // Muxes
 
         for (i=0; i < KERNEL_W_MAX; i++) begin : mux_gen
 
@@ -333,18 +441,6 @@ module conv_unit # (
                 .M_AXIS_tlast       (acc_s_last     [i]),
                 .M_AXIS_tuser       (acc_m_user     [i])
             );
-        end
-
-        assign mux_s2_data   [0]    = buffer_m_data_bias    [0];
-        assign mux_s2_valid  [0]    = buffer_m_valid_bias   [0];
-        assign mux_s2_user   [0]    = buffer_m_user_bias    [0];
-
-        for (i=1; i < KERNEL_W_MAX; i++) begin : acc_to_mux
-
-            assign mux_s2_data   [i]    = acc_m_data    [i-1];
-            assign mux_s2_valid  [i]    = acc_m_valid   [i-1];
-            assign mux_s2_user  [i]     = acc_m_user    [i-1];
-
         end
 
     endgenerate
