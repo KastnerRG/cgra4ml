@@ -10,8 +10,8 @@ module n_delay #(
 );
 
     input  wire                     clk;
-    input  wire                     resetn;
     input  wire                     clken;
+    input  wire                     resetn;
     input  wire [DATA_WIDTH-1 : 0]  data_in;
     output wire [DATA_WIDTH-1 : 0]  data_out;
 

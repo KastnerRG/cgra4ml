@@ -7,16 +7,16 @@ module n_delay_stream #(
     aresetn,
     aclken,
 
-    data_in,
     valid_in,
-    last_in,
+    data_in,
     keep_in,
+    last_in,
     user_in,
 
-    data_out,
     valid_out,
-    last_out,
+    data_out,
     keep_out,
+    last_out,
     user_out
 );
 
