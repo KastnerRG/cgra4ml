@@ -98,10 +98,10 @@ module conv_unit # (
     input  wire                      s_last                               ;
     input  wire [TUSER_WIDTH - 1: 0] s_user                               ;
 
-    output wire                      m_valid                             ;
+    output wire                      m_valid       [KERNEL_W_MAX - 1 : 0];
     output wire [DATA_WIDTH  - 1: 0] m_data        [KERNEL_W_MAX - 1 : 0];
-    output wire                      m_last                              ;
-    output wire [TUSER_WIDTH - 1: 0] m_user                              ;
+    output wire                      m_last        [KERNEL_W_MAX - 1 : 0];
+    output wire [TUSER_WIDTH - 1: 0] m_user        [KERNEL_W_MAX - 1 : 0];
 
 
     /*
@@ -148,15 +148,15 @@ module conv_unit # (
         .aresetn    (aresetn),
         .is_1x1     (is_1x1),
         
-        .s_valid    ({KERNEL_W_MAX{s_valid}}),
+        .s_valid    ('{KERNEL_W_MAX{s_valid}}),
         .s_data     (buffer_s_data_pixels),
-        .s_last     ({KERNEL_W_MAX{s_last}}),
+        .s_last     ('{KERNEL_W_MAX{s_last}}),
         .s_user     (buffer_s_user_pixels),
 
-        .m_tvalid   (buffer_m_valid_pixels),
-        .m_tdata    (buffer_m_data_pixels),
-        .m_tlast    (buffer_m_last_pixels),
-        .m_tuser    (buffer_m_user_pixels)
+        .m_valid   (buffer_m_valid_pixels),
+        .m_data    (buffer_m_data_pixels),
+        .m_last    (buffer_m_last_pixels),
+        .m_user    (buffer_m_user_pixels)
     );
 
     // Weights Buffer
@@ -177,15 +177,15 @@ module conv_unit # (
         .aresetn    (aresetn),
         .is_1x1     (is_1x1),
         
-        .s_valid    ({KERNEL_W_MAX{s_valid}}),
+        .s_valid    ('{KERNEL_W_MAX{s_valid}}),
         .s_data     (s_data_weights),
-        .s_last     ({KERNEL_W_MAX{0}}),
-        .s_user     ({KERNEL_W_MAX{0}}),
+        .s_last     ('{KERNEL_W_MAX{0}}),
+        .s_user     ('{KERNEL_W_MAX{0}}),
 
-        .m_tvalid   (buffer_m_valid_weights),
-        .m_tdata    (buffer_m_data_weights),
-        .m_tlast    (),
-        .m_tuser    ()
+        .m_valid   (buffer_m_valid_weights),
+        .m_data    (buffer_m_data_weights),
+        .m_last    (),
+        .m_user    ()
     );
 
     wire                       buffer_m_valid_bias   [0 : 0];
@@ -208,17 +208,17 @@ module conv_unit # (
         .aclk       (aclk),
         .aclken     (clken_mul),
         .aresetn    (aresetn),
-        .is_1x1     (0),
+        .is_1x1     (1'b0),
         
-        .s_valid    ({1{s_valid}}),
+        .s_valid    ('{1{s_valid}}),
         .s_data     (buffer_s_data_bias),
-        .s_last     ({1{0}}),
-        .s_user     ({1{s_user}}),
+        .s_last     ('{1{0}}),
+        .s_user     ('{1{s_user}}),
 
-        .m_tvalid   (buffer_m_valid_bias),
-        .m_tdata    (buffer_m_data_bias),
-        // .m_tlast    (buffer_m_last_pixels),
-        .m_tuser    (buffer_m_user_bias)
+        .m_valid   (buffer_m_valid_bias),
+        .m_data    (buffer_m_data_bias),
+        // .m_last    (buffer_m_last_pixels),
+        .m_user    (buffer_m_user_bias)
     );
 
     /*
@@ -243,12 +243,12 @@ module conv_unit # (
     wire                        acc_m_valid [KERNEL_W_MAX - 1 : 0];
     wire   [DATA_WIDTH - 1 : 0] acc_m_data  [KERNEL_W_MAX - 1 : 0];
     wire                        acc_m_last  [KERNEL_W_MAX - 1 : 0];
-    wire   [TUSER_WIDTH - 1: 0] acc_m_user  [TUSER_WIDTH  - 1 : 0];
+    wire   [TUSER_WIDTH - 1: 0] acc_m_user  [KERNEL_W_MAX - 1 : 0];
 
 
     wire                        mux_s2_valid[KERNEL_W_MAX - 1 : 0];
     wire   [DATA_WIDTH - 1 : 0] mux_s2_data [KERNEL_W_MAX - 1 : 0];
-    wire   [TUSER_WIDTH - 1: 0] mux_s2_user [TUSER_WIDTH  - 1 : 0];
+    wire   [TUSER_WIDTH - 1: 0] mux_s2_user [KERNEL_W_MAX - 1 : 0];
 
 
     genvar i;
@@ -343,7 +343,7 @@ module conv_unit # (
         for (i=0; i < KERNEL_W_MAX; i++) begin : accumulators_gen
 
             n_delay_stream #(
-                .N(ACCUMULATOR_DELAY),
+                .N(MULTIPLIER_DELAY),
                 .DATA_WIDTH(DATA_WIDTH),
                 .TUSER_WIDTH(TUSER_WIDTH)
             )
@@ -365,7 +365,7 @@ module conv_unit # (
                 .last_out   (acc_m_last     [i]),
                 .user_out   (acc_m_user     [i])
             );
-
+            
         end
 
         /*
@@ -440,21 +440,21 @@ module conv_unit # (
                 .sel                (mux_sel        [i]),
 
                 .S0_AXIS_tvalid     (mul_m_valid    [i]),
-                .S0_AXIS_tready     (0                 ),
+                .S0_AXIS_tready     (                  ),
                 .S0_AXIS_tdata      (mul_m_data     [i]),
                 .S0_AXIS_tkeep      (0                 ),
                 .S0_AXIS_tlast      (mul_m_last     [i]),
                 .S0_AXIS_tuser      (mul_m_user     [i]),
 
                 .S1_AXIS_tvalid     (mux_s2_valid   [i]),
-                .S1_AXIS_tready     (0                 ),
+                .S1_AXIS_tready     (                  ),
                 .S1_AXIS_tdata      (mux_s2_data    [i]), 
                 .S1_AXIS_tkeep      (0                 ),
                 .S1_AXIS_tlast      (0                 ),
                 .S1_AXIS_tuser      (mux_s2_user    [i]),
 
                 .M_AXIS_tvalid      (acc_s_valid    [i]),
-                .M_AXIS_tready      (                  ),
+                .M_AXIS_tready      (1                 ),
                 .M_AXIS_tdata       (acc_s_data     [i]),
                 .M_AXIS_tkeep       (                  ),
                 .M_AXIS_tlast       (acc_s_last     [i]),
@@ -463,6 +463,11 @@ module conv_unit # (
         end
 
     endgenerate
+
+    assign m_valid = acc_m_valid;
+    assign m_data  = acc_m_data ;
+    assign m_last  = acc_m_last ;
+    assign m_user  = acc_m_user ;
     
 endmodule
 
