@@ -54,7 +54,7 @@ module conv_unit_tb # ();
         .s_data_pixels  (s_data_pixels), 
         .s_data_weights (s_data_weights),
         .s_data_bias    (s_data_bias),   
-        .s_ready         (s_ready),        
+        .s_ready        (s_ready),        
         .s_last         (s_last),        
         .s_user         (s_user),        
 

@@ -307,7 +307,7 @@ module conv_unit # (
             .data_in (mul_1_delay_m_data_bias),
             .keep_in (0),
             .last_in (0),
-            .user_in (buffer_m_user_bias[0]),
+            .user_in (mul_1_delay_m_user_bias),
 
             .valid_out(mul_delay_m_valid_bias),
             .data_out (mul_delay_m_data_bias),
@@ -347,7 +347,7 @@ module conv_unit # (
         for (i=0; i < KERNEL_W_MAX; i++) begin : accumulators_gen
 
             n_delay_stream #(
-                .N(MULTIPLIER_DELAY),
+                .N(ACCUMULATOR_DELAY),
                 .DATA_WIDTH(DATA_WIDTH),
                 .TUSER_WIDTH(TUSER_WIDTH)
             )
