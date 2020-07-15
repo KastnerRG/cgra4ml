@@ -229,25 +229,25 @@ module conv_unit # (
 
     wire   [DATA_WIDTH - 1 : 0] mul_s_data  [KERNEL_W_MAX - 1 : 0];
 
-    wire   [DATA_WIDTH - 1 : 0] mul_m_data  [KERNEL_W_MAX - 1 : 0];
     wire                        mul_m_valid [KERNEL_W_MAX - 1 : 0];
+    wire   [DATA_WIDTH - 1 : 0] mul_m_data  [KERNEL_W_MAX - 1 : 0];
     wire                        mul_m_last  [KERNEL_W_MAX - 1 : 0];
     wire   [TUSER_WIDTH - 1: 0] mul_m_user  [TUSER_WIDTH  - 1 : 0];
     
-    wire   [DATA_WIDTH - 1 : 0] acc_s_data  [KERNEL_W_MAX - 1 : 0];
     wire                        acc_s_valid [KERNEL_W_MAX - 1 : 0];
+    wire   [DATA_WIDTH - 1 : 0] acc_s_data  [KERNEL_W_MAX - 1 : 0];
     wire                        acc_s_last  [KERNEL_W_MAX - 1 : 0];
     wire   [TUSER_WIDTH - 1: 0] acc_s_user  [TUSER_WIDTH  - 1 : 0];
 
 
-    wire   [DATA_WIDTH - 1 : 0] acc_m_data  [KERNEL_W_MAX - 1 : 0];
     wire                        acc_m_valid [KERNEL_W_MAX - 1 : 0];
+    wire   [DATA_WIDTH - 1 : 0] acc_m_data  [KERNEL_W_MAX - 1 : 0];
     wire                        acc_m_last  [KERNEL_W_MAX - 1 : 0];
     wire   [TUSER_WIDTH - 1: 0] acc_m_user  [TUSER_WIDTH  - 1 : 0];
 
 
-    wire   [DATA_WIDTH - 1 : 0] mux_s2_data [KERNEL_W_MAX - 1 : 0];
     wire                        mux_s2_valid[KERNEL_W_MAX - 1 : 0];
+    wire   [DATA_WIDTH - 1 : 0] mux_s2_data [KERNEL_W_MAX - 1 : 0];
     wire   [TUSER_WIDTH - 1: 0] mux_s2_user [TUSER_WIDTH  - 1 : 0];
 
 
@@ -272,19 +272,19 @@ module conv_unit # (
         bias_mul_1_hold
         (
             .aclk    (aclk),
-            .aresetn (aresetn),
             .aclken  (clken_mul),
+            .aresetn (aresetn),
 
-            .data_in (buffer_m_data_bias[0]),
             .valid_in(buffer_m_valid_bias[0]),
-            .last_in (0),
+            .data_in (buffer_m_data_bias[0]),
             .keep_in (0),
+            .last_in (0),
             .user_in (buffer_m_user_bias[0]),
 
-            .data_out(mul_1_delay_m_data_bias ),
             .valid_out(mul_1_delay_m_valid_bias),
-            .last_out(),
+            .data_out(mul_1_delay_m_data_bias ),
             .keep_out(),
+            .last_out(),
             .user_out(mul_1_delay_m_user_bias)
         );
 
@@ -296,57 +296,76 @@ module conv_unit # (
         bias_mul_hold_data_valid
         (
             .aclk    (aclk),
-            .aresetn (aresetn),
             .aclken  (clken_mul),
+            .aresetn (aresetn),
 
-            .data_in (mul_1_delay_m_data_bias),
             .valid_in(mul_1_delay_m_valid_bias),
-            .last_in (0),
+            .data_in (mul_1_delay_m_data_bias),
             .keep_in (0),
+            .last_in (0),
             .user_in (buffer_m_user_bias[0]),
 
-            .data_out (mul_delay_m_data_bias),
             .valid_out(mul_delay_m_valid_bias),
-            .last_out (),
+            .data_out (mul_delay_m_data_bias),
             .keep_out (),
+            .last_out (),
             .user_out (mul_delay_m_user_bias)
         );
 
         for (i=0; i < KERNEL_W_MAX; i++) begin : multipliers_gen
 
-            floating_point_multiplier multiplier (
-                .aclk                   (aclk),   
-                .aclken                 (clken_mul),                               
-                .aresetn                (aresetn),
-                
-                .s_axis_a_tvalid        (buffer_m_valid_pixels  [i]),            
-                .s_axis_a_tdata         (buffer_m_data_pixels   [i]),              
-                .s_axis_a_tlast         (buffer_m_last_pixels   [i]),              
+            n_delay_stream #(
+                .N(MULTIPLIER_DELAY),
+                .DATA_WIDTH(DATA_WIDTH),
+                .TUSER_WIDTH(TUSER_WIDTH)
+            )
+            dummy_multiplier
+            (
+                .aclk       (aclk),
+                .aclken     (clken_mul),
+                .aresetn    (aresetn),
 
-                .s_axis_b_tvalid        (buffer_m_valid_weights [i]),            
-                .s_axis_b_tdata         (buffer_m_data_weights  [i]),
-                
-                .m_axis_result_tvalid   (mul_m_valid    [i]),
-                .m_axis_result_tdata    (mul_m_data     [i]),    
-                .m_axis_result_tlast    (mul_m_last     [i])     
+                .valid_in   (buffer_m_valid_pixels  [i]),
+                .data_in    (buffer_m_data_pixels   [i]),
+                .keep_in    (1),
+                .last_in    (buffer_m_last_pixels   [i]),
+                .user_in    (buffer_m_user_pixels   [i]),
+
+                .valid_out  (mul_m_valid    [i]),
+                .data_out   (mul_m_data     [i]),
+                .keep_out   (),
+                .last_out   (mul_m_last     [i]),
+                .user_out   (mul_m_user     [i])
             );
+
         end
 
         for (i=0; i < KERNEL_W_MAX; i++) begin : accumulators_gen
 
-            floating_point_accumulator accumulator (
-                .aclk                   (aclk),
-                .aclken                 (aclken),
-                .aresetn                (aresetn),
+            n_delay_stream #(
+                .N(ACCUMULATOR_DELAY),
+                .DATA_WIDTH(DATA_WIDTH),
+                .TUSER_WIDTH(TUSER_WIDTH)
+            )
+            dummy_accumulator
+            (
+                .aclk       (aclk),
+                .aclken     (aclken),
+                .aresetn    (aresetn),
 
-                .s_axis_a_tvalid        (acc_s_valid    [i]),
-                .s_axis_a_tdata         (acc_s_data     [i]),    
-                .s_axis_a_tlast         (acc_s_last     [i]),     
+                .valid_in   (acc_s_valid    [i]),
+                .data_in    (acc_s_data     [i]),
+                .keep_in    (1),
+                .last_in    (acc_s_last     [i]),
+                .user_in    (acc_s_user     [i]),
 
-                .m_axis_result_tvalid   (acc_m_valid    [i]), 
-                .m_axis_result_tdata    (acc_m_data     [i]),  
-                .m_axis_result_tlast    (acc_m_last     [i])   
+                .valid_out  (acc_m_valid    [i]),
+                .data_out   (acc_m_data     [i]),
+                .keep_out   (),
+                .last_out   (acc_m_last     [i]),
+                .user_out   (acc_m_user     [i])
             );
+
         end
 
         /*
@@ -396,14 +415,14 @@ module conv_unit # (
 
         // MUX inputs
 
-        assign mux_s2_data   [0]    = mul_delay_m_data_bias    ;
         assign mux_s2_valid  [0]    = mul_delay_m_valid_bias   ;
+        assign mux_s2_data   [0]    = mul_delay_m_data_bias    ;
         assign mux_s2_user   [0]    = mul_delay_m_user_bias    ;
 
         for (i=1; i < KERNEL_W_MAX; i++) begin : mul_s2
 
-            assign mux_s2_data   [i]    = acc_m_data    [i-1];
             assign mux_s2_valid  [i]    = acc_m_valid   [i-1];
+            assign mux_s2_data   [i]    = acc_m_data    [i-1];
             assign mux_s2_user   [i]    = acc_m_user    [i-1];
 
         end
@@ -420,23 +439,23 @@ module conv_unit # (
             (
                 .sel                (mux_sel        [i]),
 
-                .S0_AXIS_tdata      (mul_m_data     [i]),
                 .S0_AXIS_tvalid     (mul_m_valid    [i]),
                 .S0_AXIS_tready     (0                 ),
+                .S0_AXIS_tdata      (mul_m_data     [i]),
                 .S0_AXIS_tkeep      (0                 ),
                 .S0_AXIS_tlast      (mul_m_last     [i]),
                 .S0_AXIS_tuser      (mul_m_user     [i]),
 
-                .S1_AXIS_tdata      (mux_s2_data    [i]), 
                 .S1_AXIS_tvalid     (mux_s2_valid   [i]),
                 .S1_AXIS_tready     (0                 ),
+                .S1_AXIS_tdata      (mux_s2_data    [i]), 
                 .S1_AXIS_tkeep      (0                 ),
                 .S1_AXIS_tlast      (0                 ),
                 .S1_AXIS_tuser      (mux_s2_user    [i]),
 
-                .M_AXIS_tdata       (acc_s_data     [i]),
                 .M_AXIS_tvalid      (acc_s_valid    [i]),
                 .M_AXIS_tready      (                  ),
+                .M_AXIS_tdata       (acc_s_data     [i]),
                 .M_AXIS_tkeep       (                  ),
                 .M_AXIS_tlast       (acc_s_last     [i]),
                 .M_AXIS_tuser       (acc_m_user     [i])
