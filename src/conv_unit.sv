@@ -77,6 +77,7 @@ module conv_unit # (
     s_data_pixels, 
     s_data_weights,
     s_data_bias,   
+    s_ready,
     s_last,        
     s_user,        
 
@@ -95,6 +96,7 @@ module conv_unit # (
     input  wire [DATA_WIDTH  - 1: 0] s_data_pixels                        ;
     input  wire [DATA_WIDTH  - 1: 0] s_data_weights [KERNEL_W_MAX - 1 : 0];
     input  wire [DATA_WIDTH  - 1: 0] s_data_bias                          ;
+    output wire                      s_ready                              ;
     input  wire                      s_last                               ;
     input  wire [TUSER_WIDTH - 1: 0] s_user                               ;
 
@@ -107,12 +109,16 @@ module conv_unit # (
     /*
     ENABLE SIGNALS
     */
-    wire    mux_sel     [KERNEL_W_MAX - 1 : 0];
-    wire    clken_mul;
-    wire    is_1x1;
+    wire    [KERNEL_W_MAX - 1 : 0] mux_sel;
+    wire                           mux_sel_any;
+    wire                           clken_mul;
+    wire                           is_1x1;
 
-    assign  clken_mul = mux_sel[0] && aclken;
-    assign  is_1x1    = s_user[0];
+    assign  mux_sel_none = !(|mux_sel);
+    assign  clken_mul    = mux_sel_none && aclken;
+
+    assign  is_1x1       = s_user[IS_1x1_INDEX];
+    assign  s_ready     = clken_mul;
 
     /*
     BUFFER UNIT------------------------------------------------------
@@ -226,9 +232,6 @@ module conv_unit # (
     */
 
 
-
-    wire   [DATA_WIDTH - 1 : 0] mul_s_data  [KERNEL_W_MAX - 1 : 0];
-
     wire                        mul_m_valid [KERNEL_W_MAX - 1 : 0];
     wire   [DATA_WIDTH - 1 : 0] mul_m_data  [KERNEL_W_MAX - 1 : 0];
     wire                        mul_m_last  [KERNEL_W_MAX - 1 : 0];
@@ -249,6 +252,7 @@ module conv_unit # (
     wire                        mux_s2_valid[KERNEL_W_MAX - 1 : 0];
     wire   [DATA_WIDTH - 1 : 0] mux_s2_data [KERNEL_W_MAX - 1 : 0];
     wire   [TUSER_WIDTH - 1: 0] mux_s2_user [KERNEL_W_MAX - 1 : 0];
+    wire                        mux_m_valid [KERNEL_W_MAX - 1 : 0];
 
 
     genvar i;
@@ -431,6 +435,8 @@ module conv_unit # (
 
         for (i=0; i < KERNEL_W_MAX; i++) begin : mux_gen
 
+            assign acc_s_valid [i] = mux_m_valid[i] && (mux_sel[i] || mux_sel_none);
+
             axis_mux #(
                 .DATA_WIDTH(DATA_WIDTH),
                 .TUSER_WIDTH(TUSER_WIDTH)
@@ -453,7 +459,7 @@ module conv_unit # (
                 .S1_AXIS_tlast      (0                 ),
                 .S1_AXIS_tuser      (mux_s2_user    [i]),
 
-                .M_AXIS_tvalid      (acc_s_valid    [i]),
+                .M_AXIS_tvalid      (mux_m_valid    [i]),
                 .M_AXIS_tready      (1                 ),
                 .M_AXIS_tdata       (acc_s_data     [i]),
                 .M_AXIS_tkeep       (                  ),
