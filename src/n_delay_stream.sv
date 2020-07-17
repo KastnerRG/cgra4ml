@@ -4,8 +4,8 @@ module n_delay_stream #(
     parameter TUSER_WIDTH
 )(
     aclk,
-    aresetn,
     aclken,
+    aresetn,
 
     valid_in,
     data_in,
