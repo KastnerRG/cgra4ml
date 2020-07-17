@@ -425,7 +425,7 @@ module conv_unit # (
 
         for (i=1; i < KERNEL_W_MAX; i++) begin : mul_s2
 
-            assign mux_s2_valid  [i]    = acc_m_valid   [i-1];
+            assign mux_s2_valid  [i]    = acc_m_valid   [i-1] && acc_m_tlast  [i-1];
             assign mux_s2_data   [i]    = acc_m_data    [i-1];
             assign mux_s2_user   [i]    = acc_m_user    [i-1];
 

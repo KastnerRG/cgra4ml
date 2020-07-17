@@ -7,14 +7,14 @@ module axis_shift_buffer_tb();
     parameter KERNEL_H_MAX          = 5;
     parameter CH_IN_COUNTER_WIDTH   = 5;
 
-    parameter KERNEL_H_1            = 0;
+    parameter KERNEL_H_1            = 2;
     parameter IM_CH_IN_1            = 5'd5 - 5'd1;
 
     reg                                         aclk                    = 0;
     reg                                         aresetn                 = 1;
     wire [DATA_WIDTH * (CONV_UNITS+(KERNEL_H_MAX-1)) - 1 : 0]  S_AXIS_tdata;
     reg                                         S_AXIS_tvalid           = 0;
-    reg                                         M_AXIS_tready           = 1;
+    reg                                         M_AXIS_tready           = 0;
 
     wire                                        S_AXIS_tready;
     wire [DATA_WIDTH * (CONV_UNITS) - 1 : 0]    M_AXIS_tdata;
@@ -71,6 +71,11 @@ axis_shift_buffer_dut
     initial begin
         @(posedge aclk);
         #(CLK_PERIOD*3)
+
+        @(posedge aclk);
+        M_AXIS_tready     <= 1;
+        @(posedge aclk);
+        M_AXIS_tready     <= 0;
 
         for (m=0; m<CONV_UNITS+(KERNEL_H_MAX-1); m=m+1) begin
             s_data[m] <= m*100 + k;

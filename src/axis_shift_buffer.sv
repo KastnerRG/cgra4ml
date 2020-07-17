@@ -17,8 +17,6 @@ Description: * Pipelined module that takes in AXIS of padded rows and releases k
                         - 14 pixels will be shifted down 3 times
                         - First 10 (=8+2) words of 14 (=8+6) should be the valid 
                             padded inputs for 3x3
-             * Tlast is not pipelined - couldnt get it working for both (1 x *) and
-                (K x *). So for now it works for both cases as combinational            
 
 Dependencies: * axis_register_slice_data_buffer 
                     - Type: IP (axis_register_slice) configured
@@ -120,27 +118,36 @@ module axis_shift_buffer#(
     is not updated (update_state = insert || remove). Hence it is safe.
 
     */
+    localparam STATE_WIDTH = $clog2(KERNEL_H_MAX+1);
 
-    localparam STATE_WIDTH = $clog2(KERNEL_H_MAX);
+    wire [CH_IN_COUNTER_WIDTH-1 : 0] selected_count;
+    assign selected_count = (kernel_h_1_out == 0) ? count_next : count;
+
+    wire tlast_in = (state == kernel_h_1_out) && (selected_count == im_channels_1_reg_out);
+
 
     wire [STATE_WIDTH-1:0]  state;
-    reg  [STATE_WIDTH-1:0]  state_next;
+    reg [STATE_WIDTH-1:0]  state_next;
     wire update_state;
     
     assign update_state = insert || remove;
 
     always @ (*) begin
-        case(state)
-            kernel_h_1_out  : state_next <= 0;
-            0               : state_next <= insert;
-            default         : state_next <= state + remove;
-        endcase
+        if (tlast_in)
+            state_next <= 3'd7;
+        else if (state == kernel_h_1_out)
+            state_next <= 0;
+        else if (state == 0)
+            state_next <= insert;
+        else 
+            state_next <= state + remove;
     end
+
 
     register
     #(
         .WORD_WIDTH     (STATE_WIDTH),
-        .RESET_VALUE    (1'b0)         // Initial state
+        .RESET_VALUE    (0)         // Initial state
     )
     state_reg
     (
@@ -179,22 +186,52 @@ module axis_shift_buffer#(
       .m_axis_tdata(slice_M_AXIS_tdata)    
     );
 
-    // OUTPUT VALID
-    wire    m_valid_next;
-    assign  m_valid_next = (state == 0) ? slice_M_AXIS_tvalid : M_AXIS_tvalid;
+    /*
+    MASTER_VALID
+    */
+    reg m_valid_next;
+    wire cond_vA;
+    wire cond_vB;
+    wire result_vB;
+    
+    wire change_data = ((state == 0) && insert) || remove;
+
+
+    always @(*) begin
+        if (state_data_out == 3'd7)
+            m_valid_next <= 1;
+        else if (state ==  0)
+            m_valid_next <= slice_M_AXIS_tvalid;
+        else 
+            m_valid_next <= M_AXIS_tvalid;
+    end
 
     register
     #(
         .WORD_WIDTH     (1),
-        .RESET_VALUE    (1'b0)         // Initially invalid
+        .RESET_VALUE    (1)         // Initially invalid
     )
     m_valid_reg
     (
         .clock          (aclk),
-        .clock_enable   (1'b1),
+        .clock_enable   (change_data),
         .resetn         (aresetn),
         .data_in        (m_valid_next),
         .data_out       (M_AXIS_tvalid)
+    );
+
+    register
+    #(
+        .WORD_WIDTH     (STATE_WIDTH),
+        .RESET_VALUE    (3'd7)         // Initial state
+    )
+    state_out
+    (
+        .clock          (aclk),
+        .clock_enable   (change_data),
+        .resetn         (aresetn),
+        .data_in        (state),
+        .data_out       (state_data_out)
     );
     
 
@@ -209,20 +246,21 @@ module axis_shift_buffer#(
     */
 
 
-    wire    [DATA_WIDTH-1:0]    slice_s_data    [CONV_UNITS + (KERNEL_H_MAX-1)-1:0];
+    wire    [DATA_WIDTH-1:0]    slice_m_data    [CONV_UNITS + (KERNEL_H_MAX-1)-1:0];
     wire    [DATA_WIDTH-1:0]    selected_data   [CONV_UNITS + (KERNEL_H_MAX-1)-1:0];
     wire    [DATA_WIDTH-1:0]    data_out        [CONV_UNITS + (KERNEL_H_MAX-1)-1:0];
     wire    [DATA_WIDTH-1:0]    m_data          [CONV_UNITS  -1:0];
 
-    wire shift;
-    assign shift = insert || remove;
+    assign shift = remove;
+    wire resetn_data;
+    assign reset_data = !aresetn || (state==3'd7 && remove);
 
     genvar i;
     generate
 
-        // 10 slice_s_data mapped
+        // 10 slice_m_data mapped
         for (i=0; i < CONV_UNITS  + (KERNEL_H_MAX-1); i=i+1) begin: s_data_gen
-            assign slice_s_data[i] = slice_M_AXIS_tdata[(i+1)*DATA_WIDTH-1: i*DATA_WIDTH];
+            assign slice_m_data[i] = slice_M_AXIS_tdata[(i+1)*DATA_WIDTH-1: i*DATA_WIDTH];
         end
         
         // First 8 data_out registers (of 10) connected to m_data
@@ -230,12 +268,12 @@ module axis_shift_buffer#(
             assign M_AXIS_tdata[(i+1)*DATA_WIDTH-1: i*DATA_WIDTH] = data_out[i];
         end
 
-        // selected_data[9](1)     is from  slice_s_data[9](1)
-        // selected_data[0..8](9) are muxed between data_out[1..9](9) and slice_s_data[0..8](9)
-        assign selected_data[CONV_UNITS + (KERNEL_H_MAX-1)-1] = slice_s_data[CONV_UNITS + (KERNEL_H_MAX-1)-1];
+        // selected_data[9](1)     is from  slice_m_data[9](1)
+        // selected_data[0..8](9) are muxed between data_out[1..9](9) and slice_m_data[0..8](9)
+        assign selected_data[CONV_UNITS + (KERNEL_H_MAX-1)-1] = slice_m_data[CONV_UNITS + (KERNEL_H_MAX-1)-1];
 
         for (i=0; i < CONV_UNITS  + (KERNEL_H_MAX-1)-1; i=i+1) begin: selected_data_gen
-            assign selected_data[i] = (state == 0) ? slice_s_data[i] : data_out[i+1];
+            assign selected_data[i] = (state == 0) ? slice_m_data[i] : data_out[i+1];
         end
 
         // 10 data_out registers
@@ -243,29 +281,19 @@ module axis_shift_buffer#(
             register
             #(
                 .WORD_WIDTH     (DATA_WIDTH),
-                .RESET_VALUE    (0)
+                .RESET_VALUE    (15360)
             )
             m_data_reg
             (
                 .clock          (aclk),
-                .clock_enable   (shift),
-                .resetn         (aresetn),
+                .clock_enable   (change_data),
+                .resetn         (!reset_data),
                 .data_in        (selected_data[i]),
                 .data_out       (data_out[i])
             );
         end
 
     endgenerate
-
-    /*
-    TLAST GENERATON ---------------------------------------------------------------------
-
-    * For every IM_CH_IN groups of input data beats, passes a single tlast bit at the
-      last shifted data beat (every IM_CH_IN * KERNEL_H_MAX beats).
-    * IM_CH_IN is not given, but (IM_CH_IN_1 = IM_CH_IN-1) is given.
-
-    */
-
 
     /*
     * Register im_channels_1 for performance (and why not?)
@@ -330,7 +358,29 @@ module axis_shift_buffer#(
         .data_out       (count)
     );
 
-    assign M_AXIS_tlast = (state == 0) && (count==im_channels_1_reg_out);
+    /*
+    TLAST GENERATON ---------------------------------------------------------------------
+
+    * For every IM_CH_IN groups of input data beats, passes a single tlast bit at the
+      last shifted data beat (every IM_CH_IN * KERNEL_H_MAX beats).
+    * IM_CH_IN is not given, but (IM_CH_IN_1 = IM_CH_IN-1) is given.
+
+    */
+
+    register
+    #(
+        .WORD_WIDTH     (CH_IN_COUNTER_WIDTH),
+        .RESET_VALUE    (0) 
+    )
+    tlast_reg
+    (
+        .clock          (aclk),
+        .clock_enable   (remove),
+        .resetn         (aresetn),
+        .data_in        (tlast_in),
+        .data_out       (M_AXIS_tlast)
+    );
+
 
 
 endmodule
