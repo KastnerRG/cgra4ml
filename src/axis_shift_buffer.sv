@@ -19,9 +19,20 @@ Description: * Pipelined module that takes in AXIS of padded rows and releases k
                             padded inputs for 3x3
 
             * Asserts tlast (registered) at the last data beat of each cin
-            * Asserts blocks_2 (registered) for the entire cin at the block before last
+            * Asserts blocks_1_k2 = blocks-1-k_w/2 (registered) for the entire cin at the block before last
             * Samples config bits with "start" pulse and holds them until next "start"
             * Asserts done after the last tlast, until next start.
+
+            * States are tied this way (indend denotes one clock delay)
+                - state_next
+                            - data_reg_in
+                            - state_data_in
+                            - cin_count_out +1
+                                        - data_reg_out
+                                        - state_data_out
+                                        - cin_out
+            * Note: cin_count_next register holds data for one clock in 1x1 and n in nxn.
+                        Hence not tied to any data
 
 Dependencies: * axis_register_slice_data_buffer 
                     - Type: IP (axis_register_slice) configured
@@ -114,6 +125,10 @@ module axis_shift_buffer#(
     wire                                    is_relu_reg_out      ;
     wire    [CIN_COUNTER_WIDTH -1 : 0]      cin_1_reg_out        ;
     wire    [BLOCKS_COUNTER_WIDTH-1 : 0]    blocks_1_reg_out     ;
+    wire                                    is_1x1_in            ;
+    wire                                    is_1x1_reg_out           ;
+    
+    assign    is_1x1_in = (kernel_h_1_in == KERNEL_H_WIDTH'('d0));          
 
     register
     #(
@@ -141,6 +156,20 @@ module axis_shift_buffer#(
         .resetn         (aresetn),
         .data_in        (kernel_w_1_in),
         .data_out       (kernel_w_1_out)
+    );
+
+    register
+    #(
+        .WORD_WIDTH     (1),
+        .RESET_VALUE    (0) 
+    )
+    IS_1x1_REG
+    (
+        .clock          (aclk),
+        .clock_enable   (start),
+        .resetn         (aresetn),
+        .data_in        (is_1x1_in),
+        .data_out       (is_1x1_reg_out)
     );
 
     register
@@ -501,7 +530,7 @@ module axis_shift_buffer#(
     BLOCKS-2 GENERATION
 
     * blocks_count = block cin_count of the currnet data beat available in master 
-    * blocks_2     = blocks_count == BLOCKS - 2
+    * blocks_1_k2     = blocks_count == BLOCKS - 2
     */
 
     wire [BLOCKS_COUNTER_WIDTH-1 : 0] blocks_in;
@@ -524,8 +553,8 @@ module axis_shift_buffer#(
         .data_out       (blocks_count)
     );
 
-    wire    is_blocks_2_in = blocks_count == (blocks_1 - kernel_w_1_out/2);
-    wire    is_blocks_2_out;
+    wire    is_blocks_1_k2_in = blocks_count == (blocks_1 - kernel_w_1_out/2);
+    wire    is_blocks_1_k2_out;
 
     register
     #(
@@ -537,35 +566,21 @@ module axis_shift_buffer#(
         .clock          (aclk),
         .clock_enable   (blocks_clken),
         .resetn         (aresetn),
-        .data_in        (is_blocks_2_in),
-        .data_out       (is_blocks_2_out)
+        .data_in        (is_blocks_1_k2_in),
+        .data_out       (is_blocks_1_k2_out)
     );
 
     /*
     TUSER GENERATION
 
-    * Tied to data
+    * "is_blocks_1_k2_out" is tied to the block (includes ones)
+    * Others are tied to start
     */
-    wire [TUSER_WIDTH-1:0] tuser_in;
     
-    assign tuser_in [INDEX_IS_1x1       ] = (kernel_h_1_out == KERNEL_H_WIDTH'('d0));
-    assign tuser_in [INDEX_IS_MAX       ] = is_max_reg_out;
-    assign tuser_in [INDEX_IS_RELU      ] = is_relu_reg_out;
-    assign tuser_in [INDEX_IS_BLOCKS_2  ] = is_blocks_2_out;
-
-    register
-    #(
-        .WORD_WIDTH     (TUSER_WIDTH),
-        .RESET_VALUE    (0) 
-    )
-    TUSER_REG
-    (
-        .clock          (aclk),
-        .clock_enable   (data_clken),
-        .resetn         (aresetn),
-        .data_in        (tuser_in),
-        .data_out       (M_AXIS_tuser)
-    );
+    assign M_AXIS_tuser [INDEX_IS_1x1       ] = is_1x1_reg_out;
+    assign M_AXIS_tuser [INDEX_IS_MAX       ] = is_max_reg_out;
+    assign M_AXIS_tuser [INDEX_IS_RELU      ] = is_relu_reg_out;
+    assign M_AXIS_tuser [INDEX_IS_BLOCKS_2  ] = is_blocks_1_k2_out;
 
     /*
     DONE GENERATION

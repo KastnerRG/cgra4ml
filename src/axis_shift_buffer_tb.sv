@@ -9,8 +9,8 @@ module axis_shift_buffer_tb();
     parameter CIN_COUNTER_WIDTH     = 5;
     parameter TUSER_WIDTH           = 4;
 
-    parameter KERNEL_H_1            = 2;
-    parameter KERNEL_W_1            = 2;
+    parameter KERNEL_H_1            = 0;
+    parameter KERNEL_W_1            = 0;
     parameter CIN_1                 = 5'd5 - 5'd1;
     parameter BLOCKS_1              = 4-1;
     
@@ -103,10 +103,10 @@ axis_shift_buffer_dut
         @(posedge aclk);
         #(CLK_PERIOD*3)
 
-        @(posedge aclk);
-        M_AXIS_tready     <= 1;
-        @(posedge aclk);
-        M_AXIS_tready     <= 0;
+        // @(posedge aclk);
+        // M_AXIS_tready     <= 1;
+        // @(posedge aclk);
+        // M_AXIS_tready     <= 0;
 
         for (m=0;   m < CONV_UNITS+(KERNEL_H_MAX-1);    m=m+1) begin
             s_data[m] <= m*100 + k;
@@ -117,6 +117,8 @@ axis_shift_buffer_dut
 
             // Turn off ready in this region
             if (n > 24 && n < 29)
+                M_AXIS_tready <= 0;
+            else if (n < 10)
                 M_AXIS_tready <= 0;
             else
                 M_AXIS_tready <= 1;
