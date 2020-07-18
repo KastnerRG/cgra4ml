@@ -63,11 +63,10 @@ module conv_unit # (
     parameter ACCUMULATOR_DELAY     = 21,
     parameter MULTIPLIER_DELAY      = 6,
 
-    parameter IS_1x1_INDEX          = 0,
-    parameter IS_MAX_INDEX          = 1,
-    parameter IS_RELU_INDEX         = 2,
-    parameter IS_BLOCK_LAST_INDEX   = 3,
-    parameter IS_CIN_FIRST_INDEX    = 4
+    parameter INDEX_IS_1x1          = 0,
+    parameter INDEX_IS_MAX          = 1,
+    parameter INDEX_IS_RELU         = 2,
+    parameter INDEX_IS_BLOCKS_2     = 3
 )(
     aclk,
     aclken,

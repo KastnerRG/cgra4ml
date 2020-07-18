@@ -5,13 +5,23 @@ module axis_shift_buffer_tb();
     parameter DATA_WIDTH            = 16;
     parameter CONV_UNITS            = 8;
     parameter KERNEL_H_MAX          = 5;
-    parameter CH_IN_COUNTER_WIDTH   = 5;
+    parameter KERNEL_W_MAX          = 5;
+    parameter CIN_COUNTER_WIDTH     = 5;
+    parameter TUSER_WIDTH           = 4;
 
     parameter KERNEL_H_1            = 2;
-    parameter IM_CH_IN_1            = 5'd5 - 5'd1;
+    parameter KERNEL_W_1            = 2;
+    parameter CIN_1                 = 5'd5 - 5'd1;
+    parameter BLOCKS_1              = 4-1;
+    
+    localparam KERNEL_H_WIDTH       = $clog2(KERNEL_H_MAX + 1);
+    localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX + 1);
+
 
     reg                                         aclk                    = 0;
     reg                                         aresetn                 = 1;
+    reg                                         start                   = 0;
+    wire                                        done                       ;
     wire [DATA_WIDTH * (CONV_UNITS+(KERNEL_H_MAX-1)) - 1 : 0]  S_AXIS_tdata;
     reg                                         S_AXIS_tvalid           = 0;
     reg                                         M_AXIS_tready           = 0;
@@ -20,30 +30,43 @@ module axis_shift_buffer_tb();
     wire [DATA_WIDTH * (CONV_UNITS) - 1 : 0]    M_AXIS_tdata;
     wire                                        M_AXIS_tvalid;
     wire                                        M_AXIS_tlast;
+    wire [TUSER_WIDTH     -1     : 0]           M_AXIS_tuser;
+    wire [KERNEL_H_WIDTH  -1     : 0]           kernel_h_1_out;
+    wire [KERNEL_W_WIDTH  -1     : 0]           kernel_w_1_out;
 
     reg  [DATA_WIDTH-1 : 0] s_data [CONV_UNITS+(KERNEL_H_MAX-1)-1:0] = '{default:0};
     wire [DATA_WIDTH-1 : 0] m_data [CONV_UNITS-1:0];
 
 axis_shift_buffer
 #(
-    .DATA_WIDTH(DATA_WIDTH),
-    .CONV_UNITS(CONV_UNITS),
-    .KERNEL_H_MAX(KERNEL_H_MAX),
-    .CH_IN_COUNTER_WIDTH(5)
+    .DATA_WIDTH         (DATA_WIDTH),
+    .CONV_UNITS         (CONV_UNITS),
+    .KERNEL_H_MAX       (KERNEL_H_MAX),
+    .KERNEL_W_MAX       (KERNEL_W_MAX),
+    .CIN_COUNTER_WIDTH  (5)
 )
 axis_shift_buffer_dut
 (
-    .aclk(aclk),
-    .aresetn(aresetn),
-    .im_channels_in_1(IM_CH_IN_1),
-    .kernel_h_1(KERNEL_H_1),
-    .S_AXIS_tdata(S_AXIS_tdata),
-    .S_AXIS_tvalid(S_AXIS_tvalid),
-    .S_AXIS_tready(S_AXIS_tready),
-    .M_AXIS_tdata(M_AXIS_tdata),
-    .M_AXIS_tvalid(M_AXIS_tvalid),
-    .M_AXIS_tready(M_AXIS_tready),
-    .M_AXIS_tlast(M_AXIS_tlast)
+    .aclk               (aclk),
+    .aresetn            (aresetn),
+    .start              (start),
+    .done               (done),
+    .kernel_h_1_in      (KERNEL_H_1),
+    .kernel_w_1_in      (KERNEL_W_1),
+    .is_max             (1),
+    .is_relu            (1),
+    .blocks_1           (BLOCKS_1),
+    .cin_1              (CIN_1),
+    .S_AXIS_tdata       (S_AXIS_tdata),
+    .S_AXIS_tvalid      (S_AXIS_tvalid),
+    .S_AXIS_tready      (S_AXIS_tready),
+    .M_AXIS_tdata       (M_AXIS_tdata),
+    .M_AXIS_tvalid      (M_AXIS_tvalid),
+    .M_AXIS_tready      (M_AXIS_tready),
+    .M_AXIS_tlast       (M_AXIS_tlast),
+    .M_AXIS_tuser       (M_AXIS_tuser),
+    .kernel_h_1_out     (kernel_h_1_out),
+    .kernel_w_1_out     (kernel_w_1_out)
 );
 
     genvar i;
@@ -73,11 +96,19 @@ axis_shift_buffer_dut
         #(CLK_PERIOD*3)
 
         @(posedge aclk);
+        start             <= 1;
+        @(posedge aclk);
+        start             <= 0;
+
+        @(posedge aclk);
+        #(CLK_PERIOD*3)
+
+        @(posedge aclk);
         M_AXIS_tready     <= 1;
         @(posedge aclk);
         M_AXIS_tready     <= 0;
 
-        for (m=0; m<CONV_UNITS+(KERNEL_H_MAX-1); m=m+1) begin
+        for (m=0;   m < CONV_UNITS+(KERNEL_H_MAX-1);    m=m+1) begin
             s_data[m] <= m*100 + k;
         end
 
