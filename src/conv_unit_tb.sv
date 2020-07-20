@@ -5,15 +5,16 @@ module conv_unit_tb # ();
     parameter CLK_PERIOD            = 10;
     parameter DATA_WIDTH            = 16;
     parameter KERNEL_W_MAX          = 3;
-    parameter TUSER_WIDTH           = 5;
+    parameter TUSER_WIDTH           = 4;
     parameter ACCUMULATOR_DELAY     = 4;
     parameter MULTIPLIER_DELAY      = 3;
 
-    parameter IS_1x1_INDEX          = 0;
-    parameter IS_MAX_INDEX          = 1;
-    parameter IS_RELU_INDEX         = 2;
-    parameter IS_BLOCK_LAST_INDEX   = 3;
-    parameter IS_CIN_FIRST_INDEX    = 4;
+    parameter INDEX_IS_1x1          = 0;
+    parameter INDEX_IS_MAX          = 1;
+    parameter INDEX_IS_RELU         = 2;
+    parameter INDEX_IS_BLOCKS_2     = 3;
+
+    parameter CIN = 10;
 
 
     reg                       aclk                                  = 0;
@@ -22,7 +23,6 @@ module conv_unit_tb # ();
     reg                       s_valid                               = 0;
     reg  [DATA_WIDTH  - 1: 0] s_data_pixels                         = 9;
     reg  [DATA_WIDTH  - 1: 0] s_data_weights [KERNEL_W_MAX - 1 : 0] = '{default:'0};
-    reg  [DATA_WIDTH  - 1: 0] s_data_bias                           = 9;
     wire                      s_ready                                  ;
     reg                       s_last                                = 0;
     reg  [TUSER_WIDTH - 1: 0] s_user                                = 1;
@@ -33,16 +33,15 @@ module conv_unit_tb # ();
     wire [TUSER_WIDTH - 1: 0] m_user        [KERNEL_W_MAX - 1 : 0] ;
     
     conv_unit # (
-        .DATA_WIDTH         (DATA_WIDTH),
-        .KERNEL_W_MAX       (KERNEL_W_MAX),
-        .TUSER_WIDTH        (TUSER_WIDTH),
-        .ACCUMULATOR_DELAY  (ACCUMULATOR_DELAY) ,
-        .MULTIPLIER_DELAY   (MULTIPLIER_DELAY),
-        .IS_1x1_INDEX       (IS_1x1_INDEX),
-        .IS_MAX_INDEX       (IS_MAX_INDEX),
-        .IS_RELU_INDEX      (IS_RELU_INDEX),
-        .IS_BLOCK_LAST_INDEX(IS_BLOCK_LAST_INDEX),
-        .IS_CIN_FIRST_INDEX (IS_CIN_FIRST_INDEX) 
+        .DATA_WIDTH               (DATA_WIDTH),
+        .KERNEL_W_MAX             (KERNEL_W_MAX),
+        .TUSER_WIDTH              (TUSER_WIDTH),
+        .ACCUMULATOR_DELAY        (ACCUMULATOR_DELAY) ,
+        .MULTIPLIER_DELAY         (MULTIPLIER_DELAY),
+        .INDEX_IS_1x1             (INDEX_IS_1x1),
+        .INDEX_IS_MAX             (INDEX_IS_MAX),
+        .INDEX_IS_RELU            (INDEX_IS_RELU),
+        .INDEX_IS_BLOCKS_2        (INDEX_IS_BLOCKS_2)
     )
     conv_unit_dut
     (
@@ -53,7 +52,6 @@ module conv_unit_tb # ();
         .s_valid        (s_valid),       
         .s_data_pixels  (s_data_pixels), 
         .s_data_weights (s_data_weights),
-        .s_data_bias    (s_data_bias),   
         .s_ready        (s_ready),        
         .s_last         (s_last),        
         .s_user         (s_user),        
@@ -78,31 +76,40 @@ module conv_unit_tb # ();
         #(CLK_PERIOD*3)
 
         aresetn                 <= 1;
-        s_user[IS_1x1_INDEX]    <= 0;
+        s_user[INDEX_IS_1x1]    <= 0;
 
-        for (n=0; n<100; n=n+1) begin
+        for (n=0; n<1000; n=n+1) begin
             @(posedge aclk);
 
             if (n==6)
                 aclken <= 1;
 
             if (s_ready) begin
-
-                if (i == 2) begin
-                    i <= 0;
-                    k                       <= k + 1; 
-                end
-                else begin
-                    i <= i+1;
+                
+                if(!s_last) begin
+                    if (i == 2) begin
+                        i <= 0;
+                        k                   <= k + 1; 
+                    end
+                    else begin
+                        i <= i+1;
+                    end
                 end
 
                 s_valid                     <= 1;
                 
-
-                s_data_pixels               <= k*100 + i;
-                s_data_bias                 <= k*1000 +500 + i;
-                s_last                      <= (k % 10 == 9) && (i==2);
-                s_user[IS_CIN_FIRST_INDEX]  <= (k % 10 == 0) && (i==0);
+                if (!s_last) begin 
+                    s_data_weights[0]           <= k*100 + i;
+                    s_data_weights[1]           <= k*100 + i + 1000;
+                    s_data_weights[2]           <= k*100 + i + 2000;
+                    s_last                      <= (k % CIN == CIN-1) && (i==2);
+                end
+                else begin
+                    s_data_weights[0]           <= 1;
+                    s_data_weights[1]           <= 1;
+                    s_data_weights[2]           <= 1;
+                    s_last                      <= 0;
+                end
             end
 
         end
