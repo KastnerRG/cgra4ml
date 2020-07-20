@@ -1,3 +1,67 @@
+/*//////////////////////////////////////////////////////////////////////////////////
+Group : ABruTECH
+Engineer: Abarajithan G.
+
+Create Date: 14/07/2020
+Design Name: Step Buffer
+Tool Versions: Vivado 2018.2
+Description:
+        * 1x1 : All datapaths are delayed by one clock
+                - Zero relative delay between datapaths, they move together
+                - Output is registered to help performace and fanout, since
+                    one image_buffer feeds upto 16 cores and
+                    one weights_buffer feeds 8 units
+
+        * nxm : Delays data (for nxm convolution) in steps such that each datapath is (A-2)
+                clocks behind the previous, to ensure following operation in 
+                perfect sync within the conv unit.
+
+            1. last data from multiplier comes to mux_s1[i]
+                * Directly goes into acc_s[i]
+                * Clearing the accumulator with it
+                * mul_m_last[i] that comes with it gets delayed (enters  mux_sel[i])
+
+            2. On next data beat, last data from acc_s[i-1] comes into mux_s2[i]
+                * mux_sel[i] is asserted, mux[i] allows mux_s2[i] into acc_s[i]
+                * acc_s[i-1] enters acc_s[i], as 1st data of new accumulation
+                    its tlast is not allowed passed
+                * All multipliers are disabled
+                * All accumulators, except [i] are disabled
+                * acc_s[i] accepts acc_s[i-1]
+                * "bias" has come to the mul_s[i] and waits
+                    as multipler pipeline is disabled
+
+            3. On next data_beat, mux_sel[i] is updated (deasserted)
+                * BECAUSE acc_s_valid_[i-1] was high in prev clock
+                * mux[i] allows mux_s1[i] into acc_s[i]
+                * acc_s[i] accepts bias as 2nd data of new accumulation
+                * all multipliers and other accumulators resume operation
+
+            - If last data from acc_s[i-1] doesn't follow last data of mul_s[i]:
+                - mux_sel[i] will NOT be deasserted (updated)
+                - multipliers and other accumulators will freeze forever
+            - For this sync to happen:
+                - datapath[i] should be delayed by DELAY clocks than datapath[i-1]
+                - DELAY = (A-1) -1 = (A-2)
+                    - When multipliers are frozen, each accumulator works 
+                        one extra clock than its corresponding multiplier,
+                        in (2), to accept other acc_s value. This means, the
+                        relative delay of accumulator is (A-1) 
+                        as seen by a multiplier
+                    - If (A-1), both mul_s[i] and acc_s[i-1] will give tlast together
+                    - (-1) ensures mul_s[i] comes first
+
+Dependencies: * Floating point IP
+                    - name : floating_point_multiplier
+              * Floating point IP
+                    - name : 
+
+Revision:
+Revision 0.01 - File Created
+Additional Comments: 
+
+//////////////////////////////////////////////////////////////////////////////////*/
+
 module step_buffer  #(
     parameter DATA_WIDTH       ,
     parameter STEPS            ,
@@ -28,10 +92,10 @@ module step_buffer  #(
   
     // N-delay'i slaves
 
-    input wire                      s_valid   [STEPS-1 : 0];
-    input wire [DATA_WIDTH  - 1: 0] s_data    [STEPS-1 : 0];
-    input wire                      s_last    [STEPS-1 : 0];
-    input wire [TUSER_WIDTH - 1: 0] s_user    [STEPS-1 : 0];
+    input wire                      s_valid  [STEPS-1 : 0];
+    input wire [DATA_WIDTH  - 1: 0] s_data   [STEPS-1 : 0];
+    input wire                      s_last   [STEPS-1 : 0];
+    input wire [TUSER_WIDTH - 1: 0] s_user   [STEPS-1 : 0];
 
     // Hold'i master
     
@@ -42,17 +106,17 @@ module step_buffer  #(
     
     // N-delay'i master
 
-    wire                      delay_m_valid   [STEPS-1 : 0];
-    wire [DATA_WIDTH  - 1: 0] delay_m_data    [STEPS-1 : 0];
-    wire                      delay_m_last    [STEPS-1 : 0];
-    wire [TUSER_WIDTH - 1: 0] delay_m_user    [STEPS-1 : 0];
+    wire                      delay_m_valid  [STEPS-1 : 0];
+    wire [DATA_WIDTH  - 1: 0] delay_m_data   [STEPS-1 : 0];
+    wire                      delay_m_last   [STEPS-1 : 0];
+    wire [TUSER_WIDTH - 1: 0] delay_m_user   [STEPS-1 : 0];
 
     // Hold'i slave
 
-    wire                      hold_s_valid   [STEPS-1 : 1];
-    wire [DATA_WIDTH  - 1: 0] hold_s_data    [STEPS-1 : 1];
-    wire                      hold_s_last    [STEPS-1 : 1];
-    wire [TUSER_WIDTH - 1: 0] hold_s_user    [STEPS-1 : 1];
+    wire                      hold_s_valid   [STEPS-1 : 0];
+    wire [DATA_WIDTH  - 1: 0] hold_s_data    [STEPS-1 : 0];
+    wire                      hold_s_last    [STEPS-1 : 0];
+    wire [TUSER_WIDTH - 1: 0] hold_s_user    [STEPS-1 : 0];
 
 
 
@@ -63,7 +127,7 @@ module step_buffer  #(
 
         for (i=1 ;  i < STEPS;  i = i+1) begin : delays_gen
             
-            localparam DELAY = i * (ACCUMULATOR_DELAY-2);
+            localparam DELAY = i * (ACCUMULATOR_DELAY-2) + 1;
 
             n_delay_stream #(
                 .N              (DELAY),
@@ -96,9 +160,16 @@ module step_buffer  #(
             assign hold_s_user  [i] = (is_1x1==0) ? delay_m_user  [i] : s_user  [i];
         end
 
-        // Hold regs for i > 0
+        // Hold reg slave [0]
 
-        for (i=1 ;  i < STEPS;  i = i+1) begin : hold_regs_gen
+        assign hold_s_valid [0] = s_valid [0];
+        assign hold_s_data  [0] = s_data  [0];
+        assign hold_s_last  [0] = s_last  [0];
+        assign hold_s_user  [0] = s_user  [0];
+
+        // Hold regs for i >= 0
+
+        for (i=0 ;  i < STEPS;  i = i+1) begin : hold_regs_gen
 
             n_delay_stream #(
                 .N              (1),
@@ -121,11 +192,6 @@ module step_buffer  #(
             );
 
         end
-
-        assign m_valid[0] = s_valid [0];
-        assign m_data [0] = s_data  [0];
-        assign m_last [0] = s_last  [0];
-        assign m_user [0] = s_user  [0];
 
     endgenerate
 

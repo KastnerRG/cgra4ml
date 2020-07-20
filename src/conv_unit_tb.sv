@@ -6,22 +6,23 @@ module conv_unit_tb # ();
     parameter DATA_WIDTH            = 16;
     parameter KERNEL_W_MAX          = 3;
     parameter TUSER_WIDTH           = 4;
-    parameter ACCUMULATOR_DELAY     = 4;
-    parameter MULTIPLIER_DELAY      = 3;
+    parameter ACCUMULATOR_DELAY     = 19;
+    parameter MULTIPLIER_DELAY      = 6;
 
     parameter INDEX_IS_1x1          = 0;
     parameter INDEX_IS_MAX          = 1;
     parameter INDEX_IS_RELU         = 2;
     parameter INDEX_IS_BLOCKS_2     = 3;
 
-    parameter CIN = 10;
+    parameter KW_CIN    = 9;
+    parameter IS_1x1    = 0;
 
 
     reg                       aclk                                  = 0;
     reg                       aclken                                = 0;               
     reg                       aresetn                               = 0;
     reg                       s_valid                               = 0;
-    reg  [DATA_WIDTH  - 1: 0] s_data_pixels                         = 9;
+    reg  [DATA_WIDTH  - 1: 0] s_data_pixels                         = 1;
     reg  [DATA_WIDTH  - 1: 0] s_data_weights [KERNEL_W_MAX - 1 : 0] = '{default:'0};
     wire                      s_ready                                  ;
     reg                       s_last                                = 0;
@@ -76,7 +77,7 @@ module conv_unit_tb # ();
         #(CLK_PERIOD*3)
 
         aresetn                 <= 1;
-        s_user[INDEX_IS_1x1]    <= 0;
+        s_user[INDEX_IS_1x1]    <= IS_1x1;
 
         for (n=0; n<1000; n=n+1) begin
             @(posedge aclk);
@@ -102,13 +103,15 @@ module conv_unit_tb # ();
                     s_data_weights[0]           <= k*100 + i;
                     s_data_weights[1]           <= k*100 + i + 1000;
                     s_data_weights[2]           <= k*100 + i + 2000;
-                    s_last                      <= (k % CIN == CIN-1) && (i==2);
+                    s_last                      <= (k % KW_CIN == KW_CIN-1) && (i==2);
+                    s_user[INDEX_IS_1x1]        <= IS_1x1;
                 end
                 else begin
                     s_data_weights[0]           <= 1;
                     s_data_weights[1]           <= 1;
                     s_data_weights[2]           <= 1;
                     s_last                      <= 0;
+                    s_user[INDEX_IS_1x1]        <= IS_1x1;
                 end
             end
 

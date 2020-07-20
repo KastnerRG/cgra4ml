@@ -115,10 +115,12 @@ module conv_unit # (
     wire                           mux_sel_any;
     wire                           mux_sel_none;
     wire                           clken_mul;
+    wire    [KERNEL_W_MAX - 1 : 0] clken_acc;
     wire                           is_1x1;
 
     assign  mux_sel_none = !(|mux_sel);
-    assign  clken_mul    = mux_sel_none && aclken;
+    assign  clken_mul    = aclken &&  mux_sel_none;
+    assign  clken_acc[0] = clken_mul;
 
     assign  is_1x1       = s_user[INDEX_IS_1x1];
     assign  s_ready      = clken_mul;
@@ -192,9 +194,7 @@ module conv_unit # (
         .s_user     ('{KERNEL_W_MAX{0}}),
 
         .m_valid   (buffer_m_valid_weights),
-        .m_data    (buffer_m_data_weights),
-        .m_last    (),
-        .m_user    ()
+        .m_data    (buffer_m_data_weights)
     );
 
     /*
@@ -257,6 +257,19 @@ module conv_unit # (
 
         end
 
+        /* 
+        CLKEN ACCUMULATOR
+
+        * For datapath[0], keep accumulator enabled when "mux_sel_none"
+        * Other datapaths, allow accumulator only if the sel bit of that datapath rises.
+        * This ensures accumulators and multiplers are tied together, hence 
+            delays being in sync for ANY cin >= 3. 
+        */
+
+        for (i=1; i < KERNEL_W_MAX; i++) begin : clken_acc_gen
+            assign  clken_acc[i]    = aclken && (mux_sel_none || mux_sel[i]);
+        end
+
         for (i=0; i < KERNEL_W_MAX; i++) begin : accumulators_gen
 
             dummy_accumulator #(
@@ -267,7 +280,7 @@ module conv_unit # (
             dummy_accumulator_unit
             (
                 .aclk       (aclk),
-                .aclken     (aclken),
+                .aclken     (clken_acc[i]),
                 .aresetn    (aresetn),
 
                 .valid_in   (acc_s_valid    [i]),
@@ -293,17 +306,57 @@ module conv_unit # (
 
         /*
         SEL BITS
-        */
 
-        //SEL[1,2]
+        * 1x1 : mux_sel   [i] = 0 ; permanently connecting mul to acc
+        * nxm : mul_m_last[i] are delayed by one data beat
+
+        * nxm : Delays inside step_buffer should sync perfectly, such that
+          for every datapath[i] (except 0):
+
+            1. last data from multiplier comes to mux_s1[i]
+                * Directly goes into acc_s[i]
+                * Clearing the accumulator with it
+                * mul_m_last[i] that comes with it gets delayed (enters  mux_sel[i])
+
+            2. On next data beat, last data from acc_s[i-1] comes into mux_s2[i]
+                * mux_sel[i] is asserted, mux[i] allows mux_s2[i] into acc_s[i]
+                * acc_s[i-1] enters acc_s[i], as 1st data of new accumulation
+                    its tlast is not allowed passed
+                * All multipliers are disabled
+                * All accumulators, except [i] are disabled
+                * acc_s[i] accepts acc_s[i-1]
+                * "bias" has come to the mul_s[i] and waits
+                    as multipler pipeline is disabled
+
+            3. On next data_beat, mux_sel[i] is updated (deasserted)
+                * BECAUSE acc_s_valid_[i-1] was high in prev clock
+                * mux[i] allows mux_s1[i] into acc_s[i]
+                * acc_s[i] accepts bias as 2nd data of new accumulation
+                * all multipliers and other accumulators resume operation
+
+            -  If last data from acc_s[i-1] doesn't follow last data of mul_s[i]:
+                - mux_sel[i] will NOT be deasserted (updated)
+                - multipliers and other accumulators will freeze forever
+            - For this sync to happen:
+                - datapath[i] should be delayed by DELAY clocks than datapath[i-1]
+                - DELAY = (A-1) -1 = (A-2)
+                    - When multipliers are frozen, each accumulator works 
+                        one extra clock than its corresponding multiplier,
+                        in (2), to accept other acc_s value. This means, the
+                        relative delay of accumulator is (A-1) 
+                        as seen by a multiplier
+                    - If (A-1), both mul_s[i] and acc_s[i-1] will give tlast together
+                    - (-1) ensures mul_s[i] comes first
+                    
+        */
 
         for (i=1; i < KERNEL_W_MAX; i++) begin : sel_regs_gen
 
             wire   update_switch;
             assign update_switch = acc_s_valid[i] && aclken;
             
-            wire  sel_in;
-            assign sel_in = mul_m_last [i];
+            wire   sel_in;
+            assign sel_in = mul_m_last [i] && (!mul_m_user[INDEX_IS_1x1]);
             
             register #(
                 .WORD_WIDTH     (DATA_WIDTH),
@@ -344,23 +397,17 @@ module conv_unit # (
                 .sel                (mux_sel        [i]),
 
                 .S0_AXIS_tvalid     (mul_m_valid    [i]),
-                .S0_AXIS_tready     (                  ),
                 .S0_AXIS_tdata      (mul_m_data     [i]),
-                .S0_AXIS_tkeep      (0                 ),
                 .S0_AXIS_tlast      (mul_m_last     [i]),
                 .S0_AXIS_tuser      (mul_m_user     [i]),
 
                 .S1_AXIS_tvalid     (mux_s2_valid   [i]),
-                .S1_AXIS_tready     (                  ),
                 .S1_AXIS_tdata      (mux_s2_data    [i]), 
-                .S1_AXIS_tkeep      (0                 ),
-                .S1_AXIS_tlast      (0                 ),
                 .S1_AXIS_tuser      (mux_s2_user    [i]),
+                .S1_AXIS_tlast      (0                 ),   // Acc last is kept at zero
 
                 .M_AXIS_tvalid      (mux_m_valid    [i]),
-                .M_AXIS_tready      (1                 ),
                 .M_AXIS_tdata       (acc_s_data     [i]),
-                .M_AXIS_tkeep       (                  ),
                 .M_AXIS_tlast       (acc_s_last     [i]),
                 .M_AXIS_tuser       (acc_m_user     [i])
             );
