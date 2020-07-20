@@ -51,11 +51,6 @@ Description:
                     - If (A-1), both mul_s[i] and acc_s[i-1] will give tlast together
                     - (-1) ensures mul_s[i] comes first
 
-Dependencies: * Floating point IP
-                    - name : floating_point_multiplier
-              * Floating point IP
-                    - name : 
-
 Revision:
 Revision 0.01 - File Created
 Additional Comments: 

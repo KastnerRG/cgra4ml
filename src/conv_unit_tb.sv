@@ -12,9 +12,9 @@ module conv_unit_tb # ();
     parameter INDEX_IS_1x1          = 0;
     parameter INDEX_IS_MAX          = 1;
     parameter INDEX_IS_RELU         = 2;
-    parameter INDEX_IS_BLOCKS_2     = 3;
+    parameter INDEX_IS_COLS_1_K2    = 3;
 
-    parameter KW_CIN    = 9;
+    // parameter KW_CIN    = 9;
     parameter IS_1x1    = 0;
 
 
@@ -42,7 +42,7 @@ module conv_unit_tb # ();
         .INDEX_IS_1x1             (INDEX_IS_1x1),
         .INDEX_IS_MAX             (INDEX_IS_MAX),
         .INDEX_IS_RELU            (INDEX_IS_RELU),
-        .INDEX_IS_BLOCKS_2        (INDEX_IS_BLOCKS_2)
+        .INDEX_IS_COLS_1_K2       (INDEX_IS_COLS_1_K2)
     )
     conv_unit_dut
     (
