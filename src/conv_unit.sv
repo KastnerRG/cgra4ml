@@ -71,7 +71,7 @@ module conv_unit # (
     parameter INDEX_IS_1x1          ,
     parameter INDEX_IS_MAX          ,
     parameter INDEX_IS_RELU         ,
-    parameter INDEX_IS_BLOCKS_2     
+    parameter INDEX_IS_COLS_1_K2     
 )(
     aclk,
     aclken,
