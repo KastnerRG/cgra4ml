@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="float_tb_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="float_tb" />
+            <top_module name="glbl" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="278560000fs"></ZoomStartTime>
+      <ZoomEndTime time="460360001fs"></ZoomEndTime>
+      <Cursor1Time time="365100000fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="232"></NameColumnWidth>
+      <ValueColumnWidth column_width="86"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="37" />
+   <wvobject fp_name="/float_tb/aclk" type="logic">
+      <obj_property name="ElementShortName">aclk</obj_property>
+      <obj_property name="ObjectShortName">aclk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/aresetn" type="logic">
+      <obj_property name="ElementShortName">aresetn</obj_property>
+      <obj_property name="ObjectShortName">aresetn</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/aclken" type="logic">
+      <obj_property name="ElementShortName">aclken</obj_property>
+      <obj_property name="ObjectShortName">aclken</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider659">
+      <obj_property name="label">Mul Slave A</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/mul_a_axis_tvalid" type="logic">
+      <obj_property name="ElementShortName">mul_a_axis_tvalid</obj_property>
+      <obj_property name="ObjectShortName">mul_a_axis_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/mul_a_axis_tdata" type="array">
+      <obj_property name="ElementShortName">mul_a_axis_tdata[15:0]</obj_property>
+      <obj_property name="ObjectShortName">mul_a_axis_tdata[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/dum_mul_a_axis_tdata" type="array">
+      <obj_property name="ElementShortName">dum_mul_a_axis_tdata[15:0]</obj_property>
+      <obj_property name="ObjectShortName">dum_mul_a_axis_tdata[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/mul_a_axis_tuser" type="array">
+      <obj_property name="ElementShortName">mul_a_axis_tuser[3:0]</obj_property>
+      <obj_property name="ObjectShortName">mul_a_axis_tuser[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/mul_a_axis_tlast" type="logic">
+      <obj_property name="ElementShortName">mul_a_axis_tlast</obj_property>
+      <obj_property name="ObjectShortName">mul_a_axis_tlast</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider661">
+      <obj_property name="label">Mul Slave B</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/mul_b_axis_tvalid" type="logic">
+      <obj_property name="ElementShortName">mul_b_axis_tvalid</obj_property>
+      <obj_property name="ObjectShortName">mul_b_axis_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/mul_b_axis_tdata" type="array">
+      <obj_property name="ElementShortName">mul_b_axis_tdata[15:0]</obj_property>
+      <obj_property name="ObjectShortName">mul_b_axis_tdata[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/dum_mul_b_axis_tdata" type="array">
+      <obj_property name="ElementShortName">dum_mul_b_axis_tdata[15:0]</obj_property>
+      <obj_property name="ObjectShortName">dum_mul_b_axis_tdata[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider662">
+      <obj_property name="label">Mul Master</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/mul_m_axis_tvalid" type="logic">
+      <obj_property name="ElementShortName">mul_m_axis_tvalid</obj_property>
+      <obj_property name="ObjectShortName">mul_m_axis_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/dum_mul_m_axis_tvalid" type="logic">
+      <obj_property name="ElementShortName">dum_mul_m_axis_tvalid</obj_property>
+      <obj_property name="ObjectShortName">dum_mul_m_axis_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/mul_m_axis_tdata" type="array">
+      <obj_property name="ElementShortName">mul_m_axis_tdata[15:0]</obj_property>
+      <obj_property name="ObjectShortName">mul_m_axis_tdata[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/dum_mul_m_axis_tdata" type="array">
+      <obj_property name="ElementShortName">dum_mul_m_axis_tdata[15:0]</obj_property>
+      <obj_property name="ObjectShortName">dum_mul_m_axis_tdata[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/mul_m_axis_tuser" type="array">
+      <obj_property name="ElementShortName">mul_m_axis_tuser[3:0]</obj_property>
+      <obj_property name="ObjectShortName">mul_m_axis_tuser[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/dum_mul_m_axis_tuser" type="array">
+      <obj_property name="ElementShortName">dum_mul_m_axis_tuser[3:0]</obj_property>
+      <obj_property name="ObjectShortName">dum_mul_m_axis_tuser[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/mul_m_axis_tlast" type="logic">
+      <obj_property name="ElementShortName">mul_m_axis_tlast</obj_property>
+      <obj_property name="ObjectShortName">mul_m_axis_tlast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/dum_mul_m_axis_tlast" type="logic">
+      <obj_property name="ElementShortName">dum_mul_m_axis_tlast</obj_property>
+      <obj_property name="ObjectShortName">dum_mul_m_axis_tlast</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider664">
+      <obj_property name="label">Acc Slave</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/acc_s_axis_tvalid" type="logic">
+      <obj_property name="ElementShortName">acc_s_axis_tvalid</obj_property>
+      <obj_property name="ObjectShortName">acc_s_axis_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/acc_s_axis_tdata" type="array">
+      <obj_property name="ElementShortName">acc_s_axis_tdata[15:0]</obj_property>
+      <obj_property name="ObjectShortName">acc_s_axis_tdata[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/dum_acc_s_axis_tdata" type="array">
+      <obj_property name="ElementShortName">dum_acc_s_axis_tdata[15:0]</obj_property>
+      <obj_property name="ObjectShortName">dum_acc_s_axis_tdata[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/acc_s_axis_tuser" type="array">
+      <obj_property name="ElementShortName">acc_s_axis_tuser[3:0]</obj_property>
+      <obj_property name="ObjectShortName">acc_s_axis_tuser[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/acc_s_axis_tlast" type="logic">
+      <obj_property name="ElementShortName">acc_s_axis_tlast</obj_property>
+      <obj_property name="ObjectShortName">acc_s_axis_tlast</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider665">
+      <obj_property name="label">Acc Master</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/acc_m_axis_tvalid" type="logic">
+      <obj_property name="ElementShortName">acc_m_axis_tvalid</obj_property>
+      <obj_property name="ObjectShortName">acc_m_axis_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/dum_acc_m_axis_tvalid" type="logic">
+      <obj_property name="ElementShortName">dum_acc_m_axis_tvalid</obj_property>
+      <obj_property name="ObjectShortName">dum_acc_m_axis_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/acc_m_axis_tdata" type="array">
+      <obj_property name="ElementShortName">acc_m_axis_tdata[15:0]</obj_property>
+      <obj_property name="ObjectShortName">acc_m_axis_tdata[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/dum_acc_m_axis_tdata" type="array">
+      <obj_property name="ElementShortName">dum_acc_m_axis_tdata[15:0]</obj_property>
+      <obj_property name="ObjectShortName">dum_acc_m_axis_tdata[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/acc_m_axis_tuser" type="array">
+      <obj_property name="ElementShortName">acc_m_axis_tuser[3:0]</obj_property>
+      <obj_property name="ObjectShortName">acc_m_axis_tuser[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/dum_acc_m_axis_tuser" type="array">
+      <obj_property name="ElementShortName">dum_acc_m_axis_tuser[3:0]</obj_property>
+      <obj_property name="ObjectShortName">dum_acc_m_axis_tuser[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/acc_m_axis_tlast" type="logic">
+      <obj_property name="ElementShortName">acc_m_axis_tlast</obj_property>
+      <obj_property name="ObjectShortName">acc_m_axis_tlast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/float_tb/dum_acc_m_axis_tlast" type="logic">
+      <obj_property name="ElementShortName">dum_acc_m_axis_tlast</obj_property>
+      <obj_property name="ObjectShortName">dum_acc_m_axis_tlast</obj_property>
+   </wvobject>
+</wave_config>
