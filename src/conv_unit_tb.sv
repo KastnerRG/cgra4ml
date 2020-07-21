@@ -14,7 +14,7 @@ module conv_unit_tb # ();
     parameter INDEX_IS_RELU         = 2;
     parameter INDEX_IS_COLS_1_K2    = 3;
 
-    // parameter KW_CIN    = 9;
+    parameter KW_CIN    = 9;
     parameter IS_1x1    = 0;
 
 
