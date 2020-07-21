@@ -202,27 +202,26 @@ module conv_unit # (
     */
 
 
-    wire                        mul_m_valid [KERNEL_W_MAX - 1 : 0];
-    wire   [DATA_WIDTH - 1 : 0] mul_m_data  [KERNEL_W_MAX - 1 : 0];
-    wire                        mul_m_last  [KERNEL_W_MAX - 1 : 0];
-    wire   [TUSER_WIDTH - 1: 0] mul_m_user  [TUSER_WIDTH  - 1 : 0];
+    wire                        mul_m_valid         [KERNEL_W_MAX - 1 : 0];
+    wire   [DATA_WIDTH - 1 : 0] mul_m_data          [KERNEL_W_MAX - 1 : 0];
+    wire                        mul_m_last          [KERNEL_W_MAX - 1 : 0];
+    wire   [TUSER_WIDTH - 1: 0] mul_m_user          [TUSER_WIDTH  - 1 : 0];
     
-    wire                        acc_s_valid [KERNEL_W_MAX - 1 : 0];
-    wire   [DATA_WIDTH - 1 : 0] acc_s_data  [KERNEL_W_MAX - 1 : 0];
-    wire                        acc_s_last  [KERNEL_W_MAX - 1 : 0];
-    wire   [TUSER_WIDTH - 1: 0] acc_s_user  [TUSER_WIDTH  - 1 : 0];
+    wire                        acc_s_valid         [KERNEL_W_MAX - 1 : 0];
+    wire   [DATA_WIDTH - 1 : 0] acc_s_data          [KERNEL_W_MAX - 1 : 0];
+    wire                        acc_s_last          [KERNEL_W_MAX - 1 : 0];
+    wire   [TUSER_WIDTH - 1: 0] acc_s_user          [TUSER_WIDTH  - 1 : 0];
 
+    wire                        acc_m_valid         [KERNEL_W_MAX - 1 : 0];
+    wire   [DATA_WIDTH - 1 : 0] acc_m_data          [KERNEL_W_MAX - 1 : 0];
+    wire                        acc_m_last          [KERNEL_W_MAX - 1 : 0];
+    wire                        acc_m_valid_last    [KERNEL_W_MAX - 1 : 0];
+    wire   [TUSER_WIDTH - 1: 0] acc_m_user          [KERNEL_W_MAX - 1 : 0];
 
-    wire                        acc_m_valid [KERNEL_W_MAX - 1 : 0];
-    wire   [DATA_WIDTH - 1 : 0] acc_m_data  [KERNEL_W_MAX - 1 : 0];
-    wire                        acc_m_last  [KERNEL_W_MAX - 1 : 0];
-    wire   [TUSER_WIDTH - 1: 0] acc_m_user  [KERNEL_W_MAX - 1 : 0];
-
-
-    wire                        mux_s2_valid[KERNEL_W_MAX - 1 : 1];
-    wire   [DATA_WIDTH - 1 : 0] mux_s2_data [KERNEL_W_MAX - 1 : 1];
-    wire   [TUSER_WIDTH - 1: 0] mux_s2_user [KERNEL_W_MAX - 1 : 1];
-    wire                        mux_m_valid [KERNEL_W_MAX - 1 : 1];
+    wire                        mux_s2_valid        [KERNEL_W_MAX - 1 : 1];
+    wire   [DATA_WIDTH - 1 : 0] mux_s2_data         [KERNEL_W_MAX - 1 : 1];
+    wire   [TUSER_WIDTH - 1: 0] mux_s2_user         [KERNEL_W_MAX - 1 : 1];
+    wire                        mux_m_valid         [KERNEL_W_MAX - 1 : 1];
 
 
     genvar i;
@@ -272,6 +271,8 @@ module conv_unit # (
 
         for (i=0; i < KERNEL_W_MAX; i++) begin : accumulators_gen
 
+            assign acc_m_valid_last[i] = acc_m_valid [i] & acc_m_last [i];
+
             dummy_accumulator #(
                 .ACCUMULATOR_DELAY(ACCUMULATOR_DELAY),
                 .DATA_WIDTH(DATA_WIDTH),
@@ -309,6 +310,7 @@ module conv_unit # (
 
         * 1x1 : mux_sel   [i] = 0 ; permanently connecting mul to acc
         * nxm : mul_m_last[i] are delayed by one data beat
+        * NOTE: sel_register is updated using the true acc_m_valid, not pad_filtered one
 
         * nxm : Delays inside step_buffer should sync perfectly, such that
           for every datapath[i] (except 0):
@@ -329,12 +331,12 @@ module conv_unit # (
                     as multipler pipeline is disabled
 
             3. On next data_beat, mux_sel[i] is updated (deasserted)
-                * BECAUSE acc_s_valid_[i-1] was high in prev clock
+                * BECAUSE selected_valid[i] = acc_m_valid_last[i-1] was asserted in prev clock
                 * mux[i] allows mux_s1[i] into acc_s[i]
                 * acc_s[i] accepts bias as 2nd data of new accumulation
                 * all multipliers and other accumulators resume operation
 
-            -  If last data from acc_s[i-1] doesn't follow last data of mul_s[i]:
+            -  If last data from acc_m[i-1] doesn't follow last data of mul_s[i]:
                 - mux_sel[i] will NOT be deasserted (updated)
                 - multipliers and other accumulators will freeze forever
             - For this sync to happen:
@@ -352,8 +354,10 @@ module conv_unit # (
 
         for (i=1; i < KERNEL_W_MAX; i++) begin : sel_regs_gen
 
-            wire   update_switch;
-            assign update_switch = acc_s_valid[i] && aclken;
+            wire   update_switch, selected_valid;
+            assign selected_valid = (mux_sel[i]==0) ? mul_m_valid [i] : acc_m_valid_last[i-1];
+            assign update_switch  = aclken && selected_valid;
+
             
             wire   sel_in;
             assign sel_in = mul_m_last [i] && (!mul_m_user[INDEX_IS_1x1]);
@@ -376,9 +380,9 @@ module conv_unit # (
 
         for (i=1; i < KERNEL_W_MAX; i++) begin : mul_s2
 
-            assign mux_s2_valid  [i]    = acc_m_valid   [i-1] && acc_m_last  [i-1];
-            assign mux_s2_data   [i]    = acc_m_data    [i-1];
-            assign mux_s2_user   [i]    = acc_m_user    [i-1];
+            assign mux_s2_valid  [i]    = acc_m_valid_last  [i-1];
+            assign mux_s2_data   [i]    = acc_m_data        [i-1];
+            assign mux_s2_user   [i]    = acc_m_user        [i-1];
 
         end
 
