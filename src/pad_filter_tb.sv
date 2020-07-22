@@ -10,8 +10,8 @@ module pad_filter_tb # ();
     parameter INDEX_IS_1x1          = 0;
     parameter INDEX_IS_COLS_1_K2    = 3;
 
-    parameter KW_1                  = 3-1;
-    parameter IS_1x1                = 1;
+    parameter KW_1                  = 5-1;
+    parameter IS_1x1                = 0;
 
     localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX   + 1);
 
@@ -20,12 +20,10 @@ module pad_filter_tb # ();
     reg                         aresetn                              = 0;
     reg                         start                                = 0;
     reg  [KERNEL_W_WIDTH-1:0]   kernel_w_1_in                        = KW_1;
-    reg                         in_valid_last [KERNEL_W_MAX - 1 : 0] = '{default:'0};
-    reg                         in_last       [KERNEL_W_MAX - 1 : 0] = '{default:'0};
-    reg  [TUSER_WIDTH - 1: 0]   in_user       [KERNEL_W_MAX - 1 : 0] = '{default:'0};
-    wire                        snake_valid   [KERNEL_W_MAX - 1 : 1];
-    wire                        m_valid       [KERNEL_W_MAX - 1 : 0];
-    wire                        m_last        [KERNEL_W_MAX - 1 : 0];
+    reg                         valid_last [KERNEL_W_MAX - 1 : 0] = '{default:'0};
+    reg  [TUSER_WIDTH - 1: 0]   user       [KERNEL_W_MAX - 1 : 0] = '{default:'0};
+    wire                        mask_partial  [KERNEL_W_MAX - 1 : 1];
+    wire                        mask_full     [KERNEL_W_MAX - 1 : 0];
 
     pad_filter # (
         .DATA_WIDTH        (DATA_WIDTH),
@@ -41,12 +39,10 @@ module pad_filter_tb # ();
         .aresetn         (aresetn      ),
         .start           (start        ),
         .kernel_w_1_in   (kernel_w_1_in),
-        .in_valid_last   (in_valid_last),
-        .in_last         (in_last      ),
-        .in_user         (in_user      ),
-        .snake_valid     (snake_valid  ),
-        .m_valid         (m_valid      ),
-        .m_last          (m_last       )
+        .valid_last      (valid_last),
+        .user         (user      ),
+        .mask_partial    (mask_partial ),
+        .mask_full       (mask_full    )
     );
 
     always begin
@@ -60,14 +56,15 @@ module pad_filter_tb # ();
         @(posedge aclk);
         #(CLK_PERIOD*3)
         aresetn     <= 1;
+        aclken      <= 1;
         
-        in_user         [0][INDEX_IS_1x1] <= IS_1x1;
-        in_user         [1][INDEX_IS_1x1] <= IS_1x1;
-        in_user         [2][INDEX_IS_1x1] <= IS_1x1;
-        in_user         [3][INDEX_IS_1x1] <= IS_1x1;
-        in_user         [4][INDEX_IS_1x1] <= IS_1x1;
-        in_user         [5][INDEX_IS_1x1] <= IS_1x1;
-        in_user         [6][INDEX_IS_1x1] <= IS_1x1;
+        user         [0][INDEX_IS_1x1] <= IS_1x1;
+        user         [1][INDEX_IS_1x1] <= IS_1x1;
+        user         [2][INDEX_IS_1x1] <= IS_1x1;
+        user         [3][INDEX_IS_1x1] <= IS_1x1;
+        user         [4][INDEX_IS_1x1] <= IS_1x1;
+        user         [5][INDEX_IS_1x1] <= IS_1x1;
+        user         [6][INDEX_IS_1x1] <= IS_1x1;
 
         @(posedge aclk);
         start       <= 1;
@@ -76,80 +73,80 @@ module pad_filter_tb # ();
 
         #(CLK_PERIOD*3)
         @(posedge aclk);
-        in_valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
+        valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
 
         @(posedge aclk);
-        in_valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
+        valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
 
         @(posedge aclk);
-        in_valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
+        valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
 
         @(posedge aclk);
-        in_valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
-        in_user         [0][INDEX_IS_COLS_1_K2] <= 1;
-        in_user         [1][INDEX_IS_COLS_1_K2] <= 1;
-        in_user         [2][INDEX_IS_COLS_1_K2] <= 1;
-        in_user         [3][INDEX_IS_COLS_1_K2] <= 1;
-        in_user         [4][INDEX_IS_COLS_1_K2] <= 1;
-        in_user         [5][INDEX_IS_COLS_1_K2] <= 1;
-        in_user         [6][INDEX_IS_COLS_1_K2] <= 1;
+        valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
+        user         [0][INDEX_IS_COLS_1_K2] <= 1;
+        user         [1][INDEX_IS_COLS_1_K2] <= 1;
+        user         [2][INDEX_IS_COLS_1_K2] <= 1;
+        user         [3][INDEX_IS_COLS_1_K2] <= 1;
+        user         [4][INDEX_IS_COLS_1_K2] <= 1;
+        user         [5][INDEX_IS_COLS_1_K2] <= 1;
+        user         [6][INDEX_IS_COLS_1_K2] <= 1;
         @(posedge aclk);
-        in_valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
-        in_user         [0][INDEX_IS_COLS_1_K2] <= 0;
-        in_user         [1][INDEX_IS_COLS_1_K2] <= 0;
-        in_user         [2][INDEX_IS_COLS_1_K2] <= 0;
-        in_user         [3][INDEX_IS_COLS_1_K2] <= 0;
-        in_user         [4][INDEX_IS_COLS_1_K2] <= 0;
-        in_user         [5][INDEX_IS_COLS_1_K2] <= 0;
-        in_user         [6][INDEX_IS_COLS_1_K2] <= 0;
-
-        #(CLK_PERIOD*3)
-        @(posedge aclk);
-        in_valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
-        @(posedge aclk);
-        in_valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
+        valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
+        user         [0][INDEX_IS_COLS_1_K2] <= 0;
+        user         [1][INDEX_IS_COLS_1_K2] <= 0;
+        user         [2][INDEX_IS_COLS_1_K2] <= 0;
+        user         [3][INDEX_IS_COLS_1_K2] <= 0;
+        user         [4][INDEX_IS_COLS_1_K2] <= 0;
+        user         [5][INDEX_IS_COLS_1_K2] <= 0;
+        user         [6][INDEX_IS_COLS_1_K2] <= 0;
 
         #(CLK_PERIOD*3)
         @(posedge aclk);
-        in_valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
+        valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
         @(posedge aclk);
-        in_valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
+        valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
 
         #(CLK_PERIOD*3)
         @(posedge aclk);
-        in_valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
+        valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
         @(posedge aclk);
-        in_valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
+        valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
 
         #(CLK_PERIOD*3)
         @(posedge aclk);
-        in_valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
+        valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
         @(posedge aclk);
-        in_valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
+        valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
 
         #(CLK_PERIOD*3)
         @(posedge aclk);
-        in_valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
+        valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
         @(posedge aclk);
-        in_valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
+        valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
 
         #(CLK_PERIOD*3)
         @(posedge aclk);
-        in_valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
+        valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
         @(posedge aclk);
-        in_valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
+        valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
 
         #(CLK_PERIOD*3)
         @(posedge aclk);
-        in_valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
+        valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
         @(posedge aclk);
-        in_valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
+        valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
 
         #(CLK_PERIOD*3)
         @(posedge aclk);
-        in_valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
+        valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
         @(posedge aclk);
-        in_valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
+        valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
+
+        #(CLK_PERIOD*3)
+        @(posedge aclk);
+        valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
+        @(posedge aclk);
+        valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
 
 
     end
