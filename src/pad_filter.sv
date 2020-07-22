@@ -64,7 +64,7 @@ module pad_filter # (
         .data_out       (kw2_1_reg_out)
     );
     
-    // e_ register bank
+    // end_col register bank
 
     wire   [KW2_MAX      - 1 : 0]  col_end_in      [KERNEL_W_MAX - 1 : 0]; // e_
     wire   [KW2_MAX      - 1 : 0]  col_end         [KERNEL_W_MAX - 1 : 0]; // e_
@@ -94,7 +94,7 @@ module pad_filter # (
         end
     endgenerate
 
-    // s_ - Register bank
+    // start_col - Register bank
 
     wire   [KW2_MAX      - 1 : 0]    col_start_in       [KERNEL_W_MAX - 1 : 0]; // s_
     wire   [KW2_MAX      - 1 : 0]    col_start          [KERNEL_W_MAX - 1 : 0]; // s_
@@ -131,24 +131,26 @@ module pad_filter # (
 
     wire   is_1x1 = in_user[INDEX_IS_1x1];
     generate
-        for ( i=0; i < KERNEL_W_MAX; i = i+1) begin: lookup_gen_i
-            for ( r=0;  r < KW2_MAX; r = r+1) begin: lut_allow_gen_r
+        for ( i=0; i < KERNEL_W_MAX; i = i+1)   begin: lookup_out_gen_i
+            for ( r=0;  r < KW2_MAX; r = r+1)   begin: lut_allow_gen_r
                assign lut_allow_out   [i][r] = ((i==2*(r+1)) & (!(|col_start[i][r:0]))) | (col_end[i][r] & (i>r) & (i<2*r+3)) | is_1x1;
-            end
-
-            for ( r=0;  r <  i     ; r = r+1) begin: lut_block_gen_r1
-               assign lut_block_snake [i][r] =  (i > 2*r+2);
-            end
-            for ( r=i;  r < KW2_MAX; r = r+1) begin: lut_block_gen_r2
-               assign lut_block_snake [i][r] =  (|col_end[i][r:i]) | (i > 2*r+2);
             end
         end
 
-        for ( i=1; i < KERNEL_W_MAX; i = i+1) begin: filter_snake
+        for ( i=1; i < KERNEL_W_MAX; i = i+1)   begin: lookup_snake_gen_i
+            for ( r=0;  r <  i-1     ; r = r+1) begin: lut_block_gen_r1
+               assign lut_block_snake [i][r] =  (i > 2*r+2);
+            end
+            for ( r=i-1;  r < KW2_MAX; r = r+1) begin: lut_block_gen_r2
+               assign lut_block_snake [i][r] =  (|col_end[i][r:i-1]) | (i > 2*r+2);
+            end
+        end
+
+        for ( i=1; i < KERNEL_W_MAX; i = i+1)   begin: filter_snake
             assign snake_valid[i] = in_valid_last[i-1] & (!lut_block_snake[i][kw2_1_reg_out]);
         end
         
-        for ( i=0; i < KERNEL_W_MAX; i = i+1) begin: filter_out
+        for ( i=0; i < KERNEL_W_MAX; i = i+1)   begin: filter_out
             assign m_valid[i]     = in_valid_last[i] & lut_allow_out[i][kw2_1_reg_out];
             assign m_last [i]     = in_last      [i] & lut_allow_out[i][kw2_1_reg_out];
         end
