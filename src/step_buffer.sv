@@ -24,7 +24,7 @@ Description:
             2. On next data beat, last data from acc_s[i-1] comes into mux_s2[i]
                 * mux_sel[i] is asserted, mux[i] allows mux_s2[i] into acc_s[i]
                 * acc_s[i-1] enters acc_s[i], as 1st data of new accumulation
-                    its tlast is not allowed passed
+                    its tlast is not allowed to pass
                 * All multipliers are disabled
                 * All accumulators, except [i] are disabled
                 * acc_s[i] accepts acc_s[i-1]
