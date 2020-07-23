@@ -39,8 +39,8 @@ module pad_filter_tb # ();
         .aresetn         (aresetn      ),
         .start           (start        ),
         .kernel_w_1_in   (kernel_w_1_in),
-        .valid_last      (valid_last),
-        .user         (user      ),
+        .valid_last      (valid_last   ),
+        .user            (user         ),
         .mask_partial    (mask_partial ),
         .mask_full       (mask_full    )
     );
