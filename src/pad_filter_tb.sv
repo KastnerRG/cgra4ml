@@ -71,16 +71,25 @@ module pad_filter_tb # ();
         @(posedge aclk);
         start       <= 0;
 
-        #(CLK_PERIOD*3)
+        #(CLK_PERIOD*10)
         @(posedge aclk);
         valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
-
+        @(posedge aclk);
+        valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
+        @(posedge aclk);
+        @(posedge aclk);
         @(posedge aclk);
         valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
-
+        @(posedge aclk);
+        valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
+        @(posedge aclk);
+        @(posedge aclk);
         @(posedge aclk);
         valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
-
+        @(posedge aclk);
+        valid_last <= {1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0};
+        @(posedge aclk);
+        @(posedge aclk);
         @(posedge aclk);
         valid_last <= {1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1, 1'b1};
         user         [0][INDEX_IS_COLS_1_K2] <= 1;
