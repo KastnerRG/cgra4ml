@@ -14,13 +14,18 @@ module conv_unit_tb # ();
     parameter INDEX_IS_RELU         = 2;
     parameter INDEX_IS_COLS_1_K2    = 3;
 
-    parameter KW_CIN    = 9;
+    parameter KW        = 3;
+    parameter KW_CIN    = 6;
     parameter IS_1x1    = 0;
 
+
+    localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX   + 1);
 
     reg                       aclk                                  = 0;
     reg                       aclken                                = 0;               
     reg                       aresetn                               = 0;
+    reg                       start                                 = 0;
+    reg  [KERNEL_W_WIDTH-1:0] kernel_w_1                            = KW-1;
     reg                       s_valid                               = 0;
     reg  [DATA_WIDTH  - 1: 0] s_data_pixels                         = 1;
     reg  [DATA_WIDTH  - 1: 0] s_data_weights [KERNEL_W_MAX - 1 : 0] = '{default:'0};
@@ -28,10 +33,10 @@ module conv_unit_tb # ();
     reg                       s_last                                = 0;
     reg  [TUSER_WIDTH - 1: 0] s_user                                = 1;
 
-    wire                      m_valid       [KERNEL_W_MAX - 1 : 0] ;
-    wire [DATA_WIDTH  - 1: 0] m_data        [KERNEL_W_MAX - 1 : 0] ;
-    wire                      m_last        [KERNEL_W_MAX - 1 : 0] ;
-    wire [TUSER_WIDTH - 1: 0] m_user        [KERNEL_W_MAX - 1 : 0] ;
+    wire                      m_valid ;
+    wire [DATA_WIDTH  - 1: 0] m_data  ;
+    wire                      m_last  ;
+    wire [TUSER_WIDTH - 1: 0] m_user  ;
     
     conv_unit # (
         .DATA_WIDTH               (DATA_WIDTH),
@@ -49,6 +54,8 @@ module conv_unit_tb # ();
         .aclk           (aclk),
         .aclken         (aclken),
         .aresetn        (aresetn),
+        .start          (start  ),
+        .kernel_w_1     (kernel_w_1),
 
         .s_valid        (s_valid),       
         .s_data_pixels  (s_data_pixels), 
@@ -77,7 +84,11 @@ module conv_unit_tb # ();
         #(CLK_PERIOD*3)
 
         aresetn                 <= 1;
+        start                   <= 1;
         s_user[INDEX_IS_1x1]    <= IS_1x1;
+
+        @(posedge aclk);
+        start                   <= 0;
 
         for (n=0; n<1000; n=n+1) begin
             @(posedge aclk);

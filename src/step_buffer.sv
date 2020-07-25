@@ -145,14 +145,12 @@ module step_buffer  #(
             );
         end
 
-        // Muxes for i > 0
-
         for (i=1 ;  i < STEPS;  i = i+1) begin : hold_muxes_gen
 
-            assign hold_s_valid [i] = (is_1x1==0) ? delay_m_valid [i] : s_valid [i];
-            assign hold_s_data  [i] = (is_1x1==0) ? delay_m_data  [i] : s_data  [i];
-            assign hold_s_last  [i] = (is_1x1==0) ? delay_m_last  [i] : s_last  [i];
-            assign hold_s_user  [i] = (is_1x1==0) ? delay_m_user  [i] : s_user  [i];
+            assign hold_s_valid [i] = delay_m_valid [i];
+            assign hold_s_data  [i] = delay_m_data  [i];
+            assign hold_s_last  [i] = delay_m_last  [i];
+            assign hold_s_user  [i] = delay_m_user  [i];
         end
 
         // Hold reg slave [0]

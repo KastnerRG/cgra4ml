@@ -21,6 +21,11 @@ Description:    * Fully pipelined
                 * datapath[0] has no muxes, accumulator directly connected to multiplier
                 * muxes are indexed 1,2...(kw-1) to match rest of indexing
 
+                * Limitations
+                    - Output order is messed up for 1x1 if CIN > (kw-1)*(A-1)-2
+                    - Output order of last kw/2 cols of 3x3 is reversed
+                    - 3x3: CIN >= 6 for delays to sync up without error
+
 Dependencies: * Floating point IP
                     - name : floating_point_multiplier
               * Floating point IP
@@ -77,6 +82,9 @@ module conv_unit # (
     aclken,
     aresetn,
 
+    start,
+    kernel_w_1,
+
     s_valid,       
     s_data_pixels, 
     s_data_weights,
@@ -90,10 +98,14 @@ module conv_unit # (
     m_user
 
 );
+    localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX   + 1);
 
     input  wire                      aclk;
     input  wire                      aclken;               
     input  wire                      aresetn;
+
+    input  wire                      start;
+    input  wire [KERNEL_W_WIDTH-1:0] kernel_w_1;
 
     input  wire                      s_valid                              ;
     input  wire [DATA_WIDTH  - 1: 0] s_data_pixels                        ;
@@ -102,10 +114,10 @@ module conv_unit # (
     input  wire                      s_last                               ;
     input  wire [TUSER_WIDTH - 1: 0] s_user                               ;
 
-    output wire                      m_valid       [KERNEL_W_MAX - 1 : 0];
-    output wire [DATA_WIDTH  - 1: 0] m_data        [KERNEL_W_MAX - 1 : 0];
-    output wire                      m_last        [KERNEL_W_MAX - 1 : 0];
-    output wire [TUSER_WIDTH - 1: 0] m_user        [KERNEL_W_MAX - 1 : 0];
+    output wire                      m_valid ;
+    output wire [DATA_WIDTH  - 1: 0] m_data  ;
+    output wire                      m_last  ;
+    output wire [TUSER_WIDTH - 1: 0] m_user  ;
 
 
     /*
@@ -202,27 +214,51 @@ module conv_unit # (
     */
 
 
-    wire                        mul_m_valid         [KERNEL_W_MAX - 1 : 0];
-    wire   [DATA_WIDTH - 1 : 0] mul_m_data          [KERNEL_W_MAX - 1 : 0];
-    wire                        mul_m_last          [KERNEL_W_MAX - 1 : 0];
-    wire   [TUSER_WIDTH - 1: 0] mul_m_user          [TUSER_WIDTH  - 1 : 0];
+    wire                        mul_m_valid             [KERNEL_W_MAX - 1 : 0];
+    wire   [DATA_WIDTH - 1 : 0] mul_m_data              [KERNEL_W_MAX - 1 : 0];
+    wire                        mul_m_last              [KERNEL_W_MAX - 1 : 0];
+    wire   [TUSER_WIDTH - 1: 0] mul_m_user              [KERNEL_W_MAX - 1 : 0];
     
-    wire                        acc_s_valid         [KERNEL_W_MAX - 1 : 0];
-    wire   [DATA_WIDTH - 1 : 0] acc_s_data          [KERNEL_W_MAX - 1 : 0];
-    wire                        acc_s_last          [KERNEL_W_MAX - 1 : 0];
-    wire   [TUSER_WIDTH - 1: 0] acc_s_user          [TUSER_WIDTH  - 1 : 0];
+    wire                        acc_s_valid             [KERNEL_W_MAX - 1 : 0];
+    wire   [DATA_WIDTH - 1 : 0] acc_s_data              [KERNEL_W_MAX - 1 : 0];
+    wire                        acc_s_last              [KERNEL_W_MAX - 1 : 0];
+    wire   [TUSER_WIDTH - 1: 0] acc_s_user              [TUSER_WIDTH  - 1 : 0];
 
-    wire                        acc_m_valid         [KERNEL_W_MAX - 1 : 0];
-    wire   [DATA_WIDTH - 1 : 0] acc_m_data          [KERNEL_W_MAX - 1 : 0];
-    wire                        acc_m_last          [KERNEL_W_MAX - 1 : 0];
-    wire                        acc_m_valid_last    [KERNEL_W_MAX - 1 : 0];
-    wire   [TUSER_WIDTH - 1: 0] acc_m_user          [KERNEL_W_MAX - 1 : 0];
+    wire                        acc_m_valid             [KERNEL_W_MAX - 1 : 0];
+    wire   [DATA_WIDTH - 1 : 0] acc_m_data              [KERNEL_W_MAX - 1 : 0];
+    wire                        acc_m_last              [KERNEL_W_MAX - 1 : 0];
+    wire                        acc_m_valid_last        [KERNEL_W_MAX - 1 : 0];
+    wire                        acc_m_valid_last_masked [KERNEL_W_MAX - 1 : 0];
+    wire   [TUSER_WIDTH - 1: 0] acc_m_user              [KERNEL_W_MAX - 1 : 0];
 
-    wire                        mux_s2_valid        [KERNEL_W_MAX - 1 : 1];
-    wire   [DATA_WIDTH - 1 : 0] mux_s2_data         [KERNEL_W_MAX - 1 : 1];
-    wire   [TUSER_WIDTH - 1: 0] mux_s2_user         [KERNEL_W_MAX - 1 : 1];
-    wire                        mux_m_valid         [KERNEL_W_MAX - 1 : 1];
+    wire                        mux_s2_valid            [KERNEL_W_MAX - 1 : 1];
+    wire   [DATA_WIDTH - 1 : 0] mux_s2_data             [KERNEL_W_MAX - 1 : 1];
+    wire   [TUSER_WIDTH - 1: 0] mux_s2_user             [KERNEL_W_MAX - 1 : 1];
+    wire                        mux_m_valid             [KERNEL_W_MAX - 1 : 1];
 
+    wire                        mask_partial            [KERNEL_W_MAX - 1 : 1];
+    wire                        mask_full               [KERNEL_W_MAX - 1 : 0];
+
+
+    pad_filter # (
+        .DATA_WIDTH        (DATA_WIDTH),
+        .KERNEL_W_MAX      (KERNEL_W_MAX),
+        .TUSER_WIDTH       (TUSER_WIDTH),
+        .INDEX_IS_COLS_1_K2(INDEX_IS_COLS_1_K2),
+        .INDEX_IS_1x1      (INDEX_IS_1x1)
+    )
+    pad_filter_dut
+    (
+        .aclk            (aclk              ),
+        .aclken          (aclken            ),
+        .aresetn         (aresetn           ),
+        .start           (start             ),
+        .kernel_w_1_in   (kernel_w_1        ),
+        .valid_last      (acc_m_valid_last  ),
+        .user            (acc_m_user        ),
+        .mask_partial    (mask_partial      ),
+        .mask_full       (mask_full         )
+    );
 
     genvar i;
     generate
@@ -271,7 +307,8 @@ module conv_unit # (
 
         for (i=0; i < KERNEL_W_MAX; i++) begin : accumulators_gen
 
-            assign acc_m_valid_last[i] = acc_m_valid [i] & acc_m_last [i];
+            assign acc_m_valid_last         [i] = acc_m_valid [i] & acc_m_last [i];
+            assign acc_m_valid_last_masked  [i] = acc_m_valid_last[i] & mask_full[i];
 
             dummy_accumulator #(
                 .ACCUMULATOR_DELAY(ACCUMULATOR_DELAY),
@@ -380,7 +417,7 @@ module conv_unit # (
 
         for (i=1; i < KERNEL_W_MAX; i++) begin : mul_s2
 
-            assign mux_s2_valid  [i]    = acc_m_valid_last  [i-1];
+            assign mux_s2_valid  [i]    = acc_m_valid_last  [i-1] && mask_partial[i];
             assign mux_s2_data   [i]    = acc_m_data        [i-1];
             assign mux_s2_user   [i]    = acc_m_user        [i-1];
 
@@ -419,10 +456,99 @@ module conv_unit # (
 
     endgenerate
 
-    assign m_valid = acc_m_valid;
-    assign m_data  = acc_m_data ;
-    assign m_last  = acc_m_last ;
-    assign m_user  = acc_m_user ;
+
+
+    /*
+    SHIFT REGISTERS
+
+    * KW_MAX number of shift registers are chained. Conv_unit output is given by shift_reg[KW_MAX-1]
+    * Shift enable = aclk = m_ready of the AXIS outside.
+        - whenever m_ready goes down, whole unit freezes, including shift regs.
+        - if we use acc_clken or something else:
+            when m_ready stays high, shift_clken might go low.
+            this would result in valid staying high and data unchanged
+            for multiple clocks as m_ready stays high. Downstream module
+            will count it as multiple transactions as per AXIS protocol.
+
+    n x m:
+
+    * Middle cols:  - Only one datapath gives output, spaced ~CIN*KW delay apart.
+                    - For any delay, outputs will come out one after the other, all is well
+    * End cols   :  - (KW/2 + 1) datapaths give data out, spaced (A-2) delays apart
+                    - But they come out in reversed order
+    * Start cols :  - KW/2 cols are ignored
+                    - So there is time for end_cols to come out
+
+    1 x 1:
+
+    * All datapaths give outputs
+    * Order is messed up if CIN > i(A-1)-2
+        - Can be solved by bypassing the (A-1) delay
+        - But then back-to-back kernel change is not possible
+    */
+    wire                        shift_sel              [KERNEL_W_MAX - 1 : 1];
+
+    wire                        shift_in_valid         [KERNEL_W_MAX - 1 : 0];
+    wire   [DATA_WIDTH - 1 : 0] shift_in_data          [KERNEL_W_MAX - 1 : 0];
+    wire                        shift_in_last          [KERNEL_W_MAX - 1 : 0];
+    wire   [TUSER_WIDTH - 1: 0] shift_in_user          [TUSER_WIDTH  - 1 : 0];
+
+    wire                        shift_out_valid        [KERNEL_W_MAX - 1 : 0];
+    wire   [DATA_WIDTH - 1 : 0] shift_out_data         [KERNEL_W_MAX - 1 : 0];
+    wire                        shift_out_last         [KERNEL_W_MAX - 1 : 0];
+    wire   [TUSER_WIDTH - 1: 0] shift_out_user         [TUSER_WIDTH  - 1 : 0];
+
+    generate
+
+        assign shift_in_valid [0] = acc_m_valid_last_masked [0]  ;
+        assign shift_in_data  [0] = acc_m_data              [0]  ;
+        assign shift_in_last  [0] = acc_m_valid_last_masked [0]  ;
+        assign shift_in_user  [0] = acc_m_user              [0]  ;
+
+        assign m_valid = shift_out_valid [KERNEL_W_MAX-1];
+        assign m_data  = shift_out_data  [KERNEL_W_MAX-1];
+        assign m_last  = shift_out_last  [KERNEL_W_MAX-1];
+        assign m_user  = shift_out_user  [KERNEL_W_MAX-1];
+
+        for (i=1; i < KERNEL_W_MAX; i++) begin : shift_sel_gen
+
+            assign shift_sel      [i] = acc_m_valid_last_masked[i]  ? acc_m_valid_last_masked [i] : shift_in_valid [i-1];
+
+            assign shift_in_valid [i] = shift_sel[i]         ? acc_m_valid_last_masked [i] : shift_out_valid   [i-1];
+            assign shift_in_data  [i] = shift_sel[i]         ? acc_m_data              [i] : shift_out_data    [i-1];
+            assign shift_in_last  [i] = shift_sel[i]         ? acc_m_valid_last_masked [i] : shift_out_last    [i-1];
+            assign shift_in_user  [i] = shift_sel[i]         ? acc_m_user              [i] : shift_out_user    [i-1];
+        end
+
+        for (i=0; i < KERNEL_W_MAX; i++) begin : shift_reg_gen
+
+
+            n_delay_stream #(
+                .N           (1                 ),
+                .DATA_WIDTH  (DATA_WIDTH        ),
+                .TUSER_WIDTH (TUSER_WIDTH       )
+            )
+            SHIFT_REG
+            (
+                .aclk       (aclk               ),
+                .aclken     (aclken             ), // = m_ready of outside
+                .aresetn    (aresetn            ),
+
+                .valid_in   (shift_in_valid  [i]),
+                .data_in    (shift_in_data   [i]),
+                .last_in    (shift_in_last   [i]),
+                .user_in    (shift_in_user   [i]),
+
+                .valid_out  (shift_out_valid [i]),
+                .data_out   (shift_out_data  [i]),
+                .last_out   (shift_out_last  [i]),
+                .user_out   (shift_out_user  [i])
+            );
+        end
+
+    endgenerate
+
+
     
 endmodule
 

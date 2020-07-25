@@ -156,7 +156,7 @@ module pad_filter # (
             register
             #(
                 .WORD_WIDTH     (KW2_MAX),
-                .RESET_VALUE    (0      )         
+                .RESET_VALUE    (1      )         
             )
             COL_START_REG
             (
