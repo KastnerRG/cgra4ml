@@ -9,8 +9,11 @@
 !*.md
 !**/build*.tcl
 
+**/.ipynb_checkpoints/**
+
 # in subfolders also
 # allow all stuff inside any subfolder named "src"
 
 !*/
 !**/src/**
+!**/wave/**
