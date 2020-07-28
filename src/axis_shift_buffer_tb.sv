@@ -12,7 +12,7 @@ module axis_shift_buffer_tb();
     parameter KERNEL_H_1            = 0;
     parameter KERNEL_W_1            = 0;
     parameter CIN_1                 = 5'd5 - 5'd1;
-    parameter BLOCKS_1              = 4-1;
+    parameter COLS_1              = 4-1;
     
     localparam KERNEL_H_WIDTH       = $clog2(KERNEL_H_MAX + 1);
     localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX + 1);
@@ -22,12 +22,10 @@ module axis_shift_buffer_tb();
     reg                                         aresetn                 = 1;
     reg                                         start                   = 0;
     wire                                        done                       ;
-    wire [DATA_WIDTH * (CONV_UNITS+(KERNEL_H_MAX-1)) - 1 : 0]  S_AXIS_tdata;
     reg                                         S_AXIS_tvalid           = 0;
     reg                                         M_AXIS_tready           = 0;
 
     wire                                        S_AXIS_tready;
-    wire [DATA_WIDTH * (CONV_UNITS) - 1 : 0]    M_AXIS_tdata;
     wire                                        M_AXIS_tvalid;
     wire                                        M_AXIS_tlast;
     wire [TUSER_WIDTH     -1     : 0]           M_AXIS_tuser;
@@ -55,12 +53,12 @@ axis_shift_buffer_dut
     .kernel_w_1_in      (KERNEL_W_1),
     .is_max             (1),
     .is_relu            (1),
-    .blocks_1           (BLOCKS_1),
+    .cols_1             (COLS_1),
     .cin_1              (CIN_1),
-    .S_AXIS_tdata       (S_AXIS_tdata),
+    .S_AXIS_tdata       (s_data),
     .S_AXIS_tvalid      (S_AXIS_tvalid),
     .S_AXIS_tready      (S_AXIS_tready),
-    .M_AXIS_tdata       (M_AXIS_tdata),
+    .M_AXIS_tdata       (m_data),
     .M_AXIS_tvalid      (M_AXIS_tvalid),
     .M_AXIS_tready      (M_AXIS_tready),
     .M_AXIS_tlast       (M_AXIS_tlast),
@@ -70,18 +68,7 @@ axis_shift_buffer_dut
 );
 
     genvar i;
-    generate
-        // 10 s_data mapped
-        for (i=0; i < CONV_UNITS +(KERNEL_H_MAX-1); i=i+1) begin: s_data_gen
-            assign S_AXIS_tdata[(i+1)*DATA_WIDTH-1: i*DATA_WIDTH] = s_data[i];
-        end
-
-        // 8 m_data mapped
-        for (i=0; i < CONV_UNITS; i=i+1) begin: m_data_gen
-            assign m_data[i] = M_AXIS_tdata[(i+1)*DATA_WIDTH-1: i*DATA_WIDTH];
-        end
-    endgenerate
-
+    
     always begin
         #(CLK_PERIOD/2);
         aclk <= ~aclk;
