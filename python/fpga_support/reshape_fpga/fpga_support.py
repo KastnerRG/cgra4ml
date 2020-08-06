@@ -355,15 +355,16 @@ class FPGA_Reshaper():
         for i in range(1, self.num_conv_layers+1):
             self.make_image(i)
 
-    def make_image_out(self, i, next_max, to_txt=False, txt_float=False):
+    def make_image_out(self, i, next_max, to_txt=False, txt_float=False, to_pad=True):
         if i != self.num_conv_layers:
             if next_max:
                 image = self.model_dict[f'{self.conv_prefix}_{i+1}'].in_data[0]
                 assert len(image.shape) == 3
                 h, w, c = image.shape
                 blocks = h//self.conv_units
-                image = np.pad(image, ((1, 1), (0, 0), (0, 0)),
-                               mode='constant')
+                if to_pad:
+                    image = np.pad(image, ((1, 1), (0, 0), (0, 0)),
+                                   mode='constant')
                 image = image.astype(np.float16)
 
                 if c % 2:
@@ -387,8 +388,9 @@ class FPGA_Reshaper():
                 assert len(image.shape) == 3
                 h, w, c = image.shape
                 blocks = h//self.conv_units
-                image = np.pad(image, ((1, 1), (0, 0), (0, 0)),
-                               mode='constant')
+                if to_pad:
+                    image = np.pad(image, ((1, 1), (0, 0), (0, 0)),
+                                   mode='constant')
                 image = image.astype(np.float16)
 
                 self.im_array = np.empty((0), dtype=np.float16)
@@ -409,7 +411,10 @@ class FPGA_Reshaper():
             image = np.concatenate([other_cols, last_cols_flipped], axis=1)
 
             blocks = h//self.conv_units
-            image = np.pad(image, ((1, 1), (0, 0), (0, 0)), mode='constant')
+            if to_pad:
+                image = np.pad(image,
+                               ((1, 1), (0, 0), (0, 0)),
+                               mode='constant')
             image = image.astype(np.float16)
 
             self.im_array = np.empty((0), dtype=np.float16)
