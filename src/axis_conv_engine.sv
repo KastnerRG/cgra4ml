@@ -23,6 +23,9 @@ module axis_conv_engine # (
     parameter KERNEL_W_MAX          ,
     parameter KERNEL_H_MAX          , // odd number
     parameter TUSER_WIDTH           ,
+    parameter CIN_COUNTER_WIDTH     ,
+    parameter COLS_COUNTER_WIDTH    ,
+    parameter ONE                   ,
     parameter ACCUMULATOR_DELAY     ,
     parameter MULTIPLIER_DELAY      ,
 
@@ -40,7 +43,7 @@ module axis_conv_engine # (
     kernel_h_1      ,
     is_max          ,
     is_relu         ,
-    blocks_1        ,
+    cols_1          ,
     cin_1           ,
 
     pixels_s_valid  ,       
@@ -63,49 +66,56 @@ module axis_conv_engine # (
     localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX   + 1);
     localparam KERNEL_H_WIDTH       = $clog2(KERNEL_H_MAX   + 1);
 
-    input  wire                      aclk                                                   ;
-    input  wire                      aclken                                                 ;               
-    input  wire                      aresetn                                                ;
+    input  wire                          aclk                                                   ;
+    input  wire                          aclken                                                 ;               
+    input  wire                          aresetn                                                ;
                                                                                                                                             
-    input  wire                      start                                                  ;
-    input  wire [KERNEL_W_WIDTH-1:0] kernel_w_1                                             ;
-    input  wire [KERNEL_H_WIDTH-1:0] kernel_h_1                                             ;
-    input  wire                      is_max                                                 ;
-    input  wire                      is_relu                                                ;
-    input  wire                      blocks_1                                               ;
-    input  wire                      cin_1                                                  ;
+    input  wire                          start                                                  ;
+    input  wire [KERNEL_W_WIDTH    -1:0] kernel_w_1                                             ;
+    input  wire [KERNEL_H_WIDTH    -1:0] kernel_h_1                                             ;
+    input  wire                          is_max                                                 ;
+    input  wire                          is_relu                                                ;
+    input  wire [COLS_COUNTER_WIDTH-1:0] cols_1                                                 ;
+    input  wire [CIN_COUNTER_WIDTH -1:0] cin_1                                                  ;
                                                                                                 
-    input  wire                      pixels_s_valid                                         ;
-    input  wire [DATA_WIDTH  - 1: 0] pixels_s_data  [CONV_UNITS + (KERNEL_H_MAX-1) -1 : 0]  ;
-    output wire                      pixels_s_ready                                         ;
-                                                                                                
-    input  wire                      weights_s_valid                                        ;
-    output wire                      weights_s_ready                                        ;
-    input  wire [DATA_WIDTH  - 1: 0] weights_s_data [KERNEL_W_MAX - 1 : 0]                  ;
-                                                                                                
-    output wire                      m_valid                                                ;
-    output wire [DATA_WIDTH  - 1: 0] m_data                                                 ;
-    output wire                      m_last                                                 ;
-    output wire [TUSER_WIDTH - 1: 0] m_user                                                 ;
-                                                                                                
-    output wire                      done                                                   ;
+    input  wire                          pixels_s_valid                                         ;
+    input  wire [DATA_WIDTH        -1:0] pixels_s_data  [CONV_UNITS + (KERNEL_H_MAX-1) -1 : 0]  ;
+    output wire                          pixels_s_ready                                         ;
+                                                                                                    
+    input  wire                          weights_s_valid                                        ;
+    output wire                          weights_s_ready                                        ;
+    input  wire [DATA_WIDTH        -1:0] weights_s_data [KERNEL_W_MAX                  -1 : 0]  ;
+                                                                                                    
+    output wire                          m_valid                                                ;
+    output wire [DATA_WIDTH        -1:0] m_data         [CONV_UNITS                    -1 : 0]  ;
+    output wire                          m_last                                                 ;
+    output wire [TUSER_WIDTH       -1:0] m_user                                                 ;
+                                                                                                    
+    output wire                          done                                                   ;
 
 
     //-----------------------------------------------------------------
     
     
-    wire    [DATA_WIDTH * (CONV_UNITS) - 1 : 0]   shift_pixels_m_data;
-    wire                                          shift_pixels_m_valid;
-    wire                                          shift_pixels_m_ready;
-    wire                                          shift_pixels_m_last;
-    wire    [TUSER_WIDTH-1:0]                     shift_pixels_m_user;
+    wire    [DATA_WIDTH -1 : 0]   shift_pixels_m_data   [CONV_UNITS-1 : 0];
+    wire                          shift_pixels_m_valid                    ;
+    wire                          shift_pixels_m_ready                    ;
+    wire                          shift_pixels_m_last                     ;
+    wire    [TUSER_WIDTH-1 : 0]   shift_pixels_m_user                     ;
 
     axis_shift_buffer #(
         .DATA_WIDTH         (DATA_WIDTH),
         .CONV_UNITS         (CONV_UNITS),
         .KERNEL_H_MAX       (KERNEL_H_MAX),
         .KERNEL_W_MAX       (KERNEL_W_MAX),
-        .CIN_COUNTER_WIDTH  (5)
+        .CIN_COUNTER_WIDTH  (CIN_COUNTER_WIDTH ),
+        .COLS_COUNTER_WIDTH (COLS_COUNTER_WIDTH),
+        .ONE                (ONE               ),
+        .TUSER_WIDTH        (TUSER_WIDTH       ),
+        .INDEX_IS_1x1       (INDEX_IS_1x1      ),
+        .INDEX_IS_MAX       (INDEX_IS_MAX      ),
+        .INDEX_IS_RELU      (INDEX_IS_RELU     ),
+        .INDEX_IS_COLS_1_K2 (INDEX_IS_COLS_1_K2)
     )
     SHIFT_BUFFER
     (
@@ -117,7 +127,7 @@ module axis_conv_engine # (
         .kernel_w_1_in      (kernel_h_1     ),
         .is_max             (is_max         ),
         .is_relu            (is_relu        ),
-        .blocks_1           (blocks_1       ),
+        .cols_1             (cols_1         ),
         .cin_1              (cin_1          ),
 
         .S_AXIS_tdata       (pixels_s_data        ),
@@ -136,13 +146,12 @@ module axis_conv_engine # (
     */
 
     wire conv_s_valid;
-    wire conv_s_ready;
 
     assign conv_s_valid             = weights_s_valid   & shift_pixels_m_valid;
+    assign weights_s_ready          = conv_s_ready [0]  & shift_pixels_m_valid;
+    assign shift_pixels_m_ready     = conv_s_ready [0]  & weights_s_valid;
 
-    assign weights_s_ready          = conv_s_ready      & shift_pixels_m_valid;
-    assign shift_pixels_m_ready     = conv_s_ready      & weights_s_valid;
-
+    wire                   conv_s_ready [CONV_UNITS-1 : 0];
     wire                   conv_m_valid [CONV_UNITS-1 : 0];
     wire                   conv_m_last  [CONV_UNITS-1 : 0];
     wire [TUSER_WIDTH-1:0] conv_m_user  [CONV_UNITS-1 : 0];
@@ -176,7 +185,7 @@ module axis_conv_engine # (
             .s_valid        (conv_s_valid             ),       
             .s_data_pixels  (shift_pixels_m_data  [i] ), 
             .s_data_weights (weights_s_data           ),
-            .s_ready        (conv_s_ready             ),        
+            .s_ready        (conv_s_ready  [i]        ),        
             .s_last         (shift_pixels_m_last      ),        
             .s_user         (shift_pixels_m_user      ),        
 

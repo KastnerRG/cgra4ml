@@ -19,7 +19,7 @@ Description: * Pipelined module that takes in AXIS of padded rows and releases k
                             padded inputs for 3x3
 
             * Asserts tlast (registered) at the last data beat of each cin
-            * Asserts cols_1_k2 = blocks-1-k_w/2 (registered) for the entire cin at the block before last
+            * Asserts cols_1_k2 = cols-1-k_w/2 (registered) for the entire cin at the block before last
             * Samples config bits with "start" pulse and holds them until next "start"
             * Asserts done after the last tlast, until next start.
 
@@ -45,20 +45,18 @@ Additional Comments:
 //////////////////////////////////////////////////////////////////////////////////*/
 
 module axis_shift_buffer#(
-    parameter DATA_WIDTH                = 16,
-    parameter CONV_UNITS                = 8,
-    parameter KERNEL_H_MAX              = 3,
-    parameter KERNEL_W_MAX              = 3,
-
-    parameter CIN_COUNTER_WIDTH         = 10,
-    parameter BLOCKS_COUNTER_WIDTH      = 10,
-    parameter ONE                       = 15360,
-
-    parameter TUSER_WIDTH           = 4,
-    parameter INDEX_IS_1x1          = 0,
-    parameter INDEX_IS_MAX          = 1,
-    parameter INDEX_IS_RELU         = 2,
-    parameter INDEX_IS_COLS_1_K2    = 3
+    parameter DATA_WIDTH                ,
+    parameter CONV_UNITS                ,
+    parameter KERNEL_H_MAX              ,
+    parameter KERNEL_W_MAX              ,
+    parameter CIN_COUNTER_WIDTH         ,
+    parameter COLS_COUNTER_WIDTH        ,
+    parameter ONE                       ,
+    parameter TUSER_WIDTH               ,
+    parameter INDEX_IS_1x1              ,
+    parameter INDEX_IS_MAX              ,
+    parameter INDEX_IS_RELU             ,
+    parameter INDEX_IS_COLS_1_K2        
 )(
     aclk,
     aresetn,
@@ -69,7 +67,7 @@ module axis_shift_buffer#(
     kernel_w_1_in,         // = (kernel_h  - 1)
     is_max,
     is_relu,
-    cols_1,           // = (blocks    - 1)
+    cols_1,           // = (cols    - 1)
     cin_1,              // = (cin       - 1)
 
     S_AXIS_tdata,
@@ -99,7 +97,7 @@ module axis_shift_buffer#(
     input   wire                                    is_max          ;
     input   wire                                    is_relu         ;
     input   wire    [CIN_COUNTER_WIDTH    -1 : 0]   cin_1           ;
-    input   wire    [BLOCKS_COUNTER_WIDTH -1 : 0]   cols_1          ;
+    input   wire    [COLS_COUNTER_WIDTH -1 : 0]   cols_1          ;
     input   wire    [DATA_WIDTH           -1 : 0]   S_AXIS_tdata    [CONV_UNITS + (KERNEL_H_MAX-1)-1 : 0];
     input   wire                                    S_AXIS_tvalid   ;
     output  wire                                    S_AXIS_tready   ;
@@ -121,7 +119,7 @@ module axis_shift_buffer#(
     wire                                    is_max_reg_out       ;
     wire                                    is_relu_reg_out      ;
     wire    [CIN_COUNTER_WIDTH -1 : 0]      cin_1_reg_out        ;
-    wire    [BLOCKS_COUNTER_WIDTH-1 : 0]    cols_1_reg_out     ;
+    wire    [COLS_COUNTER_WIDTH-1 : 0]    cols_1_reg_out     ;
     wire                                    is_1x1_in            ;
     wire                                    is_1x1_reg_out           ;
     
@@ -213,7 +211,7 @@ module axis_shift_buffer#(
 
     register
     #(
-        .WORD_WIDTH     (BLOCKS_COUNTER_WIDTH),
+        .WORD_WIDTH     (COLS_COUNTER_WIDTH),
         .RESET_VALUE    (0) 
     )
     COLS_1_REG
@@ -527,33 +525,33 @@ module axis_shift_buffer#(
     );
 
     /*
-    BLOCKS-2 GENERATION
+    COLS-2 GENERATION
 
-    * blocks_count = block cin_count of the currnet data beat available in master 
-    * cols_1_k2     = blocks_count == BLOCKS - 2
+    * cols_count = block cin_count of the currnet data beat available in master 
+    * cols_1_k2     = cols_count == COLS - 2
     */
 
-    wire [BLOCKS_COUNTER_WIDTH-1 : 0] blocks_in;
-    wire [BLOCKS_COUNTER_WIDTH-1 : 0] blocks_count ;
+    wire [COLS_COUNTER_WIDTH-1 : 0] cols_in;
+    wire [COLS_COUNTER_WIDTH-1 : 0] cols_count ;
 
-    assign blocks_in = (blocks_count == cols_1) ? 0 : blocks_count + 1;
-    wire blocks_clken = M_AXIS_tlast && remove;
+    assign cols_in = (cols_count == cols_1) ? 0 : cols_count + 1;
+    wire cols_clken = M_AXIS_tlast && remove;
 
     register
     #(
-        .WORD_WIDTH     (BLOCKS_COUNTER_WIDTH),
+        .WORD_WIDTH     (COLS_COUNTER_WIDTH),
         .RESET_VALUE    (0) 
     )
-    BLOCKS_COUNTER_REG
+    COLS_COUNTER_REG
     (
         .clock          (aclk),
-        .clock_enable   (blocks_clken),
+        .clock_enable   (cols_clken),
         .resetn         (aresetn),
-        .data_in        (blocks_in),
-        .data_out       (blocks_count)
+        .data_in        (cols_in),
+        .data_out       (cols_count)
     );
 
-    wire    is_cols_1_k2_in = blocks_count == (cols_1 - kernel_w_1_out/2);
+    wire    is_cols_1_k2_in = cols_count == (cols_1 - kernel_w_1_out/2);
     wire    is_cols_1_k2_out;
 
     register
@@ -561,10 +559,10 @@ module axis_shift_buffer#(
         .WORD_WIDTH     (1),
         .RESET_VALUE    (0) 
     )
-    BLOCKS_2_REG
+    COLS_2_REG
     (
         .clock          (aclk),
-        .clock_enable   (blocks_clken),
+        .clock_enable   (cols_clken),
         .resetn         (aresetn),
         .data_in        (is_cols_1_k2_in),
         .data_out       (is_cols_1_k2_out)
@@ -585,12 +583,12 @@ module axis_shift_buffer#(
     /*
     DONE GENERATION
 
-    * done = (blocks == 0 & cin == 0 & state_data_in = 0)
+    * done = (cols == 0 & cin == 0 & state_data_in = 0)
     * sampled at last (tlast & remove)
 
     */
 
-    wire done_in    = (blocks_count == cols_1);
+    wire done_in    = (cols_count == cols_1);
     wire done_clken = M_AXIS_tlast && remove;
     wire done_reset = !aresetn || start;
 
