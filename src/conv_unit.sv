@@ -475,7 +475,7 @@ module conv_unit # (
                 .M_AXIS_tvalid      (mux_m_valid    [i]),
                 .M_AXIS_tdata       (acc_s_data     [i]),
                 .M_AXIS_tlast       (acc_s_last     [i]),
-                .M_AXIS_tuser       (acc_m_user     [i])
+                .M_AXIS_tuser       (acc_s_user     [i])
             );
         end
 
