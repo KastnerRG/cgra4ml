@@ -124,7 +124,6 @@ module conv_unit # (
     ENABLE SIGNALS
     */
     wire    [KERNEL_W_MAX - 1 : 1] mux_sel;
-    wire                           mux_sel_any;
     wire                           mux_sel_none;
     wire                           clken_mul;
     wire    [KERNEL_W_MAX - 1 : 0] clken_acc;
@@ -222,7 +221,7 @@ module conv_unit # (
     wire                        acc_s_valid             [KERNEL_W_MAX - 1 : 0];
     wire   [DATA_WIDTH - 1 : 0] acc_s_data              [KERNEL_W_MAX - 1 : 0];
     wire                        acc_s_last              [KERNEL_W_MAX - 1 : 0];
-    wire   [TUSER_WIDTH - 1: 0] acc_s_user              [TUSER_WIDTH  - 1 : 0];
+    wire   [TUSER_WIDTH - 1: 0] acc_s_user              [KERNEL_W_MAX - 1 : 0];
 
     wire                        acc_m_valid             [KERNEL_W_MAX - 1 : 0];
     wire   [DATA_WIDTH - 1 : 0] acc_m_data              [KERNEL_W_MAX - 1 : 0];
@@ -250,7 +249,7 @@ module conv_unit # (
     pad_filter_dut
     (
         .aclk            (aclk              ),
-        .aclken          (aclken            ),
+        .aclken          (clken_acc         ),
         .aresetn         (aresetn           ),
         .start           (start             ),
         .kernel_w_1_in   (kernel_w_1        ),
@@ -265,43 +264,43 @@ module conv_unit # (
 
         for (i=0; i < KERNEL_W_MAX; i++) begin : multipliers_gen
 
-            floating_point_multiplier multipler (
-                .aclk                   (aclk),                                            
-                .aclken                 (aclken),                                          
-                .aresetn                (aresetn),                                         
-                .s_axis_a_tvalid        (buffer_m_valid_pixels    [i]),                                 
-                .s_axis_a_tdata         (buffer_m_data_pixels     [i]),                                           
-                .s_axis_a_tlast         (buffer_m_last_pixels     [i]),                                  
-                .s_axis_a_tuser         (buffer_m_user_pixels     [i]),                                          
-                .s_axis_b_tvalid        (buffer_m_valid_weights   [i]),                                 
-                .s_axis_b_tdata         (buffer_m_data_weights    [i]),                                           
-                .m_axis_result_tvalid   (mul_m_valid              [i]),                             
-                .m_axis_result_tdata    (mul_m_data               [i]),                                       
-                .m_axis_result_tlast    (mul_m_last               [i]),                               
-                .m_axis_result_tuser    (mul_m_user               [i])                                      
-            );
-
-            // dummy_multiplier #(
-            //     .MULTIPLIER_DELAY(MULTIPLIER_DELAY),
-            //     .DATA_WIDTH(DATA_WIDTH),
-            //     .TUSER_WIDTH(TUSER_WIDTH)
-            // )
-            // dummy_multiplier_unit
-            // (
-            //     .aclk       (aclk),
-            //     .aclken     (clken_mul),
-            //     .aresetn    (aresetn),
-            //     .valid_in_1   (buffer_m_valid_pixels    [i]),
-            //     .data_in_1    (buffer_m_data_pixels     [i]),
-            //     .last_in_1    (buffer_m_last_pixels     [i]),
-            //     .user_in_1    (buffer_m_user_pixels     [i]),
-            //     .valid_in_2   (buffer_m_valid_weights   [i]),
-            //     .data_in_2    (buffer_m_data_weights    [i]),
-            //     .valid_out  (mul_m_valid    [i]),
-            //     .data_out   (mul_m_data     [i]),
-            //     .last_out   (mul_m_last     [i]),
-            //     .user_out   (mul_m_user     [i])
+            // floating_point_multiplier multipler (
+            //     .aclk                   (aclk),                                            
+            //     .aclken                 (aclken),                                          
+            //     .aresetn                (aresetn),                                         
+            //     .s_axis_a_tvalid        (buffer_m_valid_pixels    [i]),                                 
+            //     .s_axis_a_tdata         (buffer_m_data_pixels     [i]),                                           
+            //     .s_axis_a_tlast         (buffer_m_last_pixels     [i]),                                  
+            //     .s_axis_a_tuser         (buffer_m_user_pixels     [i]),                                          
+            //     .s_axis_b_tvalid        (buffer_m_valid_weights   [i]),                                 
+            //     .s_axis_b_tdata         (buffer_m_data_weights    [i]),                                           
+            //     .m_axis_result_tvalid   (mul_m_valid              [i]),                             
+            //     .m_axis_result_tdata    (mul_m_data               [i]),                                       
+            //     .m_axis_result_tlast    (mul_m_last               [i]),                               
+            //     .m_axis_result_tuser    (mul_m_user               [i])                                      
             // );
+
+            dummy_multiplier #(
+                .MULTIPLIER_DELAY(MULTIPLIER_DELAY),
+                .DATA_WIDTH(DATA_WIDTH),
+                .TUSER_WIDTH(TUSER_WIDTH)
+            )
+            dummy_multiplier_unit
+            (
+                .aclk       (aclk),
+                .aclken     (clken_mul),
+                .aresetn    (aresetn),
+                .valid_in_1   (buffer_m_valid_pixels    [i]),
+                .data_in_1    (buffer_m_data_pixels     [i]),
+                .last_in_1    (buffer_m_last_pixels     [i]),
+                .user_in_1    (buffer_m_user_pixels     [i]),
+                .valid_in_2   (buffer_m_valid_weights   [i]),
+                .data_in_2    (buffer_m_data_weights    [i]),
+                .valid_out  (mul_m_valid    [i]),
+                .data_out   (mul_m_data     [i]),
+                .last_out   (mul_m_last     [i]),
+                .user_out   (mul_m_user     [i])
+            );
 
         end
 
@@ -323,39 +322,39 @@ module conv_unit # (
             assign acc_m_valid_last         [i] = acc_m_valid [i] & acc_m_last [i];
             assign acc_m_valid_last_masked  [i] = acc_m_valid_last[i] & mask_full[i];
 
-            floating_point_accumulator acc (
-                .aclk                   (aclk),                                 
-                .aclken                 (aclken),                               
-                .aresetn                (aresetn),                              
-                .s_axis_a_tvalid        (acc_s_valid    [i]),                      
-                .s_axis_a_tdata         (acc_s_data     [i]),                                
-                .s_axis_a_tlast         (acc_s_last     [i]),                       
-                .s_axis_a_tuser         (acc_s_user     [i]),                               
-                .m_axis_result_tvalid   (acc_m_valid    [i]),                  
-                .m_axis_result_tdata    (acc_m_data     [i]),                            
-                .m_axis_result_tlast    (acc_m_last     [i]),                    
-                .m_axis_result_tuser    (acc_m_user     [i])                           
-            );
-
-            // dummy_accumulator #(
-            //     .ACCUMULATOR_DELAY(ACCUMULATOR_DELAY),
-            //     .DATA_WIDTH(DATA_WIDTH),
-            //     .TUSER_WIDTH(TUSER_WIDTH)
-            // )
-            // dummy_accumulator_unit
-            // (
-            //     .aclk       (aclk),
-            //     .aclken     (clken_acc[i]),
-            //     .aresetn    (aresetn),
-            //     .valid_in   (acc_s_valid    [i]),
-            //     .data_in    (acc_s_data     [i]),
-            //     .last_in    (acc_s_last     [i]),
-            //     .user_in    (acc_s_user     [i]),
-            //     .valid_out  (acc_m_valid    [i]),
-            //     .data_out   (acc_m_data     [i]),
-            //     .last_out   (acc_m_last     [i]),
-            //     .user_out   (acc_m_user     [i])
+            // floating_point_accumulator acc (
+            //     .aclk                   (aclk),                                 
+            //     .aclken                 (aclken),                               
+            //     .aresetn                (aresetn),                              
+            //     .s_axis_a_tvalid        (acc_s_valid    [i]),                      
+            //     .s_axis_a_tdata         (acc_s_data     [i]),                                
+            //     .s_axis_a_tlast         (acc_s_last     [i]),                       
+            //     .s_axis_a_tuser         (acc_s_user     [i]),                               
+            //     .m_axis_result_tvalid   (acc_m_valid    [i]),                  
+            //     .m_axis_result_tdata    (acc_m_data     [i]),                            
+            //     .m_axis_result_tlast    (acc_m_last     [i]),                    
+            //     .m_axis_result_tuser    (acc_m_user     [i])                           
             // );
+
+            dummy_accumulator #(
+                .ACCUMULATOR_DELAY(ACCUMULATOR_DELAY),
+                .DATA_WIDTH(DATA_WIDTH),
+                .TUSER_WIDTH(TUSER_WIDTH)
+            )
+            dummy_accumulator_unit
+            (
+                .aclk       (aclk),
+                .aclken     (clken_acc[i]),
+                .aresetn    (aresetn),
+                .valid_in   (acc_s_valid    [i]),
+                .data_in    (acc_s_data     [i]),
+                .last_in    (acc_s_last     [i]),
+                .user_in    (acc_s_user     [i]),
+                .valid_out  (acc_m_valid    [i]),
+                .data_out   (acc_m_data     [i]),
+                .last_out   (acc_m_last     [i]),
+                .user_out   (acc_m_user     [i])
+            );
             
         end
 
@@ -521,7 +520,7 @@ module conv_unit # (
     wire                        shift_out_valid        [KERNEL_W_MAX - 1 : 0];
     wire   [DATA_WIDTH - 1 : 0] shift_out_data         [KERNEL_W_MAX - 1 : 0];
     wire                        shift_out_last         [KERNEL_W_MAX - 1 : 0];
-    wire   [TUSER_WIDTH - 1: 0] shift_out_user         [TUSER_WIDTH  - 1 : 0];
+    wire   [TUSER_WIDTH - 1: 0] shift_out_user         [KERNEL_W_MAX - 1 : 0];
 
     generate
 

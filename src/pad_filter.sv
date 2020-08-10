@@ -55,7 +55,7 @@ module pad_filter # (
     localparam KERNEL_W_WIDTH    = $clog2(KERNEL_W_MAX   + 1);
 
     input  wire                      aclk;
-    input  wire                      aclken;               
+    input  wire [KERNEL_W_MAX-1 : 0] aclken;               
     input  wire                      aresetn;
     input  wire                      start;
 
@@ -129,7 +129,7 @@ module pad_filter # (
     generate
         for (i=0; i < KERNEL_W_MAX; i = i+1) begin: col_end_gen_i
 
-            assign reg_clken[i] = valid_last  [i] && aclken;
+            assign reg_clken[i] = valid_last  [i] && aclken[i];
 
             assign col_end_in         [i][1]  = user[i][INDEX_IS_COLS_1_K2];
             assign col_start_in       [i][1]  = col_end[i][kw2_wire]; // This is a mux

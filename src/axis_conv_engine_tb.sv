@@ -9,7 +9,7 @@ module axis_conv_engine_tb # ();
     parameter TUSER_WIDTH          =  4 ; 
     parameter CIN_COUNTER_WIDTH    = 10 ;
     parameter COLS_COUNTER_WIDTH   = 10 ;
-    parameter ONE                  = 15360 ;
+    parameter ONE                  = 1;//15360 ;
     parameter ACCUMULATOR_DELAY    = 19 ; 
     parameter MULTIPLIER_DELAY     =  6 ; 
 
@@ -18,8 +18,8 @@ module axis_conv_engine_tb # ();
     parameter INDEX_IS_RELU        =  2 ; 
     parameter INDEX_IS_COLS_1_K2   =  3 ; 
 
-    parameter COLS_1               =  96-1;
-    parameter CIN_1                =  64-1;
+    parameter COLS_1               =  3-1;
+    parameter CIN_1                =  12-1;   // 3 CIN + 1 > 2(A-1)-1 => CIN > 2(A-2)/3 => CIN > 2(19-2)/3 => CIN > 11.33 => CIN_min = 12
 
     localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX   + 1);
     localparam KERNEL_H_WIDTH       = $clog2(KERNEL_H_MAX   + 1);
@@ -49,8 +49,6 @@ module axis_conv_engine_tb # ();
     wire                      m_last                                                    ;
     wire [TUSER_WIDTH - 1: 0] m_user                                                    ;
                                                                                          
-    wire                      done                                                      ;
-
     axis_conv_engine # (
         .CONV_UNITS           (CONV_UNITS        ) ,
         .DATA_WIDTH           (DATA_WIDTH        ) ,
@@ -92,10 +90,7 @@ module axis_conv_engine_tb # ();
         .m_valid         (m_valid        ),
         .m_data          (m_data         ),
         .m_last          (m_last         ),
-        .m_user          (m_user         ),
-
-        .done            (done           )//
-
+        .m_user          (m_user         )
     );
 
     always begin
@@ -108,7 +103,7 @@ module axis_conv_engine_tb # ();
     integer status, file_im_out, file_im_in, file_weights;
 
     initial begin
-        file_im_out  = $fopen("D:/Vision Traffic/soc/mem_yolo/txt/3_im_out_fpga.txt","w");
+        file_im_out  = $fopen("D:/Vision Traffic/soc/mem_yolo/txt/1_im_out_fpga.txt","w");
     end
 
     always @ (posedge aclk) begin
@@ -142,7 +137,7 @@ module axis_conv_engine_tb # ();
 
         feed_data;
 
-        @(posedge done);
+        @(posedge aclk);
         for (n=0; n < 100; n = n+1)
             @(posedge aclk);
 
@@ -154,8 +149,8 @@ module axis_conv_engine_tb # ();
     task feed_data;
         integer m;
     begin
-        file_im_in   = $fopen("D:/Vision Traffic/soc/mem_yolo/txt/3_im.txt","r");
-        file_weights = $fopen("D:/Vision Traffic/soc/mem_yolo/txt/3_wb.txt","r");
+        file_im_in   = $fopen("D:/Vision Traffic/soc/mem_yolo/txt/1_im.txt","r");
+        file_weights = $fopen("D:/Vision Traffic/soc/mem_yolo/txt/1_wb.txt","r");
 
         while(1) begin
             @(posedge aclk);
@@ -179,7 +174,7 @@ module axis_conv_engine_tb # ();
 
             if ($feof(file_weights)) begin
                 $fclose(file_weights);
-                file_weights = $fopen("D:/Vision Traffic/soc/mem_yolo/txt/3_wb.txt","r");
+                file_weights = $fopen("D:/Vision Traffic/soc/mem_yolo/txt/1_wb.txt","r");
             end
 
             if (weights_s_ready) begin

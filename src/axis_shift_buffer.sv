@@ -21,7 +21,6 @@ Description: * Pipelined module that takes in AXIS of padded rows and releases k
             * Asserts tlast (registered) at the last data beat of each cin
             * Asserts cols_1_k2 = cols-1-k_w/2 (registered) for the entire cin at the block before last
             * Samples config bits with "start" pulse and holds them until next "start"
-            * Asserts done after the last tlast, until next start.
 
             * States are tied this way (indend denotes one clock delay)
                 - state_next
@@ -61,7 +60,6 @@ module axis_shift_buffer#(
     aclk,
     aresetn,
     start,
-    done,
 
     kernel_h_1_in,         // = (kernel_h  - 1)
     kernel_w_1_in,         // = (kernel_h  - 1)
@@ -90,7 +88,6 @@ module axis_shift_buffer#(
     input   wire    aclk;
     input   wire    aresetn;
     input   wire    start;
-    output  wire    done;
     
     input   wire    [KERNEL_H_WIDTH       -1 : 0]   kernel_h_1_in   ;
     input   wire    [KERNEL_W_WIDTH       -1 : 0]   kernel_w_1_in   ;
@@ -551,7 +548,7 @@ module axis_shift_buffer#(
         .data_out       (cols_count)
     );
 
-    wire    is_cols_1_k2_in = cols_count == (cols_1 - kernel_w_1_out/2);
+    wire    is_cols_1_k2_in = cols_count == (cols_1 - kernel_w_1_out/2 -1);
     wire    is_cols_1_k2_out;
 
     register
@@ -579,32 +576,6 @@ module axis_shift_buffer#(
     assign M_AXIS_tuser [INDEX_IS_MAX       ] = is_max_reg_out;
     assign M_AXIS_tuser [INDEX_IS_RELU      ] = is_relu_reg_out;
     assign M_AXIS_tuser [INDEX_IS_COLS_1_K2 ] = is_cols_1_k2_out;
-
-    /*
-    DONE GENERATION
-
-    * done = (cols == 0 & cin == 0 & state_data_in = 0)
-    * sampled at last (tlast & remove)
-
-    */
-
-    wire done_in    = (cols_count == cols_1);
-    wire done_clken = M_AXIS_tlast && remove;
-    wire done_reset = !aresetn || start;
-
-    register
-    #(
-        .WORD_WIDTH     (1),
-        .RESET_VALUE    (0) 
-    )
-    DONE_REG
-    (
-        .clock          (aclk),
-        .clock_enable   (done_clken),
-        .resetn         (!done_reset),
-        .data_in        (done_in),
-        .data_out       (done)
-    );
 
 
 endmodule
