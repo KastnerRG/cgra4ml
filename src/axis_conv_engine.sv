@@ -57,10 +57,7 @@ module axis_conv_engine # (
     m_valid         ,
     m_data          ,
     m_last          ,
-    m_user          ,
-
-    done            //
-
+    m_user          
 );
     genvar i;
     localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX   + 1);
@@ -91,7 +88,6 @@ module axis_conv_engine # (
     output wire                          m_last                                                 ;
     output wire [TUSER_WIDTH       -1:0] m_user                                                 ;
                                                                                                     
-    output wire                          done                                                   ;
 
 
     //-----------------------------------------------------------------
@@ -122,7 +118,6 @@ module axis_conv_engine # (
         .aclk               (aclk           ),
         .aresetn            (aresetn        ),
         .start              (start          ),
-        .done               (done           ),
         .kernel_h_1_in      (kernel_w_1     ),
         .kernel_w_1_in      (kernel_h_1     ),
         .is_max             (is_max         ),

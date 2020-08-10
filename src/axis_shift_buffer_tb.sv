@@ -4,15 +4,22 @@ module axis_shift_buffer_tb();
     parameter CLK_PERIOD            = 10;
     parameter DATA_WIDTH            = 16;
     parameter CONV_UNITS            = 8;
-    parameter KERNEL_H_MAX          = 5;
-    parameter KERNEL_W_MAX          = 5;
+    parameter KERNEL_H_MAX          = 3;
+    parameter KERNEL_W_MAX          = 3;
     parameter CIN_COUNTER_WIDTH     = 5;
     parameter TUSER_WIDTH           = 4;
+    parameter COLS_COUNTER_WIDTH    = 10;
+    parameter ONE                   = 15360;
 
-    parameter KERNEL_H_1            = 0;
-    parameter KERNEL_W_1            = 0;
-    parameter CIN_1                 = 5'd5 - 5'd1;
-    parameter COLS_1              = 4-1;
+    parameter INDEX_IS_1x1          = 0;
+    parameter INDEX_IS_MAX          = 1;
+    parameter INDEX_IS_RELU         = 2;
+    parameter INDEX_IS_COLS_1_K2    = 3;
+
+    parameter KERNEL_H_1            = 3-1;
+    parameter KERNEL_W_1            = 3-1;
+    parameter CIN_1                 = 6-1;
+    parameter COLS_1                = 10-1;
     
     localparam KERNEL_H_WIDTH       = $clog2(KERNEL_H_MAX + 1);
     localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX + 1);
@@ -21,7 +28,6 @@ module axis_shift_buffer_tb();
     reg                                         aclk                    = 0;
     reg                                         aresetn                 = 1;
     reg                                         start                   = 0;
-    wire                                        done                       ;
     reg                                         S_AXIS_tvalid           = 0;
     reg                                         M_AXIS_tready           = 0;
 
@@ -41,14 +47,20 @@ axis_shift_buffer
     .CONV_UNITS         (CONV_UNITS),
     .KERNEL_H_MAX       (KERNEL_H_MAX),
     .KERNEL_W_MAX       (KERNEL_W_MAX),
-    .CIN_COUNTER_WIDTH  (5)
+    .CIN_COUNTER_WIDTH  (CIN_COUNTER_WIDTH),
+    .COLS_COUNTER_WIDTH (COLS_COUNTER_WIDTH),
+    .ONE                (ONE               ),
+    .TUSER_WIDTH        (TUSER_WIDTH       ),
+    .INDEX_IS_1x1       (INDEX_IS_1x1      ),
+    .INDEX_IS_MAX       (INDEX_IS_MAX      ),
+    .INDEX_IS_RELU      (INDEX_IS_RELU     ),
+    .INDEX_IS_COLS_1_K2 (INDEX_IS_COLS_1_K2)
 )
 axis_shift_buffer_dut
 (
     .aclk               (aclk),
     .aresetn            (aresetn),
     .start              (start),
-    .done               (done),
     .kernel_h_1_in      (KERNEL_H_1),
     .kernel_w_1_in      (KERNEL_W_1),
     .is_max             (1),
