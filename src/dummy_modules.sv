@@ -54,8 +54,20 @@ module dummy_accumulator #(
     wire                     acc_hold_m_last ;
     wire [TUSER_WIDTH-1 : 0] acc_hold_m_user ;
 
-    wire [DATA_WIDTH-1  : 0] acc_data_in;
-    assign acc_data_in = (data_in & {DATA_WIDTH{valid_in}}) + ({DATA_WIDTH{!clear}} & acc_hold_m_data & {DATA_WIDTH{acc_hold_m_valid}});
+    reg [DATA_WIDTH-1  : 0] acc_data_in;
+
+    always @(*) begin
+        if (clear)
+            if (valid_in)
+                acc_data_in <= data_in;
+            else
+                acc_data_in <= 0;
+        else 
+            if (valid_in)
+                acc_data_in <= data_in + acc_hold_m_data;
+            else
+                acc_data_in <= acc_hold_m_data;
+    end
 
     n_delay_stream #(
         .N(1),
