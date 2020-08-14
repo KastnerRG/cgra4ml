@@ -421,10 +421,10 @@ module conv_unit # (
 
             
             wire   sel_in;
-            assign sel_in = mul_m_last [i] && (!mul_m_user[INDEX_IS_1x1]);
+            assign sel_in = mul_m_last [i] && (!mul_m_user[i][INDEX_IS_1x1]);
             
             register #(
-                .WORD_WIDTH     (DATA_WIDTH),
+                .WORD_WIDTH     (1),
                 .RESET_VALUE    (0)
             )
             sel_registers

@@ -156,7 +156,7 @@ module float_tb # ();
         #(CLK_PERIOD*7)
 
         @(posedge aclk);
-        aclken <= 0;
+        aclken <= 1;
         acc_s_axis_tvalid       <= 1;
         acc_s_axis_tdata        <= F16_1;
         dum_acc_s_axis_tdata    <= 1;
