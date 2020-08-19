@@ -18,17 +18,21 @@ module axis_conv_engine_tb # ();
     parameter INDEX_IS_RELU        =  2 ; 
     parameter INDEX_IS_COLS_1_K2   =  3 ; 
 
-    parameter KERNEL_W_1           =  3 -1 ;
-    parameter KERNEL_H_1           =  3 -1 ;
-    parameter IS_MAX               =  0    ; 
-    parameter IS_RELU              =  0    ;
-    parameter COLS_1               =  4 -1 ;
-    parameter CIN_1                =  3 -1 ;   // 3 CIN + 1 > 2(A-1)-1 => CIN > 2(A-2)/3 => CIN > 2(19-2)/3 => CIN > 11.33 => CIN_min = 12
+    parameter KERNEL_W             =  3 ;
+    parameter KERNEL_H             =  3 ;
+    parameter IS_MAX               =  0 ; 
+    parameter IS_RELU              =  0 ;
+
+    parameter HEIGHT               =  8 ;
+    parameter WIDTH                =  4 ;
+    parameter CIN                  =  3 ;   // 3 CIN + 1 > 2(A-1)-1 => CIN > 2(A-2)/3 => CIN > 2(19-2)/3 => CIN > 11.33 => CIN_min = 12
+    
 
     string    im_in_path           = "D:/Vision Traffic/soc/mem_yolo/txt/1_im.txt";
     string    im_out_path          = "D:/Vision Traffic/soc/mem_yolo/txt/1_im_out_fpga.txt";
     string    weights_path         = "D:/Vision Traffic/soc/mem_yolo/txt/1_wb.txt";
 
+    localparam BLOCKS              =  HEIGHT / CONV_UNITS;
     localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX   + 1);
     localparam KERNEL_H_WIDTH       = $clog2(KERNEL_H_MAX   + 1);
 
@@ -105,10 +109,13 @@ module axis_conv_engine_tb # ();
     integer n = 0;
     integer status, file_im_out, file_im_in, file_weights;
 
+    integer im_rotate_count    = 0;
     integer w_rotate_count     = 0;
     integer wb_beats_count     = 0;
     integer im_in_beats_count  = 0;
     integer im_out_beats_count = 0;
+
+    bit done_feed = 0;
 
     initial begin
         file_im_in   = $fopen(im_in_path   ,"r");
@@ -133,35 +140,27 @@ module axis_conv_engine_tb # ();
     end
 
     /*
-        WEIGHTS FEEDING
-        - Feed weights COL (= width) times
+        Restart image file for every column & feed pixels
     */
     always @ (posedge aclk) begin
         #1;
+        if (!done_feed) begin
 
-        if (weights_s_ready) begin
-            weights_s_valid <= 1;
-            wb_beats_count = wb_beats_count + 1;
-            for (m=0; m < KERNEL_W_MAX; m = m+1)
-                status = $fscanf(file_weights,"%d\n",weights_s_data[m]);
-        end
-        else begin
-            for (m=0; m < KERNEL_W_MAX; m = m+1)
-                weights_s_data[m] <= weights_s_data[m];
-        end
+            axis_feed_weights;
 
-        // Restart weights
-        if (status != 1 && $feof(file_weights)) begin // status != 1 :.operation completed (to avoid warning) 
-            $fclose(file_weights);
+            if (status != 1 && $feof(file_weights)) begin
 
-            if (w_rotate_count == COLS_1)
-                weights_s_valid <= 0;
-            else begin
-                file_weights = $fopen(weights_path,"r");
-                w_rotate_count = w_rotate_count + 1;
+                    $fclose(file_weights);
+                    file_weights = $fopen(weights_path,"r");
+
+                    if (w_rotate_count == WIDTH * BLOCKS - 1) // One COUT done
+                        w_rotate_count = 0;
+                    else                                      // One col done
+                        w_rotate_count = w_rotate_count + 1;
+
+                    axis_feed_weights;
             end
         end
-
     end
 
     initial begin
@@ -169,12 +168,12 @@ module axis_conv_engine_tb # ();
         #(CLK_PERIOD*3)
         @(posedge aclk);
 
-        kernel_w_1              <=  KERNEL_W_1;
-        kernel_h_1              <=  KERNEL_H_1;
-        is_max                  <=  IS_MAX    ;
-        is_relu                 <=  IS_RELU   ;
-        cols_1                  <=  COLS_1    ;
-        cin_1                   <=  CIN_1     ;
+        kernel_w_1              <=  KERNEL_W - 1;
+        kernel_h_1              <=  KERNEL_H - 1;
+        is_max                  <=  IS_MAX      ;
+        is_relu                 <=  IS_RELU     ;
+        cols_1                  <=  WIDTH    - 1;
+        cin_1                   <=  CIN      - 1;
 
         aresetn                 <= 1;
         start                   <= 1;
@@ -185,51 +184,73 @@ module axis_conv_engine_tb # ();
         #(CLK_PERIOD*3);
 
         /*
-            FEED IMAGE PIXELS
+            Restart image file for every output channel & feed pixels
         */
         while(1) begin
             @(posedge aclk);
             #1;
 
-            if ($feof(file_im_in)) begin
-                if (pixels_s_ready) begin
-                    pixels_s_valid  <= 0;
-                    break;
-                end
-                else
-                    continue;
+            axis_feed_pixels;
+
+            if (status != 1 && $feof(file_im_in)) begin
+                pixels_s_valid <= 0;
+                break;
             end
-
-            if (pixels_s_ready) begin
-
-                pixels_s_valid      <= 1;
-                im_in_beats_count   = im_in_beats_count + 1;
-
-                for (m=0; m < CONV_UNITS + (KERNEL_H_MAX-1); m = m+1)
-                    status = $fscanf(file_im_in,"%d\n",pixels_s_data[m]);
-                    
-            end
-            else begin
-                for (m=0; m < CONV_UNITS + (KERNEL_H_MAX-1); m = m+1)
-                    pixels_s_data[m] <= pixels_s_data[m];
-            end
-
         end
 
         /*
-            Wait for COLS im_out beats to come out and close files
+            Wait for all im_out beats to come out and close files
         */
         
         while(1) begin
             @(posedge aclk);
-            if (im_out_beats_count > COLS_1)
+            if (im_out_beats_count > WIDTH * BLOCKS - 1)
                 break;
         end
 
         $fclose(file_im_in);
         $fclose(file_weights);
         $fclose(file_im_out);
+        done_feed = 1;
 
     end
+    
+    /*
+    Feed weights according to AXIS protocol
+    */
+    task axis_feed_weights;
+    begin
+        if (weights_s_ready) begin
+            weights_s_valid <= 1;
+            wb_beats_count = wb_beats_count + 1;
+            for (m=0; m < KERNEL_W_MAX; m = m+1)
+                status = $fscanf(file_weights,"%d\n",weights_s_data[m]);
+        end
+        else begin
+            for (m=0; m < KERNEL_W_MAX; m = m+1)
+                weights_s_data[m] <= weights_s_data[m];    
+        end
+    end
+    endtask
+
+    /*
+    Feed pixels according to AXIS protocol
+    */
+    task axis_feed_pixels;
+    begin
+        if (pixels_s_ready) begin
+            pixels_s_valid      <= 1;
+            im_in_beats_count   = im_in_beats_count + 1;
+
+            for (m=0; m < CONV_UNITS + (KERNEL_H_MAX-1); m = m+1)
+                status = $fscanf(file_im_in,"%d\n",pixels_s_data[m]);
+                
+        end
+        else begin
+            for (m=0; m < CONV_UNITS + (KERNEL_H_MAX-1); m = m+1)
+                pixels_s_data[m] <= pixels_s_data[m];
+        end
+    end
+    endtask
 
 endmodule
