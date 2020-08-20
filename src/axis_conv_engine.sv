@@ -49,22 +49,24 @@ Additional Comments:
 */
 
 module axis_conv_engine # (
-    parameter CONV_CORES            ,
-    parameter CONV_UNITS            ,
-    parameter DATA_WIDTH            ,
-    parameter KERNEL_W_MAX          ,
-    parameter KERNEL_H_MAX          , // odd number
-    parameter TUSER_WIDTH           ,
-    parameter CIN_COUNTER_WIDTH     ,
-    parameter COLS_COUNTER_WIDTH    ,
-    parameter ONE                   ,
-    parameter ACCUMULATOR_DELAY     ,
-    parameter MULTIPLIER_DELAY      ,
+    parameter IS_FIXED_POINT            =  0 , 
+    parameter CONV_CORES                = 24 ,
+    parameter CONV_UNITS                =  8 ,
+    parameter DATA_WIDTH                = 16 ,
+    parameter KERNEL_W_MAX              =  3 ,
+    parameter KERNEL_H_MAX              =  3 , // odd number
+    parameter TUSER_WIDTH               =  4 ,
+    parameter CIN_COUNTER_WIDTH         = 10 ,
+    parameter COLS_COUNTER_WIDTH        = 10 ,
+    parameter FLOAT_ACCUMULATOR_DELAY   = 19 ,
+    parameter FLOAT_MULTIPLIER_DELAY    =  6 ,
+    parameter FIXED_ACCUMULATOR_DELAY   =  4 ,
+    parameter FIXED_MULTIPLIER_DELAY    =  3 ,
 
-    parameter INDEX_IS_1x1          ,
-    parameter INDEX_IS_MAX          ,
-    parameter INDEX_IS_RELU         ,
-    parameter INDEX_IS_COLS_1_K2     
+    parameter INDEX_IS_1x1              =  0 ,
+    parameter INDEX_IS_MAX              =  1 ,
+    parameter INDEX_IS_RELU             =  2 ,
+    parameter INDEX_IS_COLS_1_K2        =  3  
 )(
     aclk            ,
     aclken          ,
@@ -94,6 +96,7 @@ module axis_conv_engine # (
     genvar k,i;
     localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX   + 1);
     localparam KERNEL_H_WIDTH       = $clog2(KERNEL_H_MAX   + 1);
+    localparam ACCUMULATOR_DELAY    = IS_FIXED_POINT ? FIXED_ACCUMULATOR_DELAY : FLOAT_ACCUMULATOR_DELAY ; 
 
     input  wire                          aclk                                                       ;
     input  wire                          aclken                                                     ;               
@@ -134,13 +137,13 @@ module axis_conv_engine # (
     wire    [TUSER_WIDTH-1 : 0]   m_shift_pixels_user                     ;
 
     axis_shift_buffer #(
+        .IS_FIXED_POINT     (IS_FIXED_POINT    ) ,
         .DATA_WIDTH         (DATA_WIDTH),
         .CONV_UNITS         (CONV_UNITS),
         .KERNEL_H_MAX       (KERNEL_H_MAX),
         .KERNEL_W_MAX       (KERNEL_W_MAX),
         .CIN_COUNTER_WIDTH  (CIN_COUNTER_WIDTH ),
         .COLS_COUNTER_WIDTH (COLS_COUNTER_WIDTH),
-        .ONE                (ONE               ),
         .TUSER_WIDTH        (TUSER_WIDTH       ),
         .INDEX_IS_1x1       (INDEX_IS_1x1      ),
         .INDEX_IS_MAX       (INDEX_IS_MAX      ),
@@ -278,16 +281,19 @@ module axis_conv_engine # (
     for (i=0; i < CONV_CORES; i++) begin: cores_gen
         
         conv_core # (
-            .CONV_UNITS          (CONV_UNITS        ),
-            .DATA_WIDTH          (DATA_WIDTH        ),
-            .KERNEL_W_MAX        (KERNEL_W_MAX      ),
-            .TUSER_WIDTH         (TUSER_WIDTH       ),
-            .ACCUMULATOR_DELAY   (ACCUMULATOR_DELAY ),
-            .MULTIPLIER_DELAY    (MULTIPLIER_DELAY  ),
-            .INDEX_IS_1x1        (INDEX_IS_1x1      ),
-            .INDEX_IS_MAX        (INDEX_IS_MAX      ),
-            .INDEX_IS_RELU       (INDEX_IS_RELU     ),
-            .INDEX_IS_COLS_1_K2  (INDEX_IS_COLS_1_K2) 
+            .IS_FIXED_POINT         (IS_FIXED_POINT         ),
+            .CONV_UNITS             (CONV_UNITS             ),
+            .DATA_WIDTH             (DATA_WIDTH             ),
+            .KERNEL_W_MAX           (KERNEL_W_MAX           ),
+            .TUSER_WIDTH            (TUSER_WIDTH            ),
+            .FLOAT_ACCUMULATOR_DELAY(FLOAT_ACCUMULATOR_DELAY),
+            .FLOAT_MULTIPLIER_DELAY (FLOAT_MULTIPLIER_DELAY ),
+            .FIXED_ACCUMULATOR_DELAY(FIXED_ACCUMULATOR_DELAY),
+            .FIXED_MULTIPLIER_DELAY (FIXED_MULTIPLIER_DELAY ),
+            .INDEX_IS_1x1           (INDEX_IS_1x1           ),
+            .INDEX_IS_MAX           (INDEX_IS_MAX           ),
+            .INDEX_IS_RELU          (INDEX_IS_RELU          ),
+            .INDEX_IS_COLS_1_K2     (INDEX_IS_COLS_1_K2     ) 
         )
         CONV_CORE
         (
@@ -313,4 +319,4 @@ module axis_conv_engine # (
     end
     endgenerate
 
-endmodule;
+endmodule

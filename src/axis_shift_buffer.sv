@@ -44,13 +44,13 @@ Additional Comments:
 //////////////////////////////////////////////////////////////////////////////////*/
 
 module axis_shift_buffer#(
+    parameter IS_FIXED_POINT            ,
     parameter DATA_WIDTH                ,
     parameter CONV_UNITS                ,
     parameter KERNEL_H_MAX              ,
     parameter KERNEL_W_MAX              ,
     parameter CIN_COUNTER_WIDTH         ,
     parameter COLS_COUNTER_WIDTH        ,
-    parameter ONE                       ,
     parameter TUSER_WIDTH               ,
     parameter INDEX_IS_1x1              ,
     parameter INDEX_IS_MAX              ,
@@ -84,6 +84,7 @@ module axis_shift_buffer#(
     genvar i;
     localparam KERNEL_H_WIDTH    = $clog2(KERNEL_H_MAX   + 1);
     localparam KERNEL_W_WIDTH    = $clog2(KERNEL_W_MAX   + 1);
+    localparam ONE               = IS_FIXED_POINT ? 1 : 15360 ;
 
     input   wire    aclk;
     input   wire    aresetn;

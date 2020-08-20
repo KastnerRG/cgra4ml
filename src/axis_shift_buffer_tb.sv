@@ -1,6 +1,7 @@
 `timescale 1ns / 1ps
 
 module axis_shift_buffer_tb();
+    parameter IS_FIXED_POINT        = 0 ;
     parameter CLK_PERIOD            = 10;
     parameter DATA_WIDTH            = 16;
     parameter CONV_UNITS            = 8;
@@ -9,7 +10,6 @@ module axis_shift_buffer_tb();
     parameter CIN_COUNTER_WIDTH     = 5;
     parameter TUSER_WIDTH           = 4;
     parameter COLS_COUNTER_WIDTH    = 10;
-    parameter ONE                   = 15360;
 
     parameter INDEX_IS_1x1          = 0;
     parameter INDEX_IS_MAX          = 1;
