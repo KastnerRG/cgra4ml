@@ -1,41 +1,48 @@
 `timescale 1ns / 1ps
 
 module axis_conv_engine_tb # ();
-    parameter CLK_PERIOD           = 10 ;
-    parameter CONV_CORES           =  1 ;
-    parameter CONV_UNITS           =  8 ; 
-    parameter DATA_WIDTH           = 16 ; 
-    parameter KERNEL_W_MAX         =  3 ; 
-    parameter KERNEL_H_MAX         =  3 ;   // odd number
-    parameter TUSER_WIDTH          =  4 ; 
-    parameter CIN_COUNTER_WIDTH    = 10 ;
-    parameter COLS_COUNTER_WIDTH   = 10 ;
-    parameter ONE                  = 1  ;     //15360 ;
-    parameter ACCUMULATOR_DELAY    = 4  ;     //19 ; 
-    parameter MULTIPLIER_DELAY     = 3  ;     // 6 ; 
 
-    parameter INDEX_IS_1x1         =  0 ; 
-    parameter INDEX_IS_MAX         =  1 ; 
-    parameter INDEX_IS_RELU        =  2 ; 
-    parameter INDEX_IS_COLS_1_K2   =  3 ; 
+    parameter IS_FIXED_POINT            =  1 ;
+    parameter CLK_PERIOD                = 10 ;
+    parameter CONV_CORES                =  1 ;
+    parameter CONV_UNITS                =  8 ; 
+    parameter DATA_WIDTH                = 16 ; 
+    parameter KERNEL_W_MAX              =  3 ; 
+    parameter KERNEL_H_MAX              =  3 ;   // odd number
+    parameter TUSER_WIDTH               =  4 ; 
+    parameter CIN_COUNTER_WIDTH         = 10 ;
+    parameter COLS_COUNTER_WIDTH        = 10 ;
 
-    parameter KERNEL_W             =  3 ;
-    parameter KERNEL_H             =  3 ;
-    parameter IS_MAX               =  0 ; 
-    parameter IS_RELU              =  0 ;
+    parameter INDEX_IS_1x1              =  0 ; 
+    parameter INDEX_IS_MAX              =  1 ; 
+    parameter INDEX_IS_RELU             =  2 ; 
+    parameter INDEX_IS_COLS_1_K2        =  3 ; 
 
-    parameter HEIGHT               =  8 ;
-    parameter WIDTH                =  4 ;
-    parameter CIN                  =  3 ;   // 3 CIN + 1 > 2(A-1)-1 => CIN > 2(A-2)/3 => CIN > 2(19-2)/3 => CIN > 11.33 => CIN_min = 12
+    parameter KERNEL_W                  =  3 ;
+    parameter KERNEL_H                  =  3 ;
+    parameter IS_MAX                    =  0 ; 
+    parameter IS_RELU                   =  0 ;
+
+    parameter FLOAT_ACCUMULATOR_DELAY   =  19;
+    parameter FLOAT_MULTIPLIER_DELAY    =  6 ;
+    parameter FIXED_ACCUMULATOR_DELAY   =  4 ;
+    parameter FIXED_MULTIPLIER_DELAY    =  3 ;
+
+    parameter HEIGHT                    =  8 ;
+    parameter WIDTH                     =  4 ;
+    parameter CIN                       = 12 ;   // 3 CIN + 1 > 2(A-1)-1 => CIN > 2(A-2)/3 => CIN > 2(19-2)/3 => CIN > 11.33 => CIN_min = 12
     
-
-    string    im_in_path           = "D:/Vision Traffic/soc/mem_yolo/txt/1_im.txt";
-    string    im_out_path          = "D:/Vision Traffic/soc/mem_yolo/txt/1_im_out_fpga.txt";
-    string    weights_path         = "D:/Vision Traffic/soc/mem_yolo/txt/1_wb.txt";
-
-    localparam BLOCKS              =  HEIGHT / CONV_UNITS;
-    localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX   + 1);
-    localparam KERNEL_H_WIDTH       = $clog2(KERNEL_H_MAX   + 1);
+    localparam ONE                      = IS_FIXED_POINT ? 1 : 15360 ;
+    localparam ACCUMULATOR_DELAY        = IS_FIXED_POINT ? FIXED_ACCUMULATOR_DELAY : FLOAT_ACCUMULATOR_DELAY ; 
+    localparam MULTIPLIER_DELAY         = IS_FIXED_POINT ? FIXED_MULTIPLIER_DELAY  :  FLOAT_MULTIPLIER_DELAY ; 
+    
+    string    im_in_path                = "D:/Vision Traffic/soc/mem_yolo/txt/1_im.txt";
+    string    im_out_path               = "D:/Vision Traffic/soc/mem_yolo/txt/1_im_out_fpga.txt";
+    string    weights_path              = "D:/Vision Traffic/soc/mem_yolo/txt/1_wb.txt";
+    
+    localparam BLOCKS                   =  HEIGHT / CONV_UNITS;
+    localparam KERNEL_W_WIDTH           = $clog2(KERNEL_W_MAX   + 1);
+    localparam KERNEL_H_WIDTH           = $clog2(KERNEL_H_MAX   + 1);
 
     reg                           aclk                                               = 0;
     reg                           aclken                                             = 1;               
@@ -63,21 +70,23 @@ module axis_conv_engine_tb # ();
     wire [TUSER_WIDTH - 1: 0] m_user                                                    ;
                                                                                          
     axis_conv_engine # (
-        .CONV_CORES           (CONV_CORES        ) ,
-        .CONV_UNITS           (CONV_UNITS        ) ,
-        .DATA_WIDTH           (DATA_WIDTH        ) ,
-        .KERNEL_W_MAX         (KERNEL_W_MAX      ) ,
-        .KERNEL_H_MAX         (KERNEL_H_MAX      ) , // odd number
-        .TUSER_WIDTH          (TUSER_WIDTH       ) ,
-        .CIN_COUNTER_WIDTH    (CIN_COUNTER_WIDTH ) ,
-        .COLS_COUNTER_WIDTH   (COLS_COUNTER_WIDTH) ,
-        .ONE                  (ONE               ) ,
-        .ACCUMULATOR_DELAY    (ACCUMULATOR_DELAY ) ,
-        .MULTIPLIER_DELAY     (MULTIPLIER_DELAY  ) ,
-        .INDEX_IS_1x1         (INDEX_IS_1x1      ) ,
-        .INDEX_IS_MAX         (INDEX_IS_MAX      ) ,
-        .INDEX_IS_RELU        (INDEX_IS_RELU     ) ,
-        .INDEX_IS_COLS_1_K2   (INDEX_IS_COLS_1_K2)  
+        .IS_FIXED_POINT         (IS_FIXED_POINT         ) ,
+        .CONV_CORES             (CONV_CORES             ) ,
+        .CONV_UNITS             (CONV_UNITS             ) ,
+        .DATA_WIDTH             (DATA_WIDTH             ) ,
+        .KERNEL_W_MAX           (KERNEL_W_MAX           ) ,
+        .KERNEL_H_MAX           (KERNEL_H_MAX           ) , // odd number
+        .TUSER_WIDTH            (TUSER_WIDTH            ) ,
+        .CIN_COUNTER_WIDTH      (CIN_COUNTER_WIDTH      ) ,
+        .COLS_COUNTER_WIDTH     (COLS_COUNTER_WIDTH     ) ,
+        .FLOAT_ACCUMULATOR_DELAY(FLOAT_ACCUMULATOR_DELAY) ,
+        .FLOAT_MULTIPLIER_DELAY (FLOAT_MULTIPLIER_DELAY ) ,
+        .FIXED_ACCUMULATOR_DELAY(FIXED_ACCUMULATOR_DELAY) ,
+        .FIXED_MULTIPLIER_DELAY (FIXED_MULTIPLIER_DELAY ) ,
+        .INDEX_IS_1x1           (INDEX_IS_1x1           ) ,
+        .INDEX_IS_MAX           (INDEX_IS_MAX           ) ,
+        .INDEX_IS_RELU          (INDEX_IS_RELU          ) ,
+        .INDEX_IS_COLS_1_K2     (INDEX_IS_COLS_1_K2     )  
     )
     conv_engine_dut
     (

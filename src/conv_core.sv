@@ -1,15 +1,18 @@
 module conv_core # (
-    parameter CONV_UNITS            ,
-    parameter DATA_WIDTH            ,
-    parameter KERNEL_W_MAX          ,
-    parameter TUSER_WIDTH           ,
-    parameter ACCUMULATOR_DELAY     ,
-    parameter MULTIPLIER_DELAY      ,
+    parameter IS_FIXED_POINT         ,
+    parameter CONV_UNITS             ,
+    parameter DATA_WIDTH             ,
+    parameter KERNEL_W_MAX           ,
+    parameter TUSER_WIDTH            ,
+    parameter FLOAT_ACCUMULATOR_DELAY,
+    parameter FLOAT_MULTIPLIER_DELAY ,
+    parameter FIXED_ACCUMULATOR_DELAY,
+    parameter FIXED_MULTIPLIER_DELAY ,
 
-    parameter INDEX_IS_1x1          ,
-    parameter INDEX_IS_MAX          ,
-    parameter INDEX_IS_RELU         ,
-    parameter INDEX_IS_COLS_1_K2     
+    parameter INDEX_IS_1x1           ,
+    parameter INDEX_IS_MAX           ,
+    parameter INDEX_IS_RELU          ,
+    parameter INDEX_IS_COLS_1_K2      
 )(
     aclk                ,
     aclken              ,
@@ -34,6 +37,7 @@ module conv_core # (
 
 );
     localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX   + 1);
+    localparam ACCUMULATOR_DELAY    = IS_FIXED_POINT ? FIXED_ACCUMULATOR_DELAY : FLOAT_ACCUMULATOR_DELAY ; 
 
     input  wire                      aclk;
     input  wire                      aclken;               
@@ -100,11 +104,12 @@ module conv_core # (
     for (i=0; i < CONV_UNITS; i++) begin: conv_unit_gen
             
        conv_unit # (
+            .IS_FIXED_POINT           (IS_FIXED_POINT),
             .DATA_WIDTH               (DATA_WIDTH),
             .KERNEL_W_MAX             (KERNEL_W_MAX),
             .TUSER_WIDTH              (TUSER_WIDTH),
-            .ACCUMULATOR_DELAY        (ACCUMULATOR_DELAY) ,
-            .MULTIPLIER_DELAY         (MULTIPLIER_DELAY),
+            .FIXED_ACCUMULATOR_DELAY  (FIXED_ACCUMULATOR_DELAY),
+            .FIXED_MULTIPLIER_DELAY   (FIXED_MULTIPLIER_DELAY),
             .INDEX_IS_1x1             (INDEX_IS_1x1),
             .INDEX_IS_MAX             (INDEX_IS_MAX),
             .INDEX_IS_RELU            (INDEX_IS_RELU),
