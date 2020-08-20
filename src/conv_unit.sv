@@ -85,13 +85,13 @@ module conv_unit # (
     start,
     kernel_w_1,
 
-    s_valid,       
-    s_data_pixels, 
-    s_data_weights,
-    s_ready,
-    s_last,        
-    s_user,        
-
+    s_ready            ,
+    s_step_pixels_valid,
+    s_step_pixels_data ,
+    s_step_weights_data,
+    s_step_pixels_last ,
+    s_step_pixels_user ,
+    
     m_valid,
     m_data,
     m_last,
@@ -107,12 +107,12 @@ module conv_unit # (
     input  wire                      start;
     input  wire [KERNEL_W_WIDTH-1:0] kernel_w_1;
 
-    input  wire                      s_valid                              ;
-    input  wire [DATA_WIDTH  - 1: 0] s_data_pixels                        ;
-    input  wire [DATA_WIDTH  - 1: 0] s_data_weights [KERNEL_W_MAX - 1 : 0];
-    output wire                      s_ready                              ;
-    input  wire                      s_last                               ;
-    input  wire [TUSER_WIDTH - 1: 0] s_user                               ;
+    output wire                      s_ready                                   ;
+    input  wire                      s_step_pixels_valid [KERNEL_W_MAX - 1 : 0];
+    input  wire [DATA_WIDTH  - 1: 0] s_step_pixels_data  [KERNEL_W_MAX - 1 : 0];
+    input  wire [DATA_WIDTH  - 1: 0] s_step_weights_data [KERNEL_W_MAX - 1 : 0];
+    input  wire                      s_step_pixels_last  [KERNEL_W_MAX - 1 : 0];
+    input  wire [TUSER_WIDTH - 1: 0] s_step_pixels_user  [KERNEL_W_MAX - 1 : 0];
 
     output wire                      m_valid ;
     output wire [DATA_WIDTH  - 1: 0] m_data  ;
@@ -125,93 +125,14 @@ module conv_unit # (
     */
     wire    [KERNEL_W_MAX - 1 : 1] mux_sel;
     wire                           mux_sel_none;
-    wire                           clken_mul;
     wire    [KERNEL_W_MAX - 1 : 0] clken_acc;
-    wire                           is_1x1;
+    wire                           clken_mul;
 
     assign  mux_sel_none = !(|mux_sel);
     assign  clken_mul    = aclken &&  mux_sel_none;
     assign  clken_acc[0] = clken_mul;
 
-    assign  is_1x1       = s_user[INDEX_IS_1x1];
     assign  s_ready      = clken_mul;
-
-    /*
-    BUFFER UNIT------------------------------------------------------
-    */
-    // Pixel Buffer
-
-    wire                      buffer_m_valid_pixels [KERNEL_W_MAX - 1 : 0];
-    wire [DATA_WIDTH  - 1: 0] buffer_m_data_pixels  [KERNEL_W_MAX - 1 : 0];
-    wire                      buffer_m_last_pixels  [KERNEL_W_MAX - 1 : 0];
-    wire [TUSER_WIDTH - 1: 0] buffer_m_user_pixels  [KERNEL_W_MAX - 1 : 0];
-
-    wire [DATA_WIDTH  - 1: 0] buffer_s_data_pixels  [KERNEL_W_MAX - 1 : 0];
-    wire [TUSER_WIDTH - 1: 0] buffer_s_user_pixels  [KERNEL_W_MAX - 1 : 0];
-
-    genvar k;
-    generate
-        for (k=0 ; k < KERNEL_W_MAX; k = k + 1) begin: repeat_pixels_gen
-            assign buffer_s_data_pixels [k] = s_data_pixels;
-            assign buffer_s_user_pixels [k] = s_user;
-        end
-    endgenerate
-
-    step_buffer  #(
-        .DATA_WIDTH       (DATA_WIDTH),
-        .STEPS            (KERNEL_W_MAX),
-        .ACCUMULATOR_DELAY(ACCUMULATOR_DELAY),
-        .TUSER_WIDTH      (TUSER_WIDTH)
-    )
-    step_buffer_pixels
-    (
-        .aclk       (aclk),
-        .aclken     (clken_mul),
-        .aresetn    (aresetn),
-        .is_1x1     (is_1x1),
-        
-        .s_valid    ('{KERNEL_W_MAX{s_valid}}),
-        .s_data     (buffer_s_data_pixels),
-        .s_last     ('{KERNEL_W_MAX{s_last}}),
-        .s_user     (buffer_s_user_pixels),
-
-        .m_valid   (buffer_m_valid_pixels),
-        .m_data    (buffer_m_data_pixels),
-        .m_last    (buffer_m_last_pixels),
-        .m_user    (buffer_m_user_pixels)
-    );
-
-    // Weights Buffer
-
-    wire                      buffer_m_valid_weights[KERNEL_W_MAX - 1 : 0];
-    wire [DATA_WIDTH  - 1: 0] buffer_m_data_weights [KERNEL_W_MAX - 1 : 0];
-
-    step_buffer  #(
-        .DATA_WIDTH       (DATA_WIDTH),
-        .STEPS            (KERNEL_W_MAX),
-        .ACCUMULATOR_DELAY(ACCUMULATOR_DELAY),
-        .TUSER_WIDTH      (TUSER_WIDTH)
-    )
-    step_buffer_weights
-    (
-        .aclk       (aclk),
-        .aclken     (clken_mul),
-        .aresetn    (aresetn),
-        .is_1x1     (is_1x1),
-        
-        .s_valid    ('{KERNEL_W_MAX{s_valid}}),
-        .s_data     (s_data_weights),
-        .s_last     ('{KERNEL_W_MAX{0}}),
-        .s_user     ('{KERNEL_W_MAX{0}}),
-
-        .m_valid   (buffer_m_valid_weights),
-        .m_data    (buffer_m_data_weights)
-    );
-
-    /*
-    --------------------------------------------------------------------------
-    */
-
 
     wire                        mul_m_valid             [KERNEL_W_MAX - 1 : 0];
     wire   [DATA_WIDTH - 1 : 0] mul_m_data              [KERNEL_W_MAX - 1 : 0];
@@ -268,12 +189,12 @@ module conv_unit # (
             //     .aclk                   (aclk),                                            
             //     .aclken                 (aclken),                                          
             //     .aresetn                (aresetn),                                         
-            //     .s_axis_a_tvalid        (buffer_m_valid_pixels    [i]),                                 
-            //     .s_axis_a_tdata         (buffer_m_data_pixels     [i]),                                           
-            //     .s_axis_a_tlast         (buffer_m_last_pixels     [i]),                                  
-            //     .s_axis_a_tuser         (buffer_m_user_pixels     [i]),                                          
-            //     .s_axis_b_tvalid        (buffer_m_valid_weights   [i]),                                 
-            //     .s_axis_b_tdata         (buffer_m_data_weights    [i]),                                           
+            //     .s_axis_a_tvalid        (s_step_pixels_valid      [i]),                                 
+            //     .s_axis_a_tdata         (s_step_pixels_data       [i]),                                           
+            //     .s_axis_a_tlast         (s_step_pixels_last       [i]),                                  
+            //     .s_axis_a_tuser         (s_step_pixels_user       [i]),                                          
+            //     .s_axis_b_tvalid        (s_step_pixels_valid      [i]),                                 
+            //     .s_axis_b_tdata         (s_step_weights_data      [i]),                                           
             //     .m_axis_result_tvalid   (mul_m_valid              [i]),                             
             //     .m_axis_result_tdata    (mul_m_data               [i]),                                       
             //     .m_axis_result_tlast    (mul_m_last               [i]),                               
@@ -287,19 +208,19 @@ module conv_unit # (
             )
             dummy_multiplier_unit
             (
-                .aclk       (aclk),
-                .aclken     (clken_mul),
-                .aresetn    (aresetn),
-                .valid_in_1   (buffer_m_valid_pixels    [i]),
-                .data_in_1    (buffer_m_data_pixels     [i]),
-                .last_in_1    (buffer_m_last_pixels     [i]),
-                .user_in_1    (buffer_m_user_pixels     [i]),
-                .valid_in_2   (buffer_m_valid_weights   [i]),
-                .data_in_2    (buffer_m_data_weights    [i]),
-                .valid_out  (mul_m_valid    [i]),
-                .data_out   (mul_m_data     [i]),
-                .last_out   (mul_m_last     [i]),
-                .user_out   (mul_m_user     [i])
+                .aclk         (aclk),
+                .aclken       (clken_mul),
+                .aresetn      (aresetn),
+                .valid_in_1   (s_step_pixels_valid      [i]),
+                .data_in_1    (s_step_pixels_data       [i]),
+                .last_in_1    (s_step_pixels_last       [i]),
+                .user_in_1    (s_step_pixels_user       [i]),
+                .valid_in_2   (s_step_pixels_valid      [i]),
+                .data_in_2    (s_step_weights_data      [i]),
+                .valid_out    (mul_m_valid              [i]),
+                .data_out     (mul_m_data               [i]),
+                .last_out     (mul_m_last               [i]),
+                .user_out     (mul_m_user               [i])
             );
 
         end
@@ -485,7 +406,9 @@ module conv_unit # (
     /*
     SHIFT REGISTERS
 
-    * KW_MAX number of shift registers are chained. Conv_unit output is given by shift_reg[KW_MAX-1]
+    * KW_MAX number of shift registers are chained. 
+    * Values are shifted from shift_reg[KW_MAX-1] -> ... -> shift_reg[1] -> shift_reg[0]
+    * Conv_unit output is given by shift_reg[0]
     * Shift enable = aclk = m_ready of the AXIS outside.
         - whenever m_ready goes down, whole unit freezes, including shift regs.
         - if we use acc_clken or something else:
@@ -510,7 +433,7 @@ module conv_unit # (
         - Can be solved by bypassing the (A-1) delay
         - But then back-to-back kernel change is not possible
     */
-    wire                        shift_sel              [KERNEL_W_MAX - 1 : 1];
+    wire                        shift_sel              [KERNEL_W_MAX - 2 : 0];
 
     wire                        shift_in_valid         [KERNEL_W_MAX - 1 : 0];
     wire   [DATA_WIDTH - 1 : 0] shift_in_data          [KERNEL_W_MAX - 1 : 0];
@@ -523,29 +446,22 @@ module conv_unit # (
     wire   [TUSER_WIDTH - 1: 0] shift_out_user         [KERNEL_W_MAX - 1 : 0];
 
     generate
+        for (i=0; i < KERNEL_W_MAX-1; i++) begin : shift_sel_gen
 
-        assign shift_in_valid [0] = acc_m_valid_last_masked [0]  ;
-        assign shift_in_data  [0] = acc_m_data              [0]  ;
-        assign shift_in_last  [0] = acc_m_valid_last_masked [0]  ;
-        assign shift_in_user  [0] = acc_m_user              [0]  ;
+            assign shift_sel      [i] = acc_m_valid_last_masked[i]  ? acc_m_valid_last_masked [i] : shift_in_valid  [i+1];
 
-        assign m_valid = shift_out_valid [KERNEL_W_MAX-1];
-        assign m_data  = shift_out_data  [KERNEL_W_MAX-1];
-        assign m_last  = shift_out_last  [KERNEL_W_MAX-1];
-        assign m_user  = shift_out_user  [KERNEL_W_MAX-1];
-
-        for (i=1; i < KERNEL_W_MAX; i++) begin : shift_sel_gen
-
-            assign shift_sel      [i] = acc_m_valid_last_masked[i]  ? acc_m_valid_last_masked [i] : shift_in_valid [i-1];
-
-            assign shift_in_valid [i] = shift_sel[i]         ? acc_m_valid_last_masked [i] : shift_out_valid   [i-1];
-            assign shift_in_data  [i] = shift_sel[i]         ? acc_m_data              [i] : shift_out_data    [i-1];
-            assign shift_in_last  [i] = shift_sel[i]         ? acc_m_valid_last_masked [i] : shift_out_last    [i-1];
-            assign shift_in_user  [i] = shift_sel[i]         ? acc_m_user              [i] : shift_out_user    [i-1];
+            assign shift_in_valid [i] = shift_sel[i]                ? acc_m_valid_last_masked [i] : shift_out_valid [i+1];
+            assign shift_in_data  [i] = shift_sel[i]                ? acc_m_data              [i] : shift_out_data  [i+1];
+            assign shift_in_last  [i] = shift_sel[i]                ? acc_m_valid_last_masked [i] : shift_out_last  [i+1];
+            assign shift_in_user  [i] = shift_sel[i]                ? acc_m_user              [i] : shift_out_user  [i+1];
         end
 
-        for (i=0; i < KERNEL_W_MAX; i++) begin : shift_reg_gen
+        assign     shift_in_valid [KERNEL_W_MAX - 1] = acc_m_valid_last_masked [KERNEL_W_MAX - 1]  ;
+        assign     shift_in_data  [KERNEL_W_MAX - 1] = acc_m_data              [KERNEL_W_MAX - 1]  ;
+        assign     shift_in_last  [KERNEL_W_MAX - 1] = acc_m_valid_last_masked [KERNEL_W_MAX - 1]  ;
+        assign     shift_in_user  [KERNEL_W_MAX - 1] = acc_m_user              [KERNEL_W_MAX - 1]  ;
 
+        for (i=0; i < KERNEL_W_MAX; i++) begin : shift_reg_gen
 
             n_delay_stream #(
                 .N           (1                 ),
@@ -569,9 +485,12 @@ module conv_unit # (
                 .user_out   (shift_out_user  [i])
             );
         end
-
     endgenerate
 
+    assign m_valid = shift_out_valid [0];
+    assign m_data  = shift_out_data  [0];
+    assign m_last  = shift_out_last  [0];
+    assign m_user  = shift_out_user  [0];
 
     
 endmodule

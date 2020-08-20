@@ -2,6 +2,7 @@
 
 module axis_conv_engine_tb # ();
     parameter CLK_PERIOD           = 10 ;
+    parameter CONV_CORES           =  1 ;
     parameter CONV_UNITS           =  8 ; 
     parameter DATA_WIDTH           = 16 ; 
     parameter KERNEL_W_MAX         =  3 ; 
@@ -48,20 +49,21 @@ module axis_conv_engine_tb # ();
     reg  [COLS_COUNTER_WIDTH-1:0] cols_1                                             = 0;
     reg  [CIN_COUNTER_WIDTH -1:0] cin_1                                              = 0;
 
-    reg                       pixels_s_valid                                         = 0;
-    reg  [DATA_WIDTH  - 1: 0] pixels_s_data  [CONV_UNITS + (KERNEL_H_MAX-1) -1 : 0]  = '{default:0};
-    wire                      pixels_s_ready                                            ;
+    reg                       s_pixels_valid                                         = 0;
+    reg  [DATA_WIDTH  - 1: 0] s_pixels_data  [CONV_UNITS + (KERNEL_H_MAX-1) -1 : 0]  = '{default:0};
+    wire                      s_pixels_ready                                            ;
     
-    reg                       weights_s_valid                                        = 0;
-    wire                      weights_s_ready                                           ;
-    reg  [DATA_WIDTH  - 1: 0] weights_s_data [KERNEL_W_MAX - 1 : 0]                  = '{default:0};
+    reg                       s_weights_valid                                        = 0;
+    wire                      s_weights_ready                                           ;
+    reg  [DATA_WIDTH  - 1: 0] s_weights_data [CONV_CORES -1 : 0][KERNEL_W_MAX- 1 : 0]= '{default:0};
                                                                                          
     wire                      m_valid                                                   ;
-    wire [DATA_WIDTH  - 1: 0] m_data         [CONV_UNITS   - 1 : 0]                     ;
+    wire [DATA_WIDTH  - 1: 0] m_data         [CONV_CORES -1 : 0][CONV_UNITS  - 1 : 0]   ;
     wire                      m_last                                                    ;
     wire [TUSER_WIDTH - 1: 0] m_user                                                    ;
                                                                                          
     axis_conv_engine # (
+        .CONV_CORES           (CONV_CORES        ) ,
         .CONV_UNITS           (CONV_UNITS        ) ,
         .DATA_WIDTH           (DATA_WIDTH        ) ,
         .KERNEL_W_MAX         (KERNEL_W_MAX      ) ,
@@ -91,13 +93,13 @@ module axis_conv_engine_tb # ();
         .cols_1          (cols_1         ),
         .cin_1           (cin_1          ),
 
-        .pixels_s_valid  (pixels_s_valid ),       
-        .pixels_s_data   (pixels_s_data  ),   
-        .pixels_s_ready  (pixels_s_ready ),
+        .s_pixels_valid  (s_pixels_valid ),       
+        .s_pixels_data   (s_pixels_data  ),   
+        .s_pixels_ready  (s_pixels_ready ),
 
-        .weights_s_valid (weights_s_valid),       
-        .weights_s_data  (weights_s_data ),
-        .weights_s_ready (weights_s_ready),
+        .s_weights_valid (s_weights_valid),       
+        .s_weights_data  (s_weights_data ),
+        .s_weights_ready (s_weights_ready),
 
         .m_valid         (m_valid        ),
         .m_data          (m_data         ),
@@ -134,8 +136,10 @@ module axis_conv_engine_tb # ();
         #(CLK_PERIOD/2);
         if (aclken && m_valid) begin
             im_out_beats_count = im_out_beats_count + 1;
-            for (m=0; m < CONV_UNITS; m = m+1)
-                $fdisplay(file_im_out, "%d", m_data[m]);
+
+            for (n=0; n < CONV_CORES; n = n+1)
+                for (m=0; m < CONV_UNITS; m = m+1)
+                    $fdisplay(file_im_out, "%d", m_data[n][m]);
         end
     end
 
@@ -193,7 +197,7 @@ module axis_conv_engine_tb # ();
             axis_feed_pixels;
 
             if (status != 1 && $feof(file_im_in)) begin
-                pixels_s_valid <= 0;
+                s_pixels_valid <= 0;
                 break;
             end
         end
@@ -220,15 +224,17 @@ module axis_conv_engine_tb # ();
     */
     task axis_feed_weights;
     begin
-        if (weights_s_ready) begin
-            weights_s_valid <= 1;
+        if (s_weights_ready) begin
+            s_weights_valid <= 1;
             wb_beats_count = wb_beats_count + 1;
-            for (m=0; m < KERNEL_W_MAX; m = m+1)
-                status = $fscanf(file_weights,"%d\n",weights_s_data[m]);
+
+            for (n=0; n < CONV_CORES  ; n = n+1)
+                for (m=0; m < KERNEL_W_MAX; m = m+1)
+                    status = $fscanf(file_weights,"%d\n",s_weights_data[n][m]);
         end
         else begin
             for (m=0; m < KERNEL_W_MAX; m = m+1)
-                weights_s_data[m] <= weights_s_data[m];    
+                s_weights_data[m] <= s_weights_data[m];    
         end
     end
     endtask
@@ -238,17 +244,17 @@ module axis_conv_engine_tb # ();
     */
     task axis_feed_pixels;
     begin
-        if (pixels_s_ready) begin
-            pixels_s_valid      <= 1;
+        if (s_pixels_ready) begin
+            s_pixels_valid      <= 1;
             im_in_beats_count   = im_in_beats_count + 1;
 
             for (m=0; m < CONV_UNITS + (KERNEL_H_MAX-1); m = m+1)
-                status = $fscanf(file_im_in,"%d\n",pixels_s_data[m]);
+                status = $fscanf(file_im_in,"%d\n",s_pixels_data[m]);
                 
         end
         else begin
             for (m=0; m < CONV_UNITS + (KERNEL_H_MAX-1); m = m+1)
-                pixels_s_data[m] <= pixels_s_data[m];
+                s_pixels_data[m] <= s_pixels_data[m];
         end
     end
     endtask
