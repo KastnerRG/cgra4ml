@@ -5,6 +5,7 @@
 # allow only .tcl files named "build*.tcl"
 
 !*.gitignore
+!*.gitattributes
 !*.py
 !*.md
 !**/build*.tcl
