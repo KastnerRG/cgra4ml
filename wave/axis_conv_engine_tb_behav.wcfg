@@ -11,13 +11,13 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="798666666fs"></ZoomStartTime>
-      <ZoomEndTime time="1040266667fs"></ZoomEndTime>
-      <Cursor1Time time="1000000000fs"></Cursor1Time>
+      <ZoomStartTime time="83920000fs"></ZoomStartTime>
+      <ZoomEndTime time="1077920001fs"></ZoomEndTime>
+      <Cursor1Time time="223920000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="198"></NameColumnWidth>
-      <ValueColumnWidth column_width="86"></ValueColumnWidth>
+      <NameColumnWidth column_width="258"></NameColumnWidth>
+      <ValueColumnWidth column_width="78"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="27" />
    <wvobject fp_name="/axis_conv_engine_tb/aclk" type="logic">
@@ -39,27 +39,30 @@
    <wvobject fp_name="group573" type="group">
       <obj_property name="label">Pixels Inputs</obj_property>
       <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/im_rotate_count" type="array">
+         <obj_property name="ElementShortName">im_rotate_count[31:0]</obj_property>
+         <obj_property name="ObjectShortName">im_rotate_count[31:0]</obj_property>
+      </wvobject>
       <wvobject fp_name="/axis_conv_engine_tb/im_in_beats_count" type="array">
          <obj_property name="ElementShortName">im_in_beats_count[31:0]</obj_property>
          <obj_property name="ObjectShortName">im_in_beats_count[31:0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/pixels_s_ready" type="logic">
-         <obj_property name="ElementShortName">pixels_s_ready</obj_property>
-         <obj_property name="ObjectShortName">pixels_s_ready</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/s_pixels_ready" type="logic">
+         <obj_property name="ElementShortName">s_pixels_ready</obj_property>
+         <obj_property name="ObjectShortName">s_pixels_ready</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/pixels_s_valid" type="logic">
-         <obj_property name="ElementShortName">pixels_s_valid</obj_property>
-         <obj_property name="ObjectShortName">pixels_s_valid</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/s_pixels_valid" type="logic">
+         <obj_property name="ElementShortName">s_pixels_valid</obj_property>
+         <obj_property name="ObjectShortName">s_pixels_valid</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/pixels_s_data" type="array">
-         <obj_property name="ElementShortName">pixels_s_data[2:0][15:0]</obj_property>
-         <obj_property name="ObjectShortName">pixels_s_data[2:0][15:0]</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/s_pixels_data" type="array">
+         <obj_property name="ElementShortName">s_pixels_data[9:0][15:0]</obj_property>
+         <obj_property name="ObjectShortName">s_pixels_data[9:0][15:0]</obj_property>
       </wvobject>
    </wvobject>
    <wvobject fp_name="group575" type="group">
       <obj_property name="label">Weights Inputs</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="/axis_conv_engine_tb/w_rotate_count" type="array">
          <obj_property name="ElementShortName">w_rotate_count[31:0]</obj_property>
          <obj_property name="ObjectShortName">w_rotate_count[31:0]</obj_property>
@@ -68,18 +71,22 @@
          <obj_property name="ElementShortName">wb_beats_count[31:0]</obj_property>
          <obj_property name="ObjectShortName">wb_beats_count[31:0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/weights_s_valid" type="logic">
-         <obj_property name="ElementShortName">weights_s_valid</obj_property>
-         <obj_property name="ObjectShortName">weights_s_valid</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/s_weights_ready" type="logic">
+         <obj_property name="ElementShortName">s_weights_ready</obj_property>
+         <obj_property name="ObjectShortName">s_weights_ready</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/weights_s_ready" type="logic">
-         <obj_property name="ElementShortName">weights_s_ready</obj_property>
-         <obj_property name="ObjectShortName">weights_s_ready</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/s_weights_valid" type="logic">
+         <obj_property name="ElementShortName">s_weights_valid</obj_property>
+         <obj_property name="ObjectShortName">s_weights_valid</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/weights_s_data" type="array">
-         <obj_property name="ElementShortName">weights_s_data[2:0][15:0]</obj_property>
-         <obj_property name="ObjectShortName">weights_s_data[2:0][15:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/s_weights_data" type="array">
+         <obj_property name="ElementShortName">s_weights_data[0:0][2:0][15:0]</obj_property>
+         <obj_property name="ObjectShortName">s_weights_data[0:0][2:0][15:0]</obj_property>
+         <wvobject fp_name="/axis_conv_engine_tb/s_weights_data[0]" type="array">
+            <obj_property name="ElementShortName">[0][2:0][15:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][2:0][15:0]</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+         </wvobject>
       </wvobject>
    </wvobject>
    <wvobject fp_name="group572" type="group">
@@ -89,37 +96,27 @@
          <obj_property name="ElementShortName">conv_s_valid</obj_property>
          <obj_property name="ObjectShortName">conv_s_valid</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/weights_s_valid" type="logic">
-         <obj_property name="ElementShortName">weights_s_valid</obj_property>
-         <obj_property name="ObjectShortName">weights_s_valid</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/s_weights_valid" type="logic">
+         <obj_property name="ElementShortName">s_weights_valid</obj_property>
+         <obj_property name="ObjectShortName">s_weights_valid</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/shift_pixels_m_valid" type="logic">
-         <obj_property name="ElementShortName">shift_pixels_m_valid</obj_property>
-         <obj_property name="ObjectShortName">shift_pixels_m_valid</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/m_shift_pixels_ready" type="logic">
+         <obj_property name="ElementShortName">m_shift_pixels_ready</obj_property>
+         <obj_property name="ObjectShortName">m_shift_pixels_ready</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/shift_pixels_m_ready" type="logic">
-         <obj_property name="ElementShortName">shift_pixels_m_ready</obj_property>
-         <obj_property name="ObjectShortName">shift_pixels_m_ready</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/conv_s_ready[0]" type="logic">
-         <obj_property name="ElementShortName">[0]</obj_property>
-         <obj_property name="ObjectShortName">[0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /aclken" type="logic">
-         <obj_property name="ElementShortName">aclken</obj_property>
-         <obj_property name="ObjectShortName">aclken</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mux_sel" type="array">
-         <obj_property name="ElementShortName">mux_sel[2:1]</obj_property>
-         <obj_property name="ObjectShortName">mux_sel[2:1]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/weights_s_ready" type="logic">
-         <obj_property name="ElementShortName">weights_s_ready</obj_property>
-         <obj_property name="ObjectShortName">weights_s_ready</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/m_shift_pixels_valid" type="logic">
+         <obj_property name="ElementShortName">m_shift_pixels_valid</obj_property>
+         <obj_property name="ObjectShortName">m_shift_pixels_valid</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/conv_s_ready[0]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[0]</obj_property>
          <obj_property name="ObjectShortName">[0]</obj_property>
+         <obj_property name="label">conv_s_ready[0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/s_weights_ready" type="logic">
+         <obj_property name="ElementShortName">s_weights_ready</obj_property>
+         <obj_property name="ObjectShortName">s_weights_ready</obj_property>
       </wvobject>
    </wvobject>
    <wvobject fp_name="group577" type="group">
@@ -135,9 +132,13 @@
          <obj_property name="ObjectShortName">m_valid</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_conv_engine_tb/m_data" type="array">
-         <obj_property name="ElementShortName">m_data[0:0][15:0]</obj_property>
-         <obj_property name="ObjectShortName">m_data[0:0][15:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
+         <obj_property name="ElementShortName">m_data[0:0][7:0][15:0]</obj_property>
+         <obj_property name="ObjectShortName">m_data[0:0][7:0][15:0]</obj_property>
+         <wvobject fp_name="/axis_conv_engine_tb/m_data[0]" type="array">
+            <obj_property name="ElementShortName">[0][7:0][15:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][7:0][15:0]</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+         </wvobject>
       </wvobject>
       <wvobject fp_name="/axis_conv_engine_tb/m_last" type="logic">
          <obj_property name="ElementShortName">m_last</obj_property>
@@ -155,21 +156,23 @@
    <wvobject fp_name="group548" type="group">
       <obj_property name="label">Pixels In</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/pixels_s_ready" type="logic">
-         <obj_property name="ElementShortName">pixels_s_ready</obj_property>
-         <obj_property name="ObjectShortName">pixels_s_ready</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/s_pixels_ready" type="logic">
+         <obj_property name="ElementShortName">s_pixels_ready</obj_property>
+         <obj_property name="ObjectShortName">s_pixels_ready</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/pixels_s_valid" type="logic">
-         <obj_property name="ElementShortName">pixels_s_valid</obj_property>
-         <obj_property name="ObjectShortName">pixels_s_valid</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/s_pixels_valid" type="logic">
+         <obj_property name="ElementShortName">s_pixels_valid</obj_property>
+         <obj_property name="ObjectShortName">s_pixels_valid</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/pixels_s_data" type="array">
-         <obj_property name="ElementShortName">pixels_s_data[2:0][15:0]</obj_property>
-         <obj_property name="ObjectShortName">pixels_s_data[2:0][15:0]</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/s_pixels_data[0]" type="array">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[0][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[0][15:0]</obj_property>
+         <obj_property name="label">s_pixels_data[0]</obj_property>
       </wvobject>
    </wvobject>
    <wvobject fp_name="group549" type="group">
-      <obj_property name="label">Shift Buffer</obj_property>
+      <obj_property name="label">Pixels Shift Buffer</obj_property>
       <obj_property name="DisplayName">label</obj_property>
       <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/SHIFT_BUFFER/cols_clken" type="logic">
          <obj_property name="ElementShortName">cols_clken</obj_property>
@@ -179,418 +182,444 @@
          <obj_property name="ElementShortName">cols_count[9:0]</obj_property>
          <obj_property name="ObjectShortName">cols_count[9:0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/shift_pixels_m_ready" type="logic">
-         <obj_property name="ElementShortName">shift_pixels_m_ready</obj_property>
-         <obj_property name="ObjectShortName">shift_pixels_m_ready</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/m_shift_pixels_ready" type="logic">
+         <obj_property name="ElementShortName">m_shift_pixels_ready</obj_property>
+         <obj_property name="ObjectShortName">m_shift_pixels_ready</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/shift_pixels_m_valid" type="logic">
-         <obj_property name="ElementShortName">shift_pixels_m_valid</obj_property>
-         <obj_property name="ObjectShortName">shift_pixels_m_valid</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/m_shift_pixels_valid" type="logic">
+         <obj_property name="ElementShortName">m_shift_pixels_valid</obj_property>
+         <obj_property name="ObjectShortName">m_shift_pixels_valid</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/shift_pixels_m_data" type="array">
-         <obj_property name="ElementShortName">shift_pixels_m_data[0:0][15:0]</obj_property>
-         <obj_property name="ObjectShortName">shift_pixels_m_data[0:0][15:0]</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/m_shift_pixels_data[0]" type="array">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[0][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[0][15:0]</obj_property>
+         <obj_property name="label">m_shift_pixels_data[0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/shift_pixels_m_last" type="logic">
-         <obj_property name="ElementShortName">shift_pixels_m_last</obj_property>
-         <obj_property name="ObjectShortName">shift_pixels_m_last</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/m_shift_pixels_last" type="logic">
+         <obj_property name="ElementShortName">m_shift_pixels_last</obj_property>
+         <obj_property name="ObjectShortName">m_shift_pixels_last</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/shift_pixels_m_user" type="array">
-         <obj_property name="ElementShortName">shift_pixels_m_user[3:0]</obj_property>
-         <obj_property name="ObjectShortName">shift_pixels_m_user[3:0]</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/m_shift_pixels_user" type="array">
+         <obj_property name="ElementShortName">m_shift_pixels_user[3:0]</obj_property>
+         <obj_property name="ObjectShortName">m_shift_pixels_user[3:0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/shift_pixels_m_user[3]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/m_shift_pixels_user[3]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[3]</obj_property>
          <obj_property name="ObjectShortName">[3]</obj_property>
-         <obj_property name="label">shift_pixels_m_user[3]</obj_property>
-         <obj_property name="CustomSignalColor">#00FF7F</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
+         <obj_property name="label">m_shift_pixels_user[3]</obj_property>
       </wvobject>
    </wvobject>
    <wvobject fp_name="group1054" type="group">
       <obj_property name="label">Datapath[2]</obj_property>
       <obj_property name="DisplayName">label</obj_property>
       <obj_property name="isExpanded"></obj_property>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/weights_s_valid" type="logic">
-         <obj_property name="ElementShortName">weights_s_valid</obj_property>
-         <obj_property name="ObjectShortName">weights_s_valid</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/s_weights_valid" type="logic">
+         <obj_property name="ElementShortName">s_weights_valid</obj_property>
+         <obj_property name="ObjectShortName">s_weights_valid</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/weights_s_ready" type="logic">
-         <obj_property name="ElementShortName">weights_s_ready</obj_property>
-         <obj_property name="ObjectShortName">weights_s_ready</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/s_weights_ready" type="logic">
+         <obj_property name="ElementShortName">s_weights_ready</obj_property>
+         <obj_property name="ObjectShortName">s_weights_ready</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/weights_s_data[2]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/s_weights_data[0][2]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[2][15:0]</obj_property>
          <obj_property name="ObjectShortName">[2][15:0]</obj_property>
-         <obj_property name="label">weights_s_data[2]</obj_property>
+         <obj_property name="label">s_weights_data[0][2]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_valid_weights[2]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /m_step_weights_valid[2]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[2]</obj_property>
          <obj_property name="ObjectShortName">[2]</obj_property>
-         <obj_property name="CustomSignalColor">#00FF00</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-         <obj_property name="label">buffer_m_valid_weights[2]</obj_property>
+         <obj_property name="label">m_step_weights_valid[2]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_data_weights[2]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /m_step_weights_data[2]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[2][15:0]</obj_property>
          <obj_property name="ObjectShortName">[2][15:0]</obj_property>
-         <obj_property name="CustomSignalColor">#00FF00</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-         <obj_property name="label">buffer_m_data_weights[2]</obj_property>
+         <obj_property name="label">m_step_weights_data[2]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_valid_pixels[2]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /s_step_pixels_valid[2]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[2]</obj_property>
          <obj_property name="ObjectShortName">[2]</obj_property>
-         <obj_property name="CustomSignalColor">#00FF00</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-         <obj_property name="label">buffer_m_valid_pixels[2]</obj_property>
+         <obj_property name="label">s_step_pixels_valid[2]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_data_pixels[2]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /s_step_pixels_data[0][2]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[2][15:0]</obj_property>
          <obj_property name="ObjectShortName">[2][15:0]</obj_property>
-         <obj_property name="CustomSignalColor">#00FF00</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-         <obj_property name="label">buffer_m_data_pixels[2]</obj_property>
+         <obj_property name="label">s_step_pixels_data[2]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mul_m_valid[2]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /s_step_pixels_last[2]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[2]</obj_property>
+         <obj_property name="ObjectShortName">[2]</obj_property>
+         <obj_property name="label">s_step_pixels_last[2]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /mul_m_valid[2]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[2]</obj_property>
          <obj_property name="ObjectShortName">[2]</obj_property>
          <obj_property name="label">mul_m_valid[2]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mul_m_data[2]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /mul_m_data[2]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[2][15:0]</obj_property>
          <obj_property name="ObjectShortName">[2][15:0]</obj_property>
          <obj_property name="label">mul_m_data[2]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mul_m_last[2]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /mul_m_last[2]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[2]</obj_property>
          <obj_property name="ObjectShortName">[2]</obj_property>
          <obj_property name="label">mul_m_last[2]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /\sel_regs_gen[2].sel_registers /clock_enable" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /\sel_regs_gen[2].update_switch " type="logic">
          <obj_property name="DisplayName">label</obj_property>
-         <obj_property name="ElementShortName">clock_enable</obj_property>
-         <obj_property name="ObjectShortName">clock_enable</obj_property>
+         <obj_property name="ElementShortName">\sel_regs_gen[2].update_switch </obj_property>
+         <obj_property name="ObjectShortName">\sel_regs_gen[2].update_switch </obj_property>
          <obj_property name="label">update_switch[2]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /\sel_regs_gen[2].sel_registers /data_in" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /\sel_regs_gen[2].sel_registers /data_in" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">data_in[0:0]</obj_property>
          <obj_property name="ObjectShortName">data_in[0:0]</obj_property>
          <obj_property name="label">sel_in[2]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mux_sel[2]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /mux_sel[2]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[2]</obj_property>
          <obj_property name="ObjectShortName">[2]</obj_property>
          <obj_property name="label">mux_sel[2]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_s_valid[2]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_s_valid[2]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[2]</obj_property>
          <obj_property name="ObjectShortName">[2]</obj_property>
          <obj_property name="label">acc_s_valid[2]</obj_property>
-         <obj_property name="CustomSignalColor">#FFFF00</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_s_data[2]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_s_data[2]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[2][15:0]</obj_property>
          <obj_property name="ObjectShortName">[2][15:0]</obj_property>
          <obj_property name="label">acc_s_data[2]</obj_property>
-         <obj_property name="CustomSignalColor">#FFFF00</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_s_last[2]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_s_last[2]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[2]</obj_property>
          <obj_property name="ObjectShortName">[2]</obj_property>
          <obj_property name="label">acc_s_last[2]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_valid[2]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_valid[2]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[2]</obj_property>
          <obj_property name="ObjectShortName">[2]</obj_property>
          <obj_property name="label">acc_m_valid[2]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_data[2]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_data[2]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[2][15:0]</obj_property>
          <obj_property name="ObjectShortName">[2][15:0]</obj_property>
          <obj_property name="label">acc_m_data[2]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_valid_last[2]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_valid_last[2]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[2]</obj_property>
          <obj_property name="ObjectShortName">[2]</obj_property>
          <obj_property name="label">acc_m_valid_last[2]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_valid_last_masked[2]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_valid_last_masked[2]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[2]</obj_property>
          <obj_property name="ObjectShortName">[2]</obj_property>
          <obj_property name="label">acc_m_valid_last_masked[2]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /shift_sel[2]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[2]</obj_property>
+         <obj_property name="ObjectShortName">[2]</obj_property>
+         <obj_property name="label">shift_sel[2]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /shift_out_valid[2]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[2]</obj_property>
+         <obj_property name="ObjectShortName">[2]</obj_property>
+         <obj_property name="label">shift_out_valid[2]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /shift_out_data[2]" type="array">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[2][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[2][15:0]</obj_property>
+         <obj_property name="label">shift_out_data[2]</obj_property>
       </wvobject>
    </wvobject>
    <wvobject fp_name="group1055" type="group">
       <obj_property name="label">Datapath[1]</obj_property>
       <obj_property name="DisplayName">label</obj_property>
       <obj_property name="isExpanded"></obj_property>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/weights_s_valid" type="logic">
-         <obj_property name="ElementShortName">weights_s_valid</obj_property>
-         <obj_property name="ObjectShortName">weights_s_valid</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/s_weights_valid" type="logic">
+         <obj_property name="ElementShortName">s_weights_valid</obj_property>
+         <obj_property name="ObjectShortName">s_weights_valid</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/weights_s_ready" type="logic">
-         <obj_property name="ElementShortName">weights_s_ready</obj_property>
-         <obj_property name="ObjectShortName">weights_s_ready</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/s_weights_ready" type="logic">
+         <obj_property name="ElementShortName">s_weights_ready</obj_property>
+         <obj_property name="ObjectShortName">s_weights_ready</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/weights_s_data[1]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/s_weights_data[0][1]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[1][15:0]</obj_property>
          <obj_property name="ObjectShortName">[1][15:0]</obj_property>
-         <obj_property name="label">weights_s_data[1]</obj_property>
+         <obj_property name="label">s_weights_data[0][1]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_valid_weights[1]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /m_step_weights_valid[1]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[1]</obj_property>
          <obj_property name="ObjectShortName">[1]</obj_property>
-         <obj_property name="CustomSignalColor">#00FF00</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-         <obj_property name="label">buffer_m_valid_weights[1]</obj_property>
+         <obj_property name="label">m_step_weights_valid[1]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_data_weights[1]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /m_step_weights_data[1]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[1][15:0]</obj_property>
          <obj_property name="ObjectShortName">[1][15:0]</obj_property>
-         <obj_property name="CustomSignalColor">#00FF00</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-         <obj_property name="label">buffer_m_data_weights[1]</obj_property>
+         <obj_property name="label">m_step_weights_data[1]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_valid_pixels[1]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /s_step_pixels_valid[1]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[1]</obj_property>
          <obj_property name="ObjectShortName">[1]</obj_property>
-         <obj_property name="CustomSignalColor">#00FF00</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-         <obj_property name="label">buffer_m_valid_pixels[1]</obj_property>
+         <obj_property name="label">s_step_pixels_valid[1]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_data_pixels[1]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /s_step_pixels_data[0][1]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[1][15:0]</obj_property>
          <obj_property name="ObjectShortName">[1][15:0]</obj_property>
-         <obj_property name="CustomSignalColor">#00FF00</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-         <obj_property name="label">buffer_m_data_pixels[1]</obj_property>
+         <obj_property name="label">s_step_pixels_data[1]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mul_m_valid[1]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /s_step_pixels_last[1]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[1]</obj_property>
+         <obj_property name="ObjectShortName">[1]</obj_property>
+         <obj_property name="label">s_step_pixels_last[1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /mul_m_valid[1]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[1]</obj_property>
          <obj_property name="ObjectShortName">[1]</obj_property>
          <obj_property name="label">mul_m_valid[1]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mul_m_data[1]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /mul_m_data[1]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[1][15:0]</obj_property>
          <obj_property name="ObjectShortName">[1][15:0]</obj_property>
          <obj_property name="label">mul_m_data[1]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mul_m_last[1]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /mul_m_last[1]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[1]</obj_property>
          <obj_property name="ObjectShortName">[1]</obj_property>
          <obj_property name="label">mul_m_last[1]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /\sel_regs_gen[1].sel_registers /clock_enable" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /\sel_regs_gen[1].update_switch " type="logic">
          <obj_property name="DisplayName">label</obj_property>
-         <obj_property name="ElementShortName">clock_enable</obj_property>
-         <obj_property name="ObjectShortName">clock_enable</obj_property>
+         <obj_property name="ElementShortName">\sel_regs_gen[1].update_switch </obj_property>
+         <obj_property name="ObjectShortName">\sel_regs_gen[1].update_switch </obj_property>
          <obj_property name="label">update_switch[1]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /\sel_regs_gen[1].sel_registers /data_in" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /\sel_regs_gen[1].sel_registers /data_in" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">data_in[0:0]</obj_property>
          <obj_property name="ObjectShortName">data_in[0:0]</obj_property>
          <obj_property name="label">sel_in[1]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mux_sel[1]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /mux_sel[1]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[1]</obj_property>
          <obj_property name="ObjectShortName">[1]</obj_property>
          <obj_property name="label">mux_sel[1]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_s_valid[1]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_s_valid[1]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[1]</obj_property>
          <obj_property name="ObjectShortName">[1]</obj_property>
          <obj_property name="label">acc_s_valid[1]</obj_property>
-         <obj_property name="CustomSignalColor">#00FFFF</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_s_data[1]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_s_data[1]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[1][15:0]</obj_property>
          <obj_property name="ObjectShortName">[1][15:0]</obj_property>
          <obj_property name="label">acc_s_data[1]</obj_property>
-         <obj_property name="CustomSignalColor">#00FFFF</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_s_last[1]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_s_last[1]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[1]</obj_property>
          <obj_property name="ObjectShortName">[1]</obj_property>
          <obj_property name="label">acc_s_last[1]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_valid[1]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_valid[1]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[1]</obj_property>
          <obj_property name="ObjectShortName">[1]</obj_property>
          <obj_property name="label">acc_m_valid[1]</obj_property>
-         <obj_property name="CustomSignalColor">#FFFF00</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_data[1]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_data[1]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[1][15:0]</obj_property>
          <obj_property name="ObjectShortName">[1][15:0]</obj_property>
          <obj_property name="label">acc_m_data[1]</obj_property>
-         <obj_property name="CustomSignalColor">#FFFF00</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_valid_last[1]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_valid_last[1]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[1]</obj_property>
          <obj_property name="ObjectShortName">[1]</obj_property>
          <obj_property name="label">acc_m_valid_last[1]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_valid_last_masked[1]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_valid_last_masked[1]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[1]</obj_property>
          <obj_property name="ObjectShortName">[1]</obj_property>
          <obj_property name="label">acc_m_valid_last_masked[1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /shift_sel[1]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[1]</obj_property>
+         <obj_property name="ObjectShortName">[1]</obj_property>
+         <obj_property name="label">shift_sel[1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /shift_out_valid[1]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[1]</obj_property>
+         <obj_property name="ObjectShortName">[1]</obj_property>
+         <obj_property name="label">shift_out_valid[1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /shift_out_data[1]" type="array">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[1][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[1][15:0]</obj_property>
+         <obj_property name="label">shift_out_data[1]</obj_property>
       </wvobject>
    </wvobject>
    <wvobject fp_name="group1056" type="group">
       <obj_property name="label">Datapath[0]</obj_property>
       <obj_property name="DisplayName">label</obj_property>
       <obj_property name="isExpanded"></obj_property>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/weights_s_valid" type="logic">
-         <obj_property name="ElementShortName">weights_s_valid</obj_property>
-         <obj_property name="ObjectShortName">weights_s_valid</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/s_weights_valid" type="logic">
+         <obj_property name="ElementShortName">s_weights_valid</obj_property>
+         <obj_property name="ObjectShortName">s_weights_valid</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/weights_s_ready" type="logic">
-         <obj_property name="ElementShortName">weights_s_ready</obj_property>
-         <obj_property name="ObjectShortName">weights_s_ready</obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/s_weights_ready" type="logic">
+         <obj_property name="ElementShortName">s_weights_ready</obj_property>
+         <obj_property name="ObjectShortName">s_weights_ready</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/weights_s_data[0]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/s_weights_data[0][0]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[0][15:0]</obj_property>
          <obj_property name="ObjectShortName">[0][15:0]</obj_property>
-         <obj_property name="label">weights_s_data[0]</obj_property>
+         <obj_property name="label">s_weights_data[0][0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_valid_weights[0]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /m_step_weights_valid[0]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[0]</obj_property>
          <obj_property name="ObjectShortName">[0]</obj_property>
-         <obj_property name="CustomSignalColor">#00FF00</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-         <obj_property name="label">buffer_m_valid_weights[0]</obj_property>
+         <obj_property name="label">m_step_weights_valid[0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_data_weights[0]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /m_step_weights_data[0]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[0][15:0]</obj_property>
          <obj_property name="ObjectShortName">[0][15:0]</obj_property>
-         <obj_property name="CustomSignalColor">#00FF00</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-         <obj_property name="label">buffer_m_data_weights[0]</obj_property>
+         <obj_property name="label">m_step_weights_data[0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_valid_pixels[0]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /s_step_pixels_valid[0]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[0]</obj_property>
          <obj_property name="ObjectShortName">[0]</obj_property>
-         <obj_property name="CustomSignalColor">#00FF00</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-         <obj_property name="label">buffer_m_valid_pixels[0]</obj_property>
+         <obj_property name="label">s_step_pixels_valid[0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_data_pixels[0]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /s_step_pixels_data[0][0]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[0][15:0]</obj_property>
          <obj_property name="ObjectShortName">[0][15:0]</obj_property>
-         <obj_property name="CustomSignalColor">#00FF00</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
-         <obj_property name="label">buffer_m_data_pixels[0]</obj_property>
+         <obj_property name="label">s_step_pixels_data[0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mul_m_valid[0]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /s_step_pixels_last[0]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[0]</obj_property>
+         <obj_property name="ObjectShortName">[0]</obj_property>
+         <obj_property name="label">s_step_pixels_last[0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /mul_m_valid[0]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[0]</obj_property>
          <obj_property name="ObjectShortName">[0]</obj_property>
          <obj_property name="label">mul_m_valid[0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mul_m_data[0]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /mul_m_data[0]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[0][15:0]</obj_property>
          <obj_property name="ObjectShortName">[0][15:0]</obj_property>
          <obj_property name="label">mul_m_data[0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mul_m_last[0]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /mul_m_last[0]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[0]</obj_property>
          <obj_property name="ObjectShortName">[0]</obj_property>
          <obj_property name="label">mul_m_last[0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_s_valid[0]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_s_valid[0]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[0]</obj_property>
          <obj_property name="ObjectShortName">[0]</obj_property>
          <obj_property name="label">acc_s_valid[0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_s_data[0]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_s_data[0]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[0][15:0]</obj_property>
          <obj_property name="ObjectShortName">[0][15:0]</obj_property>
          <obj_property name="label">acc_s_data[0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_s_last[0]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_s_last[0]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[0]</obj_property>
          <obj_property name="ObjectShortName">[0]</obj_property>
          <obj_property name="label">acc_s_last[0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_valid[0]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_valid[0]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[0]</obj_property>
          <obj_property name="ObjectShortName">[0]</obj_property>
          <obj_property name="label">acc_m_valid[0]</obj_property>
-         <obj_property name="CustomSignalColor">#00FFFF</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_data[0]" type="array">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_data[0]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[0][15:0]</obj_property>
          <obj_property name="ObjectShortName">[0][15:0]</obj_property>
          <obj_property name="label">acc_m_data[0]</obj_property>
-         <obj_property name="CustomSignalColor">#00FFFF</obj_property>
-         <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_valid_last[0]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_valid_last[0]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[0]</obj_property>
          <obj_property name="ObjectShortName">[0]</obj_property>
          <obj_property name="label">acc_m_valid_last[0]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_valid_last_masked[0]" type="logic">
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_valid_last_masked[0]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[0]</obj_property>
          <obj_property name="ObjectShortName">[0]</obj_property>
          <obj_property name="label">acc_m_valid_last_masked[0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /shift_out_valid[0]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[0]</obj_property>
+         <obj_property name="ObjectShortName">[0]</obj_property>
+         <obj_property name="label">shift_out_valid[0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /shift_out_data[0]" type="array">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[0][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[0][15:0]</obj_property>
+         <obj_property name="label">shift_out_data[0]</obj_property>
       </wvobject>
    </wvobject>
    <wvobject type="divider" fp_name="divider1910">
@@ -600,211 +629,38 @@
    <wvobject fp_name="group552" type="group">
       <obj_property name="label">Weights In</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/weights_s_ready" type="logic">
-         <obj_property name="ElementShortName">weights_s_ready</obj_property>
-         <obj_property name="ObjectShortName">weights_s_ready</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/weights_s_valid" type="logic">
-         <obj_property name="ElementShortName">weights_s_valid</obj_property>
-         <obj_property name="ObjectShortName">weights_s_valid</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/weights_s_data" type="array">
-         <obj_property name="ElementShortName">weights_s_data[2:0][15:0]</obj_property>
-         <obj_property name="ObjectShortName">weights_s_data[2:0][15:0]</obj_property>
-      </wvobject>
    </wvobject>
    <wvobject fp_name="group553" type="group">
       <obj_property name="label">Step Buffer [0] Out</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_valid_pixels" type="array">
-         <obj_property name="ElementShortName">buffer_m_valid_pixels[2:0]</obj_property>
-         <obj_property name="ObjectShortName">buffer_m_valid_pixels[2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_data_pixels" type="array">
-         <obj_property name="ElementShortName">buffer_m_data_pixels[2:0][15:0]</obj_property>
-         <obj_property name="ObjectShortName">buffer_m_data_pixels[2:0][15:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_last_pixels" type="array">
-         <obj_property name="ElementShortName">buffer_m_last_pixels[2:0]</obj_property>
-         <obj_property name="ObjectShortName">buffer_m_last_pixels[2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_user_pixels" type="array">
-         <obj_property name="ElementShortName">buffer_m_user_pixels[2:0][3:0]</obj_property>
-         <obj_property name="ObjectShortName">buffer_m_user_pixels[2:0][3:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_valid_weights" type="array">
-         <obj_property name="ElementShortName">buffer_m_valid_weights[2:0]</obj_property>
-         <obj_property name="ObjectShortName">buffer_m_valid_weights[2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /buffer_m_data_weights" type="array">
-         <obj_property name="ElementShortName">buffer_m_data_weights[2:0][15:0]</obj_property>
-         <obj_property name="ObjectShortName">buffer_m_data_weights[2:0][15:0]</obj_property>
-      </wvobject>
    </wvobject>
    <wvobject fp_name="group554" type="group">
       <obj_property name="label">Mul_m</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /clken_mul" type="logic">
-         <obj_property name="ElementShortName">clken_mul</obj_property>
-         <obj_property name="ObjectShortName">clken_mul</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mul_m_valid" type="array">
-         <obj_property name="ElementShortName">mul_m_valid[2:0]</obj_property>
-         <obj_property name="ObjectShortName">mul_m_valid[2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mul_m_data" type="array">
-         <obj_property name="ElementShortName">mul_m_data[2:0][15:0]</obj_property>
-         <obj_property name="ObjectShortName">mul_m_data[2:0][15:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mul_m_last" type="array">
-         <obj_property name="ElementShortName">mul_m_last[2:0]</obj_property>
-         <obj_property name="ObjectShortName">mul_m_last[2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mul_m_user" type="array">
-         <obj_property name="ElementShortName">mul_m_user[2:0][3:0]</obj_property>
-         <obj_property name="ObjectShortName">mul_m_user[2:0][3:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-      </wvobject>
    </wvobject>
    <wvobject fp_name="group567" type="group">
       <obj_property name="label">Mux</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mux_sel" type="array">
-         <obj_property name="ElementShortName">mux_sel[2:1]</obj_property>
-         <obj_property name="ObjectShortName">mux_sel[2:1]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mux_sel_none" type="logic">
-         <obj_property name="ElementShortName">mux_sel_none</obj_property>
-         <obj_property name="ObjectShortName">mux_sel_none</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mux_m_valid" type="array">
-         <obj_property name="ElementShortName">mux_m_valid[2:1]</obj_property>
-         <obj_property name="ObjectShortName">mux_m_valid[2:1]</obj_property>
-      </wvobject>
    </wvobject>
    <wvobject fp_name="group555" type="group">
       <obj_property name="label">Acc_s</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /clken_acc" type="array">
-         <obj_property name="ElementShortName">clken_acc[2:0]</obj_property>
-         <obj_property name="ObjectShortName">clken_acc[2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_s_valid" type="array">
-         <obj_property name="ElementShortName">acc_s_valid[2:0]</obj_property>
-         <obj_property name="ObjectShortName">acc_s_valid[2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_s_data" type="array">
-         <obj_property name="ElementShortName">acc_s_data[2:0][15:0]</obj_property>
-         <obj_property name="ObjectShortName">acc_s_data[2:0][15:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_s_last" type="array">
-         <obj_property name="ElementShortName">acc_s_last[2:0]</obj_property>
-         <obj_property name="ObjectShortName">acc_s_last[2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_s_user" type="array">
-         <obj_property name="ElementShortName">acc_s_user[2:0][3:0]</obj_property>
-         <obj_property name="ObjectShortName">acc_s_user[2:0][3:0]</obj_property>
-      </wvobject>
    </wvobject>
    <wvobject fp_name="group556" type="group">
       <obj_property name="label">Acc_m</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_valid" type="array">
-         <obj_property name="ElementShortName">acc_m_valid[2:0]</obj_property>
-         <obj_property name="ObjectShortName">acc_m_valid[2:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_data" type="array">
-         <obj_property name="ElementShortName">acc_m_data[2:0][15:0]</obj_property>
-         <obj_property name="ObjectShortName">acc_m_data[2:0][15:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_last" type="array">
-         <obj_property name="ElementShortName">acc_m_last[2:0]</obj_property>
-         <obj_property name="ObjectShortName">acc_m_last[2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_valid_last" type="array">
-         <obj_property name="ElementShortName">acc_m_valid_last[2:0]</obj_property>
-         <obj_property name="ObjectShortName">acc_m_valid_last[2:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_valid_last_masked" type="array">
-         <obj_property name="ElementShortName">acc_m_valid_last_masked[2:0]</obj_property>
-         <obj_property name="ObjectShortName">acc_m_valid_last_masked[2:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /acc_m_user" type="array">
-         <obj_property name="ElementShortName">acc_m_user[2:0][3:0]</obj_property>
-         <obj_property name="ObjectShortName">acc_m_user[2:0][3:0]</obj_property>
-      </wvobject>
    </wvobject>
    <wvobject fp_name="group557" type="group">
       <obj_property name="label">Pad Filter</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /pad_filter_dut/reg_clken" type="array">
-         <obj_property name="ElementShortName">reg_clken[2:0]</obj_property>
-         <obj_property name="ObjectShortName">reg_clken[2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /pad_filter_dut/col_end" type="array">
-         <obj_property name="ElementShortName">col_end[2:0][1:1]</obj_property>
-         <obj_property name="ObjectShortName">col_end[2:0][1:1]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /pad_filter_dut/col_start" type="array">
-         <obj_property name="ElementShortName">col_start[2:0][1:1]</obj_property>
-         <obj_property name="ObjectShortName">col_start[2:0][1:1]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mask_partial" type="array">
-         <obj_property name="ElementShortName">mask_partial[2:1]</obj_property>
-         <obj_property name="ObjectShortName">mask_partial[2:1]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /mask_full" type="array">
-         <obj_property name="ElementShortName">mask_full[2:0]</obj_property>
-         <obj_property name="ObjectShortName">mask_full[2:0]</obj_property>
-      </wvobject>
    </wvobject>
    <wvobject fp_name="group558" type="group">
       <obj_property name="label">Shift</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /shift_out_valid" type="array">
-         <obj_property name="ElementShortName">shift_out_valid[2:0]</obj_property>
-         <obj_property name="ObjectShortName">shift_out_valid[2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /shift_out_data" type="array">
-         <obj_property name="ElementShortName">shift_out_data[2:0][15:0]</obj_property>
-         <obj_property name="ObjectShortName">shift_out_data[2:0][15:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /shift_out_last" type="array">
-         <obj_property name="ElementShortName">shift_out_last[2:0]</obj_property>
-         <obj_property name="ObjectShortName">shift_out_last[2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /shift_out_user" type="array">
-         <obj_property name="ElementShortName">shift_out_user[2:0][3:0]</obj_property>
-         <obj_property name="ObjectShortName">shift_out_user[2:0][3:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-      </wvobject>
    </wvobject>
    <wvobject fp_name="group559" type="group">
       <obj_property name="label">Master</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /m_valid" type="logic">
-         <obj_property name="ElementShortName">m_valid</obj_property>
-         <obj_property name="ObjectShortName">m_valid</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /m_data" type="array">
-         <obj_property name="ElementShortName">m_data[15:0]</obj_property>
-         <obj_property name="ObjectShortName">m_data[15:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /m_last" type="logic">
-         <obj_property name="ElementShortName">m_last</obj_property>
-         <obj_property name="ObjectShortName">m_last</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\conv_unit_gen[0].CONV_UNIT /m_user" type="array">
-         <obj_property name="ElementShortName">m_user[3:0]</obj_property>
-         <obj_property name="ObjectShortName">m_user[3:0]</obj_property>
-      </wvobject>
    </wvobject>
    <wvobject type="divider" fp_name="divider560">
       <obj_property name="label">Other</obj_property>

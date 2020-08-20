@@ -118,7 +118,7 @@ module step_buffer  #(
     genvar i;
     generate
 
-        // DELAYS for i > 0:    i*(ACCUMULATOR_DELAY-1)-(i-1)-1 = i*(ACCUMULATOR_DELAY-2)
+        // DELAYS for i > 0:    i*(ACCUMULATOR_DELAY-1)-(i-1)  = i*(ACCUMULATOR_DELAY-2) + 1
 
         for (i=1 ;  i < STEPS;  i = i+1) begin : delays_gen
             
