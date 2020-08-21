@@ -147,44 +147,16 @@ module step_buffer  #(
 
         for (i=1 ;  i < STEPS;  i = i+1) begin : hold_muxes_gen
 
-            assign hold_s_valid [i] = delay_m_valid [i];
-            assign hold_s_data  [i] = delay_m_data  [i];
-            assign hold_s_last  [i] = delay_m_last  [i];
-            assign hold_s_user  [i] = delay_m_user  [i];
+            assign m_valid [i] = delay_m_valid [i];
+            assign m_data  [i] = delay_m_data  [i];
+            assign m_last  [i] = delay_m_last  [i];
+            assign m_user  [i] = delay_m_user  [i];
         end
 
-        // Hold reg slave [0]
-
-        assign hold_s_valid [0] = s_valid [0];
-        assign hold_s_data  [0] = s_data  [0];
-        assign hold_s_last  [0] = s_last  [0];
-        assign hold_s_user  [0] = s_user  [0];
-
-        // Hold regs for i >= 0
-
-        for (i=0 ;  i < STEPS;  i = i+1) begin : hold_regs_gen
-
-            n_delay_stream #(
-                .N              (1),
-                .DATA_WIDTH     (DATA_WIDTH),
-                .TUSER_WIDTH    (TUSER_WIDTH)
-            )
-            n_delay_stream_unit
-            (
-                .aclk           (aclk),
-                .aclken         (aclken),
-                .aresetn        (aresetn),
-                .valid_in       (hold_s_valid   [i]),
-                .data_in        (hold_s_data    [i]),
-                .last_in        (hold_s_last    [i]),
-                .user_in        (hold_s_user    [i]),
-                .valid_out      (m_valid        [i]),
-                .data_out       (m_data         [i]),
-                .last_out       (m_last         [i]),
-                .user_out       (m_user         [i])
-            );
-
-        end
+        assign m_valid [0] = s_valid [0];
+        assign m_data  [0] = s_data  [0];
+        assign m_last  [0] = s_last  [0];
+        assign m_user  [0] = s_user  [0];
 
     endgenerate
 
