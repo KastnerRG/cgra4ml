@@ -9,6 +9,14 @@ Description: * Output is not AXIS yet
              * Multiple cores
 
              * Find condition for output shift registers to work safely
+             
+             * Limitations
+                    - Freezes if not: 3 CIN + 1 > 2(A-1)-1; CIN_min = 12 for A = 19
+                    - Output order is messed up for 1x1 if CIN > (kw-1)*(A-1)-2
+                    - Output order of last kw/2 cols of 3x3 is reversed
+                    - When 1x1 and CIN = 1
+                        - Identity operation. Expected input = output
+                        - Alternating values will be lost due to masking of valid_last
 
 Dependencies: 
 

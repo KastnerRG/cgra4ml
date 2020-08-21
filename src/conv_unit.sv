@@ -22,9 +22,12 @@ Description:    * Fully pipelined
                 * muxes are indexed 1,2...(kw-1) to match rest of indexing
 
                 * Limitations
+                    - Freezes if not: 3 CIN + 1 > 2(A-1)-1; CIN_min = 12 for A = 19
                     - Output order is messed up for 1x1 if CIN > (kw-1)*(A-1)-2
                     - Output order of last kw/2 cols of 3x3 is reversed
-                    - 3x3: CIN >= 6 for delays to sync up without error
+                    - When 1x1 and CIN = 1
+                        - Identity operation. Expected input = output
+                        - Alternating values will be lost due to masking of valid_last
 
 Dependencies: * Floating point IP
                     - name : floating_point_multiplier
@@ -244,7 +247,6 @@ module conv_unit # (
         for (i=0; i < KERNEL_W_MAX; i++) begin : accumulators_gen
 
             assign acc_m_valid_last         [i] = acc_m_valid [i] & acc_m_last [i];
-            assign acc_m_valid_last_masked  [i] = acc_m_valid_last[i] & mask_full[i];
 
             if (IS_FIXED_POINT) begin         
                 fixed_point_accumulator_wrapper #(
@@ -464,6 +466,39 @@ module conv_unit # (
     wire   [TUSER_WIDTH - 1: 0] shift_out_user         [KERNEL_W_MAX - 1 : 0];
 
     generate
+        /*
+            MASKED VALID LAST
+                - Full mask from pad filter is applied
+                - Delayed by one clock, ANDed with not
+                    - To ensure this stays HIGH only for one clock
+                    - Else, when acc_m_valid_last_masked stays high for two clocks 
+                        (when acc[1] waits to get accepted into acc[2]),
+                        m_valid stays high for two clocks and same data is read twice.
+                    - Valid data never comes consecutively in any acc:
+                        - in any NxN, shift_buffer delays data by N, so valids are N*CIN clocks apart
+                        - In 1x1, when CIN > 1, valids are CIN clocks apart
+                        - If 1x1 and CIN = 1, it is not convolution - it is identity operation
+                            - This will fail there
+        */
+        for (i=0; i < KERNEL_W_MAX  ; i++) begin : valid_masked_gen
+            wire acc_m_valid_last_masked_delayed;
+
+            assign acc_m_valid_last_masked  [i] = acc_m_valid_last[i] & mask_full[i] & !acc_m_valid_last_masked_delayed;
+
+            register #(
+                .WORD_WIDTH     (1),
+                .RESET_VALUE    (0)
+            )
+            sel_registers
+            (
+                .clock          (aclk),
+                .clock_enable   (aclken),
+                .resetn         (aresetn),
+                .data_in        (acc_m_valid_last_masked  [i]   ),
+                .data_out       (acc_m_valid_last_masked_delayed)
+            );
+        end
+
         for (i=0; i < KERNEL_W_MAX-1; i++) begin : shift_sel_gen
 
             assign shift_sel      [i] = shift_out_valid  [i+1];
