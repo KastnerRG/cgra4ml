@@ -11,13 +11,13 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="90350000fs"></ZoomStartTime>
-      <ZoomEndTime time="104700001fs"></ZoomEndTime>
-      <Cursor1Time time="100350000fs"></Cursor1Time>
+      <ZoomStartTime time="10021220000fs"></ZoomStartTime>
+      <ZoomEndTime time="15841220001fs"></ZoomEndTime>
+      <Cursor1Time time="20904500000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="258"></NameColumnWidth>
-      <ValueColumnWidth column_width="66"></ValueColumnWidth>
+      <ValueColumnWidth column_width="62"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="27" />
    <wvobject fp_name="/axis_conv_engine_tb/aclk" type="logic">
@@ -236,12 +236,6 @@
          <obj_property name="ObjectShortName">[2][15:0]</obj_property>
          <obj_property name="label">m_step_weights_data[2]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /s_step_pixels_valid[2]" type="logic">
-         <obj_property name="DisplayName">label</obj_property>
-         <obj_property name="ElementShortName">[2]</obj_property>
-         <obj_property name="ObjectShortName">[2]</obj_property>
-         <obj_property name="label">s_step_pixels_valid[2]</obj_property>
-      </wvobject>
       <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /s_step_pixels_data[0][2]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[2][15:0]</obj_property>
@@ -380,12 +374,6 @@
          <obj_property name="ObjectShortName">[1][15:0]</obj_property>
          <obj_property name="label">m_step_weights_data[1]</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /s_step_pixels_valid[1]" type="logic">
-         <obj_property name="DisplayName">label</obj_property>
-         <obj_property name="ElementShortName">[1]</obj_property>
-         <obj_property name="ObjectShortName">[1]</obj_property>
-         <obj_property name="label">s_step_pixels_valid[1]</obj_property>
-      </wvobject>
       <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /s_step_pixels_data[0][1]" type="array">
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="ElementShortName">[1][15:0]</obj_property>
@@ -397,10 +385,6 @@
          <obj_property name="ElementShortName">[1]</obj_property>
          <obj_property name="ObjectShortName">[1]</obj_property>
          <obj_property name="label">s_step_pixels_last[1]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /s_step_pixels_valid" type="array">
-         <obj_property name="ElementShortName">s_step_pixels_valid[2:0]</obj_property>
-         <obj_property name="ObjectShortName">s_step_pixels_valid[2:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /mul_m_valid[1]" type="logic">
          <obj_property name="DisplayName">label</obj_property>
@@ -537,12 +521,6 @@
          <obj_property name="ElementShortName">[0][15:0]</obj_property>
          <obj_property name="ObjectShortName">[0][15:0]</obj_property>
          <obj_property name="label">m_step_weights_data[0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /s_step_pixels_valid[0]" type="logic">
-         <obj_property name="DisplayName">label</obj_property>
-         <obj_property name="ElementShortName">[0]</obj_property>
-         <obj_property name="ObjectShortName">[0]</obj_property>
-         <obj_property name="label">s_step_pixels_valid[0]</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /s_step_pixels_data[0][0]" type="array">
          <obj_property name="DisplayName">label</obj_property>
@@ -763,46 +741,6 @@
          <obj_property name="ElementShortName">clken_mul</obj_property>
          <obj_property name="ObjectShortName">clken_mul</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /\multipliers_gen[1].genblk1.fixed_point_multiplier /valid_in_1" type="logic">
-         <obj_property name="ElementShortName">valid_in_1</obj_property>
-         <obj_property name="ObjectShortName">valid_in_1</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /\multipliers_gen[1].genblk1.fixed_point_multiplier /valid_in_2" type="logic">
-         <obj_property name="ElementShortName">valid_in_2</obj_property>
-         <obj_property name="ObjectShortName">valid_in_2</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /\multipliers_gen[1].genblk1.fixed_point_multiplier /valid_out" type="logic">
-         <obj_property name="ElementShortName">valid_out</obj_property>
-         <obj_property name="ObjectShortName">valid_out</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /\multipliers_gen[1].genblk1.fixed_point_multiplier /data_in_1" type="array">
-         <obj_property name="ElementShortName">data_in_1[15:0]</obj_property>
-         <obj_property name="ObjectShortName">data_in_1[15:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /\multipliers_gen[1].genblk1.fixed_point_multiplier /valid_in_1" type="logic">
-         <obj_property name="ElementShortName">valid_in_1</obj_property>
-         <obj_property name="ObjectShortName">valid_in_1</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /\multipliers_gen[1].genblk1.fixed_point_multiplier /last_in_1" type="logic">
-         <obj_property name="ElementShortName">last_in_1</obj_property>
-         <obj_property name="ObjectShortName">last_in_1</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /\multipliers_gen[1].genblk1.fixed_point_multiplier /user_in_1" type="array">
-         <obj_property name="ElementShortName">user_in_1[3:0]</obj_property>
-         <obj_property name="ObjectShortName">user_in_1[3:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /\multipliers_gen[1].genblk1.fixed_point_multiplier /data_in_2" type="array">
-         <obj_property name="ElementShortName">data_in_2[15:0]</obj_property>
-         <obj_property name="ObjectShortName">data_in_2[15:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /\multipliers_gen[1].genblk1.fixed_point_multiplier /valid_in_2" type="logic">
-         <obj_property name="ElementShortName">valid_in_2</obj_property>
-         <obj_property name="ObjectShortName">valid_in_2</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /\multipliers_gen[1].genblk1.fixed_point_multiplier /data_out" type="array">
-         <obj_property name="ElementShortName">data_out[15:0]</obj_property>
-         <obj_property name="ObjectShortName">data_out[15:0]</obj_property>
-      </wvobject>
    </wvobject>
    <wvobject fp_name="group567" type="group">
       <obj_property name="label">Mux</obj_property>
@@ -815,6 +753,31 @@
    <wvobject fp_name="group556" type="group">
       <obj_property name="label">Acc_m</obj_property>
       <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_valid" type="array">
+         <obj_property name="ElementShortName">acc_m_valid[2:0]</obj_property>
+         <obj_property name="ObjectShortName">acc_m_valid[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_data" type="array">
+         <obj_property name="ElementShortName">acc_m_data[2:0][15:0]</obj_property>
+         <obj_property name="ObjectShortName">acc_m_data[2:0][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_last" type="array">
+         <obj_property name="ElementShortName">acc_m_last[2:0]</obj_property>
+         <obj_property name="ObjectShortName">acc_m_last[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_valid_last" type="array">
+         <obj_property name="ElementShortName">acc_m_valid_last[2:0]</obj_property>
+         <obj_property name="ObjectShortName">acc_m_valid_last[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_valid_last_masked" type="array">
+         <obj_property name="ElementShortName">acc_m_valid_last_masked[2:0]</obj_property>
+         <obj_property name="ObjectShortName">acc_m_valid_last_masked[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_conv_engine_tb/conv_engine_dut/\cores_gen[0].CONV_CORE /\conv_unit_gen[0].CONV_UNIT /acc_m_user" type="array">
+         <obj_property name="ElementShortName">acc_m_user[2:0][3:0]</obj_property>
+         <obj_property name="ObjectShortName">acc_m_user[2:0][3:0]</obj_property>
+      </wvobject>
    </wvobject>
    <wvobject fp_name="group557" type="group">
       <obj_property name="label">Pad Filter</obj_property>
