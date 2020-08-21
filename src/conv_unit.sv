@@ -89,6 +89,7 @@ module conv_unit # (
     s_ready            ,
     s_step_pixels_valid,
     s_step_pixels_data ,
+    s_step_weights_valid,
     s_step_weights_data,
     s_step_pixels_last ,
     s_step_pixels_user ,
@@ -111,6 +112,7 @@ module conv_unit # (
     output wire                      s_ready                                   ;
     input  wire                      s_step_pixels_valid [KERNEL_W_MAX - 1 : 0];
     input  wire [DATA_WIDTH  - 1: 0] s_step_pixels_data  [KERNEL_W_MAX - 1 : 0];
+    input  wire                      s_step_weights_valid[KERNEL_W_MAX - 1 : 0];
     input  wire [DATA_WIDTH  - 1: 0] s_step_weights_data [KERNEL_W_MAX - 1 : 0];
     input  wire                      s_step_pixels_last  [KERNEL_W_MAX - 1 : 0];
     input  wire [TUSER_WIDTH - 1: 0] s_step_pixels_user  [KERNEL_W_MAX - 1 : 0];
@@ -192,7 +194,7 @@ module conv_unit # (
                     .DATA_WIDTH         (DATA_WIDTH            ),
                     .TUSER_WIDTH        (TUSER_WIDTH           )
                 )
-                dummy_multiplier_unit
+                fixed_point_multiplier
                 (
                     .aclk         (aclk),
                     .aclken       (clken_mul),
@@ -201,7 +203,7 @@ module conv_unit # (
                     .data_in_1    (s_step_pixels_data       [i]),
                     .last_in_1    (s_step_pixels_last       [i]),
                     .user_in_1    (s_step_pixels_user       [i]),
-                    .valid_in_2   (s_step_pixels_valid      [i]),
+                    .valid_in_2   (s_step_weights_valid     [i]),
                     .data_in_2    (s_step_weights_data      [i]),
                     .valid_out    (mul_m_valid              [i]),
                     .data_out     (mul_m_data               [i]),
@@ -218,7 +220,7 @@ module conv_unit # (
                     .s_axis_a_tdata         (s_step_pixels_data       [i]),                                           
                     .s_axis_a_tlast         (s_step_pixels_last       [i]),                                  
                     .s_axis_a_tuser         (s_step_pixels_user       [i]),                                          
-                    .s_axis_b_tvalid        (s_step_pixels_valid      [i]),                                 
+                    .s_axis_b_tvalid        (s_step_weights_valid     [i]),                                 
                     .s_axis_b_tdata         (s_step_weights_data      [i]),                                           
                     .m_axis_result_tvalid   (mul_m_valid              [i]),                             
                     .m_axis_result_tdata    (mul_m_data               [i]),                                       
@@ -252,7 +254,7 @@ module conv_unit # (
                     .DATA_WIDTH         (DATA_WIDTH             ),
                     .TUSER_WIDTH        (TUSER_WIDTH            )
                 )
-                dummy_accumulator_unit
+                fixed_point_accumulator
                 (
                     .aclk       (aclk),
                     .aclken     (clken_acc[i]),
@@ -414,6 +416,19 @@ module conv_unit # (
     * KW_MAX number of shift registers are chained. 
     * Values are shifted from shift_reg[KW_MAX-1] -> ... -> shift_reg[1] -> shift_reg[0]
     * Conv_unit output is given by shift_reg[0]
+    
+    * Muxing
+        - Input of shift registers are the muxed result of acc_m[i] and shift_out[i+1]
+        - Priority is given to shifting. 
+            - If shift_out[i+1] is high, input is taken from there.
+            - Else, input is taken from acc_m[i]
+        - Because, if two acc_m[1] and acc_m[2] are released together, as in A=2 (default fixed point), 
+            acc_m[1] stays for two clocks until it's value goes into acc_m[2]
+        - So, the clock sequence goes as follows:
+            - acc_m[0] == 0 ; shift[0] == 0        ; acc_m[1] == 1 ; shift[1] == 0         ; acc_m[2] == 1  ; shift[2] == 0
+            - acc_m[0] == 0 ; shift[0] == 0        ; acc_m[1] == 1 ; shift[1] == acc_m[1]  ; acc_m[2] == 0  ; shift[2] == acc_m[2]
+            - acc_m[0] == 0 ; shift[0] == acc_m[1] ; acc_m[1] == 0 ; shift[1] == acc_m[2]  ; acc_m[2] == 0  ; shift[2] == 0
+
     * Shift enable = aclk = m_ready of the AXIS outside.
         - whenever m_ready goes down, whole unit freezes, including shift regs.
         - if we use acc_clken or something else:
@@ -453,12 +468,12 @@ module conv_unit # (
     generate
         for (i=0; i < KERNEL_W_MAX-1; i++) begin : shift_sel_gen
 
-            assign shift_sel      [i] = acc_m_valid_last_masked[i]  ? acc_m_valid_last_masked [i] : shift_in_valid  [i+1];
+            assign shift_sel      [i] = shift_out_valid  [i+1];
 
-            assign shift_in_valid [i] = shift_sel[i]                ? acc_m_valid_last_masked [i] : shift_out_valid [i+1];
-            assign shift_in_data  [i] = shift_sel[i]                ? acc_m_data              [i] : shift_out_data  [i+1];
-            assign shift_in_last  [i] = shift_sel[i]                ? acc_m_valid_last_masked [i] : shift_out_last  [i+1];
-            assign shift_in_user  [i] = shift_sel[i]                ? acc_m_user              [i] : shift_out_user  [i+1];
+            assign shift_in_valid [i] = shift_sel  [i] ? shift_out_valid [i+1] : acc_m_valid_last_masked [i];
+            assign shift_in_data  [i] = shift_sel  [i] ? shift_out_data  [i+1] : acc_m_data              [i];
+            assign shift_in_last  [i] = shift_sel  [i] ? shift_out_last  [i+1] : acc_m_valid_last_masked [i];
+            assign shift_in_user  [i] = shift_sel  [i] ? shift_out_user  [i+1] : acc_m_user              [i];
         end
 
         assign     shift_in_valid [KERNEL_W_MAX - 1] = acc_m_valid_last_masked [KERNEL_W_MAX - 1]  ;
