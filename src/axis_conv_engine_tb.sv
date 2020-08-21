@@ -1,4 +1,4 @@
-`timescale 1ns / 1ps
+`timescale 10ns / 1ns
 
 module axis_conv_engine_tb # ();
 
@@ -25,7 +25,7 @@ module axis_conv_engine_tb # ();
 
     parameter FLOAT_ACCUMULATOR_DELAY   =  19;
     parameter FLOAT_MULTIPLIER_DELAY    =  6 ;
-    parameter FIXED_ACCUMULATOR_DELAY   =  4 ;
+    parameter FIXED_ACCUMULATOR_DELAY   =  2 ;
     parameter FIXED_MULTIPLIER_DELAY    =  3 ;
 
     parameter HEIGHT                    =  8 ;

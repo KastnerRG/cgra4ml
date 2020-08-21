@@ -1,4 +1,4 @@
-`timescale 1ns / 1ps
+`timescale 10ns / 1ns
 
 module float_tb # ();
 
@@ -6,8 +6,8 @@ module float_tb # ();
     parameter DATA_WIDTH        = 16;
     parameter TUSER_WIDTH       = 4;
 
-    parameter ACCUMULATOR_DELAY = 19;
-    parameter MULTIPLIER_DELAY  = 6;
+    parameter ACCUMULATOR_DELAY = 2;
+    parameter MULTIPLIER_DELAY  = 3;
 
     parameter F16_1             = 15360;
     parameter F16_2             = 16384;
@@ -37,36 +37,43 @@ module float_tb # ();
     reg   [DATA_WIDTH -1 :0]    mul_b_axis_tdata  = 0; 
     wire  [TUSER_WIDTH -1 :0]   mul_b_axis_tuser     ; 
 
-
     wire                        mul_m_axis_tvalid    ; 
     reg                         mul_m_axis_tready = 1; 
     wire  [DATA_WIDTH -1 :0]    mul_m_axis_tdata     ; 
     wire  [TUSER_WIDTH -1 :0]   mul_m_axis_tuser     ; 
     wire                        mul_m_axis_tlast     ; 
 
-    reg   [DATA_WIDTH -1 :0]    dum_mul_a_axis_tdata  = 0; 
-    reg   [DATA_WIDTH -1 :0]    dum_mul_b_axis_tdata  = 0; 
-    wire                        dum_mul_m_axis_tvalid    ; 
-    wire  [DATA_WIDTH -1 :0]    dum_mul_m_axis_tdata     ; 
-    wire  [TUSER_WIDTH -1 :0]   dum_mul_m_axis_tuser     ; 
-    wire                        dum_mul_m_axis_tlast     ; 
+    reg   [DATA_WIDTH -1 :0]    fixed_mul_a_axis_tdata  = 0; 
+    reg   [DATA_WIDTH -1 :0]    fixed_mul_b_axis_tdata  = 0; 
+    wire                        fixed_mul_m_axis_tvalid    ; 
+    wire  [DATA_WIDTH -1 :0]    fixed_mul_m_axis_tdata     ; 
+    wire  [TUSER_WIDTH -1 :0]   fixed_mul_m_axis_tuser     ; 
+    wire                        fixed_mul_m_axis_tlast     ; 
+    wire                        dum_mul_m_axis_tvalid      ; 
+    wire  [DATA_WIDTH -1 :0]    dum_mul_m_axis_tdata       ; 
+    wire  [TUSER_WIDTH -1 :0]   dum_mul_m_axis_tuser       ; 
+    wire                        dum_mul_m_axis_tlast       ; 
 
-    reg                         acc_s_axis_tvalid = 0; 
-    wire                        acc_s_axis_tready    ; 
-    reg   [DATA_WIDTH -1 :0]    acc_s_axis_tdata  = 0; 
-    reg   [TUSER_WIDTH -1 :0]   acc_s_axis_tuser  = 0; 
-    reg                         acc_s_axis_tlast  = 0; 
-    wire                        acc_m_axis_tvalid    ; 
-    reg                         acc_m_axis_tready = 1; 
-    wire  [DATA_WIDTH -1 :0]    acc_m_axis_tdata     ; 
-    wire  [TUSER_WIDTH -1 :0]   acc_m_axis_tuser     ; 
-    wire                        acc_m_axis_tlast     ; 
+    reg                         acc_s_axis_tvalid       = 0; 
+    wire                        acc_s_axis_tready          ; 
+    reg   [DATA_WIDTH -1 :0]    acc_s_axis_tdata        = 0; 
+    reg   [TUSER_WIDTH -1 :0]   acc_s_axis_tuser        = 0; 
+    reg                         acc_s_axis_tlast        = 0; 
+    wire                        acc_m_axis_tvalid          ; 
+    reg                         acc_m_axis_tready       = 1; 
+    wire  [DATA_WIDTH -1 :0]    acc_m_axis_tdata           ; 
+    wire  [TUSER_WIDTH -1 :0]   acc_m_axis_tuser           ; 
+    wire                        acc_m_axis_tlast           ; 
 
-    wire                        dum_acc_m_axis_tvalid    ; 
-    reg   [DATA_WIDTH -1 :0]    dum_acc_s_axis_tdata  = 0; 
-    wire  [DATA_WIDTH -1 :0]    dum_acc_m_axis_tdata     ; 
-    wire  [TUSER_WIDTH -1 :0]   dum_acc_m_axis_tuser     ; 
-    wire                        dum_acc_m_axis_tlast     ; 
+    reg   [DATA_WIDTH -1 :0]    fixed_acc_s_axis_tdata  = 0; 
+    wire                        fixed_acc_m_axis_tvalid    ; 
+    wire  [DATA_WIDTH -1 :0]    fixed_acc_m_axis_tdata     ; 
+    wire  [TUSER_WIDTH -1 :0]   fixed_acc_m_axis_tuser     ; 
+    wire                        fixed_acc_m_axis_tlast     ; 
+    wire                        dum_acc_m_axis_tvalid      ; 
+    wire  [DATA_WIDTH -1 :0]    dum_acc_m_axis_tdata       ; 
+    wire  [TUSER_WIDTH -1 :0]   dum_acc_m_axis_tuser       ; 
+    wire                        dum_acc_m_axis_tlast       ; 
 
     floating_point_accumulator acc (
         .aclk                   (aclk),                                 
@@ -82,19 +89,40 @@ module float_tb # ();
         .m_axis_result_tuser    (acc_m_axis_tuser)                           
     );
 
-    dummy_accumulator #(
+    fixed_point_accumulator_wrapper #(
         .ACCUMULATOR_DELAY(ACCUMULATOR_DELAY),
         .DATA_WIDTH(DATA_WIDTH),
         .TUSER_WIDTH(TUSER_WIDTH)
     )
-    dummy_accumulator_unit
+    fixed_acc
     (
         .aclk       (aclk),
         .aclken     (aclken),
         .aresetn    (aresetn),
 
         .valid_in   (acc_s_axis_tvalid),
-        .data_in    (dum_acc_s_axis_tdata),
+        .data_in    (fixed_acc_s_axis_tdata),
+        .last_in    (acc_s_axis_tlast),
+        .user_in    (acc_s_axis_tuser),
+        .valid_out  (fixed_acc_m_axis_tvalid),
+        .data_out   (fixed_acc_m_axis_tdata),
+        .last_out   (fixed_acc_m_axis_tlast),
+        .user_out   (fixed_acc_m_axis_tuser)
+    );
+
+    dummy_accumulator #(
+        .ACCUMULATOR_DELAY(ACCUMULATOR_DELAY),
+        .DATA_WIDTH(DATA_WIDTH),
+        .TUSER_WIDTH(TUSER_WIDTH)
+    )
+    dummy_accumulator
+    (
+        .aclk       (aclk),
+        .aclken     (aclken),
+        .aresetn    (aresetn),
+
+        .valid_in   (acc_s_axis_tvalid),
+        .data_in    (fixed_acc_s_axis_tdata),
         .last_in    (acc_s_axis_tlast),
         .user_in    (acc_s_axis_tuser),
         .valid_out  (dum_acc_m_axis_tvalid),
@@ -119,27 +147,50 @@ module float_tb # ();
         .m_axis_result_tuser    (mul_m_axis_tuser   )                                      
     );
 
-    dummy_multiplier #(
+    fixed_point_multiplier_wrapper #(
         .MULTIPLIER_DELAY(MULTIPLIER_DELAY),
         .DATA_WIDTH(DATA_WIDTH),
         .TUSER_WIDTH(TUSER_WIDTH)
     )
-    dummy_multiplier_unit
+    fixed_multiplier
     (
         .aclk       (aclk),
         .aclken     (aclken),
         .aresetn    (aresetn),
 
         .valid_in_1 (mul_a_axis_tvalid      ),
-        .data_in_1  (dum_mul_a_axis_tdata   ),
+        .data_in_1  (fixed_mul_a_axis_tdata ),
         .last_in_1  (mul_a_axis_tlast       ),
         .user_in_1  (mul_a_axis_tuser       ),
         .valid_in_2 (mul_b_axis_tvalid      ),
-        .data_in_2  (dum_mul_b_axis_tdata   ),
-        .valid_out  (dum_mul_m_axis_tvalid  ),
-        .data_out   (dum_mul_m_axis_tdata   ),
-        .last_out   (dum_mul_m_axis_tlast   ),
-        .user_out   (dum_mul_m_axis_tuser   )
+        .data_in_2  (fixed_mul_b_axis_tdata ),
+        .valid_out  (fixed_mul_m_axis_tvalid),
+        .data_out   (fixed_mul_m_axis_tdata ),
+        .last_out   (fixed_mul_m_axis_tlast ),
+        .user_out   (fixed_mul_m_axis_tuser )
+    );
+
+    dummy_multiplier #(
+        .MULTIPLIER_DELAY(MULTIPLIER_DELAY),
+        .DATA_WIDTH(DATA_WIDTH),
+        .TUSER_WIDTH(TUSER_WIDTH)
+    )
+    dummy_mul
+    (
+        .aclk       (aclk),
+        .aclken     (aclken),
+        .aresetn    (aresetn),
+
+        .valid_in_1 (mul_a_axis_tvalid        ),
+        .data_in_1  (fixed_mul_a_axis_tdata   ),
+        .last_in_1  (mul_a_axis_tlast         ),
+        .user_in_1  (mul_a_axis_tuser         ),
+        .valid_in_2 (mul_b_axis_tvalid        ),
+        .data_in_2  (fixed_mul_b_axis_tdata   ),
+        .valid_out  (dum_mul_m_axis_tvalid    ),
+        .data_out   (dum_mul_m_axis_tdata     ),
+        .last_out   (dum_mul_m_axis_tlast     ),
+        .user_out   (dum_mul_m_axis_tuser     )
     );
 
     always begin
@@ -153,50 +204,143 @@ module float_tb # ();
         #(CLK_PERIOD*5)
         @(posedge aclk);
         aresetn                 <= 1;
-        #(CLK_PERIOD*7)
+        #(CLK_PERIOD*3)
+
+        @(posedge aclk);
+        mul_a_axis_tvalid       <= 1;
+        mul_b_axis_tvalid       <= 1;
+        mul_a_axis_tdata        <= F16_2;
+        mul_b_axis_tdata        <= F16_5;
+        mul_a_axis_tuser        <= 2;
+        fixed_mul_a_axis_tdata  <= 1;
+        fixed_mul_b_axis_tdata  <= 9;
+
+        @(posedge aclk);
+        mul_a_axis_tvalid       <= 0;
+        mul_b_axis_tvalid       <= 0;
+        mul_a_axis_tdata        <= F16_2;
+        mul_b_axis_tdata        <= F16_5;
+        mul_a_axis_tuser        <= 2;
+        fixed_mul_a_axis_tdata  <= 1;
+        fixed_mul_b_axis_tdata  <= 9;
+
+        //--------------------------------------------------------
 
         @(posedge aclk);
         aclken <= 1;
         acc_s_axis_tvalid       <= 1;
         acc_s_axis_tdata        <= F16_1;
-        dum_acc_s_axis_tdata    <= 1;
+        fixed_acc_s_axis_tdata  <= 1;
         acc_s_axis_tuser        <= 4'd1;
         
         @(posedge aclk);
         acc_s_axis_tvalid       <= 1;
         acc_s_axis_tdata        <= F16_2;
-        dum_acc_s_axis_tdata    <= 2;
+        fixed_acc_s_axis_tdata  <= 2;
         acc_s_axis_tuser        <= 4'd2;
 
         @(posedge aclk);
         aclken <= 1;
         acc_s_axis_tvalid       <= 0;
         acc_s_axis_tdata        <= F16_15;
-        dum_acc_s_axis_tdata    <= 15;
+        fixed_acc_s_axis_tdata  <= 15;
         acc_s_axis_tuser        <= 4'd15;
         @(posedge aclk);
 
         @(posedge aclk);
         acc_s_axis_tvalid       <= 1;
         acc_s_axis_tdata        <= F16_3;
-        dum_acc_s_axis_tdata    <= 3;
+        fixed_acc_s_axis_tdata  <= 3;
         acc_s_axis_tuser        <= 4'd3;
 
         @(posedge aclk);
         acc_s_axis_tvalid       <= 1;
         acc_s_axis_tdata        <= F16_5;
-        dum_acc_s_axis_tdata    <= 5;
+        fixed_acc_s_axis_tdata  <= 5;
         acc_s_axis_tuser        <= 4'd5;
         acc_s_axis_tlast        <= 1;
 
         @(posedge aclk);
         acc_s_axis_tvalid       <= 0;
         acc_s_axis_tdata        <= F16_6;
-        dum_acc_s_axis_tdata    <= 6;
+        fixed_acc_s_axis_tdata  <= 6;
         acc_s_axis_tuser        <= 4'd6;
         acc_s_axis_tlast        <= 0;
 
+        @(posedge aclk);
+        acc_s_axis_tvalid       <= 1;
+        acc_s_axis_tdata        <= F16_3;
+        fixed_acc_s_axis_tdata  <= 3;
+        acc_s_axis_tuser        <= 4'd3;
 
+        @(posedge aclk);
+        acc_s_axis_tvalid       <= 1;
+        acc_s_axis_tdata        <= F16_5;
+        fixed_acc_s_axis_tdata  <= 5;
+        acc_s_axis_tuser        <= 4'd5;
+
+        @(posedge aclk);
+        acc_s_axis_tvalid       <= 0;
+        acc_s_axis_tdata        <= F16_6;
+        fixed_acc_s_axis_tdata  <= 6;
+        acc_s_axis_tuser        <= 4'd6;
+        acc_s_axis_tlast        <= 0;
+
+        @(posedge aclk);
+        acc_s_axis_tvalid       <= 1;
+        acc_s_axis_tdata        <= F16_3;
+        fixed_acc_s_axis_tdata  <= 3;
+        acc_s_axis_tuser        <= 4'd3;
+        acc_s_axis_tlast        <= 1;
+
+        @(posedge aclk);
+        acc_s_axis_tvalid       <= 0;
+        acc_s_axis_tdata        <= F16_6;
+        fixed_acc_s_axis_tdata  <= 6;
+        acc_s_axis_tuser        <= 4'd6;
+        acc_s_axis_tlast        <= 0;
+
+//-------------------------------------------------------
+
+        @(posedge aclk);
+        mul_a_axis_tvalid       <= 0;
+        mul_b_axis_tvalid       <= 0;
+        mul_a_axis_tdata        <= F16_2;
+        mul_b_axis_tdata        <= F16_5;
+        mul_a_axis_tuser        <= 2;
+        fixed_mul_a_axis_tdata  <= 2;
+        fixed_mul_b_axis_tdata  <= 3;
+
+        @(posedge aclk);
+        @(posedge aclk);
+        @(posedge aclk);
+        @(posedge aclk);
+        @(posedge aclk);
+        @(posedge aclk);
+
+        mul_a_axis_tvalid       <= 1;
+        mul_b_axis_tvalid       <= 1;
+        mul_a_axis_tdata        <= F16_2;
+        mul_b_axis_tdata        <= F16_5;
+        mul_a_axis_tuser        <= 2;
+        fixed_mul_a_axis_tdata  <= 2;
+        fixed_mul_b_axis_tdata  <= 3;
+
+        @(posedge aclk);
+
+        mul_a_axis_tvalid       <= 0;
+        mul_b_axis_tvalid       <= 0;
+        mul_a_axis_tdata        <= 0;
+        mul_b_axis_tdata        <= 0;
+        mul_a_axis_tuser        <= 0;
+        fixed_mul_a_axis_tdata  <= 0;
+        fixed_mul_b_axis_tdata  <= 0;
+
+        @(posedge aclk);
+        @(posedge aclk);
+        @(posedge aclk);
+        @(posedge aclk);
+        @(posedge aclk);
 
         @(posedge aclk);
         mul_a_axis_tvalid       <= 1;
@@ -204,8 +348,8 @@ module float_tb # ();
         mul_a_axis_tdata        <= F16_2;
         mul_b_axis_tdata        <= F16_3;
         mul_a_axis_tuser        <= 2;
-        dum_mul_a_axis_tdata    <= 2;
-        dum_mul_b_axis_tdata    <= 3;
+        fixed_mul_a_axis_tdata  <= 2;
+        fixed_mul_b_axis_tdata  <= 3;
 
         @(posedge aclk);
         mul_a_axis_tvalid       <= 0;
@@ -219,14 +363,14 @@ module float_tb # ();
         mul_a_axis_tvalid       <= 1;
         mul_a_axis_tdata        <= F16_3;
         mul_a_axis_tuser        <= 3;
-        dum_mul_a_axis_tdata    <= 3;
+        fixed_mul_a_axis_tdata  <= 3;
         @(posedge aclk);
         @(posedge aclk);
 
         @(posedge aclk);
         mul_b_axis_tvalid       <= 1;
         mul_b_axis_tdata        <= F16_4;
-        dum_mul_b_axis_tdata    <= 4;
+        fixed_mul_b_axis_tdata  <= 4;
         mul_a_axis_tlast        <= 1;
 
         @(posedge aclk);

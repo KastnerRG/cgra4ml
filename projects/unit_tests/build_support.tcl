@@ -27,6 +27,16 @@ create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -modu
 set_property -dict [list CONFIG.Component_Name {floating_point_accumulator} CONFIG.Operation_Type {Accumulator} CONFIG.Add_Sub_Value {Add} CONFIG.A_Precision_Type {Half} CONFIG.C_Mult_Usage {No_Usage} CONFIG.Flow_Control {NonBlocking} CONFIG.Has_ACLKEN {true} CONFIG.Has_ARESETn {true} CONFIG.Has_A_TUSER {true} CONFIG.A_TUSER_Width {4} CONFIG.C_A_Exponent_Width {5} CONFIG.C_A_Fraction_Width {11} CONFIG.Result_Precision_Type {Half} CONFIG.C_Result_Exponent_Width {5} CONFIG.C_Result_Fraction_Width {11} CONFIG.C_Accum_Msb {32} CONFIG.C_Accum_Lsb {-24} CONFIG.C_Accum_Input_Msb {15} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Latency {19} CONFIG.C_Rate {1} CONFIG.Has_A_TLAST {true} CONFIG.RESULT_TLAST_Behv {Pass_A_TLAST}] [get_ips floating_point_accumulator]
 generate_target {instantiation_template} [get_files ./$PROJ_FOLDER/$PROJ_NAME.srcs/sources_1/ip/floating_point_accumulator/floating_point_accumulator.xci]
 
+# Fixed Multiplier (3 clocks - optimum)
+create_ip -name mult_gen -vendor xilinx.com -library ip -version 12.0 -module_name fixed_point_multiplier
+set_property -dict [list CONFIG.Component_Name {fixed_point_multiplier} CONFIG.PortAWidth {16} CONFIG.PortBWidth {16} CONFIG.Multiplier_Construction {Use_Mults} CONFIG.Use_Custom_Output_Width {true} CONFIG.OutputWidthHigh {15} CONFIG.PipeStages {3} CONFIG.ClockEnable {true}] [get_ips fixed_point_multiplier]
+generate_target {instantiation_template} [get_files ./$PROJ_FOLDER/$PROJ_NAME.srcs/sources_1/ip/fixed_point_multiplier/fixed_point_multiplier.xci]
+
+# Fixed Accumulator (2 clocks - auto)
+create_ip -name c_accum -vendor xilinx.com -library ip -version 12.0 -module_name fixed_point_accumulator
+set_property -dict [list CONFIG.Component_Name {fixed_point_accumulator} CONFIG.Implementation {DSP48} CONFIG.Latency_Configuration {Automatic} CONFIG.Latency {2} CONFIG.CE {true}] [get_ips fixed_point_accumulator]
+generate_target {instantiation_template} [get_files ./$PROJ_FOLDER/$PROJ_NAME.srcs/sources_1/ip/fixed_point_accumulator/fixed_point_accumulator.xci]
+
 # Reg Slice for Buffer
 
 create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name axis_register_slice_data_buffer
