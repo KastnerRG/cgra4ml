@@ -25,7 +25,6 @@ module conv_core # (
     s_weights_valid     ,
     s_weights_data      ,
 
-    s_step_pixels_valid ,
     s_step_pixels_data  , 
     s_step_pixels_last  , 
     s_step_pixels_user  ,     
@@ -51,7 +50,6 @@ module conv_core # (
     input  wire                      s_weights_valid                                                  ;
     input  wire [DATA_WIDTH  - 1: 0] s_weights_data                             [KERNEL_W_MAX - 1 : 0];
 
-    input  wire                      s_step_pixels_valid                        [KERNEL_W_MAX - 1 : 0];
     input  wire [DATA_WIDTH  - 1: 0] s_step_pixels_data   [CONV_UNITS   - 1 : 0][KERNEL_W_MAX - 1 : 0];
     input  wire                      s_step_pixels_last                         [KERNEL_W_MAX - 1 : 0];
     input  wire [TUSER_WIDTH - 1: 0] s_step_pixels_user                         [KERNEL_W_MAX - 1 : 0];
@@ -124,8 +122,8 @@ module conv_core # (
             .kernel_w_1         (kernel_w_1               ),
 
             .s_ready            (conv_s_ready         [i] ),
-            .s_step_pixels_valid(s_step_pixels_valid      ),
             .s_step_pixels_data (s_step_pixels_data   [i] ),
+            .s_step_weights_valid(m_step_weights_valid    ),
             .s_step_weights_data(m_step_weights_data      ),
             .s_step_pixels_last (s_step_pixels_last       ),
             .s_step_pixels_user (s_step_pixels_user       ),

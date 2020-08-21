@@ -87,7 +87,6 @@ module conv_unit # (
     kernel_w_1,
 
     s_ready            ,
-    s_step_pixels_valid,
     s_step_pixels_data ,
     s_step_weights_valid,
     s_step_weights_data,
@@ -110,7 +109,6 @@ module conv_unit # (
     input  wire [KERNEL_W_WIDTH-1:0] kernel_w_1;
 
     output wire                      s_ready                                   ;
-    input  wire                      s_step_pixels_valid [KERNEL_W_MAX - 1 : 0];
     input  wire [DATA_WIDTH  - 1: 0] s_step_pixels_data  [KERNEL_W_MAX - 1 : 0];
     input  wire                      s_step_weights_valid[KERNEL_W_MAX - 1 : 0];
     input  wire [DATA_WIDTH  - 1: 0] s_step_weights_data [KERNEL_W_MAX - 1 : 0];
@@ -189,7 +187,7 @@ module conv_unit # (
         for (i=0; i < KERNEL_W_MAX; i++) begin : multipliers_gen
 
             if (IS_FIXED_POINT) begin
-                dummy_multiplier #(
+                fixed_point_multiplier_wrapper #(
                     .MULTIPLIER_DELAY   (FIXED_MULTIPLIER_DELAY),
                     .DATA_WIDTH         (DATA_WIDTH            ),
                     .TUSER_WIDTH        (TUSER_WIDTH           )
@@ -199,7 +197,7 @@ module conv_unit # (
                     .aclk         (aclk),
                     .aclken       (clken_mul),
                     .aresetn      (aresetn),
-                    .valid_in_1   (s_step_pixels_valid      [i]),
+                    .valid_in_1   (s_step_weights_valid     [i]),
                     .data_in_1    (s_step_pixels_data       [i]),
                     .last_in_1    (s_step_pixels_last       [i]),
                     .user_in_1    (s_step_pixels_user       [i]),
@@ -216,7 +214,7 @@ module conv_unit # (
                     .aclk                   (aclk),                                            
                     .aclken                 (clken_mul),                                          
                     .aresetn                (aresetn),                                         
-                    .s_axis_a_tvalid        (s_step_pixels_valid      [i]),                                 
+                    .s_axis_a_tvalid        (s_step_weights_valid     [i]),                                 
                     .s_axis_a_tdata         (s_step_pixels_data       [i]),                                           
                     .s_axis_a_tlast         (s_step_pixels_last       [i]),                                  
                     .s_axis_a_tuser         (s_step_pixels_user       [i]),                                          
@@ -249,7 +247,7 @@ module conv_unit # (
             assign acc_m_valid_last_masked  [i] = acc_m_valid_last[i] & mask_full[i];
 
             if (IS_FIXED_POINT) begin         
-                dummy_accumulator #(
+                fixed_point_accumulator_wrapper #(
                     .ACCUMULATOR_DELAY  (FIXED_ACCUMULATOR_DELAY),
                     .DATA_WIDTH         (DATA_WIDTH             ),
                     .TUSER_WIDTH        (TUSER_WIDTH            )
@@ -416,7 +414,7 @@ module conv_unit # (
     * KW_MAX number of shift registers are chained. 
     * Values are shifted from shift_reg[KW_MAX-1] -> ... -> shift_reg[1] -> shift_reg[0]
     * Conv_unit output is given by shift_reg[0]
-    
+
     * Muxing
         - Input of shift registers are the muxed result of acc_m[i] and shift_out[i+1]
         - Priority is given to shifting. 

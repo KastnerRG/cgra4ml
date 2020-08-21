@@ -248,7 +248,6 @@ module axis_conv_engine # (
         .aresetn    (aresetn),
         .is_1x1     (is_1x1),
         
-        .s_valid    ('{KERNEL_W_MAX{m_shift_pixels_valid}} ),
         .s_last     ('{KERNEL_W_MAX{m_shift_pixels_last}}  ),
         .s_user     (s_step_pixels_repeated_user           ),
 
@@ -304,9 +303,8 @@ module axis_conv_engine # (
             .kernel_w_1          (kernel_w_1                ),
             .is_1x1              (is_1x1                    ),
             .s_ready             (conv_s_ready          [i] ),
-            .s_weights_valid     (s_weights_valid           ),
+            .s_weights_valid     (conv_s_valid              ),
             .s_weights_data      (s_weights_data        [i] ),
-            .s_step_pixels_valid (m_step_pixels_valid       ),
             .s_step_pixels_data  (m_step_pixels_data        ), 
             .s_step_pixels_last  (m_step_pixels_last        ), 
             .s_step_pixels_user  (m_step_pixels_user        ),     
