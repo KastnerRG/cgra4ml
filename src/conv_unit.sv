@@ -21,6 +21,16 @@ Description:    * Fully pipelined
                 * datapath[0] has no muxes, accumulator directly connected to multiplier
                 * muxes are indexed 1,2...(kw-1) to match rest of indexing
 
+                * ACTIVE & PASSIVE
+                    - If IS_ACTIVE is set to 1, 
+                        - unit is generated as an ACTIVE controller
+                        - unit computes and drives: mux_sel, clken_mul, clken_acc, mux_s2_valid, acc_s_valid, acc_s_last, shift_sel
+                        - out_* are driven, in_* are disconnected (Z)
+                    - Else
+                        - unit is generated as PASSIVE controlee
+                        - unit receives: mux_sel, clken_mul, clken_acc, mux_s2_valid, acc_s_valid, acc_s_last, shift_sel 
+                            from in_*. out_* are disconnected (Z)
+
                 * Limitations
                     - Freezes if not: 3 CIN + 1 > 2(A-1)-1; CIN_min = 12 for A = 19
                     - Output order is messed up for 1x1 if CIN > (kw-1)*(A-1)-2
@@ -40,37 +50,8 @@ Additional Comments:
 
 //////////////////////////////////////////////////////////////////////////////////*/
 
-/*
-    MODULE HIERARCHY
-
-    - AXIS_CONV_ENGINE (Shell)
-        - AXIS_reg_slice
-        - CONV_ENGINE
-            - CONV_BLOCK                x 2
-                - CONV_CORE             x 16
-                    - CONV_UNIT         x 8
-                        - mul        x 3
-                        - acc        x 3
-                        - mux        x 3
-                        - reg        x 3
-                    - weights_buffer
-                      (step_buffer)
-                        - reg    x 1
-                        - reg    x   (A-1) + 1
-                        - reg    x 2*(A-1) + 1
-                - pixels_buffer
-                    - step_buffer    x 8
-                            - reg    x 1
-                            - reg    x   (A-1) + 1
-                            - reg    x 2*(A-1) + 1
-
-    - AXIS_Output_Pipe
-        - Core converter
-        - Engine converter
-    */
-
 module conv_unit # (
-    parameter IS_ACTIVE             ,
+    parameter IS_ACTIVE                 ,
     parameter IS_FIXED_POINT            ,
     parameter DATA_WIDTH                ,
     parameter KERNEL_W_MAX              ,
@@ -83,106 +64,108 @@ module conv_unit # (
     parameter INDEX_IS_RELU             ,
     parameter INDEX_IS_COLS_1_K2         
 )(
-    aclk,
-    aresetn,
+    // Common signals for ACTIVE and PASSIVE
+    aclk                    ,
+    aclken                  ,
+    aresetn                 ,
 
-    s_step_pixels_data ,
-    s_step_weights_valid,
-    s_step_weights_data,
+    s_step_pixels_data      ,
+    s_step_weights_valid    ,
+    s_step_weights_data     ,
     
-    m_data,
+    m_data                  ,
 
-    aclken,
-    start,
-    kernel_w_1,
-    s_ready            ,
+    // Signals for ACTIVE only. out_* are 'z for PASSIVE, hence disconnected. inputs will be disconnected during elaboration.
+    start                   ,
+    kernel_w_1              ,
 
-    s_step_pixels_last ,
-    s_step_pixels_user ,
+    s_step_pixels_last      ,
+    s_step_pixels_user      ,
 
-    m_valid,
-    m_last,
-    m_user,
+    s_ready                 ,
+    m_valid                 ,
+    m_last                  ,
+    m_user                  ,
 
-    out_mux_sel,
-    out_clken_mul,
-    out_clken_acc,
-    out_mux_s2_valid,
-    out_acc_s_valid,
-    out_acc_s_last,
-    out_shift_sel,
+    out_mux_sel             ,
+    out_clken_mul           ,
+    out_clken_acc           ,
+    out_mux_s2_valid        ,
+    out_acc_s_valid         ,
+    out_acc_s_last          ,
+    out_shift_sel           ,
 
-    in_mux_sel,
-    in_clken_mul,
-    in_clken_acc,
-    in_mux_s2_valid,
-    in_acc_s_valid,
-    in_acc_s_last,
+    // Signals for PASSIVE only. in_* are 'z for ACIVE
+    in_mux_sel              ,
+    in_clken_mul            ,
+    in_clken_acc            ,
+    in_mux_s2_valid         ,
+    in_acc_s_valid          ,
+    in_acc_s_last           ,
     in_shift_sel
 
 );
     localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX   + 1);
 
-    input  wire                      aclk;
-    input  wire                      aresetn;
+    input  wire                      aclk                                           ;
+    input  wire                      aclken                                         ;               
+    input  wire                      aresetn                                        ;
 
-    input  wire [DATA_WIDTH  - 1: 0] s_step_pixels_data  [KERNEL_W_MAX - 1 : 0];
-    input  wire                      s_step_weights_valid[KERNEL_W_MAX - 1 : 0];
-    input  wire [DATA_WIDTH  - 1: 0] s_step_weights_data [KERNEL_W_MAX - 1 : 0];
+    input  wire [DATA_WIDTH  - 1: 0] s_step_pixels_data     [KERNEL_W_MAX - 1 : 0]  ;
+    input  wire                      s_step_weights_valid   [KERNEL_W_MAX - 1 : 0]  ;
+    input  wire [DATA_WIDTH  - 1: 0] s_step_weights_data    [KERNEL_W_MAX - 1 : 0]  ;
 
-    output wire [DATA_WIDTH  - 1: 0] m_data  ;
+    output wire [DATA_WIDTH  - 1: 0] m_data                                         ;
 
-    input  wire                      aclken     ;               
-    input  wire                      start      ;
-    input  wire [KERNEL_W_WIDTH-1:0] kernel_w_1 ;
-    output wire                      s_ready    ;
+    input  wire                      start                                          ;
+    input  wire [KERNEL_W_WIDTH-1:0] kernel_w_1                                     ;
 
-    input  wire                      s_step_pixels_last  [KERNEL_W_MAX - 1 : 0];
-    input  wire [TUSER_WIDTH - 1: 0] s_step_pixels_user  [KERNEL_W_MAX - 1 : 0];
+    input  wire                      s_step_pixels_last     [KERNEL_W_MAX - 1 : 0]  ;
+    input  wire [TUSER_WIDTH - 1: 0] s_step_pixels_user     [KERNEL_W_MAX - 1 : 0]  ;
 
-    output wire                      m_valid ;
-    output wire                      m_last  ;
-    output wire [TUSER_WIDTH - 1: 0] m_user  ;
+    output wire                      s_ready                                        ;
+    output wire                      m_valid                                        ;
+    output wire                      m_last                                         ;
+    output wire [TUSER_WIDTH - 1: 0] m_user                                         ;
 
-    output wire [KERNEL_W_MAX-1 : 1] out_mux_sel                           ;//
-    output wire                      out_clken_mul                         ;
-    output wire [KERNEL_W_MAX-1 : 0] out_clken_acc                         ;//
-    output wire                      out_mux_s2_valid[KERNEL_W_MAX - 1 : 1];
-    output wire                      out_acc_s_valid [KERNEL_W_MAX - 1 : 0];
-    output wire                      out_acc_s_last  [KERNEL_W_MAX - 1 : 0];
-    output wire                      out_shift_sel   [KERNEL_W_MAX - 2 : 0];
+    output wire [KERNEL_W_MAX-1 : 1] out_mux_sel                                    ;
+    output wire                      out_clken_mul                                  ;
+    output wire [KERNEL_W_MAX-1 : 0] out_clken_acc                                  ;
+    output wire                      out_mux_s2_valid       [KERNEL_W_MAX - 1 : 1]  ;
+    output wire                      out_acc_s_valid        [KERNEL_W_MAX - 1 : 0]  ;
+    output wire                      out_acc_s_last         [KERNEL_W_MAX - 1 : 0]  ;
+    output wire                      out_shift_sel          [KERNEL_W_MAX - 2 : 0]  ;
 
-    input  wire [KERNEL_W_MAX-1 : 1] in_mux_sel                            ;
-    input  wire                      in_clken_mul                          ;
-    input  wire [KERNEL_W_MAX-1 : 0] in_clken_acc                          ;//
-    input  wire                      in_mux_s2_valid [KERNEL_W_MAX - 1 : 1];
-    input  wire                      in_acc_s_valid  [KERNEL_W_MAX - 1 : 0];
-    input  wire                      in_acc_s_last   [KERNEL_W_MAX - 1 : 0];
-    input  wire                      in_shift_sel    [KERNEL_W_MAX - 2 : 0];
+    input  wire [KERNEL_W_MAX-1 : 1] in_mux_sel                                     ;
+    input  wire                      in_clken_mul                                   ;
+    input  wire [KERNEL_W_MAX-1 : 0] in_clken_acc                                   ;
+    input  wire                      in_mux_s2_valid        [KERNEL_W_MAX - 1 : 1]  ;
+    input  wire                      in_acc_s_valid         [KERNEL_W_MAX - 1 : 0]  ;
+    input  wire                      in_acc_s_last          [KERNEL_W_MAX - 1 : 0]  ;
+    input  wire                      in_shift_sel           [KERNEL_W_MAX - 2 : 0]  ;
 
 
     /*
     ENABLE SIGNALS
     */
-    wire    [KERNEL_W_MAX - 1 : 1] mux_sel;
-    wire                           mux_sel_none;
-    wire    [KERNEL_W_MAX - 1 : 0] clken_acc;
-    wire                           clken_mul;
+    wire    [KERNEL_W_MAX - 1 : 1] mux_sel      ;
+    wire                           mux_sel_none ;
+    wire    [KERNEL_W_MAX - 1 : 0] clken_acc    ;
+    wire                           clken_mul    ;
 
     generate
         if (IS_ACTIVE) begin
-            assign mux_sel_none     = !(|mux_sel);
+            assign mux_sel_none     = !(|mux_sel)       ;
             assign clken_mul        = aclken &&  mux_sel_none;
-            assign clken_acc[0]     = clken_mul;
+            assign clken_acc[0]     = clken_mul         ;
+            assign s_ready          = clken_mul         ;
 
-            assign s_ready          = clken_mul;
-
-            assign out_clken_mul    = clken_mul     ;
-            assign out_clken_acc[0] = clken_acc[0]  ;
+            assign out_clken_mul    = clken_mul         ;
+            assign out_clken_acc[0] = clken_acc[0]      ;
         end
         else begin
-            assign clken_mul        = in_clken_mul   ;
-            assign clken_acc[0]     = in_clken_acc[0];
+            assign clken_mul        = in_clken_mul      ;
+            assign clken_acc[0]     = in_clken_acc[0]   ;
         end
     endgenerate
 
@@ -303,7 +286,7 @@ module conv_unit # (
                     );
                 end
                 else begin
-                    floating_point_multiplier_passive multipler (
+                    floating_point_multiplier_passive multiplier (
                         .aclk                   (aclk),                                            
                         .aclken                 (clken_mul),                                          
                         .aresetn                (aresetn),                                         
@@ -333,14 +316,16 @@ module conv_unit # (
                 assign clken_acc[i]    = aclken && (mux_sel_none || mux_sel[i]);
                 assign out_clken_acc[i]= clken_acc[i];
             end
-            else
+            else begin
                 assign clken_acc[i]    = in_clken_acc[i];
+            end
 
         end
 
         for (i=0; i < KERNEL_W_MAX; i++) begin : accumulators_gen
 
             assign acc_m_valid_last         [i] = acc_m_valid [i] & acc_m_last [i];
+
             if (IS_ACTIVE) begin
                 if (IS_FIXED_POINT) begin         
                     fixed_point_accumulator_wrapper #(
@@ -365,9 +350,9 @@ module conv_unit # (
                 end
                 else begin
                     floating_point_accumulator_active accumulator (
-                        .aclk                   (aclk),                                 
-                        .aclken                 (clken_acc[i]),                               
-                        .aresetn                (aresetn),                              
+                        .aclk                   (aclk              ),                                 
+                        .aclken                 (clken_acc      [i]),                               
+                        .aresetn                (aresetn           ),                              
                         .s_axis_a_tvalid        (acc_s_valid    [i]),                      
                         .s_axis_a_tdata         (acc_s_data     [i]),                                
                         .s_axis_a_tlast         (acc_s_last     [i]),                       
@@ -388,9 +373,9 @@ module conv_unit # (
                     )
                     fixed_point_accumulator
                     (
-                        .aclk       (aclk),
-                        .aclken     (clken_acc[i]),
-                        .aresetn    (aresetn),
+                        .aclk       (aclk              ),
+                        .aclken     (clken_acc      [i]),
+                        .aresetn    (aresetn           ),
                         .valid_in   (acc_s_valid    [i]),
                         .data_in    (acc_s_data     [i]),
                         .last_in    (acc_s_last     [i]),
@@ -401,9 +386,9 @@ module conv_unit # (
                 end
                 else begin
                     floating_point_accumulator_passive accumulator (
-                        .aclk                   (aclk),                                 
-                        .aclken                 (clken_acc[i]),                               
-                        .aresetn                (aresetn),                              
+                        .aclk                   (aclk              ),                                 
+                        .aclken                 (clken_acc      [i]),                               
+                        .aresetn                (aresetn           ),                              
                         .s_axis_a_tvalid        (acc_s_valid    [i]),    
                         .s_axis_a_tdata         (acc_s_data     [i]),              
                         .s_axis_a_tlast         (acc_s_last     [i]),     
@@ -419,19 +404,19 @@ module conv_unit # (
         Directly connect Mul_0 to Acc_0
         */
         if (IS_ACTIVE) begin
-            assign acc_s_valid[0] = mul_m_valid[0] && mux_sel_none;
-            assign acc_s_data [0] = mul_m_data [0];
-            assign acc_s_last [0] = mul_m_last [0];
-            assign acc_s_user [0] = mul_m_user [0];
+            assign acc_s_valid      [0] = mul_m_valid   [0] && mux_sel_none;
+            assign acc_s_data       [0] = mul_m_data    [0]                ;
+            assign acc_s_last       [0] = mul_m_last    [0]                ;
+            assign acc_s_user       [0] = mul_m_user    [0]                ;
 
-            assign out_acc_s_valid[0] = acc_s_valid[0];
-            assign out_acc_s_last [0] = acc_s_last [0];
+            assign out_acc_s_valid  [0] = acc_s_valid   [0]                ;
+            assign out_acc_s_last   [0] = acc_s_last    [0]                ;
         end
         else begin
-            assign acc_s_valid[0] = in_acc_s_valid[0];
-            assign acc_s_data [0] = mul_m_data    [0];
-            assign acc_s_last [0] = in_acc_s_last [0];
-            assign acc_s_last [0] = mul_m_last    [0];
+            assign acc_s_valid      [0] = in_acc_s_valid[0]                ;
+            assign acc_s_data       [0] = mul_m_data    [0]                ;
+            assign acc_s_last       [0] = in_acc_s_last [0]                ;
+            assign acc_s_last       [0] = mul_m_last    [0]                ;
         end
 
         /*
@@ -486,13 +471,10 @@ module conv_unit # (
 
             for (i=1; i < KERNEL_W_MAX; i++) begin : sel_regs_gen
 
-                wire   update_switch, selected_valid;
-                assign selected_valid = (mux_sel[i]==0) ? mul_m_valid [i] : acc_m_valid_last[i-1];
-                assign update_switch  = aclken && selected_valid;
+                wire selected_valid = (mux_sel[i]==0) ? mul_m_valid [i] : acc_m_valid_last[i-1];
+                wire update_switch  = aclken && selected_valid;
 
-                
-                wire   sel_in;
-                assign sel_in = mul_m_last [i] && (!mul_m_user[i][INDEX_IS_1x1]);
+                wire sel_in         = mul_m_last [i] && (!mul_m_user[i][INDEX_IS_1x1]);
                 
                 register #(
                     .WORD_WIDTH     (1),
@@ -500,9 +482,9 @@ module conv_unit # (
                 )
                 sel_registers
                 (
-                    .clock          (aclk),
-                    .clock_enable   (update_switch),
-                    .resetn         (aresetn),
+                    .clock          (aclk          ),
+                    .clock_enable   (update_switch ),
+                    .resetn         (aresetn       ),
                     .data_in        (sel_in        ),
                     .data_out       (mux_sel    [i])
                 );
@@ -518,14 +500,14 @@ module conv_unit # (
 
             if(IS_ACTIVE) begin
                 assign mux_s2_valid     [i] = acc_m_valid_last  [i-1] && mask_partial[i];
-                assign out_mux_s2_valid [i] = mux_s2_valid[i];
+                assign out_mux_s2_valid [i] = mux_s2_valid[i]                           ;
             end
             else begin
-                assign mux_s2_valid     [i] = in_mux_s2_valid[i];
+                assign mux_s2_valid     [i] = in_mux_s2_valid[i]     ;
             end
-            
-            assign mux_s2_data   [i]    = acc_m_data        [i-1];
-            assign mux_s2_user   [i]    = acc_m_user        [i-1];
+
+            assign mux_s2_data          [i] = acc_m_data        [i-1];
+            assign mux_s2_user          [i] = acc_m_user        [i-1];
 
         end
 
@@ -533,7 +515,7 @@ module conv_unit # (
         if(IS_ACTIVE)
             for (i=1; i < KERNEL_W_MAX; i++) begin : mux_gen
 
-                assign acc_s_valid [i] = mux_m_valid[i] && (mux_sel[i] || mux_sel_none);
+                assign acc_s_valid [i]    = mux_m_valid[i] && (mux_sel[i] || mux_sel_none);
                 
                 assign out_acc_s_valid[i] = acc_s_valid[i];
                 assign out_acc_s_last [i] = acc_s_last [i];
@@ -664,9 +646,9 @@ module conv_unit # (
         */
         if (IS_ACTIVE)
             for (i=0; i < KERNEL_W_MAX  ; i++) begin : valid_masked_gen
-                wire acc_m_valid_last_masked_delayed;
-
-                assign acc_m_valid_last_masked  [i] = acc_m_valid_last[i] & mask_full[i] & !acc_m_valid_last_masked_delayed;
+                
+                wire    acc_m_valid_last_masked_delayed;
+                assign  acc_m_valid_last_masked  [i] = acc_m_valid_last[i] & mask_full[i] & !acc_m_valid_last_masked_delayed;
 
                 register #(
                     .WORD_WIDTH     (1),
@@ -674,10 +656,10 @@ module conv_unit # (
                 )
                 sel_registers
                 (
-                    .clock          (aclk),
-                    .clock_enable   (aclken),
-                    .resetn         (aresetn),
-                    .data_in        (acc_m_valid_last_masked  [i]   ),
+                    .clock          (aclk                           ),
+                    .clock_enable   (aclken                         ),
+                    .resetn         (aresetn                        ),
+                    .data_in        (acc_m_valid_last_masked    [i] ),
                     .data_out       (acc_m_valid_last_masked_delayed)
                 );
             end
@@ -696,10 +678,10 @@ module conv_unit # (
                 assign shift_in_user  [i] = shift_sel  [i] ? shift_out_user  [i+1] : acc_m_user              [i];
             end
 
-            assign     shift_in_valid [KERNEL_W_MAX - 1] = acc_m_valid_last_masked [KERNEL_W_MAX - 1]  ;
-            assign     shift_in_data  [KERNEL_W_MAX - 1] = acc_m_data              [KERNEL_W_MAX - 1]  ;
-            assign     shift_in_last  [KERNEL_W_MAX - 1] = acc_m_valid_last_masked [KERNEL_W_MAX - 1]  ;
-            assign     shift_in_user  [KERNEL_W_MAX - 1] = acc_m_user              [KERNEL_W_MAX - 1]  ;
+            assign     shift_in_valid [KERNEL_W_MAX - 1] = acc_m_valid_last_masked [KERNEL_W_MAX - 1];
+            assign     shift_in_data  [KERNEL_W_MAX - 1] = acc_m_data              [KERNEL_W_MAX - 1];
+            assign     shift_in_last  [KERNEL_W_MAX - 1] = acc_m_valid_last_masked [KERNEL_W_MAX - 1];
+            assign     shift_in_user  [KERNEL_W_MAX - 1] = acc_m_user              [KERNEL_W_MAX - 1];
 
             for (i=0; i < KERNEL_W_MAX; i++) begin : shift_reg_gen
 
@@ -729,8 +711,6 @@ module conv_unit # (
             assign m_data  = shift_out_data  [0];
             assign m_last  = shift_out_last  [0];
             assign m_user  = shift_out_user  [0];
-
-            
         end
         else begin
 
@@ -747,16 +727,16 @@ module conv_unit # (
                 )
                 SHIFT_REG
                 (
-                    .clock          (aclk),
-                    .clock_enable   (aclken),
-                    .resetn         (aresetn),
+                    .clock          (aclk               ),
+                    .clock_enable   (aclken             ),
+                    .resetn         (aresetn            ),
                     .data_in        (shift_in_data   [i]),
                     .data_out       (shift_out_data  [i])
                 );
             end
 
-            assign     shift_in_data  [KERNEL_W_MAX - 1] = acc_m_data              [KERNEL_W_MAX - 1]  ;
-            assign     m_data  = shift_out_data  [0];
+            assign     shift_in_data  [KERNEL_W_MAX - 1] = acc_m_data      [KERNEL_W_MAX - 1];
+            assign     m_data                            = shift_out_data  [0]               ;
         end
     endgenerate     
 

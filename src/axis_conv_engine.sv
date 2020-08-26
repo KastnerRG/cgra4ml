@@ -145,18 +145,18 @@ module axis_conv_engine # (
     wire    [TUSER_WIDTH-1 : 0]   m_shift_pixels_user                     ;
 
     axis_shift_buffer #(
-        .IS_FIXED_POINT     (IS_FIXED_POINT    ) ,
-        .DATA_WIDTH         (DATA_WIDTH),
-        .CONV_UNITS         (CONV_UNITS),
-        .KERNEL_H_MAX       (KERNEL_H_MAX),
-        .KERNEL_W_MAX       (KERNEL_W_MAX),
-        .CIN_COUNTER_WIDTH  (CIN_COUNTER_WIDTH ),
-        .COLS_COUNTER_WIDTH (COLS_COUNTER_WIDTH),
-        .TUSER_WIDTH        (TUSER_WIDTH       ),
-        .INDEX_IS_1x1       (INDEX_IS_1x1      ),
-        .INDEX_IS_MAX       (INDEX_IS_MAX      ),
-        .INDEX_IS_RELU      (INDEX_IS_RELU     ),
-        .INDEX_IS_COLS_1_K2 (INDEX_IS_COLS_1_K2)
+        .IS_FIXED_POINT     (IS_FIXED_POINT     ),
+        .DATA_WIDTH         (DATA_WIDTH         ),
+        .CONV_UNITS         (CONV_UNITS         ),
+        .KERNEL_H_MAX       (KERNEL_H_MAX       ),
+        .KERNEL_W_MAX       (KERNEL_W_MAX       ),
+        .CIN_COUNTER_WIDTH  (CIN_COUNTER_WIDTH  ),
+        .COLS_COUNTER_WIDTH (COLS_COUNTER_WIDTH ),
+        .TUSER_WIDTH        (TUSER_WIDTH        ),
+        .INDEX_IS_1x1       (INDEX_IS_1x1       ),
+        .INDEX_IS_MAX       (INDEX_IS_MAX       ),
+        .INDEX_IS_RELU      (INDEX_IS_RELU      ),
+        .INDEX_IS_COLS_1_K2 (INDEX_IS_COLS_1_K2 )
     )
     SHIFT_BUFFER
     (
@@ -174,11 +174,11 @@ module axis_conv_engine # (
         .S_AXIS_tvalid      (s_pixels_valid       ),
         .S_AXIS_tready      (s_pixels_ready       ),
 
-        .M_AXIS_tdata       (m_shift_pixels_data   ),
-        .M_AXIS_tvalid      (m_shift_pixels_valid  ),
-        .M_AXIS_tready      (m_shift_pixels_ready  ),
-        .M_AXIS_tlast       (m_shift_pixels_last   ),
-        .M_AXIS_tuser       (m_shift_pixels_user   )
+        .M_AXIS_tdata       (m_shift_pixels_data  ),
+        .M_AXIS_tvalid      (m_shift_pixels_valid ),
+        .M_AXIS_tready      (m_shift_pixels_ready ),
+        .M_AXIS_tlast       (m_shift_pixels_last  ),
+        .M_AXIS_tuser       (m_shift_pixels_user  )
     );
 
     /*
@@ -280,9 +280,9 @@ module axis_conv_engine # (
     wire                   conv_m_last  [CONV_CORES-1 : 0];
     wire [TUSER_WIDTH-1:0] conv_m_user  [CONV_CORES-1 : 0];
 
-    assign m_valid  = conv_m_valid[0];
-    assign m_last   = conv_m_last [0];
-    assign m_user   = conv_m_user [0];
+    assign m_valid        = conv_m_valid[0]               ;
+    assign m_last         = conv_m_last [0]               ;
+    assign m_user         = conv_m_user [0]               ;
 
     generate
     for (i=0; i < CONV_CORES; i++) begin: cores_gen
