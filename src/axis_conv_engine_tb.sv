@@ -2,7 +2,7 @@
 
 module axis_conv_engine_tb # ();
 
-    parameter IS_FIXED_POINT            =  0 ;
+    parameter IS_FIXED_POINT            =  1 ;
     parameter CLK_PERIOD                = 10 ;
     parameter CONV_CORES                =  1 ;
     parameter CONV_UNITS                =  8 ; 
