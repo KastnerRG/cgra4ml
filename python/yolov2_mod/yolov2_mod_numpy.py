@@ -12,6 +12,7 @@ if True:    # To prevent reordering of imports
     import numpy as np
     import cv2
     import h5py
+    import pickle
     import matplotlib.pyplot as plt
     import sys
     sys.path.append("../aba_framework")
@@ -30,34 +31,114 @@ __maintainer__ = "Abarajthan G"
 __email__ = "abarajithan07@gmail.com"
 __status__ = "Research"
 
+
 class YOLOv2_Modified_Numpy():
     def __init__(self,
+                 quantize=False,
                  np_dtype=np.float64,
+                 np_dtype_sum=np.float64,
+                 np_dtype_conv_out=np.float64,
+                 np_dtype_lrelu=np.float64,
+                 bits_conv_out=32,
                  input_W=384,
                  input_H=256,
                  image_path='../data/5.png',
                  image=None,
-                 weights_path='YOLOv2_modified_trained_merged.h5'):
+                 GAMMA=2.2,
+                 weights_path='YOLOv2_modified_trained_merged.h5',
+                 quant_weights_path='tflite_mod_weights.pickle'):
 
         self.model = MyModel()
         self.output = None
         self.weights_path = weights_path
+        self.quantize = quantize
+        self.quant_weights_path = quant_weights_path
         self.np_dtype = np_dtype
+        self.np_dtype_sum = np_dtype_sum
+        self.np_dtype_conv_out = np_dtype_conv_out
+        self.np_dtype_lrelu = np_dtype_lrelu
+        self.bits_conv_out = bits_conv_out
 
         self.input_W = input_W
         self.input_H = input_H
         self.image_path = image_path
         self.image = image
+        self.GAMMA = GAMMA
 
-        self.load_weights()
+        if self.quantize:
+            self.load_quant_weights()
+            self.get_weights = self.get_quant_weights
+        else:
+            self.load_weights()
+            self.get_weights = self.get_float_weights
+
         self.load_image()
         self.compile()
+
+        if self.quantize:
+            for layer in self.model.d.values():
+                self.set_quant_params(layer)
+
+                if 'input' in layer.name:
+                    layer.quantize = True
+        self.input_layer.set_input_image()
+
+    def load_quant_weights(self):
+        self.quant_weights = pickle.load(open(self.quant_weights_path, 'rb'))
+
+    def get_quant_weights(self, name):
+        if 'conv' in name:
+            kernel = self.quant_weights[name]['kernel']['tensor']
+            kernel = kernel.transpose([1, 2, 3, 0])
+            bias = self.quant_weights[name]['bias']['tensor']
+
+            return [kernel, bias]
+
+    def set_quant_params(self, layer):
+        if 'conv' in layer.name:
+            layer.scale = self.quant_weights[layer.name]['conv']['scales'][0]
+            layer.zero_point = self.quant_weights[layer.name]['conv']['zero_points'][0]
+
+            layer.weights_scales = self.quant_weights[layer.name]['kernel']['scales']
+            layer.weights_zero_points = self.quant_weights[layer.name]['kernel']['zero_points']
+
+            layer.biases_scales = self.quant_weights[layer.name]['bias']['scales']
+            layer.biases_zero_points = self.quant_weights[layer.name]['bias']['zero_points']
+
+        elif 'maxpool' in layer.name:
+            layer.scale = self.quant_weights[layer.name]['maxpool']['scales'][0]
+            layer.zero_point = self.quant_weights[layer.name]['maxpool']['zero_points'][0]
+        elif 'leaky_relu' in layer.name:
+            layer.scale = self.quant_weights[layer.name]['leaky_relu']['scales'][0]
+            layer.zero_point = self.quant_weights[layer.name]['leaky_relu']['zero_points'][0]
+
+            '''Get previous conv layer'''
+            conv_layer = layer.prev_layer
+            while (not isinstance(conv_layer, MyConv)):
+                conv_layer = conv_layer.prev_layer
+
+            layer.weights_scales = conv_layer.weights_scales
+            layer.weights_zero_points = conv_layer.weights_zero_points
+            layer.weights = conv_layer.weights
+
+            layer.prev_scale = conv_layer.prev_layer.scale
+            layer.prev_zero_point = conv_layer.prev_layer.zero_point
+
+            layer.biases_scales = conv_layer.biases_scales
+            layer.biases_zero_points = conv_layer.biases_zero_points
+            layer.biases = conv_layer.biases
+
+        elif 'input' in layer.name:
+            layer.scale = self.quant_weights[layer.name]['input']['scales'][0]
+            layer.zero_point = self.quant_weights[layer.name]['input']['zero_points'][0]
+        else:
+            print('Error. Unknown layer: ', layer.name)
 
     def load_weights(self):
         f = h5py.File(self.weights_path)
         self.model_weights = f['model_weights']
 
-    def get_weights(self, name):
+    def get_float_weights(self, name):
         '''
         Return weights based on layer name
         '''
@@ -78,53 +159,89 @@ class YOLOv2_Modified_Numpy():
             return w
 
     def compile(self):
-        layer_name = 'input'
+        layer_name = 'input_1'
         np_dtype = self.np_dtype
-        self.model.d[layer_name] = MyInput(self.input_image, name=layer_name)
 
+        self.input_layer = MyInput(self.input_image,
+                                   name=layer_name,
+                                   np_dtype=self.np_dtype,
+                                   quantize=False)
+        self.model.d[layer_name] = self.input_layer
+
+        maxpool_i = 0
         for i in range(1, 21):
             prev_name = layer_name
             layer_name = 'conv_' + str(i)
-            bn_name = 'norm_' + str(i)
+
+            if self.quantize:
+                bn_name = ''
+            else:
+                bn_name = 'norm_' + str(i)
+
             self.model.d[layer_name] = MyConv(prev_layer=self.model.d[prev_name],
                                               weights_biases=self.get_weights(
                                                   layer_name),
                                               bn_weights=self.get_weights(
                                                   bn_name),
                                               name=layer_name,
-                                              np_dtype=np_dtype)
-
+                                              np_dtype=np_dtype,
+                                              np_dtype_sum=self.np_dtype_sum,
+                                              np_dtype_conv_out=self.np_dtype_conv_out,
+                                              bits_conv_out=self.bits_conv_out,
+                                              quantize=self.quantize)
             prev_name = layer_name
-            layer_name = 'lrelu_' + str(i)
+            layer_name = 'leaky_relu_' + str(i)
             self.model.d[layer_name] = MyLeakyRelu(prev_layer=self.model.d[prev_name],
                                                    name=layer_name,
-                                                   np_dtype=np_dtype)
+                                                   np_dtype=np_dtype,
+                                                   np_dtype_lrelu=self.np_dtype_lrelu,
+                                                   quantize=self.quantize)
 
             if i in [1, 2, 5, 8, 13]:
+                maxpool_i += 1
+
                 prev_name = layer_name
-                layer_name = 'maxpool_' + str(i)
+                layer_name = 'maxpool_' + str(maxpool_i)
                 self.model.d[layer_name] = MyMaxPool(prev_layer=self.model.d[prev_name],
                                                      name=layer_name,
                                                      pool_size=(2, 2),
                                                      np_dtype=np_dtype)
+
         i = 21
         prev_name = layer_name
         layer_name = 'conv_' + str(i)
-        layer_name_in_h5 = 'conv_23'
+        if self.quantize:
+            layer_name_in_h5 = 'conv_21'
+        else:
+            layer_name_in_h5 = 'conv_23'
+
         bn_name = ''
         self.model.d[layer_name] = MyConv(prev_layer=self.model.d[prev_name],
-                                              weights_biases=self.get_weights(
-                                                  layer_name_in_h5),
-                                              bn_weights=self.get_weights(
-                                                  bn_name),
-                                              name=layer_name,
-                                              np_dtype=np_dtype)
+                                          weights_biases=self.get_weights(
+            layer_name_in_h5),
+            bn_weights=self.get_weights(
+            bn_name),
+            name=layer_name,
+            np_dtype=np_dtype,
+            np_dtype_sum=self.np_dtype_sum,
+            quantize=self.quantize)
         self.model.output_name = 'conv_21'
-                  
 
     def fwd_pass(self):
         self.np_output_data = self.model.get_np_output_data()
         self.output = self.model.get_np_output_data()
+
+        if self.quantize:
+            out_layer = self.model.d[self.model.output_name]
+
+            '''
+            This is same as: self.output = out_layer.out_float_data
+            '''
+            a_q = out_layer.requantize_params['a_q']
+            fa = out_layer.scale
+            a_0 = out_layer.zero_point
+
+            self.output = a_q/fa + a_0
 
     def fwd_pass_quantized(self, quant_vals):
         self.quantized_output_data = self.model.get_quantized_output_data(
@@ -145,24 +262,24 @@ class YOLOv2_Modified_Numpy():
             self.raw_image, (self.input_W, self.input_H))
         self.input_image = self.input_image / 255.
         self.input_image = self.input_image[:, :, ::-1]
-        self.input_image = np.expand_dims(
-            self.input_image, 0).astype(self.np_dtype)
+        self.input_image = np.expand_dims(self.input_image, 0)
 
     def show_on_image(self, OBJ_THRESHOLD=0.3, NMS_THRESHOLD=0.3):
         LABELS = ['motorbikes/bicycles', 'three-wheeler', 'car/van', 'truck']
         CLASS = len(LABELS)
         # 0.5
         # 0.45
-        ANCHORS = [0.57273, 0.677385, 
-                   1.87446, 2.06253, 
-                   3.33843, 5.47434, 
-                   7.88282, 3.52778, 
+        ANCHORS = [0.57273, 0.677385,
+                   1.87446, 2.06253,
+                   3.33843, 5.47434,
+                   7.88282, 3.52778,
                    9.77052, 9.16828]
         dummy_array = np.zeros((1, 1, 1, 1, 50, 4))
 
         _, grid_h, grid_w, _ = self.output.shape
 
-        m_out_r = np.reshape(self.output, (1, grid_h, grid_w, 5, 5+CLASS)).copy()
+        m_out_r = np.reshape(
+            self.output, (1, grid_h, grid_w, 5, 5+CLASS)).copy()
         self.boxes = None
         self.boxes = decode_netout(m_out_r[0],
                                    obj_threshold=OBJ_THRESHOLD,
@@ -180,4 +297,3 @@ class YOLOv2_Modified_Numpy():
         for name in self.model.d.keys():
             print('\n\n\nLAYER: ', name)
             self.model.d[name].show_hist()
-
