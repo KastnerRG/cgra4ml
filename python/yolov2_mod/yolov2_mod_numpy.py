@@ -38,7 +38,6 @@ class YOLOv2_Modified_Numpy():
                  np_dtype=np.float64,
                  np_dtype_sum=np.float64,
                  np_dtype_conv_out=np.float64,
-                 np_dtype_lrelu=np.float64,
                  bits_conv_out=32,
                  input_W=384,
                  input_H=256,
@@ -56,7 +55,6 @@ class YOLOv2_Modified_Numpy():
         self.np_dtype = np_dtype
         self.np_dtype_sum = np_dtype_sum
         self.np_dtype_conv_out = np_dtype_conv_out
-        self.np_dtype_lrelu = np_dtype_lrelu
         self.bits_conv_out = bits_conv_out
 
         self.input_W = input_W
@@ -105,12 +103,35 @@ class YOLOv2_Modified_Numpy():
             layer.biases_scales = self.quant_weights[layer.name]['bias']['scales']
             layer.biases_zero_points = self.quant_weights[layer.name]['bias']['zero_points']
 
+            layer.scale = np.float64(layer.scale)
+            layer.zero_point = np.float64(layer.zero_point)
+            layer.weights_scales = np.float64(layer.weights_scales)
+            layer.weights_zero_points = np.float64(layer.weights_zero_points)
+            layer.biases_scales = np.float64(layer.biases_scales)
+            layer.biases_zero_points = np.float64(layer.biases_zero_points)
+
+            '''
+            Set output LUT
+            - access values as lut[a_q+128]
+            '''
+            lut = np.arange(start=-128, stop=128)
+            lut = layer.scale * (lut - layer.zero_point)
+            lut = np.float32(lut)
+            layer.unquantize_lut = lut
+
         elif 'maxpool' in layer.name:
             layer.scale = self.quant_weights[layer.name]['maxpool']['scales'][0]
             layer.zero_point = self.quant_weights[layer.name]['maxpool']['zero_points'][0]
+
+            layer.scale = np.float64(layer.scale)
+            layer.zero_point = np.float64(layer.zero_point)
+
         elif 'leaky_relu' in layer.name:
             layer.scale = self.quant_weights[layer.name]['leaky_relu']['scales'][0]
             layer.zero_point = self.quant_weights[layer.name]['leaky_relu']['zero_points'][0]
+
+            layer.scale = np.float64(layer.scale)
+            layer.zero_point = np.float64(layer.zero_point)
 
             '''Get previous conv layer'''
             conv_layer = layer.prev_layer
@@ -128,9 +149,34 @@ class YOLOv2_Modified_Numpy():
             layer.biases_zero_points = conv_layer.biases_zero_points
             layer.biases = conv_layer.biases
 
+            layer.scale = np.float64(layer.scale)
+            layer.zero_point = np.float64(layer.zero_point)
+            layer.weights_scales = np.float64(layer.weights_scales)
+            layer.weights_zero_points = np.float64(layer.weights_zero_points)
+            layer.weights = np.float64(layer.weights)
+            layer.biases_scales = np.float64(layer.biases_scales)
+            layer.biases_zero_points = np.float64(layer.biases_zero_points)
+            layer.biases = np.float64(layer.biases)
+            layer.prev_scale = np.float64(layer.prev_scale)
+            layer.prev_zero_point = np.float64(layer.prev_zero_point)
+
         elif 'input' in layer.name:
             layer.scale = self.quant_weights[layer.name]['input']['scales'][0]
             layer.zero_point = self.quant_weights[layer.name]['input']['zero_points'][0]
+
+            layer.scale = np.float64(layer.scale)
+            layer.zero_point = np.float64(layer.zero_point)
+
+            '''
+            Set Input LUT
+            '''
+            lut = np.arange(start=0, stop=256)
+            lut = (lut/255.0)**(1/2.2)
+            lut = lut/layer.scale + layer.zero_point
+            lut = np.round(lut).astype(np.int8)
+
+            layer.quantize_lut = lut
+
         else:
             print('Error. Unknown layer: ', layer.name)
 
@@ -164,6 +210,7 @@ class YOLOv2_Modified_Numpy():
 
         self.input_layer = MyInput(self.input_image,
                                    name=layer_name,
+                                   GAMMA=self.GAMMA,
                                    np_dtype=self.np_dtype,
                                    quantize=False)
         self.model.d[layer_name] = self.input_layer
@@ -194,7 +241,6 @@ class YOLOv2_Modified_Numpy():
             self.model.d[layer_name] = MyLeakyRelu(prev_layer=self.model.d[prev_name],
                                                    name=layer_name,
                                                    np_dtype=np_dtype,
-                                                   np_dtype_lrelu=self.np_dtype_lrelu,
                                                    quantize=self.quantize)
 
             if i in [1, 2, 5, 8, 13]:
@@ -235,13 +281,25 @@ class YOLOv2_Modified_Numpy():
             out_layer = self.model.d[self.model.output_name]
 
             '''
-            This is same as: self.output = out_layer.out_float_data
-            '''
+            Following three MUST be equivalent
+            
+            1. 
+            self.output = out_layer.out_float_data
+
+            2. 
             a_q = out_layer.requantize_params['a_q']
             fa = out_layer.scale
             a_0 = out_layer.zero_point
 
-            self.output = a_q/fa + a_0
+            self.output = fa*(a_q - a_0)
+
+            3.
+            a_q = out_layer.requantize_params['a_q']
+            self.output = out_layer.unquantize_lut[a_q+128]
+
+            '''
+            a_q = out_layer.requantize_params['a_q']
+            self.output = out_layer.unquantize_lut[a_q + 128]
 
     def fwd_pass_quantized(self, quant_vals):
         self.quantized_output_data = self.model.get_quantized_output_data(
@@ -253,6 +311,9 @@ class YOLOv2_Modified_Numpy():
         self.output = A*self.quantized_output_data + B
 
     def load_image(self):
+        '''
+        Reshaped uint8 image is passed. (image/255)**(1/gamma) is done in input layer
+        '''
         if self.image is None:
             self.raw_image = cv2.imread(self.image_path)
         else:
@@ -260,7 +321,6 @@ class YOLOv2_Modified_Numpy():
 
         self.input_image = cv2.resize(
             self.raw_image, (self.input_W, self.input_H))
-        self.input_image = self.input_image / 255.
         self.input_image = self.input_image[:, :, ::-1]
         self.input_image = np.expand_dims(self.input_image, 0)
 
