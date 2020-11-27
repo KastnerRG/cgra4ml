@@ -418,6 +418,7 @@ class MyConv(MyLayer):
         self.biases_scales = None
         self.weights_zero_points = None
         self.biases_zero_points = None
+        self.unquantize_lut = None
 
         if self.quantize:
             self.clip_max = 2**(bits_conv_out-1)-1
@@ -670,20 +671,22 @@ class MyInput(MyLayer):
         - Simply returns the image, ending the recursive call
     '''
 
-    def __init__(self, input_image, name='input', np_dtype=np.float64, quantize=False):
+    def __init__(self, input_image, name='input', GAMMA=1, np_dtype=np.float64, quantize=False):
         MyLayer.__init__(self, prev_layer=None,
                          name=name, np_dtype=np_dtype,
                          quantize=quantize)
         self.input_image = input_image
+        self.quantize_lut = None
+        self.GAMMA = GAMMA
 
     def set_input_image(self):
         input_image = self.input_image.copy()
 
         if self.quantize:
-            image_int = input_image/self.scale + self.zero_point + 0.5  # rounding
-            self.input_image = image_int.astype(self.np_dtype)
+            self.input_image = self.quantize_lut[input_image]
         else:
-            self.input_image = input_image.astype(self.np_dtype)
+            self.input_image = (input_image/255.0)**(1/self.GAMMA)
+            self.input_image = self.input_image.astype(self.np_dtype)
 
     def get_np_output_recursively(self):
         self.np_out_data = self.decode(self.encode(self.input_image))
@@ -710,15 +713,12 @@ class MyLeakyRelu(MyLayer):
                  prev_layer=None,
                  alpha=0.1, name='',
                  np_dtype=np.float64,
-                 np_dtype_lrelu=np.float64,
                  quantize=False):
 
         MyLayer.__init__(self, prev_layer=prev_layer,
                          name=name, np_dtype=np_dtype,
                          quantize=quantize)
         self.alpha = alpha
-
-        self.np_dtype_lrelu = np_dtype_lrelu
 
         self.weights_scales = None
         self.biases_scales = None
@@ -792,7 +792,7 @@ class MyLeakyRelu(MyLayer):
                 }
 
     def np_out(self, in_data):
-        x = in_data.astype(self.np_dtype_lrelu)
+        x = in_data
         self.in_data = x
 
         if self.quantize:
