@@ -10,7 +10,7 @@ module always_valid_cyclic_bram_tb();
 
   localparam DEPTH   = 8 ;
   localparam WIDTH   = 64;
-  localparam LATENCY = 3 ;
+  localparam LATENCY = 2 ;
   localparam ADDR_WIDTH = $clog2(DEPTH);
 
   logic clk, clken, resetn;
