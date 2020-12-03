@@ -59,26 +59,21 @@ module always_valid_cyclic_bram #(
 
   localparam IDLE = 0;
   localparam WORK = 1;
-  logic state, state_next;
+  logic state;
+  logic state_trigger;
+
+  assign state_trigger = (w_ptr == BUFFER_DEPTH-1 && s_valid_ready);
+
   register #(
     .WORD_WIDTH   (1), 
     .RESET_VALUE  (IDLE)
   ) STATE (
     .clock        (clk   ),
-    .clock_enable (clken ),
+    .clock_enable (clken && state_trigger),
     .resetn       (resetn),
-    .data_in      (state_next),
-    .data_out     (state     )
+    .data_in      (WORK  ),
+    .data_out     (state )
   );
-  always_comb begin
-    if (state == IDLE) begin
-      if (w_ptr == BUFFER_DEPTH-1 && s_valid_ready) begin
-            state_next = WORK;
-      end
-      else  state_next = IDLE;
-    end
-    else    state_next = WORK;
-  end
 
   /*
     WRITE POINTER
@@ -88,28 +83,20 @@ module always_valid_cyclic_bram #(
   */
   logic w_ptr_incr;
   logic [BUFFER_DEPTH-1:0] w_ptr, w_ptr_next;
+
+  assign w_ptr_incr = (state == IDLE) ? s_valid_ready : bram_valid_out;
+  assign w_ptr_next = (w_ptr == BUFFER_DEPTH-1) ? 0   : w_ptr + 1;
+
   register #(
     .WORD_WIDTH   (BUFFER_DEPTH), 
     .RESET_VALUE  (0)
   ) W_PTR (
     .clock        (clk   ),
-    .clock_enable (clken ),
+    .clock_enable (clken && w_ptr_incr),
     .resetn       (resetn),
     .data_in      (w_ptr_next),
     .data_out     (w_ptr     )
   );
-  always_comb begin
-    if (state == IDLE) w_ptr_incr = s_valid_ready;
-    else               w_ptr_incr = bram_valid_out;
-
-    if (w_ptr_incr) begin
-      if (w_ptr == BUFFER_DEPTH-1) w_ptr_next = 0;
-      else                         w_ptr_next = w_ptr + 1;
-    end
-    else begin
-      w_ptr_next = w_ptr;
-    end
-  end
 
   /*
     BUFFER
@@ -120,6 +107,11 @@ module always_valid_cyclic_bram #(
 
   logic [WIDTH-1:0] buffer_data       [BUFFER_DEPTH];
   logic [WIDTH-1:0] buffer_data_next  [BUFFER_DEPTH];
+
+  logic buff_w_trigger;
+  assign buff_w_trigger = (state == IDLE) ? s_valid_ready : bram_valid_out;
+  assign m_data  = buffer_data[r_ptr];
+
   generate
     for(genvar i=0; i < BUFFER_DEPTH; i++) begin: buf_data
       register #(
@@ -127,7 +119,7 @@ module always_valid_cyclic_bram #(
         .RESET_VALUE  (0)
       ) BUFFER_DATA (
         .clock        (clk   ),
-        .clock_enable (clken ),
+        .clock_enable (clken && buff_w_trigger),
         .resetn       (resetn),
         .data_in      (buffer_data_next[i]),
         .data_out     (buffer_data     [i])
@@ -135,16 +127,10 @@ module always_valid_cyclic_bram #(
     end
   endgenerate
   always_comb begin
-    m_data  = buffer_data[r_ptr];
-
     buffer_data_next = buffer_data; // default
-    if (state == IDLE)begin
-      if (s_valid_ready)  buffer_data_next[w_ptr] = s_data;
-    end
-    else begin
-      if (bram_valid_out) buffer_data_next[w_ptr] = bram_r_data;
-      else                buffer_data_next[w_ptr] = buffer_data_next[w_ptr];
-    end
+    if      (s_valid_ready)  buffer_data_next[w_ptr] = s_data;
+    else if (bram_valid_out) buffer_data_next[w_ptr] = bram_r_data;
+    else                     buffer_data_next[w_ptr] = buffer_data[w_ptr];
   end
 
   /*
@@ -169,65 +155,50 @@ module always_valid_cyclic_bram #(
   */
 
   logic [ADDR_WIDTH-1:0] addr_w_prev, addr_w;
+  assign addr_w = (addr_w_prev == addr_max_1) ? 0 : addr_w_prev + 1;
+
   register #(
     .WORD_WIDTH   (ADDR_WIDTH), 
     .RESET_VALUE  (-1)
   ) ADDR_W (
     .clock        (clk        ),
-    .clock_enable (clken      ),
+    .clock_enable (clken && s_valid_ready),
     .resetn       (resetn     ),
     .data_in      (addr_w),
-    .data_out     (addr_w_prev     )
+    .data_out     (addr_w_prev)
   );
-  always_comb begin
-    if (s_valid_ready) begin
-      if (addr_w_prev == addr_max_1) addr_w = 0;
-      else                           addr_w = addr_w_prev + 1;
-    end
-    else begin
-      addr_w = addr_w_prev;
-    end
-  end
 
   /*
     BRAM READ ADDRESS
   */
 
   logic [ADDR_WIDTH-1:0] addr_r, addr_r_next;
-  logic [BUFFER_DEPTH-1:0] r_ptr, r_ptr_next;
+  assign addr_r_next = (addr_r == addr_max_1) ? 0 : addr_r + 1;
+
   register #(
     .WORD_WIDTH   (ADDR_WIDTH), 
     .RESET_VALUE  (BUFFER_DEPTH)
   ) ADD_R (
     .clock        (clk   ),
-    .clock_enable (clken ),
+    .clock_enable (clken && m_valid_ready),
     .resetn       (resetn),
     .data_in      (addr_r_next),
     .data_out     (addr_r     )
   );
+
+  logic [BUFFER_DEPTH-1:0] r_ptr, r_ptr_next;
+  assign r_ptr_next = (r_ptr == BUFFER_DEPTH-1) ? 0 : r_ptr  + 1;
+
   register #(
     .WORD_WIDTH   (BUFFER_DEPTH), 
     .RESET_VALUE  (0)
   ) R_PTR (
     .clock        (clk   ),
-    .clock_enable (clken ),
+    .clock_enable (clken && m_valid_ready),
     .resetn       (resetn),
     .data_in      (r_ptr_next),
     .data_out     (r_ptr     )
   );
-  always_comb begin
-    if (m_valid_ready) begin
-      if (addr_r == addr_max_1)    addr_r_next = 0;
-      else                         addr_r_next = addr_r + 1;
-
-      if (r_ptr == BUFFER_DEPTH-1) r_ptr_next  = 0;
-      else                         r_ptr_next  = r_ptr  + 1;
-    end
-    else begin
-      addr_r_next = addr_r;
-      r_ptr_next  = r_ptr;
-    end
-  end
 
   /*
     M_VALID
@@ -259,7 +230,7 @@ module always_valid_cyclic_bram #(
     .clkb (clk          ),
     .enb  (clken        ),
     .addrb(addr_r       ),
-    .doutb(bram_r_data       )
+    .doutb(bram_r_data  )
   );
   
 endmodule
