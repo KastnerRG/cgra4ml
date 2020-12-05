@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="maxpool_core_tb_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="maxpool_core_tb" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="871666666fs"></ZoomStartTime>
+      <ZoomEndTime time="962866667fs"></ZoomEndTime>
+      <Cursor1Time time="1000000000fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="178"></NameColumnWidth>
+      <ValueColumnWidth column_width="143"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="37" />
+   <wave_markers>
+      <marker time="775000000" label="" />
+      <marker time="325000000" label="" />
+   </wave_markers>
+   <wvobject fp_name="/maxpool_core_tb/clk" type="logic">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/clken" type="logic">
+      <obj_property name="ElementShortName">clken</obj_property>
+      <obj_property name="ObjectShortName">clken</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/resetn" type="logic">
+      <obj_property name="ElementShortName">resetn</obj_property>
+      <obj_property name="ObjectShortName">resetn</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider164">
+      <obj_property name="label">Inout</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/s_valid" type="logic">
+      <obj_property name="ElementShortName">s_valid</obj_property>
+      <obj_property name="ObjectShortName">s_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/s_data" type="array">
+      <obj_property name="ElementShortName">s_data[0:2][0:1][15:0]</obj_property>
+      <obj_property name="ObjectShortName">s_data[0:2][0:1][15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/s_user" type="array">
+      <obj_property name="ElementShortName">s_user[0:1]</obj_property>
+      <obj_property name="ObjectShortName">s_user[0:1]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/m_valid" type="logic">
+      <obj_property name="ElementShortName">m_valid</obj_property>
+      <obj_property name="ObjectShortName">m_valid</obj_property>
+      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/m_data" type="array">
+      <obj_property name="ElementShortName">m_data[0:2][0:1][15:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data[0:2][0:1][15:0]</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/m_keep" type="array">
+      <obj_property name="ElementShortName">m_keep[0:2][0:1]</obj_property>
+      <obj_property name="ObjectShortName">m_keep[0:2][0:1]</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider157">
+      <obj_property name="label">State</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/dut/in_count_next" type="array">
+      <obj_property name="ElementShortName">in_count_next[2:0]</obj_property>
+      <obj_property name="ObjectShortName">in_count_next[2:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/dut/in_count" type="array">
+      <obj_property name="ElementShortName">in_count[2:0]</obj_property>
+      <obj_property name="ObjectShortName">in_count[2:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/dut/state_trigger" type="logic">
+      <obj_property name="ElementShortName">state_trigger</obj_property>
+      <obj_property name="ObjectShortName">state_trigger</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/dut/state" type="logic">
+      <obj_property name="ElementShortName">state</obj_property>
+      <obj_property name="ObjectShortName">state</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider106">
+      <obj_property name="label">Slave</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/s_valid" type="logic">
+      <obj_property name="ElementShortName">s_valid</obj_property>
+      <obj_property name="ObjectShortName">s_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/s_ready" type="logic">
+      <obj_property name="ElementShortName">s_ready</obj_property>
+      <obj_property name="ObjectShortName">s_ready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/dut/s_handshake" type="logic">
+      <obj_property name="ElementShortName">s_handshake</obj_property>
+      <obj_property name="ObjectShortName">s_handshake</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/s_data" type="array">
+      <obj_property name="ElementShortName">s_data[0:2][0:1][15:0]</obj_property>
+      <obj_property name="ObjectShortName">s_data[0:2][0:1][15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/s_user" type="array">
+      <obj_property name="ElementShortName">s_user[0:1]</obj_property>
+      <obj_property name="ObjectShortName">s_user[0:1]</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider108">
+      <obj_property name="label">Comparator</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/dut/sel_max_4_in" type="logic">
+      <obj_property name="ElementShortName">sel_max_4_in</obj_property>
+      <obj_property name="ObjectShortName">sel_max_4_in</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/dut/\units[0].max_in_1 " type="array">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">\units[0].max_in_1 [15:0]</obj_property>
+      <obj_property name="ObjectShortName">\units[0].max_in_1 [15:0]</obj_property>
+      <obj_property name="label">0.max_in_1 [7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/dut/\units[0].max_in_2 " type="array">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">\units[0].max_in_2 [15:0]</obj_property>
+      <obj_property name="ObjectShortName">\units[0].max_in_2 [15:0]</obj_property>
+      <obj_property name="label">0.max_in_2 [7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/dut/\units[0].max_out " type="array">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">\units[0].max_out [15:0]</obj_property>
+      <obj_property name="ObjectShortName">\units[0].max_out [15:0]</obj_property>
+      <obj_property name="label">0.max_out [7:0]</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider218">
+      <obj_property name="label">Buffer</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/dut/buf_0_en" type="logic">
+      <obj_property name="ElementShortName">buf_0_en</obj_property>
+      <obj_property name="ObjectShortName">buf_0_en</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/dut/buf_n_en" type="logic">
+      <obj_property name="ElementShortName">buf_n_en</obj_property>
+      <obj_property name="ObjectShortName">buf_n_en</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/dut/\units[0].buffer " type="array">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">\units[0].buffer [0:9][15:0]</obj_property>
+      <obj_property name="ObjectShortName">\units[0].buffer [0:9][15:0]</obj_property>
+      <obj_property name="label">0.buffer [0:9][7:0]</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/maxpool_core_tb/dut/\units[0].buffer [0]" type="array">
+         <obj_property name="ElementShortName">[0][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[0][15:0]</obj_property>
+         <obj_property name="CustomSignalColor">#E0FFFF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/maxpool_core_tb/dut/\units[0].buffer [1]" type="array">
+         <obj_property name="ElementShortName">[1][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[1][15:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF0080</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/maxpool_core_tb/dut/\units[0].buffer [2]" type="array">
+         <obj_property name="ElementShortName">[2][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[2][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/maxpool_core_tb/dut/\units[0].buffer [3]" type="array">
+         <obj_property name="ElementShortName">[3][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[3][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/maxpool_core_tb/dut/\units[0].buffer [4]" type="array">
+         <obj_property name="ElementShortName">[4][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[4][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/maxpool_core_tb/dut/\units[0].buffer [5]" type="array">
+         <obj_property name="ElementShortName">[5][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[5][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/maxpool_core_tb/dut/\units[0].buffer [6]" type="array">
+         <obj_property name="ElementShortName">[6][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[6][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/maxpool_core_tb/dut/\units[0].buffer [7]" type="array">
+         <obj_property name="ElementShortName">[7][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[7][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/maxpool_core_tb/dut/\units[0].buffer [8]" type="array">
+         <obj_property name="ElementShortName">[8][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[8][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/maxpool_core_tb/dut/\units[0].buffer [9]" type="array">
+         <obj_property name="ElementShortName">[9][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[9][15:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/dut/\units[0].out_delay_data " type="array">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">\units[0].out_delay_data [0:1][15:0]</obj_property>
+      <obj_property name="ObjectShortName">\units[0].out_delay_data [0:1][15:0]</obj_property>
+      <obj_property name="label">0.out_delay_data [0:1][7:0]</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider107">
+      <obj_property name="label">Master</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/dut/out_delay_valid" type="logic">
+      <obj_property name="ElementShortName">out_delay_valid</obj_property>
+      <obj_property name="ObjectShortName">out_delay_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/dut/out_max_valid" type="logic">
+      <obj_property name="ElementShortName">out_max_valid</obj_property>
+      <obj_property name="ObjectShortName">out_max_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/m_valid" type="logic">
+      <obj_property name="ElementShortName">m_valid</obj_property>
+      <obj_property name="ObjectShortName">m_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/m_data" type="array">
+      <obj_property name="ElementShortName">m_data[0:2][0:1][15:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data[0:2][0:1][15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/maxpool_core_tb/m_keep" type="array">
+      <obj_property name="ElementShortName">m_keep[0:2][0:1]</obj_property>
+      <obj_property name="ObjectShortName">m_keep[0:2][0:1]</obj_property>
+   </wvobject>
+</wave_config>
