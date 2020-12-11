@@ -38,7 +38,8 @@ the initial power-on-reset state without complicating the design.
 module register
 #(
     parameter WORD_WIDTH  = 0,
-    parameter RESET_VALUE = 0
+    parameter RESET_VALUE = 0,
+    parameter LOCAL       = 0
 )
 (
     input   wire                        clock,
@@ -66,7 +67,7 @@ module register
         if clear is not asserted!
         */
 
-        if (resetn == 1'b0) begin
+        if (LOCAL && (resetn == 1'b0)) begin
             data_out <= RESET_VALUE;
         end
     end

@@ -1,6 +1,7 @@
 module n_delay #(
     parameter N,
-    parameter DATA_WIDTH
+    parameter DATA_WIDTH,
+    parameter LOCAL = 0
 )(
     clk,
     resetn,
@@ -26,7 +27,8 @@ module n_delay #(
             register
             #(
                 .WORD_WIDTH     (DATA_WIDTH),
-                .RESET_VALUE    (0)
+                .RESET_VALUE    (0),
+                .LOCAL          (LOCAL)
             )
             m_data_reg
             (
