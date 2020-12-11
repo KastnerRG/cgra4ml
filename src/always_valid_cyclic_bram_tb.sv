@@ -8,21 +8,27 @@ module always_valid_cyclic_bram_tb();
     forever #(CLK_PERIOD/2) clk <= ~clk;
   end
 
-  localparam DEPTH   = 8 ;
-  localparam WIDTH   = 64;
-  localparam LATENCY = 2 ;
-  localparam ADDR_WIDTH = $clog2(DEPTH);
+  localparam W_DEPTH   = 8 ;
+  localparam W_WIDTH   = 16;
+  localparam R_WIDTH   = 8 ;
+  localparam LATENCY   = 2 ;
+
+  localparam R_DEPTH = W_DEPTH * W_WIDTH / R_WIDTH;
+  localparam R_ADDR_WIDTH = $clog2(R_DEPTH);
+  localparam W_ADDR_WIDTH = $clog2(W_DEPTH);
 
   logic clk, clken, resetn;
   logic s_valid_ready, m_ready;
   logic m_valid;
-  logic [WIDTH-1:0] s_data;
-  logic [WIDTH-1:0] m_data;
-  logic [ADDR_WIDTH-1:0] addr_max_1;
+  logic [W_WIDTH-1:0] s_data;
+  logic [R_WIDTH-1:0] m_data;
+  logic [R_ADDR_WIDTH-1:0] r_addr_max_1;
+  logic [W_ADDR_WIDTH-1:0] w_addr_max_1;
 
   always_valid_cyclic_bram #(
-    .DEPTH   (DEPTH  ),
-    .WIDTH   (WIDTH  ),
+    .W_DEPTH (W_DEPTH),
+    .W_WIDTH (W_WIDTH),
+    .R_WIDTH (R_WIDTH),
     .LATENCY (LATENCY)
     ) dut (.*);
 
@@ -31,7 +37,8 @@ module always_valid_cyclic_bram_tb();
     @(posedge clk);
     clken  <= 1;
     resetn <= 1;
-    addr_max_1    <= 5;
+    w_addr_max_1  <= 3-1;
+    r_addr_max_1  <= 6-1;
 
     s_valid_ready <= 0;
     s_data        <= 0;
@@ -39,24 +46,24 @@ module always_valid_cyclic_bram_tb();
 
     @(posedge clk);
     s_valid_ready <= 1;
-    s_data        <= 1;
+    s_data        <= {8'd2, 8'd1};
     @(posedge clk);
     s_valid_ready <= 1;
-    s_data        <= 2;
+    s_data        <= {8'd4, 8'd3};
     @(posedge clk);
     s_valid_ready <= 0;
     @(posedge clk);
     s_valid_ready <= 1;
-    s_data        <= 3;
-    @(posedge clk);
-    s_valid_ready <= 1;
-    s_data        <= 4;
-    @(posedge clk);
-    s_valid_ready <= 1;
-    s_data        <= 5;
-    @(posedge clk);
-    s_valid_ready <= 1;
-    s_data        <= 6;
+    s_data        <= {8'd6, 8'd5};
+    // @(posedge clk);
+    // s_valid_ready <= 1;
+    // s_data        <= 4;
+    // @(posedge clk);
+    // s_valid_ready <= 1;
+    // s_data        <= 5;
+    // @(posedge clk);
+    // s_valid_ready <= 1;
+    // s_data        <= 6;
     @(posedge clk);
     s_valid_ready <= 0;
     @(posedge clk);
