@@ -44,13 +44,13 @@ module maxpool_core #(
     resetn,
 
     s_valid,
-    s_data,
+    s_data_uc,
     s_ready,
     s_user,
 
     m_valid,
-    m_data,
-    m_keep,
+    m_data_uc,
+    m_keep_uc,
     m_last
   );
   typedef logic signed [WORD_WIDTH-1:0] word_t;
@@ -58,11 +58,11 @@ module maxpool_core #(
   input  logic clk, clken, resetn;
   input  logic s_valid;
   output logic m_valid, s_ready, m_last;
-  input  logic [0:1] s_user;
+  input  logic [1:0] s_user;
 
-  input  word_t s_data [UNITS][2];
-  output word_t m_data [UNITS][2];
-  output logic  m_keep [UNITS][2];
+  input  word_t s_data_uc [UNITS-1:0][1:0];
+  output word_t m_data_uc [UNITS-1:0][1:0];
+  output logic  m_keep_uc [UNITS-1:0][1:0];
 
   logic s_handshake;
   assign s_handshake = s_valid && s_ready;
@@ -112,7 +112,7 @@ module maxpool_core #(
 
     * The most important signal
     * goes high one clock after the input handshake at state = MAX_4
-    * signifies the clockcycle where max inputs chosen from buffers (instead of s_data)
+    * signifies the clockcycle where max inputs chosen from buffers (instead of s_data_uc)
   */
   logic max_4_handshake, max_4_handshake_delay;
   assign max_4_handshake = s_handshake && (state==MAX_4);
@@ -198,7 +198,7 @@ module maxpool_core #(
   generate
     for (genvar u=0; u < UNITS; u++) begin: units
       /*
-        Delay s_data
+        Delay s_data_uc
       */
       word_t out_delay_data  [2];
       for (genvar c=0; c < 2; c++) begin: two
@@ -209,7 +209,7 @@ module maxpool_core #(
           .clock        (clk   ),
           .resetn       (resetn),
           .clock_enable (clken && buf_delay_en),
-          .data_in      (s_data     [u][c]),
+          .data_in      (s_data_uc  [u][c]),
           .data_out     (out_delay_data[c])
         );
       end
@@ -243,17 +243,17 @@ module maxpool_core #(
       word_t max_in_1, max_in_2, max_out;
       assign max_out = (max_in_1 > max_in_2) ? max_in_1 : max_in_2;
 
-      assign max_in_1 = sel_max_4_in ? buffer[1] : s_data[u][0];
-      assign max_in_2 = sel_max_4_in ? buffer[MEMEBERS+1] : s_data[u][1];
+      assign max_in_1 = sel_max_4_in ? buffer[1] : s_data_uc[u][0];
+      assign max_in_2 = sel_max_4_in ? buffer[MEMEBERS+1] : s_data_uc[u][1];
 
       /*
         OUTPUT
       */
-      assign m_data [u][0] = out_max_valid ? buffer[1] : out_delay_data[0];
-      assign m_data [u][1] = out_delay_data[1];
+      assign m_data_uc [u][0] = out_max_valid ? buffer[1] : out_delay_data[0];
+      assign m_data_uc [u][1] = out_delay_data[1];
       
-      assign m_keep [u][0] = 1;
-      assign m_keep [u][1] = out_max_valid ? 0 : 1;
+      assign m_keep_uc [u][0] = 1;
+      assign m_keep_uc [u][1] = out_max_valid ? 0 : 1;
 
     end
   endgenerate

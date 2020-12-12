@@ -21,18 +21,36 @@ module axis_maxpool_engine_tb();
   logic aresetn;
   logic s_valid, s_ready, m_ready, m_valid, m_last;
   
-  logic [0:1] s_user;
-  logic signed [WORD_WIDTH-1:0] s_data [GROUPS][UNITS][2];
-  logic signed [WORD_WIDTH-1:0] m_data [GROUPS][UNITS][2];
-  logic                         m_keep [GROUPS][UNITS][2];
+  logic [1:0] s_user;
 
-  logic [GROUPS*UNITS*2*WORD_WIDTH-1:0] s_data_flat;
-  logic [GROUPS*UNITS*2*WORD_WIDTH-1:0] m_data_flat;
-  logic [GROUPS*UNITS*2-1:0]            m_keep_flat;
+  logic [GROUPS*UNITS*2*WORD_WIDTH-1:0] s_data_flat_cgu;
+  logic [GROUPS*UNITS*2*WORD_WIDTH-1:0] m_data_flat_cgu;
+  logic [GROUPS*UNITS*2-1:0]            m_keep_flat_cgu;
 
-  assign {<<{s_data_flat}} = s_data;
-  assign m_data = {>>{{<<{m_data_flat}}}};
-  assign m_keep = {>>{{<<{m_keep_flat}}}};
+  logic signed [WORD_WIDTH-1:0] s_data_cgu [1:0][GROUPS-1:0][UNITS-1:0];
+  logic signed [WORD_WIDTH-1:0] m_data_cgu [1:0][GROUPS-1:0][UNITS-1:0];
+  logic                         m_keep_cgu [1:0][GROUPS-1:0][UNITS-1:0];
+
+  assign {>>{s_data_flat_cgu}} = s_data_cgu;
+  assign m_data_cgu = {>>{m_data_flat_cgu}};
+  assign m_keep_cgu = {>>{m_keep_flat_cgu}};
+
+  logic signed [WORD_WIDTH-1:0] s_data_guc [GROUPS-1:0][UNITS-1:0][1:0];
+  logic signed [WORD_WIDTH-1:0] m_data_guc [GROUPS-1:0][UNITS-1:0][1:0];
+  logic                         m_keep_guc [GROUPS-1:0][UNITS-1:0][1:0];
+
+
+  generate
+    for (genvar c = 0; c < 2; c++) begin
+      for (genvar g = 0; g < GROUPS; g++) begin
+        for (genvar u = 0; u < UNITS; u++) begin
+          assign s_data_cgu[c][g][u] = s_data_guc[g][u][c];
+          assign m_data_guc[g][u][c] = m_data_cgu[c][g][u];
+          assign m_keep_guc[g][u][c] = m_keep_cgu[c][g][u];
+        end
+      end
+    end
+  endgenerate
 
   axis_maxpool_engine #(
     .UNITS            (UNITS           ),
@@ -46,18 +64,18 @@ module axis_maxpool_engine_tb();
     .aresetn      (aresetn    ),
     .s_axis_tvalid(s_valid    ),
     .s_axis_tready(s_ready    ),
-    .s_axis_tdata (s_data_flat),
+    .s_axis_tdata (s_data_flat_cgu),
     .s_axis_tuser (s_user     ),
     .m_axis_tvalid(m_valid    ),
     .m_axis_tready(m_ready    ),
-    .m_axis_tdata (m_data_flat),
-    .m_axis_tkeep (m_keep_flat),
+    .m_axis_tdata (m_data_flat_cgu),
+    .m_axis_tkeep (m_keep_flat_cgu),
     .m_axis_tlast (m_last     )
   );
 
   task fill_data (input int init, input logic is_max, is_not_max);
     @(posedge aclk);
-    foreach (s_data[g,u,c]) s_data[g][u][c] <= init + 10*u + c;
+    foreach (s_data_guc[g,u,c]) s_data_guc[g][u][c] <= init + 10*u + c;
 
     s_valid      <= 1;
     s_user[INDEX_IS_MAX    ] <= is_max;
@@ -73,7 +91,7 @@ module axis_maxpool_engine_tb();
 
     for (int i=0; i < MEMEBERS; i++) begin
       repeat (1) @(posedge aclk);
-      fill_data(100*i, 0, 1);
+      fill_data(100 + i, 0, 1);
       @(posedge aclk);
       s_valid <= 0;
     end
@@ -85,7 +103,7 @@ module axis_maxpool_engine_tb();
 
     for (int i=0; i < MEMEBERS; i++) begin
       repeat (3) @(posedge aclk);
-      fill_data(1000+100*i, 1, 0);
+      fill_data(100 + i, 1, 0);
       @(posedge aclk);
       s_valid <= 0;
     end
@@ -94,7 +112,7 @@ module axis_maxpool_engine_tb();
 
     for (int i=0; i < MEMEBERS; i++) begin
       repeat (3) @(posedge aclk);
-      fill_data(100*i, 1, 0);
+      fill_data(i, 1, 0);
       @(posedge aclk);
       s_valid <= 0;
     end
@@ -105,7 +123,7 @@ module axis_maxpool_engine_tb();
 
     for (int i=0; i < MEMEBERS; i++) begin
       repeat (3) @(posedge aclk);
-      fill_data(1000+100*i, 1, 1);
+      fill_data(100+i, 1, 1);
       @(posedge aclk);
       s_valid <= 0;
     end
@@ -114,7 +132,7 @@ module axis_maxpool_engine_tb();
 
     for (int i=0; i < MEMEBERS; i++) begin
       repeat (3) @(posedge aclk);
-      fill_data(i*100, 1, 1);
+      fill_data(i, 1, 1);
       @(posedge aclk);
       s_valid <= 0;
     end
