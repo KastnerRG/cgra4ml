@@ -64,7 +64,7 @@ module axis_maxpool_engine #(
     .m_last      (m_last       )
   );
 
-  axis_reg_slice_32 slice (
+  axis_reg_slice_maxpool slice (
     .aclk           (aclk           ),  // input wire aclk
     .aresetn        (aresetn        ),  // input wire aresetn
     .s_axis_tvalid  (m_valid        ),  // input wire s_axis_tvalid
