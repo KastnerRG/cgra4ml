@@ -11,11 +11,28 @@ module axis_lrelu_engine_tb();
 
   localparam WORD_WIDTH_IN  = 32;
   localparam WORD_WIDTH_OUT = 8 ;
-  localparam TUSER_WIDTH    = 4;
+  localparam TUSER_WIDTH    = 8;
+  localparam WORD_WIDTH_CONFIG = 8 ;
+
   localparam UNITS   = 8;
   localparam GROUPS  = 2;
   localparam COPIES  = 2;
   localparam MEMBERS = 8;
+
+  localparam CONFIG_BEATS_3X3_1 = 21-1;
+  localparam CONFIG_BEATS_1X1_1 = 9 -1;
+
+  localparam LATENCY_FIXED_2_FLOAT =  6;
+  localparam LATENCY_FLOAT_32      = 16;
+
+  localparam INDEX_IS_3X3     = 0;  
+  localparam INDEX_IS_RELU    = 1;
+  localparam INDEX_IS_MAX     = 2;
+  localparam INDEX_IS_NOT_MAX = 3;
+  localparam INDEX_IS_TOP     = 4;
+  localparam INDEX_IS_BOTTOM  = 5;
+  localparam INDEX_IS_LEFT    = 6;
+  localparam INDEX_IS_RIGHT   = 7;
 
   logic aresetn      ;
   logic s_axis_tvalid;
@@ -35,6 +52,8 @@ module axis_lrelu_engine_tb();
   logic s_keep_mcg [MEMBERS-1:0][COPIES-1:0][GROUPS-1:0];
   logic m_keep_cg               [COPIES-1:0][GROUPS-1:0];
 
+  logic [WORD_WIDTH_CONFIG-1 :0] s_data_config_mcg [MEMBERS-1:0][COPIES-1:0][GROUPS-1:0];
+
   assign {>>{s_axis_tdata}} = s_data_mcgu;
   assign m_data_cgu = {>>{m_axis_tdata}};
   assign {>>{s_keep_mcg}} = s_axis_tkeep;
@@ -45,10 +64,26 @@ module axis_lrelu_engine_tb();
     .WORD_WIDTH_IN (WORD_WIDTH_IN ),
     .WORD_WIDTH_OUT(WORD_WIDTH_OUT),
     .TUSER_WIDTH   (TUSER_WIDTH),
+
     .UNITS   (UNITS  ),
     .GROUPS  (GROUPS ),
     .COPIES  (COPIES ),
-    .MEMBERS (MEMBERS)
+    .MEMBERS (MEMBERS),
+
+    .CONFIG_BEATS_3X3 (CONFIG_BEATS_3X3),
+    .CONFIG_BEATS_1X1 (CONFIG_BEATS_1X1),
+
+    .LATENCY_FIXED_2_FLOAT(LATENCY_FIXED_2_FLOAT),
+    .LATENCY_FLOAT_32     (LATENCY_FLOAT_32     ),
+
+    .INDEX_IS_3X3     (INDEX_IS_3X3    ),
+    .INDEX_IS_RELU    (INDEX_IS_RELU   ),
+    .INDEX_IS_MAX     (INDEX_IS_MAX    ),
+    .INDEX_IS_NOT_MAX (INDEX_IS_NOT_MAX),
+    .INDEX_IS_TOP     (INDEX_IS_TOP    ),
+    .INDEX_IS_BOTTOM  (INDEX_IS_BOTTOM ),
+    .INDEX_IS_LEFT    (INDEX_IS_LEFT   ),
+    .INDEX_IS_RIGHT   (INDEX_IS_RIGHT  )
   ) dut (.*);
 
   initial begin
