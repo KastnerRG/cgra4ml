@@ -1,7 +1,6 @@
 module axis_lrelu_engine #(
     WORD_WIDTH_IN  = 32,
     WORD_WIDTH_OUT = 8 ,
-    TUSER_WIDTH    = 8 ,
     WORD_WIDTH_CONFIG = 8,
 
     UNITS   = 8,
@@ -14,15 +13,21 @@ module axis_lrelu_engine #(
     
     LATENCY_FIXED_2_FLOAT =  6,
     LATENCY_FLOAT_32      = 16,
+    BRAM_LATENCY          = 2 ,
 
-    INDEX_IS_3X3     = 0
-    INDEX_IS_RELU    = 1,
-    INDEX_IS_MAX     = 2,
-    INDEX_IS_NOT_MAX = 3,
-    INDEX_IS_TOP     = 4,
-    INDEX_IS_BOTTOM  = 5,
-    INDEX_IS_LEFT    = 6,
-    INDEX_IS_RIGHT   = 7
+    BITS_CONV_CORE       = $clog2(GROUPS * COPIES * MEMBERS),
+    I_IS_3X3             = BITS_CONV_CORE + 0,  
+    I_MAXPOOL_IS_MAX     = BITS_CONV_CORE + 1,
+    I_MAXPOOL_IS_NOT_MAX = BITS_CONV_CORE + 2,
+    I_LRELU_IS_LRELU     = BITS_CONV_CORE + 3,
+    I_LRELU_IS_TOP       = BITS_CONV_CORE + 4,
+    I_LRELU_IS_BOTTOM    = BITS_CONV_CORE + 5,
+    I_LRELU_IS_LEFT      = BITS_CONV_CORE + 6,
+    I_LRELU_IS_RIGHT     = BITS_CONV_CORE + 7,
+
+    TUSER_WIDTH_LRELU       = BITS_CONV_CORE + 8,
+    TUSER_WIDTH_LRELU_FMA_1 = BITS_CONV_CORE + 4,
+    TUSER_WIDTH_MAXPOOL     = BITS_CONV_CORE + 3
   )(
     aclk         ,
     aresetn      ,
@@ -30,22 +35,18 @@ module axis_lrelu_engine #(
     s_axis_tready,
     s_axis_tdata , // mcgu
     s_axis_tuser ,
-    s_axis_tkeep ,
     s_axis_tlast ,
     m_axis_tvalid,
     m_axis_tready,
     m_axis_tdata , // cgu
-    m_axis_tuser ,
-    m_axis_tkeep 
+    m_axis_tuser 
   );
 
     input  wire aclk, aresetn;
     input  wire s_axis_tvalid, s_axis_tlast, m_axis_tready;
     output wire m_axis_tvalid, s_axis_tready;
-    input  wire [TUSER_WIDTH-1:0] s_axis_tuser;
-    output wire [1:0] m_axis_tuser;
-    input  wire [MEMBERS * COPIES * GROUPS-1:0] s_axis_tkeep; 
-    output wire [          COPIES * GROUPS-1:0] m_axis_tkeep; 
+    input  wire [TUSER_WIDTH_LRELU  -1:0] s_axis_tuser;
+    output wire [TUSER_WIDTH_MAXPOOL-1:0] m_axis_tuser;
 
     input  wire [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_axis_tdata;
     output wire [          COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_axis_tdata;
@@ -53,9 +54,8 @@ module axis_lrelu_engine #(
     wire [COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_data_e;
     wire [COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_data_e;
     wire s_valid_e, s_last_e, m_valid_e;
-    wire [COPIES * GROUPS-1:0] s_keep_e, m_keep_e; 
-    wire [TUSER_WIDTH-1:0] s_user_e;
-    wire [1:0] m_user_e;
+    wire [TUSER_WIDTH_LRELU  -1:0] s_user_e;
+    wire [TUSER_WIDTH_MAXPOOL-1:0] m_user_e;
     wire s_ready_slice;
 
     localparam BYTES_IN = WORD_WIDTH_IN/8;
@@ -67,7 +67,8 @@ module axis_lrelu_engine #(
         - 1: slave bypasses dw and directly connects to config port
         - 0: slave connects to dw bank
     */
-    wire sel_config, dw_s_valid, dw_s_ready, config_s_valid, config_s_ready;
+    wire dw_s_valid, dw_s_ready, config_s_valid;
+    reg  sel_config, resetn_config, config_s_ready;
 
     assign dw_s_valid     = sel_config ? 0              : s_axis_tvalid;
     assign config_s_valid = sel_config ? s_axis_tvalid  : 0;
@@ -105,7 +106,7 @@ module axis_lrelu_engine #(
       * default:
         - same as PASS_S
     */
-    wire config_handshake, resetn_config, s_vr_last_conv_out, s_vr_last_dw_out;
+    wire config_handshake, s_vr_last_conv_out, s_vr_last_dw_out;
 
     assign s_vr_last_conv_out = s_axis_tlast  && s_axis_tvalid && s_axis_tready;
     assign s_vr_last_dw_out   = s_last_e      && s_valid_e     && s_ready_slice;
@@ -118,38 +119,41 @@ module axis_lrelu_engine #(
     localparam WRITE_2_S = 4;
     localparam FILL_S    = 5;
 
-    wire [2:0] state, state_next;
+    wire [2:0] state;
+    reg  [2:0] state_next;
     register #(
       .WORD_WIDTH   (3), 
       .RESET_VALUE  (WRITE_1_S)
     ) STATE (
-      .clock        (clk   ),
-      .resetn       (resetn),
-      .clock_enable (1),
+      .clock        (aclk   ),
+      .resetn       (aresetn),
+      .clock_enable (1'b1),
       .data_in      (state_next),
       .data_out     (state)
     );
 
-    localparam CONFIG_BEATS_BITS = $clog2(CONFIG_BEATS_3X3);
-    wire [CONFIG_BEATS_BITS-1:0] count_config, count_config_next, num_beats_1;    
+    localparam CONFIG_BEATS_BITS = $clog2(CONFIG_BEATS_3X3_1 + 1);
+    wire [CONFIG_BEATS_BITS-1:0] count_config, num_beats_1;
+    reg  [CONFIG_BEATS_BITS-1:0] count_config_next;
     register #(
       .WORD_WIDTH   (CONFIG_BEATS_BITS), 
       .RESET_VALUE  (0)
     ) COUNT_CONFIG (
-      .clock        (clk   ),
-      .resetn       (resetn),
+      .clock        (aclk   ),
+      .resetn       (aresetn),
       .clock_enable (config_handshake ),
       .data_in      (count_config_next),
       .data_out     (count_config)
     );
     localparam FILL_BITS = $clog2(BRAM_LATENCY+1);
-    wire [FILL_BITS-1:0] count_fill, count_fill_next;    
+    wire [FILL_BITS-1:0] count_fill;
+    reg  [FILL_BITS-1:0] count_fill_next;    
     register #(
       .WORD_WIDTH   (FILL_BITS), 
       .RESET_VALUE  (0)
     ) FILL_CONFIG (
-      .clock        (clk   ),
-      .resetn       (resetn),
+      .clock        (aclk   ),
+      .resetn       (aresetn),
       .clock_enable (s_ready_slice ),
       .data_in      (count_fill_next),
       .data_out     (count_fill)
@@ -160,7 +164,7 @@ module axis_lrelu_engine #(
       case (state)
         PASS_S    : if (s_vr_last_conv_out) state_next = BLOCK_S;
         BLOCK_S   : if (s_vr_last_dw_out  ) state_next = RESET_S;
-        RESET_S   : if (s_ready_slice)      state_next = WRITE_S;
+        RESET_S   : if (s_ready_slice)      state_next = WRITE_1_S;
         WRITE_1_S : if (config_handshake)   state_next = WRITE_2_S;
         WRITE_2_S : if ((count_config == 0)              && config_handshake) state_next = FILL_S;
         FILL_S    : if (count_fill == (BRAM_LATENCY+1-1) && s_ready_slice )   state_next = PASS_S;
@@ -195,7 +199,7 @@ module axis_lrelu_engine #(
                     sel_config        = 1;
                     config_s_ready    = s_ready_slice;
                     resetn_config     = 1;
-                    count_config_next = s_axis_tuser[INDEX_IS_3X3] ? CONFIG_BEATS_3X3_1 : CONFIG_BEATS_1X1_1;
+                    count_config_next = s_axis_tuser[I_IS_3X3] ? CONFIG_BEATS_3X3_1 : CONFIG_BEATS_1X1_1;
                     count_fill_next   = 0;
                   end
         WRITE_2_S:begin
@@ -221,6 +225,9 @@ module axis_lrelu_engine #(
                   end
       endcase
     end
+    
+    wire is_3x3_config;
+    assign is_3x3_config = s_axis_tuser[I_IS_3X3];
 
     /*
       DATAWIDTH CONVERTER BANKS
@@ -231,15 +238,6 @@ module axis_lrelu_engine #(
     generate
       for(genvar c=0; c<COPIES; c=c+1) begin: c
         for(genvar g=0; g<GROUPS; g=g+1) begin: g
-          /*
-            TKEEP
-          */
-          wire [BYTES_IN*MEMBERS-1:0] dw_s_keep;
-          for(genvar m=0; m<MEMBERS; m=m+1) begin: m
-            assign dw_s_keep[BYTES_IN*(m+1)-1:BYTES_IN*m] = {BYTES_IN{s_axis_tkeep[COPIES*GROUPS*m + GROUPS*c + g]}};
-          end
-          wire [BYTES_IN-1:0] dw_m_keep;
-          assign s_keep_e[GROUPS*c + g] = dw_m_keep[0];
 
           for(genvar u=0; u<UNITS; u=u+1) begin: u
             
@@ -257,15 +255,13 @@ module axis_lrelu_engine #(
                 .aresetn        (aresetn),             
                 .s_axis_tvalid  (dw_s_valid),  
                 .s_axis_tready  (dw_s_ready),  
-                .s_axis_tdata   (dw_s_data),    
-                .s_axis_tkeep   (dw_s_keep),    
+                .s_axis_tdata   (dw_s_data),
                 .s_axis_tlast   (s_axis_tlast),    
                 .s_axis_tid     (s_axis_tuser),   
 
                 .m_axis_tvalid  (s_valid_e),  
                 .m_axis_tready  (s_ready_slice), 
-                .m_axis_tdata   (dw_m_data), 
-                .m_axis_tkeep   (dw_m_keep), 
+                .m_axis_tdata   (dw_m_data),
                 .m_axis_tlast   (s_last_e),  
                 .m_axis_tid     (s_user_e)   
               );
@@ -275,10 +271,8 @@ module axis_lrelu_engine #(
                 .aresetn        (aresetn),       
                 .s_axis_tvalid  (s_axis_tvalid), 
                 .s_axis_tdata   (dw_s_data),
-                .s_axis_tkeep   (dw_s_keep),
                 .m_axis_tready  (s_ready_slice),  
-                .m_axis_tdata   (dw_m_data),
-                .m_axis_tkeep   (dw_m_keep)
+                .m_axis_tdata   (dw_m_data)
               );
             end
             assign s_data_e[(GROUPS*UNITS*c + UNITS*g + u +1)*WORD_WIDTH_IN-1:(GROUPS*UNITS*c + UNITS*g + u)*WORD_WIDTH_IN] = dw_m_data;
@@ -290,7 +284,6 @@ module axis_lrelu_engine #(
     lrelu_engine #(
       .WORD_WIDTH_IN  (WORD_WIDTH_IN ),
       .WORD_WIDTH_OUT (WORD_WIDTH_OUT),
-      .TUSER_WIDTH    (TUSER_WIDTH   ),
       .WORD_WIDTH_CONFIG(WORD_WIDTH_CONFIG ),
 
       .UNITS   (UNITS  ),
@@ -301,14 +294,19 @@ module axis_lrelu_engine #(
       .LATENCY_FIXED_2_FLOAT (LATENCY_FIXED_2_FLOAT),
       .LATENCY_FLOAT_32      (LATENCY_FLOAT_32     ),
 
-      .INDEX_IS_3X3     (INDEX_IS_3X3    ),
-      .INDEX_IS_RELU    (INDEX_IS_RELU   ),
-      .INDEX_IS_MAX     (INDEX_IS_MAX    ),
-      .INDEX_IS_NOT_MAX (INDEX_IS_NOT_MAX),
-      .INDEX_IS_TOP     (INDEX_IS_TOP    ),
-      .INDEX_IS_BOTTOM  (INDEX_IS_BOTTOM ),
-      .INDEX_IS_LEFT    (INDEX_IS_LEFT   ),
-      .INDEX_IS_RIGHT   (INDEX_IS_RIGHT  )
+      .BITS_CONV_CORE       (BITS_CONV_CORE      ),
+      .I_IS_3X3             (I_IS_3X3            ),
+      .I_MAXPOOL_IS_MAX     (I_MAXPOOL_IS_MAX    ),
+      .I_MAXPOOL_IS_NOT_MAX (I_MAXPOOL_IS_NOT_MAX),
+      .I_LRELU_IS_LRELU     (I_LRELU_IS_LRELU    ),
+      .I_LRELU_IS_TOP       (I_LRELU_IS_TOP      ),
+      .I_LRELU_IS_BOTTOM    (I_LRELU_IS_BOTTOM   ),
+      .I_LRELU_IS_LEFT      (I_LRELU_IS_LEFT     ),
+      .I_LRELU_IS_RIGHT     (I_LRELU_IS_RIGHT    ),
+
+      .TUSER_WIDTH_LRELU       (TUSER_WIDTH_LRELU      ),
+      .TUSER_WIDTH_LRELU_FMA_1 (TUSER_WIDTH_LRELU_FMA_1),
+      .TUSER_WIDTH_MAXPOOL     (TUSER_WIDTH_MAXPOOL    )
     )
     engine
     (
@@ -317,15 +315,14 @@ module axis_lrelu_engine #(
       .resetn           (aresetn  ),
       .s_valid          (s_valid_e),
       .s_user           (s_user_e ),
-      .s_keep_flat_cg   (s_keep_e ),
       .m_valid          (m_valid_e),
       .m_user           (m_user_e ),
-      .m_keep_flat_cg   (m_keep_e ),
       .s_data_flat_cgu  (s_data_e ),
       .m_data_flat_cgu  (m_data_e ),
 
       .resetn_config     (resetn_config ),
       .s_valid_config    (config_s_valid),
+      .is_3x3_config     (is_3x3_config ),
       .s_data_conv_out   (s_axis_tdata  )
     );
 
@@ -335,13 +332,11 @@ module axis_lrelu_engine #(
       .s_axis_tvalid  (m_valid_e      ),
       .s_axis_tready  (s_ready_slice  ),
       .s_axis_tdata   (m_data_e       ),
-      .s_axis_tid     (m_keep_e       ),
       .s_axis_tuser   (m_user_e       ),  
 
       .m_axis_tvalid  (m_axis_tvalid  ),
       .m_axis_tready  (m_axis_tready  ),
       .m_axis_tdata   (m_axis_tdata   ),
-      .m_axis_tid     (m_axis_tkeep   ),
       .m_axis_tuser   (m_axis_tuser   ) 
     );
 

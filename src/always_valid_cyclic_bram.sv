@@ -25,7 +25,8 @@ module always_valid_cyclic_bram #(
   W_DEPTH = 8,
   W_WIDTH = 8,
   R_WIDTH = 8,
-  LATENCY = 3
+  LATENCY = 3,
+  IP_TYPE = 0  // 0: depth=3m, 1: depth=m (edge) 
 )(
   clk  ,
   clken,
@@ -160,17 +161,32 @@ module always_valid_cyclic_bram #(
   );
 
   logic [R_WIDTH-1:0] bram_r_data;
-  sdpram sdpram (
-    .clka (clk               ),
-    .ena  (clken             ),
-    .wea  (s_valid_ready     ),
-    .addra(addr_w            ),
-    .dina (s_data            ),
-    .clkb (clk               ),
-    .enb  (clken             ),
-    .addrb(addr_r            ),
-    .doutb(bram_r_data       )
-  );
+  generate
+    if (IP_TYPE == 0)
+      bram_lrelu BRAM (
+        .clka (clk               ),
+        .ena  (clken             ),
+        .wea  (s_valid_ready     ),
+        .addra(addr_w            ),
+        .dina (s_data            ),
+        .clkb (clk               ),
+        .enb  (clken             ),
+        .addrb(addr_r            ),
+        .doutb(bram_r_data       )
+      );
+    else if (IP_TYPE == 1)
+      bram_lrelu_edge BRAM (
+        .clka (clk               ),
+        .ena  (clken             ),
+        .wea  (s_valid_ready     ),
+        .addra(addr_w            ),
+        .dina (s_data            ),
+        .clkb (clk               ),
+        .enb  (clken             ),
+        .addrb(addr_r            ),
+        .doutb(bram_r_data       )
+      );
+  endgenerate
 
   /*
     WRITE POINTER
