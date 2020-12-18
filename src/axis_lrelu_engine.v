@@ -51,6 +51,8 @@ module axis_lrelu_engine #(
     input  wire [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_axis_tdata;
     output wire [          COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_axis_tdata;
 
+    wire [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_axis_tdata_cmgu;
+
     wire [COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_data_e;
     wire [COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_data_e;
     wire s_valid_e, s_last_e, m_valid_e;
@@ -232,51 +234,54 @@ module axis_lrelu_engine #(
     /*
       DATAWIDTH CONVERTER BANKS
 
-      * Size: MEMBERS -> 1 = 8x32->32 = 256 -> 32
-      * Number: COPIES x GROUPS x UNITS = 2x2x8 = 32
+      * Size: GUM(W) -> GU(W) : 2*8*8*(26) -> 2*8*(26) : 3328 -> 416 : 416B -> 52B
+      * Number: 2 (one per copy)
     */
     generate
       for(genvar c=0; c<COPIES; c=c+1) begin: c
-        for(genvar g=0; g<GROUPS; g=g+1) begin: g
 
-          for(genvar u=0; u<UNITS; u=u+1) begin: u
-            
-            wire [MEMBERS * WORD_WIDTH_IN-1:0] dw_s_data;
-            wire [          WORD_WIDTH_IN-1:0] dw_m_data;
-
-            for(genvar m=0; m<MEMBERS; m=m+1) begin: m
-              assign dw_s_data[(m+1)*WORD_WIDTH_IN-1: m*WORD_WIDTH_IN] = s_axis_tdata[(GROUPS*UNITS*MEMBERS*c + UNITS*MEMBERS*g + MEMBERS*u + m +1)*WORD_WIDTH_IN-1 : (GROUPS*UNITS*MEMBERS*c + UNITS*MEMBERS*g + MEMBERS*u + m)*WORD_WIDTH_IN];
+        // Transpose MCGU -> CGUM
+        for (genvar g=0; g<GROUPS; g=g+1) begin: g
+          for (genvar u=0; u<UNITS; u=u+1) begin: u
+            for (genvar m=0; m<MEMBERS; m=m+1) begin: m
+              assign s_axis_tdata_cmgu [(c*MEMBERS*GROUPS*UNITS + m*GROUPS*UNITS + g*UNITS + u +1)*WORD_WIDTH_IN-1:(c*MEMBERS*GROUPS*UNITS + m*GROUPS*UNITS + g*UNITS + u)*WORD_WIDTH_IN] = s_axis_tdata[(m*COPIES*GROUPS*UNITS + c*GROUPS*UNITS + g*UNITS + u +1)*WORD_WIDTH_IN-1:(m*COPIES*GROUPS*UNITS + c*GROUPS*UNITS + g*UNITS + u)*WORD_WIDTH_IN];
             end
-
-            // DWIDTH 8 words -> 1 word
-            if (c==0 && g==0) begin
-              axis_dw_m_1_active dw (
-                .aclk           (aclk),          
-                .aresetn        (aresetn),             
-                .s_axis_tvalid  (dw_s_valid),  
-                .s_axis_tready  (dw_s_ready),  
-                .s_axis_tdata   (dw_s_data),
-                .s_axis_tlast   (s_axis_tlast),    
-                .s_axis_tid     (s_axis_tuser),   
-
-                .m_axis_tvalid  (s_valid_e),  
-                .m_axis_tready  (s_ready_slice), 
-                .m_axis_tdata   (dw_m_data),
-                .m_axis_tlast   (s_last_e),  
-                .m_axis_tid     (s_user_e)   
-              );
-            end else begin
-              axis_dw_m_1 dw (
-                .aclk           (aclk),          
-                .aresetn        (aresetn),       
-                .s_axis_tvalid  (s_axis_tvalid), 
-                .s_axis_tdata   (dw_s_data),
-                .m_axis_tready  (s_ready_slice),  
-                .m_axis_tdata   (dw_m_data)
-              );
-            end
-            assign s_data_e[(GROUPS*UNITS*c + UNITS*g + u +1)*WORD_WIDTH_IN-1:(GROUPS*UNITS*c + UNITS*g + u)*WORD_WIDTH_IN] = dw_m_data;
           end
+        end
+
+        wire [MEMBERS * GROUPS * UNITS * WORD_WIDTH_IN-1:0] dw_s_data_mgu;
+        wire [          GROUPS * UNITS * WORD_WIDTH_IN-1:0] dw_m_data_gu ;
+        
+        assign dw_s_data_mgu = s_axis_tdata_cmgu[(c+1)*MEMBERS*GROUPS*UNITS*WORD_WIDTH_IN-1:(c)*MEMBERS*GROUPS*UNITS*WORD_WIDTH_IN];
+        assign s_data_e[(c+1)*GROUPS*UNITS*WORD_WIDTH_IN-1:(c)*GROUPS*UNITS*WORD_WIDTH_IN] = dw_m_data_gu;
+
+        if (c==0) begin
+          axis_dw_gum_gu_active dw (
+            .aclk           (aclk),          
+            .aresetn        (aresetn),             
+            .s_axis_tvalid  (dw_s_valid),  
+            .s_axis_tready  (dw_s_ready),  
+            .s_axis_tdata   (dw_s_data_mgu),
+            .s_axis_tlast   (s_axis_tlast),    
+            .s_axis_tid     (s_axis_tuser),   
+
+            .m_axis_tvalid  (s_valid_e),  
+            .m_axis_tready  (s_ready_slice), 
+            .m_axis_tdata   (s_data_e),
+            .m_axis_tlast   (s_last_e),  
+            .m_axis_tid     (s_user_e)   
+          );
+        end
+        else begin
+          axis_dw_gum_gu dw (
+            .aclk           (aclk),          
+            .aresetn        (aresetn),             
+            .s_axis_tvalid  (dw_s_valid),  
+            .s_axis_tdata   (dw_s_data_mgu),
+
+            .m_axis_tready  (s_ready_slice), 
+            .m_axis_tdata   (s_data_e)
+          );
         end
       end
     endgenerate

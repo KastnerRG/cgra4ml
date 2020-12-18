@@ -90,11 +90,14 @@ module always_valid_cyclic_bram #(
   end
 
   always_comb begin
-    bram_r_en = 0;
-    m_valid = 0;
     unique case (state)
+      WRITE_S : begin
+                  bram_r_en = 0;
+                  m_valid = 0;
+                end
       FILL_1_S: begin
                   bram_r_en = 1;
+                  m_valid = 0;
                 end
       FILL_2_S: begin
                   bram_r_en = 1;
