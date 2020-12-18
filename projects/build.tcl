@@ -4,15 +4,15 @@ set SOURCE_FOLDER ../src
 
 set AXIS_FREQUENCY_MHZ   250
 set WORD_WIDTH           8
-set WORD_WIDTH_CONV_OUT  26
+set WORD_WIDTH_CONV_OUT  32
 set WORD_WIDTH_LRELU_1   32
 set WORD_WIDTH_LRELU_2   16
 set WORD_WIDTH_LRELU_OUT 8
 
-set UNITS   8
-set GROUPS  2
-set COPIES  2
-set MEMBERS 8
+set UNITS   2
+set GROUPS  1
+set COPIES  1
+set MEMBERS 4
 
 set BITS_CONV_CORE          [expr int(ceil(log($GROUPS * $COPIES * $MEMBERS)/log(2)))]
 set TUSER_WIDTH_LRELU       [expr $BITS_CONV_CORE + 8]
@@ -24,9 +24,9 @@ set MAX_IM_WIDTH  384
 set MAX_IM_HEIGHT 256
 set MAX_CHANNELS  1024
 
-# create project
-create_project $PROJ_NAME ./$PROJ_FOLDER -part xc7z045ffg900-2
-set_property board_part xilinx.com:zc706:part0:1.4 [current_project]
+# # create project
+# create_project $PROJ_NAME ./$PROJ_FOLDER -part xc7z045ffg900-2
+# set_property board_part xilinx.com:zc706:part0:1.4 [current_project]
 
 # Create IPs
 set IP_NAMES [list ]
