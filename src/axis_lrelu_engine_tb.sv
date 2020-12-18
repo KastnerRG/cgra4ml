@@ -12,14 +12,14 @@ module axis_lrelu_engine_tb();
   localparam IS_3X3  = 1;
   localparam IS_RELU = 1;
 
-  localparam WORD_WIDTH_IN     = 26;
+  localparam WORD_WIDTH_IN     = 32;
   localparam WORD_WIDTH_OUT    = 8 ;
   localparam WORD_WIDTH_CONFIG = 8 ;
 
-  localparam UNITS   = 8;
-  localparam GROUPS  = 2;
-  localparam COPIES  = 2;
-  localparam MEMBERS = 8;
+  localparam UNITS   = 2;
+  localparam GROUPS  = 1;
+  localparam COPIES  = 1;
+  localparam MEMBERS = 4;
 
   localparam CONFIG_BEATS_3X3_1 = 21-1;
   localparam CONFIG_BEATS_1X1_1 = 9 -1;
@@ -79,6 +79,8 @@ module axis_lrelu_engine_tb();
   logic [MEMBERS*COPIES*GROUPS*WORD_WIDTH_CONFIG-1:0] s_config_f16_bcgv_flat;
   logic [WORD_WIDTH_CONFIG-1 :0] s_config_bcgm     [BEATS -1:0][COPIES-1 :0][GROUPS-1:0][MEMBERS-1:0];
   logic [WORD_WIDTH_IN-1 :0]     s_config_pad_bmcgu    [BEATS -1:0][MEMBERS-1:0][COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+  
+  shortreal s_config_sr_bcgv [BEATS -1:0][COPIES-1:0][GROUPS-1:0][VALS_CONFIG-1:0];
 
   generate
     assign {>>{s_config_f16_mcg_flat}} = s_config_f16_mcg;
@@ -97,6 +99,7 @@ module axis_lrelu_engine_tb();
         for (genvar b=0; b<BEATS; b++) begin
           for (genvar v=0; v<VALS_CONFIG; v++) begin
             assign s_config_f16_bcgv [b][c][g][v] = s_config_f16_bvcg [b][v][c][g];
+            assign s_config_sr_bcgv [b][c][g][v] = $bitstoshortreal(float_16_to_32(s_config_f16_bcgv [b][c][g][v]));
           end
           for (genvar m=0; m<MEMBERS; m++) begin
             assign s_config_pad_bmcgu[b][m][c][g][0] = WORD_WIDTH_IN'(s_config_bcgm[b][c][g][m]);
@@ -108,7 +111,9 @@ module axis_lrelu_engine_tb();
 
   task load_config;
     // Pass D
-    s_config_sr_cgm[0][0][0] <= d_sr;
+    for (int c=0; c<COPIES; c++)
+      for (int g=0; g<GROUPS; g++)
+        s_config_sr_cgm[c][g][0] <= d_sr;
     @(posedge aclk);
     s_data_mcgu <= s_config_pad_bmcgu [0];
 
@@ -187,9 +192,26 @@ module axis_lrelu_engine_tb();
     s_axis_tuser [I_LRELU_IS_LEFT     ] <= 1;
     s_axis_tuser [I_LRELU_IS_RIGHT    ] <= 0;
 
-    // d = 
+    
+    d_sr = 1.0;
+    b_sr = '{default:1.0};
+    a_sr = '{default:1.0};
 
     @(posedge aclk);
+    @(posedge aclk);
+    @(posedge aclk);
+    
+    load_config;
+
+    @(posedge aclk);
+    s_axis_tvalid <= 0;
+    @(posedge aclk);
+    @(posedge aclk);
+    @(posedge aclk);
+    @(posedge aclk);
+    s_axis_tvalid <= 1;
+    s_data_mcgu <= '{default:1};
+
     
   end
 
