@@ -44,7 +44,7 @@ module always_valid_cyclic_bram #(
   localparam R_ADDR_WIDTH = $clog2(R_DEPTH);
 
   localparam BUFFER_DEPTH = LATENCY + 1;
-  localparam PTR_WIDTH    = $clog2(LATENCY+1);
+  localparam PTR_WIDTH    = $clog2(BUFFER_DEPTH);
 
   input  logic clk, clken, resetn;
   input  logic s_valid_ready, m_ready;
@@ -100,7 +100,7 @@ module always_valid_cyclic_bram #(
                   m_valid = 0;
                 end
       FILL_2_S: begin
-                  bram_r_en = 1;
+                  bram_r_en = 0;
                   m_valid   = 1;
                 end
       READ_S  : begin
