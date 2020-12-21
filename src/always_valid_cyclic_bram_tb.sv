@@ -8,9 +8,9 @@ module always_valid_cyclic_bram_tb();
     forever #(CLK_PERIOD/2) clk <= ~clk;
   end
 
-  localparam W_DEPTH   = 8 ;
-  localparam W_WIDTH   = 16;
-  localparam R_WIDTH   = 8 ;
+  localparam W_DEPTH   = 2 ;
+  localparam W_WIDTH   = 32;
+  localparam R_WIDTH   = 16 ;
   localparam LATENCY   = 2 ;
 
   localparam R_DEPTH = W_DEPTH * W_WIDTH / R_WIDTH;
@@ -29,7 +29,8 @@ module always_valid_cyclic_bram_tb();
     .W_DEPTH (W_DEPTH),
     .W_WIDTH (W_WIDTH),
     .R_WIDTH (R_WIDTH),
-    .LATENCY (LATENCY)
+    .LATENCY (LATENCY),
+    .IP_TYPE (1)
     ) dut (.*);
 
 
@@ -37,24 +38,24 @@ module always_valid_cyclic_bram_tb();
     @(posedge clk);
     clken  <= 1;
     resetn <= 1;
-    w_addr_max_1  <= 3-1;
-    r_addr_max_1  <= 6-1;
+    w_addr_max_1  <= W_DEPTH-1;
+    r_addr_max_1  <= R_DEPTH-1;
 
     s_valid_ready <= 0;
     s_data        <= 0;
-    m_ready       <= 1;
+    m_ready       <= 0;
 
     @(posedge clk);
     s_valid_ready <= 1;
-    s_data        <= {8'd2, 8'd1};
+    s_data        <= {8'd4, 8'd3, 8'd2, 8'd1};
     @(posedge clk);
     s_valid_ready <= 1;
-    s_data        <= {8'd4, 8'd3};
-    @(posedge clk);
-    s_valid_ready <= 0;
-    @(posedge clk);
-    s_valid_ready <= 1;
-    s_data        <= {8'd6, 8'd5};
+    s_data        <= {8'd8, 8'd7, 8'd6, 8'd5};
+    // @(posedge clk);
+    // s_valid_ready <= 0;
+    // @(posedge clk);
+    // s_valid_ready <= 1;
+    // s_data        <= {8'd12, 8'd11, 8'd10, 8'd9};
     // @(posedge clk);
     // s_valid_ready <= 1;
     // s_data        <= 4;
@@ -66,8 +67,9 @@ module always_valid_cyclic_bram_tb();
     // s_data        <= 6;
     @(posedge clk);
     s_valid_ready <= 0;
-    @(posedge clk);
-    @(posedge clk);
+
+    repeat (30) @(posedge clk);
+
     @(posedge clk);
     m_ready       <= 1;
 
