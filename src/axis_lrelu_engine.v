@@ -8,8 +8,8 @@ module axis_lrelu_engine #(
     COPIES  = 2,
     MEMBERS = 2,
 
-    CONFIG_BEATS_3X3_1 = 21-1,
-    CONFIG_BEATS_1X1_1 = 9 -1,
+    CONFIG_BEATS_3X3_1 = 19, // D(1) + A(2) + B(9*2) -2
+    CONFIG_BEATS_1X1_1 = 9 -1, // D(1) + A(2*3) + B(2*3) = 13
     
     LATENCY_FIXED_2_FLOAT =  6,
     LATENCY_FLOAT_32      = 16,
@@ -44,7 +44,8 @@ module axis_lrelu_engine #(
 
     input  wire aclk, aresetn;
     input  wire s_axis_tvalid, s_axis_tlast, m_axis_tready;
-    output wire m_axis_tvalid, s_axis_tready;
+    output wire m_axis_tvalid;
+    output reg  s_axis_tready;
     input  wire [TUSER_WIDTH_LRELU  -1:0] s_axis_tuser;
     output wire [TUSER_WIDTH_MAXPOOL-1:0] m_axis_tuser;
 
@@ -61,20 +62,6 @@ module axis_lrelu_engine #(
     wire s_ready_slice;
 
     localparam BYTES_IN = WORD_WIDTH_IN/8;
-
-    /*
-      AXIS DEMUX
-
-      * sel_config is driven by state machine 
-        - 1: slave bypasses dw and directly connects to config port
-        - 0: slave connects to dw bank
-    */
-    wire dw_s_valid, dw_s_ready, config_s_valid;
-    reg  sel_config, resetn_config, config_s_ready;
-
-    assign dw_s_valid     = sel_config ? 0              : s_axis_tvalid;
-    assign config_s_valid = sel_config ? s_axis_tvalid  : 0;
-    assign s_axis_tready  = sel_config ? config_s_ready : dw_s_ready;
 
     /*
       STATE MACHINE
@@ -101,18 +88,18 @@ module axis_lrelu_engine #(
         - Hence set the config_count as num_beats-1
       * WRITE_2_S:
         - connect engine's config to slave
-        - config_count decremets at every config_handshake
+        - config_count decremets at every handshake
         - when config_count = 0 and handshake, switch to PASS_S
       * FILL_S
         - Block input and wait for (BRAM_LATENCY+1) clocks for BRAMs to get valid
       * default:
         - same as PASS_S
     */
-    wire config_handshake, s_vr_last_conv_out, s_vr_last_dw_out;
+    wire handshake, s_vr_last_conv_out, s_vr_last_dw_out;
 
     assign s_vr_last_conv_out = s_axis_tlast  && s_axis_tvalid && s_axis_tready;
     assign s_vr_last_dw_out   = s_last_e      && s_valid_e     && s_ready_slice;
-    assign config_handshake   = s_axis_tvalid && config_s_ready;
+    assign handshake          = s_axis_tvalid && s_axis_tready;
 
     localparam PASS_S    = 0;
     localparam BLOCK_S   = 1;
@@ -135,7 +122,7 @@ module axis_lrelu_engine #(
     );
 
     localparam CONFIG_BEATS_BITS = $clog2(CONFIG_BEATS_3X3_1 + 1);
-    wire [CONFIG_BEATS_BITS-1:0] count_config, num_beats_1;
+    wire [CONFIG_BEATS_BITS-1:0] count_config;
     reg  [CONFIG_BEATS_BITS-1:0] count_config_next;
     register #(
       .WORD_WIDTH   (CONFIG_BEATS_BITS), 
@@ -143,11 +130,13 @@ module axis_lrelu_engine #(
     ) COUNT_CONFIG (
       .clock        (aclk   ),
       .resetn       (aresetn),
-      .clock_enable (config_handshake ),
+      .clock_enable (handshake ),
       .data_in      (count_config_next),
       .data_out     (count_config)
     );
-    localparam FILL_BITS = $clog2(BRAM_LATENCY+1);
+    localparam FILL_DELAY = 2*BRAM_LATENCY-1;
+
+    localparam FILL_BITS = $clog2(FILL_DELAY);
     wire [FILL_BITS-1:0] count_fill;
     reg  [FILL_BITS-1:0] count_fill_next;    
     register #(
@@ -160,67 +149,89 @@ module axis_lrelu_engine #(
       .data_in      (count_fill_next),
       .data_out     (count_fill)
     );
-
+    /*
+      Fill delay:
+        - M clocks to fill
+        - L clocks for first value to come out (and written)
+        - L clocks for the rest of the buffer (L+1) to fill 
+    */
     always @ (*) begin
       state_next = state;
       case (state)
         PASS_S    : if (s_vr_last_conv_out) state_next = BLOCK_S;
         BLOCK_S   : if (s_vr_last_dw_out  ) state_next = RESET_S;
         RESET_S   : if (s_ready_slice)      state_next = WRITE_1_S;
-        WRITE_1_S : if (config_handshake)   state_next = WRITE_2_S;
-        WRITE_2_S : if ((count_config == 0)              && config_handshake) state_next = FILL_S;
-        FILL_S    : if (count_fill == (BRAM_LATENCY+1-1) && s_ready_slice )   state_next = PASS_S;
+        WRITE_1_S : if (handshake)   state_next = WRITE_2_S;
+        WRITE_2_S : if ((count_config == 0)          && handshake) state_next = FILL_S;
+        FILL_S    : if (count_fill == (FILL_DELAY-1) && s_ready_slice )   state_next = PASS_S;
         default   : state_next = state;
       endcase
     end
 
+    wire dw_s_ready;
+    reg  config_s_valid, dw_s_valid, resetn_config, config_s_ready;
+
     always @ (*) begin
       case (state)
         PASS_S  : begin
-                    sel_config        = 0;
-                    config_s_ready    = 0;
+                    config_s_valid    = 0;
+                    dw_s_valid        = s_axis_tvalid;
+                    s_axis_tready     = dw_s_ready;
+                    
                     resetn_config     = 1;
                     count_config_next = 0;
                     count_fill_next   = 0;
                   end
         BLOCK_S : begin
-                    sel_config        = 1;
-                    config_s_ready    = 0;
+                    config_s_valid    = 0;
+                    dw_s_valid        = 0;
+                    s_axis_tready     = 0;
+
                     resetn_config     = 1;
                     count_config_next = 0;
                     count_fill_next   = 0;
                   end
         RESET_S : begin
-                    sel_config        = 1;
-                    config_s_ready    = 0;
+                    config_s_valid    = 0;
+                    dw_s_valid        = 0;
+                    s_axis_tready     = 0;
+
                     resetn_config     = 0;
                     count_config_next = 0;
                     count_fill_next   = 0;
                   end
         WRITE_1_S:begin
-                    sel_config        = 1;
-                    config_s_ready    = s_ready_slice;
+                    config_s_valid    = s_axis_tvalid;
+                    dw_s_valid        = 0;
+                    s_axis_tready     = s_ready_slice;
+
                     resetn_config     = 1;
                     count_config_next = s_axis_tuser[I_IS_3X3] ? CONFIG_BEATS_3X3_1 : CONFIG_BEATS_1X1_1;
                     count_fill_next   = 0;
                   end
         WRITE_2_S:begin
-                    sel_config        = 1;
-                    config_s_ready    = s_ready_slice;
+                    config_s_valid    = s_axis_tvalid;
+                    dw_s_valid        = 0;
+                    s_axis_tready     = s_ready_slice;
+
                     resetn_config     = 1;
                     count_config_next = count_config - 1;
                     count_fill_next   = 0;
                   end
         FILL_S:   begin
-                    sel_config        = 1;
-                    config_s_ready    = 0;
+                    config_s_valid    = 0;
+                    dw_s_valid        = 0;
+                    s_axis_tready     = 0;
+
                     resetn_config     = 1;
                     count_config_next = 0;
                     count_fill_next   = count_fill + 1;
                   end
         default  :begin
-                    sel_config        = 0;
-                    config_s_ready    = 0;
+                    config_s_valid    = 0;
+                    dw_s_valid        = s_axis_tvalid;
+                    s_axis_tready     = dw_s_ready;
+
                     resetn_config     = 1;
                     count_config_next = 0;
                     count_fill_next   = 0;

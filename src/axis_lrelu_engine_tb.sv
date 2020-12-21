@@ -21,11 +21,12 @@ module axis_lrelu_engine_tb();
   localparam COPIES  = 1;
   localparam MEMBERS = 4;
 
-  localparam CONFIG_BEATS_3X3_1 = 21-1;
-  localparam CONFIG_BEATS_1X1_1 = 9 -1;
+  localparam CONFIG_BEATS_3X3_1 = 19; // D(1) + A(2) + B(9*2) -2
+  localparam CONFIG_BEATS_1X1_1 = 9 -1-1;
 
   localparam LATENCY_FIXED_2_FLOAT =  6;
   localparam LATENCY_FLOAT_32      = 16;
+  localparam BRAM_LATENCY          =  2;
 
   localparam BITS_CONV_CORE       = $clog2(GROUPS * COPIES * MEMBERS);
   localparam I_IS_3X3             = BITS_CONV_CORE + 0;  
@@ -52,99 +53,12 @@ module axis_lrelu_engine_tb();
   logic [TUSER_WIDTH_LRELU  -1:0] s_axis_tuser ;
   logic [TUSER_WIDTH_MAXPOOL-1:0] m_axis_tuser ;
 
-  logic [WORD_WIDTH_IN  -1:0] s_data_mcgu [MEMBERS-1:0][COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+  logic [WORD_WIDTH_IN  -1:0] s_data_int_mcgu [MEMBERS-1:0][COPIES-1:0][GROUPS-1:0][UNITS-1:0];
   logic [WORD_WIDTH_OUT -1:0] m_data_cgu               [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
-
-  assign {>>{s_axis_tdata}} = s_data_mcgu;
-  assign m_data_cgu = {>>{m_axis_tdata}};
-
-  /*
-    Build config
-  */
-  localparam K_MEMBERS = IS_3X3 ? 1 : 3;
-  localparam B_VALS    = IS_3X3 ? 3 : 1;
-
-  shortreal d_sr;
-  shortreal a_sr [K_MEMBERS-1:0][MEMBERS-1:0][COPIES-1:0][GROUPS-1:0];
-  shortreal b_sr [K_MEMBERS-1:0][MEMBERS-1:0][COPIES-1:0][GROUPS-1:0][B_VALS-1:0][B_VALS-1:0]; //clr_mtb
-  shortreal s_config_sr_cgm   [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0] = '{default:0};
-
-  localparam BEATS = 16 / WORD_WIDTH_CONFIG;
-  localparam VALS_CONFIG = MEMBERS / BEATS;
-  logic [15:0] s_config_f16_cgm  [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0];
-  logic [15:0] s_config_f16_mcg  [MEMBERS-1:0][COPIES-1:0][GROUPS-1:0];
-  logic [MEMBERS*COPIES*GROUPS*16-1:0] s_config_f16_mcg_flat;
-  logic [15:0] s_config_f16_bvcg [BEATS -1:0][VALS_CONFIG-1:0][COPIES-1:0][GROUPS-1:0];
-  logic [15:0] s_config_f16_bcgv [BEATS -1:0][COPIES-1:0][GROUPS-1:0][VALS_CONFIG-1:0];
-  logic [MEMBERS*COPIES*GROUPS*WORD_WIDTH_CONFIG-1:0] s_config_f16_bcgv_flat;
-  logic [WORD_WIDTH_CONFIG-1 :0] s_config_bcgm     [BEATS -1:0][COPIES-1 :0][GROUPS-1:0][MEMBERS-1:0];
-  logic [WORD_WIDTH_IN-1 :0]     s_config_pad_bmcgu    [BEATS -1:0][MEMBERS-1:0][COPIES-1:0][GROUPS-1:0][UNITS-1:0];
   
-  shortreal s_config_sr_bcgv [BEATS -1:0][COPIES-1:0][GROUPS-1:0][VALS_CONFIG-1:0];
 
-  generate
-    assign {>>{s_config_f16_mcg_flat}} = s_config_f16_mcg;
-    assign s_config_f16_bvcg = {>>{s_config_f16_mcg_flat}};
-    assign {>>{s_config_f16_bcgv_flat}} = s_config_f16_bcgv;
-    assign s_config_bcgm = {>>{s_config_f16_bcgv_flat}};
-
-
-    for (genvar c=0; c<COPIES; c++) begin
-      for (genvar g=0; g<GROUPS; g++) begin
-        for (genvar m=0; m<MEMBERS; m++) begin
-          assign s_config_f16_cgm[c][g][m] = float_32_to_16($shortrealtobits(s_config_sr_cgm[c][g][m]));
-          assign s_config_f16_mcg[m][c][g] = s_config_f16_cgm [c][g][m];
-        end
-
-        for (genvar b=0; b<BEATS; b++) begin
-          for (genvar v=0; v<VALS_CONFIG; v++) begin
-            assign s_config_f16_bcgv [b][c][g][v] = s_config_f16_bvcg [b][v][c][g];
-            assign s_config_sr_bcgv [b][c][g][v] = $bitstoshortreal(float_16_to_32(s_config_f16_bcgv [b][c][g][v]));
-          end
-          for (genvar m=0; m<MEMBERS; m++) begin
-            assign s_config_pad_bmcgu[b][m][c][g][0] = WORD_WIDTH_IN'(s_config_bcgm[b][c][g][m]);
-          end
-        end
-      end
-    end
-  endgenerate
-
-  task load_config;
-    // Pass D
-    for (int c=0; c<COPIES; c++)
-      for (int g=0; g<GROUPS; g++)
-        s_config_sr_cgm[c][g][0] <= d_sr;
-    @(posedge aclk);
-    s_data_mcgu <= s_config_pad_bmcgu [0];
-
-    // Pass A
-    for (int k=0; k<K_MEMBERS; k++) begin
-      for (int c=0; c<COPIES; c++)
-        for (int g=0; g<GROUPS; g++)
-          for (int m=0; m<MEMBERS; m++)
-            s_config_sr_cgm [c][g][m] <= a_sr [k][m][c][g];
-
-      for (int b=0; b<BEATS; b++) load_config_beat(b);
-    end
-
-    // Pass B
-    for (int clr=0; clr<B_VALS; clr++)
-      for (int mtb=0; mtb<B_VALS; mtb++)
-        for (int k=0; k<K_MEMBERS; k++) begin
-          for (int c=0; c<COPIES; c++)
-            for (int g=0; g<GROUPS; g++)
-              for (int m=0; m<MEMBERS; m++)
-                s_config_sr_cgm [c][g][m] <= b_sr [k][m][c][g][clr][mtb];
-          
-          for (int b=0; b<BEATS; b++) load_config_beat(b);
-        end
-  endtask
-
-  task load_config_beat (input int b);
-      @(posedge aclk);
-      s_data_mcgu   <= s_config_pad_bmcgu [b];
-      s_axis_tvalid <= 1;
-  endtask
+  assign {>>{s_axis_tdata}} = s_data_int_mcgu;
+  assign m_data_cgu = {>>{m_axis_tdata}};
 
   axis_lrelu_engine #(
     .WORD_WIDTH_IN (WORD_WIDTH_IN ),
@@ -160,6 +74,7 @@ module axis_lrelu_engine_tb();
 
     .LATENCY_FIXED_2_FLOAT(LATENCY_FIXED_2_FLOAT),
     .LATENCY_FLOAT_32     (LATENCY_FLOAT_32     ),
+    .BRAM_LATENCY         (BRAM_LATENCY         ),
 
     .BITS_CONV_CORE       (BITS_CONV_CORE      ),
     .I_IS_3X3             (I_IS_3X3            ),
@@ -176,6 +91,9 @@ module axis_lrelu_engine_tb();
     .TUSER_WIDTH_MAXPOOL     (TUSER_WIDTH_MAXPOOL    )
   ) dut (.*);
 
+  int status, file_data_in;
+  string data_in_path = "D:/Vision Traffic/soc/python/fpga_support/lrelu_input.txt";
+
   initial begin
     aresetn       <= 1;
     m_axis_tready <= 1;
@@ -189,30 +107,32 @@ module axis_lrelu_engine_tb();
     s_axis_tuser [I_LRELU_IS_LRELU    ] <= IS_RELU;
     s_axis_tuser [I_LRELU_IS_TOP      ] <= 1;
     s_axis_tuser [I_LRELU_IS_BOTTOM   ] <= 1;
-    s_axis_tuser [I_LRELU_IS_LEFT     ] <= 1;
+    s_axis_tuser [I_LRELU_IS_LEFT     ] <= 0;
     s_axis_tuser [I_LRELU_IS_RIGHT    ] <= 0;
 
-    
-    d_sr = 1.0;
-    b_sr = '{default:1.0};
-    a_sr = '{default:1.0};
+    file_data_in   = $fopen(data_in_path   ,"r");
 
-    @(posedge aclk);
-    @(posedge aclk);
-    @(posedge aclk);
-    
-    load_config;
-
-    @(posedge aclk);
-    s_axis_tvalid <= 0;
-    @(posedge aclk);
-    @(posedge aclk);
-    @(posedge aclk);
-    @(posedge aclk);
-    s_axis_tvalid <= 1;
-    s_data_mcgu <= '{default:1};
-
-    
+    forever begin
+      @(posedge aclk);
+      #1;
+      if (!$feof(file_data_in)) begin
+        axis_feed_data;
+      end
+    end
   end
+
+  task axis_feed_data;
+  begin
+      if (s_axis_tready) begin
+          s_axis_tvalid <= 1;
+
+          for (int m=0; m < MEMBERS; m++)
+            for (int c=0; c < COPIES; c++)
+              for (int g=0; g < GROUPS; g++)
+                for (int u=0; u < UNITS; u++)
+                  status = $fscanf(file_data_in,"%d\n",s_data_int_mcgu[m][c][g][u]);
+      end
+  end
+  endtask
 
 endmodule
