@@ -12,18 +12,21 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="296590000fs"></ZoomStartTime>
-      <ZoomEndTime time="407390001fs"></ZoomEndTime>
+      <ZoomStartTime time="976541666fs"></ZoomStartTime>
+      <ZoomEndTime time="1004691667fs"></ZoomEndTime>
       <Cursor1Time time="1000000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="224"></NameColumnWidth>
-      <ValueColumnWidth column_width="98"></ValueColumnWidth>
+      <ValueColumnWidth column_width="94"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="75" />
+   <WVObjectSize size="90" />
    <wave_markers>
       <marker time="15000000" label="" />
       <marker time="315000000" label="" />
+      <marker time="475000000" label="" />
+      <marker time="625000000" label="" />
+      <marker time="685000000" label="" />
    </wave_markers>
    <wvobject fp_name="/axis_lrelu_engine_tb/aclk" type="logic">
       <obj_property name="ElementShortName">aclk</obj_property>
@@ -37,6 +40,14 @@
       <obj_property name="label">Testbench IO</obj_property>
       <obj_property name="DisplayName">label</obj_property>
    </wvobject>
+   <wvobject fp_name="/axis_lrelu_engine_tb/config_beats" type="array">
+      <obj_property name="ElementShortName">config_beats[31:0]</obj_property>
+      <obj_property name="ObjectShortName">config_beats[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_lrelu_engine_tb/data_beats" type="array">
+      <obj_property name="ElementShortName">data_beats[31:0]</obj_property>
+      <obj_property name="ObjectShortName">data_beats[31:0]</obj_property>
+   </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/s_axis_tready" type="logic">
       <obj_property name="ElementShortName">s_axis_tready</obj_property>
       <obj_property name="ObjectShortName">s_axis_tready</obj_property>
@@ -48,6 +59,63 @@
    <wvobject fp_name="/axis_lrelu_engine_tb/s_axis_tuser" type="array">
       <obj_property name="ElementShortName">s_axis_tuser[9:0]</obj_property>
       <obj_property name="ObjectShortName">s_axis_tuser[9:0]</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/axis_lrelu_engine_tb/s_axis_tuser[9]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[9]</obj_property>
+         <obj_property name="ObjectShortName">[9]</obj_property>
+         <obj_property name="label">right</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/s_axis_tuser[8]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[8]</obj_property>
+         <obj_property name="ObjectShortName">[8]</obj_property>
+         <obj_property name="label">left</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/s_axis_tuser[7]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[7]</obj_property>
+         <obj_property name="ObjectShortName">[7]</obj_property>
+         <obj_property name="label">bot</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/s_axis_tuser[6]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[6]</obj_property>
+         <obj_property name="ObjectShortName">[6]</obj_property>
+         <obj_property name="label">top</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/s_axis_tuser[5]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[5]</obj_property>
+         <obj_property name="ObjectShortName">[5]</obj_property>
+         <obj_property name="label">is_relu</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/s_axis_tuser[4]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[4]</obj_property>
+         <obj_property name="ObjectShortName">[4]</obj_property>
+         <obj_property name="label">is_not_max</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/s_axis_tuser[3]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[3]</obj_property>
+         <obj_property name="ObjectShortName">[3]</obj_property>
+         <obj_property name="label">is_max</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/s_axis_tuser[2]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[2]</obj_property>
+         <obj_property name="ObjectShortName">[2]</obj_property>
+         <obj_property name="label">is_3x3</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/s_axis_tuser[1]" type="logic">
+         <obj_property name="ElementShortName">[1]</obj_property>
+         <obj_property name="ObjectShortName">[1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/s_axis_tuser[0]" type="logic">
+         <obj_property name="ElementShortName">[0]</obj_property>
+         <obj_property name="ObjectShortName">[0]</obj_property>
+      </wvobject>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/m_axis_tvalid" type="logic">
       <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
@@ -58,8 +126,8 @@
       <obj_property name="ObjectShortName">m_axis_tready</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/m_data_cgu" type="array">
-      <obj_property name="ElementShortName">m_data_cgu[0:0][0:0][1:0][7:0]</obj_property>
-      <obj_property name="ObjectShortName">m_data_cgu[0:0][0:0][1:0][7:0]</obj_property>
+      <obj_property name="ElementShortName">m_data_cgu[0:0][0:0][2:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data_cgu[0:0][0:0][2:0][7:0]</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider799">
       <obj_property name="label">AXIS LRELU slave</obj_property>
@@ -90,13 +158,12 @@
       <obj_property name="ObjectShortName">s_axis_tvalid</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/s_axis_tdata" type="array">
-      <obj_property name="ElementShortName">s_axis_tdata[255:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axis_tdata[255:0]</obj_property>
+      <obj_property name="ElementShortName">s_axis_tdata[383:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axis_tdata[383:0]</obj_property>
    </wvobject>
    <wvobject fp_name="group912" type="group">
       <obj_property name="label">State Machine - Config</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="/axis_lrelu_engine_tb/dut/state_next" type="array">
          <obj_property name="ElementShortName">state_next[2:0]</obj_property>
          <obj_property name="ObjectShortName">state_next[2:0]</obj_property>
@@ -141,12 +208,12 @@
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/s_axis_tdata" type="array">
-      <obj_property name="ElementShortName">s_axis_tdata[255:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axis_tdata[255:0]</obj_property>
+      <obj_property name="ElementShortName">s_axis_tdata[383:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axis_tdata[383:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/s_data_conv_out" type="array">
-      <obj_property name="ElementShortName">s_data_conv_out[255:0]</obj_property>
-      <obj_property name="ObjectShortName">s_data_conv_out[255:0]</obj_property>
+      <obj_property name="ElementShortName">s_data_conv_out[383:0]</obj_property>
+      <obj_property name="ObjectShortName">s_data_conv_out[383:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/config_s_data_cgv_sr" type="array">
       <obj_property name="ElementShortName">config_s_data_cgv_sr[0:0][0:0][1:0]</obj_property>
@@ -203,8 +270,8 @@
          <obj_property name="ObjectShortName">s_axis_tready</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_lrelu_engine_tb/dut/\c[0].genblk2.dw /s_axis_tdata" type="array">
-         <obj_property name="ElementShortName">s_axis_tdata[255:0]</obj_property>
-         <obj_property name="ObjectShortName">s_axis_tdata[255:0]</obj_property>
+         <obj_property name="ElementShortName">s_axis_tdata[383:0]</obj_property>
+         <obj_property name="ObjectShortName">s_axis_tdata[383:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_lrelu_engine_tb/dut/\c[0].genblk2.dw /s_axis_tlast" type="logic">
          <obj_property name="ElementShortName">s_axis_tlast</obj_property>
@@ -223,8 +290,8 @@
          <obj_property name="ObjectShortName">m_axis_tready</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_lrelu_engine_tb/dut/\c[0].genblk2.dw /m_axis_tdata" type="array">
-         <obj_property name="ElementShortName">m_axis_tdata[63:0]</obj_property>
-         <obj_property name="ObjectShortName">m_axis_tdata[63:0]</obj_property>
+         <obj_property name="ElementShortName">m_axis_tdata[95:0]</obj_property>
+         <obj_property name="ObjectShortName">m_axis_tdata[95:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_lrelu_engine_tb/dut/\c[0].genblk2.dw /m_axis_tlast" type="logic">
          <obj_property name="ElementShortName">m_axis_tlast</obj_property>
@@ -240,9 +307,13 @@
       <obj_property name="DisplayName">label</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/s_data_cgu" type="array">
-      <obj_property name="ElementShortName">s_data_cgu[0:0][0:0][1:0][31:0]</obj_property>
-      <obj_property name="ObjectShortName">s_data_cgu[0:0][0:0][1:0][31:0]</obj_property>
+      <obj_property name="ElementShortName">s_data_cgu[0:0][0:0][2:0][31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_data_cgu[0:0][0:0][2:0][31:0]</obj_property>
       <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/s_user" type="array">
+      <obj_property name="ElementShortName">s_user[9:0]</obj_property>
+      <obj_property name="ObjectShortName">s_user[9:0]</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider801">
       <obj_property name="label">FMA1 slave</obj_property>
@@ -251,7 +322,6 @@
    <wvobject fp_name="group935" type="group">
       <obj_property name="label">Config FMA1</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/config_fma1_f16_cgv" type="array">
          <obj_property name="ElementShortName">config_fma1_f16_cgv[0:0][0:0][1:0][15:0]</obj_property>
          <obj_property name="ObjectShortName">config_fma1_f16_cgv[0:0][0:0][1:0][15:0]</obj_property>
@@ -462,16 +532,6 @@
    <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_ready_cg_clr_mtb" type="array">
       <obj_property name="ElementShortName">b_ready_cg_clr_mtb[0:0][0:0][2:0][2:0]</obj_property>
       <obj_property name="ObjectShortName">b_ready_cg_clr_mtb[0:0][0:0][2:0][2:0]</obj_property>
-      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_ready_cg_clr_mtb[0]" type="array">
-         <obj_property name="ElementShortName">[0][0:0][2:0][2:0]</obj_property>
-         <obj_property name="ObjectShortName">[0][0:0][2:0][2:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-         <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_ready_cg_clr_mtb[0][0]" type="array">
-            <obj_property name="ElementShortName">[0][2:0][2:0]</obj_property>
-            <obj_property name="ObjectShortName">[0][2:0][2:0]</obj_property>
-            <obj_property name="isExpanded"></obj_property>
-         </wvobject>
-      </wvobject>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/fma1_index_clr" type="array">
       <obj_property name="ElementShortName">fma1_index_clr[1:0]</obj_property>
@@ -483,85 +543,6 @@
       <obj_property name="CustomSignalColor">#FF00FF</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
       <obj_property name="isExpanded"></obj_property>
-      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_cg_clr_mtb_sr[0]" type="array">
-         <obj_property name="ElementShortName">[0][0:0][2:0][2:0]</obj_property>
-         <obj_property name="ObjectShortName">[0][0:0][2:0][2:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-         <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_cg_clr_mtb_sr[0][0]" type="array">
-            <obj_property name="ElementShortName">[0][2:0][2:0]</obj_property>
-            <obj_property name="ObjectShortName">[0][2:0][2:0]</obj_property>
-            <obj_property name="isExpanded"></obj_property>
-            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_cg_clr_mtb_sr[0][0][2]" type="array">
-               <obj_property name="ElementShortName">[2][2:0]</obj_property>
-               <obj_property name="ObjectShortName">[2][2:0]</obj_property>
-               <obj_property name="isExpanded"></obj_property>
-               <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_cg_clr_mtb_sr[0][0][2][2]" type="other">
-                  <obj_property name="ElementShortName">[2]</obj_property>
-                  <obj_property name="ObjectShortName">[2]</obj_property>
-                  <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-                  <obj_property name="UseCustomSignalColor">true</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_cg_clr_mtb_sr[0][0][2][1]" type="other">
-                  <obj_property name="ElementShortName">[1]</obj_property>
-                  <obj_property name="ObjectShortName">[1]</obj_property>
-                  <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-                  <obj_property name="UseCustomSignalColor">true</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_cg_clr_mtb_sr[0][0][2][0]" type="other">
-                  <obj_property name="ElementShortName">[0]</obj_property>
-                  <obj_property name="ObjectShortName">[0]</obj_property>
-                  <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-                  <obj_property name="UseCustomSignalColor">true</obj_property>
-               </wvobject>
-            </wvobject>
-            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_cg_clr_mtb_sr[0][0][1]" type="array">
-               <obj_property name="ElementShortName">[1][2:0]</obj_property>
-               <obj_property name="ObjectShortName">[1][2:0]</obj_property>
-               <obj_property name="isExpanded"></obj_property>
-               <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_cg_clr_mtb_sr[0][0][1][2]" type="other">
-                  <obj_property name="ElementShortName">[2]</obj_property>
-                  <obj_property name="ObjectShortName">[2]</obj_property>
-                  <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-                  <obj_property name="UseCustomSignalColor">true</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_cg_clr_mtb_sr[0][0][1][1]" type="other">
-                  <obj_property name="ElementShortName">[1]</obj_property>
-                  <obj_property name="ObjectShortName">[1]</obj_property>
-                  <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-                  <obj_property name="UseCustomSignalColor">true</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_cg_clr_mtb_sr[0][0][1][0]" type="other">
-                  <obj_property name="ElementShortName">[0]</obj_property>
-                  <obj_property name="ObjectShortName">[0]</obj_property>
-                  <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-                  <obj_property name="UseCustomSignalColor">true</obj_property>
-               </wvobject>
-            </wvobject>
-            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_cg_clr_mtb_sr[0][0][0]" type="array">
-               <obj_property name="ElementShortName">[0][2:0]</obj_property>
-               <obj_property name="ObjectShortName">[0][2:0]</obj_property>
-               <obj_property name="isExpanded"></obj_property>
-               <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_cg_clr_mtb_sr[0][0][0][2]" type="other">
-                  <obj_property name="ElementShortName">[2]</obj_property>
-                  <obj_property name="ObjectShortName">[2]</obj_property>
-                  <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-                  <obj_property name="UseCustomSignalColor">true</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_cg_clr_mtb_sr[0][0][0][1]" type="other">
-                  <obj_property name="ElementShortName">[1]</obj_property>
-                  <obj_property name="ObjectShortName">[1]</obj_property>
-                  <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-                  <obj_property name="UseCustomSignalColor">true</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_cg_clr_mtb_sr[0][0][0][0]" type="other">
-                  <obj_property name="ElementShortName">[0]</obj_property>
-                  <obj_property name="ObjectShortName">[0]</obj_property>
-                  <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-                  <obj_property name="UseCustomSignalColor">true</obj_property>
-               </wvobject>
-            </wvobject>
-         </wvobject>
-      </wvobject>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_mid_f32_cg" type="array">
       <obj_property name="ElementShortName">b_mid_f32_cg[0:0][0:0][31:0]</obj_property>
@@ -588,37 +569,217 @@
       <obj_property name="radix_otherWidth">8</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/is_top_cgu" type="array">
-      <obj_property name="ElementShortName">is_top_cgu[0:0][0:0][1:0]</obj_property>
-      <obj_property name="ObjectShortName">is_top_cgu[0:0][0:0][1:0]</obj_property>
+      <obj_property name="ElementShortName">is_top_cgu[0:0][0:0][2:0]</obj_property>
+      <obj_property name="ObjectShortName">is_top_cgu[0:0][0:0][2:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/is_bot_cgu" type="array">
-      <obj_property name="ElementShortName">is_bot_cgu[0:0][0:0][1:0]</obj_property>
-      <obj_property name="ObjectShortName">is_bot_cgu[0:0][0:0][1:0]</obj_property>
+      <obj_property name="ElementShortName">is_bot_cgu[0:0][0:0][2:0]</obj_property>
+      <obj_property name="ObjectShortName">is_bot_cgu[0:0][0:0][2:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_val_f32_cgu" type="array">
-      <obj_property name="ElementShortName">b_val_f32_cgu[0:0][0:0][1:0][31:0]</obj_property>
-      <obj_property name="ObjectShortName">b_val_f32_cgu[0:0][0:0][1:0][31:0]</obj_property>
+      <obj_property name="ElementShortName">b_val_f32_cgu[0:0][0:0][2:0][31:0]</obj_property>
+      <obj_property name="ObjectShortName">b_val_f32_cgu[0:0][0:0][2:0][31:0]</obj_property>
+      <obj_property name="Radix">REALRADIX</obj_property>
+      <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
+      <obj_property name="radix_fractionWidth">24</obj_property>
+      <obj_property name="radix_otherWidth">8</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/\c[0].g[0].mtb[0].clr[0].genblk1.BRAM_B /m_valid" type="logic">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">m_valid</obj_property>
+      <obj_property name="ObjectShortName">m_valid</obj_property>
+      <obj_property name="label">bram_00_mvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/\c[0].g[0].mtb[0].clr[1].genblk1.BRAM_B /m_valid" type="logic">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">m_valid</obj_property>
+      <obj_property name="ObjectShortName">m_valid</obj_property>
+      <obj_property name="label">bram_01_mvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_user_float32" type="array">
+      <obj_property name="ElementShortName">m_user_float32[9:0]</obj_property>
+      <obj_property name="ObjectShortName">m_user_float32[9:0]</obj_property>
+      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_user_float32[9]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[9]</obj_property>
+         <obj_property name="ObjectShortName">[9]</obj_property>
+         <obj_property name="label">right</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_user_float32[8]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[8]</obj_property>
+         <obj_property name="ObjectShortName">[8]</obj_property>
+         <obj_property name="label">left</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_user_float32[7]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[7]</obj_property>
+         <obj_property name="ObjectShortName">[7]</obj_property>
+         <obj_property name="label">bot</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_user_float32[6]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[6]</obj_property>
+         <obj_property name="ObjectShortName">[6]</obj_property>
+         <obj_property name="label">top</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_user_float32[5]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[5]</obj_property>
+         <obj_property name="ObjectShortName">[5]</obj_property>
+         <obj_property name="label">lrelu</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_user_float32[4]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[4]</obj_property>
+         <obj_property name="ObjectShortName">[4]</obj_property>
+         <obj_property name="label">not_max</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_user_float32[3]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[3]</obj_property>
+         <obj_property name="ObjectShortName">[3]</obj_property>
+         <obj_property name="label">max</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_user_float32[2]" type="logic">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">[2]</obj_property>
+         <obj_property name="ObjectShortName">[2]</obj_property>
+         <obj_property name="label">3x3</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_user_float32[1]" type="logic">
+         <obj_property name="ElementShortName">[1]</obj_property>
+         <obj_property name="ObjectShortName">[1]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_user_float32[0]" type="logic">
+         <obj_property name="ElementShortName">[0]</obj_property>
+         <obj_property name="ObjectShortName">[0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_user_float32[9]" type="logic">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">[9]</obj_property>
+      <obj_property name="ObjectShortName">[9]</obj_property>
+      <obj_property name="label">right</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_user_float32[8]" type="logic">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">[8]</obj_property>
+      <obj_property name="ObjectShortName">[8]</obj_property>
+      <obj_property name="label">left</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_user_float32[7]" type="logic">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">[7]</obj_property>
+      <obj_property name="ObjectShortName">[7]</obj_property>
+      <obj_property name="label">bot</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_user_float32[6]" type="logic">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">[6]</obj_property>
+      <obj_property name="ObjectShortName">[6]</obj_property>
+      <obj_property name="label">top</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_float32_cgu" type="array">
+      <obj_property name="ElementShortName">m_data_float32_cgu[0:0][0:0][2:0][31:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data_float32_cgu[0:0][0:0][2:0][31:0]</obj_property>
+      <obj_property name="Radix">REALRADIX</obj_property>
+      <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
+      <obj_property name="radix_fractionWidth">24</obj_property>
+      <obj_property name="radix_otherWidth">8</obj_property>
+      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_float32_cgu[0]" type="array">
+         <obj_property name="ElementShortName">[0][0:0][2:0][31:0]</obj_property>
+         <obj_property name="ObjectShortName">[0][0:0][2:0][31:0]</obj_property>
+         <obj_property name="Radix">REALRADIX</obj_property>
+         <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
+         <obj_property name="radix_fractionWidth">24</obj_property>
+         <obj_property name="radix_otherWidth">8</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_float32_cgu[0][0]" type="array">
+            <obj_property name="ElementShortName">[0][2:0][31:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][2:0][31:0]</obj_property>
+            <obj_property name="Radix">REALRADIX</obj_property>
+            <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
+            <obj_property name="radix_fractionWidth">24</obj_property>
+            <obj_property name="radix_otherWidth">8</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_float32_cgu[0][0][2]" type="array">
+               <obj_property name="ElementShortName">[2][31:0]</obj_property>
+               <obj_property name="ObjectShortName">[2][31:0]</obj_property>
+               <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+               <obj_property name="Radix">REALRADIX</obj_property>
+               <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
+               <obj_property name="radix_fractionWidth">24</obj_property>
+               <obj_property name="radix_otherWidth">8</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_float32_cgu[0][0][1]" type="array">
+               <obj_property name="ElementShortName">[1][31:0]</obj_property>
+               <obj_property name="ObjectShortName">[1][31:0]</obj_property>
+               <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+               <obj_property name="Radix">REALRADIX</obj_property>
+               <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
+               <obj_property name="radix_fractionWidth">24</obj_property>
+               <obj_property name="radix_otherWidth">8</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_float32_cgu[0][0][0]" type="array">
+               <obj_property name="ElementShortName">[0][31:0]</obj_property>
+               <obj_property name="ObjectShortName">[0][31:0]</obj_property>
+               <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+               <obj_property name="Radix">REALRADIX</obj_property>
+               <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
+               <obj_property name="radix_fractionWidth">24</obj_property>
+               <obj_property name="radix_otherWidth">8</obj_property>
+            </wvobject>
+         </wvobject>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/a_val_cg_sr" type="array">
+      <obj_property name="ElementShortName">a_val_cg_sr[0:0][0:0]</obj_property>
+      <obj_property name="ObjectShortName">a_val_cg_sr[0:0][0:0]</obj_property>
+      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/a_val_cg_sr[0]" type="array">
+         <obj_property name="ElementShortName">[0][0:0]</obj_property>
+         <obj_property name="ObjectShortName">[0][0:0]</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_val_f32_cgu" type="array">
+      <obj_property name="ElementShortName">b_val_f32_cgu[0:0][0:0][2:0][31:0]</obj_property>
+      <obj_property name="ObjectShortName">b_val_f32_cgu[0:0][0:0][2:0][31:0]</obj_property>
       <obj_property name="Radix">REALRADIX</obj_property>
       <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
       <obj_property name="radix_fractionWidth">24</obj_property>
       <obj_property name="radix_otherWidth">8</obj_property>
       <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_val_f32_cgu[0]" type="array">
-         <obj_property name="ElementShortName">[0][0:0][1:0][31:0]</obj_property>
-         <obj_property name="ObjectShortName">[0][0:0][1:0][31:0]</obj_property>
+         <obj_property name="ElementShortName">[0][0:0][2:0][31:0]</obj_property>
+         <obj_property name="ObjectShortName">[0][0:0][2:0][31:0]</obj_property>
+         <obj_property name="isExpanded"></obj_property>
          <obj_property name="Radix">REALRADIX</obj_property>
          <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
          <obj_property name="radix_fractionWidth">24</obj_property>
          <obj_property name="radix_otherWidth">8</obj_property>
-         <obj_property name="isExpanded"></obj_property>
          <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_val_f32_cgu[0][0]" type="array">
-            <obj_property name="ElementShortName">[0][1:0][31:0]</obj_property>
-            <obj_property name="ObjectShortName">[0][1:0][31:0]</obj_property>
+            <obj_property name="ElementShortName">[0][2:0][31:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][2:0][31:0]</obj_property>
+            <obj_property name="isExpanded"></obj_property>
             <obj_property name="Radix">REALRADIX</obj_property>
             <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
             <obj_property name="radix_fractionWidth">24</obj_property>
             <obj_property name="radix_otherWidth">8</obj_property>
-            <obj_property name="isExpanded"></obj_property>
+            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_val_f32_cgu[0][0][2]" type="array">
+               <obj_property name="ElementShortName">[2][31:0]</obj_property>
+               <obj_property name="ObjectShortName">[2][31:0]</obj_property>
+               <obj_property name="Radix">REALRADIX</obj_property>
+               <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
+               <obj_property name="radix_fractionWidth">24</obj_property>
+               <obj_property name="radix_otherWidth">8</obj_property>
+            </wvobject>
             <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/b_val_f32_cgu[0][0][1]" type="array">
                <obj_property name="ElementShortName">[1][31:0]</obj_property>
                <obj_property name="ObjectShortName">[1][31:0]</obj_property>
@@ -638,25 +799,98 @@
          </wvobject>
       </wvobject>
    </wvobject>
-   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/\c[0].g[0].mtb[0].clr[0].genblk1.BRAM_B /m_valid" type="logic">
-      <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="ElementShortName">m_valid</obj_property>
-      <obj_property name="ObjectShortName">m_valid</obj_property>
-      <obj_property name="label">bram_00_mvalid</obj_property>
+   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_valid_fma_1" type="logic">
+      <obj_property name="ElementShortName">m_valid_fma_1</obj_property>
+      <obj_property name="ObjectShortName">m_valid_fma_1</obj_property>
    </wvobject>
-   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/\c[0].g[0].mtb[0].clr[1].genblk1.BRAM_B /m_valid" type="logic">
-      <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="ElementShortName">m_valid</obj_property>
-      <obj_property name="ObjectShortName">m_valid</obj_property>
-      <obj_property name="label">bram_01_mvalid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_float32_cgu" type="array">
-      <obj_property name="ElementShortName">m_data_float32_cgu[0:0][0:0][1:0][31:0]</obj_property>
-      <obj_property name="ObjectShortName">m_data_float32_cgu[0:0][0:0][1:0][31:0]</obj_property>
+   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_1_cgu" type="array">
+      <obj_property name="ElementShortName">m_data_fma_1_cgu[0:0][0:0][2:0][31:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data_fma_1_cgu[0:0][0:0][2:0][31:0]</obj_property>
       <obj_property name="Radix">REALRADIX</obj_property>
       <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
       <obj_property name="radix_fractionWidth">24</obj_property>
       <obj_property name="radix_otherWidth">8</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_1_cgu[0]" type="array">
+         <obj_property name="ElementShortName">[0][0:0][2:0][31:0]</obj_property>
+         <obj_property name="ObjectShortName">[0][0:0][2:0][31:0]</obj_property>
+         <obj_property name="Radix">REALRADIX</obj_property>
+         <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
+         <obj_property name="radix_fractionWidth">24</obj_property>
+         <obj_property name="radix_otherWidth">8</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_1_cgu[0][0]" type="array">
+            <obj_property name="ElementShortName">[0][2:0][31:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][2:0][31:0]</obj_property>
+            <obj_property name="Radix">REALRADIX</obj_property>
+            <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
+            <obj_property name="radix_fractionWidth">24</obj_property>
+            <obj_property name="radix_otherWidth">8</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_1_cgu[0][0][2]" type="array">
+               <obj_property name="ElementShortName">[2][31:0]</obj_property>
+               <obj_property name="ObjectShortName">[2][31:0]</obj_property>
+               <obj_property name="Radix">REALRADIX</obj_property>
+               <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
+               <obj_property name="radix_fractionWidth">24</obj_property>
+               <obj_property name="radix_otherWidth">8</obj_property>
+               <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_1_cgu[0][0][1]" type="array">
+               <obj_property name="ElementShortName">[1][31:0]</obj_property>
+               <obj_property name="ObjectShortName">[1][31:0]</obj_property>
+               <obj_property name="Radix">REALRADIX</obj_property>
+               <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
+               <obj_property name="radix_fractionWidth">24</obj_property>
+               <obj_property name="radix_otherWidth">8</obj_property>
+               <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_1_cgu[0][0][0]" type="array">
+               <obj_property name="ElementShortName">[0][31:0]</obj_property>
+               <obj_property name="ObjectShortName">[0][31:0]</obj_property>
+               <obj_property name="Radix">REALRADIX</obj_property>
+               <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
+               <obj_property name="radix_fractionWidth">24</obj_property>
+               <obj_property name="radix_otherWidth">8</obj_property>
+               <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+            </wvobject>
+         </wvobject>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_1_cgu_sr" type="array">
+      <obj_property name="ElementShortName">m_data_fma_1_cgu_sr[0:0][0:0][2:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data_fma_1_cgu_sr[0:0][0:0][2:0]</obj_property>
+      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_1_cgu_sr[0]" type="array">
+         <obj_property name="ElementShortName">[0][0:0][2:0]</obj_property>
+         <obj_property name="ObjectShortName">[0][0:0][2:0]</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_1_cgu_sr[0][0]" type="array">
+            <obj_property name="ElementShortName">[0][2:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][2:0]</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_1_cgu_sr[0][0][2]" type="other">
+               <obj_property name="ElementShortName">[2]</obj_property>
+               <obj_property name="ObjectShortName">[2]</obj_property>
+               <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_1_cgu_sr[0][0][1]" type="other">
+               <obj_property name="ElementShortName">[1]</obj_property>
+               <obj_property name="ObjectShortName">[1]</obj_property>
+               <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_1_cgu_sr[0][0][0]" type="other">
+               <obj_property name="ElementShortName">[0]</obj_property>
+               <obj_property name="ObjectShortName">[0]</obj_property>
+               <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+            </wvobject>
+         </wvobject>
+      </wvobject>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/s_user_fma_1" type="array">
       <obj_property name="ElementShortName">s_user_fma_1[5:0]</obj_property>
@@ -686,13 +920,11 @@
       <obj_property name="ElementShortName">config_flat_2_cg_sr[0:0][0:0]</obj_property>
       <obj_property name="ObjectShortName">config_flat_2_cg_sr[0:0][0:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/d_val_cg" type="array">
-      <obj_property name="ElementShortName">d_val_cg[0:0][0:0][15:0]</obj_property>
-      <obj_property name="ObjectShortName">d_val_cg[0:0][0:0][15:0]</obj_property>
-   </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/d_val_cg_sr" type="array">
       <obj_property name="ElementShortName">d_val_cg_sr[0:0][0:0]</obj_property>
       <obj_property name="ObjectShortName">d_val_cg_sr[0:0][0:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject fp_name="group936" type="group">
       <obj_property name="label">Config FMA2</obj_property>
@@ -727,28 +959,63 @@
       <obj_property name="ObjectShortName">d_val_cg_sr[0:0][0:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/is_lrelu_cgu" type="array">
-      <obj_property name="ElementShortName">is_lrelu_cgu[0:0][0:0][1:0]</obj_property>
-      <obj_property name="ObjectShortName">is_lrelu_cgu[0:0][0:0][1:0]</obj_property>
+      <obj_property name="ElementShortName">is_lrelu_cgu[0:0][0:0][2:0]</obj_property>
+      <obj_property name="ObjectShortName">is_lrelu_cgu[0:0][0:0][2:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/c_val_cgu_sr" type="array">
-      <obj_property name="ElementShortName">c_val_cgu_sr[0:0][0:0][1:0]</obj_property>
-      <obj_property name="ObjectShortName">c_val_cgu_sr[0:0][0:0][1:0]</obj_property>
+      <obj_property name="ElementShortName">c_val_cgu_sr[0:0][0:0][2:0]</obj_property>
+      <obj_property name="ObjectShortName">c_val_cgu_sr[0:0][0:0][2:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_1_cgu" type="array">
-      <obj_property name="ElementShortName">m_data_fma_1_cgu[0:0][0:0][1:0][31:0]</obj_property>
-      <obj_property name="ObjectShortName">m_data_fma_1_cgu[0:0][0:0][1:0][31:0]</obj_property>
-      <obj_property name="Radix">REALRADIX</obj_property>
-      <obj_property name="radix_realType">FLOATINGPOINTRADIX</obj_property>
-      <obj_property name="radix_fractionWidth">24</obj_property>
-      <obj_property name="radix_otherWidth">8</obj_property>
+   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_user_fma_1" type="array">
+      <obj_property name="ElementShortName">m_user_fma_1[5:0]</obj_property>
+      <obj_property name="ObjectShortName">m_user_fma_1[5:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_1_cgu_sr" type="array">
-      <obj_property name="ElementShortName">m_data_fma_1_cgu_sr[0:0][0:0][1:0]</obj_property>
-      <obj_property name="ObjectShortName">m_data_fma_1_cgu_sr[0:0][0:0][1:0]</obj_property>
+      <obj_property name="ElementShortName">m_data_fma_1_cgu_sr[0:0][0:0][2:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data_fma_1_cgu_sr[0:0][0:0][2:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/s_user_fma_2" type="array">
       <obj_property name="ElementShortName">s_user_fma_2[4:0]</obj_property>
       <obj_property name="ObjectShortName">s_user_fma_2[4:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_2_cgu_sr" type="array">
+      <obj_property name="ElementShortName">m_data_fma_2_cgu_sr[0:0][0:0][2:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data_fma_2_cgu_sr[0:0][0:0][2:0]</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_2_cgu_sr[0]" type="array">
+         <obj_property name="ElementShortName">[0][0:0][2:0]</obj_property>
+         <obj_property name="ObjectShortName">[0][0:0][2:0]</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_2_cgu_sr[0][0]" type="array">
+            <obj_property name="ElementShortName">[0][2:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][2:0]</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_2_cgu_sr[0][0][2]" type="other">
+               <obj_property name="ElementShortName">[2]</obj_property>
+               <obj_property name="ObjectShortName">[2]</obj_property>
+               <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_2_cgu_sr[0][0][1]" type="other">
+               <obj_property name="ElementShortName">[1]</obj_property>
+               <obj_property name="ObjectShortName">[1]</obj_property>
+               <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_2_cgu_sr[0][0][0]" type="other">
+               <obj_property name="ElementShortName">[0]</obj_property>
+               <obj_property name="ObjectShortName">[0]</obj_property>
+               <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+            </wvobject>
+         </wvobject>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_valid_fma_2" type="logic">
+      <obj_property name="ElementShortName">m_valid_fma_2</obj_property>
+      <obj_property name="ObjectShortName">m_valid_fma_2</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider803">
       <obj_property name="label">Float2Fix slave</obj_property>
@@ -759,16 +1026,42 @@
       <obj_property name="ObjectShortName">m_valid_fma_2</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_fma_2_cgu_sr" type="array">
-      <obj_property name="ElementShortName">m_data_fma_2_cgu_sr[0:0][0:0][1:0]</obj_property>
-      <obj_property name="ObjectShortName">m_data_fma_2_cgu_sr[0:0][0:0][1:0]</obj_property>
+      <obj_property name="ElementShortName">m_data_fma_2_cgu_sr[0:0][0:0][2:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data_fma_2_cgu_sr[0:0][0:0][2:0]</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider804">
       <obj_property name="label">Float2Fix master</obj_property>
       <obj_property name="DisplayName">label</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_cgu" type="array">
-      <obj_property name="ElementShortName">m_data_cgu[0:0][0:0][1:0][7:0]</obj_property>
-      <obj_property name="ObjectShortName">m_data_cgu[0:0][0:0][1:0][7:0]</obj_property>
+      <obj_property name="ElementShortName">m_data_cgu[0:0][0:0][2:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data_cgu[0:0][0:0][2:0][7:0]</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_cgu[0]" type="array">
+         <obj_property name="ElementShortName">[0][0:0][2:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">[0][0:0][2:0][7:0]</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_cgu[0][0]" type="array">
+            <obj_property name="ElementShortName">[0][2:0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][2:0][7:0]</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_cgu[0][0][2]" type="array">
+               <obj_property name="ElementShortName">[2][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_cgu[0][0][1]" type="array">
+               <obj_property name="ElementShortName">[1][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_lrelu_engine_tb/dut/engine/m_data_cgu[0][0][0]" type="array">
+               <obj_property name="ElementShortName">[0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            </wvobject>
+         </wvobject>
+      </wvobject>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/m_axis_tvalid" type="logic">
       <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
@@ -779,8 +1072,44 @@
       <obj_property name="ObjectShortName">m_axis_tready</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/m_axis_tdata" type="array">
-      <obj_property name="ElementShortName">m_axis_tdata[15:0]</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tdata[15:0]</obj_property>
+      <obj_property name="ElementShortName">m_axis_tdata[23:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tdata[23:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_lrelu_engine_tb/m_data_cgu" type="array">
+      <obj_property name="ElementShortName">m_data_cgu[0:0][0:0][2:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data_cgu[0:0][0:0][2:0][7:0]</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/axis_lrelu_engine_tb/m_data_cgu[0]" type="array">
+         <obj_property name="ElementShortName">[0][0:0][2:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">[0][0:0][2:0][7:0]</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/axis_lrelu_engine_tb/m_data_cgu[0][0]" type="array">
+            <obj_property name="ElementShortName">[0][2:0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][2:0][7:0]</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+            <wvobject fp_name="/axis_lrelu_engine_tb/m_data_cgu[0][0][2]" type="array">
+               <obj_property name="ElementShortName">[2][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_lrelu_engine_tb/m_data_cgu[0][0][1]" type="array">
+               <obj_property name="ElementShortName">[1][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_lrelu_engine_tb/m_data_cgu[0][0][0]" type="array">
+               <obj_property name="ElementShortName">[0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+            </wvobject>
+         </wvobject>
+      </wvobject>
    </wvobject>
    <wvobject fp_name="/axis_lrelu_engine_tb/m_axis_tuser" type="array">
       <obj_property name="ElementShortName">m_axis_tuser[4:0]</obj_property>

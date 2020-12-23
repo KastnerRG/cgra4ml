@@ -8,6 +8,8 @@ module lrelu_engine #(
   COPIES  = 2,
   MEMBERS = 2,
 
+  ALPHA = 16'd11878,
+
   LATENCY_FIXED_2_FLOAT =  6,
   LATENCY_FLOAT_32      = 16,
   BRAM_LATENCY          =  2,
@@ -304,8 +306,7 @@ module lrelu_engine #(
   logic [BRAM_R_WIDTH-1:0] a_val_cg     [COPIES-1:0][GROUPS-1:0];
   logic [31:0]             a_val_f32_cg [COPIES-1:0][GROUPS-1:0];
   logic                    b_ready_cg_clr_mtb[COPIES-1:0][GROUPS-1:0][2:0][2:0];
-  logic [BRAM_R_WIDTH-1:0] b_cg_clr_mtb      [COPIES-1:0][GROUPS-1:0][2:0][2:0];
-  logic [31:0]             b_cg_clr_mtb_f32  [COPIES-1:0][GROUPS-1:0][2:0][2:0];
+  logic [BRAM_R_WIDTH-1:0] b_cg_clr_mtb_f16  [COPIES-1:0][GROUPS-1:0][2:0][2:0];
   logic [31:0] b_mid_f32_cg [COPIES-1:0][GROUPS-1:0];
   logic [31:0] b_top_f32_cg [COPIES-1:0][GROUPS-1:0]; 
   logic [31:0] b_bot_f32_cg [COPIES-1:0][GROUPS-1:0];
@@ -333,9 +334,14 @@ module lrelu_engine #(
   logic [1:0] fma1_index_clr;
   logic ready_mtb [2:0];
   always_comb begin
-    if      (m_user_float32[I_LRELU_IS_LEFT ])  fma1_index_clr = 2'd1;
-    else if (m_user_float32[I_LRELU_IS_RIGHT])  fma1_index_clr = 2'd2;
-    else                                        fma1_index_clr = 2'd0;
+    if (m_user_float32[I_IS_3X3]) begin
+      if      (m_user_float32[I_LRELU_IS_LEFT ])  fma1_index_clr = 2'd1;
+      else if (m_user_float32[I_LRELU_IS_RIGHT])  fma1_index_clr = 2'd2;
+      else                                        fma1_index_clr = 2'd0;
+    end
+    else begin
+      fma1_index_clr = 2'd0;
+    end
   end
 
 
@@ -382,7 +388,8 @@ module lrelu_engine #(
         */
         for (genvar mtb=0; mtb < 3; mtb ++) begin: mtb
 
-          assign ready_mtb[mtb] = (mtb==0) || (mtb==1 && m_user_float32[I_LRELU_IS_TOP]) || (mtb==2 && m_user_float32[I_LRELU_IS_BOTTOM]);
+          assign ready_mtb[mtb] = (mtb==0) || m_user_float32[I_IS_3X3] && (   (mtb==1 && m_user_float32[I_LRELU_IS_TOP]) 
+                                                                           || (mtb==2 && m_user_float32[I_LRELU_IS_BOTTOM]));
 
           for (genvar clr=0; clr < 3; clr ++) begin: clr
           assign b_ready_cg_clr_mtb[c][g][clr][mtb] = m_valid_float32 && (fma1_index_clr == clr) && ready_mtb[mtb];
@@ -401,7 +408,7 @@ module lrelu_engine #(
                 .resetn       (resetn_config_1),
                 .s_valid_ready(valid_config_1 && (w_sel_bram_1 == 3)),
                 .s_data       (config_flat_1_cg [c][g]),
-                .m_data       (b_cg_clr_mtb[c][g][clr][mtb]),
+                .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
                 .m_ready      (b_ready_cg_clr_mtb[c][g][clr][mtb]),
                 .r_addr_max_1 (b_r_addr_max_1),
                 .w_addr_max_1 (b_w_addr_max_1)
@@ -420,20 +427,19 @@ module lrelu_engine #(
                 .resetn       (resetn_config_1),
                 .s_valid_ready(valid_config_1 && (w_sel_bram_1 == 3 + clr*3 + mtb)),
                 .s_data       (config_flat_1_cg [c][g]),
-                .m_data       (b_cg_clr_mtb[c][g][clr][mtb]),
+                .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
                 .m_ready      (b_ready_cg_clr_mtb[c][g][clr][mtb]),
                 .r_addr_max_1 (BRAM_R_DEPTH_3X3-1),
                 .w_addr_max_1 (BRAM_W_DEPTH_3X3-1)
               );
             end
-            assign b_cg_clr_mtb_f32[c][g][clr][mtb] = float_16_to_32(b_cg_clr_mtb[c][g][clr][mtb]);
           end
         end
 
         always_comb begin
-          b_mid_f32_cg[c][g] = b_cg_clr_mtb_f32[c][g][fma1_index_clr][0];
-          b_top_f32_cg[c][g] = b_cg_clr_mtb_f32[c][g][fma1_index_clr][1];
-          b_bot_f32_cg[c][g] = b_cg_clr_mtb_f32[c][g][fma1_index_clr][2];
+          b_mid_f32_cg[c][g] = float_16_to_32(b_cg_clr_mtb_f16[c][g][fma1_index_clr][0]);
+          b_top_f32_cg[c][g] = float_16_to_32(b_cg_clr_mtb_f16[c][g][fma1_index_clr][1]);
+          b_bot_f32_cg[c][g] = float_16_to_32(b_cg_clr_mtb_f16[c][g][fma1_index_clr][2]);
         end
 
         /*
@@ -475,17 +481,22 @@ module lrelu_engine #(
           assign is_bot_cgu[c][g][u] = (u == UNITS-1) && m_user_float32[I_LRELU_IS_BOTTOM];
 
           always_comb begin
-            unique case ({is_top_cgu[c][g][u], is_bot_cgu[c][g][u]})
-              2'b00 : b_val_f32_cgu[c][g][u] = b_mid_f32_cg[c][g];
-              2'b10 : b_val_f32_cgu[c][g][u] = b_top_f32_cg[c][g];
-              2'b01 : b_val_f32_cgu[c][g][u] = b_bot_f32_cg[c][g];
-            endcase
+            if (m_user_float32[I_IS_3X3]) begin
+              unique case ({is_top_cgu[c][g][u], is_bot_cgu[c][g][u]})
+                2'b00 : b_val_f32_cgu[c][g][u] = b_mid_f32_cg[c][g];
+                2'b10 : b_val_f32_cgu[c][g][u] = b_top_f32_cg[c][g];
+                2'b01 : b_val_f32_cgu[c][g][u] = b_bot_f32_cg[c][g];
+              endcase
+            end
+            else begin
+              b_val_f32_cgu[c][g][u] = b_mid_f32_cg[c][g];
+            end
           end
 
           assign m_data_fma_1_cgu_f16[c][g][u] = float_32_to_16(m_data_fma_1_cgu[c][g][u]);
 
-          assign is_lrelu_cgu[c][g][u] = m_user_fma_1[I_LRELU_IS_LRELU] && m_data_fma_1_cgu[c][g][u][0];
-          assign c_val_cgu   [c][g][u] = is_lrelu_cgu[c][g][u] ? 16'd11878 : 16'd15360 ; // 0.1 or 1
+          assign is_lrelu_cgu[c][g][u] = m_user_fma_1[I_LRELU_IS_LRELU] && m_data_fma_1_cgu[c][g][u][31];
+          assign c_val_cgu   [c][g][u] = is_lrelu_cgu[c][g][u] ? ALPHA : 16'd15360 ; // 0.1 or 1
 
           if (c==0 && g==0 && u==0) begin
             fixed_to_float_active FIX2FLOAT (
@@ -499,6 +510,13 @@ module lrelu_engine #(
               .m_axis_result_tdata  (m_data_float32_cgu[c][g][u]),    
               .m_axis_result_tuser  (m_user_float32)    
             );
+            /*
+             FMA Operation:  fma_out = fma_a * fma_b + fma_c
+
+             fma_a = data
+             fma_b = a
+             fma_c = b
+            */
             float_32_ma_active FMA_1 (
               .aclk                 (clk),                                  
               .aclken               (clken),                              
@@ -507,13 +525,20 @@ module lrelu_engine #(
               .s_axis_a_tdata       (m_data_float32_cgu[c][g][u]),              
               .s_axis_a_tuser       (s_user_fma_1),              
               .s_axis_b_tvalid      (1'b1),            
-              .s_axis_b_tdata       (b_val_f32_cgu[c][g][u]),              
+              .s_axis_b_tdata       (a_val_f32_cg [c][g]),              
               .s_axis_c_tvalid      (1'b1),           
-              .s_axis_c_tdata       (a_val_f32_cg [c][g]),              
+              .s_axis_c_tdata       (b_val_f32_cgu[c][g][u]),              
               .m_axis_result_tvalid (m_valid_fma_1),  
               .m_axis_result_tdata  (m_data_fma_1_cgu[c][g][u]),    
               .m_axis_result_tuser  (m_user_fma_1)    
             );
+            /*
+             FMA Operation:  fma_out = fma_a * fma_b + fma_c
+
+             fma_a = data
+             fma_b = c
+             fma_c = d
+            */
             float_16_ma_active FMA_2 (
               .aclk                 (clk),                                  
               .aclken               (clken),                              
@@ -534,7 +559,7 @@ module lrelu_engine #(
               .aclken               (clken),                              
               // .aresetn              (resetn),                            
               .s_axis_a_tvalid      (m_valid_fma_2),            
-              .s_axis_a_tdata       (m_data_fma_1_cgu_f16[c][g][u]),              
+              .s_axis_a_tdata       (m_data_fma_2_cgu [c][g][u]),              
               .s_axis_a_tuser       (m_user_fma_2),
               .m_axis_result_tvalid (m_valid), 
               .m_axis_result_tdata  (m_data_cgu[c][g][u]),    
@@ -550,6 +575,13 @@ module lrelu_engine #(
               .s_axis_a_tdata       (s_data_fix2float_cgu[c][g][u]), 
               .m_axis_result_tdata  (m_data_float32_cgu[c][g][u])  
             );
+            /*
+             FMA Operation:  fma_out = fma_a * fma_b + fma_c
+
+             fma_a = data
+             fma_b = a
+             fma_c = b
+            */
             float_32_ma FMA_1 (
               .aclk                 (clk),                                  
               .aclken               (clken),                              
@@ -557,11 +589,18 @@ module lrelu_engine #(
               .s_axis_a_tvalid      (m_valid_float32),            
               .s_axis_a_tdata       (m_data_float32_cgu [c][g][u]),              
               .s_axis_b_tvalid      (1'b1),            
-              .s_axis_b_tdata       (b_val_f32_cgu [c][g][u]),              
+              .s_axis_b_tdata       (a_val_f32_cg  [c][g]),              
               .s_axis_c_tvalid      (1'b1),           
-              .s_axis_c_tdata       (a_val_f32_cg  [c][g]),              
+              .s_axis_c_tdata       (b_val_f32_cgu [c][g][u]),              
               .m_axis_result_tdata  (m_data_fma_1_cgu [c][g][u])
             );
+            /*
+             FMA Operation:  fma_out = fma_a * fma_b + fma_c
+
+             fma_a = data
+             fma_b = c
+             fma_c = d
+            */
             float_16_ma FMA_2 (
               .aclk                 (clk),                                  
               .aclken               (clken),                              
@@ -623,7 +662,7 @@ module lrelu_engine #(
 
         for (genvar clr=0; clr<3; clr++)
           for (genvar mtb=0; mtb<3; mtb++)
-            assign b_cg_clr_mtb_sr   [c][g][clr][mtb] = $bitstoshortreal(float_16_to_32(b_cg_clr_mtb [c][g][clr][mtb]));
+            assign b_cg_clr_mtb_sr   [c][g][clr][mtb] = $bitstoshortreal(float_16_to_32(b_cg_clr_mtb_f16 [c][g][clr][mtb]));
       end
     end
   endgenerate
@@ -657,7 +696,7 @@ function logic [15:0] float_32_to_16 (input logic [31:0] float_32);
   logic [22:0] fra_32;
 
   assign {sign, exp_32, fra_32} = float_32;
-  assign fra_16 = (fra_32 + (32'b1 << 12)) >> 13 ;
+  assign fra_16 = fra_32 >> 13 ;
   assign exp_16 = exp_32 - 7'd112; //- 15 + 127;
   assign float_16 = {sign, exp_16, fra_16};
   return float_16;

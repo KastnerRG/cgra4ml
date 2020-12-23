@@ -8,6 +8,8 @@ module axis_lrelu_engine #(
     COPIES  = 2,
     MEMBERS = 2,
 
+    ALPHA = 16'd11878,
+
     CONFIG_BEATS_3X3_1 = 19, // D(1) + A(2) + B(9*2) -2
     CONFIG_BEATS_1X1_1 = 9 -1, // D(1) + A(2*3) + B(2*3) = 13
     
@@ -306,6 +308,8 @@ module axis_lrelu_engine #(
       .GROUPS  (GROUPS ),
       .COPIES  (COPIES ),
       .MEMBERS (MEMBERS),
+
+      .ALPHA   (ALPHA),
 
       .LATENCY_FIXED_2_FLOAT (LATENCY_FIXED_2_FLOAT),
       .LATENCY_FLOAT_32      (LATENCY_FLOAT_32     ),

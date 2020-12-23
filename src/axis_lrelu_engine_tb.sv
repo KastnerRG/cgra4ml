@@ -16,10 +16,12 @@ module axis_lrelu_engine_tb();
   localparam WORD_WIDTH_OUT    = 8 ;
   localparam WORD_WIDTH_CONFIG = 8 ;
 
-  localparam UNITS   = 2;
+  localparam UNITS   = 3;
   localparam GROUPS  = 1;
   localparam COPIES  = 1;
   localparam MEMBERS = 4;
+
+  localparam ALPHA = 16'd11878;
 
   localparam CONFIG_BEATS_3X3_1 = 19; // D(1) + A(2) + B(9*2) -2
   localparam CONFIG_BEATS_1X1_1 = 9 -1-1;
@@ -69,6 +71,8 @@ module axis_lrelu_engine_tb();
     .COPIES  (COPIES ),
     .MEMBERS (MEMBERS),
 
+    .ALPHA   (ALPHA),
+
     .CONFIG_BEATS_3X3_1 (CONFIG_BEATS_3X3_1),
     .CONFIG_BEATS_1X1_1 (CONFIG_BEATS_1X1_1),
 
@@ -91,8 +95,39 @@ module axis_lrelu_engine_tb();
     .TUSER_WIDTH_MAXPOOL     (TUSER_WIDTH_MAXPOOL    )
   ) dut (.*);
 
-  int status, file_data_in;
+  int status, file_data_in, file_data_out;
   string data_in_path = "D:/Vision Traffic/soc/python/fpga_support/lrelu_input.txt";
+  string data_out_path = "D:/Vision Traffic/soc/python/fpga_support/lrelu_output.txt";
+
+  int config_beats = 0;
+  int data_beats = 0;
+
+  localparam COLS   = 3;
+  localparam BLOCKS = 3;
+
+  initial begin
+    file_data_in    = $fopen(data_in_path   ,"r");
+    file_data_out   = $fopen(data_out_path   ,"w");
+  end
+
+  initial begin
+
+    while (1) begin
+      @(posedge aclk);
+
+      #(CLK_PERIOD/2);
+      if (m_axis_tvalid) begin
+          for (int c=0; c < COPIES; c++)
+            for (int g=0; g < GROUPS; g++)
+              for (int u=0; u < UNITS; u++) begin
+                $display("saving %d", m_data_cgu[c][g][u]);
+                $fdisplay(file_data_out, "%d", signed'(m_data_cgu[c][g][u]));
+              end
+      end
+    end
+
+    
+  end
 
   initial begin
     aresetn       <= 1;
@@ -105,34 +140,74 @@ module axis_lrelu_engine_tb();
     s_axis_tuser [I_MAXPOOL_IS_MAX    ] <= 0;
     s_axis_tuser [I_MAXPOOL_IS_NOT_MAX] <= 1;
     s_axis_tuser [I_LRELU_IS_LRELU    ] <= IS_RELU;
-    s_axis_tuser [I_LRELU_IS_TOP      ] <= 1;
-    s_axis_tuser [I_LRELU_IS_BOTTOM   ] <= 1;
-    s_axis_tuser [I_LRELU_IS_LEFT     ] <= 0;
-    s_axis_tuser [I_LRELU_IS_RIGHT    ] <= 0;
 
-    file_data_in   = $fopen(data_in_path   ,"r");
-
-    forever begin
+    while (1) begin
       @(posedge aclk);
       #1;
-      if (!$feof(file_data_in)) begin
-        axis_feed_data;
-      end
+      if ($feof(file_data_in)) break;
+      else  axis_feed_data;
     end
+
+    // $finish();
+
+    @(posedge aclk);
+    config_beats  <= 0;
+    data_beats    <= 0;
+    s_axis_tvalid <= 0;
+    s_axis_tuser  <= 0;
+    s_axis_tlast  <= 0;
+    s_data_int_mcgu  <= '{default:0};
+
+    repeat(300) @(posedge aclk);
+    $fclose(file_data_out);
+    $display("closing file");
+    $finish();
+
   end
 
   task axis_feed_data;
-  begin
-      if (s_axis_tready) begin
-          s_axis_tvalid <= 1;
+    if (s_axis_tready) begin
+        s_axis_tvalid <= 1;
 
-          for (int m=0; m < MEMBERS; m++)
-            for (int c=0; c < COPIES; c++)
-              for (int g=0; g < GROUPS; g++)
-                for (int u=0; u < UNITS; u++)
-                  status = $fscanf(file_data_in,"%d\n",s_data_int_mcgu[m][c][g][u]);
-      end
-  end
+        if   (config_beats != 21) config_beats <= config_beats + 1;
+        else begin
+          if   (data_beats % COLS == 0)  begin
+            s_axis_tuser [I_LRELU_IS_LEFT     ] <= 1;
+            s_axis_tuser [I_LRELU_IS_RIGHT    ] <= 0;
+          end
+          else if (data_beats % COLS == COLS-1)  begin
+            s_axis_tuser [I_LRELU_IS_LEFT     ] <= 0;
+            s_axis_tuser [I_LRELU_IS_RIGHT    ] <= 1;
+          end
+          else begin
+            s_axis_tuser [I_LRELU_IS_LEFT     ] <= 0;
+            s_axis_tuser [I_LRELU_IS_RIGHT    ] <= 0;
+          end
+
+          if   (data_beats / COLS == 0)  begin
+            s_axis_tuser [I_LRELU_IS_TOP      ] <= 1;
+            s_axis_tuser [I_LRELU_IS_BOTTOM   ] <= 0;
+          end
+          else if (data_beats / COLS == BLOCKS-1)  begin
+            s_axis_tuser [I_LRELU_IS_TOP      ] <= 0;
+            s_axis_tuser [I_LRELU_IS_BOTTOM   ] <= 1;
+          end
+          else begin
+            s_axis_tuser [I_LRELU_IS_TOP      ] <= 0;
+            s_axis_tuser [I_LRELU_IS_BOTTOM   ] <= 0;
+          end
+
+          if (data_beats == UNITS*MEMBERS*COLS*BLOCKS-1) s_axis_tlast <= 1;
+          
+          data_beats <= data_beats + 1;
+        end
+
+        for (int m=0; m < MEMBERS; m++)
+          for (int c=0; c < COPIES; c++)
+            for (int g=0; g < GROUPS; g++)
+              for (int u=0; u < UNITS; u++)
+                status = $fscanf(file_data_in,"%d\n",s_data_int_mcgu[m][c][g][u]);
+    end
   endtask
 
 endmodule
