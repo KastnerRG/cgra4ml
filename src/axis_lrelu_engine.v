@@ -1,3 +1,29 @@
+/*//////////////////////////////////////////////////////////////////////////////////
+Group : ABruTECH
+Engineer: Abarajithan G.
+
+Create Date: 16/12/2020
+Design Name: AXIS RELU ENGINE
+Tool Versions: Vivado 2018.2
+Description:  * Performs LRelu with requantization
+              * Requires slave to give a tlast at the last beat of each iteration
+                  and give config bits at the beginning of next iteration
+              * Contains DW converter to reduce width (and increase rate) 
+                  by factor of MEMBERS
+              * Config state machine (present here) overrides the DW converter
+                  by looking at tlast on either side of DW
+                  to pull config bits into the engine at full width
+              * w_sel state machine (present in engine) counts the BRAMs (10 of them)
+                  to fill them with config
+              * Afterwards DW converter is connected to the slave for data to flow
+
+Revision:
+Revision 0.01 - File Created
+Additional Comments: 
+
+//////////////////////////////////////////////////////////////////////////////////*/
+
+
 module axis_lrelu_engine #(
     WORD_WIDTH_IN  = 32,
     WORD_WIDTH_OUT = 8 ,
@@ -91,9 +117,11 @@ module axis_lrelu_engine #(
       * WRITE_2_S:
         - connect engine's config to slave
         - config_count decremets at every handshake
-        - when config_count = 0 and handshake, switch to PASS_S
+        - when config_count = 0 and handshake, switch to PASS_S if 3x3 or to FILL_S if 1x1
       * FILL_S
+        - For 1x1 case, since B_cm is needed immediately
         - Block input and wait for (BRAM_LATENCY+1) clocks for BRAMs to get valid
+        - For 3x3, B_rb is filled last and is needed after several clocks, so no need
       * default:
         - same as PASS_S
     */
