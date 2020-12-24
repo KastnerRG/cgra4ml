@@ -97,18 +97,17 @@ module axis_lrelu_engine_tb();
 
   int status, file_data_in, file_data_out;
   string data_in_path = "D:/Vision Traffic/soc/python/fpga_support/lrelu_input.txt";
-  string data_out_path = "D:/Vision Traffic/soc/python/fpga_support/lrelu_output.txt";
+  string data_out_path_1 = "D:/Vision Traffic/soc/python/fpga_support/lrelu_output_1.txt";
+  string data_out_path_2 = "D:/Vision Traffic/soc/python/fpga_support/lrelu_output_2.txt";
 
   int config_beats = 0;
   int data_beats = 0;
 
+  int data_out_beats = 0;
+  int times = 0;
+
   localparam COLS   = 3;
   localparam BLOCKS = 3;
-
-  initial begin
-    file_data_in    = $fopen(data_in_path   ,"r");
-    file_data_out   = $fopen(data_out_path   ,"w");
-  end
 
   initial begin
 
@@ -123,6 +122,18 @@ module axis_lrelu_engine_tb();
                 $display("saving %d", m_data_cgu[c][g][u]);
                 $fdisplay(file_data_out, "%d", signed'(m_data_cgu[c][g][u]));
               end
+
+        if (data_out_beats == COLS*BLOCKS*MEMBERS-1) begin
+          data_out_beats <= 0;
+          $fclose(file_data_out);
+          if (times == 0) begin
+            file_data_out <= $fopen(data_out_path_2   ,"w");
+            times <= times + 1;
+          end else begin
+            $finish();
+          end
+        end
+        else data_out_beats <= data_out_beats + 1;
       end
     end
 
@@ -130,6 +141,9 @@ module axis_lrelu_engine_tb();
   end
 
   initial begin
+    file_data_in    = $fopen(data_in_path   ,"r");
+    file_data_out   = $fopen(data_out_path_1,"w");
+
     aresetn       <= 1;
     m_axis_tready <= 1;
     s_axis_tvalid <= 0;
@@ -148,20 +162,27 @@ module axis_lrelu_engine_tb();
       else  axis_feed_data;
     end
 
-    // $finish();
-
     @(posedge aclk);
+    file_data_in    = $fopen(data_in_path   ,"r");
     config_beats  <= 0;
     data_beats    <= 0;
     s_axis_tvalid <= 0;
-    s_axis_tuser  <= 0;
+    s_axis_tuser [I_IS_3X3            ] <= IS_3X3;
+    s_axis_tuser [I_LRELU_IS_LRELU    ] <= IS_RELU;
     s_axis_tlast  <= 0;
     s_data_int_mcgu  <= '{default:0};
 
-    repeat(300) @(posedge aclk);
-    $fclose(file_data_out);
-    $display("closing file");
-    $finish();
+    while (1) begin
+      @(posedge aclk);
+      #1;
+      if ($feof(file_data_in)) break;
+      else  axis_feed_data;
+    end
+
+    @(posedge aclk);
+    s_axis_tvalid <= 0;
+    s_axis_tlast  <= 0;
+
 
   end
 
@@ -197,7 +218,7 @@ module axis_lrelu_engine_tb();
             s_axis_tuser [I_LRELU_IS_BOTTOM   ] <= 0;
           end
 
-          if (data_beats == UNITS*MEMBERS*COLS*BLOCKS-1) s_axis_tlast <= 1;
+          if (data_beats == COLS*BLOCKS-1) s_axis_tlast <= 1;
           
           data_beats <= data_beats + 1;
         end

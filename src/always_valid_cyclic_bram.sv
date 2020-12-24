@@ -137,7 +137,8 @@ module always_valid_cyclic_bram #(
 
   register #(
     .WORD_WIDTH   (R_ADDR_WIDTH), 
-    .RESET_VALUE  (0)
+    .RESET_VALUE  (0),
+    .LOCAL        (1)
   ) ADD_R (
     .clock        (clk   ),
     .clock_enable (clken && bram_r_en),
@@ -197,6 +198,21 @@ module always_valid_cyclic_bram #(
     - Counts cyclically from 0 to BUFFER_DEPTH-1
         if "w_ptr_incr" (=s_valid_ready or bram_valid_out)
   */
+  localparam LATENCY_BITS = $clog2(LATENCY+1);
+  logic [LATENCY_BITS-1:0] w_ptr_reset_count, w_ptr_reset_count_next;
+  assign w_ptr_reset_count_next =  w_ptr_reset_count - 1;
+  register #(
+    .WORD_WIDTH   (LATENCY_BITS), 
+    .RESET_VALUE  (LATENCY),
+    .LOCAL        (1)
+  ) W_PTR_RESET_COUNT (
+    .clock        (clk),
+    .clock_enable (clken && (w_ptr_reset_count !=0)),
+    .resetn       (resetn),
+    .data_in      (w_ptr_reset_count_next),
+    .data_out     (w_ptr_reset_count)
+  );
+
   logic [PTR_WIDTH-1:0] w_ptr, w_ptr_next;
 
   assign w_ptr_next = (w_ptr == BUFFER_DEPTH-1) ? 0  : w_ptr + 1;
@@ -207,11 +223,12 @@ module always_valid_cyclic_bram #(
     .LOCAL        (1)
   ) W_PTR (
     .clock        (clk),
-    .clock_enable (clken && bram_valid_out),
+    .clock_enable (clken && bram_valid_out && (w_ptr_reset_count==0)),
     .resetn       (resetn),
     .data_in      (w_ptr_next),
     .data_out     (w_ptr     )
   );
+
 
   /*
     BUFFER
