@@ -119,7 +119,15 @@ module lrelu_engine #(
               ct,cb, lm,lt,lb, rm,rt,rb
 
     * BRAMs write when (sel == their index) & valid
-    * Delayed by Fix2float-1 latency to match the config latency
+    * Fill delay
+      - 1x1, 
+        - B_cm is filled last and is needed immediately
+        - Hence, we wait for LATENCY clocks in FILL_S
+      - 3x3,
+        - B_rb is filled last
+        - B_l are needed first and then B_c are needed. 
+        - B_l not needed until the left edge of image
+        - So, no explicit fill delay, directly start reading
   */
 
   logic [3:0] w_sel_bram_next, w_sel_bram, w_sel_bram_1;
@@ -328,7 +336,9 @@ module lrelu_engine #(
   logic is_lrelu_cgu                [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
 
   /*
+    CLR mux for B-BRAM
 
+    - Only one of C,L,R can be true at a time
   */
 
   logic [1:0] fma1_index_clr;
@@ -385,6 +395,7 @@ module lrelu_engine #(
 
         /*
           BRAM B
+          - Only the nessasary BRAMs are ready (using ready)
         */
         for (genvar mtb=0; mtb < 3; mtb ++) begin: mtb
 
@@ -437,6 +448,13 @@ module lrelu_engine #(
           end
         end
 
+        /*
+          MTB : Middle, Top and Bottom
+
+          - All three can be needed at once (if there is only one block)
+          - Hence, convert to f32 and keep them seperately
+        */
+
         always_comb begin
           b_mid_f32_cg[c][g] = float_16_to_32(b_cg_clr_mtb_f16[c][g][fma1_index_clr][0]);
           b_top_f32_cg[c][g] = float_16_to_32(b_cg_clr_mtb_f16[c][g][fma1_index_clr][1]);
@@ -477,6 +495,10 @@ module lrelu_engine #(
         for (genvar u=0; u < UNITS; u++) begin:u
 
           assign s_data_fix2float_cgu[c][g][u] = WIDTH_FIXED_2_FLOAT_S_DATA'(signed'(s_data_cgu[c][g][u]));
+
+          /*
+            Assign MTB BRAMs to each unit
+          */
           
           assign is_top_cgu[c][g][u] = (u == 0      ) && m_user_float32[I_LRELU_IS_TOP];
           assign is_bot_cgu[c][g][u] = (u == UNITS-1) && m_user_float32[I_LRELU_IS_BOTTOM];
@@ -495,6 +517,10 @@ module lrelu_engine #(
           end
 
           assign m_data_fma_1_cgu_f16[c][g][u] = float_32_to_16(m_data_fma_1_cgu[c][g][u]);
+
+          /*
+            LRELU
+          */
 
           assign is_lrelu_cgu[c][g][u] = m_user_fma_1[I_LRELU_IS_LRELU] && m_data_fma_1_cgu[c][g][u][31];
           assign c_val_cgu   [c][g][u] = is_lrelu_cgu[c][g][u] ? ALPHA : 16'd15360 ; // 0.1 or 1
