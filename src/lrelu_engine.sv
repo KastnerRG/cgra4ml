@@ -370,7 +370,7 @@ module lrelu_engine #(
           .W_WIDTH (BRAM_W_WIDTH),
           .R_WIDTH (BRAM_R_WIDTH),
           .LATENCY (BRAM_LATENCY),
-          .IP_TYPE (1)
+          .IP_TYPE (0)
         ) BRAM_A (
           .clk          (clk),
           .clken        (clken),
@@ -379,8 +379,8 @@ module lrelu_engine #(
           .s_data       (config_flat_1_cg [c][g]),
           .m_data       (a_val_cg [c][g]),
           .m_ready      (m_valid_float32),
-          .r_addr_max_1 (BRAM_R_DEPTH_3X3-1),
-          .w_addr_max_1 (BRAM_W_DEPTH_3X3-1)
+          .r_addr_max_1 (b_r_addr_max_1),
+          .w_addr_max_1 (b_w_addr_max_1)
         );
 
         /*
@@ -392,7 +392,8 @@ module lrelu_engine #(
                                                                            || (mtb==2 && m_user_float32[I_LRELU_IS_BOTTOM]));
 
           for (genvar clr=0; clr < 3; clr ++) begin: clr
-          assign b_ready_cg_clr_mtb[c][g][clr][mtb] = m_valid_float32 && (fma1_index_clr == clr) && ready_mtb[mtb];
+            
+            assign b_ready_cg_clr_mtb[c][g][clr][mtb] = m_valid_float32 && (fma1_index_clr == clr) && ready_mtb[mtb];
 
             if (mtb==0 && clr ==0) begin // Center BRAM
 

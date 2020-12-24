@@ -197,6 +197,10 @@ module always_valid_cyclic_bram #(
 
     - Counts cyclically from 0 to BUFFER_DEPTH-1
         if "w_ptr_incr" (=s_valid_ready or bram_valid_out)
+
+    - Prevent w_ptr incrementing from bram_valid immediately after a reset
+      - W_PTR_RESET_COUNT activates after a reset and count downs for LATENCY clocks
+      - w_ptr does not increment during this time
   */
   localparam LATENCY_BITS = $clog2(LATENCY+1);
   logic [LATENCY_BITS-1:0] w_ptr_reset_count, w_ptr_reset_count_next;
