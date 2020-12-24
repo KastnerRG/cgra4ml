@@ -10,8 +10,8 @@ module axis_lrelu_engine #(
 
     ALPHA = 16'd11878,
 
-    CONFIG_BEATS_3X3_1 = 19, // D(1) + A(2) + B(9*2) -2
-    CONFIG_BEATS_1X1_1 = 9 -1, // D(1) + A(2*3) + B(2*3) = 13
+    CONFIG_BEATS_3X3_1 = 19, // D(1) + A(2) + B(9*2) -2 = 21-2 = 19
+    CONFIG_BEATS_1X1_1 = 11, // D(1) + A(2*3) + B(2*3) -2 = 13 -2 = 11
     
     LATENCY_FIXED_2_FLOAT =  6,
     LATENCY_FLOAT_32      = 16,
@@ -164,8 +164,10 @@ module axis_lrelu_engine #(
         BLOCK_S   : if (s_vr_last_dw_out  ) state_next = RESET_S;
         RESET_S   : if (s_ready_slice)      state_next = WRITE_1_S;
         WRITE_1_S : if (handshake)   state_next = WRITE_2_S;
-        WRITE_2_S : if ((count_config == 0)          && handshake) state_next = FILL_S;
-        FILL_S    : if (count_fill == (FILL_DELAY-1) && s_ready_slice )   state_next = PASS_S;
+        WRITE_2_S : if ((count_config == 0) && handshake) 
+                      if (s_axis_tuser[I_IS_3X3]) state_next = PASS_S;
+                      else                        state_next = FILL_S;
+        FILL_S    : if (count_fill == FILL_DELAY && s_ready_slice )   state_next = PASS_S;
         default   : state_next = state;
       endcase
     end

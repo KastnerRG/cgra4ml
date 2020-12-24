@@ -23,8 +23,8 @@ module axis_lrelu_engine_tb();
 
   localparam ALPHA = 16'd11878;
 
-  localparam CONFIG_BEATS_3X3_1 = 19; // D(1) + A(2) + B(9*2) -2
-  localparam CONFIG_BEATS_1X1_1 = 9 -1-1;
+  localparam CONFIG_BEATS_3X3_1 = 19; // D(1) + A(2) + B(9*2) -2 = 21-2 = 19
+  localparam CONFIG_BEATS_1X1_1 = 11; // D(1) + A(2*3) + B(2*3) -2 = 13 -2 = 11
 
   localparam LATENCY_FIXED_2_FLOAT =  6;
   localparam LATENCY_FLOAT_32      = 16;
@@ -106,6 +106,8 @@ module axis_lrelu_engine_tb();
   int data_out_beats = 0;
   int times = 0;
 
+  int k_members = 0;
+
   localparam COLS   = 3;
   localparam BLOCKS = 3;
 
@@ -116,14 +118,16 @@ module axis_lrelu_engine_tb();
 
       #(CLK_PERIOD/2);
       if (m_axis_tvalid) begin
-          for (int c=0; c < COPIES; c++)
-            for (int g=0; g < GROUPS; g++)
-              for (int u=0; u < UNITS; u++) begin
-                $display("saving %d", m_data_cgu[c][g][u]);
-                $fdisplay(file_data_out, "%d", signed'(m_data_cgu[c][g][u]));
-              end
+        for (int c=0; c < COPIES; c++)
+          for (int g=0; g < GROUPS; g++)
+            for (int u=0; u < UNITS; u++) begin
+              $display("saving %d", m_data_cgu[c][g][u]);
+              $fdisplay(file_data_out, "%d", signed'(m_data_cgu[c][g][u]));
+            end
 
-        if (data_out_beats == COLS*BLOCKS*MEMBERS-1) begin
+        if (data_out_beats < COLS*BLOCKS*k_members*MEMBERS-1)
+          data_out_beats <= data_out_beats + 1;
+        else begin
           data_out_beats <= 0;
           $fclose(file_data_out);
           if (times == 0) begin
@@ -133,7 +137,7 @@ module axis_lrelu_engine_tb();
             $finish();
           end
         end
-        else data_out_beats <= data_out_beats + 1;
+        
       end
     end
 
@@ -155,48 +159,52 @@ module axis_lrelu_engine_tb();
     s_axis_tuser [I_MAXPOOL_IS_NOT_MAX] <= 1;
     s_axis_tuser [I_LRELU_IS_LRELU    ] <= IS_RELU;
 
+    k_members <= IS_3X3 ? 1 : 3;
+
     while (1) begin
-      @(posedge aclk);
-      #1;
-      if ($feof(file_data_in)) break;
+      if (s_axis_tlast) break;
       else  axis_feed_data;
     end
 
-    @(posedge aclk);
-    file_data_in    = $fopen(data_in_path   ,"r");
+    file_data_in  <= $fopen(data_in_path   ,"r");
     config_beats  <= 0;
     data_beats    <= 0;
     s_axis_tvalid <= 0;
+    s_axis_tlast  <= 0;
     s_axis_tuser [I_IS_3X3            ] <= IS_3X3;
     s_axis_tuser [I_LRELU_IS_LRELU    ] <= IS_RELU;
     s_axis_tlast  <= 0;
     s_data_int_mcgu  <= '{default:0};
+    k_members <= IS_3X3 ? 1 : 3;
+
+    @(posedge aclk);
 
     while (1) begin
-      @(posedge aclk);
-      #1;
-      if ($feof(file_data_in)) break;
+      if (s_axis_tlast) break;
       else  axis_feed_data;
     end
 
-    @(posedge aclk);
     s_axis_tvalid <= 0;
     s_axis_tlast  <= 0;
-
 
   end
 
   task axis_feed_data;
+    @(posedge aclk);
+    #1;
+
     if (s_axis_tready) begin
         s_axis_tvalid <= 1;
 
-        if   (config_beats != 21) config_beats <= config_beats + 1;
+        if (config_beats < (IS_3X3 ? 21: 13)) 
+          config_beats <= config_beats + 1;
+
         else begin
-          if   (data_beats % COLS == 0)  begin
+          if   (data_beats % (k_members*COLS) == 0)  begin
             s_axis_tuser [I_LRELU_IS_LEFT     ] <= 1;
             s_axis_tuser [I_LRELU_IS_RIGHT    ] <= 0;
           end
-          else if (data_beats % COLS == COLS-1)  begin
+          else if (data_beats % (k_members*COLS) == COLS-1)  begin
             s_axis_tuser [I_LRELU_IS_LEFT     ] <= 0;
             s_axis_tuser [I_LRELU_IS_RIGHT    ] <= 1;
           end
@@ -205,11 +213,11 @@ module axis_lrelu_engine_tb();
             s_axis_tuser [I_LRELU_IS_RIGHT    ] <= 0;
           end
 
-          if   (data_beats / COLS == 0)  begin
+          if   (data_beats / (k_members*COLS) == 0)  begin
             s_axis_tuser [I_LRELU_IS_TOP      ] <= 1;
             s_axis_tuser [I_LRELU_IS_BOTTOM   ] <= 0;
           end
-          else if (data_beats / COLS == BLOCKS-1)  begin
+          else if (data_beats / (k_members*COLS) == BLOCKS-1)  begin
             s_axis_tuser [I_LRELU_IS_TOP      ] <= 0;
             s_axis_tuser [I_LRELU_IS_BOTTOM   ] <= 1;
           end
@@ -218,7 +226,7 @@ module axis_lrelu_engine_tb();
             s_axis_tuser [I_LRELU_IS_BOTTOM   ] <= 0;
           end
 
-          if (data_beats == COLS*BLOCKS-1) s_axis_tlast <= 1;
+          if (data_beats == k_members*COLS*BLOCKS-1) s_axis_tlast <= 1;
           
           data_beats <= data_beats + 1;
         end
