@@ -780,14 +780,16 @@ class MyLeakyRelu(MyLayer):
 
         alpha_arr = (y > 0) + (y < 0) * alpha
 
-        a_q = alpha_arr * y + D
+        a_q_f16 = alpha_arr.astype(np.float16) * \
+            y.astype(np.float16) + D.astype(np.float16)
 
-        a_q = a_q.astype(np_dtype)
+        a_q = a_q_f16.astype(np_dtype)
 
         return {'A': A,
                 'B': B,
                 'y': y,
                 'D': D,
+                'a_q_f16': a_q_f16,
                 'a_q': a_q
                 }
 
