@@ -35,7 +35,7 @@ Description: * Pipelined module that takes in AXIS of padded rows and releases k
 
 Dependencies: * axis_register_slice_data_buffer 
                     - Type: IP (axis_register_slice) configured
-                    - Data width = {(KERNEL_H_MAX-1) * (DATA_WIDTH/8)} bytes
+                    - Data width = {(KERNEL_H_MAX-1) * (WORD_WIDTH/8)} bytes
 
 Revision:
 Revision: 2.0
@@ -44,8 +44,7 @@ Additional Comments:
 //////////////////////////////////////////////////////////////////////////////////*/
 
 module axis_shift_buffer#(
-    parameter IS_FIXED_POINT            ,
-    parameter DATA_WIDTH                ,
+    parameter WORD_WIDTH                ,
     parameter CONV_UNITS                ,
     parameter KERNEL_H_MAX              ,
     parameter KERNEL_W_MAX              ,
@@ -84,7 +83,7 @@ module axis_shift_buffer#(
     genvar i;
     localparam KERNEL_H_WIDTH    = $clog2(KERNEL_H_MAX   + 1);
     localparam KERNEL_W_WIDTH    = $clog2(KERNEL_W_MAX   + 1);
-    localparam ONE               = IS_FIXED_POINT ? 1 : 15360 ;
+    localparam ONE               = 1;
 
     input   wire    aclk;
     input   wire    aresetn;
@@ -96,10 +95,10 @@ module axis_shift_buffer#(
     input   wire                                    is_relu         ;
     input   wire    [CIN_COUNTER_WIDTH    -1 : 0]   cin_1           ;
     input   wire    [COLS_COUNTER_WIDTH -1 : 0]   cols_1          ;
-    input   wire    [DATA_WIDTH           -1 : 0]   S_AXIS_tdata    [CONV_UNITS + (KERNEL_H_MAX-1)-1 : 0];
+    input   wire    [WORD_WIDTH           -1 : 0]   S_AXIS_tdata    [CONV_UNITS + (KERNEL_H_MAX-1)-1 : 0];
     input   wire                                    S_AXIS_tvalid   ;
     output  wire                                    S_AXIS_tready   ;
-    output  wire    [DATA_WIDTH           -1 : 0]   M_AXIS_tdata    [CONV_UNITS-1 : 0];
+    output  wire    [WORD_WIDTH           -1 : 0]   M_AXIS_tdata    [CONV_UNITS-1 : 0];
     output  wire                                    M_AXIS_tvalid   ;
     input   wire                                    M_AXIS_tready   ;
     output  wire                                    M_AXIS_tlast    ;
@@ -315,11 +314,11 @@ module axis_shift_buffer#(
 
     */
 
-    wire [DATA_WIDTH * (CONV_UNITS + (KERNEL_H_MAX-1)) - 1 : 0]  slice_M_AXIS_tdata;
-    wire [DATA_WIDTH * (CONV_UNITS + (KERNEL_H_MAX-1)) - 1 : 0]  slice_S_AXIS_tdata;
+    wire [WORD_WIDTH * (CONV_UNITS + (KERNEL_H_MAX-1)) - 1 : 0]  slice_M_AXIS_tdata;
+    wire [WORD_WIDTH * (CONV_UNITS + (KERNEL_H_MAX-1)) - 1 : 0]  slice_S_AXIS_tdata;
 
     for (i=0; i < CONV_UNITS + (KERNEL_H_MAX-1) ; i++) begin
-        assign slice_S_AXIS_tdata  [(i+1) * DATA_WIDTH -1 : i * DATA_WIDTH] =   S_AXIS_tdata[i];
+        assign slice_S_AXIS_tdata  [(i+1) * WORD_WIDTH -1 : i * WORD_WIDTH] =   S_AXIS_tdata[i];
     end
 
     wire slice_M_AXIS_tready = (state_data_in==0) && M_AXIS_tready;
@@ -422,10 +421,10 @@ module axis_shift_buffer#(
     */
 
 
-    wire    [DATA_WIDTH-1:0]    slice_m_data    [CONV_UNITS + (KERNEL_H_MAX-1)-1:0];
-    wire    [DATA_WIDTH-1:0]    selected_data   [CONV_UNITS + (KERNEL_H_MAX-1)-1:0];
-    wire    [DATA_WIDTH-1:0]    data_out        [CONV_UNITS + (KERNEL_H_MAX-1)-1:0];
-    wire    [DATA_WIDTH-1:0]    m_data          [CONV_UNITS  -1:0];
+    wire    [WORD_WIDTH-1:0]    slice_m_data    [CONV_UNITS + (KERNEL_H_MAX-1)-1:0];
+    wire    [WORD_WIDTH-1:0]    selected_data   [CONV_UNITS + (KERNEL_H_MAX-1)-1:0];
+    wire    [WORD_WIDTH-1:0]    data_out        [CONV_UNITS + (KERNEL_H_MAX-1)-1:0];
+    wire    [WORD_WIDTH-1:0]    m_data          [CONV_UNITS  -1:0];
 
     wire resetn_data;
     wire reset_data = !aresetn || (state_data_in==-KERNEL_H_WIDTH'('d1) && remove);
@@ -434,7 +433,7 @@ module axis_shift_buffer#(
 
         // 10 slice_m_data mapped
         for (i=0; i < CONV_UNITS  + (KERNEL_H_MAX-1); i=i+1) begin: s_data_gen
-            assign slice_m_data[i] = slice_M_AXIS_tdata[(i+1)*DATA_WIDTH-1: i*DATA_WIDTH];
+            assign slice_m_data[i] = slice_M_AXIS_tdata[(i+1)*WORD_WIDTH-1: i*WORD_WIDTH];
         end
         
         // First 8 data_out registers (of 10) connected to m_data
@@ -454,7 +453,7 @@ module axis_shift_buffer#(
         for (i=0; i < CONV_UNITS  + (KERNEL_H_MAX-1); i=i+1) begin: data_out_reg_gen
             register
             #(
-                .WORD_WIDTH     (DATA_WIDTH),
+                .WORD_WIDTH     (WORD_WIDTH),
                 .RESET_VALUE    (ONE)
             )
             M_DATA_REG

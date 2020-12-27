@@ -51,18 +51,17 @@ Additional Comments:
 //////////////////////////////////////////////////////////////////////////////////*/
 
 module conv_unit # (
-    parameter IS_ACTIVE                 ,
-    parameter IS_FIXED_POINT            ,
-    parameter DATA_WIDTH                ,
-    parameter KERNEL_W_MAX              ,
-    parameter TUSER_WIDTH               ,
-    parameter FIXED_ACCUMULATOR_DELAY   ,
-    parameter FIXED_MULTIPLIER_DELAY    ,
-
-    parameter INDEX_IS_1x1              ,
-    parameter INDEX_IS_MAX              ,
-    parameter INDEX_IS_RELU             ,
-    parameter INDEX_IS_COLS_1_K2         
+    parameter IS_ACTIVE         ,
+    parameter WORD_WIDTH_IN     ,
+    parameter WORD_WIDTH_OUT    ,
+    parameter KERNEL_W_MAX      ,
+    parameter TUSER_WIDTH       ,
+    parameter MULTIPLIER_DELAY  ,
+    parameter ACCUMULATOR_DELAY ,
+    parameter INDEX_IS_1x1      ,
+    parameter INDEX_IS_MAX      ,
+    parameter INDEX_IS_RELU     ,
+    parameter INDEX_IS_COLS_1_K2 
 )(
     // Common signals for ACTIVE and PASSIVE
     aclk                    ,
@@ -107,51 +106,50 @@ module conv_unit # (
 );
     localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX   + 1);
 
-    input  wire                      aclk                                           ;
-    input  wire                      aclken                                         ;               
-    input  wire                      aresetn                                        ;
+    input  logic aclk   ;
+    input  logic aclken ;               
+    input  logic aresetn;
+    input  logic start  ;
 
-    input  wire [DATA_WIDTH  - 1: 0] s_step_pixels_data     [KERNEL_W_MAX - 1 : 0]  ;
-    input  wire                      s_step_weights_valid   [KERNEL_W_MAX - 1 : 0]  ;
-    input  wire [DATA_WIDTH  - 1: 0] s_step_weights_data    [KERNEL_W_MAX - 1 : 0]  ;
+    output logic s_ready;
+    input  logic s_step_weights_valid [KERNEL_W_MAX-1: 0];
+    input  logic s_step_pixels_last   [KERNEL_W_MAX-1: 0];
+    input  logic [WORD_WIDTH_IN  - 1: 0] s_step_pixels_data  [KERNEL_W_MAX - 1 : 0];
+    input  logic [WORD_WIDTH_IN  - 1: 0] s_step_weights_data [KERNEL_W_MAX - 1 : 0];
+    input  logic [TUSER_WIDTH    - 1: 0] s_step_pixels_user  [KERNEL_W_MAX - 1 : 0];
 
-    output wire [DATA_WIDTH  - 1: 0] m_data                                         ;
 
-    input  wire                      start                                          ;
-    input  wire [KERNEL_W_WIDTH-1:0] kernel_w_1                                     ;
+    input  logic [KERNEL_W_WIDTH-1:0] kernel_w_1;
 
-    input  wire                      s_step_pixels_last     [KERNEL_W_MAX - 1 : 0]  ;
-    input  wire [TUSER_WIDTH - 1: 0] s_step_pixels_user     [KERNEL_W_MAX - 1 : 0]  ;
+    output logic [WORD_WIDTH_OUT-1: 0] m_data;
+    output logic [TUSER_WIDTH   -1: 0] m_user;
+    output logic m_valid;
+    output logic m_last ;
 
-    output wire                      s_ready                                        ;
-    output wire                      m_valid                                        ;
-    output wire                      m_last                                         ;
-    output wire [TUSER_WIDTH - 1: 0] m_user                                         ;
+    output logic out_clken_mul                     ;
+    output logic [KERNEL_W_MAX-1 : 1] out_mux_sel  ;
+    output logic [KERNEL_W_MAX-1 : 0] out_clken_acc;
+    output logic out_mux_s2_valid [KERNEL_W_MAX-1: 1];
+    output logic out_acc_s_valid  [KERNEL_W_MAX-1: 0];
+    output logic out_acc_s_last   [KERNEL_W_MAX-1: 0];
+    output logic out_shift_sel    [KERNEL_W_MAX-2: 0];
 
-    output wire [KERNEL_W_MAX-1 : 1] out_mux_sel                                    ;
-    output wire                      out_clken_mul                                  ;
-    output wire [KERNEL_W_MAX-1 : 0] out_clken_acc                                  ;
-    output wire                      out_mux_s2_valid       [KERNEL_W_MAX - 1 : 1]  ;
-    output wire                      out_acc_s_valid        [KERNEL_W_MAX - 1 : 0]  ;
-    output wire                      out_acc_s_last         [KERNEL_W_MAX - 1 : 0]  ;
-    output wire                      out_shift_sel          [KERNEL_W_MAX - 2 : 0]  ;
-
-    input  wire [KERNEL_W_MAX-1 : 1] in_mux_sel                                     ;
-    input  wire                      in_clken_mul                                   ;
-    input  wire [KERNEL_W_MAX-1 : 0] in_clken_acc                                   ;
-    input  wire                      in_mux_s2_valid        [KERNEL_W_MAX - 1 : 1]  ;
-    input  wire                      in_acc_s_valid         [KERNEL_W_MAX - 1 : 0]  ;
-    input  wire                      in_acc_s_last          [KERNEL_W_MAX - 1 : 0]  ;
-    input  wire                      in_shift_sel           [KERNEL_W_MAX - 2 : 0]  ;
+    input  logic in_clken_mul;
+    input  logic [KERNEL_W_MAX-1 : 1] in_mux_sel  ;
+    input  logic [KERNEL_W_MAX-1 : 0] in_clken_acc;
+    input  logic in_mux_s2_valid [KERNEL_W_MAX-1: 1];
+    input  logic in_acc_s_valid  [KERNEL_W_MAX-1: 0];
+    input  logic in_acc_s_last   [KERNEL_W_MAX-1: 0];
+    input  logic in_shift_sel    [KERNEL_W_MAX-2: 0];
 
 
     /*
     ENABLE SIGNALS
     */
-    wire    [KERNEL_W_MAX - 1 : 1] mux_sel      ;
-    wire                           mux_sel_none ;
-    wire    [KERNEL_W_MAX - 1 : 0] clken_acc    ;
-    wire                           clken_mul    ;
+    logic    [KERNEL_W_MAX - 1 : 1] mux_sel      ;
+    logic                           mux_sel_none ;
+    logic    [KERNEL_W_MAX - 1 : 0] clken_acc    ;
+    logic                           clken_mul    ;
 
     generate
         if (IS_ACTIVE) begin
@@ -169,35 +167,34 @@ module conv_unit # (
         end
     endgenerate
 
-    wire                        mul_m_valid             [KERNEL_W_MAX - 1 : 0];
-    wire   [DATA_WIDTH - 1 : 0] mul_m_data              [KERNEL_W_MAX - 1 : 0];
-    wire                        mul_m_last              [KERNEL_W_MAX - 1 : 0];
-    wire   [TUSER_WIDTH - 1: 0] mul_m_user              [KERNEL_W_MAX - 1 : 0];
+    logic   mul_m_valid [KERNEL_W_MAX - 1 : 0];
+    logic   mul_m_last  [KERNEL_W_MAX - 1 : 0];
+    logic   [WORD_WIDTH_IN-1: 0] mul_m_data [KERNEL_W_MAX - 1 : 0];
+    logic   [TUSER_WIDTH - 1: 0] mul_m_user [KERNEL_W_MAX - 1 : 0];
     
-    wire                        acc_s_valid             [KERNEL_W_MAX - 1 : 0];
-    wire   [DATA_WIDTH - 1 : 0] acc_s_data              [KERNEL_W_MAX - 1 : 0];
-    wire                        acc_s_last              [KERNEL_W_MAX - 1 : 0];
-    wire   [TUSER_WIDTH - 1: 0] acc_s_user              [KERNEL_W_MAX - 1 : 0];
+    logic   acc_s_valid [KERNEL_W_MAX - 1 : 0];
+    logic   acc_s_last  [KERNEL_W_MAX - 1 : 0];
+    logic   [WORD_WIDTH_OUT-1: 0] acc_s_data  [KERNEL_W_MAX - 1 : 0];
+    logic   [TUSER_WIDTH   -1: 0] acc_s_user  [KERNEL_W_MAX - 1 : 0];
 
-    wire                        acc_m_valid             [KERNEL_W_MAX - 1 : 0];
-    wire   [DATA_WIDTH - 1 : 0] acc_m_data              [KERNEL_W_MAX - 1 : 0];
-    wire                        acc_m_last              [KERNEL_W_MAX - 1 : 0];
-    wire                        acc_m_valid_last        [KERNEL_W_MAX - 1 : 0];
-    wire                        acc_m_valid_last_masked [KERNEL_W_MAX - 1 : 0];
-    wire   [TUSER_WIDTH - 1: 0] acc_m_user              [KERNEL_W_MAX - 1 : 0];
+    logic   acc_m_valid             [KERNEL_W_MAX - 1 : 0];
+    logic   acc_m_last              [KERNEL_W_MAX - 1 : 0];
+    logic   acc_m_valid_last        [KERNEL_W_MAX - 1 : 0];
+    logic   acc_m_valid_last_masked [KERNEL_W_MAX - 1 : 0];
+    logic   [WORD_WIDTH_OUT-1: 0] acc_m_data [KERNEL_W_MAX - 1 : 0];
+    logic   [TUSER_WIDTH   -1: 0] acc_m_user [KERNEL_W_MAX - 1 : 0];
 
-    wire                        mux_s2_valid            [KERNEL_W_MAX - 1 : 1];
-    wire   [DATA_WIDTH - 1 : 0] mux_s2_data             [KERNEL_W_MAX - 1 : 1];
-    wire   [TUSER_WIDTH - 1: 0] mux_s2_user             [KERNEL_W_MAX - 1 : 1];
-    wire                        mux_m_valid             [KERNEL_W_MAX - 1 : 1];
+    logic   mux_s2_valid [KERNEL_W_MAX - 1 : 1];
+    logic   mux_m_valid  [KERNEL_W_MAX - 1 : 1];
+    logic   [WORD_WIDTH_OUT-1:0] mux_s2_data [KERNEL_W_MAX - 1 : 1];
+    logic   [TUSER_WIDTH - 1: 0] mux_s2_user [KERNEL_W_MAX - 1 : 1];
 
-    wire                        mask_partial            [KERNEL_W_MAX - 1 : 1];
-    wire                        mask_full               [KERNEL_W_MAX - 1 : 0];
+    logic   mask_partial [KERNEL_W_MAX - 1 : 1];
+    logic   mask_full    [KERNEL_W_MAX - 1 : 0];
 
     generate
         if(IS_ACTIVE) begin
             pad_filter # (
-                .DATA_WIDTH        (DATA_WIDTH        ),
                 .KERNEL_W_MAX      (KERNEL_W_MAX      ),
                 .TUSER_WIDTH       (TUSER_WIDTH       ),
                 .INDEX_IS_COLS_1_K2(INDEX_IS_COLS_1_K2),
@@ -224,11 +221,10 @@ module conv_unit # (
         for (i=0; i < KERNEL_W_MAX; i++) begin : multipliers_gen
 
             if (IS_ACTIVE) begin
-                if (IS_FIXED_POINT) begin
                     fixed_point_multiplier_wrapper #(
-                        .MULTIPLIER_DELAY   (FIXED_MULTIPLIER_DELAY),
-                        .DATA_WIDTH         (DATA_WIDTH            ),
-                        .TUSER_WIDTH        (TUSER_WIDTH           )
+                        .MULTIPLIER_DELAY   (MULTIPLIER_DELAY),
+                        .WORD_WIDTH         (WORD_WIDTH_IN   ),
+                        .TUSER_WIDTH        (TUSER_WIDTH     )
                     )
                     fixed_point_multiplier
                     (
@@ -246,31 +242,12 @@ module conv_unit # (
                         .last_out     (mul_m_last               [i]),
                         .user_out     (mul_m_user               [i])
                     );
-                end
-                else begin
-                    floating_point_multiplier_active multipler (
-                        .aclk                   (aclk),                                            
-                        .aclken                 (clken_mul),                                          
-                        .aresetn                (aresetn),                                         
-                        .s_axis_a_tvalid        (s_step_weights_valid     [i]),                                 
-                        .s_axis_a_tdata         (s_step_pixels_data       [i]),                                           
-                        .s_axis_a_tlast         (s_step_pixels_last       [i]),                                  
-                        .s_axis_a_tuser         (s_step_pixels_user       [i]),                                          
-                        .s_axis_b_tvalid        (s_step_weights_valid     [i]),                                 
-                        .s_axis_b_tdata         (s_step_weights_data      [i]),                                           
-                        .m_axis_result_tvalid   (mul_m_valid              [i]),                             
-                        .m_axis_result_tdata    (mul_m_data               [i]),                                       
-                        .m_axis_result_tlast    (mul_m_last               [i]),                               
-                        .m_axis_result_tuser    (mul_m_user               [i])                                      
-                    );
-                end
             end
             else begin
-                if (IS_FIXED_POINT) begin
                     fixed_point_multiplier_wrapper #(
-                        .MULTIPLIER_DELAY   (FIXED_MULTIPLIER_DELAY),
-                        .DATA_WIDTH         (DATA_WIDTH            ),
-                        .TUSER_WIDTH        (TUSER_WIDTH           )
+                        .MULTIPLIER_DELAY   (MULTIPLIER_DELAY ),
+                        .WORD_WIDTH         (WORD_WIDTH_IN    ),
+                        .TUSER_WIDTH        (TUSER_WIDTH      )
                     )
                     fixed_point_multiplier
                     (
@@ -284,20 +261,6 @@ module conv_unit # (
                         .valid_out    (mul_m_valid              [i]),
                         .data_out     (mul_m_data               [i])
                     );
-                end
-                else begin
-                    floating_point_multiplier_passive multiplier (
-                        .aclk                   (aclk),                                            
-                        .aclken                 (clken_mul),                                          
-                        .aresetn                (aresetn),                                         
-                        .s_axis_a_tvalid        (s_step_weights_valid     [i]),    
-                        .s_axis_a_tdata         (s_step_pixels_data       [i]),              
-                        .s_axis_b_tvalid        (s_step_weights_valid     [i]),    
-                        .s_axis_b_tdata         (s_step_weights_data      [i]),              
-                        .m_axis_result_tvalid   (mul_m_valid              [i]),
-                        .m_axis_result_tdata    (mul_m_data               [i])
-                    );
-                end
             end
         end
 
@@ -327,11 +290,10 @@ module conv_unit # (
             assign acc_m_valid_last         [i] = acc_m_valid [i] & acc_m_last [i];
 
             if (IS_ACTIVE) begin
-                if (IS_FIXED_POINT) begin         
                     fixed_point_accumulator_wrapper #(
-                        .ACCUMULATOR_DELAY  (FIXED_ACCUMULATOR_DELAY),
-                        .DATA_WIDTH         (DATA_WIDTH             ),
-                        .TUSER_WIDTH        (TUSER_WIDTH            )
+                        .ACCUMULATOR_DELAY  (ACCUMULATOR_DELAY),
+                        .WORD_WIDTH         (WORD_WIDTH_OUT   ),
+                        .TUSER_WIDTH        (TUSER_WIDTH      )
                     )
                     fixed_point_accumulator
                     (
@@ -347,29 +309,12 @@ module conv_unit # (
                         .last_out   (acc_m_last     [i]),
                         .user_out   (acc_m_user     [i])
                     );
-                end
-                else begin
-                    floating_point_accumulator_active accumulator (
-                        .aclk                   (aclk              ),                                 
-                        .aclken                 (clken_acc      [i]),                               
-                        .aresetn                (aresetn           ),                              
-                        .s_axis_a_tvalid        (acc_s_valid    [i]),                      
-                        .s_axis_a_tdata         (acc_s_data     [i]),                                
-                        .s_axis_a_tlast         (acc_s_last     [i]),                       
-                        .s_axis_a_tuser         (acc_s_user     [i]),                               
-                        .m_axis_result_tvalid   (acc_m_valid    [i]),                  
-                        .m_axis_result_tdata    (acc_m_data     [i]),                            
-                        .m_axis_result_tlast    (acc_m_last     [i]),                    
-                        .m_axis_result_tuser    (acc_m_user     [i])                           
-                    );
-                end
             end
             else begin
-                if (IS_FIXED_POINT) begin         
                     fixed_point_accumulator_wrapper #(
-                        .ACCUMULATOR_DELAY  (FIXED_ACCUMULATOR_DELAY),
-                        .DATA_WIDTH         (DATA_WIDTH             ),
-                        .TUSER_WIDTH        (TUSER_WIDTH            )
+                        .ACCUMULATOR_DELAY  (ACCUMULATOR_DELAY),
+                        .WORD_WIDTH         (WORD_WIDTH_OUT   ),
+                        .TUSER_WIDTH        (TUSER_WIDTH      )
                     )
                     fixed_point_accumulator
                     (
@@ -383,20 +328,6 @@ module conv_unit # (
                         .data_out   (acc_m_data     [i]),
                         .last_out   (acc_m_last     [i])
                     );
-                end
-                else begin
-                    floating_point_accumulator_passive accumulator (
-                        .aclk                   (aclk              ),                                 
-                        .aclken                 (clken_acc      [i]),                               
-                        .aresetn                (aresetn           ),                              
-                        .s_axis_a_tvalid        (acc_s_valid    [i]),    
-                        .s_axis_a_tdata         (acc_s_data     [i]),              
-                        .s_axis_a_tlast         (acc_s_last     [i]),     
-                        .m_axis_result_tvalid   (acc_m_valid    [i]),
-                        .m_axis_result_tlast    (acc_m_last     [i]),
-                        .m_axis_result_tdata    (acc_m_data     [i]) 
-                    );
-                end
             end
         end
 
@@ -471,10 +402,10 @@ module conv_unit # (
 
             for (i=1; i < KERNEL_W_MAX; i++) begin : sel_regs_gen
 
-                wire selected_valid = (mux_sel[i]==0) ? mul_m_valid [i] : acc_m_valid_last[i-1];
-                wire update_switch  = aclken && selected_valid;
+                logic selected_valid = (mux_sel[i]==0) ? mul_m_valid [i] : acc_m_valid_last[i-1];
+                logic update_switch  = aclken && selected_valid;
 
-                wire sel_in         = mul_m_last [i] && (!mul_m_user[i][INDEX_IS_1x1]);
+                logic sel_in         = mul_m_last [i] && (!mul_m_user[i][INDEX_IS_1x1]);
                 
                 register #(
                     .WORD_WIDTH     (1),
@@ -521,15 +452,15 @@ module conv_unit # (
                 assign out_acc_s_last [i] = acc_s_last [i];
 
                 axis_mux #(
-                    .DATA_WIDTH(DATA_WIDTH),
-                    .TUSER_WIDTH(TUSER_WIDTH)
+                    .DATA_WIDTH   (WORD_WIDTH_OUT),
+                    .TUSER_WIDTH  (TUSER_WIDTH)
                 )
                 mux
                 (
                     .sel                (mux_sel        [i]),
 
+                    .S0_AXIS_tdata      (WORD_WIDTH_OUT'(signed'(mul_m_data [i]))),
                     .S0_AXIS_tvalid     (mul_m_valid    [i]),
-                    .S0_AXIS_tdata      (mul_m_data     [i]),
                     .S0_AXIS_tlast      (mul_m_last     [i]),
                     .S0_AXIS_tuser      (mul_m_user     [i]),
 
@@ -551,15 +482,15 @@ module conv_unit # (
                 assign acc_s_last [i] = in_acc_s_last [i];
 
                 axis_mux #(
-                    .DATA_WIDTH(DATA_WIDTH),
+                    .DATA_WIDTH (WORD_WIDTH_OUT),
                     .TUSER_WIDTH(TUSER_WIDTH)
                 )
                 mux
                 (
                     .sel                (mux_sel        [i]),
 
+                    .S0_AXIS_tdata      (WORD_WIDTH_OUT'(signed'(mul_m_data [i]))),
                     .S0_AXIS_tvalid     (mul_m_valid    [i]),
-                    .S0_AXIS_tdata      (mul_m_data     [i]),
 
                     .S1_AXIS_tvalid     (mux_s2_valid   [i]),
                     .S1_AXIS_tdata      (mux_s2_data    [i]), 
@@ -617,17 +548,17 @@ module conv_unit # (
         - Can be solved by bypassing the (A-1) delay
         - But then back-to-back kernel change is not possible
     */
-    wire                        shift_sel              [KERNEL_W_MAX - 2 : 0];
+    logic                        shift_sel              [KERNEL_W_MAX - 2 : 0];
 
-    wire                        shift_in_valid         [KERNEL_W_MAX - 1 : 0];
-    wire   [DATA_WIDTH - 1 : 0] shift_in_data          [KERNEL_W_MAX - 1 : 0];
-    wire                        shift_in_last          [KERNEL_W_MAX - 1 : 0];
-    wire   [TUSER_WIDTH - 1: 0] shift_in_user          [TUSER_WIDTH  - 1 : 0];
+    logic                        shift_in_valid         [KERNEL_W_MAX - 1 : 0];
+    logic   [WORD_WIDTH_OUT-1:0] shift_in_data          [KERNEL_W_MAX - 1 : 0];
+    logic                        shift_in_last          [KERNEL_W_MAX - 1 : 0];
+    logic   [TUSER_WIDTH - 1: 0] shift_in_user          [TUSER_WIDTH  - 1 : 0];
 
-    wire                        shift_out_valid        [KERNEL_W_MAX - 1 : 0];
-    wire   [DATA_WIDTH - 1 : 0] shift_out_data         [KERNEL_W_MAX - 1 : 0];
-    wire                        shift_out_last         [KERNEL_W_MAX - 1 : 0];
-    wire   [TUSER_WIDTH - 1: 0] shift_out_user         [KERNEL_W_MAX - 1 : 0];
+    logic                        shift_out_valid        [KERNEL_W_MAX - 1 : 0];
+    logic   [WORD_WIDTH_OUT-1:0] shift_out_data         [KERNEL_W_MAX - 1 : 0];
+    logic                        shift_out_last         [KERNEL_W_MAX - 1 : 0];
+    logic   [TUSER_WIDTH - 1: 0] shift_out_user         [KERNEL_W_MAX - 1 : 0];
 
     generate
         /*
@@ -647,7 +578,7 @@ module conv_unit # (
         if (IS_ACTIVE)
             for (i=0; i < KERNEL_W_MAX  ; i++) begin : valid_masked_gen
                 
-                wire    acc_m_valid_last_masked_delayed;
+                logic   acc_m_valid_last_masked_delayed;
                 assign  acc_m_valid_last_masked  [i] = acc_m_valid_last[i] & mask_full[i] & !acc_m_valid_last_masked_delayed;
 
                 register #(
@@ -687,7 +618,7 @@ module conv_unit # (
 
                 n_delay_stream #(
                     .N           (1                 ),
-                    .DATA_WIDTH  (DATA_WIDTH        ),
+                    .WORD_WIDTH  (WORD_WIDTH_OUT    ),
                     .TUSER_WIDTH (TUSER_WIDTH       )
                 )
                 SHIFT_REG
@@ -722,7 +653,7 @@ module conv_unit # (
             
             for (i=0; i < KERNEL_W_MAX; i++) begin : shift_reg_gen
                 register #(
-                        .WORD_WIDTH     (DATA_WIDTH),
+                        .WORD_WIDTH     (WORD_WIDTH_OUT),
                         .RESET_VALUE    (0)
                 )
                 SHIFT_REG

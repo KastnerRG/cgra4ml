@@ -36,9 +36,9 @@ Additional Comments:
             - Sync pixels-weights
             - pixels_buffer   x 8
                 (step_buffer) 
-                - reg         x 1
-                - reg         x   (A-2) + 1
-                - reg         x 2*(A-2) + 1
+                - reg        x 1
+                - reg        x   (A-2) + 1
+                - reg        x 2*(A-2) + 1
             - CONV_CORE       x 32
                 - CONV_UNIT   x 8
                     - mul     x 3
@@ -57,19 +57,17 @@ Additional Comments:
 */
 
 module axis_conv_engine # (
-    parameter IS_FIXED_POINT            =  0 , 
     parameter CONV_CORES                = 24 ,
     parameter CONV_UNITS                =  8 ,
-    parameter DATA_WIDTH                = 16 ,
+    parameter WORD_WIDTH_IN             =  8 ,
+    parameter WORD_WIDTH_OUT            = 25 ,
     parameter KERNEL_W_MAX              =  3 ,
     parameter KERNEL_H_MAX              =  3 , // odd number
     parameter TUSER_WIDTH               =  4 ,
     parameter CIN_COUNTER_WIDTH         = 10 ,
     parameter COLS_COUNTER_WIDTH        = 10 ,
-    parameter FLOAT_ACCUMULATOR_DELAY   = 19 ,
-    parameter FLOAT_MULTIPLIER_DELAY    =  6 ,
-    parameter FIXED_ACCUMULATOR_DELAY   =  4 ,
-    parameter FIXED_MULTIPLIER_DELAY    =  3 ,
+    parameter ACCUMULATOR_DELAY         =  4 ,
+    parameter MULTIPLIER_DELAY          =  3 ,
 
     parameter INDEX_IS_1x1              =  0 ,
     parameter INDEX_IS_MAX              =  1 ,
@@ -104,32 +102,30 @@ module axis_conv_engine # (
     genvar k,i;
     localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX   + 1);
     localparam KERNEL_H_WIDTH       = $clog2(KERNEL_H_MAX   + 1);
-    localparam ACCUMULATOR_DELAY    = IS_FIXED_POINT ? FIXED_ACCUMULATOR_DELAY : FLOAT_ACCUMULATOR_DELAY ; 
 
-    input  wire                          aclk                                                       ;
-    input  wire                          aclken                                                     ;               
-    input  wire                          aresetn                                                    ;
+    input  logic aclk   ;
+    input  logic aclken ;               
+    input  logic aresetn;
                                                                                                                                                 
-    input  wire                          start                                                      ;
-    input  wire [KERNEL_W_WIDTH    -1:0] kernel_w_1                                                 ;
-    input  wire [KERNEL_H_WIDTH    -1:0] kernel_h_1                                                 ;
-    input  wire                          is_max                                                     ;
-    input  wire                          is_relu                                                    ;
-    input  wire [COLS_COUNTER_WIDTH-1:0] cols_1                                                     ;
-    input  wire [CIN_COUNTER_WIDTH -1:0] cin_1                                                      ;
+    input  logic start  ;
+    input  logic is_max ;
+    input  logic is_relu;
+    input  logic [KERNEL_W_WIDTH    -1:0] kernel_w_1                                                 ;
+    input  logic [KERNEL_H_WIDTH    -1:0] kernel_h_1                                                 ;
+    input  logic [COLS_COUNTER_WIDTH-1:0] cols_1                                                     ;
+    input  logic [CIN_COUNTER_WIDTH -1:0] cin_1                                                      ;
                                                                                                     
-    input  wire                          s_pixels_valid                                             ;
-    input  wire [DATA_WIDTH        -1:0] s_pixels_data  [CONV_UNITS + (KERNEL_H_MAX-1)    - 1 : 0]  ;
-    output wire                          s_pixels_ready                                             ;
-                                                                                                        
-    input  wire                          s_weights_valid                                            ;
-    output wire                          s_weights_ready                                            ;
-    input  wire [DATA_WIDTH        -1:0] s_weights_data [CONV_CORES - 1 : 0][KERNEL_W_MAX - 1 : 0]  ;
+    input  logic s_pixels_valid ;
+    output logic s_pixels_ready ;
+    input  logic s_weights_valid;
+    output logic s_weights_ready;
+    input  logic [WORD_WIDTH_IN-1:0] s_pixels_data  [CONV_UNITS + (KERNEL_H_MAX-1)    - 1 : 0]  ;
+    input  logic [WORD_WIDTH_IN-1:0] s_weights_data [CONV_CORES - 1 : 0][KERNEL_W_MAX - 1 : 0]  ;
                                                                                                     
-    output wire                          m_valid                                                    ;
-    output wire [DATA_WIDTH        -1:0] m_data         [CONV_CORES - 1 : 0][CONV_UNITS   - 1 : 0]  ;
-    output wire                          m_last                                                     ;
-    output wire [TUSER_WIDTH       -1:0] m_user                                                     ;
+    output logic m_valid;
+    output logic m_last ;
+    output logic [TUSER_WIDTH   -1:0] m_user;
+    output logic [WORD_WIDTH_OUT-1:0] m_data [CONV_CORES - 1 : 0][CONV_UNITS   - 1 : 0]  ;
                                                                                                     
 
 
@@ -138,15 +134,14 @@ module axis_conv_engine # (
     */
     
     
-    wire    [DATA_WIDTH -1 : 0]   m_shift_pixels_data   [CONV_UNITS-1 : 0];
-    wire                          m_shift_pixels_valid                    ;
-    wire                          m_shift_pixels_ready                    ;
-    wire                          m_shift_pixels_last                     ;
-    wire    [TUSER_WIDTH-1 : 0]   m_shift_pixels_user                     ;
+    logic [WORD_WIDTH_IN -1 : 0] m_shift_pixels_data   [CONV_UNITS-1 : 0];
+    logic                        m_shift_pixels_valid;
+    logic                        m_shift_pixels_ready;
+    logic                        m_shift_pixels_last ;
+    logic [TUSER_WIDTH-1 : 0]    m_shift_pixels_user ;
 
     axis_shift_buffer #(
-        .IS_FIXED_POINT     (IS_FIXED_POINT     ),
-        .DATA_WIDTH         (DATA_WIDTH         ),
+        .WORD_WIDTH         (WORD_WIDTH_IN      ),
         .CONV_UNITS         (CONV_UNITS         ),
         .KERNEL_H_MAX       (KERNEL_H_MAX       ),
         .KERNEL_W_MAX       (KERNEL_W_MAX       ),
@@ -185,13 +180,13 @@ module axis_conv_engine # (
         SYNC WEIGHTS and PIXELS
     */
 
-    wire conv_s_valid;
+    logic conv_s_valid;
 
     assign conv_s_valid             = s_weights_valid   & m_shift_pixels_valid;
     assign s_weights_ready          = conv_s_ready [0]  & m_shift_pixels_valid;
     assign m_shift_pixels_ready     = conv_s_ready [0]  & s_weights_valid;
 
-    wire   is_1x1                   = m_shift_pixels_user[INDEX_IS_1x1];
+    logic   is_1x1                   = m_shift_pixels_user[INDEX_IS_1x1];
 
     /*
         STEP BUFFER FOR PIXELS
@@ -200,23 +195,23 @@ module axis_conv_engine # (
         - Pixel valid, last, user is stepped once and given to all CONV_UNITS
     */
 
-    wire                      m_step_pixels_valid                       [KERNEL_W_MAX - 1 : 0];
-    wire [DATA_WIDTH  - 1: 0] m_step_pixels_data    [CONV_UNITS - 1 : 0][KERNEL_W_MAX - 1 : 0];
-    wire                      m_step_pixels_last                        [KERNEL_W_MAX - 1 : 0];
-    wire [TUSER_WIDTH - 1: 0] m_step_pixels_user                        [KERNEL_W_MAX - 1 : 0];
+    logic                      m_step_pixels_valid                       [KERNEL_W_MAX - 1 : 0];
+    logic [WORD_WIDTH_IN-1: 0] m_step_pixels_data    [CONV_UNITS - 1 : 0][KERNEL_W_MAX - 1 : 0];
+    logic                      m_step_pixels_last                        [KERNEL_W_MAX - 1 : 0];
+    logic [TUSER_WIDTH - 1: 0] m_step_pixels_user                        [KERNEL_W_MAX - 1 : 0];
 
 
     generate
         for (k=0 ; k < CONV_UNITS;   k = k + 1) begin: step_pixels_gen
 
-            wire [DATA_WIDTH  - 1: 0] s_step_pixels_repeated_data    [KERNEL_W_MAX - 1 : 0];
+            logic [WORD_WIDTH_IN  - 1: 0] s_step_pixels_repeated_data    [KERNEL_W_MAX - 1 : 0];
 
             for (i=0 ; i < KERNEL_W_MAX; i = i + 1) begin: repeat_pixels_gen
                 assign s_step_pixels_repeated_data [i] = m_shift_pixels_data[k];
             end
 
             step_buffer  #(
-                .DATA_WIDTH       (DATA_WIDTH),
+                .WORD_WIDTH       (WORD_WIDTH_IN),
                 .STEPS            (KERNEL_W_MAX),
                 .ACCUMULATOR_DELAY(ACCUMULATOR_DELAY),
                 .TUSER_WIDTH      (TUSER_WIDTH)
@@ -228,14 +223,14 @@ module axis_conv_engine # (
                 .aresetn    (aresetn),
                 .is_1x1     (is_1x1),
                 
-                .s_data     (s_step_pixels_repeated_data           ),
-                .m_data     (m_step_pixels_data               [k]  )
+                .s_data     (s_step_pixels_repeated_data),
+                .m_data     (m_step_pixels_data    [k])
             );
 
         end
     endgenerate
 
-    wire [TUSER_WIDTH - 1: 0] s_step_pixels_repeated_user    [KERNEL_W_MAX - 1 : 0];
+    logic [TUSER_WIDTH - 1: 0] s_step_pixels_repeated_user    [KERNEL_W_MAX - 1 : 0];
 
     generate
     for (i=0 ; i < KERNEL_W_MAX; i = i + 1) begin: repeat_user_gen
@@ -244,7 +239,7 @@ module axis_conv_engine # (
     endgenerate
 
     step_buffer  #(
-        .DATA_WIDTH       (DATA_WIDTH),
+        .WORD_WIDTH       (WORD_WIDTH_IN),
         .STEPS            (KERNEL_W_MAX),
         .ACCUMULATOR_DELAY(ACCUMULATOR_DELAY),
         .TUSER_WIDTH      (TUSER_WIDTH)
@@ -275,28 +270,26 @@ module axis_conv_engine # (
     */
 
 
-    wire                   conv_s_ready [CONV_CORES-1 : 0];
-    wire                   conv_m_valid [CONV_CORES-1 : 0];
-    wire                   conv_m_last  [CONV_CORES-1 : 0];
-    wire [TUSER_WIDTH-1:0] conv_m_user  [CONV_CORES-1 : 0];
+    logic                   conv_s_ready [CONV_CORES-1 : 0];
+    logic                   conv_m_valid [CONV_CORES-1 : 0];
+    logic                   conv_m_last  [CONV_CORES-1 : 0];
+    logic [TUSER_WIDTH-1:0] conv_m_user  [CONV_CORES-1 : 0];
 
-    assign m_valid        = conv_m_valid[0]               ;
-    assign m_last         = conv_m_last [0]               ;
-    assign m_user         = conv_m_user [0]               ;
+    assign m_valid        = conv_m_valid[0];
+    assign m_last         = conv_m_last [0];
+    assign m_user         = conv_m_user [0];
 
     generate
     for (i=0; i < CONV_CORES; i++) begin: cores_gen
         
         conv_core # (
-            .IS_FIXED_POINT         (IS_FIXED_POINT         ),
             .CONV_UNITS             (CONV_UNITS             ),
-            .DATA_WIDTH             (DATA_WIDTH             ),
+            .WORD_WIDTH_IN          (WORD_WIDTH_IN          ),
+            .WORD_WIDTH_OUT         (WORD_WIDTH_OUT         ),
             .KERNEL_W_MAX           (KERNEL_W_MAX           ),
             .TUSER_WIDTH            (TUSER_WIDTH            ),
-            .FLOAT_ACCUMULATOR_DELAY(FLOAT_ACCUMULATOR_DELAY),
-            .FLOAT_MULTIPLIER_DELAY (FLOAT_MULTIPLIER_DELAY ),
-            .FIXED_ACCUMULATOR_DELAY(FIXED_ACCUMULATOR_DELAY),
-            .FIXED_MULTIPLIER_DELAY (FIXED_MULTIPLIER_DELAY ),
+            .ACCUMULATOR_DELAY      (ACCUMULATOR_DELAY      ),
+            .MULTIPLIER_DELAY       (MULTIPLIER_DELAY       ),
             .INDEX_IS_1x1           (INDEX_IS_1x1           ),
             .INDEX_IS_MAX           (INDEX_IS_MAX           ),
             .INDEX_IS_RELU          (INDEX_IS_RELU          ),
