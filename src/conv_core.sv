@@ -18,20 +18,17 @@ Additional Comments:
 //////////////////////////////////////////////////////////////////////////////////*/
 
 module conv_core # (
-    parameter IS_FIXED_POINT         ,
-    parameter CONV_UNITS             ,
-    parameter DATA_WIDTH             ,
-    parameter KERNEL_W_MAX           ,
-    parameter TUSER_WIDTH            ,
-    parameter FLOAT_ACCUMULATOR_DELAY,
-    parameter FLOAT_MULTIPLIER_DELAY ,
-    parameter FIXED_ACCUMULATOR_DELAY,
-    parameter FIXED_MULTIPLIER_DELAY ,
-
-    parameter INDEX_IS_1x1           ,
-    parameter INDEX_IS_MAX           ,
-    parameter INDEX_IS_RELU          ,
-    parameter INDEX_IS_COLS_1_K2      
+    parameter CONV_UNITS        ,
+    parameter WORD_WIDTH_IN     ,
+    parameter WORD_WIDTH_OUT    ,
+    parameter KERNEL_W_MAX      ,
+    parameter TUSER_WIDTH       ,
+    parameter ACCUMULATOR_DELAY ,
+    parameter MULTIPLIER_DELAY  ,
+    parameter INDEX_IS_1x1      ,
+    parameter INDEX_IS_MAX      ,
+    parameter INDEX_IS_RELU     ,
+    parameter INDEX_IS_COLS_1_K2 
 )(
     aclk                ,
     aclken              ,
@@ -54,42 +51,41 @@ module conv_core # (
     m_user              
 
 );
-    localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX   + 1)                                      ;
-    localparam ACCUMULATOR_DELAY    = IS_FIXED_POINT ? FIXED_ACCUMULATOR_DELAY : FLOAT_ACCUMULATOR_DELAY ; 
+    localparam KERNEL_W_WIDTH = $clog2(KERNEL_W_MAX   + 1);
 
-    input  wire                      aclk                                                             ;
-    input  wire                      aclken                                                           ;               
-    input  wire                      aresetn                                                          ;
+    input  logic aclk;
+    input  logic aclken;               
+    input  logic aresetn;
 
-    input  wire                      start                                                            ;
-    input  wire [KERNEL_W_WIDTH-1:0] kernel_w_1                                                       ;
-    input  wire                      is_1x1                                                           ;
+    input  logic start;
+    input  logic [KERNEL_W_WIDTH-1:0] kernel_w_1;
+    input  logic is_1x1;
 
-    output wire                      s_ready                                                          ;
-    input  wire                      s_weights_valid                                                  ;
-    input  wire [DATA_WIDTH  - 1: 0] s_weights_data                             [KERNEL_W_MAX - 1 : 0];
+    output logic s_ready;
+    input  logic s_weights_valid;
+    input  logic s_step_pixels_last [KERNEL_W_MAX - 1 : 0];
+    input  logic [TUSER_WIDTH - 1: 0] s_step_pixels_user [KERNEL_W_MAX - 1 : 0];
 
-    input  wire [DATA_WIDTH  - 1: 0] s_step_pixels_data   [CONV_UNITS   - 1 : 0][KERNEL_W_MAX - 1 : 0];
-    input  wire                      s_step_pixels_last                         [KERNEL_W_MAX - 1 : 0];
-    input  wire [TUSER_WIDTH - 1: 0] s_step_pixels_user                         [KERNEL_W_MAX - 1 : 0];
+    input  logic [WORD_WIDTH_IN  - 1: 0] s_weights_data                             [KERNEL_W_MAX - 1 : 0];
+    input  logic [WORD_WIDTH_IN  - 1: 0] s_step_pixels_data   [CONV_UNITS   - 1 : 0][KERNEL_W_MAX - 1 : 0];
 
-    output wire                      m_valid                                                          ;
-    output wire [DATA_WIDTH  - 1: 0] m_data               [CONV_UNITS  - 1  : 0]                      ;
-    output wire                      m_last                                                           ;
-    output wire [TUSER_WIDTH - 1: 0] m_user                                                           ;
+    output logic m_valid;
+    output logic m_last ;
+    output logic [WORD_WIDTH_OUT-1: 0] m_data [CONV_UNITS  - 1  : 0];
+    output logic [TUSER_WIDTH - 1: 0]  m_user ;
 
     /*
         STEP BUFFER FOR WEIGHTS
     */
 
-    wire                      m_step_weights_valid [KERNEL_W_MAX - 1 : 0];
-    wire [DATA_WIDTH  - 1: 0] m_step_weights_data  [KERNEL_W_MAX - 1 : 0];
+    logic                      m_step_weights_valid    [KERNEL_W_MAX - 1 : 0];
+    logic [WORD_WIDTH_IN  - 1: 0] m_step_weights_data  [KERNEL_W_MAX - 1 : 0];
 
     step_buffer  #(
-        .DATA_WIDTH       (DATA_WIDTH                   ),
-        .STEPS            (KERNEL_W_MAX                 ),
-        .ACCUMULATOR_DELAY(ACCUMULATOR_DELAY            ),
-        .TUSER_WIDTH      (TUSER_WIDTH                  )
+        .WORD_WIDTH       (WORD_WIDTH_IN    ),
+        .STEPS            (KERNEL_W_MAX     ),
+        .ACCUMULATOR_DELAY(ACCUMULATOR_DELAY),
+        .TUSER_WIDTH      (TUSER_WIDTH      )
     )
     step_buffer_weights
     (
@@ -114,13 +110,13 @@ module conv_core # (
 
     // Wires that distribute driven signals from out_* of ACTIVE to in_* of passive units.
 
-    wire [KERNEL_W_MAX-1 : 1] mux_sel                           ;
-    wire                      clken_mul                         ;
-    wire [KERNEL_W_MAX-1 : 0] clken_acc                         ;
-    wire                      mux_s2_valid[KERNEL_W_MAX - 1 : 1];
-    wire                      acc_s_valid [KERNEL_W_MAX - 1 : 0];
-    wire                      acc_s_last  [KERNEL_W_MAX - 1 : 0];     
-    wire                      shift_sel   [KERNEL_W_MAX - 2 : 0];     
+    logic [KERNEL_W_MAX-1 : 1] mux_sel                           ;
+    logic                      clken_mul                         ;
+    logic [KERNEL_W_MAX-1 : 0] clken_acc                         ;
+    logic                      mux_s2_valid[KERNEL_W_MAX - 1 : 1];
+    logic                      acc_s_valid [KERNEL_W_MAX - 1 : 0];
+    logic                      acc_s_last  [KERNEL_W_MAX - 1 : 0];     
+    logic                      shift_sel   [KERNEL_W_MAX - 2 : 0];     
 
     genvar i;
     generate
@@ -128,12 +124,12 @@ module conv_core # (
             if (i == 0)
                 conv_unit # (
                         .IS_ACTIVE                (1                      ),
-                        .IS_FIXED_POINT           (IS_FIXED_POINT         ),
-                        .DATA_WIDTH               (DATA_WIDTH             ),
+                        .WORD_WIDTH_IN            (WORD_WIDTH_IN          ),
+                        .WORD_WIDTH_OUT           (WORD_WIDTH_OUT         ),
                         .KERNEL_W_MAX             (KERNEL_W_MAX           ),
                         .TUSER_WIDTH              (TUSER_WIDTH            ),
-                        .FIXED_ACCUMULATOR_DELAY  (FIXED_ACCUMULATOR_DELAY),
-                        .FIXED_MULTIPLIER_DELAY   (FIXED_MULTIPLIER_DELAY ),
+                        .ACCUMULATOR_DELAY        (ACCUMULATOR_DELAY      ),
+                        .MULTIPLIER_DELAY         (MULTIPLIER_DELAY       ),
                         .INDEX_IS_1x1             (INDEX_IS_1x1           ),
                         .INDEX_IS_MAX             (INDEX_IS_MAX           ),
                         .INDEX_IS_RELU            (INDEX_IS_RELU          ),
@@ -172,12 +168,12 @@ module conv_core # (
             else
                 conv_unit # (
                         .IS_ACTIVE                (0                      ),
-                        .IS_FIXED_POINT           (IS_FIXED_POINT         ),
-                        .DATA_WIDTH               (DATA_WIDTH             ),
+                        .WORD_WIDTH_IN            (WORD_WIDTH_IN          ),
+                        .WORD_WIDTH_OUT           (WORD_WIDTH_OUT         ),
                         .KERNEL_W_MAX             (KERNEL_W_MAX           ),
                         .TUSER_WIDTH              (TUSER_WIDTH            ),
-                        .FIXED_ACCUMULATOR_DELAY  (FIXED_ACCUMULATOR_DELAY),
-                        .FIXED_MULTIPLIER_DELAY   (FIXED_MULTIPLIER_DELAY ),
+                        .ACCUMULATOR_DELAY        (ACCUMULATOR_DELAY      ),
+                        .MULTIPLIER_DELAY         (MULTIPLIER_DELAY       ),
                         .INDEX_IS_1x1             (INDEX_IS_1x1           ),
                         .INDEX_IS_MAX             (INDEX_IS_MAX           ),
                         .INDEX_IS_RELU            (INDEX_IS_RELU          ),

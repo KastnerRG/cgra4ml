@@ -31,7 +31,6 @@ Additional Comments:
 
 
 module pad_filter # (
-    parameter DATA_WIDTH        ,
     parameter KERNEL_W_MAX      ,
     parameter TUSER_WIDTH       ,
     parameter INDEX_IS_COLS_1_K2,
@@ -54,18 +53,18 @@ module pad_filter # (
     localparam KW2_MAX           = KERNEL_W_MAX/2; //R, 3->1, 5->2, 7->3
     localparam KERNEL_W_WIDTH    = $clog2(KERNEL_W_MAX   + 1);
 
-    input  wire                      aclk;
-    input  wire [KERNEL_W_MAX-1 : 0] aclken;               
-    input  wire                      aresetn;
-    input  wire                      start;
+    input  logic                      aclk;
+    input  logic [KERNEL_W_MAX-1 : 0] aclken;               
+    input  logic                      aresetn;
+    input  logic                      start;
 
-    input  wire [KERNEL_W_WIDTH-1:0] kernel_w_1_in ;
+    input  logic [KERNEL_W_WIDTH-1:0] kernel_w_1_in ;
 
-    input  wire                      valid_last [KERNEL_W_MAX - 1 : 0];
-    input  wire [TUSER_WIDTH - 1: 0] user       [KERNEL_W_MAX - 1 : 0];
+    input  logic                      valid_last [KERNEL_W_MAX - 1 : 0];
+    input  logic [TUSER_WIDTH - 1: 0] user       [KERNEL_W_MAX - 1 : 0];
 
-    output wire                      mask_partial [KERNEL_W_MAX - 1 : 1];
-    output wire                      mask_full    [KERNEL_W_MAX - 1 : 0];
+    output logic                      mask_partial [KERNEL_W_MAX - 1 : 1];
+    output logic                      mask_full    [KERNEL_W_MAX - 1 : 0];
 
     /*
     KW2_1 Register
@@ -79,8 +78,8 @@ module pad_filter # (
     
     */
 
-    wire   [KERNEL_W_WIDTH-1 : 0]    kw2_in;
-    wire   [KERNEL_W_WIDTH-1 : 0]    kw2_wire;
+    logic   [KERNEL_W_WIDTH-1 : 0]    kw2_in;
+    logic   [KERNEL_W_WIDTH-1 : 0]    kw2_wire;
 
     assign kw2_in = kernel_w_1_in/2; // kw = 7 : kw2_wire = 3,   kw = 5 : kw2_wire = 2,   kw = 3 : kw2_wire = 1
 
@@ -121,11 +120,11 @@ module pad_filter # (
     */
 
 
-    wire                            reg_clken           [KERNEL_W_MAX - 1 : 0];
-    wire   [KW2_MAX          : 1]   col_end_in          [KERNEL_W_MAX - 1 : 0];
-    wire   [KW2_MAX          : 1]   col_end             [KERNEL_W_MAX - 1 : 0];
-    wire   [KW2_MAX          : 1]   col_start_in        [KERNEL_W_MAX - 1 : 0];
-    wire   [KW2_MAX          : 1]   col_start           [KERNEL_W_MAX - 1 : 0];
+    logic                            reg_clken           [KERNEL_W_MAX - 1 : 0];
+    logic   [KW2_MAX          : 1]   col_end_in          [KERNEL_W_MAX - 1 : 0];
+    logic   [KW2_MAX          : 1]   col_end             [KERNEL_W_MAX - 1 : 0];
+    logic   [KW2_MAX          : 1]   col_start_in        [KERNEL_W_MAX - 1 : 0];
+    logic   [KW2_MAX          : 1]   col_start           [KERNEL_W_MAX - 1 : 0];
     generate
         for (i=0; i < KERNEL_W_MAX; i = i+1) begin: col_end_gen_i
 
@@ -188,21 +187,21 @@ module pad_filter # (
     bit   lut_allow_full     [KERNEL_W_MAX - 1 : 0] [KW2_MAX : 1];
     bit   lut_stop_partial   [KERNEL_W_MAX - 1 : 0] [KW2_MAX : 1]; 
 
-    wire   is_1x1 = user[INDEX_IS_1x1];
+    logic   is_1x1 = user[INDEX_IS_1x1];
     generate
         for ( i=0; i < KERNEL_W_MAX; i = i+1)   begin: lookup_full_datapath_gen
             for ( kw2=1;  kw2 < KW2_MAX+1; kw2 = kw2+1)   begin: lookup_full_kw_gen
             
-                wire full_datapath             =     i == 2*kw2            ; // i == kw-1 = (2k2+1)-1 = (2(kw2)+1)-1 = 2kw2
-                wire unused_datapaths          =     i >  2*kw2            ; // Anything above that is unused
+                logic full_datapath             =     i == 2*kw2            ; // i == kw-1 = (2k2+1)-1 = (2(kw2)+1)-1 = 2kw2
+                logic unused_datapaths          =     i >  2*kw2            ; // Anything above that is unused
 
-                wire start_cols                =     |col_start[i][kw2:1]  ; // 1,2,...k2 : first k/2 colums are to be ignored
-                wire last_col                  =      col_end  [i][kw2  ]  ; // if the last column:
+                logic start_cols                =     |col_start[i][kw2:1]  ; // 1,2,...k2 : first k/2 colums are to be ignored
+                logic last_col                  =      col_end  [i][kw2  ]  ; // if the last column:
 
-                wire last_malformed            =     i <  kw2              ; // All (i<k2) datapaths contain malformed data, rest contain padded data
+                logic last_malformed            =     i <  kw2              ; // All (i<k2) datapaths contain malformed data, rest contain padded data
 
-                wire at_start_and_middle       =     full_datapath & !start_cols; // During start_cols, block all datapaths. During middle_cols, allow only full_datapth.
-                wire at_last_col               =     last_col & !last_malformed & !unused_datapaths; // At the last_col, only allow datapaths that have partially formed padding
+                logic at_start_and_middle       =     full_datapath & !start_cols; // During start_cols, block all datapaths. During middle_cols, allow only full_datapth.
+                logic at_last_col               =     last_col & !last_malformed & !unused_datapaths; // At the last_col, only allow datapaths that have partially formed padding
 
                 assign lut_allow_full   [i][kw2] =     at_start_and_middle | at_last_col | is_1x1;
             end
@@ -213,8 +212,8 @@ module pad_filter # (
         for ( i=1; i < KERNEL_W_MAX; i = i+1)   begin: lookup_partial_datapath_gen
             for ( kw2=1;  kw2 <  KW2_MAX+1 ; kw2 = kw2+1) begin: lut_partial_kw_gen
 
-                wire unused_datapaths  =  i >  2*kw2 ;          // Anything above i == kw2 should be blocked
-                wire end_partial;
+                logic unused_datapaths  =  i >  2*kw2 ;          // Anything above i == kw2 should be blocked
+                logic end_partial;
 
                 if (i > kw2)
                     assign end_partial = 0;                     // Dont block i>kw2 datapaths. We need those partial sums for first few columns

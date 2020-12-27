@@ -1,6 +1,6 @@
 module n_delay #(
     parameter N,
-    parameter DATA_WIDTH,
+    parameter WORD_WIDTH,
     parameter LOCAL = 0
 )(
     clk,
@@ -13,10 +13,10 @@ module n_delay #(
     input  wire                     clk;
     input  wire                     clken;
     input  wire                     resetn;
-    input  wire [DATA_WIDTH-1 : 0]  data_in;
-    output wire [DATA_WIDTH-1 : 0]  data_out;
+    input  wire [WORD_WIDTH-1 : 0]  data_in;
+    output wire [WORD_WIDTH-1 : 0]  data_out;
 
-    wire        [DATA_WIDTH-1 : 0]  data        [(N+1)-1:   0];
+    wire        [WORD_WIDTH-1 : 0]  data        [(N+1)-1:   0];
 
     assign data     [0] = data_in;
     assign data_out     = data[(N+1)-1];
@@ -26,7 +26,7 @@ module n_delay #(
         for (i=0 ; i < N; i++) begin: delay_reg_gen
             register
             #(
-                .WORD_WIDTH     (DATA_WIDTH),
+                .WORD_WIDTH     (WORD_WIDTH),
                 .RESET_VALUE    (0),
                 .LOCAL          (LOCAL)
             )

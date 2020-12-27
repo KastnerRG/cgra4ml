@@ -58,7 +58,7 @@ Additional Comments:
 //////////////////////////////////////////////////////////////////////////////////*/
 
 module step_buffer  #(
-    parameter DATA_WIDTH       ,
+    parameter WORD_WIDTH       ,
     parameter STEPS            ,
     parameter ACCUMULATOR_DELAY,
     parameter TUSER_WIDTH      
@@ -88,28 +88,28 @@ module step_buffer  #(
     // N-delay'i slaves
 
     input wire                      s_valid  [STEPS-1 : 0];
-    input wire [DATA_WIDTH  - 1: 0] s_data   [STEPS-1 : 0];
+    input wire [WORD_WIDTH  - 1: 0] s_data   [STEPS-1 : 0];
     input wire                      s_last   [STEPS-1 : 0];
     input wire [TUSER_WIDTH - 1: 0] s_user   [STEPS-1 : 0];
 
     // Hold'i master
     
     output wire                      m_valid [STEPS-1 : 0];
-    output wire [DATA_WIDTH  - 1: 0] m_data  [STEPS-1 : 0];
+    output wire [WORD_WIDTH  - 1: 0] m_data  [STEPS-1 : 0];
     output wire                      m_last  [STEPS-1 : 0];
     output wire [TUSER_WIDTH - 1: 0] m_user  [STEPS-1 : 0];
     
     // N-delay'i master
 
     wire                      delay_m_valid  [STEPS-1 : 0];
-    wire [DATA_WIDTH  - 1: 0] delay_m_data   [STEPS-1 : 0];
+    wire [WORD_WIDTH  - 1: 0] delay_m_data   [STEPS-1 : 0];
     wire                      delay_m_last   [STEPS-1 : 0];
     wire [TUSER_WIDTH - 1: 0] delay_m_user   [STEPS-1 : 0];
 
     // Hold'i slave
 
     wire                      hold_s_valid   [STEPS-1 : 0];
-    wire [DATA_WIDTH  - 1: 0] hold_s_data    [STEPS-1 : 0];
+    wire [WORD_WIDTH  - 1: 0] hold_s_data    [STEPS-1 : 0];
     wire                      hold_s_last    [STEPS-1 : 0];
     wire [TUSER_WIDTH - 1: 0] hold_s_user    [STEPS-1 : 0];
 
@@ -126,7 +126,7 @@ module step_buffer  #(
 
             n_delay_stream #(
                 .N              (DELAY),
-                .DATA_WIDTH     (DATA_WIDTH),
+                .WORD_WIDTH     (WORD_WIDTH),
                 .TUSER_WIDTH    (TUSER_WIDTH)
             )
             n_delay_stream_unit
