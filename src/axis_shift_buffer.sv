@@ -509,7 +509,7 @@ module axis_shift_buffer#(
 
     register
     #(
-        .WORD_WIDTH     (CIN_COUNTER_WIDTH),
+        .WORD_WIDTH     (1),
         .RESET_VALUE    (0) 
     )
     TLAST_REG
