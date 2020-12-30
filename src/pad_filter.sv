@@ -187,7 +187,6 @@ module pad_filter # (
     bit   lut_allow_full     [KERNEL_W_MAX - 1 : 0] [KW2_MAX : 1];
     bit   lut_stop_partial   [KERNEL_W_MAX - 1 : 0] [KW2_MAX : 1]; 
 
-    logic   is_1x1 = user[INDEX_IS_1x1];
     generate
         for ( i=0; i < KERNEL_W_MAX; i = i+1)   begin: lookup_full_datapath_gen
             for ( kw2=1;  kw2 < KW2_MAX+1; kw2 = kw2+1)   begin: lookup_full_kw_gen
@@ -203,7 +202,7 @@ module pad_filter # (
                 logic at_start_and_middle       =     full_datapath & !start_cols; // During start_cols, block all datapaths. During middle_cols, allow only full_datapth.
                 logic at_last_col               =     last_col & !last_malformed & !unused_datapaths; // At the last_col, only allow datapaths that have partially formed padding
 
-                assign lut_allow_full   [i][kw2] =     at_start_and_middle | at_last_col | is_1x1;
+                assign lut_allow_full   [i][kw2] =     at_start_and_middle | at_last_col | user[i][INDEX_IS_1x1];
             end
 
             assign    mask_full[i]             =     lut_allow_full    [i][kw2_wire];
