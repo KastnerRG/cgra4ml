@@ -85,26 +85,26 @@ module axis_shift_buffer#(
     localparam KERNEL_W_WIDTH    = $clog2(KERNEL_W_MAX   + 1);
     localparam ONE               = 1;
 
-    input   wire    aclk;
-    input   wire    aresetn;
-    input   wire    start;
+    input   logic    aclk;
+    input   logic    aresetn;
+    input   logic    start;
     
-    input   wire    [KERNEL_H_WIDTH       -1 : 0]   kernel_h_1_in   ;
-    input   wire    [KERNEL_W_WIDTH       -1 : 0]   kernel_w_1_in   ;
-    input   wire                                    is_max          ;
-    input   wire                                    is_relu         ;
-    input   wire    [CIN_COUNTER_WIDTH    -1 : 0]   cin_1           ;
-    input   wire    [COLS_COUNTER_WIDTH -1 : 0]   cols_1          ;
-    input   wire    [WORD_WIDTH           -1 : 0]   S_AXIS_tdata    [CONV_UNITS + (KERNEL_H_MAX-1)-1 : 0];
-    input   wire                                    S_AXIS_tvalid   ;
-    output  wire                                    S_AXIS_tready   ;
-    output  wire    [WORD_WIDTH           -1 : 0]   M_AXIS_tdata    [CONV_UNITS-1 : 0];
-    output  wire                                    M_AXIS_tvalid   ;
-    input   wire                                    M_AXIS_tready   ;
-    output  wire                                    M_AXIS_tlast    ;
-    output  wire    [TUSER_WIDTH          -1 : 0]   M_AXIS_tuser    ;
-    output  wire    [KERNEL_H_WIDTH       -1 : 0]   kernel_h_1_out  ;
-    output  wire    [KERNEL_W_WIDTH       -1 : 0]   kernel_w_1_out  ;
+    input   logic    [KERNEL_H_WIDTH       -1 : 0]   kernel_h_1_in   ;
+    input   logic    [KERNEL_W_WIDTH       -1 : 0]   kernel_w_1_in   ;
+    input   logic                                    is_max          ;
+    input   logic                                    is_relu         ;
+    input   logic    [CIN_COUNTER_WIDTH    -1 : 0]   cin_1           ;
+    input   logic    [COLS_COUNTER_WIDTH -1 : 0]   cols_1          ;
+    input   logic    [WORD_WIDTH           -1 : 0]   S_AXIS_tdata    [CONV_UNITS + (KERNEL_H_MAX-1)-1 : 0];
+    input   logic                                    S_AXIS_tvalid   ;
+    output  logic                                    S_AXIS_tready   ;
+    output  logic    [WORD_WIDTH           -1 : 0]   M_AXIS_tdata    [CONV_UNITS-1 : 0];
+    output  logic                                    M_AXIS_tvalid   ;
+    input   logic                                    M_AXIS_tready   ;
+    output  logic                                    M_AXIS_tlast    ;
+    output  logic    [TUSER_WIDTH          -1 : 0]   M_AXIS_tuser    ;
+    output  logic    [KERNEL_H_WIDTH       -1 : 0]   kernel_h_1_out  ;
+    output  logic    [KERNEL_W_WIDTH       -1 : 0]   kernel_w_1_out  ;
 
 
     /* 
@@ -113,12 +113,12 @@ module axis_shift_buffer#(
     * Registered at "start"
     */
 
-    wire                                    is_max_reg_out       ;
-    wire                                    is_relu_reg_out      ;
-    wire    [CIN_COUNTER_WIDTH -1 : 0]      cin_1_reg_out        ;
-    wire    [COLS_COUNTER_WIDTH-1 : 0]    cols_1_reg_out     ;
-    wire                                    is_1x1_in            ;
-    wire                                    is_1x1_reg_out           ;
+    logic                                    is_max_reg_out       ;
+    logic                                    is_relu_reg_out      ;
+    logic    [CIN_COUNTER_WIDTH -1 : 0]      cin_1_reg_out        ;
+    logic    [COLS_COUNTER_WIDTH-1 : 0]    cols_1_reg_out     ;
+    logic                                    is_1x1_in            ;
+    logic                                    is_1x1_reg_out           ;
     
     assign    is_1x1_in = (kernel_h_1_in == KERNEL_H_WIDTH'('d0));          
 
@@ -224,10 +224,12 @@ module axis_shift_buffer#(
     HANDSHAKES
     */
 
-    wire slice_M_AXIS_tvalid;
+    logic slice_M_AXIS_tvalid;
+
+    logic insert, remove;
         
-    wire insert = slice_M_AXIS_tvalid && M_AXIS_tready;
-    wire remove = M_AXIS_tvalid       && M_AXIS_tready;
+    assign insert = slice_M_AXIS_tvalid && M_AXIS_tready;
+    assign remove = M_AXIS_tvalid       && M_AXIS_tready;
 
     // STATE
     /*
@@ -251,7 +253,7 @@ module axis_shift_buffer#(
     */
 
 
-    wire [CIN_COUNTER_WIDTH-1 : 0] selected_count;
+    logic [CIN_COUNTER_WIDTH-1 : 0] selected_count;
     /*
     * CELLOTAPES
     
@@ -267,13 +269,15 @@ module axis_shift_buffer#(
     */
 
 
-    assign selected_count = (kernel_h_1_out == 0) ? cin_count+1 : cin_count;        
-    wire tlast_in = (state_data_in == kernel_h_1_out) && (selected_count == cin_1_reg_out);
+    assign selected_count = (kernel_h_1_out == 0) ? cin_count+1 : cin_count;
+
+    logic  tlast_in;
+    assign tlast_in = (state_data_in == kernel_h_1_out) && (selected_count == cin_1_reg_out);
 
 
-    wire [KERNEL_H_WIDTH-1:0]  state_data_in;
-    reg  [KERNEL_H_WIDTH-1:0]  state_next;
-    wire update_state;
+    logic [KERNEL_H_WIDTH-1:0]  state_data_in;
+    logic [KERNEL_H_WIDTH-1:0]  state_next;
+    logic update_state;
     
     assign update_state = insert || remove;
 
@@ -314,14 +318,15 @@ module axis_shift_buffer#(
 
     */
 
-    wire [WORD_WIDTH * (CONV_UNITS + (KERNEL_H_MAX-1)) - 1 : 0]  slice_M_AXIS_tdata;
-    wire [WORD_WIDTH * (CONV_UNITS + (KERNEL_H_MAX-1)) - 1 : 0]  slice_S_AXIS_tdata;
+    logic [WORD_WIDTH * (CONV_UNITS + (KERNEL_H_MAX-1)) - 1 : 0]  slice_M_AXIS_tdata;
+    logic [WORD_WIDTH * (CONV_UNITS + (KERNEL_H_MAX-1)) - 1 : 0]  slice_S_AXIS_tdata;
 
     for (i=0; i < CONV_UNITS + (KERNEL_H_MAX-1) ; i++) begin
         assign slice_S_AXIS_tdata  [(i+1) * WORD_WIDTH -1 : i * WORD_WIDTH] =   S_AXIS_tdata[i];
     end
 
-    wire slice_M_AXIS_tready = (state_data_in==0) && M_AXIS_tready;
+    logic  slice_M_AXIS_tready;
+    assign slice_M_AXIS_tready = (state_data_in==0) && M_AXIS_tready;
     
     axis_register_slice_data_buffer reg_slice (
       .aclk(aclk),                    
@@ -339,8 +344,9 @@ module axis_shift_buffer#(
 
     * Tied to master_data
     */
-    reg m_valid_next;    
-    wire data_clken = ((state_data_in == 0) && insert) || remove;
+    logic m_valid_next;    
+    logic  data_clken;
+    assign data_clken = ((state_data_in == 0) && insert) || remove;
 
     /*
     * Problem At the start: 
@@ -393,7 +399,7 @@ module axis_shift_buffer#(
     * State of data beat available on the output side
     */
 
-    wire [KERNEL_H_WIDTH-1  :0]     state_data_out;
+    logic [KERNEL_H_WIDTH-1  :0]     state_data_out;
 
     register
     #(
@@ -421,13 +427,13 @@ module axis_shift_buffer#(
     */
 
 
-    wire    [WORD_WIDTH-1:0]    slice_m_data    [CONV_UNITS + (KERNEL_H_MAX-1)-1:0];
-    wire    [WORD_WIDTH-1:0]    selected_data   [CONV_UNITS + (KERNEL_H_MAX-1)-1:0];
-    wire    [WORD_WIDTH-1:0]    data_out        [CONV_UNITS + (KERNEL_H_MAX-1)-1:0];
-    wire    [WORD_WIDTH-1:0]    m_data          [CONV_UNITS  -1:0];
+    logic [WORD_WIDTH-1:0] slice_m_data    [CONV_UNITS + (KERNEL_H_MAX-1)-1:0];
+    logic [WORD_WIDTH-1:0] selected_data   [CONV_UNITS + (KERNEL_H_MAX-1)-1:0];
+    logic [WORD_WIDTH-1:0] data_out        [CONV_UNITS + (KERNEL_H_MAX-1)-1:0];
+    logic [WORD_WIDTH-1:0] m_data          [CONV_UNITS  -1:0];
 
-    wire resetn_data;
-    wire reset_data = !aresetn || (state_data_in==-KERNEL_H_WIDTH'('d1) && remove);
+    logic resetn_data, reset_data;
+    assign reset_data = !aresetn || (state_data_in==-KERNEL_H_WIDTH'('d1) && remove);
 
     generate
 
@@ -478,8 +484,8 @@ module axis_shift_buffer#(
         - count_out points to the ch_in of the data available at M_AXIS_tdata at this clock
     */
 
-    wire [CIN_COUNTER_WIDTH-1 : 0]   cin_count, cin_count_next;
-    wire                             counter_clken;
+    logic [CIN_COUNTER_WIDTH-1 : 0]   cin_count, cin_count_next;
+    logic                             counter_clken;
 
     assign counter_clken = remove && (state_data_in == 0);
     assign cin_count_next    = (cin_count == cin_1_reg_out) ? 0 : cin_count + 1;
@@ -528,11 +534,12 @@ module axis_shift_buffer#(
     * cols_1_k2     = cols_count == COLS - 2
     */
 
-    wire [COLS_COUNTER_WIDTH-1 : 0] cols_in;
-    wire [COLS_COUNTER_WIDTH-1 : 0] cols_count ;
+    logic cols_clken;
+    logic [COLS_COUNTER_WIDTH-1 : 0] cols_in;
+    logic [COLS_COUNTER_WIDTH-1 : 0] cols_count ;
 
     assign cols_in = (cols_count == cols_1) ? 0 : cols_count + 1;
-    wire cols_clken = M_AXIS_tlast && remove;
+    assign cols_clken = M_AXIS_tlast && remove;
 
     register
     #(
@@ -548,8 +555,8 @@ module axis_shift_buffer#(
         .data_out       (cols_count)
     );
 
-    wire    is_cols_1_k2_in = cols_count == (cols_1 - kernel_w_1_out/2 -1);
-    wire    is_cols_1_k2_out;
+    logic  is_cols_1_k2_out, is_cols_1_k2_in;
+    assign is_cols_1_k2_in = cols_count == (cols_1 - kernel_w_1_out/2 -1);
 
     register
     #(
