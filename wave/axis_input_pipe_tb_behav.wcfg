@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="axis_input_pipe_tb_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="axis_input_pipe_tb" />
+            <top_module name="glbl" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="737620000fs"></ZoomStartTime>
+      <ZoomEndTime time="822620001fs"></ZoomEndTime>
+      <Cursor1Time time="786820000fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="220"></NameColumnWidth>
+      <ValueColumnWidth column_width="58"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="45" />
+   <wvobject fp_name="/axis_input_pipe_tb/aclk" type="logic">
+      <obj_property name="ElementShortName">aclk</obj_property>
+      <obj_property name="ObjectShortName">aclk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/aresetn" type="logic">
+      <obj_property name="ElementShortName">aresetn</obj_property>
+      <obj_property name="ObjectShortName">aresetn</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/start_1" type="array">
+      <obj_property name="ElementShortName">start_1[31:0]</obj_property>
+      <obj_property name="ObjectShortName">start_1[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/start_2" type="array">
+      <obj_property name="ElementShortName">start_2[31:0]</obj_property>
+      <obj_property name="ObjectShortName">start_2[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/s_words_1" type="array">
+      <obj_property name="ElementShortName">s_words_1[31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_words_1[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/s_words_2" type="array">
+      <obj_property name="ElementShortName">s_words_2[31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_words_2[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider1322">
+      <obj_property name="label">Pixels Input</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="group1327" type="group">
+      <obj_property name="label">s_pixels_1</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/axis_input_pipe_tb/s_axis_pixels_1_tready" type="logic">
+         <obj_property name="ElementShortName">s_axis_pixels_1_tready</obj_property>
+         <obj_property name="ObjectShortName">s_axis_pixels_1_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/s_axis_pixels_1_tvalid" type="logic">
+         <obj_property name="ElementShortName">s_axis_pixels_1_tvalid</obj_property>
+         <obj_property name="ObjectShortName">s_axis_pixels_1_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/s_axis_pixels_1_tlast" type="logic">
+         <obj_property name="ElementShortName">s_axis_pixels_1_tlast</obj_property>
+         <obj_property name="ObjectShortName">s_axis_pixels_1_tlast</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/s_data_pixels_1" type="array">
+         <obj_property name="ElementShortName">s_data_pixels_1[7:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">s_data_pixels_1[7:0][7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/s_axis_pixels_1_tkeep" type="array">
+         <obj_property name="ElementShortName">s_axis_pixels_1_tkeep[7:0]</obj_property>
+         <obj_property name="ObjectShortName">s_axis_pixels_1_tkeep[7:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group1328" type="group">
+      <obj_property name="label">s_pixels_2</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/axis_input_pipe_tb/s_axis_pixels_2_tready" type="logic">
+         <obj_property name="ElementShortName">s_axis_pixels_2_tready</obj_property>
+         <obj_property name="ObjectShortName">s_axis_pixels_2_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/s_axis_pixels_2_tvalid" type="logic">
+         <obj_property name="ElementShortName">s_axis_pixels_2_tvalid</obj_property>
+         <obj_property name="ObjectShortName">s_axis_pixels_2_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/s_axis_pixels_2_tlast" type="logic">
+         <obj_property name="ElementShortName">s_axis_pixels_2_tlast</obj_property>
+         <obj_property name="ObjectShortName">s_axis_pixels_2_tlast</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/s_data_pixels_2" type="array">
+         <obj_property name="ElementShortName">s_data_pixels_2[7:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">s_data_pixels_2[7:0][7:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/s_axis_pixels_2_tkeep" type="array">
+         <obj_property name="ElementShortName">s_axis_pixels_2_tkeep[7:0]</obj_property>
+         <obj_property name="ObjectShortName">s_axis_pixels_2_tkeep[7:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider1331">
+      <obj_property name="label">Image Mux</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/aclk" type="logic">
+      <obj_property name="ElementShortName">aclk</obj_property>
+      <obj_property name="ObjectShortName">aclk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/state" type="array">
+      <obj_property name="ElementShortName">state[1:0]</obj_property>
+      <obj_property name="ObjectShortName">state[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/ones_count" type="array">
+      <obj_property name="ElementShortName">ones_count[4:0]</obj_property>
+      <obj_property name="ObjectShortName">ones_count[4:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/is_max_out" type="logic">
+      <obj_property name="ElementShortName">is_max_out</obj_property>
+      <obj_property name="ObjectShortName">is_max_out</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/kernel_h_1_out" type="array">
+      <obj_property name="ElementShortName">kernel_h_1_out[1:0]</obj_property>
+      <obj_property name="ObjectShortName">kernel_h_1_out[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/dw_1_m_ready" type="logic">
+      <obj_property name="ElementShortName">dw_1_m_ready</obj_property>
+      <obj_property name="ObjectShortName">dw_1_m_ready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/dw_1_m_valid" type="logic">
+      <obj_property name="ElementShortName">dw_1_m_valid</obj_property>
+      <obj_property name="ObjectShortName">dw_1_m_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/dw_1_m_data" type="array">
+      <obj_property name="ElementShortName">dw_1_m_data[4:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">dw_1_m_data[4:0][7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/dw_1_m_last" type="logic">
+      <obj_property name="ElementShortName">dw_1_m_last</obj_property>
+      <obj_property name="ObjectShortName">dw_1_m_last</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/dw_2_m_ready" type="logic">
+      <obj_property name="ElementShortName">dw_2_m_ready</obj_property>
+      <obj_property name="ObjectShortName">dw_2_m_ready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/dw_2_m_valid" type="logic">
+      <obj_property name="ElementShortName">dw_2_m_valid</obj_property>
+      <obj_property name="ObjectShortName">dw_2_m_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/dw_2_m_data" type="array">
+      <obj_property name="ElementShortName">dw_2_m_data[4:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">dw_2_m_data[4:0][7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/m_axis_tready" type="logic">
+      <obj_property name="ElementShortName">m_axis_tready</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/m_axis_tvalid" type="logic">
+      <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/m_data_1" type="array">
+      <obj_property name="ElementShortName">m_data_1[4:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data_1[4:0][7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/m_data_2" type="array">
+      <obj_property name="ElementShortName">m_data_2[4:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data_2[4:0][7:0]</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider1348">
+      <obj_property name="label">Pixel shifter_1</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/aclk" type="logic">
+      <obj_property name="ElementShortName">aclk</obj_property>
+      <obj_property name="ObjectShortName">aclk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/s_axis_tready" type="logic">
+      <obj_property name="ElementShortName">s_axis_tready</obj_property>
+      <obj_property name="ObjectShortName">s_axis_tready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/s_axis_tvalid" type="logic">
+      <obj_property name="ElementShortName">s_axis_tvalid</obj_property>
+      <obj_property name="ObjectShortName">s_axis_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/s_data" type="array">
+      <obj_property name="ElementShortName">s_data[4:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">s_data[4:0][7:0]</obj_property>
+      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/s_data[4]" type="array">
+         <obj_property name="ElementShortName">[4][7:0]</obj_property>
+         <obj_property name="ObjectShortName">[4][7:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/s_data[3]" type="array">
+         <obj_property name="ElementShortName">[3][7:0]</obj_property>
+         <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/s_data[2]" type="array">
+         <obj_property name="ElementShortName">[2][7:0]</obj_property>
+         <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/s_data[1]" type="array">
+         <obj_property name="ElementShortName">[1][7:0]</obj_property>
+         <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/s_data[0]" type="array">
+         <obj_property name="ElementShortName">[0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/s_data_decentered" type="array">
+      <obj_property name="ElementShortName">s_data_decentered[4:0][1:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">s_data_decentered[4:0][1:0][7:0]</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/count" type="array">
+      <obj_property name="ElementShortName">count[1:0]</obj_property>
+      <obj_property name="ObjectShortName">count[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/count_next" type="array">
+      <obj_property name="ElementShortName">count_next[1:0]</obj_property>
+      <obj_property name="ObjectShortName">count_next[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/slice_s_ready" type="logic">
+      <obj_property name="ElementShortName">slice_s_ready</obj_property>
+      <obj_property name="ObjectShortName">slice_s_ready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/slice_s_valid" type="logic">
+      <obj_property name="ElementShortName">slice_s_valid</obj_property>
+      <obj_property name="ObjectShortName">slice_s_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/buf_data_out" type="array">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">buf_data_out[4:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">buf_data_out[4:0][7:0]</obj_property>
+      <obj_property name="label">buf_data_out_1[2:0][7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/buf_data_out" type="array">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">buf_data_out[4:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">buf_data_out[4:0][7:0]</obj_property>
+      <obj_property name="label">buf_data_out_2[2:0][7:0]</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider1357">
+      <obj_property name="label">Output</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/aclk" type="logic">
+      <obj_property name="ElementShortName">aclk</obj_property>
+      <obj_property name="ObjectShortName">aclk</obj_property>
+   </wvobject>
+   <wvobject fp_name="group1329" type="group">
+      <obj_property name="label">m_pixels</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/axis_input_pipe_tb/m_axis_tready" type="logic">
+         <obj_property name="ElementShortName">m_axis_tready</obj_property>
+         <obj_property name="ObjectShortName">m_axis_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/m_axis_tvalid" type="logic">
+         <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
+         <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/m_data_pixels_2" type="array">
+         <obj_property name="ElementShortName">m_data_pixels_2[2:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">m_data_pixels_2[2:0][7:0]</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/axis_input_pipe_tb/m_data_pixels_2[2]" type="array">
+            <obj_property name="ElementShortName">[2][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+            <obj_property name="CustomSignalColor">#FFA500</obj_property>
+            <obj_property name="UseCustomSignalColor">true</obj_property>
+         </wvobject>
+         <wvobject fp_name="/axis_input_pipe_tb/m_data_pixels_2[1]" type="array">
+            <obj_property name="ElementShortName">[1][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+            <obj_property name="CustomSignalColor">#FFA500</obj_property>
+            <obj_property name="UseCustomSignalColor">true</obj_property>
+         </wvobject>
+         <wvobject fp_name="/axis_input_pipe_tb/m_data_pixels_2[0]" type="array">
+            <obj_property name="ElementShortName">[0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+            <obj_property name="CustomSignalColor">#FFA500</obj_property>
+            <obj_property name="UseCustomSignalColor">true</obj_property>
+         </wvobject>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/m_data_pixels_1" type="array">
+         <obj_property name="ElementShortName">m_data_pixels_1[2:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">m_data_pixels_1[2:0][7:0]</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/axis_input_pipe_tb/m_data_pixels_1[2]" type="array">
+            <obj_property name="ElementShortName">[2][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+            <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+            <obj_property name="UseCustomSignalColor">true</obj_property>
+         </wvobject>
+         <wvobject fp_name="/axis_input_pipe_tb/m_data_pixels_1[1]" type="array">
+            <obj_property name="ElementShortName">[1][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+            <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+            <obj_property name="UseCustomSignalColor">true</obj_property>
+         </wvobject>
+         <wvobject fp_name="/axis_input_pipe_tb/m_data_pixels_1[0]" type="array">
+            <obj_property name="ElementShortName">[0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+            <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+            <obj_property name="UseCustomSignalColor">true</obj_property>
+         </wvobject>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/status" type="array">
+      <obj_property name="ElementShortName">status[31:0]</obj_property>
+      <obj_property name="ObjectShortName">status[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/file_im_1" type="array">
+      <obj_property name="ElementShortName">file_im_1[31:0]</obj_property>
+      <obj_property name="ObjectShortName">file_im_1[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/file_im_2" type="array">
+      <obj_property name="ElementShortName">file_im_2[31:0]</obj_property>
+      <obj_property name="ObjectShortName">file_im_2[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="group1321" type="group">
+      <obj_property name="label">Params</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/axis_input_pipe_tb/CLK_PERIOD" type="array">
+         <obj_property name="ElementShortName">CLK_PERIOD[31:0]</obj_property>
+         <obj_property name="ObjectShortName">CLK_PERIOD[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/UNITS" type="array">
+         <obj_property name="ElementShortName">UNITS[31:0]</obj_property>
+         <obj_property name="ObjectShortName">UNITS[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/WORD_WIDTH" type="array">
+         <obj_property name="ElementShortName">WORD_WIDTH[31:0]</obj_property>
+         <obj_property name="ObjectShortName">WORD_WIDTH[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/KERNEL_H_MAX" type="array">
+         <obj_property name="ElementShortName">KERNEL_H_MAX[31:0]</obj_property>
+         <obj_property name="ObjectShortName">KERNEL_H_MAX[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/BITS_KERNEL_H_MAX" type="array">
+         <obj_property name="ElementShortName">BITS_KERNEL_H_MAX[31:0]</obj_property>
+         <obj_property name="ObjectShortName">BITS_KERNEL_H_MAX[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/BEATS_CONFIG_3X3_1" type="array">
+         <obj_property name="ElementShortName">BEATS_CONFIG_3X3_1[31:0]</obj_property>
+         <obj_property name="ObjectShortName">BEATS_CONFIG_3X3_1[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/BEATS_CONFIG_1X1_1" type="array">
+         <obj_property name="ElementShortName">BEATS_CONFIG_1X1_1[31:0]</obj_property>
+         <obj_property name="ObjectShortName">BEATS_CONFIG_1X1_1[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/TUSER_WIDTH_IM_IN" type="array">
+         <obj_property name="ElementShortName">TUSER_WIDTH_IM_IN[31:0]</obj_property>
+         <obj_property name="ObjectShortName">TUSER_WIDTH_IM_IN[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/TKEEP_WIDTH_IM_IN" type="array">
+         <obj_property name="ElementShortName">TKEEP_WIDTH_IM_IN[31:0]</obj_property>
+         <obj_property name="ObjectShortName">TKEEP_WIDTH_IM_IN[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/UNITS_EDGES" type="array">
+         <obj_property name="ElementShortName">UNITS_EDGES[31:0]</obj_property>
+         <obj_property name="ObjectShortName">UNITS_EDGES[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/IM_IN_S_DATA_WORDS" type="array">
+         <obj_property name="ElementShortName">IM_IN_S_DATA_WORDS[31:0]</obj_property>
+         <obj_property name="ObjectShortName">IM_IN_S_DATA_WORDS[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/BITS_OTHER" type="array">
+         <obj_property name="ElementShortName">BITS_OTHER[31:0]</obj_property>
+         <obj_property name="ObjectShortName">BITS_OTHER[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/I_IM_IN_IS_MAXPOOL" type="array">
+         <obj_property name="ElementShortName">I_IM_IN_IS_MAXPOOL[31:0]</obj_property>
+         <obj_property name="ObjectShortName">I_IM_IN_IS_MAXPOOL[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/I_IM_IN_KERNEL_H_1" type="array">
+         <obj_property name="ElementShortName">I_IM_IN_KERNEL_H_1[31:0]</obj_property>
+         <obj_property name="ObjectShortName">I_IM_IN_KERNEL_H_1[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/BEATS_2" type="array">
+         <obj_property name="ElementShortName">BEATS_2[31:0]</obj_property>
+         <obj_property name="ObjectShortName">BEATS_2[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/WORDS_2" type="array">
+         <obj_property name="ElementShortName">WORDS_2[31:0]</obj_property>
+         <obj_property name="ObjectShortName">WORDS_2[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/BEATS_1" type="array">
+         <obj_property name="ElementShortName">BEATS_1[31:0]</obj_property>
+         <obj_property name="ObjectShortName">BEATS_1[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/WORDS_1" type="array">
+         <obj_property name="ElementShortName">WORDS_1[31:0]</obj_property>
+         <obj_property name="ObjectShortName">WORDS_1[31:0]</obj_property>
+      </wvobject>
+   </wvobject>
+</wave_config>
