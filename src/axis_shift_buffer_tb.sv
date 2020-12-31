@@ -3,7 +3,7 @@
 module axis_shift_buffer_tb();
     parameter IS_FIXED_POINT        = 0 ;
     parameter CLK_PERIOD            = 10;
-    parameter DATA_WIDTH            = 16;
+    parameter WORD_WIDTH            = 16;
     parameter CONV_UNITS            = 8;
     parameter KERNEL_H_MAX          = 3;
     parameter KERNEL_W_MAX          = 3;
@@ -25,31 +25,30 @@ module axis_shift_buffer_tb();
     localparam KERNEL_W_WIDTH       = $clog2(KERNEL_W_MAX + 1);
 
 
-    reg                                         aclk                    = 0;
-    reg                                         aresetn                 = 1;
-    reg                                         start                   = 0;
-    reg                                         S_AXIS_tvalid           = 0;
-    reg                                         M_AXIS_tready           = 0;
+    logic                                       aclk                    = 0;
+    logic                                       aresetn                 = 1;
+    logic                                       start                   = 0;
+    logic                                       S_AXIS_tvalid           = 0;
+    logic                                       M_AXIS_tready           = 0;
 
-    wire                                        S_AXIS_tready;
-    wire                                        M_AXIS_tvalid;
-    wire                                        M_AXIS_tlast;
-    wire [TUSER_WIDTH     -1     : 0]           M_AXIS_tuser;
-    wire [KERNEL_H_WIDTH  -1     : 0]           kernel_h_1_out;
-    wire [KERNEL_W_WIDTH  -1     : 0]           kernel_w_1_out;
+    logic                                       S_AXIS_tready;
+    logic                                       M_AXIS_tvalid;
+    logic                                       M_AXIS_tlast;
+    logic[TUSER_WIDTH     -1     : 0]           M_AXIS_tuser;
+    logic[KERNEL_H_WIDTH  -1     : 0]           kernel_h_1_out;
+    logic[KERNEL_W_WIDTH  -1     : 0]           kernel_w_1_out;
 
-    reg  [DATA_WIDTH-1 : 0] s_data [CONV_UNITS+(KERNEL_H_MAX-1)-1:0] = '{default:0};
-    wire [DATA_WIDTH-1 : 0] m_data [CONV_UNITS-1:0];
+    logic[WORD_WIDTH-1 : 0] s_data [CONV_UNITS+(KERNEL_H_MAX-1)-1:0] = '{default:0};
+    logic[WORD_WIDTH-1 : 0] m_data [CONV_UNITS-1:0];
 
 axis_shift_buffer
 #(
-    .DATA_WIDTH         (DATA_WIDTH),
+    .WORD_WIDTH         (WORD_WIDTH),
     .CONV_UNITS         (CONV_UNITS),
     .KERNEL_H_MAX       (KERNEL_H_MAX),
     .KERNEL_W_MAX       (KERNEL_W_MAX),
     .CIN_COUNTER_WIDTH  (CIN_COUNTER_WIDTH),
     .COLS_COUNTER_WIDTH (COLS_COUNTER_WIDTH),
-    .ONE                (ONE               ),
     .TUSER_WIDTH        (TUSER_WIDTH       ),
     .INDEX_IS_1x1       (INDEX_IS_1x1      ),
     .INDEX_IS_MAX       (INDEX_IS_MAX      ),
