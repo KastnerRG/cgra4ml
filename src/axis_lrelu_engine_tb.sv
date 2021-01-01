@@ -9,7 +9,7 @@ module axis_lrelu_engine_tb();
     forever #(CLK_PERIOD/2) aclk <= ~aclk;
   end
 
-  localparam IS_3X3  = 1;
+  localparam IS_3X3  = 0;
   localparam IS_RELU = 1;
 
   localparam WORD_WIDTH_IN     = 32;
