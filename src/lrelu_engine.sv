@@ -206,7 +206,7 @@ module lrelu_engine #(
 
   n_delay #(
     .N          (LATENCY_FIXED_2_FLOAT),
-    .DATA_WIDTH (4)
+    .WORD_WIDTH (4)
   ) W_SEL_BRAM_1 (
     .clk      (clk),
     .resetn   (resetn),
@@ -217,7 +217,7 @@ module lrelu_engine #(
   logic w_sel_bram_2;
   n_delay #(
     .N          (LATENCY_FLOAT_32),
-    .DATA_WIDTH (1)
+    .WORD_WIDTH (1)
   ) W_SEL_BRAM_2 (
     .clk      (clk),
     .resetn   (resetn),
@@ -229,7 +229,7 @@ module lrelu_engine #(
   logic valid_config_1;
   n_delay #(
     .N          (LATENCY_FIXED_2_FLOAT),
-    .DATA_WIDTH (1)
+    .WORD_WIDTH (1)
   ) CONFIG_VALID_1 (
     .clk      (clk),
     .resetn   (resetn),
@@ -240,7 +240,7 @@ module lrelu_engine #(
   logic valid_config_2;
   n_delay #(
     .N          (LATENCY_FLOAT_32),
-    .DATA_WIDTH (1)
+    .WORD_WIDTH (1)
   ) CONFIG_VALID_2 (
     .clk      (clk),
     .resetn   (resetn),
@@ -252,7 +252,7 @@ module lrelu_engine #(
   logic resetn_config_1;
   n_delay #(
     .N          (LATENCY_FIXED_2_FLOAT),
-    .DATA_WIDTH (1)
+    .WORD_WIDTH (1)
   ) CONFIG_RESETN_1 (
     .clk      (clk),
     .resetn   (resetn),
@@ -263,7 +263,7 @@ module lrelu_engine #(
   logic resetn_config_2;
   n_delay #(
     .N          (LATENCY_FLOAT_32),
-    .DATA_WIDTH (1)
+    .WORD_WIDTH (1)
   ) CONFIG_RESETN_2 (
     .clk      (clk),
     .resetn   (resetn),
@@ -275,7 +275,7 @@ module lrelu_engine #(
   logic is_3x3_config_1;
   n_delay #(
     .N          (LATENCY_FIXED_2_FLOAT),
-    .DATA_WIDTH (1)
+    .WORD_WIDTH (1)
   ) CONFIG_3x3_1 (
     .clk      (clk),
     .resetn   (resetn),
@@ -296,10 +296,10 @@ module lrelu_engine #(
   assign s_user_fma_1 = TUSER_WIDTH_LRELU_FMA_1'(m_user_float32);
   assign s_user_fma_2 = TUSER_WIDTH_MAXPOOL'(m_user_fma_1);
   
-  logic [BITS_BRAM_R_DEPTH-1:0] b_r_addr_max_1; 
-  logic [BITS_BRAM_W_DEPTH-1:0] b_w_addr_max_1;
-  assign b_w_addr_max_1 = is_3x3_config_1          ? BRAM_W_DEPTH_3X3-1 : BRAM_W_DEPTH_1X1-1;
-  assign b_r_addr_max_1 = m_user_float32[I_IS_3X3] ? BRAM_R_DEPTH_3X3-1 : BRAM_R_DEPTH_1X1-1;
+  logic [BITS_BRAM_R_DEPTH-1:0] b_r_addr_max  ; 
+  logic [BITS_BRAM_W_DEPTH-1:0] b_w_addr_max  ;
+  assign b_w_addr_max   = is_3x3_config_1          ? BRAM_W_DEPTH_3X3-1 : BRAM_W_DEPTH_1X1-1;
+  assign b_r_addr_max   = m_user_float32[I_IS_3X3] ? BRAM_R_DEPTH_3X3-1 : BRAM_R_DEPTH_1X1-1;
 
   /*
     Declare multidimensional wires
@@ -361,7 +361,7 @@ module lrelu_engine #(
 
         n_delay #(
           .N          (LATENCY_FIXED_2_FLOAT),
-          .DATA_WIDTH (WORD_WIDTH_CONFIG * MEMBERS)
+          .WORD_WIDTH (WORD_WIDTH_CONFIG * MEMBERS)
         ) CONFIG_DATA_FLAT_1 (
           .clk      (clk),
           .resetn   (resetn),
@@ -389,8 +389,9 @@ module lrelu_engine #(
           .s_data       (config_flat_1_cg [c][g]),
           .m_data       (a_val_cg [c][g]),
           .m_ready      (m_valid_float32),
-          .r_addr_max_1 (b_r_addr_max_1),
-          .w_addr_max_1 (b_w_addr_max_1)
+          .r_addr_min   (0),
+          .r_addr_max   (b_r_addr_max  ),
+          .w_addr_max   (b_w_addr_max  )
         );
 
         /*
@@ -422,8 +423,9 @@ module lrelu_engine #(
                 .s_data       (config_flat_1_cg [c][g]),
                 .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
                 .m_ready      (b_ready_cg_clr_mtb[c][g][clr][mtb]),
-                .r_addr_max_1 (b_r_addr_max_1),
-                .w_addr_max_1 (b_w_addr_max_1)
+                .r_addr_min   (0),
+                .r_addr_max   (b_r_addr_max  ),
+                .w_addr_max   (b_w_addr_max  )
               );
             end
             else begin // Edge BRAM
@@ -441,8 +443,9 @@ module lrelu_engine #(
                 .s_data       (config_flat_1_cg [c][g]),
                 .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
                 .m_ready      (b_ready_cg_clr_mtb[c][g][clr][mtb]),
-                .r_addr_max_1 (BRAM_R_DEPTH_3X3-1),
-                .w_addr_max_1 (BRAM_W_DEPTH_3X3-1)
+                .r_addr_min   (0),
+                .r_addr_max   (BRAM_R_DEPTH_3X3-1),
+                .w_addr_max   (BRAM_W_DEPTH_3X3-1)
               );
             end
           end
@@ -466,7 +469,7 @@ module lrelu_engine #(
         */
         n_delay #(
           .N          (LATENCY_FLOAT_32),
-          .DATA_WIDTH (BRAM_R_WIDTH)
+          .WORD_WIDTH (BRAM_R_WIDTH)
         ) CONFIG_DATA_FLAT_2 (
           .clk      (clk),
           .resetn   (resetn),

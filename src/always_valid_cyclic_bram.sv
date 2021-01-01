@@ -26,7 +26,7 @@ module always_valid_cyclic_bram #(
   W_WIDTH = 8,
   R_WIDTH = 8,
   LATENCY = 3,
-  IP_TYPE = 0  // 0: depth=3m, 1: depth=m (edge) 
+  IP_TYPE = 0  // 0: depth=3m, 1: depth=m (edge) 2: weights
 )(
   clk  ,
   clken,
@@ -36,8 +36,9 @@ module always_valid_cyclic_bram #(
   m_data,
   m_valid,
   m_ready,
-  r_addr_max_1,
-  w_addr_max_1
+  r_addr_max,
+  r_addr_min,
+  w_addr_max
 );
   localparam R_DEPTH = W_DEPTH * W_WIDTH / R_WIDTH;
   localparam W_ADDR_WIDTH = $clog2(W_DEPTH);
@@ -51,8 +52,9 @@ module always_valid_cyclic_bram #(
   output logic m_valid;
   input  logic [W_WIDTH-1:0] s_data;
   output logic [R_WIDTH-1:0] m_data;
-  input  logic [R_ADDR_WIDTH-1:0] r_addr_max_1;
-  input  logic [W_ADDR_WIDTH-1:0] w_addr_max_1;
+  input  logic [R_ADDR_WIDTH-1:0] r_addr_max;
+  input  logic [R_ADDR_WIDTH-1:0] r_addr_min;
+  input  logic [W_ADDR_WIDTH-1:0] w_addr_max;
 
   
   logic m_valid_ready;
@@ -83,7 +85,7 @@ module always_valid_cyclic_bram #(
   always_comb begin
     state_next = state; // else
     unique case (state)
-      WRITE_S : if(addr_w == w_addr_max_1   && s_valid_ready) state_next = FILL_1_S;
+      WRITE_S : if(addr_w == w_addr_max   && s_valid_ready) state_next = FILL_1_S;
       FILL_1_S: if(bram_valid_out)                            state_next = FILL_2_S;
       FILL_2_S: if(w_ptr  == BUFFER_DEPTH-1)                  state_next = READ_S  ;
     endcase
@@ -115,11 +117,12 @@ module always_valid_cyclic_bram #(
   */
 
   logic [W_ADDR_WIDTH-1:0] addr_w_prev, addr_w;
-  assign addr_w = (addr_w_prev == w_addr_max_1) ? 0 : addr_w_prev + 1;
+  assign addr_w = (addr_w_prev == w_addr_max) ? 0 : addr_w_prev + 1;
 
   register #(
     .WORD_WIDTH   (W_ADDR_WIDTH), 
-    .RESET_VALUE  (-1)
+    .RESET_VALUE  (-1),
+    .LOCAL        (1)
   ) ADDR_W (
     .clock        (clk        ),
     .clock_enable (clken && s_valid_ready),
@@ -130,10 +133,14 @@ module always_valid_cyclic_bram #(
 
   /*
     BRAM READ ADDRESS
+
+    - Counts from 0
+    - Resets to r_addr_min after maxing out
+    - typically 0 but for weights, we keep this as address beyond config bits
   */
 
   logic [R_ADDR_WIDTH-1:0] addr_r, addr_r_next;
-  assign addr_r_next = (addr_r == r_addr_max_1) ? 0 : addr_r + 1;
+  assign addr_r_next = (addr_r == r_addr_max) ? r_addr_min : addr_r + 1;
 
   register #(
     .WORD_WIDTH   (R_ADDR_WIDTH), 
@@ -155,7 +162,8 @@ module always_valid_cyclic_bram #(
   logic bram_valid_out;
   n_delay #(
       .N          (LATENCY),
-      .DATA_WIDTH (1)
+      .WORD_WIDTH (1),
+      .LOCAL      (1)
   ) BRAM_VALID (
       .clk        (clk           ),
       .resetn     (resetn        ),
@@ -180,6 +188,18 @@ module always_valid_cyclic_bram #(
       );
     else if (IP_TYPE == 1)
       bram_lrelu_edge BRAM (
+        .clka (clk               ),
+        .ena  (clken             ),
+        .wea  (s_valid_ready     ),
+        .addra(addr_w            ),
+        .dina (s_data            ),
+        .clkb (clk               ),
+        .enb  (clken             ),
+        .addrb(addr_r            ),
+        .doutb(bram_r_data       )
+      );
+    else if (IP_TYPE == 2)
+      bram_weights BRAM (
         .clka (clk               ),
         .ena  (clken             ),
         .wea  (s_valid_ready     ),
