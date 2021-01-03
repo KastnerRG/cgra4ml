@@ -10,8 +10,8 @@ module axis_weight_rotator_tb ();
   
   localparam K_1      = 3-1;
   localparam CIN_1    = 4-1;
-  localparam COLS_1   = 4-1;
-  localparam BLOCKS_1 = 2-1; 
+  localparam COLS_1   = 20-1;
+  localparam BLOCKS_1 = 1-1; 
 
   localparam CORES             = 4;
   localparam WORD_WIDTH        = 8; 
@@ -101,8 +101,10 @@ module axis_weight_rotator_tb ();
   string path_weights = "D:/Vision Traffic/soc/mem_yolo/txt/weights_rot_in.txt";
   
   localparam CONFIG_BEATS_1 = K_1 == 0 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
-  localparam BEATS = CONFIG_BEATS_1+1 + (K_1+1)*(COLS_1+1);
-  localparam WORDS = BEATS * (K_1+1) * CORES;
+  localparam W_BEATS = 1 + CONFIG_BEATS_1+1 + (K_1+1)*(CIN_1+1);
+  localparam W_WORDS = (W_BEATS-1) * (K_1+1) * CORES + WEIGHTS_DMA_BITS/WORD_WIDTH;
+  localparam W_WORDS_PER_BEAT = WEIGHTS_DMA_BITS/WORD_WIDTH;
+
   int s_words_w = 0; 
 
   task axis_feed_weights;
@@ -110,16 +112,16 @@ module axis_weight_rotator_tb ();
     if (s_axis_tready) begin
       s_axis_tvalid <= 1;
 
-      for (int i=0; i < WORDS; i++) begin
+      for (int i=0; i < W_WORDS_PER_BEAT; i++) begin
 
         status = $fscanf(file_weights,"%d\n", s_data_weights[i]);
         
-        if (s_words_w < WORDS)   s_axis_tkeep[i] = 1;
+        if (s_words_w < W_WORDS) s_axis_tkeep[i] = 1;
         else                     s_axis_tkeep[i] = 0;
         s_words_w = s_words_w + 1;
       end
 
-      if (s_words_w < WORDS)     s_axis_tlast <= 0;
+      if (s_words_w < W_WORDS)   s_axis_tlast <= 0;
       else                       s_axis_tlast <= 1;
     end
   end
@@ -162,16 +164,14 @@ module axis_weight_rotator_tb ();
     m_axis_tready   <= 1;
 
     @(posedge aclk);
-    @(posedge aclk);
 
-    file_weights   = $fopen(path_weights   ,"r");
-    start_w = 1;
-    while (!(start_w == 0)) @(posedge aclk);
+    repeat(5) begin
+      @(posedge aclk);
+      file_weights   = $fopen(path_weights   ,"r");
+      start_w = 1;
+      while (!(start_w == 0)) @(posedge aclk);
+    end
 
-    @(posedge aclk);
-    file_weights   = $fopen(path_weights   ,"r");
-    start_w = 1;
-    while (!(start_w == 0)) @(posedge aclk);
     $fclose(file_weights);
   end
 

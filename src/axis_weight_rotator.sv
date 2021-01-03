@@ -6,7 +6,16 @@ Create Date: 30/12/2020
 Design Name: AXIS Weight Rotator
 Tool Versions: Vivado 2018.2
 Description: 
-            
+          - Contains two Always Valid Cyclic BRAMs and a DW converter
+          - s_data is directly from DMA. 32 bits.
+          - first beat contains ref values: {s_blocks_1, s_cols_1, s_cin_1, s_kh_1, s_kw_1}
+          - first beat bypasses DWC and loaded to ref registers
+          - Following data (lrelu_config: 21/13 m_beats + weights: k_h*cin m_beats) 
+              written into one BRAM
+          - When done_write, the BRAM is read and rotated (cols*blocks) times
+              - Total weights beats: k_h*cin*cols*blocks
+              - M_TLAST issued at last beat
+              - T_TUSER: is_config, is_1x1, kw, top, bot, cols_1_k2            
 
 Dependencies: 
 
@@ -60,16 +69,13 @@ module axis_weight_rotator (
   localparam BITS_CONFIG_COUNT    = $clog2(BEATS_CONFIG_3X3_1);
   localparam M_WIDTH              = WORD_WIDTH*CORES*KERNEL_W_MAX;
 
-  localparam BRAM_W_WIDTH = M_WIDTH;
-  localparam BRAM_R_WIDTH = M_WIDTH;
-  localparam BRAM_R_DEPTH = KERNEL_H_MAX * IM_CIN_MAX + BEATS_CONFIG_3X3_1;
-  localparam BRAM_W_DEPTH = BRAM_R_DEPTH * BRAM_R_WIDTH / BRAM_W_WIDTH;
+  localparam BRAM_WIDTH = M_WIDTH;
+  localparam BRAM_DEPTH = KERNEL_H_MAX * IM_CIN_MAX + BEATS_CONFIG_3X3_1;
 
-  localparam BITS_R_ADDR       = $clog2(BRAM_R_DEPTH);
-  localparam BITS_W_ADDR       = $clog2(BRAM_W_DEPTH);
-  localparam BITS_IM_CIN       = $clog2(IM_CIN_MAX);
-  localparam BITS_IM_BLOCKS    = $clog2(IM_BLOCKS_MAX);
-  localparam BITS_IM_COLS      = $clog2(IM_COLS_MAX);
+  localparam BITS_ADDR       = $clog2(BRAM_DEPTH);
+  localparam BITS_IM_CIN     = $clog2(IM_CIN_MAX);
+  localparam BITS_IM_BLOCKS  = $clog2(IM_BLOCKS_MAX);
+  localparam BITS_IM_COLS    = $clog2(IM_COLS_MAX);
 
   input logic aclk;
   input logic aresetn;
@@ -86,18 +92,19 @@ module axis_weight_rotator (
   output logic [TUSER_WIDTH_CONV-1:0] m_axis_tuser;
   output logic [M_WIDTH         -1:0] m_axis_tdata;
 
-  logic [WORD_WIDTH-1:0] s_data [WEIGHTS_DMA_BITS/WORD_WIDTH-1:0];
-  logic [WORD_WIDTH-1:0] m_data [CORES-1:0][KERNEL_W_MAX-1:0];
-
-  assign s_data = {>>{s_axis_tdata}};
-  assign {>>{m_axis_tdata}} = m_data;
-
   typedef logic logic_2_t [2];
   typedef logic [BITS_CONFIG_COUNT-1:0] config_2_t [2];
 
   logic dw_m_ready, dw_m_valid, dw_m_last, dw_s_valid, dw_s_ready;
-  logic [TUSER_WIDTH_CONV-1:0] dw_m_user;
-  logic [M_WIDTH         -1:0] dw_m_data;
+  logic [M_WIDTH -1:0] dw_m_data_flat;
+
+  logic [WORD_WIDTH-1:0] s_data    [WEIGHTS_DMA_BITS/WORD_WIDTH-1:0];
+  logic [WORD_WIDTH-1:0] m_data    [CORES-1:0][KERNEL_W_MAX-1:0];
+  logic [WORD_WIDTH-1:0] dw_m_data [CORES-1:0][KERNEL_W_MAX-1:0];
+
+  assign s_data    = {>>{s_axis_tdata}};
+  assign dw_m_data = {>>{dw_m_data_flat}};
+  assign m_data    = {>>{m_axis_tdata}};
   
   logic state_dw_next, state_dw, s_handshake, s_last_handshake;
 
@@ -107,27 +114,26 @@ module axis_weight_rotator (
   logic_2_t done_read_next, done_write_next, clken_ref;
   logic_2_t done_read, done_write, bram_resetn, bram_wen, bram_w_full, bram_m_ready, bram_m_valid;
 
-  logic[M_WIDTH-1:0]      bram_m_data  [2];
+  logic[M_WIDTH-1:0]    bram_m_data  [2];
   
-  logic [BITS_R_ADDR-1:0] s_r_addr_max; 
-  logic [BITS_R_ADDR-1:0] s_r_addr_min; 
-  logic [BITS_R_ADDR-1:0] r_addr_min      [2];
-  logic [BITS_R_ADDR-1:0] r_addr_max      [2];
-  logic [BITS_W_ADDR-1:0] w_addr_max_next [2];
-  logic [BITS_W_ADDR-1:0] w_addr_max      [2];
+  logic [BITS_ADDR-1:0] s_addr_max; 
+  logic [BITS_ADDR-1:0] s_addr_min; 
+  logic [BITS_ADDR-1:0] r_addr_min    [2];
+  logic [BITS_ADDR-1:0] addr_max_next [2];
+  logic [BITS_ADDR-1:0] addr_max      [2];
   logic [BITS_CONFIG_COUNT-1:0] count_config, count_config_next;
-  logic [BITS_CONFIG_COUNT-1:0] ref_config_1 [2];
 
   logic [BITS_KERNEL_W_MAX-1:0] s_kw_1, ref_1_kw [2];
   logic [BITS_KERNEL_H_MAX-1:0] s_kh_1    , count_kh    , count_next_kh    , ref_1_kh     [2];
   logic [BITS_IM_CIN      -1:0] s_cin_1   , count_cin   , count_next_cin   , ref_1_cin    [2];
   logic [BITS_IM_COLS     -1:0] s_cols_1  , count_cols  , count_next_cols  , ref_1_cols   [2];
   logic [BITS_IM_BLOCKS   -1:0] s_blocks_1, count_blocks, count_next_blocks, ref_1_blocks [2];
-
+  
+  logic en_last_kh, en_last_cin, en_last_cols, en_last_blocks;
   logic en_count_kh, en_count_cin, en_count_cols, en_count_blocks, en_count_config;
 
-  logic last_kh, last_cin, last_cols, last_blocks;
-  logic last_next_kh, last_next_cin, last_next_cols, last_next_blocks;
+  logic last_config, last_kh, last_cin, last_cols, last_blocks;
+  logic last_next_config, last_next_kh, last_next_cin, last_next_cols, last_next_blocks;
 
   axis_dw_weights_input DW (
     .aclk           (aclk),
@@ -139,21 +145,11 @@ module axis_weight_rotator (
     .s_axis_tlast   (s_axis_tlast   ),
     .m_axis_tvalid  (dw_m_valid     ),
     .m_axis_tready  (dw_m_ready     ),
-    .m_axis_tdata   (dw_m_data      ),
+    .m_axis_tdata   (dw_m_data_flat ),
     .m_axis_tlast   (dw_m_last      )
   );
-  /*
-    Extract s_data into inputs of ref registers
-    This will give error if SUM_BITS > WEIGHTS_DMA_BITS
-  */
-  localparam SUM_BITS = BITS_KERNEL_W_MAX + BITS_KERNEL_H_MAX + BITS_IM_CIN + BITS_IM_COLS + BITS_IM_BLOCKS;
-  assign {s_blocks_1, s_cols_1, s_cin_1, s_kh_1, s_kw_1} = s_axis_tdata[SUM_BITS-1:0];
-  
-  // s_r_addr_max = (s_kh_1+1)*(s_cin_1+1) = (s_kh_1 * s_cin_1) + s_kh_1 + s_cin_1 +1
-  assign s_r_addr_max = (s_kh_1 * s_cin_1) + s_kh_1 + s_cin_1 + s_r_addr_min;
-  assign s_r_addr_min = (s_kh_1==0 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1) + 1;
 
-  assign dw_m_handshake      = dw_m_valid  && dw_m_ready;
+  assign dw_m_handshake      = dw_m_valid     && dw_m_ready;
   assign dw_m_last_handshake = dw_m_handshake && dw_m_last;
 
   /*
@@ -172,7 +168,7 @@ module axis_weight_rotator (
   always_comb begin
     state_write_next = state_write;
     unique case (state_write)
-      W_IDLE_S    : if (done_read    [i_write]) state_write_next = W_GET_REF_S;
+      W_IDLE_S    : if (done_read [i_write]   ) state_write_next = W_GET_REF_S;
       W_GET_REF_S : if (s_handshake           ) state_write_next = W_WRITE_S;
       W_WRITE_S   : if (dw_m_last_handshake   ) state_write_next = W_FILL_S;    // dw_m_last_handshake and bram_w_full[w_i] should be same
       W_FILL_S    : if (bram_m_valid [i_write]) state_write_next = W_SWITCH_S;
@@ -205,9 +201,9 @@ module axis_weight_rotator (
 
   always_comb begin
 
-      en_count_config   = 0;
-      en_count_kh       = 0; 
-      count_config_next = (ref_1_kh[i_read] == 0) ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
+    en_count_config   = 0;
+    count_config_next = (ref_1_kh[i_read] == 0) ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
+    m_axis_tvalid     = 0;
 
     unique case (state_read)
       R_IDLE_S        : begin
@@ -216,9 +212,10 @@ module axis_weight_rotator (
       R_PASS_CONFIG_S : begin
                           count_config_next  = count_config -1;
                           en_count_config    = m_axis_tready;
+                          m_axis_tvalid      = 1;
                         end
       R_READ_S        : begin
-                          en_count_kh    = m_axis_tready;
+                          m_axis_tvalid      = 1;
                         end
       R_SWITCH_S      : begin
                         end
@@ -226,9 +223,9 @@ module axis_weight_rotator (
 
     state_read_next = state_read;
     unique case (state_read)
-      R_IDLE_S        : if (done_write [i_read])                               state_read_next = R_PASS_CONFIG_S;
-      R_PASS_CONFIG_S : if (count_config == 0)                                 state_read_next = R_READ_S;
-      R_READ_S        : if (en_count_blocks && (count_blocks == ref_1_blocks)) state_read_next = R_SWITCH_S;
+      R_IDLE_S        : if (done_write [i_read])            state_read_next = R_PASS_CONFIG_S;
+      R_PASS_CONFIG_S : if (count_config == 0)              state_read_next = R_READ_S;
+      R_READ_S        : if (en_count_blocks && last_blocks) state_read_next = R_SWITCH_S;
       R_SWITCH_S      : state_read_next = R_IDLE_S;
     endcase 
   end
@@ -282,16 +279,18 @@ module axis_weight_rotator (
   assign s_last_handshake = s_handshake   && s_axis_tlast;
 
   always_comb begin
+
+    state_dw_next = state_dw;
+    dw_m_ready    = (state_write == W_WRITE_S);
+
     if (state_dw == DW_BLOCK_S) begin
-      dw_m_ready    = 0;
       dw_s_valid    = 0;
       s_axis_tready = (state_write == W_GET_REF_S);
 
-      if (s_last_handshake) state_dw_next = DW_PASS_S;
+      if (s_handshake)      state_dw_next = DW_PASS_S;
     end
     else begin
-      dw_m_ready = (state_write == W_WRITE_S);
-      dw_s_valid = s_axis_tvalid;
+      dw_s_valid    = s_axis_tvalid;
       s_axis_tready = dw_s_ready;
 
       if (s_last_handshake) state_dw_next = DW_BLOCK_S;
@@ -309,8 +308,24 @@ module axis_weight_rotator (
     .data_out     (state_dw)
   );
 
+  /*
+    Extract s_data into inputs of ref registers
+    This will give error if SUM_BITS > WEIGHTS_DMA_BITS
+  */
+  localparam SUM_BITS = BITS_KERNEL_W_MAX + BITS_KERNEL_H_MAX + BITS_IM_CIN + BITS_IM_COLS + BITS_IM_BLOCKS;
+  assign {s_blocks_1, s_cols_1, s_cin_1, s_kh_1, s_kw_1} = s_axis_tdata[SUM_BITS-1:0];
+  
+  // s_addr_max = (s_kh_1+1)*(s_cin_1+1) = (s_kh_1 * s_cin_1) + s_kh_1 + s_cin_1 +1
+  assign s_addr_max = (s_kh_1 * s_cin_1) + s_kh_1 + s_cin_1 + s_addr_min;
+  assign s_addr_min = (s_kh_1==0 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1) + 1;
+
+
   generate
     for (genvar i=0; i<2; i++) begin
+
+      /*
+        FSM Output Decoders for indexed signals
+      */
 
       always_comb begin
         bram_resetn     [i] = 1;
@@ -328,7 +343,7 @@ module axis_weight_rotator (
                             clken_ref       [i] = 1;
                           end
             W_WRITE_S   : begin
-                            bram_wen[i] = dw_m_handshake;
+                            bram_wen[i] = dw_m_valid;
                           end
             W_FILL_S    : begin
                           end
@@ -339,6 +354,7 @@ module axis_weight_rotator (
         end
 
         done_read_next[i]    = done_read[i];
+        bram_m_ready  [i]    = 0;
 
         if (i==i_read) begin
           unique case (state_read)
@@ -346,8 +362,10 @@ module axis_weight_rotator (
                               end
             R_PASS_CONFIG_S : begin
                                 done_read_next [i] = 0;
+                                bram_m_ready   [i] = m_axis_tready;
                               end
             R_READ_S        : begin
+                                bram_m_ready   [i] = m_axis_tready;
                               end
             R_SWITCH_S      : begin
                                 done_read_next [i] = 1;
@@ -357,24 +375,42 @@ module axis_weight_rotator (
       end
 
       always_valid_cyclic_bram #(
-        .W_DEPTH (BRAM_W_DEPTH), 
-        .W_WIDTH (BRAM_W_WIDTH),
-        .R_WIDTH (BRAM_R_WIDTH),
+        .W_DEPTH (BRAM_DEPTH), 
+        .W_WIDTH (BRAM_WIDTH),
+        .R_WIDTH (BRAM_WIDTH),
         .LATENCY (BRAM_LATENCY),
         .IP_TYPE (2)
       ) BRAM (
         .clk          (aclk),
         .clken        (1'b1),
         .resetn       (aresetn && bram_resetn [i]),
-        .s_data       (dw_m_data),
+        .s_data       (dw_m_data_flat),
         .s_valid_ready(bram_wen    [i]),
         .m_data       (bram_m_data [i]),
         .m_ready      (bram_m_ready[i]),
+        .m_valid      (bram_m_valid[i]),
         .w_full       (bram_w_full [i]),
         .r_addr_min   (r_addr_min  [i]),
-        .r_addr_max   (r_addr_max  [i]),
-        .w_addr_max   (w_addr_max  [i])
+        .r_addr_max   (addr_max    [i]),
+        .w_addr_max   (addr_max    [i])
       );
+
+      /*
+        DONE FLAGS
+
+        - To synchronize the two FSMs: read and write
+
+        done_write[i]
+          - When FSM_write starts writing to BRAM_0, it sets done_write[0] = 0
+          - Then, even if FSM_read wants to start reading BRAM_0, it will wait in IDLE state
+          - When FSM_write finishes writing to BRAM_0, it sets done_write[0] = 1
+          - FSM_read sees this, gets out of IDLE and starts reading BRAM_0
+
+        done_read[i]
+          - When FSM_read starts reading BRAM_0, it sets done_read[0] = 0
+          - Even if FSM_write wants to write to BRAM_0, it waits in IDLE
+          - When FSM_read finishes, it sets 1, FSM_write gets out of IDLE and starts reading
+      */
       
       register #(
         .WORD_WIDTH   (1), 
@@ -396,21 +432,14 @@ module axis_weight_rotator (
         .data_in      (done_read_next[i]),
         .data_out     (done_read     [i])
       );
-      register #(
-        .WORD_WIDTH   (BITS_W_ADDR), 
-        .RESET_VALUE  (0)
-      ) W_ADDR_MAX (
-        .clock        (aclk),
-        .clock_enable (1'b1),
-        .resetn       (aresetn),
-        .data_in      (w_addr_max_next[i]),
-        .data_out     (w_addr_max     [i])
-      );
 
       /*
         REFERENCE REGISTERS
 
-        - clken_ref [i_write] = (state == W_GET_REF_S)
+        - We bypass DW converter and take s_data, since that has lower width (32)
+        - Directly connect s_data (sliced appropriately) to ref registers
+        - Enabled during GET_REF state:
+          - clken_ref [i_write] = (state == W_GET_REF_S)
       */
 
       register #(
@@ -463,29 +492,28 @@ module axis_weight_rotator (
         .clock_enable (clken_ref    [i]),
         .data_out     (ref_1_blocks [i])
       );
-
       /*
         Address Max, Min registers:
       */
       register #(
-        .WORD_WIDTH   (BITS_R_ADDR), 
+        .WORD_WIDTH   (BITS_ADDR), 
         .RESET_VALUE  (0)
       ) R_ADDR_MIN (
         .clock        (aclk),
         .clock_enable (clken_ref  [i]),
         .resetn       (aresetn),
-        .data_in      (s_r_addr_min),
+        .data_in      (s_addr_min),
         .data_out     (r_addr_min [i])
       );
       register #(
-        .WORD_WIDTH   (BITS_R_ADDR), 
+        .WORD_WIDTH   (BITS_ADDR), 
         .RESET_VALUE  (0)
-      ) R_ADDR_MAX (
+      ) ADDR_MAX (
         .clock        (aclk),
         .clock_enable (clken_ref  [i]),
         .resetn       (aresetn),
-        .data_in      (s_r_addr_max),
-        .data_out     (r_addr_max [i])
+        .data_in      (s_addr_max),
+        .data_out     (addr_max [i])
       );
 
     end
@@ -494,34 +522,43 @@ module axis_weight_rotator (
   /*
     COUNTER REGISTERS
 
-    - en_count_config = (state_read == R_PASS_CONFIG_S) ? m_axis_tready : 0;
-    - en_count_kh    = (state_read == R_READ_S       ) ? m_axis_tready : 0;
+    - Nested counters: k_h -> cin -> cols -> blocks
+    - Down-counters
+      - count from (ref-1) to 0
+      - check 1, delay by 1 to get (count == 0)
+        - (count==1) check will fail if ref = 1, that is ref_1 == 0
+        - if ref_1==0, always last_next
+        - This will fail at ref=0, but who the fuck counts to zero?
+
+    - Enable
+      - At last_config, to accept (ref-1) for the first time
+      - At the last beat of smaller counter
   */
 
-  register #(
-    .WORD_WIDTH   (BITS_CONFIG_COUNT), 
-    .RESET_VALUE  (0)
-  ) CONFIG_COUNT (
-    .clock        (aclk),
-    .resetn       (aresetn),
-    .clock_enable (en_count_config),
-    .data_in      (count_config_next),
-    .data_out     (count_config)
-  );
+  assign en_last_kh        = m_axis_tready  && state_read == R_READ_S;
+  assign en_last_cin       = en_count_kh    && last_kh  ;
+  assign en_last_cols      = en_count_cin   && last_cin ;
+  assign en_last_blocks    = en_count_cols  && last_cols;
 
-  assign count_next_kh     = last_kh     ? ref_1_kh    [i_read] : count_kh     - 1;
-  assign count_next_cin    = last_cin    ? ref_1_cin   [i_read] : count_cin    - 1;
-  assign count_next_cols   = last_cols   ? ref_1_cols  [i_read] : count_cols   - 1;
-  assign count_next_blocks = last_blocks ? ref_1_blocks[i_read] : count_blocks - 1;
+  assign en_count_kh       = en_last_kh     || last_config;
+  assign en_count_cin      = en_last_cin    || last_config;
+  assign en_count_cols     = en_last_cols   || last_config;
+  assign en_count_blocks   = en_last_blocks || last_config;
 
-  assign last_next_kh      = (count_kh     == 1);
-  assign last_next_cin     = (count_cin    == 1);
-  assign last_next_cols    = (count_cols   == 1);
-  assign last_next_blocks  = (count_blocks == 1);
+  assign count_next_kh     = (last_kh       || last_config) ? ref_1_kh    [i_read] : count_kh     - 1;
+  assign count_next_cin    = (last_cin      || last_config) ? ref_1_cin   [i_read] : count_cin    - 1;
+  assign count_next_cols   = (last_cols     || last_config) ? ref_1_cols  [i_read] : count_cols   - 1;
+  assign count_next_blocks = (last_blocks   || last_config) ? ref_1_blocks[i_read] : count_blocks - 1;
 
-  assign en_count_cin      = en_count_kh     && last_kh ;
-  assign en_count_cols     = en_count_cin    && last_cin ;
-  assign en_count_blocks   = en_count_cols   && last_cols;
+  assign last_next_config  = count_config == 1;
+  assign last_next_kh      = count_kh     == 1 || ref_1_kh     == 0;
+  assign last_next_cin     = count_cin    == 1 || ref_1_cin    == 0;
+  assign last_next_cols    = count_cols   == 1 || ref_1_cols   == 0;
+  assign last_next_blocks  = count_blocks == 1 || ref_1_blocks == 0;
+
+  /*
+    TLAST and TUSER
+  */
 
   assign m_axis_tlast = last_kh && last_cin && last_cols && last_blocks;
   
@@ -530,9 +567,34 @@ module axis_weight_rotator (
   assign m_axis_tuser [I_KERNEL_W_1+BITS_KERNEL_W_MAX-1: I_KERNEL_W_1] = ref_1_kw [i_read];
   assign m_axis_tuser [I_KERNEL_H_1+BITS_KERNEL_H_MAX-1: I_KERNEL_H_1] = ref_1_kh [i_read];
 
-  assign m_axis_tuser [I_CONV_IS_COLS_1_K2] = count_cols   == ref_1_kw [i_read]/2; // i = cols-1-k/2 === [cols-1-i] = k/2
-  assign m_axis_tuser [I_LRELU_IS_TOP     ] = count_blocks == ref_1_blocks;
+  assign m_axis_tuser [I_CONV_IS_COLS_1_K2] = count_cols   == ref_1_kw     [i_read]/2; // i = cols-1-k/2 === [cols-1-i] = k/2
+  assign m_axis_tuser [I_LRELU_IS_TOP     ] = count_blocks == ref_1_blocks [i_read];
   assign m_axis_tuser [I_LRELU_IS_BOTTOM  ] = last_blocks;
+
+  assign m_axis_tdata = bram_m_data[i_read];
+
+
+  register #(
+    .WORD_WIDTH   (BITS_CONFIG_COUNT), 
+    .RESET_VALUE  (0)
+  ) COUNT_CONFIG (
+    .clock        (aclk),
+    .resetn       (aresetn),
+    .clock_enable (en_count_config),
+    .data_in      (count_config_next),
+    .data_out     (count_config)
+  );
+
+  register #(
+    .WORD_WIDTH   (1), 
+    .RESET_VALUE  (0)
+  ) LAST_CONFIG (
+    .clock        (aclk),
+    .resetn       (aresetn),
+    .data_in      (last_next_config),
+    .clock_enable (1),
+    .data_out     (last_config)
+  );
 
   register #(
     .WORD_WIDTH   (BITS_KERNEL_H_MAX), 
@@ -551,7 +613,7 @@ module axis_weight_rotator (
     .clock        (aclk),
     .resetn       (aresetn),
     .data_in      (last_next_kh),
-    .clock_enable (en_count_kh),
+    .clock_enable (en_last_kh),
     .data_out     (last_kh)
   );
   register #(
@@ -571,7 +633,7 @@ module axis_weight_rotator (
     .clock        (aclk),
     .resetn       (aresetn),
     .data_in      (last_next_cin),
-    .clock_enable (en_count_cin),
+    .clock_enable (en_last_cin),
     .data_out     (last_cin)
   );
   register #(
@@ -591,7 +653,7 @@ module axis_weight_rotator (
     .clock        (aclk),
     .resetn       (aresetn),
     .data_in      (last_next_cols),
-    .clock_enable (en_count_cols),
+    .clock_enable (en_last_cols),
     .data_out     (last_cols)
   );
   register #(
@@ -611,10 +673,9 @@ module axis_weight_rotator (
     .clock        (aclk),
     .resetn       (aresetn),
     .data_in      (last_next_blocks),
-    .clock_enable (en_count_blocks),
+    .clock_enable (en_last_blocks),
     .data_out     (last_blocks)
   );
-
-
+  
 endmodule
 
