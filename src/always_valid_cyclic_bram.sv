@@ -36,6 +36,7 @@ module always_valid_cyclic_bram #(
   m_data,
   m_valid,
   m_ready,
+  w_full,
   r_addr_max,
   r_addr_min,
   w_addr_max
@@ -49,7 +50,7 @@ module always_valid_cyclic_bram #(
 
   input  logic clk, clken, resetn;
   input  logic s_valid_ready, m_ready;
-  output logic m_valid;
+  output logic m_valid, w_full;
   input  logic [W_WIDTH-1:0] s_data;
   output logic [R_WIDTH-1:0] m_data;
   input  logic [R_ADDR_WIDTH-1:0] r_addr_max;
@@ -118,6 +119,8 @@ module always_valid_cyclic_bram #(
 
   logic [W_ADDR_WIDTH-1:0] addr_w_prev, addr_w;
   assign addr_w = (addr_w_prev == w_addr_max) ? 0 : addr_w_prev + 1;
+
+  assign w_full = addr_w == w_addr_max;
 
   register #(
     .WORD_WIDTH   (W_ADDR_WIDTH), 

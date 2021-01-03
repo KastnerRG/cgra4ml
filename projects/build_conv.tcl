@@ -14,10 +14,16 @@ set GROUPS  1
 set COPIES  1
 set MEMBERS 4
 
-set BITS_CONV_CORE          [expr int(ceil(log($GROUPS * $COPIES * $MEMBERS)/log(2)))]
+set WEIGHTS_DMA_BITS 32
+
+set CORES                   [expr "$GROUPS * $COPIES * $MEMBERS"]
+set BITS_CONV_CORE          [expr int(ceil(log($CORES)/log(2)))]
 set TUSER_WIDTH_LRELU       [expr $BITS_CONV_CORE + 8]
 set TUSER_WIDTH_LRELU_FMA_1 [expr $BITS_CONV_CORE + 4]
 set TUSER_WIDTH_MAXPOOL     [expr $BITS_CONV_CORE + 3]
+
+set BEATS_CONFIG_3X3_1 21
+set BEATS_CONFIG_1X1_1 13
 
 set KERNEL_W_MAX  3
 set KERNEL_H_MAX  3
@@ -57,6 +63,24 @@ set TID_WIDTH 0
 create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $TUSER_WIDTH CONFIG.TID_WIDTH $TID_WIDTH CONFIG.HAS_TKEEP $T_KEEP CONFIG.HAS_TLAST $T_LAST] [get_ips $IP_NAME]
 
+
+set IP_NAME "bram_weights"
+lappend IP_NAMES $IP_NAME
+set R_WIDTH [expr "$WORD_WIDTH_IN * $CORES * $KERNEL_W_MAX"]
+set R_DEPTH [expr "$KERNEL_H_MAX * $MAX_CHANNELS + $BEATS_CONFIG_3X3_1"]
+set W_WIDTH [expr "$R_WIDTH"]
+set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
+create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
+set_property -dict [list  CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A $W_WIDTH CONFIG.Write_Depth_A $W_DEPTH CONFIG.Read_Width_A $W_WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $R_WIDTH CONFIG.Read_Width_B $R_WIDTH CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100}] [get_ips $IP_NAME]
+
+set IP_NAME "axis_dw_weights_input"
+lappend IP_NAMES $IP_NAME
+set S_BYTES [expr "$WEIGHTS_DMA_BITS / 8"]
+set M_BYTES [expr "$W_WIDTH / 8"]
+set T_LAST 1
+set T_KEEP 1
+create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
 
 # set IP_NAME "multiplier"
 # lappend IP_NAMES $IP_NAME
