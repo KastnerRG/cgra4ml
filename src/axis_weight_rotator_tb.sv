@@ -102,7 +102,7 @@ module axis_weight_rotator_tb ();
   
   localparam CONFIG_BEATS_1 = K_1 == 0 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
   localparam W_BEATS = 1 + CONFIG_BEATS_1+1 + (K_1+1)*(CIN_1+1);
-  localparam W_WORDS = (W_BEATS-1) * (K_1+1) * CORES + WEIGHTS_DMA_BITS/WORD_WIDTH;
+  localparam W_WORDS = (W_BEATS-1) * KERNEL_W_MAX * CORES + WEIGHTS_DMA_BITS/WORD_WIDTH;
   localparam W_WORDS_PER_BEAT = WEIGHTS_DMA_BITS/WORD_WIDTH;
 
   int s_words_w = 0; 

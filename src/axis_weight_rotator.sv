@@ -535,7 +535,7 @@ module axis_weight_rotator (
       - At the last beat of smaller counter
   */
 
-  assign en_last_kh        = m_axis_tready  && state_read == R_READ_S;
+  assign en_last_kh        = last_config || (m_axis_tready  && state_read == R_READ_S);
   assign en_last_cin       = en_count_kh    && last_kh  ;
   assign en_last_cols      = en_count_cin   && last_cin ;
   assign en_last_blocks    = en_count_cols  && last_cols;
@@ -676,6 +676,6 @@ module axis_weight_rotator (
     .clock_enable (en_last_blocks),
     .data_out     (last_blocks)
   );
-  
+
 endmodule
 

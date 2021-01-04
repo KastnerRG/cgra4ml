@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="0fs"></ZoomStartTime>
-      <ZoomEndTime time="58850000001fs"></ZoomEndTime>
-      <Cursor1Time time="21000000000fs"></Cursor1Time>
+      <ZoomStartTime time="2489740000fs"></ZoomStartTime>
+      <ZoomEndTime time="2602540001fs"></ZoomEndTime>
+      <Cursor1Time time="2535000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="216"></NameColumnWidth>
       <ValueColumnWidth column_width="58"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="47" />
+   <WVObjectSize size="50" />
    <wvobject fp_name="/axis_weight_rotator_tb/aclk" type="logic">
       <obj_property name="ElementShortName">aclk</obj_property>
       <obj_property name="ObjectShortName">aclk</obj_property>
@@ -60,6 +60,7 @@
    <wvobject fp_name="group2074" type="group">
       <obj_property name="label">DW</obj_property>
       <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="/axis_weight_rotator_tb/pipe/state_dw_next" type="logic">
          <obj_property name="ElementShortName">state_dw_next</obj_property>
          <obj_property name="ObjectShortName">state_dw_next</obj_property>
@@ -93,7 +94,6 @@
       <wvobject fp_name="/axis_weight_rotator_tb/pipe/dw_m_data" type="array">
          <obj_property name="ElementShortName">dw_m_data[3:0][2:0][7:0]</obj_property>
          <obj_property name="ObjectShortName">dw_m_data[3:0][2:0][7:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
          <wvobject fp_name="/axis_weight_rotator_tb/pipe/dw_m_data[3]" type="array">
             <obj_property name="ElementShortName">[3][2:0][7:0]</obj_property>
             <obj_property name="ObjectShortName">[3][2:0][7:0]</obj_property>
@@ -118,10 +118,6 @@
             <obj_property name="CustomSignalColor">#FF00FF</obj_property>
             <obj_property name="UseCustomSignalColor">true</obj_property>
          </wvobject>
-      </wvobject>
-      <wvobject fp_name="/axis_weight_rotator_tb/pipe/addr_max" type="array">
-         <obj_property name="ElementShortName">addr_max[0:1][11:0]</obj_property>
-         <obj_property name="ObjectShortName">addr_max[0:1][11:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_weight_rotator_tb/pipe/clken_ref" type="array">
          <obj_property name="ElementShortName">clken_ref[0:1]</obj_property>
@@ -199,6 +195,30 @@
    <wvobject fp_name="/axis_weight_rotator_tb/pipe/dw_m_data" type="array">
       <obj_property name="ElementShortName">dw_m_data[3:0][2:0][7:0]</obj_property>
       <obj_property name="ObjectShortName">dw_m_data[3:0][2:0][7:0]</obj_property>
+      <wvobject fp_name="/axis_weight_rotator_tb/pipe/dw_m_data[3]" type="array">
+         <obj_property name="ElementShortName">[3][2:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">[3][2:0][7:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_weight_rotator_tb/pipe/dw_m_data[2]" type="array">
+         <obj_property name="ElementShortName">[2][2:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">[2][2:0][7:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_weight_rotator_tb/pipe/dw_m_data[1]" type="array">
+         <obj_property name="ElementShortName">[1][2:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">[1][2:0][7:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_weight_rotator_tb/pipe/dw_m_data[0]" type="array">
+         <obj_property name="ElementShortName">[0][2:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">[0][2:0][7:0]</obj_property>
+         <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+         <obj_property name="UseCustomSignalColor">true</obj_property>
+      </wvobject>
    </wvobject>
    <wvobject fp_name="/axis_weight_rotator_tb/pipe/addr_max" type="array">
       <obj_property name="ElementShortName">addr_max[0:1][11:0]</obj_property>
@@ -246,13 +266,25 @@
       <obj_property name="ElementShortName">bram_m_data[0:1][95:0]</obj_property>
       <obj_property name="ObjectShortName">bram_m_data[0:1][95:0]</obj_property>
    </wvobject>
+   <wvobject fp_name="/axis_weight_rotator_tb/pipe/last_config" type="logic">
+      <obj_property name="ElementShortName">last_config</obj_property>
+      <obj_property name="ObjectShortName">last_config</obj_property>
+   </wvobject>
    <wvobject fp_name="/axis_weight_rotator_tb/pipe/count_config" type="array">
       <obj_property name="ElementShortName">count_config[4:0]</obj_property>
       <obj_property name="ObjectShortName">count_config[4:0]</obj_property>
    </wvobject>
+   <wvobject fp_name="/axis_weight_rotator_tb/pipe/en_last_kh" type="logic">
+      <obj_property name="ElementShortName">en_last_kh</obj_property>
+      <obj_property name="ObjectShortName">en_last_kh</obj_property>
+   </wvobject>
    <wvobject fp_name="/axis_weight_rotator_tb/pipe/count_kh" type="array">
       <obj_property name="ElementShortName">count_kh[1:0]</obj_property>
       <obj_property name="ObjectShortName">count_kh[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_weight_rotator_tb/pipe/count_next_kh" type="array">
+      <obj_property name="ElementShortName">count_next_kh[1:0]</obj_property>
+      <obj_property name="ObjectShortName">count_next_kh[1:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_weight_rotator_tb/pipe/count_cin" type="array">
       <obj_property name="ElementShortName">count_cin[9:0]</obj_property>
@@ -465,6 +497,18 @@
       <wvobject fp_name="/axis_weight_rotator_tb/CONFIG_BEATS_1" type="array">
          <obj_property name="ElementShortName">CONFIG_BEATS_1[31:0]</obj_property>
          <obj_property name="ObjectShortName">CONFIG_BEATS_1[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_weight_rotator_tb/W_BEATS" type="array">
+         <obj_property name="ElementShortName">W_BEATS[31:0]</obj_property>
+         <obj_property name="ObjectShortName">W_BEATS[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_weight_rotator_tb/W_WORDS" type="array">
+         <obj_property name="ElementShortName">W_WORDS[31:0]</obj_property>
+         <obj_property name="ObjectShortName">W_WORDS[31:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_weight_rotator_tb/W_WORDS_PER_BEAT" type="array">
+         <obj_property name="ElementShortName">W_WORDS_PER_BEAT[31:0]</obj_property>
+         <obj_property name="ObjectShortName">W_WORDS_PER_BEAT[31:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_weight_rotator_tb/status" type="array">
          <obj_property name="ElementShortName">status[31:0]</obj_property>
