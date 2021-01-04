@@ -1,33 +1,4 @@
-module lrelu_engine #(
-  WORD_WIDTH_IN  = 32,
-  WORD_WIDTH_OUT = 8 ,
-  WORD_WIDTH_CONFIG = 8 ,
-
-  UNITS   = 8,
-  GROUPS  = 2,
-  COPIES  = 2,
-  MEMBERS = 2,
-
-  ALPHA = 16'd11878,
-
-  LATENCY_FIXED_2_FLOAT =  6,
-  LATENCY_FLOAT_32      = 16,
-  BRAM_LATENCY          =  2,
-
-  BITS_CONV_CORE       = $clog2(GROUPS * COPIES * MEMBERS),
-  I_IS_3X3             = BITS_CONV_CORE + 0,  
-  I_MAXPOOL_IS_MAX     = BITS_CONV_CORE + 1,
-  I_MAXPOOL_IS_NOT_MAX = BITS_CONV_CORE + 2,
-  I_LRELU_IS_LRELU     = BITS_CONV_CORE + 3,
-  I_LRELU_IS_TOP       = BITS_CONV_CORE + 4,
-  I_LRELU_IS_BOTTOM    = BITS_CONV_CORE + 5,
-  I_LRELU_IS_LEFT      = BITS_CONV_CORE + 6,
-  I_LRELU_IS_RIGHT     = BITS_CONV_CORE + 7,
-
-  TUSER_WIDTH_LRELU       = BITS_CONV_CORE + 8,
-  TUSER_WIDTH_LRELU_FMA_1 = BITS_CONV_CORE + 4,
-  TUSER_WIDTH_MAXPOOL     = BITS_CONV_CORE + 3
-)(
+module lrelu_engine (
   clk     ,
   clken   ,
   resetn  ,
@@ -40,9 +11,34 @@ module lrelu_engine #(
 
   resetn_config  ,
   s_valid_config ,
-  is_3x3_config  ,
+  is_1x1_config  ,
   s_data_conv_out
 );
+
+  parameter WORD_WIDTH_IN     = 32;
+  parameter WORD_WIDTH_OUT    = 8 ;
+  parameter WORD_WIDTH_CONFIG = 8 ;
+  parameter UNITS   = 8;
+  parameter GROUPS  = 2;
+  parameter COPIES  = 2;
+  parameter MEMBERS = 2;
+  parameter ALPHA = 16'd11878;
+  parameter LATENCY_FIXED_2_FLOAT =  6;
+  parameter LATENCY_FLOAT_32      = 16;
+  parameter BRAM_LATENCY          =  2;
+
+  parameter I_IS_NOT_MAX      = 0;
+  parameter I_IS_MAX          = I_IS_NOT_MAX      + 1;
+  parameter I_IS_LRELU        = I_IS_MAX          + 1;
+  parameter I_IS_TOP_BLOCK    = I_IS_LRELU        + 1;
+  parameter I_IS_BOTTOM_BLOCK = I_IS_TOP_BLOCK    + 1;
+  parameter I_IS_1X1          = I_IS_BOTTOM_BLOCK + 1;
+  parameter I_IS_LEFT_COL     = I_IS_1X1          + 1;
+  parameter I_IS_RIGHT_COL    = I_IS_LEFT_COL     + 1;
+
+  parameter TUSER_WIDTH_MAXPOOL_IN     = 1 + I_IS_MAX  ;
+  parameter TUSER_WIDTH_LRELU_FMA_1_IN = 1 + I_IS_LRELU;
+  parameter TUSER_WIDTH_LRELU_IN       = 1 + I_IS_RIGHT_COL;
 
   input  logic clk     ;
   input  logic clken   ;
@@ -51,8 +47,8 @@ module lrelu_engine #(
   output logic m_valid ;
   input  logic [COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_data_flat_cgu;
   output logic [COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_data_flat_cgu;
-  input  logic [TUSER_WIDTH_LRELU  -1:0] s_user  ;
-  output logic [TUSER_WIDTH_MAXPOOL-1:0] m_user  ;
+  input  logic [TUSER_WIDTH_LRELU_IN  -1:0] s_user  ;
+  output logic [TUSER_WIDTH_MAXPOOL_IN-1:0] m_user  ;
 
   /*
     CONFIG HANDLING
@@ -64,7 +60,7 @@ module lrelu_engine #(
     s_data_config_flat_cg
       config_s_data_cgv_sr
   */
-  input  logic resetn_config, s_valid_config, is_3x3_config;
+  input  logic resetn_config, s_valid_config, is_1x1_config;
   input  logic [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_data_conv_out;
 
   logic [WORD_WIDTH_IN    -1:0] s_data_conv_out_mcgu [MEMBERS-1:0][COPIES-1:0][GROUPS-1:0][UNITS-1:0];
@@ -143,7 +139,7 @@ module lrelu_engine #(
   );
 
   logic [BITS_BRAM_W_DEPTH-1:0] bram_w_depth_1, bram_addr_next, bram_addr;
-  assign bram_w_depth_1 = is_3x3_config ? BRAM_W_DEPTH_3X3-1 : BRAM_W_DEPTH_1X1-1;
+  assign bram_w_depth_1 = is_1x1_config ? BRAM_W_DEPTH_1X1-1 : BRAM_W_DEPTH_3X3-1;
   register #(
     .WORD_WIDTH   (BITS_BRAM_W_DEPTH), 
     .RESET_VALUE  (0)
@@ -178,8 +174,8 @@ module lrelu_engine #(
       3       : begin // B RAM center (0,0)
                   if (bram_addr == bram_w_depth_1) begin
                     bram_addr_next  = 0;
-                    if (is_3x3_config) w_sel_bram_next = 4;
-                    else               w_sel_bram_next = 1;
+                    if (is_1x1_config) w_sel_bram_next = 1;
+                    else               w_sel_bram_next = 4;
                   end
                   else begin
                     bram_addr_next  = bram_addr + 1;
@@ -272,16 +268,16 @@ module lrelu_engine #(
     .data_out (resetn_config_2)
   );
 
-  logic is_3x3_config_1;
+  logic is_1x1_config_1;
   n_delay #(
     .N          (LATENCY_FIXED_2_FLOAT),
     .WORD_WIDTH (1)
-  ) CONFIG_3x3_1 (
+  ) CONFIG_1x1_1 (
     .clk      (clk),
     .resetn   (resetn),
     .clken    (clken),
-    .data_in  (is_3x3_config),
-    .data_out (is_3x3_config_1)
+    .data_in  (is_1x1_config),
+    .data_out (is_1x1_config_1)
   );
 
   /*
@@ -289,17 +285,17 @@ module lrelu_engine #(
   */
 
   logic m_valid_float32, m_valid_fma_1, m_valid_fma_2;
-  logic [TUSER_WIDTH_LRELU      -1:0] m_user_float32;
-  logic [TUSER_WIDTH_LRELU_FMA_1-1:0] s_user_fma_1, m_user_fma_1;
-  logic [TUSER_WIDTH_MAXPOOL    -1:0] s_user_fma_2, m_user_fma_2;
+  logic [TUSER_WIDTH_LRELU_IN      -1:0] m_user_float32;
+  logic [TUSER_WIDTH_LRELU_FMA_1_IN-1:0] s_user_fma_1, m_user_fma_1;
+  logic [TUSER_WIDTH_MAXPOOL_IN    -1:0] s_user_fma_2, m_user_fma_2;
 
-  assign s_user_fma_1 = TUSER_WIDTH_LRELU_FMA_1'(m_user_float32);
-  assign s_user_fma_2 = TUSER_WIDTH_MAXPOOL'(m_user_fma_1);
+  assign s_user_fma_1 = TUSER_WIDTH_LRELU_FMA_1_IN'(m_user_float32);
+  assign s_user_fma_2 = TUSER_WIDTH_MAXPOOL_IN'(m_user_fma_1);
   
   logic [BITS_BRAM_R_DEPTH-1:0] b_r_addr_max  ; 
   logic [BITS_BRAM_W_DEPTH-1:0] b_w_addr_max  ;
-  assign b_w_addr_max   = is_3x3_config_1          ? BRAM_W_DEPTH_3X3-1 : BRAM_W_DEPTH_1X1-1;
-  assign b_r_addr_max   = m_user_float32[I_IS_3X3] ? BRAM_R_DEPTH_3X3-1 : BRAM_R_DEPTH_1X1-1;
+  assign b_w_addr_max   = is_1x1_config_1          ? BRAM_W_DEPTH_1X1-1 : BRAM_W_DEPTH_3X3-1;
+  assign b_r_addr_max   = m_user_float32[I_IS_1X1] ? BRAM_R_DEPTH_1X1-1 : BRAM_R_DEPTH_3X3-1;
 
   /*
     Declare multidimensional wires
@@ -344,13 +340,13 @@ module lrelu_engine #(
   logic [1:0] fma1_index_clr;
   logic ready_mtb [2:0];
   always_comb begin
-    if (m_user_float32[I_IS_3X3]) begin
-      if      (m_user_float32[I_LRELU_IS_LEFT ])  fma1_index_clr = 2'd1;
-      else if (m_user_float32[I_LRELU_IS_RIGHT])  fma1_index_clr = 2'd2;
-      else                                        fma1_index_clr = 2'd0;
+    if (m_user_float32[I_IS_1X1]) begin
+      fma1_index_clr = 2'd0;
     end
     else begin
-      fma1_index_clr = 2'd0;
+      if      (m_user_float32[I_IS_LEFT_COL   ])  fma1_index_clr = 2'd1;
+      else if (m_user_float32[I_IS_RIGHT_COL  ])  fma1_index_clr = 2'd2;
+      else                                        fma1_index_clr = 2'd0;
     end
   end
 
@@ -400,8 +396,8 @@ module lrelu_engine #(
         */
         for (genvar mtb=0; mtb < 3; mtb ++) begin: mtb
 
-          assign ready_mtb[mtb] = (mtb==0) || m_user_float32[I_IS_3X3] && (   (mtb==1 && m_user_float32[I_LRELU_IS_TOP]) 
-                                                                           || (mtb==2 && m_user_float32[I_LRELU_IS_BOTTOM]));
+          assign ready_mtb[mtb] = (mtb==0) || ~m_user_float32[I_IS_1X1] && (   (mtb==1 && m_user_float32[I_IS_TOP_BLOCK]) 
+                                                                           || (mtb==2 && m_user_float32[I_IS_BOTTOM_BLOCK]));
 
           for (genvar clr=0; clr < 3; clr ++) begin: clr
             
@@ -503,19 +499,19 @@ module lrelu_engine #(
             Assign MTB BRAMs to each unit
           */
           
-          assign is_top_cgu[c][g][u] = (u == 0      ) && m_user_float32[I_LRELU_IS_TOP];
-          assign is_bot_cgu[c][g][u] = (u == UNITS-1) && m_user_float32[I_LRELU_IS_BOTTOM];
+          assign is_top_cgu[c][g][u] = (u == 0      ) && m_user_float32[I_IS_TOP_BLOCK];
+          assign is_bot_cgu[c][g][u] = (u == UNITS-1) && m_user_float32[I_IS_BOTTOM_BLOCK];
 
           always_comb begin
-            if (m_user_float32[I_IS_3X3]) begin
+            if (m_user_float32[I_IS_1X1]) begin
+              b_val_f32_cgu[c][g][u] = b_mid_f32_cg[c][g];
+            end
+            else begin
               unique case ({is_top_cgu[c][g][u], is_bot_cgu[c][g][u]})
                 2'b00 : b_val_f32_cgu[c][g][u] = b_mid_f32_cg[c][g];
                 2'b10 : b_val_f32_cgu[c][g][u] = b_top_f32_cg[c][g];
                 2'b01 : b_val_f32_cgu[c][g][u] = b_bot_f32_cg[c][g];
               endcase
-            end
-            else begin
-              b_val_f32_cgu[c][g][u] = b_mid_f32_cg[c][g];
             end
           end
 
@@ -525,7 +521,7 @@ module lrelu_engine #(
             LRELU
           */
 
-          assign is_lrelu_cgu[c][g][u] = m_user_fma_1[I_LRELU_IS_LRELU] && m_data_fma_1_cgu[c][g][u][31];
+          assign is_lrelu_cgu[c][g][u] = m_user_fma_1[I_IS_LRELU      ] && m_data_fma_1_cgu[c][g][u][31];
           assign c_val_cgu   [c][g][u] = is_lrelu_cgu[c][g][u] ? ALPHA : 16'd15360 ; // 0.1 or 1
 
           if (c==0 && g==0 && u==0) begin
