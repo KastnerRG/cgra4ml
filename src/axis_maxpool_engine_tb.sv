@@ -9,12 +9,16 @@ module axis_maxpool_engine_tb();
     forever #(CLK_PERIOD/2) aclk <= ~aclk;
   end
 
-  localparam UNITS      = 8;
+  localparam UNITS      = 3;
   localparam GROUPS     = 2;
   localparam MEMEBERS   = 8;
   localparam WORD_WIDTH = 8;
-  localparam INDEX_IS_NOT_MAX = 0;
-  localparam INDEX_IS_MAX     = 1;
+
+  localparam KERNEL_H_MAX = 3; // odd
+  localparam UNITS_EDGES  = UNITS + KERNEL_H_MAX-1;
+
+  localparam I_IS_NOT_MAX = 0;
+  localparam I_IS_MAX     = 1;
 
   typedef logic signed [WORD_WIDTH-1:0] word_t;
 
@@ -24,20 +28,20 @@ module axis_maxpool_engine_tb();
   logic [1:0] s_user;
 
   logic [GROUPS*UNITS*2*WORD_WIDTH-1:0] s_data_flat_cgu;
-  logic [GROUPS*UNITS*2*WORD_WIDTH-1:0] m_data_flat_cgu;
-  logic [GROUPS*UNITS*2-1:0]            m_keep_flat_cgu;
+  logic [GROUPS*UNITS_EDGES*2*WORD_WIDTH-1:0] m_data_flat_cgu;
+  logic [GROUPS*UNITS_EDGES*2-1:0]            m_keep_flat_cgu;
 
   logic signed [WORD_WIDTH-1:0] s_data_cgu [1:0][GROUPS-1:0][UNITS-1:0];
-  logic signed [WORD_WIDTH-1:0] m_data_cgu [1:0][GROUPS-1:0][UNITS-1:0];
-  logic                         m_keep_cgu [1:0][GROUPS-1:0][UNITS-1:0];
+  logic signed [WORD_WIDTH-1:0] m_data_cgu [1:0][GROUPS-1:0][UNITS_EDGES-1:0];
+  logic                         m_keep_cgu [1:0][GROUPS-1:0][UNITS_EDGES-1:0];
 
   assign {>>{s_data_flat_cgu}} = s_data_cgu;
   assign m_data_cgu = {>>{m_data_flat_cgu}};
   assign m_keep_cgu = {>>{m_keep_flat_cgu}};
 
   logic signed [WORD_WIDTH-1:0] s_data_guc [GROUPS-1:0][UNITS-1:0][1:0];
-  logic signed [WORD_WIDTH-1:0] m_data_guc [GROUPS-1:0][UNITS-1:0][1:0];
-  logic                         m_keep_guc [GROUPS-1:0][UNITS-1:0][1:0];
+  logic signed [WORD_WIDTH-1:0] m_data_guc [GROUPS-1:0][UNITS_EDGES-1:0][1:0];
+  logic                         m_keep_guc [GROUPS-1:0][UNITS_EDGES-1:0][1:0];
 
 
   generate
@@ -45,6 +49,8 @@ module axis_maxpool_engine_tb();
       for (genvar g = 0; g < GROUPS; g++) begin
         for (genvar u = 0; u < UNITS; u++) begin
           assign s_data_cgu[c][g][u] = s_data_guc[g][u][c];
+        end
+        for (genvar u = 0; u < UNITS_EDGES; u++) begin
           assign m_data_guc[g][u][c] = m_data_cgu[c][g][u];
           assign m_keep_guc[g][u][c] = m_keep_cgu[c][g][u];
         end
@@ -57,8 +63,9 @@ module axis_maxpool_engine_tb();
     .GROUPS           (GROUPS          ),
     .MEMEBERS         (MEMEBERS        ),
     .WORD_WIDTH       (WORD_WIDTH      ),
-    .INDEX_IS_NOT_MAX (INDEX_IS_NOT_MAX),
-    .INDEX_IS_MAX     (INDEX_IS_MAX    )
+    .KERNEL_H_MAX     (KERNEL_H_MAX    ),
+    .I_IS_NOT_MAX     (I_IS_NOT_MAX    ),
+    .I_IS_MAX         (I_IS_MAX        )
   )dut(
     .aclk         (aclk       ),
     .aresetn      (aresetn    ),
@@ -78,8 +85,8 @@ module axis_maxpool_engine_tb();
     foreach (s_data_guc[g,u,c]) s_data_guc[g][u][c] <= init + 10*u + c;
 
     s_valid      <= 1;
-    s_user[INDEX_IS_MAX    ] <= is_max;
-    s_user[INDEX_IS_NOT_MAX] <= is_not_max;
+    s_user[I_IS_MAX    ] <= is_max;
+    s_user[I_IS_NOT_MAX] <= is_not_max;
   endtask
 
   initial begin

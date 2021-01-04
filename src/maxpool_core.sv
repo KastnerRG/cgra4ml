@@ -31,14 +31,7 @@ Additional Comments:
 //////////////////////////////////////////////////////////////////////////////////*/
 
 
-module maxpool_core #(
-    parameter UNITS      = 2,
-    parameter MEMEBERS   = 8,
-    parameter WORD_WIDTH = 8,
-
-    parameter INDEX_IS_NOT_MAX = 0,
-    parameter INDEX_IS_MAX     = 1
-  )(
+module maxpool_core(
     clk,
     clken,
     resetn,
@@ -53,6 +46,15 @@ module maxpool_core #(
     m_keep_uc,
     m_last
   );
+
+  parameter UNITS      = 8;
+  parameter GROUPS     = 2;
+  parameter MEMEBERS   = 8;
+  parameter WORD_WIDTH = 8;
+
+  parameter I_IS_NOT_MAX = 0;
+  parameter I_IS_MAX     = 1;
+
   typedef logic signed [WORD_WIDTH-1:0] word_t;
 
   input  logic clk, clken, resetn;
@@ -94,7 +96,7 @@ module maxpool_core #(
   localparam MAX_4 = 1;
   logic state, state_trigger;
 
-  assign state_trigger = s_handshake && (in_count == MEMEBERS-1) && s_user[INDEX_IS_MAX];
+  assign state_trigger = s_handshake && (in_count == MEMEBERS-1) && s_user[I_IS_MAX];
 
   register #(
     .WORD_WIDTH   (1), 
@@ -139,9 +141,9 @@ module maxpool_core #(
   */
   logic buf_0_en, buf_n_en, buf_delay_en;
 
-  assign buf_0_en = s_user[INDEX_IS_MAX] && (s_handshake || max_4_handshake_delay);
-  assign buf_n_en = s_handshake && s_user[INDEX_IS_MAX];
-  assign buf_delay_en = s_handshake && s_user[INDEX_IS_NOT_MAX];
+  assign buf_0_en = s_user[I_IS_MAX] && (s_handshake || max_4_handshake_delay);
+  assign buf_n_en = s_handshake && s_user[I_IS_MAX];
+  assign buf_delay_en = s_handshake && s_user[I_IS_NOT_MAX];
 
 
   /*
@@ -155,15 +157,15 @@ module maxpool_core #(
     .clock        (clk   ),
     .resetn       (resetn),
     .clock_enable (clken ),
-    .data_in      (s_handshake && s_user[INDEX_IS_NOT_MAX]),
+    .data_in      (s_handshake && s_user[I_IS_NOT_MAX]),
     .data_out     (out_delay_valid)
   );
 
   logic out_max_valid, out_max_valid_next;
-  assign out_max_valid_next = s_handshake && s_user[INDEX_IS_MAX] && (state == MAX_4);
+  assign out_max_valid_next = s_handshake && s_user[I_IS_MAX] && (state == MAX_4);
   n_delay #(
       .N          (2),
-      .DATA_WIDTH (1)
+      .WORD_WIDTH (1)
   ) OUT_MAX_VALID (
       .clk        (clk         ),
       .resetn     (resetn      ),
@@ -188,7 +190,7 @@ module maxpool_core #(
     .clock        (clk   ),
     .resetn       (resetn),
     .clock_enable (clken && s_handshake),
-    .data_in      (s_user[INDEX_IS_NOT_MAX] && s_user[INDEX_IS_MAX] && state==MAX_4),
+    .data_in      (s_user[I_IS_NOT_MAX] && s_user[I_IS_MAX] && state==MAX_4),
     .data_out     (max_4_max_and_non_max_delay)
   );
 
