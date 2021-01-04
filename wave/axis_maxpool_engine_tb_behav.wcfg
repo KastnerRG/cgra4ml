@@ -11,13 +11,13 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="778300000fs"></ZoomStartTime>
-      <ZoomEndTime time="830300001fs"></ZoomEndTime>
-      <Cursor1Time time="792500000fs"></Cursor1Time>
+      <ZoomStartTime time="4674333000fs"></ZoomStartTime>
+      <ZoomEndTime time="15154333001fs"></ZoomEndTime>
+      <Cursor1Time time="10874333000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="192"></NameColumnWidth>
-      <ValueColumnWidth column_width="126"></ValueColumnWidth>
+      <ValueColumnWidth column_width="122"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="7" />
    <wvobject fp_name="/axis_maxpool_engine_tb/aclk" type="logic">
@@ -43,28 +43,30 @@
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_maxpool_engine_tb/s_data_guc" type="array">
-         <obj_property name="ElementShortName">s_data_guc[1:0][7:0][1:0][7:0]</obj_property>
-         <obj_property name="ObjectShortName">s_data_guc[1:0][7:0][1:0][7:0]</obj_property>
+         <obj_property name="ElementShortName">s_data_guc[1:0][2:0][1:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">s_data_guc[1:0][2:0][1:0][7:0]</obj_property>
          <obj_property name="CustomSignalColor">#FFD700</obj_property>
          <obj_property name="UseCustomSignalColor">true</obj_property>
          <obj_property name="isExpanded"></obj_property>
+         <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
          <wvobject fp_name="/axis_maxpool_engine_tb/s_data_guc[1]" type="array">
-            <obj_property name="ElementShortName">[1][7:0][1:0][7:0]</obj_property>
-            <obj_property name="ObjectShortName">[1][7:0][1:0][7:0]</obj_property>
+            <obj_property name="ElementShortName">[1][2:0][1:0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[1][2:0][1:0][7:0]</obj_property>
+            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
          </wvobject>
          <wvobject fp_name="/axis_maxpool_engine_tb/s_data_guc[0]" type="array">
-            <obj_property name="ElementShortName">[0][7:0][1:0][7:0]</obj_property>
-            <obj_property name="ObjectShortName">[0][7:0][1:0][7:0]</obj_property>
-            <obj_property name="isExpanded"></obj_property>
+            <obj_property name="ElementShortName">[0][2:0][1:0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][2:0][1:0][7:0]</obj_property>
+            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
          </wvobject>
       </wvobject>
       <wvobject fp_name="/axis_maxpool_engine_tb/s_data_cgu" type="array">
-         <obj_property name="ElementShortName">s_data_cgu[1:0][1:0][7:0][7:0]</obj_property>
-         <obj_property name="ObjectShortName">s_data_cgu[1:0][1:0][7:0][7:0]</obj_property>
+         <obj_property name="ElementShortName">s_data_cgu[1:0][1:0][2:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">s_data_cgu[1:0][1:0][2:0][7:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_maxpool_engine_tb/s_data_flat_cgu" type="array">
-         <obj_property name="ElementShortName">s_data_flat_cgu[255:0]</obj_property>
-         <obj_property name="ObjectShortName">s_data_flat_cgu[255:0]</obj_property>
+         <obj_property name="ElementShortName">s_data_flat_cgu[95:0]</obj_property>
+         <obj_property name="ObjectShortName">s_data_flat_cgu[95:0]</obj_property>
       </wvobject>
    </wvobject>
    <wvobject fp_name="group446" type="group">
@@ -85,8 +87,8 @@
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/\cores[0].max_core /s_data_uc" type="array">
-         <obj_property name="ElementShortName">s_data_uc[7:0][1:0][7:0]</obj_property>
-         <obj_property name="ObjectShortName">s_data_uc[7:0][1:0][7:0]</obj_property>
+         <obj_property name="ElementShortName">s_data_uc[2:0][1:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">s_data_uc[2:0][1:0][7:0]</obj_property>
          <obj_property name="CustomSignalColor">#FFFF00</obj_property>
          <obj_property name="UseCustomSignalColor">true</obj_property>
          <obj_property name="isExpanded"></obj_property>
@@ -103,7 +105,6 @@
    <wvobject fp_name="group451" type="group">
       <obj_property name="label">Core Output</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/\cores[0].max_core /m_valid" type="logic">
          <obj_property name="ElementShortName">m_valid</obj_property>
          <obj_property name="ObjectShortName">m_valid</obj_property>
@@ -111,15 +112,14 @@
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/\cores[0].max_core /m_data_uc" type="array">
-         <obj_property name="ElementShortName">m_data_uc[7:0][1:0][7:0]</obj_property>
-         <obj_property name="ObjectShortName">m_data_uc[7:0][1:0][7:0]</obj_property>
+         <obj_property name="ElementShortName">m_data_uc[2:0][1:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">m_data_uc[2:0][1:0][7:0]</obj_property>
          <obj_property name="CustomSignalColor">#FF00FF</obj_property>
          <obj_property name="UseCustomSignalColor">true</obj_property>
-         <obj_property name="isExpanded"></obj_property>
       </wvobject>
       <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/\cores[0].max_core /m_keep_uc" type="array">
-         <obj_property name="ElementShortName">m_keep_uc[7:0][1:0]</obj_property>
-         <obj_property name="ObjectShortName">m_keep_uc[7:0][1:0]</obj_property>
+         <obj_property name="ElementShortName">m_keep_uc[2:0][1:0]</obj_property>
+         <obj_property name="ObjectShortName">m_keep_uc[2:0][1:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/\cores[0].max_core /m_last" type="logic">
          <obj_property name="ElementShortName">m_last</obj_property>
@@ -141,54 +141,48 @@
          <obj_property name="UseCustomSignalColor">true</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_maxpool_engine_tb/m_data_guc" type="array">
-         <obj_property name="ElementShortName">m_data_guc[1:0][7:0][1:0][7:0]</obj_property>
-         <obj_property name="ObjectShortName">m_data_guc[1:0][7:0][1:0][7:0]</obj_property>
+         <obj_property name="ElementShortName">m_data_guc[1:0][4:0][1:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">m_data_guc[1:0][4:0][1:0][7:0]</obj_property>
          <obj_property name="CustomSignalColor">#FF00FF</obj_property>
          <obj_property name="UseCustomSignalColor">true</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+         <wvobject fp_name="/axis_maxpool_engine_tb/m_data_guc[1]" type="array">
+            <obj_property name="ElementShortName">[1][4:0][1:0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[1][4:0][1:0][7:0]</obj_property>
+            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+         </wvobject>
+         <wvobject fp_name="/axis_maxpool_engine_tb/m_data_guc[0]" type="array">
+            <obj_property name="ElementShortName">[0][4:0][1:0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][4:0][1:0][7:0]</obj_property>
+            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+         </wvobject>
       </wvobject>
       <wvobject fp_name="/axis_maxpool_engine_tb/m_data_cgu" type="array">
-         <obj_property name="ElementShortName">m_data_cgu[1:0][1:0][7:0][7:0]</obj_property>
-         <obj_property name="ObjectShortName">m_data_cgu[1:0][1:0][7:0][7:0]</obj_property>
+         <obj_property name="ElementShortName">m_data_cgu[1:0][1:0][4:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">m_data_cgu[1:0][1:0][4:0][7:0]</obj_property>
          <obj_property name="CustomSignalColor">#FF00FF</obj_property>
          <obj_property name="UseCustomSignalColor">true</obj_property>
-         <wvobject fp_name="/axis_maxpool_engine_tb/m_data_cgu[1]" type="array">
-            <obj_property name="ElementShortName">[1][1:0][7:0][7:0]</obj_property>
-            <obj_property name="ObjectShortName">[1][1:0][7:0][7:0]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_maxpool_engine_tb/m_data_cgu[0]" type="array">
-            <obj_property name="ElementShortName">[0][1:0][7:0][7:0]</obj_property>
-            <obj_property name="ObjectShortName">[0][1:0][7:0][7:0]</obj_property>
-            <obj_property name="isExpanded"></obj_property>
-            <wvobject fp_name="/axis_maxpool_engine_tb/m_data_cgu[0][1]" type="array">
-               <obj_property name="ElementShortName">[1][7:0][7:0]</obj_property>
-               <obj_property name="ObjectShortName">[1][7:0][7:0]</obj_property>
-            </wvobject>
-            <wvobject fp_name="/axis_maxpool_engine_tb/m_data_cgu[0][0]" type="array">
-               <obj_property name="ElementShortName">[0][7:0][7:0]</obj_property>
-               <obj_property name="ObjectShortName">[0][7:0][7:0]</obj_property>
-               <obj_property name="isExpanded"></obj_property>
-            </wvobject>
-         </wvobject>
       </wvobject>
       <wvobject fp_name="/axis_maxpool_engine_tb/m_data_flat_cgu" type="array">
-         <obj_property name="ElementShortName">m_data_flat_cgu[255:0]</obj_property>
-         <obj_property name="ObjectShortName">m_data_flat_cgu[255:0]</obj_property>
+         <obj_property name="ElementShortName">m_data_flat_cgu[159:0]</obj_property>
+         <obj_property name="ObjectShortName">m_data_flat_cgu[159:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/m_data_flat_cgu" type="array">
-         <obj_property name="ElementShortName">m_data_flat_cgu[255:0]</obj_property>
-         <obj_property name="ObjectShortName">m_data_flat_cgu[255:0]</obj_property>
+         <obj_property name="ElementShortName">m_data_flat_cgu[95:0]</obj_property>
+         <obj_property name="ObjectShortName">m_data_flat_cgu[95:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_maxpool_engine_tb/m_keep_flat_cgu" type="array">
-         <obj_property name="ElementShortName">m_keep_flat_cgu[31:0]</obj_property>
-         <obj_property name="ObjectShortName">m_keep_flat_cgu[31:0]</obj_property>
+         <obj_property name="ElementShortName">m_keep_flat_cgu[19:0]</obj_property>
+         <obj_property name="ObjectShortName">m_keep_flat_cgu[19:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_maxpool_engine_tb/m_keep_cgu" type="array">
-         <obj_property name="ElementShortName">m_keep_cgu[1:0][1:0][7:0]</obj_property>
-         <obj_property name="ObjectShortName">m_keep_cgu[1:0][1:0][7:0]</obj_property>
+         <obj_property name="ElementShortName">m_keep_cgu[1:0][1:0][4:0]</obj_property>
+         <obj_property name="ObjectShortName">m_keep_cgu[1:0][1:0][4:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_maxpool_engine_tb/m_keep_guc" type="array">
-         <obj_property name="ElementShortName">m_keep_guc[1:0][7:0][1:0]</obj_property>
-         <obj_property name="ObjectShortName">m_keep_guc[1:0][7:0][1:0]</obj_property>
+         <obj_property name="ElementShortName">m_keep_guc[1:0][4:0][1:0]</obj_property>
+         <obj_property name="ObjectShortName">m_keep_guc[1:0][4:0][1:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_maxpool_engine_tb/m_last" type="logic">
          <obj_property name="ElementShortName">m_last</obj_property>
