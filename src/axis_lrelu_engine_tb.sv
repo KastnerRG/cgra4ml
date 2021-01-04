@@ -9,40 +9,42 @@ module axis_lrelu_engine_tb();
     forever #(CLK_PERIOD/2) aclk <= ~aclk;
   end
 
-  localparam IS_3X3  = 0;
+  localparam IS_1X1  = 0;
   localparam IS_RELU = 1;
 
-  localparam WORD_WIDTH_IN     = 32;
-  localparam WORD_WIDTH_OUT    = 8 ;
-  localparam WORD_WIDTH_CONFIG = 8 ;
+  localparam COLS    = 3;
+  localparam BLOCKS  = 3;
 
   localparam UNITS   = 3;
   localparam GROUPS  = 1;
   localparam COPIES  = 1;
   localparam MEMBERS = 4;
 
+  localparam WORD_WIDTH_IN     = 32;
+  localparam WORD_WIDTH_OUT    = 8 ;
+  localparam WORD_WIDTH_CONFIG = 8 ;
+
   localparam ALPHA = 16'd11878;
 
-  localparam CONFIG_BEATS_3X3_1 = 19; // D(1) + A(2) + B(9*2) -2 = 21-2 = 19
-  localparam CONFIG_BEATS_1X1_1 = 11; // D(1) + A(2*3) + B(2*3) -2 = 13 -2 = 11
+  localparam CONFIG_BEATS_3X3_2 = 19; // D(1) + A(2) + B(9*2) -2   = 21 -2 = 19
+  localparam CONFIG_BEATS_1X1_2 = 11; // D(1) + A(2*3) + B(2*3) -2 = 13 -2 = 11
 
   localparam LATENCY_FIXED_2_FLOAT =  6;
   localparam LATENCY_FLOAT_32      = 16;
   localparam BRAM_LATENCY          =  2;
 
-  localparam BITS_CONV_CORE       = $clog2(GROUPS * COPIES * MEMBERS);
-  localparam I_IS_3X3             = BITS_CONV_CORE + 0;  
-  localparam I_MAXPOOL_IS_MAX     = BITS_CONV_CORE + 1;
-  localparam I_MAXPOOL_IS_NOT_MAX = BITS_CONV_CORE + 2;
-  localparam I_LRELU_IS_LRELU     = BITS_CONV_CORE + 3;
-  localparam I_LRELU_IS_TOP       = BITS_CONV_CORE + 4;
-  localparam I_LRELU_IS_BOTTOM    = BITS_CONV_CORE + 5;
-  localparam I_LRELU_IS_LEFT      = BITS_CONV_CORE + 6;
-  localparam I_LRELU_IS_RIGHT     = BITS_CONV_CORE + 7;
+  localparam I_IS_NOT_MAX      = 0;
+  localparam I_IS_MAX          = I_IS_NOT_MAX      + 1;
+  localparam I_IS_LRELU        = I_IS_MAX          + 1;
+  localparam I_IS_TOP_BLOCK    = I_IS_LRELU        + 1;
+  localparam I_IS_BOTTOM_BLOCK = I_IS_TOP_BLOCK    + 1;
+  localparam I_IS_1X1          = I_IS_BOTTOM_BLOCK + 1;
+  localparam I_IS_LEFT_COL     = I_IS_1X1          + 1;
+  localparam I_IS_RIGHT_COL    = I_IS_LEFT_COL     + 1;
 
-  localparam TUSER_WIDTH_LRELU       = BITS_CONV_CORE + 8;
-  localparam TUSER_WIDTH_LRELU_FMA_1 = BITS_CONV_CORE + 4;
-  localparam TUSER_WIDTH_MAXPOOL     = BITS_CONV_CORE + 3;
+  localparam TUSER_WIDTH_MAXPOOL_IN     = 1 + I_IS_MAX  ;
+  localparam TUSER_WIDTH_LRELU_FMA_1_IN = 1 + I_IS_LRELU;
+  localparam TUSER_WIDTH_LRELU_IN       = 1 + I_IS_RIGHT_COL;
 
   logic aresetn      ;
   logic s_axis_tvalid;
@@ -52,8 +54,8 @@ module axis_lrelu_engine_tb();
   logic m_axis_tready;
   logic [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_axis_tdata ; // mcgu
   logic [          COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_axis_tdata ; // cgu
-  logic [TUSER_WIDTH_LRELU  -1:0] s_axis_tuser ;
-  logic [TUSER_WIDTH_MAXPOOL-1:0] m_axis_tuser ;
+  logic [TUSER_WIDTH_LRELU_IN  -1:0] s_axis_tuser ;
+  logic [TUSER_WIDTH_MAXPOOL_IN-1:0] m_axis_tuser ;
 
   logic [WORD_WIDTH_IN  -1:0] s_data_int_mcgu [MEMBERS-1:0][COPIES-1:0][GROUPS-1:0][UNITS-1:0];
   logic [WORD_WIDTH_OUT -1:0] m_data_cgu               [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
@@ -73,26 +75,25 @@ module axis_lrelu_engine_tb();
 
     .ALPHA   (ALPHA),
 
-    .CONFIG_BEATS_3X3_1 (CONFIG_BEATS_3X3_1),
-    .CONFIG_BEATS_1X1_1 (CONFIG_BEATS_1X1_1),
+    .CONFIG_BEATS_3X3_2 (CONFIG_BEATS_3X3_2),
+    .CONFIG_BEATS_1X1_2 (CONFIG_BEATS_1X1_2),
 
     .LATENCY_FIXED_2_FLOAT(LATENCY_FIXED_2_FLOAT),
     .LATENCY_FLOAT_32     (LATENCY_FLOAT_32     ),
     .BRAM_LATENCY         (BRAM_LATENCY         ),
 
-    .BITS_CONV_CORE       (BITS_CONV_CORE      ),
-    .I_IS_3X3             (I_IS_3X3            ),
-    .I_MAXPOOL_IS_MAX     (I_MAXPOOL_IS_MAX    ),
-    .I_MAXPOOL_IS_NOT_MAX (I_MAXPOOL_IS_NOT_MAX),
-    .I_LRELU_IS_LRELU     (I_LRELU_IS_LRELU    ),
-    .I_LRELU_IS_TOP       (I_LRELU_IS_TOP      ),
-    .I_LRELU_IS_BOTTOM    (I_LRELU_IS_BOTTOM   ),
-    .I_LRELU_IS_LEFT      (I_LRELU_IS_LEFT     ),
-    .I_LRELU_IS_RIGHT     (I_LRELU_IS_RIGHT    ),
+    .I_IS_MAX             (I_IS_MAX            ),
+    .I_IS_NOT_MAX         (I_IS_NOT_MAX        ),
+    .I_IS_LRELU           (I_IS_LRELU          ),
+    .I_IS_TOP_BLOCK       (I_IS_TOP_BLOCK      ),
+    .I_IS_BOTTOM_BLOCK    (I_IS_BOTTOM_BLOCK   ),
+    .I_IS_LEFT_COL        (I_IS_LEFT_COL       ),
+    .I_IS_RIGHT_COL       (I_IS_RIGHT_COL      ),
+    .I_IS_1X1             (I_IS_1X1            ),
 
-    .TUSER_WIDTH_LRELU       (TUSER_WIDTH_LRELU      ),
-    .TUSER_WIDTH_LRELU_FMA_1 (TUSER_WIDTH_LRELU_FMA_1),
-    .TUSER_WIDTH_MAXPOOL     (TUSER_WIDTH_MAXPOOL    )
+    .TUSER_WIDTH_LRELU_IN       (TUSER_WIDTH_LRELU_IN      ),
+    .TUSER_WIDTH_LRELU_FMA_1_IN (TUSER_WIDTH_LRELU_FMA_1_IN),
+    .TUSER_WIDTH_MAXPOOL_IN     (TUSER_WIDTH_MAXPOOL_IN    )
   ) dut (.*);
 
   int status, file_data_in, file_data_out;
@@ -107,9 +108,6 @@ module axis_lrelu_engine_tb();
   int times = 0;
 
   int k_members = 0;
-
-  localparam COLS   = 3;
-  localparam BLOCKS = 3;
 
   initial begin
 
@@ -153,13 +151,12 @@ module axis_lrelu_engine_tb();
     s_axis_tvalid <= 0;
     s_axis_tlast  <= 0;
 
-    s_axis_tuser [BITS_CONV_CORE-1:0  ] <= GROUPS * COPIES * MEMBERS -1;
-    s_axis_tuser [I_IS_3X3            ] <= IS_3X3;
-    s_axis_tuser [I_MAXPOOL_IS_MAX    ] <= 0;
-    s_axis_tuser [I_MAXPOOL_IS_NOT_MAX] <= 1;
-    s_axis_tuser [I_LRELU_IS_LRELU    ] <= IS_RELU;
+    s_axis_tuser [I_IS_1X1    ] <= IS_1X1;
+    s_axis_tuser [I_IS_MAX    ] <= 0;
+    s_axis_tuser [I_IS_NOT_MAX] <= 1;
+    s_axis_tuser [I_IS_LRELU  ] <= IS_RELU;
 
-    k_members <= IS_3X3 ? 1 : 3;
+    k_members <= IS_1X1 ? 3 : 1;
 
     while (1) begin
       if (s_axis_tlast) break;
@@ -171,11 +168,11 @@ module axis_lrelu_engine_tb();
     data_beats    <= 0;
     s_axis_tvalid <= 0;
     s_axis_tlast  <= 0;
-    s_axis_tuser [I_IS_3X3            ] <= IS_3X3;
-    s_axis_tuser [I_LRELU_IS_LRELU    ] <= IS_RELU;
+    s_axis_tuser [I_IS_1X1  ] <= IS_1X1;
+    s_axis_tuser [I_IS_LRELU] <= IS_RELU;
     s_axis_tlast  <= 0;
     s_data_int_mcgu  <= '{default:0};
-    k_members <= IS_3X3 ? 1 : 3;
+    k_members <= IS_1X1 ? 3 : 1;
 
     @(posedge aclk);
 
@@ -196,34 +193,34 @@ module axis_lrelu_engine_tb();
     if (s_axis_tready) begin
         s_axis_tvalid <= 1;
 
-        if (config_beats < (IS_3X3 ? 21: 13)) 
+        if (config_beats < (IS_1X1 ? CONFIG_BEATS_1X1_2+2 : CONFIG_BEATS_3X3_2+2)) 
           config_beats <= config_beats + 1;
 
         else begin
           if   (data_beats % (k_members*COLS) == 0)  begin
-            s_axis_tuser [I_LRELU_IS_LEFT     ] <= 1;
-            s_axis_tuser [I_LRELU_IS_RIGHT    ] <= 0;
+            s_axis_tuser [I_IS_LEFT_COL       ] <= 1;
+            s_axis_tuser [I_IS_RIGHT_COL      ] <= 0;
           end
           else if (data_beats % (k_members*COLS) == COLS-1)  begin
-            s_axis_tuser [I_LRELU_IS_LEFT     ] <= 0;
-            s_axis_tuser [I_LRELU_IS_RIGHT    ] <= 1;
+            s_axis_tuser [I_IS_LEFT_COL       ] <= 0;
+            s_axis_tuser [I_IS_RIGHT_COL      ] <= 1;
           end
           else begin
-            s_axis_tuser [I_LRELU_IS_LEFT     ] <= 0;
-            s_axis_tuser [I_LRELU_IS_RIGHT    ] <= 0;
+            s_axis_tuser [I_IS_LEFT_COL       ] <= 0;
+            s_axis_tuser [I_IS_RIGHT_COL      ] <= 0;
           end
 
           if   (data_beats / (k_members*COLS) == 0)  begin
-            s_axis_tuser [I_LRELU_IS_TOP      ] <= 1;
-            s_axis_tuser [I_LRELU_IS_BOTTOM   ] <= 0;
+            s_axis_tuser [I_IS_TOP_BLOCK      ] <= 1;
+            s_axis_tuser [I_IS_BOTTOM_BLOCK   ] <= 0;
           end
           else if (data_beats / (k_members*COLS) == BLOCKS-1)  begin
-            s_axis_tuser [I_LRELU_IS_TOP      ] <= 0;
-            s_axis_tuser [I_LRELU_IS_BOTTOM   ] <= 1;
+            s_axis_tuser [I_IS_TOP_BLOCK      ] <= 0;
+            s_axis_tuser [I_IS_BOTTOM_BLOCK   ] <= 1;
           end
           else begin
-            s_axis_tuser [I_LRELU_IS_TOP      ] <= 0;
-            s_axis_tuser [I_LRELU_IS_BOTTOM   ] <= 0;
+            s_axis_tuser [I_IS_TOP_BLOCK      ] <= 0;
+            s_axis_tuser [I_IS_BOTTOM_BLOCK   ] <= 0;
           end
 
           if (data_beats == k_members*COLS*BLOCKS-1) s_axis_tlast <= 1;

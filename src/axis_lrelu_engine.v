@@ -24,39 +24,7 @@ Additional Comments:
 //////////////////////////////////////////////////////////////////////////////////*/
 
 
-module axis_lrelu_engine #(
-    WORD_WIDTH_IN  = 32,
-    WORD_WIDTH_OUT = 8 ,
-    WORD_WIDTH_CONFIG = 8,
-
-    UNITS   = 8,
-    GROUPS  = 2,
-    COPIES  = 2,
-    MEMBERS = 2,
-
-    ALPHA = 16'd11878,
-
-    CONFIG_BEATS_3X3_1 = 19, // D(1) + A(2) + B(9*2) -2 = 21-2 = 19
-    CONFIG_BEATS_1X1_1 = 11, // D(1) + A(2*3) + B(2*3) -2 = 13 -2 = 11
-    
-    LATENCY_FIXED_2_FLOAT =  6,
-    LATENCY_FLOAT_32      = 16,
-    BRAM_LATENCY          = 2 ,
-
-    BITS_CONV_CORE       = $clog2(GROUPS * COPIES * MEMBERS),
-    I_IS_3X3             = BITS_CONV_CORE + 0,  
-    I_MAXPOOL_IS_MAX     = BITS_CONV_CORE + 1,
-    I_MAXPOOL_IS_NOT_MAX = BITS_CONV_CORE + 2,
-    I_LRELU_IS_LRELU     = BITS_CONV_CORE + 3,
-    I_LRELU_IS_TOP       = BITS_CONV_CORE + 4,
-    I_LRELU_IS_BOTTOM    = BITS_CONV_CORE + 5,
-    I_LRELU_IS_LEFT      = BITS_CONV_CORE + 6,
-    I_LRELU_IS_RIGHT     = BITS_CONV_CORE + 7,
-
-    TUSER_WIDTH_LRELU       = BITS_CONV_CORE + 8,
-    TUSER_WIDTH_LRELU_FMA_1 = BITS_CONV_CORE + 4,
-    TUSER_WIDTH_MAXPOOL     = BITS_CONV_CORE + 3
-  )(
+module axis_lrelu_engine (
     aclk         ,
     aresetn      ,
     s_axis_tvalid,
@@ -69,13 +37,43 @@ module axis_lrelu_engine #(
     m_axis_tdata , // cgu
     m_axis_tuser 
   );
+    parameter WORD_WIDTH_IN     = 32;
+    parameter WORD_WIDTH_OUT    = 8 ;
+    parameter WORD_WIDTH_CONFIG = 8 ;
+
+    parameter UNITS   = 8;
+    parameter GROUPS  = 2;
+    parameter COPIES  = 2;
+    parameter MEMBERS = 2;
+
+    parameter ALPHA = 16'd11878;
+
+    parameter CONFIG_BEATS_3X3_2 = 19; // D(1) + A(2) + B(9*2) -2 = 21-2 = 19
+    parameter CONFIG_BEATS_1X1_2 = 11; // D(1) + A(2*3) + B(2*3) -2 = 13 -2 = 11
+
+    parameter LATENCY_FIXED_2_FLOAT = 6 ;
+    parameter LATENCY_FLOAT_32      = 16;
+    parameter BRAM_LATENCY          = 2 ;
+
+    parameter I_IS_NOT_MAX      = 0;
+    parameter I_IS_MAX          = I_IS_NOT_MAX      + 1;
+    parameter I_IS_LRELU        = I_IS_MAX          + 1;
+    parameter I_IS_TOP_BLOCK    = I_IS_LRELU        + 1;
+    parameter I_IS_BOTTOM_BLOCK = I_IS_TOP_BLOCK    + 1;
+    parameter I_IS_1X1          = I_IS_BOTTOM_BLOCK + 1;
+    parameter I_IS_LEFT_COL     = I_IS_1X1          + 1;
+    parameter I_IS_RIGHT_COL    = I_IS_LEFT_COL     + 1;
+
+    parameter TUSER_WIDTH_MAXPOOL_IN     = 1 + I_IS_MAX  ;
+    parameter TUSER_WIDTH_LRELU_FMA_1_IN = 1 + I_IS_LRELU;
+    parameter TUSER_WIDTH_LRELU_IN       = 1 + I_IS_RIGHT_COL;
 
     input  wire aclk, aresetn;
     input  wire s_axis_tvalid, s_axis_tlast, m_axis_tready;
     output wire m_axis_tvalid;
     output reg  s_axis_tready;
-    input  wire [TUSER_WIDTH_LRELU  -1:0] s_axis_tuser;
-    output wire [TUSER_WIDTH_MAXPOOL-1:0] m_axis_tuser;
+    input  wire [TUSER_WIDTH_LRELU_IN  -1:0] s_axis_tuser;
+    output wire [TUSER_WIDTH_MAXPOOL_IN-1:0] m_axis_tuser;
 
     input  wire [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_axis_tdata;
     output wire [          COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_axis_tdata;
@@ -85,8 +83,8 @@ module axis_lrelu_engine #(
     wire [COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_data_e;
     wire [COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_data_e;
     wire s_valid_e, s_last_e, m_valid_e;
-    wire [TUSER_WIDTH_LRELU  -1:0] s_user_e;
-    wire [TUSER_WIDTH_MAXPOOL-1:0] m_user_e;
+    wire [TUSER_WIDTH_LRELU_IN  -1:0] s_user_e;
+    wire [TUSER_WIDTH_MAXPOOL_IN-1:0] m_user_e;
     wire s_ready_slice;
 
     localparam BYTES_IN = WORD_WIDTH_IN/8;
@@ -151,7 +149,7 @@ module axis_lrelu_engine #(
       .data_out     (state)
     );
 
-    localparam CONFIG_BEATS_BITS = $clog2(CONFIG_BEATS_3X3_1 + 1);
+    localparam CONFIG_BEATS_BITS = $clog2(CONFIG_BEATS_3X3_2 + 1);
     wire [CONFIG_BEATS_BITS-1:0] count_config;
     reg  [CONFIG_BEATS_BITS-1:0] count_config_next;
     register #(
@@ -193,8 +191,8 @@ module axis_lrelu_engine #(
         RESET_S   : if (s_ready_slice)      state_next = WRITE_1_S;
         WRITE_1_S : if (handshake)   state_next = WRITE_2_S;
         WRITE_2_S : if ((count_config == 0) && handshake) 
-                      if (s_axis_tuser[I_IS_3X3]) state_next = PASS_S;
-                      else                        state_next = FILL_S;
+                      if (s_axis_tuser[I_IS_1X1]) state_next = FILL_S;
+                      else                        state_next = PASS_S;
         FILL_S    : if (count_fill == FILL_DELAY && s_ready_slice )   state_next = PASS_S;
         default   : state_next = state;
       endcase
@@ -238,7 +236,7 @@ module axis_lrelu_engine #(
                     s_axis_tready     = s_ready_slice;
 
                     resetn_config     = 1;
-                    count_config_next = s_axis_tuser[I_IS_3X3] ? CONFIG_BEATS_3X3_1 : CONFIG_BEATS_1X1_1;
+                    count_config_next = s_axis_tuser[I_IS_1X1] ? CONFIG_BEATS_1X1_2 : CONFIG_BEATS_3X3_2;
                     count_fill_next   = 0;
                   end
         WRITE_2_S:begin
@@ -271,8 +269,8 @@ module axis_lrelu_engine #(
       endcase
     end
     
-    wire is_3x3_config;
-    assign is_3x3_config = s_axis_tuser[I_IS_3X3];
+    wire is_1x1_config;
+    assign is_1x1_config = s_axis_tuser[I_IS_1X1];
 
     /*
       DATAWIDTH CONVERTER BANKS
@@ -344,19 +342,18 @@ module axis_lrelu_engine #(
       .LATENCY_FIXED_2_FLOAT (LATENCY_FIXED_2_FLOAT),
       .LATENCY_FLOAT_32      (LATENCY_FLOAT_32     ),
 
-      .BITS_CONV_CORE       (BITS_CONV_CORE      ),
-      .I_IS_3X3             (I_IS_3X3            ),
-      .I_MAXPOOL_IS_MAX     (I_MAXPOOL_IS_MAX    ),
-      .I_MAXPOOL_IS_NOT_MAX (I_MAXPOOL_IS_NOT_MAX),
-      .I_LRELU_IS_LRELU     (I_LRELU_IS_LRELU    ),
-      .I_LRELU_IS_TOP       (I_LRELU_IS_TOP      ),
-      .I_LRELU_IS_BOTTOM    (I_LRELU_IS_BOTTOM   ),
-      .I_LRELU_IS_LEFT      (I_LRELU_IS_LEFT     ),
-      .I_LRELU_IS_RIGHT     (I_LRELU_IS_RIGHT    ),
+      .I_IS_MAX             (I_IS_MAX            ),
+      .I_IS_NOT_MAX         (I_IS_NOT_MAX        ),
+      .I_IS_LRELU           (I_IS_LRELU          ),
+      .I_IS_TOP_BLOCK       (I_IS_TOP_BLOCK      ),
+      .I_IS_BOTTOM_BLOCK    (I_IS_BOTTOM_BLOCK   ),
+      .I_IS_LEFT_COL        (I_IS_LEFT_COL       ),
+      .I_IS_RIGHT_COL       (I_IS_RIGHT_COL      ),
+      .I_IS_1X1             (I_IS_1X1            ),
 
-      .TUSER_WIDTH_LRELU       (TUSER_WIDTH_LRELU      ),
-      .TUSER_WIDTH_LRELU_FMA_1 (TUSER_WIDTH_LRELU_FMA_1),
-      .TUSER_WIDTH_MAXPOOL     (TUSER_WIDTH_MAXPOOL    )
+      .TUSER_WIDTH_LRELU_IN       (TUSER_WIDTH_LRELU_IN      ),
+      .TUSER_WIDTH_LRELU_FMA_1_IN (TUSER_WIDTH_LRELU_FMA_1_IN),
+      .TUSER_WIDTH_MAXPOOL_IN     (TUSER_WIDTH_MAXPOOL_IN    )
     )
     engine
     (
@@ -372,7 +369,7 @@ module axis_lrelu_engine #(
 
       .resetn_config     (resetn_config ),
       .s_valid_config    (config_s_valid),
-      .is_3x3_config     (is_3x3_config ),
+      .is_1x1_config     (is_1x1_config ),
       .s_data_conv_out   (s_axis_tdata  )
     );
 
