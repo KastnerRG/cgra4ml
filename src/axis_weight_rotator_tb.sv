@@ -8,7 +8,7 @@ module axis_weight_rotator_tb ();
     forever #(CLK_PERIOD/2) aclk <= ~aclk;
   end
   
-  localparam K_1      = 3-1;
+  localparam K_1      = 1-1;
   localparam CIN_1    = 4-1;
   localparam COLS_1   = 20-1;
   localparam BLOCKS_1 = 1-1; 
@@ -27,20 +27,19 @@ module axis_weight_rotator_tb ();
 
   localparam BRAM_LATENCY =  2;
 
-  localparam BITS_KERNEL_W_MAX = $clog2(KERNEL_W_MAX);
-  localparam BITS_KERNEL_H_MAX = $clog2(KERNEL_H_MAX);
+  localparam BITS_KERNEL_W = $clog2(KERNEL_W_MAX);
+  localparam BITS_KERNEL_H = $clog2(KERNEL_H_MAX);
 
-  localparam I_KERNEL_W_1         = 0;
-  localparam I_KERNEL_H_1         = I_KERNEL_W_1 + BITS_KERNEL_W_MAX + 0;
-  localparam I_OTHER              = I_KERNEL_H_1 + BITS_KERNEL_H_MAX;
-  localparam I_IS_CONFIG          = I_OTHER + 0;  
-  localparam I_CONV_IS_1X1        = I_OTHER + 1;
-  localparam I_LRELU_IS_TOP       = I_OTHER + 2;
-  localparam I_LRELU_IS_BOTTOM    = I_OTHER + 3;
-  localparam I_CONV_IS_COLS_1_K2  = I_OTHER + 4;
-  localparam TUSER_WIDTH_CONV     = I_OTHER + 5;
+  localparam I_WEIGHTS_IS_TOP_BLOCK    = 0;
+  localparam I_WEIGHTS_IS_BOTTOM_BLOCK = I_WEIGHTS_IS_TOP_BLOCK    + 1;
+  localparam I_WEIGHTS_IS_1X1          = I_WEIGHTS_IS_BOTTOM_BLOCK + 1;
+  localparam I_WEIGHTS_IS_COLS_1_K2    = I_WEIGHTS_IS_1X1          + 1;
+  localparam I_WEIGHTS_IS_CONFIG       = I_WEIGHTS_IS_COLS_1_K2    + 1;
+  localparam I_WEIGHTS_KERNEL_W_1      = I_WEIGHTS_IS_CONFIG       + 1; 
 
-  localparam BITS_CONFIG_COUNT    = $clog2(BEATS_CONFIG_3X3_1);
+  localparam TUSER_WIDTH_WEIGHTS_IN  = I_WEIGHTS_KERNEL_W_1 + BITS_KERNEL_W;
+
+  localparam BITS_CONFIG_COUNT    = $clog2(BEATS_CONFIG_3X3_1+1);
   localparam M_WIDTH              = WORD_WIDTH*CORES*KERNEL_W_MAX;
 
   localparam BRAM_W_WIDTH = WEIGHTS_DMA_BITS;
@@ -64,7 +63,7 @@ module axis_weight_rotator_tb ();
   logic m_axis_tready;
   logic m_axis_tvalid;
   logic [M_WIDTH -1:0]         m_axis_tdata;
-  logic [TUSER_WIDTH_CONV-1:0] m_axis_tuser;
+  logic [TUSER_WIDTH_WEIGHTS_IN-1:0] m_axis_tuser;
   logic m_axis_tlast;
 
   axis_weight_rotator #(
@@ -78,16 +77,14 @@ module axis_weight_rotator_tb ();
     .WEIGHTS_DMA_BITS    (WEIGHTS_DMA_BITS   ),
     .BEATS_CONFIG_3X3_1  (BEATS_CONFIG_3X3_1 ),
     .BEATS_CONFIG_1X1_1  (BEATS_CONFIG_1X1_1 ),
-    .BRAM_LATENCY        (BRAM_LATENCY       ),
-    .I_KERNEL_W_1        (I_KERNEL_W_1       ),
-    .I_KERNEL_H_1        (I_KERNEL_H_1       ),
-    .I_OTHER             (I_OTHER            ),
-    .I_IS_CONFIG         (I_IS_CONFIG        ),
-    .I_CONV_IS_1X1       (I_CONV_IS_1X1      ),
-    .I_LRELU_IS_TOP      (I_LRELU_IS_TOP     ),
-    .I_LRELU_IS_BOTTOM   (I_LRELU_IS_BOTTOM  ),
-    .I_CONV_IS_COLS_1_K2 (I_CONV_IS_COLS_1_K2),
-    .TUSER_WIDTH_CONV    (TUSER_WIDTH_CONV   )
+    .BRAM_LATENCY        (BRAM_LATENCY       ),   
+    .I_WEIGHTS_IS_TOP_BLOCK      (I_WEIGHTS_IS_TOP_BLOCK     ),
+    .I_WEIGHTS_IS_BOTTOM_BLOCK   (I_WEIGHTS_IS_BOTTOM_BLOCK  ),
+    .I_WEIGHTS_IS_1X1            (I_WEIGHTS_IS_1X1           ),
+    .I_WEIGHTS_IS_COLS_1_K2      (I_WEIGHTS_IS_COLS_1_K2     ),
+    .I_WEIGHTS_IS_CONFIG         (I_WEIGHTS_IS_CONFIG        ),
+    .I_WEIGHTS_KERNEL_W_1        (I_WEIGHTS_KERNEL_W_1       ),
+    .TUSER_WIDTH_WEIGHTS_IN(TUSER_WIDTH_WEIGHTS_IN)
   ) pipe (.*);
 
   logic [7:0] s_data_weights [WEIGHTS_DMA_BITS/8-1:0];
