@@ -26,8 +26,8 @@ Additional Comments:
 //////////////////////////////////////////////////////////////////////////////////*/
 
 module axis_weight_rotator (
-    aclk    ,
-    aresetn ,
+    aclk         ,
+    aresetn      ,
     s_axis_tready, 
     s_axis_tvalid, 
     s_axis_tlast , 
@@ -37,7 +37,7 @@ module axis_weight_rotator (
     m_axis_tvalid,   
     m_axis_tdata ,
     m_axis_tlast ,
-    m_axis_tuser
+    m_axis_tuser  
   );
   parameter CORES             = 2;
   parameter WORD_WIDTH        = 8; 
@@ -61,9 +61,9 @@ module axis_weight_rotator (
   parameter I_WEIGHTS_IS_1X1          = I_WEIGHTS_IS_BOTTOM_BLOCK + 1;
   parameter I_WEIGHTS_IS_COLS_1_K2    = I_WEIGHTS_IS_1X1          + 1;
   parameter I_WEIGHTS_IS_CONFIG       = I_WEIGHTS_IS_COLS_1_K2    + 1;
-  parameter I_WEIGHTS_KERNEL_W_1      = I_WEIGHTS_IS_CONFIG       + 1; 
-
-  parameter TUSER_WIDTH_WEIGHTS_IN = I_WEIGHTS_KERNEL_W_1 + BITS_KERNEL_W;
+  parameter I_WEIGHTS_IS_ACC_LAST     = I_WEIGHTS_IS_CONFIG       + 1;
+  parameter I_WEIGHTS_KERNEL_W_1      = I_WEIGHTS_IS_ACC_LAST     + 1; 
+  parameter TUSER_WIDTH_WEIGHTS_OUT   = I_WEIGHTS_KERNEL_W_1 + BITS_KERNEL_W;
 
   localparam BITS_CONFIG_COUNT    = $clog2(BEATS_CONFIG_3X3_1+1);
   localparam M_WIDTH              = WORD_WIDTH*CORES*KERNEL_W_MAX;
@@ -88,7 +88,7 @@ module axis_weight_rotator (
   input  logic m_axis_tready;
   output logic m_axis_tvalid;
   output logic m_axis_tlast ;
-  output logic [TUSER_WIDTH_WEIGHTS_IN-1:0] m_axis_tuser;
+  output logic [TUSER_WIDTH_WEIGHTS_OUT-1:0] m_axis_tuser;
   output logic [M_WIDTH         -1:0] m_axis_tdata;
 
   typedef logic logic_2_t [2];
@@ -565,6 +565,7 @@ module axis_weight_rotator (
   assign m_axis_tuser [I_WEIGHTS_IS_1X1     ] = ref_1_kw == 0;
   assign m_axis_tuser [I_WEIGHTS_KERNEL_W_1+BITS_KERNEL_W-1: I_WEIGHTS_KERNEL_W_1] = ref_1_kw [i_read];
 
+  assign m_axis_tuser [I_WEIGHTS_IS_ACC_LAST    ] = last_cin;
   assign m_axis_tuser [I_WEIGHTS_IS_COLS_1_K2   ] = count_cols   == ref_1_kw     [i_read]/2; // i = cols-1-k/2 === [cols-1-i] = k/2
   assign m_axis_tuser [I_WEIGHTS_IS_TOP_BLOCK   ] = count_blocks == ref_1_blocks [i_read];
   assign m_axis_tuser [I_WEIGHTS_IS_BOTTOM_BLOCK] = last_blocks;
@@ -590,7 +591,7 @@ module axis_weight_rotator (
     .clock        (aclk),
     .resetn       (aresetn),
     .data_in      (last_next_config),
-    .clock_enable (1),
+    .clock_enable (1'd1),
     .data_out     (last_config)
   );
 
