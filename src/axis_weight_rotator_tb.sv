@@ -16,7 +16,7 @@ module axis_weight_rotator_tb ();
   localparam CORES             = 4;
   localparam WORD_WIDTH        = 8; 
   localparam KERNEL_H_MAX      = 3;   // odd number
-  localparam KERNEL_W_MAX      = 3;   // odd number
+  localparam KERNEL_W_MAX      = 3;
   localparam IM_CIN_MAX        = 1024;
   localparam IM_BLOCKS_MAX     = 32;
   localparam IM_COLS_MAX       = 384;
@@ -35,9 +35,10 @@ module axis_weight_rotator_tb ();
   localparam I_WEIGHTS_IS_1X1          = I_WEIGHTS_IS_BOTTOM_BLOCK + 1;
   localparam I_WEIGHTS_IS_COLS_1_K2    = I_WEIGHTS_IS_1X1          + 1;
   localparam I_WEIGHTS_IS_CONFIG       = I_WEIGHTS_IS_COLS_1_K2    + 1;
-  localparam I_WEIGHTS_KERNEL_W_1      = I_WEIGHTS_IS_CONFIG       + 1; 
+  localparam I_WEIGHTS_IS_ACC_LAST     = I_WEIGHTS_IS_CONFIG       + 1;
+  localparam I_WEIGHTS_KERNEL_W_1      = I_WEIGHTS_IS_ACC_LAST     + 1; 
 
-  localparam TUSER_WIDTH_WEIGHTS_IN  = I_WEIGHTS_KERNEL_W_1 + BITS_KERNEL_W;
+  localparam TUSER_WIDTH_WEIGHTS_OUT  = I_WEIGHTS_KERNEL_W_1 + BITS_KERNEL_W;
 
   localparam BITS_CONFIG_COUNT    = $clog2(BEATS_CONFIG_3X3_1+1);
   localparam M_WIDTH              = WORD_WIDTH*CORES*KERNEL_W_MAX;
@@ -63,7 +64,7 @@ module axis_weight_rotator_tb ();
   logic m_axis_tready;
   logic m_axis_tvalid;
   logic [M_WIDTH -1:0]         m_axis_tdata;
-  logic [TUSER_WIDTH_WEIGHTS_IN-1:0] m_axis_tuser;
+  logic [TUSER_WIDTH_WEIGHTS_OUT-1:0] m_axis_tuser;
   logic m_axis_tlast;
 
   axis_weight_rotator #(
@@ -83,8 +84,9 @@ module axis_weight_rotator_tb ();
     .I_WEIGHTS_IS_1X1            (I_WEIGHTS_IS_1X1           ),
     .I_WEIGHTS_IS_COLS_1_K2      (I_WEIGHTS_IS_COLS_1_K2     ),
     .I_WEIGHTS_IS_CONFIG         (I_WEIGHTS_IS_CONFIG        ),
+    .I_WEIGHTS_IS_ACC_LAST       (I_WEIGHTS_IS_ACC_LAST      ),
     .I_WEIGHTS_KERNEL_W_1        (I_WEIGHTS_KERNEL_W_1       ),
-    .TUSER_WIDTH_WEIGHTS_IN(TUSER_WIDTH_WEIGHTS_IN)
+    .TUSER_WIDTH_WEIGHTS_OUT(TUSER_WIDTH_WEIGHTS_OUT)
   ) pipe (.*);
 
   logic [7:0] s_data_weights [WEIGHTS_DMA_BITS/8-1:0];

@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="412500000fs"></ZoomStartTime>
-      <ZoomEndTime time="808500001fs"></ZoomEndTime>
-      <Cursor1Time time="695000000fs"></Cursor1Time>
+      <ZoomStartTime time="0fs"></ZoomStartTime>
+      <ZoomEndTime time="1402000001fs"></ZoomEndTime>
+      <Cursor1Time time="436000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="216"></NameColumnWidth>
       <ValueColumnWidth column_width="58"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="59" />
+   <WVObjectSize size="58" />
    <wvobject fp_name="/axis_input_pipe_tb/aclk" type="logic">
       <obj_property name="ElementShortName">aclk</obj_property>
       <obj_property name="ObjectShortName">aclk</obj_property>
@@ -27,6 +27,10 @@
    <wvobject fp_name="/axis_input_pipe_tb/aresetn" type="logic">
       <obj_property name="ElementShortName">aresetn</obj_property>
       <obj_property name="ObjectShortName">aresetn</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider322">
+      <obj_property name="label">PIXELS</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_input_pipe_tb/start_1" type="array">
       <obj_property name="ElementShortName">start_1[31:0]</obj_property>
@@ -48,10 +52,17 @@
       <obj_property name="label">Pixels Input</obj_property>
       <obj_property name="DisplayName">label</obj_property>
    </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/aclk" type="logic">
+      <obj_property name="ElementShortName">aclk</obj_property>
+      <obj_property name="ObjectShortName">aclk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/m_user_kernel_h_1_out" type="array">
+      <obj_property name="ElementShortName">m_user_kernel_h_1_out[1:0]</obj_property>
+      <obj_property name="ObjectShortName">m_user_kernel_h_1_out[1:0]</obj_property>
+   </wvobject>
    <wvobject fp_name="group1327" type="group">
       <obj_property name="label">s_pixels_1</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="/axis_input_pipe_tb/s_axis_pixels_1_tready" type="logic">
          <obj_property name="ElementShortName">s_axis_pixels_1_tready</obj_property>
          <obj_property name="ObjectShortName">s_axis_pixels_1_tready</obj_property>
@@ -97,6 +108,14 @@
          <obj_property name="ObjectShortName">s_axis_pixels_2_tkeep[7:0]</obj_property>
       </wvobject>
    </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/s_data_pixels_1" type="array">
+      <obj_property name="ElementShortName">s_data_pixels_1[7:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">s_data_pixels_1[7:0][7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/s_data_pixels_2" type="array">
+      <obj_property name="ElementShortName">s_data_pixels_2[7:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">s_data_pixels_2[7:0][7:0]</obj_property>
+   </wvobject>
    <wvobject type="divider" fp_name="divider1331">
       <obj_property name="label">Image Mux</obj_property>
       <obj_property name="DisplayName">label</obj_property>
@@ -105,67 +124,41 @@
       <obj_property name="ElementShortName">aclk</obj_property>
       <obj_property name="ObjectShortName">aclk</obj_property>
    </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/state" type="array">
-      <obj_property name="ElementShortName">state[1:0]</obj_property>
-      <obj_property name="ObjectShortName">state[1:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FFD700</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/ones_count" type="array">
-      <obj_property name="ElementShortName">ones_count[4:0]</obj_property>
-      <obj_property name="ObjectShortName">ones_count[4:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/is_max_out" type="logic">
-      <obj_property name="ElementShortName">is_max_out</obj_property>
-      <obj_property name="ObjectShortName">is_max_out</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/kernel_h_1_out" type="array">
-      <obj_property name="ElementShortName">kernel_h_1_out[1:0]</obj_property>
-      <obj_property name="ObjectShortName">kernel_h_1_out[1:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/dw_1_m_ready" type="logic">
-      <obj_property name="ElementShortName">dw_1_m_ready</obj_property>
-      <obj_property name="ObjectShortName">dw_1_m_ready</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/dw_1_m_valid" type="logic">
-      <obj_property name="ElementShortName">dw_1_m_valid</obj_property>
-      <obj_property name="ObjectShortName">dw_1_m_valid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/dw_1_m_data" type="array">
-      <obj_property name="ElementShortName">dw_1_m_data[4:0][7:0]</obj_property>
-      <obj_property name="ObjectShortName">dw_1_m_data[4:0][7:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/dw_1_m_last" type="logic">
-      <obj_property name="ElementShortName">dw_1_m_last</obj_property>
-      <obj_property name="ObjectShortName">dw_1_m_last</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/dw_2_m_ready" type="logic">
-      <obj_property name="ElementShortName">dw_2_m_ready</obj_property>
-      <obj_property name="ObjectShortName">dw_2_m_ready</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/dw_2_m_valid" type="logic">
-      <obj_property name="ElementShortName">dw_2_m_valid</obj_property>
-      <obj_property name="ObjectShortName">dw_2_m_valid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/dw_2_m_data" type="array">
-      <obj_property name="ElementShortName">dw_2_m_data[4:0][7:0]</obj_property>
-      <obj_property name="ObjectShortName">dw_2_m_data[4:0][7:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/m_axis_tready" type="logic">
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/m_axis_tready" type="logic">
       <obj_property name="ElementShortName">m_axis_tready</obj_property>
       <obj_property name="ObjectShortName">m_axis_tready</obj_property>
    </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/m_axis_tvalid" type="logic">
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/m_axis_tvalid" type="logic">
       <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
       <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
    </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/m_data_1" type="array">
-      <obj_property name="ElementShortName">m_data_1[4:0][7:0]</obj_property>
-      <obj_property name="ObjectShortName">m_data_1[4:0][7:0]</obj_property>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/kernel_h_1_out" type="array">
+      <obj_property name="ElementShortName">kernel_h_1_out[1:0]</obj_property>
+      <obj_property name="ObjectShortName">kernel_h_1_out[1:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/im_mux/m_data_2" type="array">
-      <obj_property name="ElementShortName">m_data_2[4:0][7:0]</obj_property>
-      <obj_property name="ObjectShortName">m_data_2[4:0][7:0]</obj_property>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/is_lrelu_out" type="logic">
+      <obj_property name="ElementShortName">is_lrelu_out</obj_property>
+      <obj_property name="ObjectShortName">is_lrelu_out</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/is_not_max_out" type="logic">
+      <obj_property name="ElementShortName">is_not_max_out</obj_property>
+      <obj_property name="ObjectShortName">is_not_max_out</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/is_max_out" type="logic">
+      <obj_property name="ElementShortName">is_max_out</obj_property>
+      <obj_property name="ObjectShortName">is_max_out</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/m_axis_1_tdata" type="array">
+      <obj_property name="ElementShortName">m_axis_1_tdata[39:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_1_tdata[39:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/m_axis_2_tdata" type="array">
+      <obj_property name="ElementShortName">m_axis_2_tdata[39:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_2_tdata[39:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/m_axis_tuser" type="array">
+      <obj_property name="ElementShortName">m_axis_tuser[4:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tuser[4:0]</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider1348">
       <obj_property name="label">Pixel shifter_1</obj_property>
@@ -175,193 +168,90 @@
       <obj_property name="ElementShortName">aclk</obj_property>
       <obj_property name="ObjectShortName">aclk</obj_property>
    </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/s_axis_tready" type="logic">
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_SHIFT_1/s_data_decentered" type="array">
+      <obj_property name="ElementShortName">s_data_decentered[4:0][1:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">s_data_decentered[4:0][1:0][7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_SHIFT_1/buf_data_out" type="array">
+      <obj_property name="ElementShortName">buf_data_out[4:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">buf_data_out[4:0][7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_SHIFT_2/s_data_decentered" type="array">
+      <obj_property name="ElementShortName">s_data_decentered[4:0][1:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">s_data_decentered[4:0][1:0][7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_SHIFT_2/buf_data_out" type="array">
+      <obj_property name="ElementShortName">buf_data_out[4:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">buf_data_out[4:0][7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/pixels_m_ready" type="logic">
+      <obj_property name="ElementShortName">pixels_m_ready</obj_property>
+      <obj_property name="ObjectShortName">pixels_m_ready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/pixels_m_valid" type="logic">
+      <obj_property name="ElementShortName">pixels_m_valid</obj_property>
+      <obj_property name="ObjectShortName">pixels_m_valid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/m_axis_pixels_1_tdata" type="array">
+      <obj_property name="ElementShortName">m_axis_pixels_1_tdata[23:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_pixels_1_tdata[23:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/m_axis_pixels_2_tdata" type="array">
+      <obj_property name="ElementShortName">m_axis_pixels_2_tdata[23:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_pixels_2_tdata[23:0]</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider323">
+      <obj_property name="label">WEIGHTS</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/start_w" type="array">
+      <obj_property name="ElementShortName">start_w[31:0]</obj_property>
+      <obj_property name="ObjectShortName">start_w[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/s_words_w" type="array">
+      <obj_property name="ElementShortName">s_words_w[31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_words_w[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/WEIGHTS_ROTATOR/s_axis_tready" type="logic">
       <obj_property name="ElementShortName">s_axis_tready</obj_property>
       <obj_property name="ObjectShortName">s_axis_tready</obj_property>
    </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/s_axis_tvalid" type="logic">
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/WEIGHTS_ROTATOR/s_axis_tvalid" type="logic">
       <obj_property name="ElementShortName">s_axis_tvalid</obj_property>
       <obj_property name="ObjectShortName">s_axis_tvalid</obj_property>
    </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/s_data" type="array">
-      <obj_property name="ElementShortName">s_data[4:0][7:0]</obj_property>
-      <obj_property name="ObjectShortName">s_data[4:0][7:0]</obj_property>
+   <wvobject fp_name="/axis_input_pipe_tb/s_axis_weights_tdata" type="array">
+      <obj_property name="ElementShortName">s_axis_weights_tdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axis_weights_tdata[31:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/s_data_decentered" type="array">
-      <obj_property name="ElementShortName">s_data_decentered[4:0][1:0][7:0]</obj_property>
-      <obj_property name="ObjectShortName">s_data_decentered[4:0][1:0][7:0]</obj_property>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/WEIGHTS_ROTATOR/s_data" type="array">
+      <obj_property name="ElementShortName">s_data[3:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">s_data[3:0][7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/WEIGHTS_ROTATOR/s_axis_tlast" type="logic">
+      <obj_property name="ElementShortName">s_axis_tlast</obj_property>
+      <obj_property name="ObjectShortName">s_axis_tlast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/WEIGHTS_ROTATOR/s_axis_tkeep" type="array">
+      <obj_property name="ElementShortName">s_axis_tkeep[3:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axis_tkeep[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/WEIGHTS_ROTATOR/m_data" type="array">
+      <obj_property name="ElementShortName">m_data[3:0][2:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data[3:0][2:0][7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/WEIGHTS_ROTATOR/m_axis_tready" type="logic">
+      <obj_property name="ElementShortName">m_axis_tready</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/WEIGHTS_ROTATOR/m_axis_tvalid" type="logic">
+      <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/WEIGHTS_ROTATOR/m_axis_tuser" type="array">
+      <obj_property name="ElementShortName">m_axis_tuser[7:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tuser[7:0]</obj_property>
       <obj_property name="isExpanded"></obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/count" type="array">
-      <obj_property name="ElementShortName">count[1:0]</obj_property>
-      <obj_property name="ObjectShortName">count[1:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/count_next" type="array">
-      <obj_property name="ElementShortName">count_next[1:0]</obj_property>
-      <obj_property name="ObjectShortName">count_next[1:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/slice_s_ready" type="logic">
-      <obj_property name="ElementShortName">slice_s_ready</obj_property>
-      <obj_property name="ObjectShortName">slice_s_ready</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/slice_s_valid" type="logic">
-      <obj_property name="ElementShortName">slice_s_valid</obj_property>
-      <obj_property name="ObjectShortName">slice_s_valid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/buf_data_out" type="array">
-      <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="ElementShortName">buf_data_out[4:0][7:0]</obj_property>
-      <obj_property name="ObjectShortName">buf_data_out[4:0][7:0]</obj_property>
-      <obj_property name="label">buf_data_out_1[2:0][7:0]</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/buf_data_out" type="array">
-      <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="ElementShortName">buf_data_out[4:0][7:0]</obj_property>
-      <obj_property name="ObjectShortName">buf_data_out[4:0][7:0]</obj_property>
-      <obj_property name="label">buf_data_out_2[2:0][7:0]</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-   </wvobject>
-   <wvobject fp_name="group246" type="group">
-      <obj_property name="label">slice</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/slice/aclk" type="logic">
-         <obj_property name="ElementShortName">aclk</obj_property>
-         <obj_property name="ObjectShortName">aclk</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/slice/aresetn" type="logic">
-         <obj_property name="ElementShortName">aresetn</obj_property>
-         <obj_property name="ObjectShortName">aresetn</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/slice/s_axis_tvalid" type="logic">
-         <obj_property name="ElementShortName">s_axis_tvalid</obj_property>
-         <obj_property name="ObjectShortName">s_axis_tvalid</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/slice/s_axis_tready" type="logic">
-         <obj_property name="ElementShortName">s_axis_tready</obj_property>
-         <obj_property name="ObjectShortName">s_axis_tready</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/slice/s_axis_tdata" type="array">
-         <obj_property name="ElementShortName">s_axis_tdata[23:0]</obj_property>
-         <obj_property name="ObjectShortName">s_axis_tdata[23:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/slice/s_axis_tuser" type="array">
-         <obj_property name="ElementShortName">s_axis_tuser[2:0]</obj_property>
-         <obj_property name="ObjectShortName">s_axis_tuser[2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/slice/m_axis_tvalid" type="logic">
-         <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
-         <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/slice/m_axis_tready" type="logic">
-         <obj_property name="ElementShortName">m_axis_tready</obj_property>
-         <obj_property name="ObjectShortName">m_axis_tready</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/slice/m_axis_tdata" type="array">
-         <obj_property name="ElementShortName">m_axis_tdata[23:0]</obj_property>
-         <obj_property name="ObjectShortName">m_axis_tdata[23:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/slice/m_axis_tuser" type="array">
-         <obj_property name="ElementShortName">m_axis_tuser[2:0]</obj_property>
-         <obj_property name="ObjectShortName">m_axis_tuser[2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_1/m_axis_tdata" type="array">
-         <obj_property name="ElementShortName">m_axis_tdata[23:0]</obj_property>
-         <obj_property name="ObjectShortName">m_axis_tdata[23:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/m_axis_pixels_1_tdata" type="array">
-         <obj_property name="ElementShortName">m_axis_pixels_1_tdata[23:0]</obj_property>
-         <obj_property name="ObjectShortName">m_axis_pixels_1_tdata[23:0]</obj_property>
-      </wvobject>
-   </wvobject>
-   <wvobject type="divider" fp_name="divider254">
-      <obj_property name="label">Pixel shifter_2</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/aclk" type="logic">
-      <obj_property name="ElementShortName">aclk</obj_property>
-      <obj_property name="ObjectShortName">aclk</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/s_axis_tready" type="logic">
-      <obj_property name="ElementShortName">s_axis_tready</obj_property>
-      <obj_property name="ObjectShortName">s_axis_tready</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/s_axis_tvalid" type="logic">
-      <obj_property name="ElementShortName">s_axis_tvalid</obj_property>
-      <obj_property name="ObjectShortName">s_axis_tvalid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/s_axis_tdata" type="array">
-      <obj_property name="ElementShortName">s_axis_tdata[39:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axis_tdata[39:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/s_data_decentered" type="array">
-      <obj_property name="ElementShortName">s_data_decentered[4:0][1:0][7:0]</obj_property>
-      <obj_property name="ObjectShortName">s_data_decentered[4:0][1:0][7:0]</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/count" type="array">
-      <obj_property name="ElementShortName">count[1:0]</obj_property>
-      <obj_property name="ObjectShortName">count[1:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/count_next" type="array">
-      <obj_property name="ElementShortName">count_next[1:0]</obj_property>
-      <obj_property name="ObjectShortName">count_next[1:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/slice_s_ready" type="logic">
-      <obj_property name="ElementShortName">slice_s_ready</obj_property>
-      <obj_property name="ObjectShortName">slice_s_ready</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/slice_s_valid" type="logic">
-      <obj_property name="ElementShortName">slice_s_valid</obj_property>
-      <obj_property name="ObjectShortName">slice_s_valid</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/buf_data_out" type="array">
-      <obj_property name="ElementShortName">buf_data_out[4:0][7:0]</obj_property>
-      <obj_property name="ObjectShortName">buf_data_out[4:0][7:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="group281" type="group">
-      <obj_property name="label">slice</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/slice/aclk" type="logic">
-         <obj_property name="ElementShortName">aclk</obj_property>
-         <obj_property name="ObjectShortName">aclk</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/slice/aresetn" type="logic">
-         <obj_property name="ElementShortName">aresetn</obj_property>
-         <obj_property name="ObjectShortName">aresetn</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/slice/s_axis_tvalid" type="logic">
-         <obj_property name="ElementShortName">s_axis_tvalid</obj_property>
-         <obj_property name="ObjectShortName">s_axis_tvalid</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/slice/s_axis_tready" type="logic">
-         <obj_property name="ElementShortName">s_axis_tready</obj_property>
-         <obj_property name="ObjectShortName">s_axis_tready</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/slice/s_axis_tdata" type="array">
-         <obj_property name="ElementShortName">s_axis_tdata[23:0]</obj_property>
-         <obj_property name="ObjectShortName">s_axis_tdata[23:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/slice/s_axis_tuser" type="array">
-         <obj_property name="ElementShortName">s_axis_tuser[2:0]</obj_property>
-         <obj_property name="ObjectShortName">s_axis_tuser[2:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/slice/m_axis_tvalid" type="logic">
-         <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
-         <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/slice/m_axis_tready" type="logic">
-         <obj_property name="ElementShortName">m_axis_tready</obj_property>
-         <obj_property name="ObjectShortName">m_axis_tready</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/slice/m_axis_tdata" type="array">
-         <obj_property name="ElementShortName">m_axis_tdata[23:0]</obj_property>
-         <obj_property name="ObjectShortName">m_axis_tdata[23:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/pipe/image_shift_2/slice/m_axis_tuser" type="array">
-         <obj_property name="ElementShortName">m_axis_tuser[2:0]</obj_property>
-         <obj_property name="ObjectShortName">m_axis_tuser[2:0]</obj_property>
-      </wvobject>
    </wvobject>
    <wvobject type="divider" fp_name="divider1357">
       <obj_property name="label">Output</obj_property>
@@ -371,45 +261,33 @@
       <obj_property name="ElementShortName">aclk</obj_property>
       <obj_property name="ObjectShortName">aclk</obj_property>
    </wvobject>
-   <wvobject fp_name="group1329" type="group">
-      <obj_property name="label">m_pixels</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-      <wvobject fp_name="/axis_input_pipe_tb/m_axis_tready" type="logic">
-         <obj_property name="ElementShortName">m_axis_tready</obj_property>
-         <obj_property name="ObjectShortName">m_axis_tready</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/m_axis_tvalid" type="logic">
-         <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
-         <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/m_data_pixels_2" type="array">
-         <obj_property name="ElementShortName">m_data_pixels_2[2:0][7:0]</obj_property>
-         <obj_property name="ObjectShortName">m_data_pixels_2[2:0][7:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_input_pipe_tb/m_data_pixels_1" type="array">
-         <obj_property name="ElementShortName">m_data_pixels_1[2:0][7:0]</obj_property>
-         <obj_property name="ObjectShortName">m_data_pixels_1[2:0][7:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-      </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/m_axis_tvalid" type="logic">
+      <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
    </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/m_axis_tuser" type="array">
-      <obj_property name="ElementShortName">m_axis_tuser[2:0]</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tuser[2:0]</obj_property>
-      <obj_property name="isExpanded"></obj_property>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/m_axis_tready" type="logic">
+      <obj_property name="ElementShortName">m_axis_tready</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tready</obj_property>
    </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/status" type="array">
-      <obj_property name="ElementShortName">status[31:0]</obj_property>
-      <obj_property name="ObjectShortName">status[31:0]</obj_property>
+   <wvobject fp_name="/axis_input_pipe_tb/m_data_pixels_1" type="array">
+      <obj_property name="ElementShortName">m_data_pixels_1[2:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data_pixels_1[2:0][7:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/file_im_1" type="array">
-      <obj_property name="ElementShortName">file_im_1[31:0]</obj_property>
-      <obj_property name="ObjectShortName">file_im_1[31:0]</obj_property>
+   <wvobject fp_name="/axis_input_pipe_tb/m_data_pixels_2" type="array">
+      <obj_property name="ElementShortName">m_data_pixels_2[2:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data_pixels_2[2:0][7:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/file_im_2" type="array">
-      <obj_property name="ElementShortName">file_im_2[31:0]</obj_property>
-      <obj_property name="ObjectShortName">file_im_2[31:0]</obj_property>
+   <wvobject fp_name="/axis_input_pipe_tb/m_data_weights" type="array">
+      <obj_property name="ElementShortName">m_data_weights[3:0][2:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">m_data_weights[3:0][2:0][7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/m_axis_tlast" type="logic">
+      <obj_property name="ElementShortName">m_axis_tlast</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tlast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/pipe/m_axis_tuser" type="array">
+      <obj_property name="ElementShortName">m_axis_tuser[10:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tuser[10:0]</obj_property>
    </wvobject>
    <wvobject fp_name="group1321" type="group">
       <obj_property name="label">Params</obj_property>
