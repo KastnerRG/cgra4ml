@@ -12,11 +12,11 @@
 module maxpool_engine #(
     parameter UNITS      = 2,
     parameter GROUPS     = 2,
-    parameter MEMEBERS   = 8,
+    parameter MEMBERS    = 8,
     parameter WORD_WIDTH = 8,
 
-    parameter INDEX_IS_NOT_MAX = 0,
-    parameter INDEX_IS_MAX     = 1
+    parameter I_IS_NOT_MAX = 0,
+    parameter I_IS_MAX     = 1
   )(
     clk,
     clken,
@@ -88,10 +88,10 @@ module maxpool_engine #(
     for (genvar i = 0; i < GROUPS; i++) begin: cores
       maxpool_core #(
         .UNITS            (UNITS           ),
-        .MEMEBERS         (MEMEBERS        ),
+        .MEMBERS          (MEMBERS         ),
         .WORD_WIDTH       (WORD_WIDTH      ),
-        .INDEX_IS_NOT_MAX (INDEX_IS_NOT_MAX),
-        .INDEX_IS_MAX     (INDEX_IS_MAX    )
+        .I_IS_NOT_MAX (I_IS_NOT_MAX),
+        .I_IS_MAX     (I_IS_MAX    )
       ) max_core (
         .clk      (clk             ),
         .clken    (clken           ),

@@ -14,7 +14,7 @@ module axis_maxpool_engine (
 
   parameter UNITS      = 8;
   parameter GROUPS     = 2;
-  parameter MEMEBERS   = 8;
+  parameter MEMBERS    = 8;
   parameter WORD_WIDTH = 8;
   parameter KERNEL_H_MAX = 3; // odd
   localparam UNITS_EDGES  = UNITS + KERNEL_H_MAX-1;
@@ -53,7 +53,7 @@ module axis_maxpool_engine (
   maxpool_engine #(
     .UNITS            (UNITS           ),
     .GROUPS           (GROUPS          ),
-    .MEMEBERS         (MEMEBERS        ),
+    .MEMBERS          (MEMBERS         ),
     .WORD_WIDTH       (WORD_WIDTH      ),
     .I_IS_NOT_MAX     (I_IS_NOT_MAX    ),
     .I_IS_MAX         (I_IS_MAX        )

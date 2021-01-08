@@ -10,10 +10,10 @@ module maxpool_core_tb();
   end
 
   localparam UNITS      = 3;
-  localparam MEMEBERS   = 8;
+  localparam MEMBERS    = 8;
   localparam WORD_WIDTH = 16;
-  localparam INDEX_IS_NOT_MAX = 0;
-  localparam INDEX_IS_MAX     = 1;
+  localparam I_IS_NOT_MAX = 0;
+  localparam I_IS_MAX     = 1;
 
   typedef logic signed [WORD_WIDTH-1:0] word_t;
 
@@ -27,10 +27,10 @@ module maxpool_core_tb();
 
   maxpool_core #(
     .UNITS       (UNITS     ),
-    .MEMEBERS    (MEMEBERS  ),
+    .MEMBERS     (MEMBERS   ),
     .WORD_WIDTH  (WORD_WIDTH),
-    .INDEX_IS_MAX    (INDEX_IS_MAX    ),
-    .INDEX_IS_NOT_MAX(INDEX_IS_NOT_MAX)
+    .I_IS_MAX    (I_IS_MAX    ),
+    .I_IS_NOT_MAX(I_IS_NOT_MAX)
   ) dut (.*);
 
   task fill_data (input int init, input logic is_max, is_not_max);
@@ -39,8 +39,8 @@ module maxpool_core_tb();
       for (int c = 0; c< 2; c++) begin
         s_data[u][c] <= init + 10*u + c;
         s_valid      <= 1;
-        s_user[INDEX_IS_MAX    ] <= is_max;
-        s_user[INDEX_IS_NOT_MAX] <= is_not_max;
+        s_user[I_IS_MAX    ] <= is_max;
+        s_user[I_IS_NOT_MAX] <= is_not_max;
       end
     end
   endtask
@@ -51,7 +51,7 @@ module maxpool_core_tb();
 
     // NO MAXPOOL
 
-    for (int i=0; i < MEMEBERS; i++) begin
+    for (int i=0; i < MEMBERS ; i++) begin
       repeat (1) @(posedge clk);
       fill_data(100*i, 0, 1);
       @(posedge clk);
@@ -63,7 +63,7 @@ module maxpool_core_tb();
 
     // MAXPOOL ONLY
 
-    for (int i=0; i < MEMEBERS; i++) begin
+    for (int i=0; i < MEMBERS ; i++) begin
       repeat (3) @(posedge clk);
       fill_data(1000+100*i, 1, 0);
       @(posedge clk);
@@ -72,7 +72,7 @@ module maxpool_core_tb();
 
     repeat (5) @(posedge clk);
 
-    for (int i=0; i < MEMEBERS; i++) begin
+    for (int i=0; i < MEMBERS ; i++) begin
       repeat (3) @(posedge clk);
       fill_data(100*i, 1, 0);
       @(posedge clk);
@@ -83,7 +83,7 @@ module maxpool_core_tb();
 
     repeat (5) @(posedge clk);
 
-    for (int i=0; i < MEMEBERS; i++) begin
+    for (int i=0; i < MEMBERS ; i++) begin
       repeat (3) @(posedge clk);
       fill_data(1000+100*i, 1, 1);
       @(posedge clk);
@@ -92,7 +92,7 @@ module maxpool_core_tb();
 
     repeat (5) @(posedge clk);
 
-    for (int i=0; i < MEMEBERS; i++) begin
+    for (int i=0; i < MEMBERS ; i++) begin
       repeat (3) @(posedge clk);
       fill_data(i*100, 1, 1);
       @(posedge clk);

@@ -49,7 +49,7 @@ module maxpool_core(
 
   parameter UNITS      = 8;
   parameter GROUPS     = 2;
-  parameter MEMEBERS   = 8;
+  parameter MEMBERS    = 8;
   parameter WORD_WIDTH = 8;
 
   parameter I_IS_NOT_MAX = 0;
@@ -76,10 +76,10 @@ module maxpool_core(
               & first 8 handshakes of maxpool
     * state = MAX_4 during latter 8 handshakes of maxpool : we select max from 4
   */
-  localparam MEMEBERS_BITS = $clog2(MEMEBERS);
+  localparam MEMEBERS_BITS = $clog2(MEMBERS );
   logic [MEMEBERS_BITS-1:0] in_count, in_count_next;
 
-  assign in_count_next = (in_count == MEMEBERS-1) ? 0 : in_count  + 1;
+  assign in_count_next = (in_count == MEMBERS -1) ? 0 : in_count  + 1;
 
   register #(
     .WORD_WIDTH   (MEMEBERS_BITS), 
@@ -96,7 +96,7 @@ module maxpool_core(
   localparam MAX_4 = 1;
   logic state, state_trigger;
 
-  assign state_trigger = s_handshake && (in_count == MEMEBERS-1) && s_user[I_IS_MAX];
+  assign state_trigger = s_handshake && (in_count == MEMBERS -1) && s_user[I_IS_MAX];
 
   register #(
     .WORD_WIDTH   (1), 
@@ -219,10 +219,10 @@ module maxpool_core(
       /*
         BUFFER
       */
-      word_t buffer [MEMEBERS + 2];
+      word_t buffer [MEMBERS  + 2];
       assign buffer[0] = max_out;
 
-      for (genvar i=0; i < MEMEBERS + 1; i++) begin: bufgen
+      for (genvar i=0; i < MEMBERS  + 1; i++) begin: bufgen
 
         logic buf_en;
         assign buf_en = (i==0) ? buf_0_en : buf_n_en;
@@ -246,7 +246,7 @@ module maxpool_core(
       assign max_out = (max_in_1 > max_in_2) ? max_in_1 : max_in_2;
 
       assign max_in_1 = sel_max_4_in ? buffer[1] : s_data_uc[u][0];
-      assign max_in_2 = sel_max_4_in ? buffer[MEMEBERS+1] : s_data_uc[u][1];
+      assign max_in_2 = sel_max_4_in ? buffer[MEMBERS +1] : s_data_uc[u][1];
 
       /*
         OUTPUT
