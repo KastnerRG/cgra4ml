@@ -245,12 +245,12 @@ module axis_input_pipe (
   assign m_axis_tuser [I_IS_MAX         ] = pixels_m_user  [I_IMAGE_IS_MAX    ];
   assign m_axis_tuser [I_IS_LRELU       ] = pixels_m_user  [I_IMAGE_IS_LRELU  ];
 
-  assign m_axis_tuser [I_IS_TOP_BLOCK   ] = weights_m_user [I_WEIGHTS_IS_TOP_BLOCK   ];
-  assign m_axis_tuser [I_IS_BOTTOM_BLOCK] = weights_m_user [I_WEIGHTS_IS_BOTTOM_BLOCK];
+  assign m_axis_tuser [I_IS_TOP_BLOCK   ] = weights_m_user [I_WEIGHTS_IS_TOP_BLOCK   ] && m_axis_tvalid;
+  assign m_axis_tuser [I_IS_BOTTOM_BLOCK] = weights_m_user [I_WEIGHTS_IS_BOTTOM_BLOCK] && m_axis_tvalid;
   assign m_axis_tuser [I_IS_1X1         ] = weights_m_user [I_WEIGHTS_IS_1X1         ];
-  assign m_axis_tuser [I_IS_COLS_1_K2   ] = weights_m_user [I_WEIGHTS_IS_COLS_1_K2   ];
+  assign m_axis_tuser [I_IS_COLS_1_K2   ] = weights_m_user [I_WEIGHTS_IS_COLS_1_K2   ] && m_axis_tvalid;
   assign m_axis_tuser [I_IS_CONFIG      ] = weights_m_user [I_WEIGHTS_IS_CONFIG      ];
-  assign m_axis_tuser [I_IS_ACC_LAST    ] = weights_m_user [I_WEIGHTS_IS_ACC_LAST    ];
+  assign m_axis_tuser [I_IS_ACC_LAST    ] = weights_m_user [I_WEIGHTS_IS_ACC_LAST    ] && m_axis_tvalid;
   assign m_axis_tuser [I_KERNEL_W_1 + BITS_KERNEL_W-1: I_KERNEL_W_1] = weights_m_user [I_WEIGHTS_KERNEL_W_1 + BITS_KERNEL_W-1: I_WEIGHTS_KERNEL_W_1];
 
   /*

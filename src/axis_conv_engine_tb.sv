@@ -11,6 +11,18 @@ module axis_conv_engine_tb # ();
     forever #(CLK_PERIOD/2) clk <= ~clk;
   end
 
+  localparam IS_1X1    =  0 ;
+  localparam KERNEL_W  =  3 ;
+  localparam KERNEL_H  =  3 ;
+  localparam IS_MAX    =  0 ; 
+  localparam IS_RELU   =  0 ;
+
+  localparam IM_HEIGHT   =  2 ;
+  localparam IM_WIDTH    =  4 ;
+  localparam IM_CIN      =  2 ;   // 3 CIN + 1 > 2(A-1)-1 => CIN > 2(A-2)/3 => CIN > 2(19-2)/3 => CIN > 11.33 => CIN_min = 12
+  localparam IM_BLOCKS   = IM_HEIGHT / UNITS;
+  localparam UNITS_EDGES = UNITS + (KERNEL_H_MAX-1);
+
   localparam CORES   = 1 ;
   localparam UNITS   = 2 ;
 
@@ -27,40 +39,25 @@ module axis_conv_engine_tb # ();
   localparam IM_COLS_MAX    = 1024;
   localparam BITS_IM_CIN    = $clog2(IM_CIN_MAX);
   localparam BITS_IM_COLS   = $clog2(IM_COLS_MAX);
-  localparam BITS_CONV_CORES= CORES == 1? 1 : $clog2(CORES);
   localparam BITS_KERNEL_W  = $clog2(KERNEL_W_MAX   + 1);
   localparam BITS_KERNEL_H  = $clog2(KERNEL_H_MAX   + 1);
 
-  localparam I_CONV_CORES         = 0;
-  localparam I_IM_CIN_1           = I_CONV_CORES + BITS_CONV_CORES+ 0;
-  localparam I_IM_COLS_1          = I_IM_CIN_1   + BITS_IM_CIN    + 0;
-  localparam I_KERNEL_W           = I_IM_COLS_1  + BITS_IM_COLS   + 0;
-  localparam I_KERNEL_H           = I_KERNEL_W   + BITS_KERNEL_W  + 0;
-  localparam I_OTHER              = I_KERNEL_H   + BITS_KERNEL_H;
+  localparam I_IS_NOT_MAX      = 0;
+  localparam I_IS_MAX          = I_IS_NOT_MAX      + 1;
+  localparam I_IS_LRELU        = I_IS_MAX          + 1;
+  localparam I_IS_TOP_BLOCK    = I_IS_LRELU        + 1;
+  localparam I_IS_BOTTOM_BLOCK = I_IS_TOP_BLOCK    + 1;
+  localparam I_IS_1X1          = I_IS_BOTTOM_BLOCK + 1;
+  localparam I_IS_COLS_1_K2    = I_IS_1X1          + 1;
+  localparam I_IS_CONFIG       = I_IS_COLS_1_K2    + 1;
+  localparam I_IS_ACC_LAST     = I_IS_CONFIG       + 1;
+  localparam I_KERNEL_W_1      = I_IS_ACC_LAST     + 1; 
 
-  localparam I_IS_1X1             = I_OTHER + 0;  
-  localparam I_MAXPOOL_IS_MAX     = I_OTHER + 1;
-  localparam I_MAXPOOL_IS_NOT_MAX = I_OTHER + 2;
-  localparam I_LRELU_IS_LRELU     = I_OTHER + 3;
-  localparam I_LRELU_IS_TOP       = I_OTHER + 4;
-  localparam I_LRELU_IS_BOTTOM    = I_OTHER + 5;
-  localparam I_LRELU_IS_LEFT      = I_OTHER + 6;
-  localparam I_LRELU_IS_RIGHT     = I_OTHER + 7;
-  localparam I_IS_COLS_1_K2       = I_OTHER + 8;  
+  localparam I_IS_LEFT_COL     = I_KERNEL_W_1      + BITS_KERNEL_W;
+  localparam I_IS_RIGHT_COL    = I_IS_LEFT_COL     + 1;
 
-  localparam TUSER_WIDTH_CONV     = I_OTHER + 9;
-  localparam TUSER_WIDTH_LRELU    = BITS_CONV_CORES + 8;
-
-  localparam KERNEL_W  =  3 ;
-  localparam KERNEL_H  =  3 ;
-  localparam IS_MAX    =  0 ; 
-  localparam IS_RELU   =  0 ;
-
-  localparam IM_HEIGHT   =  8 ;
-  localparam IM_WIDTH    =  4 ;
-  localparam IM_CIN      = 12 ;   // 3 CIN + 1 > 2(A-1)-1 => CIN > 2(A-2)/3 => CIN > 2(19-2)/3 => CIN > 11.33 => CIN_min = 12
-  localparam IM_BLOCKS   = IM_HEIGHT / UNITS;
-  localparam UNITS_EDGES = UNITS + (KERNEL_H_MAX-1);
+  localparam TUSER_WIDTH_LRELU_IN = 1 + I_IS_RIGHT_COL;
+  localparam TUSER_WIDTH_CONV_IN  = BITS_KERNEL_W + I_KERNEL_W_1;
      
   string    im_in_path   = "D:/Vision Traffic/soc/mem_yolo/txt/1_im.txt";
   string    im_out_path  = "D:/Vision Traffic/soc/mem_yolo/txt/1_im_out_fpga.txt";
@@ -71,30 +68,21 @@ module axis_conv_engine_tb # ();
   logic clken;
   logic start;
 
-  logic s_pixels_valid ;
-  logic s_pixels_ready ;
+  logic s_valid ;
+  logic s_ready ;
   logic s_weights_valid;
   logic s_weights_ready;
-  logic [TUSER_WIDTH_CONV-1:0] s_user;
+  logic [TUSER_WIDTH_CONV_IN-1:0] s_user;
   logic [WORD_WIDTH_IN   -1:0] s_pixels_data  [UNITS_EDGES-1: 0];
   logic [WORD_WIDTH_IN   -1:0] s_weights_data [CORES-1:0][KERNEL_W_MAX-1:0];
                                                                                         
   logic m_valid;
   logic m_last ;
   logic [WORD_WIDTH_OUT   -1: 0] m_data       [CORES-1:0][UNITS-1:0];
-  logic [TUSER_WIDTH_LRELU-1: 0] m_user;
+  logic [TUSER_WIDTH_LRELU_IN-1: 0] m_user;
 
-  logic [BITS_CONV_CORES-1:0] s_user_cores   ;
-  logic [BITS_IM_CIN    -1:0] s_user_cin_1   ;
-  logic [BITS_IM_COLS   -1:0] s_user_cols_1  ;
   logic [BITS_KERNEL_W  -1:0] s_user_kernel_w_1;
-  logic [BITS_KERNEL_H  -1:0] s_user_kernel_h_1;
-
-  assign s_user [I_CONV_CORES + BITS_CONV_CORES -1 : I_CONV_CORES] = s_user_cores   ;
-  assign s_user [I_IM_CIN_1   + BITS_IM_CIN     -1 : I_IM_CIN_1  ] = s_user_cin_1   ;
-  assign s_user [I_IM_COLS_1  + BITS_IM_COLS    -1 : I_IM_COLS_1 ] = s_user_cols_1  ;
-  assign s_user [I_KERNEL_W   + BITS_KERNEL_W   -1 : I_KERNEL_W  ] = s_user_kernel_w_1;
-  assign s_user [I_KERNEL_H   + BITS_KERNEL_H   -1 : I_KERNEL_H  ] = s_user_kernel_h_1;
+  assign s_user [I_KERNEL_W + BITS_KERNEL_W-1 : I_KERNEL_W] = s_user_kernel_w_1;
 
                                                                                          
   conv_engine # (
@@ -108,42 +96,20 @@ module axis_conv_engine_tb # ();
     .KERNEL_H_MAX         (KERNEL_H_MAX        ), 
     .IM_CIN_MAX           (IM_CIN_MAX          ), 
     .IM_COLS_MAX          (IM_COLS_MAX         ), 
-    .I_CONV_CORES         (I_CONV_CORES        ), 
-    .I_IM_CIN_1           (I_IM_CIN_1          ), 
-    .I_IM_COLS_1          (I_IM_COLS_1         ),
-    .I_KERNEL_W           (I_KERNEL_W          ),  
-    .I_KERNEL_H           (I_KERNEL_H          ),  
-    .I_OTHER              (I_OTHER             ),  
+    .I_IS_NOT_MAX         (I_IS_NOT_MAX        ), 
+    .I_IS_MAX             (I_IS_MAX            ), 
+    .I_IS_LRELU           (I_IS_LRELU          ),
+    .I_IS_TOP_BLOCK       (I_IS_TOP_BLOCK      ),  
+    .I_IS_BOTTOM_BLOCK    (I_IS_BOTTOM_BLOCK   ),  
+    .I_IS_1X1             (I_IS_1X1            ),  
     .I_IS_COLS_1_K2       (I_IS_COLS_1_K2      ),         
-    .I_IS_1X1             (I_IS_1X1            ),
-    .I_MAXPOOL_IS_MAX     (I_MAXPOOL_IS_MAX    ),
-    .I_MAXPOOL_IS_NOT_MAX (I_MAXPOOL_IS_NOT_MAX),
-    .I_LRELU_IS_LRELU     (I_LRELU_IS_LRELU    ),
-    .I_LRELU_IS_TOP       (I_LRELU_IS_TOP      ),
-    .I_LRELU_IS_BOTTOM    (I_LRELU_IS_BOTTOM   ),
-    .I_LRELU_IS_LEFT      (I_LRELU_IS_LEFT     ),
-    .I_LRELU_IS_RIGHT     (I_LRELU_IS_RIGHT    ),  
-    .TUSER_WIDTH_CONV     (TUSER_WIDTH_CONV    ),  
-    .TUSER_WIDTH_LRELU    (TUSER_WIDTH_LRELU   )
+    .I_IS_CONFIG          (I_IS_CONFIG         ),
+    .I_WEIGHTS_IS_ACC_LAST(I_WEIGHTS_IS_ACC_LAST),
+    .I_KERNEL_W_1         (I_KERNEL_W_1        ),
+    .TUSER_WIDTH_CONV_IN  (TUSER_WIDTH_CONV_IN ),  
+    .TUSER_WIDTH_LRELU_IN (TUSER_WIDTH_LRELU_IN)
   )
-  engine
-  (
-    .clk             (clk            ),
-    .resetn          (resetn         ),
-    .clken           (clken          ),
-    .start           (start          ),
-    .s_pixels_valid  (s_pixels_valid ),       
-    .s_pixels_data   (s_pixels_data  ),   
-    .s_pixels_ready  (s_pixels_ready ),
-    .s_weights_valid (s_weights_valid),       
-    .s_weights_data  (s_weights_data ),
-    .s_weights_ready (s_weights_ready),
-    .s_user          (s_user         ),
-    .m_valid         (m_valid        ),
-    .m_data          (m_data         ),
-    .m_last          (m_last         ),
-    .m_user          (m_user         )
-  );
+  engine (.*);
 
   int status, file_im_out, file_im_in, file_weights;
   int im_rotate_count    = 0;
@@ -182,7 +148,7 @@ module axis_conv_engine_tb # ();
     Restart image file for every column & feed pixels
   */
   always @ (posedge clk) begin
-    #1;
+    // #1;
     if (!done_feed) begin
 
       axis_feed_weights;
@@ -203,15 +169,23 @@ module axis_conv_engine_tb # ();
   end
 
   initial begin
-    @(posedge clk);
-    #(CLK_PERIOD*3)
-    @(posedge clk);
+    resetn         <= 0;
+    s_pixels_valid <= 0;
+    s_weights_valid<= 0;
 
     s_user_cores      <= CORES    -1;
     s_user_cin_1      <= IM_CIN   -1;
     s_user_cols_1     <= IM_WIDTH -1;
     s_user_kernel_w_1 <= KERNEL_W -1;
     s_user_kernel_h_1 <= KERNEL_H -1;
+
+    s_user [I_IS_1X1        ] <= I_IS_1X1;
+    s_user [I_IS_LRELU] <= IS_RELU;
+    s_user [I_IS_MAX] <= IS_MAX;
+ 
+    @(posedge clk);
+    #(CLK_PERIOD*3)
+    @(posedge clk);
 
     resetn <= 1;
     start  <= 1;
@@ -227,7 +201,7 @@ module axis_conv_engine_tb # ();
     */
     while(1) begin
       @(posedge clk);
-      #1;
+      // #1;
 
       axis_feed_pixels;
 
@@ -255,7 +229,7 @@ module axis_conv_engine_tb # ();
   end
   
   /*
-  Feed weights according to AXIS protocol
+    Feed weights according to AXIS protocol
   */
   task axis_feed_weights;
   begin

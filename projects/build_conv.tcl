@@ -9,10 +9,10 @@ set WORD_WIDTH_LRELU_1   32
 set WORD_WIDTH_LRELU_2   16
 set WORD_WIDTH_LRELU_OUT 8
 
-set UNITS   3
+set UNITS   4
 set GROUPS  1
-set COPIES  1
-set MEMBERS 4
+set COPIES  2
+set MEMBERS 2
 
 set WEIGHTS_DMA_BITS 32
 
@@ -29,6 +29,7 @@ set LATENCY_MULTIPIER 3
 set LATENCY_ACCUMULATOR 2
 
 set UNITS_EDGES        [expr $UNITS + $KERNEL_H_MAX-1]
+set CORES              [expr $MEMBERS * $GROUPS * $COPIES]
 set BITS_KERNEL_W      [expr int(ceil(log($KERNEL_W_MAX)/log(2)))]
 set BITS_KERNEL_H      [expr int(ceil(log($KERNEL_H_MAX)/log(2)))]
 set IM_IN_S_DATA_WORDS [expr 2**int(ceil(log($UNITS_EDGES)/log(2)))]
@@ -116,19 +117,37 @@ set T_KEEP 1
 create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
 
-# set IP_NAME "multiplier"
-# lappend IP_NAMES $IP_NAME
-# set WIDTH $WORD_WIDTH_IN
-# set LATENCY $LATENCY_MULTIPIER
-# create_ip -name mult_gen -vendor xilinx.com -library ip -version 12.0 -module_name $IP_NAME
-# set_property -dict [list CONFIG.PortAWidth $WIDTH CONFIG.PortBWidth $WIDTH CONFIG.PipeStages $LATENCY CONFIG.ClockEnable {true}] [get_ips $IP_NAME]
+set IP_NAME "multiplier"
+lappend IP_NAMES $IP_NAME
+set WIDTH $WORD_WIDTH_IN
+set LATENCY $LATENCY_MULTIPIER
+create_ip -name mult_gen -vendor xilinx.com -library ip -version 12.0 -module_name $IP_NAME
+set_property -dict [list CONFIG.PortAWidth $WIDTH CONFIG.PortBWidth $WIDTH CONFIG.PipeStages $LATENCY CONFIG.ClockEnable {true}] [get_ips $IP_NAME]
 
-# set IP_NAME "accumulator"
-# lappend IP_NAMES $IP_NAME
-# set WIDTH $WORD_WIDTH_CONV_OUT
-# set LATENCY $LATENCY_ACCUMULATOR
-# create_ip -name c_accum -vendor xilinx.com -library ip -version 12.0 -module_name $IP_NAME
-# set_property -dict [list CONFIG.Implementation {DSP48} CONFIG.Input_Width $WIDTH CONFIG.Output_Width $WIDTH CONFIG.Latency $LATENCY CONFIG.CE {true}] [get_ips $IP_NAME]
+set IP_NAME "accumulator"
+lappend IP_NAMES $IP_NAME
+set WIDTH $WORD_WIDTH_CONV_OUT
+set LATENCY $LATENCY_ACCUMULATOR
+create_ip -name c_accum -vendor xilinx.com -library ip -version 12.0 -module_name $IP_NAME
+set_property -dict [list CONFIG.Implementation {DSP48} CONFIG.Input_Width $WIDTH CONFIG.Output_Width $WIDTH CONFIG.Latency $LATENCY CONFIG.CE {true}] [get_ips $IP_NAME]
+
+set IP_NAME "slice_conv"
+lappend IP_NAMES $IP_NAME
+set DATA_BYTES [expr "$WORD_WIDTH_CONV_OUT * $CORES * $UNITS /16"]
+set T_LAST 0
+set T_KEEP 0
+set TUSER_WIDTH 0
+create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $TUSER_WIDTH CONFIG.HAS_TKEEP $T_KEEP CONFIG.HAS_TLAST $T_LAST] [get_ips $IP_NAME]
+
+set IP_NAME "slice_conv_active"
+lappend IP_NAMES $IP_NAME
+set DATA_BYTES [expr "$WORD_WIDTH_CONV_OUT * $CORES * $UNITS /16"]
+set T_LAST 1
+set T_KEEP 0
+set TUSER_WIDTH $TUSER_WIDTH_LRELU_IN
+create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $TUSER_WIDTH CONFIG.HAS_TKEEP $T_KEEP CONFIG.HAS_TLAST $T_LAST] [get_ips $IP_NAME]
 
 
 # Generate IP output products
