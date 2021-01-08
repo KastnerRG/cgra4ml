@@ -16,9 +16,6 @@ module axis_input_pipe_tb ();
   localparam IM_HEIGHT  = 3;
   localparam IM_WIDTH   = 4;
   localparam IM_CIN     = 4;
-  localparam IS_NOT_MAX = 0;
-  localparam IS_MAX     = 1;
-  localparam IS_LRELU   = 0;
 
   /*
     SYSTEM PARAMS
@@ -181,7 +178,7 @@ module axis_input_pipe_tb ();
   
   localparam CONFIG_BEATS_1   = K == 1 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
   localparam W_BEATS          = 1 + CONFIG_BEATS_1+1 + K*IM_CIN;
-  localparam W_WORDS          = (W_BEATS-1) * KERNEL_W_MAX * CORES + WEIGHTS_DMA_BITS/WORD_WIDTH;
+  localparam WORDS_W          = (W_BEATS-1) * KERNEL_W_MAX * CORES + WEIGHTS_DMA_BITS/WORD_WIDTH;
   localparam W_WORDS_PER_BEAT = WEIGHTS_DMA_BITS/WORD_WIDTH;
 
   int s_words_1 = 0; 
@@ -189,55 +186,82 @@ module axis_input_pipe_tb ();
   int s_words_w = 0; 
 
   task axis_feed_pixels_1;
-    if (s_axis_pixels_1_tready) begin
-      s_axis_pixels_1_tvalid <= 1;
+    @(posedge aclk);
+    if (start_1) begin
+      if (s_axis_pixels_1_tready) begin
+        if (s_words_1 < WORDS_1) begin
+          s_axis_pixels_1_tvalid= 1;
 
-      for (int i=0; i < IM_IN_S_DATA_WORDS; i++) begin
+          for (int i=0; i < IM_IN_S_DATA_WORDS; i++) begin
+            if (~$feof(file_im_1))
+              status = $fscanf(file_im_1,"%d\n", s_data_pixels_1[i]);
+            
+            s_axis_pixels_1_tkeep[i] = s_words_1 < WORDS_1;
+            s_words_1 = s_words_1 + 1;
+          end
 
-        status = $fscanf(file_im_1,"%d\n", s_data_pixels_1[i]);
-        
-        if (s_words_1 < WORDS_1) s_axis_pixels_1_tkeep[i] = 1;
-        else                     s_axis_pixels_1_tkeep[i] = 0;
-        s_words_1 = s_words_1 + 1;
+          s_axis_pixels_1_tlast = ~(s_words_1 < WORDS_1);
+        end
+        else begin
+          s_axis_pixels_1_tvalid <= 0;
+          s_axis_pixels_1_tlast  <= 0;
+          s_words_1              <= 0;
+          start_1                <= 0;
+        end
       end
-
-      if (s_words_1 < WORDS_1)   s_axis_pixels_1_tlast <= 0;
-      else                       s_axis_pixels_1_tlast <= 1;
     end
   endtask
 
   task axis_feed_pixels_2;
-    if (s_axis_pixels_2_tready) begin
-      s_axis_pixels_2_tvalid <= 1;
+    @(posedge aclk);
+    if (start_2) begin
+      if (s_axis_pixels_2_tready) begin
+        if (s_words_2 < WORDS_2) begin
+          s_axis_pixels_2_tvalid = 1;
 
-      for (int i=0; i < IM_IN_S_DATA_WORDS; i++) begin
-        status = $fscanf(file_im_2,"%d\n", s_data_pixels_2[i]);
+          for (int i=0; i < IM_IN_S_DATA_WORDS; i++) begin
+            if (~$feof(file_im_2))
+              status = $fscanf(file_im_2,"%d\n", s_data_pixels_2[i]);
 
-        if (s_words_2 < WORDS_2) s_axis_pixels_2_tkeep[i] = 1;
-        else                     s_axis_pixels_2_tkeep[i] = 0;
-        s_words_2 = s_words_2 + 1;
+            s_axis_pixels_2_tkeep[i] = s_words_2 < WORDS_2;
+            s_words_2 = s_words_2 + 1;
+          end
+
+          s_axis_pixels_2_tlast = ~(s_words_2 < WORDS_2);
+        end
+        else begin
+          s_axis_pixels_2_tvalid <= 0;
+          s_axis_pixels_2_tlast  <= 0;
+          s_words_2              <= 0;
+          start_2                <= 0;
+        end
       end
-
-      if (s_words_2 < WORDS_2)   s_axis_pixels_2_tlast <= 0;
-      else                       s_axis_pixels_2_tlast <= 1;
     end
   endtask
 
   task axis_feed_weights;
-    if (s_axis_weights_tready) begin
-      s_axis_weights_tvalid <= 1;
+    @(posedge aclk);
+    if (start_w) begin
+      if (s_axis_weights_tready) begin
+        if (s_words_w < WORDS_W) begin
+          s_axis_weights_tvalid = 1;
+          for (int i=0; i < W_WORDS_PER_BEAT; i++) begin
+            if (~$feof(file_weights))
+              status = $fscanf(file_weights,"%d\n", s_data_weights[i]);
+            
+            s_axis_weights_tkeep[i] = s_words_w < WORDS_W;
+            s_words_w = s_words_w + 1;
+          end
 
-      for (int i=0; i < W_WORDS_PER_BEAT; i++) begin
-
-        status = $fscanf(file_weights,"%d\n", s_data_weights[i]);
-        
-        if (s_words_w < W_WORDS) s_axis_weights_tkeep[i] = 1;
-        else                     s_axis_weights_tkeep[i] = 0;
-        s_words_w = s_words_w + 1;
+          s_axis_weights_tlast = ~(s_words_w < WORDS_W);
+        end
+        else begin
+          s_axis_weights_tvalid <= 0;
+          s_axis_weights_tlast  <= 0;
+          s_words_w             <= 0;
+          start_w               <= 0;
+        end
       end
-
-      if (s_words_w < W_WORDS)   s_axis_weights_tlast <= 0;
-      else                       s_axis_weights_tlast <= 1;
     end
   endtask
 
@@ -246,57 +270,15 @@ module axis_input_pipe_tb ();
   int start_w =0;
 
   initial begin
-    forever begin
-      @(posedge aclk);
-
-      if (start_1) begin
-        axis_feed_pixels_1;
-        
-        if (status != 1 && $feof(file_im_1)) begin
-          @(posedge aclk);
-          s_axis_pixels_1_tvalid <= 0;
-          s_axis_pixels_1_tlast  <= 0;
-          s_words_1       <= 0;
-          start_1         <= 0;
-        end
-      end
-    end
+    forever axis_feed_pixels_1;
   end
 
   initial begin
-    forever begin
-      @(posedge aclk);
-
-      if (start_2) begin
-        axis_feed_pixels_2;
-
-        if (status != 1 && $feof(file_im_2)) begin
-          @(posedge aclk);
-          s_axis_pixels_2_tvalid <= 0;
-          s_axis_pixels_2_tlast  <= 0;
-          s_words_2       <= 0;
-          start_2         <= 0;
-        end
-      end
-    end
+    forever axis_feed_pixels_2;
   end
 
   initial begin
-    forever begin
-      @(posedge aclk);
-
-      if (start_w) begin
-        axis_feed_weights;
-        
-        if (status != 1 && $feof(file_weights)) begin
-          @(posedge aclk);
-          s_axis_weights_tvalid <= 0;
-          s_axis_weights_tlast  <= 0;
-          s_words_w             <= 0;
-          start_w               <= 0;
-        end
-      end
-    end
+    forever axis_feed_weights;
   end
 
   initial begin
@@ -332,7 +314,7 @@ module axis_input_pipe_tb ();
       start_2 = 1;
       start_w = 1;
 
-      while (!(start_1 == 0 && start_2 == 0 && start_w == 0)) @(posedge aclk);
+      while (!(start_1 == 0 && (start_2 == 0 || ~m_axis_tuser[I_IS_MAX]) && start_w == 0)) @(posedge aclk);
     end
 
     $fclose(file_im_1);

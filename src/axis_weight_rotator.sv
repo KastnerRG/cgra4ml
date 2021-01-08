@@ -110,7 +110,7 @@ module axis_weight_rotator (
   logic dw_m_handshake, dw_m_last_handshake;
   logic i_read, i_write, tog_i_read, tog_i_write;
 
-  logic_2_t done_read_next, done_write_next, clken_ref;
+  logic_2_t done_read_next, done_write_next, en_ref;
   logic_2_t done_read, done_write, bram_resetn, bram_wen, bram_w_full, bram_m_ready, bram_m_valid;
 
   logic[M_WIDTH-1:0]    bram_m_data  [2];
@@ -329,7 +329,7 @@ module axis_weight_rotator (
       always_comb begin
         bram_resetn     [i] = 1;
         bram_wen        [i] = 0;
-        clken_ref       [i] = 0;
+        en_ref          [i] = 0;
         done_write_next [i] = done_write[i];
         
         if (i==i_write) begin
@@ -339,7 +339,7 @@ module axis_weight_rotator (
             W_GET_REF_S : begin
                             done_write_next [i] = 0;
                             bram_resetn     [i] = 0;
-                            clken_ref       [i] = 1;
+                            en_ref          [i] = s_handshake;
                           end
             W_WRITE_S   : begin
                             bram_wen[i] = dw_m_valid;
@@ -438,7 +438,7 @@ module axis_weight_rotator (
         - We bypass DW converter and take s_data, since that has lower width (32)
         - Directly connect s_data (sliced appropriately) to ref registers
         - Enabled during GET_REF state:
-          - clken_ref [i_write] = (state == W_GET_REF_S)
+          - en_ref [i_write] = (state == W_GET_REF_S)
       */
 
       register #(
@@ -448,7 +448,7 @@ module axis_weight_rotator (
         .clock        (aclk),
         .resetn       (aresetn),
         .data_in      (s_kw_1),
-        .clock_enable (clken_ref [i]),
+        .clock_enable (en_ref    [i]),
         .data_out     (ref_1_kw  [i])
       );
       register #(
@@ -458,7 +458,7 @@ module axis_weight_rotator (
         .clock        (aclk),
         .resetn       (aresetn),
         .data_in      (s_kh_1),
-        .clock_enable (clken_ref [i]),
+        .clock_enable (en_ref    [i]),
         .data_out     (ref_1_kh  [i])
       );
       register #(
@@ -468,7 +468,7 @@ module axis_weight_rotator (
         .clock        (aclk),
         .resetn       (aresetn),
         .data_in      (s_cin_1),
-        .clock_enable (clken_ref  [i]),
+        .clock_enable (en_ref     [i]),
         .data_out     (ref_1_cin  [i])
       );
       register #(
@@ -478,7 +478,7 @@ module axis_weight_rotator (
         .clock        (aclk),
         .resetn       (aresetn),
         .data_in      (s_cols_1),
-        .clock_enable (clken_ref  [i]),
+        .clock_enable (en_ref     [i]),
         .data_out     (ref_1_cols [i])
       );
       register #(
@@ -488,7 +488,7 @@ module axis_weight_rotator (
         .clock        (aclk),
         .resetn       (aresetn),
         .data_in      (s_blocks_1),
-        .clock_enable (clken_ref    [i]),
+        .clock_enable (en_ref       [i]),
         .data_out     (ref_1_blocks [i])
       );
       /*
@@ -499,7 +499,7 @@ module axis_weight_rotator (
         .RESET_VALUE  (0)
       ) R_ADDR_MIN (
         .clock        (aclk),
-        .clock_enable (clken_ref  [i]),
+        .clock_enable (en_ref     [i]),
         .resetn       (aresetn),
         .data_in      (s_addr_min),
         .data_out     (r_addr_min [i])
@@ -509,7 +509,7 @@ module axis_weight_rotator (
         .RESET_VALUE  (0)
       ) ADDR_MAX (
         .clock        (aclk),
-        .clock_enable (clken_ref  [i]),
+        .clock_enable (en_ref   [i]),
         .resetn       (aresetn),
         .data_in      (s_addr_max),
         .data_out     (addr_max [i])
@@ -535,19 +535,19 @@ module axis_weight_rotator (
   */
 
   assign en_last_kh        = last_config || (m_axis_tready  && state_read == R_READ_S);
-  assign en_last_cin       = en_count_kh    && last_kh  ;
-  assign en_last_cols      = en_count_cin   && last_cin ;
-  assign en_last_blocks    = en_count_cols  && last_cols;
+  assign en_last_cin       = last_config || en_count_kh     && last_kh  ;
+  assign en_last_cols      = last_config || en_count_cin    && last_cin ;
+  assign en_last_blocks    = last_config || en_count_cols   && last_cols;
 
-  assign en_count_kh       = en_last_kh     || last_config;
-  assign en_count_cin      = en_last_cin    || last_config;
-  assign en_count_cols     = en_last_cols   || last_config;
-  assign en_count_blocks   = en_last_blocks || last_config;
+  assign en_count_kh       = en_last_kh    ;
+  assign en_count_cin      = en_last_cin   ;
+  assign en_count_cols     = en_last_cols  ;
+  assign en_count_blocks   = en_last_blocks;
 
-  assign count_next_kh     = (last_kh       || last_config) ? ref_1_kh    [i_read] : count_kh     - 1;
-  assign count_next_cin    = (last_cin      || last_config) ? ref_1_cin   [i_read] : count_cin    - 1;
-  assign count_next_cols   = (last_cols     || last_config) ? ref_1_cols  [i_read] : count_cols   - 1;
-  assign count_next_blocks = (last_blocks   || last_config) ? ref_1_blocks[i_read] : count_blocks - 1;
+  assign count_next_kh     = (last_kh       || last_config || ref_1_kh     == 0) ? ref_1_kh    [i_read] : count_kh     - 1;
+  assign count_next_cin    = (last_cin      || last_config || ref_1_cin    == 0) ? ref_1_cin   [i_read] : count_cin    - 1;
+  assign count_next_cols   = (last_cols     || last_config || ref_1_cols   == 0) ? ref_1_cols  [i_read] : count_cols   - 1;
+  assign count_next_blocks = (last_blocks   || last_config || ref_1_blocks == 0) ? ref_1_blocks[i_read] : count_blocks - 1;
 
   assign last_next_config  = count_config == 1;
   assign last_next_kh      = count_kh     == 1 || ref_1_kh     == 0;
@@ -565,7 +565,7 @@ module axis_weight_rotator (
   assign m_axis_tuser [I_WEIGHTS_IS_1X1     ] = ref_1_kw == 0;
   assign m_axis_tuser [I_WEIGHTS_KERNEL_W_1+BITS_KERNEL_W-1: I_WEIGHTS_KERNEL_W_1] = ref_1_kw [i_read];
 
-  assign m_axis_tuser [I_WEIGHTS_IS_ACC_LAST    ] = last_cin;
+  assign m_axis_tuser [I_WEIGHTS_IS_ACC_LAST    ] = last_kh && last_cin;
   assign m_axis_tuser [I_WEIGHTS_IS_COLS_1_K2   ] = count_cols   == ref_1_kw     [i_read]/2; // i = cols-1-k/2 === [cols-1-i] = k/2
   assign m_axis_tuser [I_WEIGHTS_IS_TOP_BLOCK   ] = count_blocks == ref_1_blocks [i_read];
   assign m_axis_tuser [I_WEIGHTS_IS_BOTTOM_BLOCK] = last_blocks;
