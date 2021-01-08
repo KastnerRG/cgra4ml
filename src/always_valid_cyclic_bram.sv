@@ -89,6 +89,7 @@ module always_valid_cyclic_bram #(
       WRITE_S : if(addr_w == w_addr_max   && s_valid_ready) state_next = FILL_1_S;
       FILL_1_S: if(bram_valid_out)                            state_next = FILL_2_S;
       FILL_2_S: if(w_ptr  == BUFFER_DEPTH-1)                  state_next = READ_S  ;
+      default : state_next = state;
     endcase
   end
 
