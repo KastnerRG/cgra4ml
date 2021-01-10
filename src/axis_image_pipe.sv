@@ -182,10 +182,10 @@ module axis_image_pipe (
   always_comb begin
     unique case (state)
       SET_S   : begin
-                  en_config     = 1;
+                  en_config     = dw_1_m_valid;
                   en_ones_count = 0;
                   m_axis_tvalid = 0;
-                  dw_1_m_ready  = 1;
+                  dw_1_m_ready  = m_axis_tready;
                   dw_2_m_ready  = 0;
                   m_user_kernel_h_1_out  = kernel_h_1_out;
                 end

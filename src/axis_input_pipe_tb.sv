@@ -300,7 +300,7 @@ module axis_input_pipe_tb ();
 
   initial begin
 
-    aresetn         <= 0;
+    aresetn                <= 0;
     s_axis_pixels_1_tvalid <= 0;
     s_axis_pixels_2_tvalid <= 0;
     s_axis_weights_tvalid  <= 0;
@@ -315,17 +315,15 @@ module axis_input_pipe_tb ();
  
     @(posedge aclk);
     #(CLK_PERIOD*3)
+    
     @(posedge aclk);
-
     aresetn         <= 1;
     m_axis_tready   <= 1;
     
     @(posedge aclk);
-
     file_im_1    = $fopen(path_im_1   ,"r");
     file_im_2    = $fopen(path_im_2   ,"r");
     file_weights = $fopen(path_weights,"r");
-
     start_1 = 1;
     start_2 = 1;
     start_w = 1;

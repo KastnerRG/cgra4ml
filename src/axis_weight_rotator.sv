@@ -166,7 +166,7 @@ module axis_weight_rotator (
     state_write_next = state_write;
     unique case (state_write)
       W_IDLE_S    : if (done_read [i_write]   ) state_write_next = W_GET_REF_S;
-      W_GET_REF_S : if (s_handshake           ) state_write_next = W_WRITE_S;
+      W_GET_REF_S : if (s_handshake && state_dw == DW_BLOCK_S) state_write_next = W_WRITE_S;
       W_WRITE_S   : if (dw_m_last_handshake   ) state_write_next = W_FILL_S;    // dw_m_last_handshake and bram_w_full[w_i] should be same
       W_FILL_S    : if (bram_m_valid [i_write]) state_write_next = W_SWITCH_S;
       W_SWITCH_S  : state_write_next = W_IDLE_S;
@@ -277,7 +277,6 @@ module axis_weight_rotator (
 
   always_comb begin
 
-    state_dw_next = state_dw;
     dw_m_ready    = (state_write == W_WRITE_S);
 
     if (state_dw == DW_BLOCK_S) begin
@@ -285,12 +284,14 @@ module axis_weight_rotator (
       s_axis_tready = (state_write == W_GET_REF_S);
 
       if (s_handshake)      state_dw_next = DW_PASS_S;
+      else                  state_dw_next = DW_BLOCK_S;
     end
     else begin
       dw_s_valid    = s_axis_tvalid;
       s_axis_tready = dw_s_ready;
 
       if (s_last_handshake) state_dw_next = DW_BLOCK_S;
+      else                  state_dw_next = DW_PASS_S;
     end
   end
 
@@ -299,7 +300,7 @@ module axis_weight_rotator (
     .RESET_VALUE  (DW_BLOCK_S)
   ) STATE_DW (
     .clock        (aclk),
-    .clock_enable (1'b1),
+    .clock_enable (1'd1),
     .resetn       (aresetn),
     .data_in      (state_dw_next),
     .data_out     (state_dw)
@@ -337,7 +338,7 @@ module axis_weight_rotator (
             W_GET_REF_S : begin
                             done_write_next [i] = 0;
                             bram_resetn     [i] = 0;
-                            en_ref          [i] = s_handshake;
+                            en_ref          [i] = s_handshake && (state_dw == DW_BLOCK_S);
                           end
             W_WRITE_S   : begin
                             bram_wen[i] = dw_m_valid;
@@ -555,7 +556,7 @@ module axis_weight_rotator (
   assign m_axis_tlast = last_kh && last_cin && last_cols && last_blocks;
   
   assign m_axis_tuser [I_WEIGHTS_IS_CONFIG  ] = state_read  == R_PASS_CONFIG_S;
-  assign m_axis_tuser [I_WEIGHTS_IS_1X1     ] = ref_1_kw == 0;
+  assign m_axis_tuser [I_WEIGHTS_IS_1X1     ] = ref_1_kw[i_read] == 0;
   assign m_axis_tuser [I_WEIGHTS_KERNEL_W_1+BITS_KERNEL_W-1: I_WEIGHTS_KERNEL_W_1] = ref_1_kw [i_read];
 
   assign m_axis_tuser [I_WEIGHTS_IS_ACC_LAST    ] = last_kh && last_cin;
