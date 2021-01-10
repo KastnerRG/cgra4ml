@@ -1,5 +1,5 @@
-set PROJ_NAME int
-set PROJ_FOLDER int
+set PROJ_NAME syn
+set PROJ_FOLDER syn
 set SOURCE_FOLDER ../src
 
 set AXIS_FREQUENCY_MHZ   250
@@ -9,10 +9,14 @@ set WORD_WIDTH_LRELU_1   32
 set WORD_WIDTH_LRELU_2   16
 set WORD_WIDTH_LRELU_OUT 8
 
-set UNITS   4
-set GROUPS  1
+# set UNITS   4
+# set GROUPS  1
+# set COPIES  2
+# set MEMBERS 2
+set UNITS   8
+set GROUPS  2
 set COPIES  2
-set MEMBERS 2
+set MEMBERS 8
 
 set WEIGHTS_DMA_BITS 32
 

@@ -1,3 +1,37 @@
+function logic [31:0] float_16_to_32 (input logic [15:0] float_16);
+    logic [31:0] float_32;
+    
+    logic sign;
+    logic [4 :0] exp_16;
+    logic [9 :0] fra_16;
+
+    logic [7 :0] exp_32;
+    logic [22:0] fra_32;
+
+    {sign, exp_16, fra_16} = float_16;
+    fra_32 = fra_16 << 13; // 23-10
+    exp_32 = exp_16 + 7'd112; //- 15 + 127;
+    float_32 = {sign, exp_32, fra_32};
+    return float_32;
+  endfunction
+
+function logic [15:0] float_32_to_16 (input logic [31:0] float_32);
+  logic [15:0] float_16;
+  
+  logic sign;
+  logic [4 :0] exp_16;
+  logic [9 :0] fra_16;
+
+  logic [7 :0] exp_32;
+  logic [22:0] fra_32;
+
+  {sign, exp_32, fra_32} = float_32;
+  fra_16 = fra_32 >> 13 ;
+  exp_16 = exp_32 - 7'd112; //- 15 + 127;
+  float_16 = {sign, exp_16, fra_16};
+  return float_16;
+endfunction
+
 module lrelu_engine (
   clk     ,
   clken   ,
@@ -352,8 +386,8 @@ module lrelu_engine (
 
 
   generate
-    for(genvar c=0; c<COPIES; c=c+1) begin: c
-      for(genvar g=0; g<GROUPS; g=g+1) begin: g
+    for(genvar c=0; c<COPIES; c=c+1) begin: c_gen
+      for(genvar g=0; g<GROUPS; g=g+1) begin: g_gen
 
         n_delay #(
           .N          (LATENCY_FIXED_2_FLOAT),
@@ -394,12 +428,12 @@ module lrelu_engine (
           BRAM B
           - Only the nessasary BRAMs are ready (using ready)
         */
-        for (genvar mtb=0; mtb < 3; mtb ++) begin: mtb
+        for (genvar mtb=0; mtb < 3; mtb ++) begin: mtb_gen
 
           assign ready_mtb[mtb] = (mtb==0) || ~m_user_float32[I_IS_1X1] && (   (mtb==1 && m_user_float32[I_IS_TOP_BLOCK]) 
                                                                            || (mtb==2 && m_user_float32[I_IS_BOTTOM_BLOCK]));
 
-          for (genvar clr=0; clr < 3; clr ++) begin: clr
+          for (genvar clr=0; clr < 3; clr ++) begin: clr_gen
             
             assign b_ready_cg_clr_mtb[c][g][clr][mtb] = m_valid_float32 && (fma1_index_clr == clr) && ready_mtb[mtb];
 
@@ -491,7 +525,7 @@ module lrelu_engine (
           UNITS
         */
 
-        for (genvar u=0; u < UNITS; u++) begin:u
+        for (genvar u=0; u < UNITS; u++) begin:u_gen
 
           assign s_data_fix2float_cgu[c][g][u] = WIDTH_FIXED_2_FLOAT_S_DATA'(signed'(s_data_cgu[c][g][u]));
 
@@ -666,64 +700,30 @@ module lrelu_engine (
   shortreal d_val_cg_sr              [COPIES-1:0][GROUPS-1:0];
   shortreal config_flat_2_cg_sr      [COPIES-1:0][GROUPS-1:0];
 
-  generate
-    for(genvar c=0; c<COPIES; c=c+1) begin: cs
-      for(genvar g=0; g<GROUPS; g=g+1) begin: gs
-        for(genvar u=0; u<UNITS; u=u+1) begin: us
-          assign m_data_fma_1_cgu_sr [c][g][u] = $bitstoshortreal(float_16_to_32(m_data_fma_1_cgu_f16[c][g][u]));
-          assign m_data_fma_2_cgu_sr [c][g][u] = $bitstoshortreal(float_16_to_32(m_data_fma_2_cgu    [c][g][u]));
-          assign c_val_cgu_sr        [c][g][u] = $bitstoshortreal(float_16_to_32(c_val_cgu           [c][g][u]));
-        end
+//  generate
+//    for(genvar c=0; c<COPIES; c=c+1) begin: cs
+//      for(genvar g=0; g<GROUPS; g=g+1) begin: gs
+//        for(genvar u=0; u<UNITS; u=u+1) begin: us
+//          assign m_data_fma_1_cgu_sr [c][g][u] = $bitstoshortreal(float_16_to_32(m_data_fma_1_cgu_f16[c][g][u]));
+//          assign m_data_fma_2_cgu_sr [c][g][u] = $bitstoshortreal(float_16_to_32(m_data_fma_2_cgu    [c][g][u]));
+//          assign c_val_cgu_sr        [c][g][u] = $bitstoshortreal(float_16_to_32(c_val_cgu           [c][g][u]));
+//        end
 
-        assign config_s_data_f16_cgv [c][g] = {>>{s_data_config_flat_cg [c][g]}};
-        assign config_fma1_f16_cgv   [c][g] = {>>{config_flat_1_cg [c][g]}};
+//        assign config_s_data_f16_cgv [c][g] = {>>{s_data_config_flat_cg [c][g]}};
+//        assign config_fma1_f16_cgv   [c][g] = {>>{config_flat_1_cg [c][g]}};
 
-        for(genvar v=0; v<VALS_CONFIG; v=v+1) begin: vs
-          assign config_s_data_cgv_sr[c][g][v] = $bitstoshortreal(float_16_to_32(config_s_data_f16_cgv[c][g][v]));
-          assign config_fma1_cgv_sr  [c][g][v] = $bitstoshortreal(float_16_to_32(config_fma1_f16_cgv  [c][g][v]));
-        end
-        assign config_flat_2_cg_sr   [c][g] = $bitstoshortreal(float_16_to_32(config_flat_2_cg  [c][g]));
-        assign a_val_cg_sr           [c][g] = $bitstoshortreal(float_16_to_32(a_val_cg          [c][g]));
-        assign d_val_cg_sr           [c][g] = $bitstoshortreal(float_16_to_32(d_val_cg          [c][g]));
+//        for(genvar v=0; v<VALS_CONFIG; v=v+1) begin: vs
+//          assign config_s_data_cgv_sr[c][g][v] = $bitstoshortreal(float_16_to_32(config_s_data_f16_cgv[c][g][v]));
+//          assign config_fma1_cgv_sr  [c][g][v] = $bitstoshortreal(float_16_to_32(config_fma1_f16_cgv  [c][g][v]));
+//        end
+//        assign config_flat_2_cg_sr   [c][g] = $bitstoshortreal(float_16_to_32(config_flat_2_cg  [c][g]));
+//        assign a_val_cg_sr           [c][g] = $bitstoshortreal(float_16_to_32(a_val_cg          [c][g]));
+//        assign d_val_cg_sr           [c][g] = $bitstoshortreal(float_16_to_32(d_val_cg          [c][g]));
 
-        for (genvar clr=0; clr<3; clr++)
-          for (genvar mtb=0; mtb<3; mtb++)
-            assign b_cg_clr_mtb_sr   [c][g][clr][mtb] = $bitstoshortreal(float_16_to_32(b_cg_clr_mtb_f16 [c][g][clr][mtb]));
-      end
-    end
-  endgenerate
+//        for (genvar clr=0; clr<3; clr++)
+//          for (genvar mtb=0; mtb<3; mtb++)
+//            assign b_cg_clr_mtb_sr   [c][g][clr][mtb] = $bitstoshortreal(float_16_to_32(b_cg_clr_mtb_f16 [c][g][clr][mtb]));
+//      end
+//    end
+//  endgenerate
 endmodule
-
-function logic [31:0] float_16_to_32 (input logic [15:0] float_16);
-    logic [31:0] float_32;
-    
-    logic sign;
-    logic [4 :0] exp_16;
-    logic [9 :0] fra_16;
-
-    logic [7 :0] exp_32;
-    logic [22:0] fra_32;
-
-    assign {sign, exp_16, fra_16} = float_16;
-    assign fra_32 = fra_16 << 13; // 23-10
-    assign exp_32 = exp_16 + 7'd112; //- 15 + 127;
-    assign float_32 = {sign, exp_32, fra_32};
-    return float_32;
-  endfunction
-
-function logic [15:0] float_32_to_16 (input logic [31:0] float_32);
-  logic [15:0] float_16;
-  
-  logic sign;
-  logic [4 :0] exp_16;
-  logic [9 :0] fra_16;
-
-  logic [7 :0] exp_32;
-  logic [22:0] fra_32;
-
-  assign {sign, exp_32, fra_32} = float_32;
-  assign fra_16 = fra_32 >> 13 ;
-  assign exp_16 = exp_32 - 7'd112; //- 15 + 127;
-  assign float_16 = {sign, exp_16, fra_16};
-  return float_16;
-endfunction

@@ -279,12 +279,12 @@ module axis_lrelu_engine (
       * Number: 2 (one per copy)
     */
     generate
-      for(genvar c=0; c<COPIES; c=c+1) begin: c
+      for(genvar c=0; c<COPIES; c=c+1) begin: c_gen
 
         // Transpose MCGU -> CGUM
-        for (genvar g=0; g<GROUPS; g=g+1) begin: g
-          for (genvar u=0; u<UNITS; u=u+1) begin: u
-            for (genvar m=0; m<MEMBERS; m=m+1) begin: m
+        for (genvar g=0; g<GROUPS; g=g+1) begin: g_gen
+          for (genvar u=0; u<UNITS; u=u+1) begin: u_gen
+            for (genvar m=0; m<MEMBERS; m=m+1) begin: m_gen
               assign s_axis_tdata_cmgu [(c*MEMBERS*GROUPS*UNITS + m*GROUPS*UNITS + g*UNITS + u +1)*WORD_WIDTH_IN-1:(c*MEMBERS*GROUPS*UNITS + m*GROUPS*UNITS + g*UNITS + u)*WORD_WIDTH_IN] = s_axis_tdata[(m*COPIES*GROUPS*UNITS + c*GROUPS*UNITS + g*UNITS + u +1)*WORD_WIDTH_IN-1:(m*COPIES*GROUPS*UNITS + c*GROUPS*UNITS + g*UNITS + u)*WORD_WIDTH_IN];
             end
           end
@@ -308,7 +308,7 @@ module axis_lrelu_engine (
 
             .m_axis_tvalid  (s_valid_e),  
             .m_axis_tready  (s_ready_slice), 
-            .m_axis_tdata   (s_data_e),
+            .m_axis_tdata   (dw_m_data_gu),
             .m_axis_tlast   (s_last_e),  
             .m_axis_tid     (s_user_e)   
           );
@@ -321,7 +321,7 @@ module axis_lrelu_engine (
             .s_axis_tdata   (dw_s_data_mgu),
 
             .m_axis_tready  (s_ready_slice), 
-            .m_axis_tdata   (s_data_e)
+            .m_axis_tdata   (dw_m_data_gu)
           );
         end
       end

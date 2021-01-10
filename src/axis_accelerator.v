@@ -20,14 +20,14 @@ module axis_accelerator (
     m_axis_tready         ,
     m_axis_tdata          ,
     m_axis_tkeep          ,
-    m_axis_tuser          ,
+    // m_axis_tuser          ,
     m_axis_tlast
   ); 
 
-  parameter UNITS              = 4;
-  parameter GROUPS             = 1;
+  parameter UNITS              = 8;
+  parameter GROUPS             = 2;
   parameter COPIES             = 2;
-  parameter MEMBERS            = 2;
+  parameter MEMBERS            = 8;
 
   parameter WORD_WIDTH         = 8; 
   parameter WORD_WIDTH_ACC     = 25;
@@ -36,14 +36,14 @@ module axis_accelerator (
   parameter BEATS_CONFIG_3X3_1 = 21-1;
   parameter BEATS_CONFIG_1X1_1 = 13-1;
 
-  localparam CORES             = MEMBERS * COPIES * GROUPS;
-  localparam UNITS_EDGES       = UNITS + KERNEL_H_MAX-1;
-  localparam IM_IN_S_DATA_WORDS= 2**$clog2(UNITS_EDGES);
-  localparam BITS_CONFIG_COUNT = $clog2(BEATS_CONFIG_3X3_1);
-  localparam BITS_KERNEL_H     = $clog2(KERNEL_H_MAX);
-  localparam BITS_KERNEL_W     = $clog2(KERNEL_W_MAX);
+  parameter CORES             = MEMBERS * COPIES * GROUPS;
+  parameter UNITS_EDGES       = UNITS + KERNEL_H_MAX-1;
+  parameter IM_IN_S_DATA_WORDS= 2**$clog2(UNITS_EDGES);
+  parameter BITS_CONFIG_COUNT = $clog2(BEATS_CONFIG_3X3_1);
+  parameter BITS_KERNEL_H     = $clog2(KERNEL_H_MAX);
+  parameter BITS_KERNEL_W     = $clog2(KERNEL_W_MAX);
 
-  localparam TKEEP_WIDTH_IM_IN = (WORD_WIDTH*IM_IN_S_DATA_WORDS)/8;
+  parameter TKEEP_WIDTH_IM_IN = (WORD_WIDTH*IM_IN_S_DATA_WORDS)/8;
 
   /*
     IMAGE TUSER INDICES
@@ -153,7 +153,7 @@ module axis_accelerator (
   output wire m_axis_tlast;
   output wire [GROUPS*UNITS_EDGES*COPIES*WORD_WIDTH-1:0] m_axis_tdata;
   output wire [GROUPS*UNITS_EDGES*COPIES-1:0]            m_axis_tkeep;
-  output wire [TUSER_WIDTH_LRELU_IN-1:0] m_axis_tuser;
+  // output wire [TUSER_WIDTH_LRELU_IN-1:0] m_axis_tuser;
 
   axis_input_pipe #(
     .UNITS                     (UNITS                    ),
@@ -274,9 +274,9 @@ module axis_accelerator (
       end
     endgenerate
 
-    assign lrelu_s_axis_tready = m_axis_tready;
-    assign m_axis_tvalid       = lrelu_s_axis_tvalid;
-    assign m_axis_tuser        = lrelu_s_axis_tuser;
+    // assign lrelu_s_axis_tready = m_axis_tready;
+    // assign m_axis_tvalid       = lrelu_s_axis_tvalid;
+    // assign m_axis_tuser        = lrelu_s_axis_tuser;
 
   axis_lrelu_engine #(
     .WORD_WIDTH_IN              (WORD_WIDTH_ACC            ),
