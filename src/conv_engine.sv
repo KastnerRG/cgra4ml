@@ -174,7 +174,7 @@ module conv_engine (
     CONTROL CHAINS
   */
   generate
-    for (genvar w=0; w < KERNEL_W_MAX; w++) begin: w
+    for (genvar w=0; w < KERNEL_W_MAX; w++) begin: w_gen
 
       /*
         Multiplier Delay
@@ -502,10 +502,10 @@ module conv_engine (
     /*
       DOT PRODUCT CHAIN
     */
-    for (genvar c=0; c < 2; c++) begin: c
-      for (genvar r=0; r < CORES/2; r++) begin: r
-        for (genvar u=0; u < UNITS; u++) begin: u        
-          for (genvar w=0; w < KERNEL_W_MAX; w++) begin: w
+    for (genvar c=0; c < 2; c++) begin: c_gen
+      for (genvar r=0; r < CORES/2; r++) begin: r_gen
+        for (genvar u=0; u < UNITS; u++) begin: u_gen
+          for (genvar w=0; w < KERNEL_W_MAX; w++) begin: w_gen
 
             multiplier multiplier 
             (
