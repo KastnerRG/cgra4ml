@@ -19,8 +19,8 @@ module axis_accelerator (
     m_axis_tvalid         ,
     m_axis_tready         ,
     m_axis_tdata          ,
-    m_axis_tkeep          ,
-    // m_axis_tuser          ,
+    // m_axis_tkeep          ,
+    m_axis_tuser          ,
     m_axis_tlast
   ); 
 
@@ -107,6 +107,12 @@ module axis_accelerator (
   parameter TUSER_WIDTH_LRELU_FMA_1_IN = 1 + I_IS_LRELU;
   parameter TUSER_WIDTH_LRELU_IN       = 1 + I_IS_RIGHT_COL;
 
+  parameter M_DATA_WIDTH_CONV    = WORD_WIDTH*CORES*KERNEL_W_MAX;
+  parameter M_DATA_WIDTH_LRELU   = WORD_WIDTH_ACC*UNITS*CORES;
+  parameter M_DATA_WIDTH_MAXPOOL = GROUPS*UNITS_EDGES*COPIES*WORD_WIDTH;
+
+  /* WIRES */
+
   input  wire aclk;
   input  wire aresetn;
 
@@ -139,21 +145,36 @@ module axis_accelerator (
   wire lrelu_s_axis_tready;
   wire lrelu_s_axis_tvalid;
   wire lrelu_s_axis_tlast ;
-  wire [WORD_WIDTH_ACC*UNITS*CORES   -1:0] lrelu_s_axis_tdata_cmgu;
-  wire [WORD_WIDTH_ACC*UNITS*CORES   -1:0] lrelu_s_axis_tdata_mcgu;
-  wire [TUSER_WIDTH_LRELU_IN         -1:0] lrelu_s_axis_tuser;
+  wire [M_DATA_WIDTH_CONV     -1:0] lrelu_s_axis_tdata_cmgu;
+  wire [M_DATA_WIDTH_CONV     -1:0] lrelu_s_axis_tdata_mcgu;
+  wire [TUSER_WIDTH_LRELU_IN  -1:0] lrelu_s_axis_tuser;
 
   wire maxpool_s_axis_tvalid;
   wire maxpool_s_axis_tready;
-  wire [COPIES*GROUPS*UNITS*WORD_WIDTH-1:0] maxpool_s_axis_tdata;
-  wire [TUSER_WIDTH_MAXPOOL_IN-1:0]         maxpool_s_axis_tuser;
+  wire [M_DATA_WIDTH_LRELU    -1:0] maxpool_s_axis_tdata;
+  wire [TUSER_WIDTH_MAXPOOL_IN-1:0] maxpool_s_axis_tuser;
+
+  wire maxpool_m_axis_tvalid;
+  wire maxpool_m_axis_tready;
+  wire [M_DATA_WIDTH_MAXPOOL     -1:0] maxpool_m_axis_tdata;
+  wire [GROUPS*UNITS_EDGES*COPIES-1:0] maxpool_m_axis_tkeep;
 
   input  wire m_axis_tready;
   output wire m_axis_tvalid;
   output wire m_axis_tlast;
-  output wire [GROUPS*UNITS_EDGES*COPIES*WORD_WIDTH-1:0] m_axis_tdata;
-  output wire [GROUPS*UNITS_EDGES*COPIES-1:0]            m_axis_tkeep;
-  // output wire [TUSER_WIDTH_LRELU_IN-1:0] m_axis_tuser;
+  // output wire [M_DATA_WIDTH_MAXPOOL     -1:0] m_axis_tdata;
+  // output wire [GROUPS*UNITS_EDGES*COPIES-1:0] m_axis_tkeep;
+
+
+  //*********** CONNECT OUTPUT FOR DEBUGGING ***********
+
+  output wire [M_DATA_WIDTH_CONV   -1:0] m_axis_tdata;
+  output wire [TUSER_WIDTH_LRELU_IN-1:0] m_axis_tuser;
+
+  assign lrelu_s_axis_tready = m_axis_tready;
+  assign m_axis_tvalid       = lrelu_s_axis_tvalid;
+  assign m_axis_tuser        = lrelu_s_axis_tuser;
+  assign m_axis_tdata        = lrelu_s_axis_tdata_cmgu;
 
   axis_input_pipe #(
     .UNITS                     (UNITS                    ),
@@ -273,10 +294,6 @@ module axis_accelerator (
         end
       end
     endgenerate
-
-    // assign lrelu_s_axis_tready = m_axis_tready;
-    // assign m_axis_tvalid       = lrelu_s_axis_tvalid;
-    // assign m_axis_tuser        = lrelu_s_axis_tuser;
 
   axis_lrelu_engine #(
     .WORD_WIDTH_IN              (WORD_WIDTH_ACC            ),
