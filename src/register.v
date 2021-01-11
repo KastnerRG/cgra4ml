@@ -1,4 +1,5 @@
-`default_nettype none
+`timescale 10ns / 1ns
+// `default_nettype none
 
 /*
 Why Register
@@ -37,39 +38,22 @@ the initial power-on-reset state without complicating the design.
 
 module register
 #(
-    parameter WORD_WIDTH  = 0,
-    parameter RESET_VALUE = 0,
-    parameter LOCAL       = 0
+  parameter WORD_WIDTH  = 0,
+  parameter RESET_VALUE = 0,
+  parameter LOCAL       = 0
 )
 (
-    input   wire                        clock,
-    input   wire                        clock_enable,
-    input   wire                        resetn,
-    input   wire    [WORD_WIDTH-1:0]    data_in,
-    output  reg     [WORD_WIDTH-1:0]    data_out
+  input   wire                        clock,
+  input   wire                        clock_enable,
+  input   wire                        resetn,
+  input   wire    [WORD_WIDTH-1:0]    data_in,
+  output  reg     [WORD_WIDTH-1:0]    data_out = RESET_VALUE
 );
 
-    initial begin
-        data_out = RESET_VALUE;
-    end
-
-    
-    always @(posedge clock) begin
-        if (clock_enable == 1'b1) begin
-            data_out <= data_in;
-        end
-
-        /*
-        Here, we use the "last assignment wins" idiom (See Resets) to implement reset. 
-        This is also one place where we cannot use ternary operators, else the last 
-        assignment for clear (e.g.: data_out <= (clear == 1'b1) ? RESET_VALUE : data_out;) 
-        would override any previous assignment with the current value of data_out 
-        if clear is not asserted!
-        */
-
-        if (LOCAL && (resetn == 1'b0)) begin
-            data_out <= RESET_VALUE;
-        end
-    end
+  always @(posedge clock) begin
+    if (LOCAL && ~resetn ) data_out <= RESET_VALUE;
+    else if (clock_enable) data_out <= data_in;
+    else                   data_out <= data_out;
+  end
 
 endmodule

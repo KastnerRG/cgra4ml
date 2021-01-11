@@ -1,6 +1,6 @@
 module axis_accelerator_tb ();
-  timeunit 1ns;
-  timeprecision 1ps;
+  timeunit 10ns;
+  timeprecision 1ns;
   localparam CLK_PERIOD = 10;
   logic aclk;
   initial begin
@@ -13,9 +13,11 @@ module axis_accelerator_tb ();
   */
   
   localparam K          = 3;
-  localparam IM_HEIGHT  = 3;
+  localparam IM_HEIGHT  = 4;
   localparam IM_WIDTH   = 4;
   localparam IM_CIN     = 4;
+
+  localparam ITERATIONS = 5;
 
   /*
     SYSTEM PARAMS
@@ -213,9 +215,13 @@ module axis_accelerator_tb ();
   int start_1   = 0;
   int start_2   = 0;
   int start_w   = 0;
+  int itr_count_im_1 = 0;
+  int itr_count_im_2 = 0;
+  int itr_count_w    = 0;
 
   task axis_feed_pixels_1;
     @(posedge aclk);
+    #1
     if (start_1) begin
       if (s_axis_pixels_1_tready) begin
         if (s_words_1 < WORDS_1) begin
@@ -235,7 +241,11 @@ module axis_accelerator_tb ();
           s_axis_pixels_1_tvalid <= 0;
           s_axis_pixels_1_tlast  <= 0;
           s_words_1              <= 0;
-          start_1                <= 0;
+
+          if (itr_count_im_1 < ITERATIONS-1) begin
+            file_im_1               = $fopen(path_im_1   ,"r");
+            itr_count_im_1          = itr_count_im_1 + 1;
+          end
         end
       end
     end
@@ -243,6 +253,7 @@ module axis_accelerator_tb ();
 
   task axis_feed_pixels_2;
     @(posedge aclk);
+    #1
     if (start_2) begin
       if (s_axis_pixels_2_tready) begin
         if (s_words_2 < WORDS_2) begin
@@ -262,7 +273,11 @@ module axis_accelerator_tb ();
           s_axis_pixels_2_tvalid <= 0;
           s_axis_pixels_2_tlast  <= 0;
           s_words_2              <= 0;
-          start_2                <= 0;
+
+          if (itr_count_im_2 < ITERATIONS-1) begin
+            file_im_2               = $fopen(path_im_2   ,"r");
+            itr_count_im_2          = itr_count_im_2 + 1;
+          end
         end
       end
     end
@@ -270,6 +285,7 @@ module axis_accelerator_tb ();
 
   task axis_feed_weights;
     @(posedge aclk);
+    #1
     if (start_w) begin
       if (s_axis_weights_tready) begin
         if (s_words_w < WORDS_W) begin
@@ -288,7 +304,11 @@ module axis_accelerator_tb ();
           s_axis_weights_tvalid <= 0;
           s_axis_weights_tlast  <= 0;
           s_words_w             <= 0;
-          start_w               <= 0;
+
+          if (itr_count_w < ITERATIONS-1) begin
+            file_weights         = $fopen(path_weights ,"r");
+            itr_count_w          = itr_count_w + 1;
+          end
         end
       end
     end
@@ -323,27 +343,18 @@ module axis_accelerator_tb ();
  
     @(posedge aclk);
     #(CLK_PERIOD*3)
-    @(posedge aclk);
 
+    @(posedge aclk);
     aresetn         <= 1;
     m_axis_tready   <= 1;
     
     @(posedge aclk);
-    repeat(5) begin
-      @(posedge aclk);
-      file_im_1    = $fopen(path_im_1   ,"r");
-      file_im_2    = $fopen(path_im_2   ,"r");
-      file_weights = $fopen(path_weights,"r");
-
-      start_1 = 1;
-      start_2 = 1;
-      start_w = 1;
-
-      while (!(start_1 == 0 && (start_2 == 0 || ~m_axis_tuser[I_IS_MAX]) && start_w == 0)) @(posedge aclk);
-    end
-
-    $fclose(file_im_1);
-    $fclose(file_im_2);
+    file_im_1    = $fopen(path_im_1   ,"r");
+    file_im_2    = $fopen(path_im_2   ,"r");
+    file_weights = $fopen(path_weights,"r");
+    start_1 = 1;
+    start_2 = 1;
+    start_w = 1;
   end
 
 endmodule

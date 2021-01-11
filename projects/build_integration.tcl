@@ -1,5 +1,5 @@
-set PROJ_NAME syn
-set PROJ_FOLDER syn
+set PROJ_NAME int
+set PROJ_FOLDER int
 set SOURCE_FOLDER ../src
 
 set AXIS_FREQUENCY_MHZ   250
@@ -9,14 +9,10 @@ set WORD_WIDTH_LRELU_1   32
 set WORD_WIDTH_LRELU_2   16
 set WORD_WIDTH_LRELU_OUT 8
 
-# set UNITS   4
-# set GROUPS  1
-# set COPIES  2
-# set MEMBERS 2
-set UNITS   8
-set GROUPS  2
+set UNITS   4
+set GROUPS  1
 set COPIES  2
-set MEMBERS 8
+set MEMBERS 2
 
 set WEIGHTS_DMA_BITS 32
 
@@ -76,12 +72,14 @@ set TUSER_WIDTH_LRELU_IN       [expr 1 + $I_IS_RIGHT_COL]
 set TUSER_WIDTH_LRELU_FMA_1_IN [expr 1 + $I_IS_LRELU    ]
 set TUSER_WIDTH_CONV_IN        [expr $BITS_KERNEL_W + $I_KERNEL_W_1]
 
+set IP_NAMES [list ]
+
+
 # create project
 create_project $PROJ_NAME ./$PROJ_FOLDER -part xc7z045ffg900-2
 set_property board_part xilinx.com:zc706:part0:1.4 [current_project]
 
-# Create IPs
-set IP_NAMES [list ]
+#*********** INPUT PIPE **********#
 
 set IP_NAME "axis_dw_image_input"
 lappend IP_NAMES $IP_NAME
@@ -121,6 +119,8 @@ set T_KEEP 1
 create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
 
+#*********** CONV_ENGINE **********#
+
 set IP_NAME "multiplier"
 lappend IP_NAMES $IP_NAME
 set WIDTH $WORD_WIDTH_IN
@@ -153,6 +153,8 @@ set TUSER_WIDTH $TUSER_WIDTH_LRELU_IN
 create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $TUSER_WIDTH CONFIG.HAS_TKEEP $T_KEEP CONFIG.HAS_TLAST $T_LAST] [get_ips $IP_NAME]
 
+#*********** LRELU **********#
+
 set IP_NAME "axis_dw_gum_gu_active"
 lappend IP_NAMES $IP_NAME
 set S_BYTES [expr "$MEMBERS * $GROUPS * $UNITS * $WORD_WIDTH_CONV_OUT / 8"]
@@ -171,6 +173,15 @@ set T_LAST 0
 set T_KEEP 0
 create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
+
+set IP_NAME "axis_reg_slice_lrelu_dw"
+lappend IP_NAMES $IP_NAME
+set DATA_BYTES [expr "$COPIES * $GROUPS * $UNITS * $WORD_WIDTH_CONV_OUT / 8"]
+set TUSER_WIDTH $TUSER_WIDTH_LRELU_IN
+set T_LAST 1
+set T_KEEP 0
+create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $TUSER_WIDTH CONFIG.HAS_TKEEP $T_KEEP CONFIG.HAS_TLAST $T_LAST CONFIG.REG_CONFIG {16}] [get_ips $IP_NAME]
 
 set IP_NAME "axis_reg_slice_lrelu"
 lappend IP_NAMES $IP_NAME
@@ -246,6 +257,8 @@ set W_WIDTH [expr "$MEMBERS * $WORD_WIDTH_IN"]
 set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
 set_property -dict [list  CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A $W_WIDTH CONFIG.Write_Depth_A $W_DEPTH CONFIG.Read_Width_A $W_WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $R_WIDTH CONFIG.Read_Width_B $R_WIDTH CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100}] [get_ips $IP_NAME]
+
+#*********** MAXPOOL **********#
 
 set IP_NAME "axis_reg_slice_maxpool"
 lappend IP_NAMES $IP_NAME
