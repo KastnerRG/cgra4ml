@@ -559,7 +559,7 @@ module axis_weight_rotator (
   assign m_axis_tuser [I_WEIGHTS_IS_1X1     ] = ref_1_kw[i_read] == 0;
   assign m_axis_tuser [I_WEIGHTS_KERNEL_W_1+BITS_KERNEL_W-1: I_WEIGHTS_KERNEL_W_1] = ref_1_kw [i_read];
 
-  assign m_axis_tuser [I_WEIGHTS_IS_ACC_LAST    ] = last_kh && last_cin;
+  assign m_axis_tuser [I_WEIGHTS_IS_ACC_LAST    ] = (last_kh && last_cin);
   assign m_axis_tuser [I_WEIGHTS_IS_COLS_1_K2   ] = count_cols   == ref_1_kw     [i_read]/2; // i = cols-1-k/2 === [cols-1-i] = k/2
   assign m_axis_tuser [I_WEIGHTS_IS_TOP_BLOCK   ] = count_blocks == ref_1_blocks [i_read];
   assign m_axis_tuser [I_WEIGHTS_IS_BOTTOM_BLOCK] = last_blocks;
