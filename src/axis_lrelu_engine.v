@@ -80,10 +80,11 @@ module axis_lrelu_engine (
 
     wire [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_axis_tdata_cmgu;
 
-    wire [COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_data_e;
+    wire [COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_data_e, s_dw_slice_data;
     wire [COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_data_e;
     wire s_valid_e, s_last_e, m_valid_e;
-    wire [TUSER_WIDTH_LRELU_IN  -1:0] s_user_e;
+    wire s_dw_slice_valid, s_dw_slice_last, s_dw_slice_ready;
+    wire [TUSER_WIDTH_LRELU_IN  -1:0] s_user_e, s_dw_slice_user;
     wire [TUSER_WIDTH_MAXPOOL_IN-1:0] m_user_e;
     wire s_ready_slice;
 
@@ -294,7 +295,7 @@ module axis_lrelu_engine (
         wire [          GROUPS * UNITS * WORD_WIDTH_IN-1:0] dw_m_data_gu ;
         
         assign dw_s_data_mgu = s_axis_tdata_cmgu[(c+1)*MEMBERS*GROUPS*UNITS*WORD_WIDTH_IN-1:(c)*MEMBERS*GROUPS*UNITS*WORD_WIDTH_IN];
-        assign s_data_e[(c+1)*GROUPS*UNITS*WORD_WIDTH_IN-1:(c)*GROUPS*UNITS*WORD_WIDTH_IN] = dw_m_data_gu;
+        assign s_dw_slice_data[(c+1)*GROUPS*UNITS*WORD_WIDTH_IN-1:(c)*GROUPS*UNITS*WORD_WIDTH_IN] = dw_m_data_gu;
 
         if (c==0) begin
           axis_dw_gum_gu_active dw (
@@ -306,11 +307,11 @@ module axis_lrelu_engine (
             .s_axis_tlast   (s_axis_tlast),    
             .s_axis_tid     (s_axis_tuser),   
 
-            .m_axis_tvalid  (s_valid_e),  
-            .m_axis_tready  (s_ready_slice), 
+            .m_axis_tvalid  (s_dw_slice_valid),  
+            .m_axis_tready  (s_dw_slice_ready), 
             .m_axis_tdata   (dw_m_data_gu),
-            .m_axis_tlast   (s_last_e),  
-            .m_axis_tid     (s_user_e)   
+            .m_axis_tlast   (s_dw_slice_last),  
+            .m_axis_tid     (s_dw_slice_user)   
           );
         end
         else begin
@@ -320,12 +321,33 @@ module axis_lrelu_engine (
             .s_axis_tvalid  (dw_s_valid),  
             .s_axis_tdata   (dw_s_data_mgu),
 
-            .m_axis_tready  (s_ready_slice), 
+            .m_axis_tready  (s_dw_slice_ready), 
             .m_axis_tdata   (dw_m_data_gu)
           );
         end
       end
     endgenerate
+
+    axis_reg_slice_lrelu_dw dw_slice (
+      .aclk           (aclk),                     
+      .aresetn        (aresetn),              
+      .s_axis_tvalid  (s_dw_slice_valid ),   
+      .s_axis_tready  (s_dw_slice_ready ),   
+      .s_axis_tdata   (s_dw_slice_data  ),    
+      .s_axis_tlast   (s_dw_slice_last  ),    
+      .s_axis_tuser   (s_dw_slice_user  ),   
+      .m_axis_tvalid  (s_valid_e        ),  
+      .m_axis_tready  (s_ready_slice    ),   
+      .m_axis_tdata   (s_data_e         ),    
+      .m_axis_tlast   (s_last_e         ),    
+      .m_axis_tuser   (s_user_e         )     
+    );
+
+// assign s_valid_e        = s_dw_slice_valid ;
+// assign s_dw_slice_ready = s_ready_slice;
+// assign s_data_e         = s_dw_slice_data  ;
+// assign s_last_e         = s_dw_slice_last  ;
+// assign s_user_e         = s_dw_slice_user  ;
 
     lrelu_engine #(
       .WORD_WIDTH_IN  (WORD_WIDTH_IN ),

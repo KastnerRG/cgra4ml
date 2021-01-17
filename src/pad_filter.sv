@@ -188,7 +188,7 @@ module pad_filter # (
                 assign at_start_and_middle       =     full_datapath & !start_cols; // During start_cols, block all datapaths. During middle_cols, allow only full_datapth.
                 assign at_last_col               =     last_col & !last_malformed & !unused_datapaths; // At the last_col, only allow datapaths that have partially formed padding
 
-                assign lut_allow_full   [i][kw2] =     at_start_and_middle | at_last_col | user_in[i][I_IS_1X1] | user_in[i][I_IS_CONFIG];
+                assign lut_allow_full   [i][kw2] =     at_start_and_middle | at_last_col | user_in[i][I_IS_1X1] | (user_in[i][I_IS_CONFIG] & (i==0));
             end
 
             assign    mask_full[i]             =     lut_allow_full    [i][kw2_wire[i]];
@@ -202,7 +202,7 @@ module pad_filter # (
                 assign unused_datapaths  =  i >  2*kw2 ;          // Anything above i == kw2 should be blocked
 
                 if (i > kw2)
-                    assign end_partial = 0;                     // Dont block i>kw2 datapaths. We need those partial sums for first few columns
+                    assign end_partial = col_end[i][kw2];       // Block i>kw2 datapaths, only for last col. For others, we need those partial sums for first few columns
                 else
                     assign end_partial = |col_end[i][kw2:i];    // or(i, i+1, i+2, ... k2), horizontal rows of the blocking triangle
 

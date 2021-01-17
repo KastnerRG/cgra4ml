@@ -91,19 +91,21 @@ module conv_engine (
   logic mul_m_valid [KERNEL_W_MAX-1: 0];
   logic mul_m_last  [KERNEL_W_MAX-1: 0];
   
-  logic first_bypass[KERNEL_W_MAX-1: 0];
+  logic bypass            [KERNEL_W_MAX-1: 0];
+  logic mul_m_bypass      [KERNEL_W_MAX-1: 0];
+  logic mul_m_bypass_next [KERNEL_W_MAX-1: 0];
+
   logic acc_s_valid [KERNEL_W_MAX-1: 0];
   logic acc_s_last  [KERNEL_W_MAX-1: 0];
 
   logic acc_m_valid           [KERNEL_W_MAX-1: 0];
   logic acc_m_last            [KERNEL_W_MAX-1: 0];
-  logic acc_m_cin_last        [KERNEL_W_MAX-1: 0];
   logic acc_m_cin_last_masked [KERNEL_W_MAX-1: 0];
   logic acc_m_cin_last_masked_delayed  [KERNEL_W_MAX-1: 0];
 
   logic selected_valid [KERNEL_W_MAX-1: 1]; 
-  logic update_switch  [KERNEL_W_MAX-1: 1];
-  logic sel_in         [KERNEL_W_MAX-1: 1];
+  logic mux_sel_en     [KERNEL_W_MAX-1: 1];
+  logic mux_sel_next   [KERNEL_W_MAX-1: 1];
 
   logic mux_s2_valid [KERNEL_W_MAX-1: 1];
   logic mux_m_valid  [KERNEL_W_MAX-1: 1];
@@ -130,7 +132,6 @@ module conv_engine (
   logic [WORD_WIDTH_IN*2-1:0] mul_m_data      [1:0][CORES/2-1:0][UNITS-1:0][KERNEL_W_MAX-1: 0];
   logic [WORD_WIDTH_OUT -1:0] acc_s_data      [1:0][CORES/2-1:0][UNITS-1:0][KERNEL_W_MAX-1: 0];
   logic [WORD_WIDTH_OUT -1:0] acc_m_data      [1:0][CORES/2-1:0][UNITS-1:0][KERNEL_W_MAX-1: 0];
-  logic [WORD_WIDTH_OUT -1:0] mux_s2_data     [1:0][CORES/2-1:0][UNITS-1:0][KERNEL_W_MAX-1: 1];
   logic [WORD_WIDTH_OUT -1:0] shift_in_data   [1:0][CORES/2-1:0][UNITS-1:0][KERNEL_W_MAX-1: 0];
   logic [WORD_WIDTH_OUT -1:0] shift_out_data  [1:0][CORES/2-1:0][UNITS-1:0][KERNEL_W_MAX-1: 0];
 
@@ -141,7 +142,6 @@ module conv_engine (
   assign mux_sel_none = !(|mux_sel) ;
   assign clken_mul    = clken &&  mux_sel_none;
   assign s_ready      = clken_mul   ;
-  assign clken_acc[0] = clken_mul   ;
 
   /*
     STEP BUFFER PIXELS CONTROL
@@ -196,47 +196,6 @@ module conv_engine (
         .valid_out  (mul_m_valid [w]),
         .last_out   (mul_m_last  [w]),
         .user_out   (mul_m_user  [w])
-      );
-
-      /* 
-        CLKEN ACCUMULATOR
-
-        * For datapath[0], keep accumulator enabled when "mux_sel_none"
-        * Other datapaths, allow accumulator only if the sel bit of that datapath rises.
-        * This ensures accumulators and multiplers are tied together, hence 
-            delays being in sync for ANY cin >= 3. 
-      */
-      if (w!=0) assign clken_acc[w] = clken && (mux_sel_none || mux_sel[w]);
-
-      assign acc_m_cin_last  [w] = acc_m_user[w][I_IS_ACC_LAST]; // Has to be valid last - ensured at axis_input_pipe
-
-      register #(
-        .WORD_WIDTH     (1),
-        .RESET_VALUE    (0)
-      ) ACCUMULATOR_DELAY_LAST (
-        .clock          (clk),
-        .resetn         (resetn),
-        .clock_enable   (clken_acc    [w]),
-        .data_in        (acc_s_last   [w]),
-        .data_out       (first_bypass [w])
-      );
-
-      n_delay_stream #(
-        .N              (ACCUMULATOR_DELAY),
-        .WORD_WIDTH     (WORD_WIDTH_IN    ),
-        .TUSER_WIDTH    (TUSER_WIDTH_CONV_IN )
-      ) ACCUMULATOR_DELAY_CONTROL (
-        .aclk       (clk   ),
-        .aclken     (clken_acc   [w]),
-        .aresetn    (resetn),
-
-        .valid_in   (acc_s_valid [w]),
-        .last_in    (acc_s_last  [w]),
-        .user_in    (acc_s_user  [w]),
-
-        .valid_out  (acc_m_valid [w]),
-        .last_out   (acc_m_last  [w]),
-        .user_out   (acc_m_user  [w])
       );
 
       /*
@@ -294,9 +253,9 @@ module conv_engine (
       */
       
       if (w !=0 ) begin
-        assign selected_valid [w] = (mux_sel[w]==0) ? mul_m_valid [w] : acc_m_cin_last  [w-1];
-        assign update_switch  [w] = clken && selected_valid [w];
-        assign sel_in         [w] = mul_m_last [w] && (!mul_m_user[w][I_IS_1X1]);
+        assign selected_valid [w] = (mux_sel[w]==0) ? mul_m_valid [w] : acc_m_valid [w-1];
+        assign mux_sel_en     [w] = clken && selected_valid [w];
+        assign mux_sel_next   [w] = mul_m_user[w][I_IS_ACC_LAST] && (!mul_m_user[w][I_IS_1X1]);
         
         register #(
           .WORD_WIDTH     (1),
@@ -304,20 +263,70 @@ module conv_engine (
         ) MUX_SEL (
           .clock          (clk    ),
           .resetn         (resetn),
-          .clock_enable   (update_switch[w]),
-          .data_in        (sel_in       [w]),
+          .clock_enable   (mux_sel_en   [w]),
+          .data_in        (mux_sel_next [w]),
           .data_out       (mux_sel      [w])
         );
 
-        assign mux_s2_valid [w] = acc_m_cin_last   [w-1] && mask_partial[w];
+        assign mux_s2_valid [w] = acc_m_valid      [w-1] && mask_partial[w];
         assign mux_s2_user  [w] = acc_m_user       [w-1];
 
-        assign acc_s_valid  [w] = mux_m_valid[w] && (mux_sel[w] || mux_sel_none);
-
         assign mux_m_valid  [w] = mux_sel [w] ? mux_s2_valid [w] : mul_m_valid [w];
+
+        assign acc_s_valid  [w] = mux_m_valid[w] && (mux_sel[w] || mux_sel_none);
         assign acc_s_user   [w] = mux_sel [w] ? mux_s2_user  [w] : mul_m_user  [w];
         assign acc_s_last   [w] = mux_sel [w] ? 0                : mul_m_last  [w];
       end
+
+      /* 
+        CLKEN ACCUMULATOR
+
+        * For datapath[0], keep accumulator enabled when "mux_sel_none"
+        * Other datapaths, allow accumulator only if the sel bit of that datapath rises.
+        * This ensures accumulators and multiplers are tied together, hence 
+            delays being in sync for ANY cin >= 3. 
+      */
+      assign clken_acc[w] = (w==0) ? clken_mul : clken && (mux_sel_none || mux_sel[w]);
+
+      /*
+        BYPASS
+      */
+
+      assign mul_m_bypass_next [w] = mul_m_user [w][I_IS_CONFIG] || mul_m_user [w][I_IS_ACC_LAST];
+      
+      // if (w==0) assign bypass [w] = mul_m_bypass [w];
+      // else      assign bypass [w] = mux_sel [w] ? 1'b1 : mul_m_bypass [w];
+
+      assign bypass [w] = mul_m_bypass       [w];
+
+      register #(
+        .WORD_WIDTH     (1),
+        .RESET_VALUE    (0)
+      ) MUL_M_BYPASS (
+        .clock          (clk),
+        .resetn         (resetn),
+        .clock_enable   (acc_s_valid        [w]),
+        .data_in        (mul_m_bypass_next  [w]),
+        .data_out       (mul_m_bypass       [w])
+      );
+
+      n_delay_stream #(
+        .N              (ACCUMULATOR_DELAY),
+        .WORD_WIDTH     (WORD_WIDTH_IN    ),
+        .TUSER_WIDTH    (TUSER_WIDTH_CONV_IN )
+      ) ACCUMULATOR_DELAY_CONTROL (
+        .aclk       (clk   ),
+        .aclken     (clken_acc   [w]),
+        .aresetn    (resetn),
+
+        .valid_in   (acc_s_valid [w]),
+        .last_in    (acc_s_last  [w]),
+        .user_in    (acc_s_user  [w]),
+
+        .valid_out  (acc_m_valid [w]),
+        .last_out   (acc_m_last  [w]),
+        .user_out   (acc_m_user  [w])
+      );
 
       /*
       SHIFT REGISTERS
@@ -363,12 +372,12 @@ module conv_engine (
           - But then back-to-back kernel change is not possible
       */
 
-      assign  acc_m_cin_last_masked  [w] = acc_m_cin_last  [w] & mask_full[w] & !acc_m_cin_last_masked_delayed[w];
+      assign  acc_m_cin_last_masked  [w] = acc_m_user[w][I_IS_ACC_LAST] & mask_full[w] & !acc_m_cin_last_masked_delayed[w];
 
       register #(
         .WORD_WIDTH     (1),
         .RESET_VALUE    (0)
-      ) ACCUMULATOR_CIN_LAST_DELAYED (
+      ) ACCUMULATOR_CIN_LAST_MASKED_DELAYED (
         .clock          (clk    ),
         .clock_enable   (clken  ),
         .resetn         (resetn ),
@@ -516,19 +525,13 @@ module conv_engine (
               .P      (mul_m_data         [c][r][u][w])
             );
             
-            if (w==0) begin
-              assign acc_s_data [c][r][u][w] = mul_m_data [c][r][u][w] & {WORD_WIDTH_IN{mul_m_valid[w]}};
-            end
-            else begin
-              assign mux_s2_data[c][r][u][w] = acc_m_data [c][r][u][w-1];
-              assign acc_s_data [c][r][u][w] = mux_sel [w] ? mux_s2_data [c][r][u][w] : WORD_WIDTH_OUT'(signed'(mul_m_data [c][r][u][w] & {(WORD_WIDTH_IN*2){mul_m_valid [w]}}));
-              // AND the input with valid such that invalid inputs are zeroed and accumulated
-            end
+            assign acc_s_data [c][r][u][w] = (w!=0) && mux_sel [w] ? acc_m_data [c][r][u][w-1] : WORD_WIDTH_OUT'(signed'(mul_m_data [c][r][u][w] & {(WORD_WIDTH_IN*2){mul_m_valid [w]}}));
+            // AND the input with valid such that invalid inputs are zeroed and accumulated
             
             accumulator accumulator 
             (
               .CLK    (clk),  
-              .BYPASS (first_bypass[w]),  
+              .BYPASS (bypass      [w]),  
               .CE     (clken_acc   [w]),  
               .B      (acc_s_data  [c][r][u][w]),  
               .Q      (acc_m_data  [c][r][u][w])  

@@ -13,9 +13,9 @@ module axis_input_pipe_tb ();
   */
   
   localparam K          = 3;
-  localparam IM_HEIGHT  = 4;
+  localparam IM_HEIGHT  = 2;
   localparam IM_WIDTH   = 4;
-  localparam IM_CIN     = 4;
+  localparam IM_CIN     = 3;
 
   localparam ITERATIONS = 5;
 
@@ -23,8 +23,8 @@ module axis_input_pipe_tb ();
     SYSTEM PARAMS
   */
 
-  localparam UNITS            = 4;
-  localparam CORES            = 4;
+  localparam UNITS            = 2;
+  localparam CORES            = 2;
   localparam WORD_WIDTH       = 8; 
   localparam KERNEL_H_MAX     = 3;   // odd number
   localparam KERNEL_W_MAX     = 3;
@@ -117,6 +117,7 @@ module axis_input_pipe_tb ();
 
   axis_input_pipe #(
     .UNITS              (UNITS             ),
+    .CORES              (CORES             ),
     .WORD_WIDTH         (WORD_WIDTH        ),
     .KERNEL_H_MAX       (KERNEL_H_MAX      ),
     .BEATS_CONFIG_3X3_1 (BEATS_CONFIG_3X3_1),
@@ -199,7 +200,8 @@ module axis_input_pipe_tb ();
     if (start_1) begin
       if (s_axis_pixels_1_tready) begin
         if (s_words_1 < WORDS_1) begin
-          s_axis_pixels_1_tvalid= 1;
+          #1;
+          s_axis_pixels_1_tvalid <= 1;
 
           for (int i=0; i < IM_IN_S_DATA_WORDS; i++) begin
             if (~$feof(file_im_1))
@@ -212,6 +214,7 @@ module axis_input_pipe_tb ();
           s_axis_pixels_1_tlast = ~(s_words_1 < WORDS_1);
         end
         else begin
+          #1;
           s_axis_pixels_1_tvalid <= 0;
           s_axis_pixels_1_tlast  <= 0;
           s_words_1              <= 0;
@@ -230,7 +233,8 @@ module axis_input_pipe_tb ();
     if (start_2) begin
       if (s_axis_pixels_2_tready) begin
         if (s_words_2 < WORDS_2) begin
-          s_axis_pixels_2_tvalid = 1;
+          #1;
+          s_axis_pixels_2_tvalid <= 1;
 
           for (int i=0; i < IM_IN_S_DATA_WORDS; i++) begin
             if (~$feof(file_im_2))
@@ -243,6 +247,7 @@ module axis_input_pipe_tb ();
           s_axis_pixels_2_tlast = ~(s_words_2 < WORDS_2);
         end
         else begin
+          #1;
           s_axis_pixels_2_tvalid <= 0;
           s_axis_pixels_2_tlast  <= 0;
           s_words_2              <= 0;
@@ -261,7 +266,8 @@ module axis_input_pipe_tb ();
     if (start_w) begin
       if (s_axis_weights_tready) begin
         if (s_words_w < WORDS_W) begin
-          s_axis_weights_tvalid = 1;
+          #1;
+          s_axis_weights_tvalid <= 1;
           for (int i=0; i < W_WORDS_PER_BEAT; i++) begin
             if (~$feof(file_weights))
               status = $fscanf(file_weights,"%d\n", s_data_weights[i]);
@@ -273,6 +279,7 @@ module axis_input_pipe_tb ();
           s_axis_weights_tlast = ~(s_words_w < WORDS_W);
         end
         else begin
+          #1;
           s_axis_weights_tvalid <= 0;
           s_axis_weights_tlast  <= 0;
           s_words_w             <= 0;

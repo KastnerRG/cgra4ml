@@ -13,9 +13,9 @@ module axis_accelerator_tb ();
   */
   
   localparam K          = 3;
-  localparam IM_HEIGHT  = 4;
+  localparam IM_HEIGHT  = 2;
   localparam IM_WIDTH   = 4;
-  localparam IM_CIN     = 4;
+  localparam IM_CIN     = 3;
 
   localparam ITERATIONS = 5;
 
@@ -23,12 +23,12 @@ module axis_accelerator_tb ();
     SYSTEM PARAMS
   */
 
-  localparam UNITS               = 4;
+  localparam UNITS               = 2;
   localparam GROUPS              = 1;
   localparam COPIES              = 2;
-  localparam MEMBERS             = 2;
+  localparam MEMBERS             = 1;
   localparam WORD_WIDTH          = 8; 
-  localparam WORD_WIDTH_ACC      = 25; 
+  localparam WORD_WIDTH_ACC      = 32; 
   localparam KERNEL_H_MAX        = 3;   // odd number
   localparam KERNEL_W_MAX        = 3;
   localparam IM_CIN_MAX          = 1024;
@@ -132,8 +132,8 @@ module axis_accelerator_tb ();
   logic m_axis_tlast;
   logic [TUSER_WIDTH_LRELU_IN-1:0] m_axis_tuser;
 
-  logic [GROUPS*UNITS_EDGES*COPIES*WORD_WIDTH-1:0] m_axis_tdata;
-  logic [GROUPS*UNITS_EDGES*COPIES-1:0]            m_axis_tkeep;
+  logic [WORD_WIDTH_ACC*CORES*UNITS-1:0] m_axis_tdata;
+  logic [GROUPS*UNITS_EDGES*COPIES-1:0]      m_axis_tkeep;
 
   axis_accelerator #(
     .UNITS                     (UNITS                     ),
@@ -221,11 +221,11 @@ module axis_accelerator_tb ();
 
   task axis_feed_pixels_1;
     @(posedge aclk);
-    #1
     if (start_1) begin
       if (s_axis_pixels_1_tready) begin
         if (s_words_1 < WORDS_1) begin
-          s_axis_pixels_1_tvalid= 1;
+          #1;
+          s_axis_pixels_1_tvalid <= 1;
 
           for (int i=0; i < IM_IN_S_DATA_WORDS; i++) begin
             if (~$feof(file_im_1))
@@ -253,11 +253,11 @@ module axis_accelerator_tb ();
 
   task axis_feed_pixels_2;
     @(posedge aclk);
-    #1
     if (start_2) begin
       if (s_axis_pixels_2_tready) begin
         if (s_words_2 < WORDS_2) begin
-          s_axis_pixels_2_tvalid = 1;
+          #1;
+          s_axis_pixels_2_tvalid <= 1;
 
           for (int i=0; i < IM_IN_S_DATA_WORDS; i++) begin
             if (~$feof(file_im_2))
@@ -285,11 +285,11 @@ module axis_accelerator_tb ();
 
   task axis_feed_weights;
     @(posedge aclk);
-    #1
     if (start_w) begin
       if (s_axis_weights_tready) begin
         if (s_words_w < WORDS_W) begin
-          s_axis_weights_tvalid = 1;
+          #1;
+          s_axis_weights_tvalid <= 1;
           for (int i=0; i < W_WORDS_PER_BEAT; i++) begin
             if (~$feof(file_weights))
               status = $fscanf(file_weights,"%d\n", s_data_weights[i]);
