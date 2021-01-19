@@ -1,3 +1,21 @@
+/*//////////////////////////////////////////////////////////////////////////////////
+Group : ABruTECH
+Engineer: Abarajithan G.
+Create Date: 26/07/2020
+Design Name: Convolution Engine
+Tool Versions: Vivado 2018.2
+Description: 
+             * To be tested:
+                    - 1x1
+                    - NxM
+                    - ANY accumulator delay 
+             * Limitations
+Dependencies: 
+Revision:
+Revision 0.01 - File Created
+Additional Comments: 
+//////////////////////////////////////////////////////////////////////////////////*/
+
 module conv_engine (
     clk            ,
     clken          ,
@@ -85,23 +103,26 @@ module conv_engine (
 
   logic mux_sel_none ;
   logic clken_mul;
-  logic [KERNEL_W_MAX-1: 1] mux_sel  ;
+  logic [KERNEL_W_MAX-1: 0] mux_sel  ;
   logic [KERNEL_W_MAX-1: 0] clken_acc;
 
   logic mul_m_valid [KERNEL_W_MAX-1: 0];
   logic mul_m_last  [KERNEL_W_MAX-1: 0];
   
   logic bypass            [KERNEL_W_MAX-1: 0];
-  logic mul_m_bypass      [KERNEL_W_MAX-1: 0];
-  logic mul_m_bypass_next [KERNEL_W_MAX-1: 0];
+  logic bypass      [KERNEL_W_MAX-1: 0];
+  logic bypass_next [KERNEL_W_MAX-1: 0];
 
+  logic acc_m_valid_delay_in [KERNEL_W_MAX-1: 0];
   logic acc_s_valid [KERNEL_W_MAX-1: 0];
   logic acc_s_last  [KERNEL_W_MAX-1: 0];
 
   logic acc_m_valid           [KERNEL_W_MAX-1: 0];
+  logic acc_m_valid_masked    [KERNEL_W_MAX-1: 0];
   logic acc_m_last            [KERNEL_W_MAX-1: 0];
-  logic acc_m_cin_last_masked [KERNEL_W_MAX-1: 0];
-  logic acc_m_cin_last_masked_delayed  [KERNEL_W_MAX-1: 0];
+  logic acc_m_last_masked     [KERNEL_W_MAX-1: 0];
+  logic [BITS_KERNEL_W-1:0] acc_m_kw     [KERNEL_W_MAX-1: 0];
+  logic [BITS_KERNEL_W-1:0] acc_m_last_w [KERNEL_W_MAX-1: 0];
 
   logic selected_valid [KERNEL_W_MAX-1: 1]; 
   logic mux_sel_en     [KERNEL_W_MAX-1: 1];
@@ -207,51 +228,19 @@ module conv_engine (
       assign acc_s_user  [0] = mul_m_user  [0];
 
       /*
-        SEL BITS
+        MUX SEL
 
         * 1x1 : mux_sel   [i] = 0 ; permanently connecting mul to acc
-        * nxm : mul_m_last[i] are delayed by one data beat
         * NOTE: sel_register is updated using the true acc_m_valid, not pad_filtered one
 
         * nxm : Delays inside step_buffer should sync perfectly, such that
           for every datapath[i] (except 0):
 
-            1. last data from multiplier comes to mux_s1[i]
-                * Directly goes into acc_s[i]
-                * Clearing the accumulator with it
-                * mul_m_last[i] that comes with it gets delayed (enters  mux_sel[i])
-
-            2. On next data beat, last data from acc_s[i-1] comes into mux_s2[i]
-                * mux_sel[i] is asserted, mux[i] allows mux_s2[i] into acc_s[i]
-                * acc_s[i-1] enters acc_s[i], as 1st data of new accumulation
-                    its tlast is not allowed passed
-                * All multipliers are disabled
-                * All accumulators, except [i] are disabled
-                * acc_s[i] accepts acc_s[i-1]
-                * "bias" has come to the mul_s[i] and waits
-                    as multipler pipeline is disabled
-
-            3. On next data_beat, mux_sel[i] is updated (deasserted)
-                * BECAUSE selected_valid[i] = acc_m_cin_last  [i-1] was asserted in prev clock
-                * mux[i] allows mux_s1[i] into acc_s[i]
-                * acc_s[i] accepts bias as 2nd data of new accumulation
-                * all multipliers and other accumulators resume operation
-
-            -  If last data from acc_m[i-1] doesn't follow last data of mul_s[i]:
-                - mux_sel[i] will NOT be deasserted (updated)
-                - multipliers and other accumulators will freeze forever
-            - For this sync to happen:
-                - datapath[i] should be delayed by DELAY clocks than datapath[i-1]
-                - DELAY = (A-1) -1 = (A-2)
-                    - When multipliers are frozen, each accumulator works 
-                        one extra clock than its corresponding multiplier,
-                        in (2), to accept other acc_s value. This means, the
-                        relative delay of accumulator is (A-1) 
-                        as seen by a multiplier
-                    - If (A-1), both mul_s[i] and acc_s[i-1] will give tlast together
-                    - (-1) ensures mul_s[i] comes first
+        * See architecture.xlsx for required clock by clock operation
       */
       
+      assign mux_sel[0] = 0;
+
       if (w !=0 ) begin
         assign selected_valid [w] = (mux_sel[w]==0) ? mul_m_valid [w] : acc_m_valid [w-1];
         assign mux_sel_en     [w] = clken && selected_valid [w];
@@ -282,33 +271,45 @@ module conv_engine (
         CLKEN ACCUMULATOR
 
         * For datapath[0], keep accumulator enabled when "mux_sel_none"
-        * Other datapaths, allow accumulator only if the sel bit of that datapath rises.
-        * This ensures accumulators and multiplers are tied together, hence 
-            delays being in sync for ANY cin >= 3. 
+        * Other datapaths, allow accumulator if:
+          - mux_sel_none : to accumulate normal mul_m_data
+          - mux_sel[w]   : to accumulate acc_m_data[w-1]
+                          - &!mux_sel[w-1] : block when the lower accumulator is accumulating
+        * See architecture.xlsx
       */
-      assign clken_acc[w] = (w==0) ? clken_mul : clken && (mux_sel_none || mux_sel[w]);
+      assign clken_acc[w] = (w==0) ? clken_mul : clken && (mux_sel_none || (mux_sel[w] && !mux_sel[w-1]));
 
       /*
         BYPASS
+
+        * Bypass => Fresh data
+        * First data doesn't need bypass, since its fresh.
+        * Hence we delay (is_cin_last || is_config)
+        * enable: acc_s_valid, to delay by a data beat
       */
 
-      assign mul_m_bypass_next [w] = mul_m_user [w][I_IS_CONFIG] || mul_m_user [w][I_IS_ACC_LAST];
-      
-      // if (w==0) assign bypass [w] = mul_m_bypass [w];
-      // else      assign bypass [w] = mux_sel [w] ? 1'b1 : mul_m_bypass [w];
-
-      assign bypass [w] = mul_m_bypass       [w];
+      assign bypass_next [w] = mul_m_user [w][I_IS_CONFIG] || mul_m_user [w][I_IS_ACC_LAST];
 
       register #(
         .WORD_WIDTH     (1),
         .RESET_VALUE    (0)
-      ) MUL_M_BYPASS (
+      ) bypass (
         .clock          (clk),
         .resetn         (resetn),
-        .clock_enable   (acc_s_valid        [w]),
-        .data_in        (mul_m_bypass_next  [w]),
-        .data_out       (mul_m_bypass       [w])
+        .clock_enable   (acc_s_valid  [w]),
+        .data_in        (bypass_next  [w]),
+        .data_out       (bypass       [w])
       );
+
+      /*
+        VALID DELAY
+
+        * acc_m_valid should go high
+          - after accumulating c_in data beats
+          - for every beat during config
+      */
+
+      assign acc_m_valid_delay_in [w] = acc_s_valid [w] && (mul_m_user[w][I_IS_ACC_LAST] || mul_m_user[w][I_IS_CONFIG]);
 
       n_delay_stream #(
         .N              (ACCUMULATOR_DELAY),
@@ -319,7 +320,7 @@ module conv_engine (
         .aclken     (clken_acc   [w]),
         .aresetn    (resetn),
 
-        .valid_in   (acc_s_valid [w]),
+        .valid_in   (acc_m_valid_delay_in [w]),
         .last_in    (acc_s_last  [w]),
         .user_in    (acc_s_user  [w]),
 
@@ -327,6 +328,25 @@ module conv_engine (
         .last_out   (acc_m_last  [w]),
         .user_out   (acc_m_user  [w])
       );
+
+      /*
+        MASKING
+
+        * m_valid - kept high for only one clock (since masked by clken_acc) and by pad filter
+
+        * m_last  - acc_m_last goes high in all accumulators
+                  - but m_last goes high only in the highest valid accumulator
+                    - Eg: KW_MAX = 5:
+                          - kw = 1 : w = 4
+                          - kw = 3 : w = 2
+                          - kw = 5 : w = 4
+                    - Formula: (KW_MAX-1 - KW_MAX % kw)
+      */
+      assign acc_m_kw           [w] = acc_m_user[w][BITS_KERNEL_W+I_KERNEL_W_1-1 : I_KERNEL_W_1] + 1'b1;
+      assign acc_m_last_w       [w] = (KERNEL_W_MAX-1) - (KERNEL_W_MAX % acc_m_kw[w]);
+
+      assign acc_m_last_masked  [w] = clken_acc[w] & acc_m_last [w] & (w == acc_m_last_w[w]);
+      assign acc_m_valid_masked [w] = clken_acc[w] & acc_m_valid[w] & mask_full[w];
 
       /*
       SHIFT REGISTERS
@@ -340,12 +360,6 @@ module conv_engine (
           - Priority is given to shifting. 
               - If shift_out[i+1] is high, input is taken from there.
               - Else, input is taken from acc_m[i]
-          - Because, if two acc_m[1] and acc_m[2] are released together, as in A=2 (default fixed point), 
-              acc_m[1] stays for two clocks until it's value goes into acc_m[2]
-          - So, the clock sequence goes as follows:
-              - acc_m[0] == 0 ; shift[0] == 0        ; acc_m[1] == 1 ; shift[1] == 0         ; acc_m[2] == 1  ; shift[2] == 0
-              - acc_m[0] == 0 ; shift[0] == 0        ; acc_m[1] == 1 ; shift[1] == acc_m[1]  ; acc_m[2] == 0  ; shift[2] == acc_m[2]
-              - acc_m[0] == 0 ; shift[0] == acc_m[1] ; acc_m[1] == 0 ; shift[1] == acc_m[2]  ; acc_m[2] == 0  ; shift[2] == 0
 
       * Shift enable = aclk = m_ready of the AXIS outside.
           - whenever m_ready goes down, whole unit freezes, including shift regs.
@@ -359,7 +373,7 @@ module conv_engine (
 
       * Middle cols:  - Only one datapath gives output, spaced ~CIN*KW delay apart.
                       - For any delay, outputs will come out one after the other, all is well
-      * End cols   :  - (KW/2 + 1) datapaths give data out, spaced (A-2) delays apart
+      * End cols   :  - (KW/2 + 1) datapaths give data out
                       - But they come out in reversed order
       * Start cols :  - KW/2 cols are ignored
                       - So there is time for end_cols to come out
@@ -372,36 +386,25 @@ module conv_engine (
           - But then back-to-back kernel change is not possible
       */
 
-      assign  acc_m_cin_last_masked  [w] = acc_m_user[w][I_IS_ACC_LAST] & mask_full[w] & !acc_m_cin_last_masked_delayed[w];
-
-      register #(
-        .WORD_WIDTH     (1),
-        .RESET_VALUE    (0)
-      ) ACCUMULATOR_CIN_LAST_MASKED_DELAYED (
-        .clock          (clk    ),
-        .clock_enable   (clken  ),
-        .resetn         (resetn ),
-        .data_in        (acc_m_cin_last_masked        [w] ),
-        .data_out       (acc_m_cin_last_masked_delayed[w])
-      );
-
       if (w != KERNEL_W_MAX-1) begin
-        assign shift_sel      [w] = shift_out_valid  [w+1]; //-------GET THIS OUT
+        assign shift_sel      [w] = shift_out_valid  [w+1];
 
-        assign shift_in_valid [w] = shift_sel  [w] ? shift_out_valid [w+1] : acc_m_cin_last_masked [w];
-        assign shift_in_last  [w] = shift_sel  [w] ? shift_out_last  [w+1] : acc_m_last            [w];
+        assign shift_in_valid [w] = shift_sel  [w] ? shift_out_valid [w+1] : acc_m_valid_masked [w];
+        assign shift_in_last  [w] = shift_sel  [w] ? shift_out_last  [w+1] : acc_m_last_masked  [w];
 
         assign shift_in_user  [w][I_IS_1X1:I_IS_NOT_MAX] = shift_sel  [w] ? shift_out_user  [w+1][I_IS_1X1:I_IS_NOT_MAX] : acc_m_user      [w][I_IS_1X1:I_IS_NOT_MAX];
         assign shift_in_user  [w][I_IS_LEFT_COL ]        = shift_sel  [w] ? shift_out_user  [w+1][I_IS_LEFT_COL ]        : pad_is_left_col [w];
         assign shift_in_user  [w][I_IS_RIGHT_COL]        = shift_sel  [w] ? shift_out_user  [w+1][I_IS_RIGHT_COL]        : pad_is_right_col[w];
       end
+      else begin
+        assign shift_in_valid [w] = acc_m_valid_masked [w];
+        assign shift_in_last  [w] = acc_m_last_masked  [w];
 
-      assign shift_in_valid [KERNEL_W_MAX - 1] = acc_m_cin_last_masked [KERNEL_W_MAX - 1];
-      assign shift_in_last  [KERNEL_W_MAX - 1] = acc_m_cin_last_masked [KERNEL_W_MAX - 1];
+        assign shift_in_user  [w][I_IS_1X1:I_IS_NOT_MAX] = acc_m_user       [w][I_IS_1X1:I_IS_NOT_MAX];
+        assign shift_in_user  [w][I_IS_LEFT_COL        ] = pad_is_left_col  [w];
+        assign shift_in_user  [w][I_IS_RIGHT_COL       ] = pad_is_right_col [w];
+      end
 
-      assign shift_in_user  [KERNEL_W_MAX - 1][I_IS_1X1:I_IS_NOT_MAX] = acc_m_user [KERNEL_W_MAX - 1][I_IS_1X1:I_IS_NOT_MAX];
-      assign shift_in_user  [KERNEL_W_MAX - 1][I_IS_LEFT_COL ] = pad_is_left_col   [KERNEL_W_MAX - 1];
-      assign shift_in_user  [KERNEL_W_MAX - 1][I_IS_RIGHT_COL] = pad_is_right_col  [KERNEL_W_MAX - 1];
 
       n_delay_stream #(
           .N           (1                 ),
@@ -442,6 +445,7 @@ module conv_engine (
     .aclken          (clken_acc         ),
     .aresetn         (resetn            ),
     .user_in         (acc_m_user        ),
+    .valid_in        (acc_m_valid       ),
     .mask_partial    (mask_partial      ),
     .mask_full       (mask_full         ),
     .is_left_col     (pad_is_left_col   ),
@@ -456,10 +460,8 @@ module conv_engine (
     CONVOLUTION CORES
 
     - Each core computes an output channel
-    - Pixels step buffer is kept  common to all cores, in engine (here, above)
-    - Weights step buffer is placed inside each core, for weights of that output channel
-    - Pixels and weights are not in sync at this point. They get into sync after weights buffer
-  
+    - Pixels step buffer is kept  common to all cores
+    - Weights step buffer is placed inside each core, for weights of that output channel  
   */
 
   generate
