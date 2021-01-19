@@ -42,6 +42,7 @@ module pad_filter # (
     aclken,
     aresetn,
     user_in,
+    valid_in,
     
     mask_partial,
     mask_full,
@@ -57,6 +58,7 @@ module pad_filter # (
     input  logic                      aresetn;
 
     input  logic [TUSER_WIDTH - 1: 0] user_in      [KERNEL_W_MAX - 1 : 0];
+    input  logic                      valid_in     [KERNEL_W_MAX - 1 : 0];
 
     output logic                      mask_partial [KERNEL_W_MAX - 1 : 1];
     output logic                      mask_full    [KERNEL_W_MAX - 1 : 0];
@@ -83,7 +85,7 @@ module pad_filter # (
 
     * One bit, KW2_MAX regs are there (packed dimension) for every KW_MAX datapath (unpacked dimension)
     * is_col_1_k2 from TUSER, which rises at col==(col-1-k/2) is passed through these
-    * updated at each valid_last (end of channels_in)
+    * updated at the end of each cin: (acc_m_valid & cin_last & acc_clken)
     * OPTIMIZATION: 
         To avoid synthesis of a combinational added when calculating kw/2-1 for indexing,
         start, end regs are indexed from 1,2...KW2_MAX and indexed by kw2_wire directly.        
@@ -112,7 +114,7 @@ module pad_filter # (
             assign kw2_wire[i] = kw_wire[i] / 2; // kw = 7 : kw2_wire = 3,   kw = 5 : kw2_wire = 2,   kw = 3 : kw2_wire = 1
 
 
-            assign reg_clken[i] = user_in [i][I_IS_ACC_LAST] && aclken[i] && ~user_in[i][I_IS_CONFIG];
+            assign reg_clken[i] = user_in [i][I_IS_ACC_LAST] && aclken[i] && valid_in[i];
 
             assign col_end_in         [i][1]  = user_in[i][I_IS_COLS_1_K2];
             assign col_start_in       [i][1]  = col_end[i][kw2_wire[i]]; // This is a mux
@@ -172,7 +174,7 @@ module pad_filter # (
     */
     
     logic lut_allow_full     [KERNEL_W_MAX - 1 : 0] [KW2_MAX : 1];
-    logic lut_stop_partial   [KERNEL_W_MAX - 1 : 0] [KW2_MAX : 1]; 
+    logic lut_stop_partial   [KERNEL_W_MAX - 1 : 1] [KW2_MAX : 1]; 
 
     generate
         for ( i=0; i < KERNEL_W_MAX; i = i+1)   begin: lookup_full_datapath_gen
