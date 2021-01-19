@@ -10,6 +10,8 @@ Description:
                     - NxM
                     - ANY accumulator delay 
              * Limitations
+                - 1x1: cin > KW_MAX (this is fine, for 1x1 cins are like 32, 64)
+                - 3x3: last 2 cols are flipped
 Dependencies: 
 Revision:
 Revision 0.01 - File Created
@@ -381,6 +383,7 @@ module conv_engine (
       1 x 1:
 
       * All datapaths give outputs
+      * For cin <= KW_MAX, data get overwritten. So, keep cin > KW_MAX
       * Order is messed up if CIN > i(A-1)-2
           - Can be solved by bypassing the (A-1) delay
           - But then back-to-back kernel change is not possible

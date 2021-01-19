@@ -190,10 +190,10 @@ module pad_filter # (
                 assign at_start_and_middle       =     full_datapath & !start_cols; // During start_cols, block all datapaths. During middle_cols, allow only full_datapth.
                 assign at_last_col               =     last_col & !last_malformed & !unused_datapaths; // At the last_col, only allow datapaths that have partially formed padding
 
-                assign lut_allow_full   [i][kw2] =     at_start_and_middle | at_last_col | user_in[i][I_IS_1X1] | (user_in[i][I_IS_CONFIG] & (i==0));
+                assign lut_allow_full   [i][kw2] =     at_start_and_middle | at_last_col;
             end
 
-            assign    mask_full[i]             =     lut_allow_full    [i][kw2_wire[i]];
+            assign    mask_full[i]             =     lut_allow_full    [i][kw2_wire[i]] | user_in[i][I_IS_1X1] | (user_in[i][I_IS_CONFIG] & (i==0));
         end
 
         for ( i=1; i < KERNEL_W_MAX; i = i+1)   begin: lookup_partial_datapath_gen

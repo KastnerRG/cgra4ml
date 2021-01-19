@@ -12,10 +12,10 @@ module axis_accelerator_tb ();
     IMAGE & KERNEL PARAMETERS
   */
   
-  localparam K          = 3;
+  localparam K          = 1;
   localparam IM_HEIGHT  = 2;
   localparam IM_WIDTH   = 4;
-  localparam IM_CIN     = 3;
+  localparam IM_CIN     = 4;
 
   localparam ITERATIONS = 5;
 
