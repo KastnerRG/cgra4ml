@@ -193,7 +193,7 @@ module pad_filter # (
                 assign lut_allow_full   [i][kw2] =     at_start_and_middle | at_last_col;
             end
 
-            assign    mask_full[i]             =     lut_allow_full    [i][kw2_wire[i]] | user_in[i][I_IS_1X1] | (user_in[i][I_IS_CONFIG] & (i==0));
+            assign    mask_full[i]  =  (lut_allow_full [i][kw2_wire[i]] & kw2_wire[i] !=0) | (user_in[i][I_IS_CONFIG] & (i==0)) | (user_in[i][I_IS_1X1] && ~user_in[i][I_IS_CONFIG]);
         end
 
         for ( i=1; i < KERNEL_W_MAX; i = i+1)   begin: lookup_partial_datapath_gen

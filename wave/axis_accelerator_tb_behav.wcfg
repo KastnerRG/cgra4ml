@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="10349000fs"></ZoomStartTime>
-      <ZoomEndTime time="11593001fs"></ZoomEndTime>
-      <Cursor1Time time="11106000fs"></Cursor1Time>
+      <ZoomStartTime time="9759233333fs"></ZoomStartTime>
+      <ZoomEndTime time="14279233334fs"></ZoomEndTime>
+      <Cursor1Time time="13525900000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="241"></NameColumnWidth>
       <ValueColumnWidth column_width="113"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="25" />
+   <WVObjectSize size="26" />
    <wvobject fp_name="/axis_accelerator_tb/aclk" type="logic">
       <obj_property name="ElementShortName">aclk</obj_property>
       <obj_property name="ObjectShortName">aclk</obj_property>
@@ -998,6 +998,10 @@
          <obj_property name="ObjectShortName">acc_s_user[2:0][10:0]</obj_property>
          <obj_property name="isExpanded"></obj_property>
       </wvobject>
+      <wvobject fp_name="/axis_accelerator_tb/aclk" type="logic">
+         <obj_property name="ElementShortName">aclk</obj_property>
+         <obj_property name="ObjectShortName">aclk</obj_property>
+      </wvobject>
       <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/acc_m_valid" type="array">
          <obj_property name="ElementShortName">acc_m_valid[2:0]</obj_property>
          <obj_property name="ObjectShortName">acc_m_valid[2:0]</obj_property>
@@ -1219,11 +1223,25 @@
       <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/acc_m_user" type="array">
          <obj_property name="ElementShortName">acc_m_user[2:0][10:0]</obj_property>
          <obj_property name="ObjectShortName">acc_m_user[2:0][10:0]</obj_property>
+         <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/acc_m_user[2]" type="array">
+            <obj_property name="ElementShortName">[2][10:0]</obj_property>
+            <obj_property name="ObjectShortName">[2][10:0]</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+         </wvobject>
+         <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/acc_m_user[1]" type="array">
+            <obj_property name="ElementShortName">[1][10:0]</obj_property>
+            <obj_property name="ObjectShortName">[1][10:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/acc_m_user[0]" type="array">
+            <obj_property name="ElementShortName">[0][10:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][10:0]</obj_property>
+         </wvobject>
       </wvobject>
    </wvobject>
    <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/acc_m_valid_masked" type="array">
       <obj_property name="ElementShortName">acc_m_valid_masked[2:0]</obj_property>
       <obj_property name="ObjectShortName">acc_m_valid_masked[2:0]</obj_property>
+      <obj_property name="isExpanded"></obj_property>
    </wvobject>
    <wvobject fp_name="group341" type="group">
       <obj_property name="label">Pad Filter</obj_property>
@@ -1430,6 +1448,10 @@
    <wvobject type="divider" fp_name="divider292">
       <obj_property name="label">Outputs</obj_property>
       <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_accelerator_tb/aclk" type="logic">
+      <obj_property name="ElementShortName">aclk</obj_property>
+      <obj_property name="ObjectShortName">aclk</obj_property>
    </wvobject>
    <wvobject fp_name="group291" type="group">
       <obj_property name="label">Master</obj_property>
@@ -1659,16 +1681,6 @@
          <obj_property name="ObjectShortName">IM_COLS[31:0]</obj_property>
          <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
       </wvobject>
-      <wvobject fp_name="/axis_accelerator_tb/BITS_KERNEL_W" type="array">
-         <obj_property name="ElementShortName">BITS_KERNEL_W[31:0]</obj_property>
-         <obj_property name="ObjectShortName">BITS_KERNEL_W[31:0]</obj_property>
-         <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_accelerator_tb/BITS_KERNEL_H" type="array">
-         <obj_property name="ElementShortName">BITS_KERNEL_H[31:0]</obj_property>
-         <obj_property name="ObjectShortName">BITS_KERNEL_H[31:0]</obj_property>
-         <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-      </wvobject>
       <wvobject fp_name="/axis_accelerator_tb/CORES" type="array">
          <obj_property name="ElementShortName">CORES[31:0]</obj_property>
          <obj_property name="ObjectShortName">CORES[31:0]</obj_property>
@@ -1677,6 +1689,16 @@
       <wvobject fp_name="/axis_accelerator_tb/UNITS_EDGES" type="array">
          <obj_property name="ElementShortName">UNITS_EDGES[31:0]</obj_property>
          <obj_property name="ObjectShortName">UNITS_EDGES[31:0]</obj_property>
+         <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_accelerator_tb/BITS_KERNEL_W" type="array">
+         <obj_property name="ElementShortName">BITS_KERNEL_W[31:0]</obj_property>
+         <obj_property name="ObjectShortName">BITS_KERNEL_W[31:0]</obj_property>
+         <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_accelerator_tb/BITS_KERNEL_H" type="array">
+         <obj_property name="ElementShortName">BITS_KERNEL_H[31:0]</obj_property>
+         <obj_property name="ObjectShortName">BITS_KERNEL_H[31:0]</obj_property>
          <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_accelerator_tb/IM_IN_S_DATA_WORDS" type="array">
