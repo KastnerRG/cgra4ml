@@ -8,22 +8,56 @@ module axis_accelerator_tb ();
     forever #(CLK_PERIOD/2) aclk <= ~aclk;
   end
 
+  int status, file_im_1, file_im_2, file_weights, file_out;
+
   /*
     IMAGE & KERNEL PARAMETERS
   */
-  
-  localparam K          = 1;
-  localparam IM_HEIGHT  = 2;
-  localparam IM_WIDTH   = 4;
-  localparam IM_CIN     = 4;
 
-  localparam ITERATIONS = 5;
+  //################ LAYER 1 : 3x3, maxpool ####################
+  
+  localparam K          = 3;
+  localparam MAX_FACTOR = 2;
+  localparam IM_HEIGHT  = 256;
+  localparam IM_WIDTH   = 384;
+  localparam IM_CIN     = 3;
+  string path_im_1    = "D:/Vision Traffic/soc/data/1_conv_in_0.txt";
+  string path_im_2    = "D:/Vision Traffic/soc/data/1_conv_in_1.txt";
+  string path_weights = "D:/Vision Traffic/soc/data/1_weights.txt";
+  string path_out     = "D:/Vision Traffic/soc/data/1_conv_out_fpga.txt";
+
+  // //############ LAYER 2 : 3x3, non-maxpool ####################
+
+  // localparam K          = 3;
+  // localparam MAX_FACTOR = 1;
+  // localparam IM_HEIGHT  = 128;
+  // localparam IM_WIDTH   = 192;
+  // localparam IM_CIN     = 32;
+  // string path_im_1    = "D:/Vision Traffic/soc/data/2_conv_in_0.txt";
+  // string path_im_2    = "D:/Vision Traffic/soc/data/2_conv_in_1.txt";
+  // string path_weights = "D:/Vision Traffic/soc/data/2_weights.txt";
+  // string path_out     = "D:/Vision Traffic/soc/data/2_conv_out_fpga.txt";
+
+  // //#################### LAYER 4 : 1x1 ####################
+
+  // localparam K          = 1;
+  // localparam MAX_FACTOR = 1;
+  // localparam IM_HEIGHT  = 64;
+  // localparam IM_WIDTH   = 96;
+  // localparam IM_CIN     = 128;
+  // string path_im_1    = "D:/Vision Traffic/soc/data/4_conv_in_0.txt";
+  // string path_im_2    = "D:/Vision Traffic/soc/data/4_conv_in_1.txt";
+  // string path_weights = "D:/Vision Traffic/soc/data/4_weights.txt";
+  // string path_out     = "D:/Vision Traffic/soc/data/4_conv_out_fpga.txt";
+
+  
+  localparam REPEATS = 1;
 
   /*
     SYSTEM PARAMS
   */
 
-  localparam UNITS               = 2;
+  localparam UNITS               = 4;
   localparam GROUPS              = 1;
   localparam COPIES              = 2;
   localparam MEMBERS             = 1;
@@ -133,6 +167,7 @@ module axis_accelerator_tb ();
   logic [TUSER_WIDTH_LRELU_IN-1:0] m_axis_tuser;
 
   logic [WORD_WIDTH_ACC*CORES*UNITS-1:0] m_axis_tdata;
+  logic [WORD_WIDTH_ACC-1:0]             m_data [CORES-1:0][UNITS-1:0];
   logic [GROUPS*UNITS_EDGES*COPIES-1:0]      m_axis_tkeep;
 
   axis_accelerator #(
@@ -192,14 +227,10 @@ module axis_accelerator_tb ();
   assign {>>{s_axis_pixels_1_tdata}} = s_data_pixels_1;
   assign {>>{s_axis_pixels_2_tdata}} = s_data_pixels_2;
   assign {>>{s_axis_weights_tdata}}  = s_data_weights;
+  assign m_data                      = {>>{m_axis_tdata}};
 
-  int status, file_im_1, file_im_2, file_weights;
 
-  string path_im_1 = "D:/Vision Traffic/soc/mem_yolo/txt/im_pipe_in.txt";
-  string path_im_2 = "D:/Vision Traffic/soc/mem_yolo/txt/im_pipe_in_2.txt";
-  string path_weights = "D:/Vision Traffic/soc/mem_yolo/txt/weights_rot_in.txt";
-
-  localparam BEATS_2 = IM_BLOCKS * IM_COLS * IM_CIN;
+  localparam BEATS_2 = (IM_BLOCKS/MAX_FACTOR) * IM_COLS * IM_CIN;
   localparam WORDS_2 = BEATS_2 * UNITS_EDGES;
   localparam BEATS_1 = BEATS_2 + 1;
   localparam WORDS_1 = BEATS_1 * UNITS_EDGES;
@@ -209,15 +240,21 @@ module axis_accelerator_tb ();
   localparam WORDS_W          = (W_BEATS-1) * KERNEL_W_MAX * CORES + WEIGHTS_DMA_BITS/WORD_WIDTH;
   localparam W_WORDS_PER_BEAT = WEIGHTS_DMA_BITS/WORD_WIDTH;
 
+  localparam BEATS_OUT = CONFIG_BEATS_1+1 + (IM_BLOCKS/MAX_FACTOR)*IM_COLS*(KERNEL_W_MAX/K);
+  localparam WORDS_OUT = BEATS_OUT*COPIES*MEMBERS*GROUPS*UNITS;
+
   int s_words_1 = 0; 
   int s_words_2 = 0; 
   int s_words_w = 0; 
+  int m_words   = 0; 
   int start_1   = 0;
   int start_2   = 0;
   int start_w   = 0;
-  int itr_count_im_1 = 0;
-  int itr_count_im_2 = 0;
-  int itr_count_w    = 0;
+  int start_o   = 0;
+  int repats_im_1 = 0;
+  int repats_im_2 = 0;
+  int repats_w    = 0;
+  int repats_out  = 0;
 
   task axis_feed_pixels_1;
     @(posedge aclk);
@@ -242,10 +279,8 @@ module axis_accelerator_tb ();
           s_axis_pixels_1_tlast  <= 0;
           s_words_1              <= 0;
 
-          if (itr_count_im_1 < ITERATIONS-1) begin
-            file_im_1               = $fopen(path_im_1   ,"r");
-            itr_count_im_1          = itr_count_im_1 + 1;
-          end
+          file_im_1            = $fopen(path_im_1   ,"r");
+          repats_im_1          = repats_im_1 + 1;
         end
       end
     end
@@ -274,10 +309,8 @@ module axis_accelerator_tb ();
           s_axis_pixels_2_tlast  <= 0;
           s_words_2              <= 0;
 
-          if (itr_count_im_2 < ITERATIONS-1) begin
-            file_im_2               = $fopen(path_im_2   ,"r");
-            itr_count_im_2          = itr_count_im_2 + 1;
-          end
+          file_im_2               = $fopen(path_im_2   ,"r");
+          repats_im_2             = repats_im_2 + 1;
         end
       end
     end
@@ -305,9 +338,35 @@ module axis_accelerator_tb ();
           s_axis_weights_tlast  <= 0;
           s_words_w             <= 0;
 
-          if (itr_count_w < ITERATIONS-1) begin
-            file_weights         = $fopen(path_weights ,"r");
-            itr_count_w          = itr_count_w + 1;
+          file_weights         = $fopen(path_weights ,"r");
+          repats_w             = repats_w + 1;
+        end
+      end
+    end
+  endtask
+
+  task axis_receive;
+    @(posedge aclk);
+    #(CLK_PERIOD/2);
+    if (start_o) begin
+      if (m_axis_tvalid) begin
+        if (m_words < WORDS_OUT) begin
+          for (int r=0; r < CORES; r++) begin
+            for (int u=0; u < UNITS; u++) begin
+              $fdisplay(file_out, "%d", signed'(m_data[r][u]));
+              m_words = m_words + 1;
+            end
+          end
+        end
+        else begin
+          m_words           <= 0;
+          if (repats_out < REPEATS-1) begin
+            repats_out   = repats_out + 1;
+          end
+          else begin
+            $fclose(file_out);
+            start_o = 0;
+            $finish();
           end
         end
       end
@@ -324,6 +383,10 @@ module axis_accelerator_tb ();
 
   initial begin
     forever axis_feed_weights;
+  end
+
+  initial begin
+    forever axis_receive;
   end
 
   initial begin
@@ -352,9 +415,11 @@ module axis_accelerator_tb ();
     file_im_1    = $fopen(path_im_1   ,"r");
     file_im_2    = $fopen(path_im_2   ,"r");
     file_weights = $fopen(path_weights,"r");
+    file_out     = $fopen(path_out,    "w");
     start_1 = 1;
     start_2 = 1;
     start_w = 1;
+    start_o = 1;
   end
 
 endmodule

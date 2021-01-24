@@ -256,12 +256,10 @@ module axis_input_pipe (
   /*
     DATA
 
-    - We maintain MCGU ordering
     - Pixels  : two (C) streams of U
-    - Weights : one stream in MCG (agnostic to M,C,G)
+    - Weights : one stream in CMG
     - Conv engine is agnostic to M and G
-      - Assume weights are in MCG, then cores are MCG_flat
-      - Alternative cores correspond to C=0 and C=1
+      - Assume weights are in MCG, then cores are CMG_flat
     - Send out two streams of pixels and one of weights
   */
 endmodule

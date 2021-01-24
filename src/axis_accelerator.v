@@ -232,7 +232,7 @@ module axis_accelerator (
     .m_axis_tlast              (conv_s_axis_tlast         ),     
     .m_axis_pixels_1_tdata     (conv_s_axis_pixels_1_tdata),
     .m_axis_pixels_2_tdata     (conv_s_axis_pixels_2_tdata),
-    .m_axis_weights_tdata      (conv_s_axis_weights_tdata ),
+    .m_axis_weights_tdata      (conv_s_axis_weights_tdata ), // CMG_flat
     .m_axis_tuser              (conv_s_axis_tuser         )
   );
 
@@ -270,7 +270,7 @@ module axis_accelerator (
     .s_axis_tuser         (conv_s_axis_tuser         ),
     .s_axis_tdata_pixels_1(conv_s_axis_pixels_1_tdata), // cu
     .s_axis_tdata_pixels_2(conv_s_axis_pixels_2_tdata), // cu
-    .s_axis_tdata_weights (conv_s_axis_weights_tdata ), // cr
+    .s_axis_tdata_weights (conv_s_axis_weights_tdata ), // cr = cmg
     .m_axis_tvalid        (lrelu_s_axis_tvalid       ),
     .m_axis_tready        (lrelu_s_axis_tready       ),
     .m_axis_tdata         (lrelu_s_axis_tdata_cmgu   ), // cmgu
