@@ -700,30 +700,30 @@ module lrelu_engine (
   shortreal d_val_cg_sr              [COPIES-1:0][GROUPS-1:0];
   shortreal config_flat_2_cg_sr      [COPIES-1:0][GROUPS-1:0];
 
-//  generate
-//    for(genvar c=0; c<COPIES; c=c+1) begin: cs
-//      for(genvar g=0; g<GROUPS; g=g+1) begin: gs
-//        for(genvar u=0; u<UNITS; u=u+1) begin: us
-//          assign m_data_fma_1_cgu_sr [c][g][u] = $bitstoshortreal(float_16_to_32(m_data_fma_1_cgu_f16[c][g][u]));
-//          assign m_data_fma_2_cgu_sr [c][g][u] = $bitstoshortreal(float_16_to_32(m_data_fma_2_cgu    [c][g][u]));
-//          assign c_val_cgu_sr        [c][g][u] = $bitstoshortreal(float_16_to_32(c_val_cgu           [c][g][u]));
-//        end
+ generate
+   for(genvar c=0; c<COPIES; c=c+1) begin: cs
+     for(genvar g=0; g<GROUPS; g=g+1) begin: gs
+       for(genvar u=0; u<UNITS; u=u+1) begin: us
+         assign m_data_fma_1_cgu_sr [c][g][u] = $bitstoshortreal(float_16_to_32(m_data_fma_1_cgu_f16[c][g][u]));
+         assign m_data_fma_2_cgu_sr [c][g][u] = $bitstoshortreal(float_16_to_32(m_data_fma_2_cgu    [c][g][u]));
+         assign c_val_cgu_sr        [c][g][u] = $bitstoshortreal(float_16_to_32(c_val_cgu           [c][g][u]));
+       end
 
-//        assign config_s_data_f16_cgv [c][g] = {>>{s_data_config_flat_cg [c][g]}};
-//        assign config_fma1_f16_cgv   [c][g] = {>>{config_flat_1_cg [c][g]}};
+       assign config_s_data_f16_cgv [c][g] = {>>{s_data_config_flat_cg [c][g]}};
+       assign config_fma1_f16_cgv   [c][g] = {>>{config_flat_1_cg [c][g]}};
 
-//        for(genvar v=0; v<VALS_CONFIG; v=v+1) begin: vs
-//          assign config_s_data_cgv_sr[c][g][v] = $bitstoshortreal(float_16_to_32(config_s_data_f16_cgv[c][g][v]));
-//          assign config_fma1_cgv_sr  [c][g][v] = $bitstoshortreal(float_16_to_32(config_fma1_f16_cgv  [c][g][v]));
-//        end
-//        assign config_flat_2_cg_sr   [c][g] = $bitstoshortreal(float_16_to_32(config_flat_2_cg  [c][g]));
-//        assign a_val_cg_sr           [c][g] = $bitstoshortreal(float_16_to_32(a_val_cg          [c][g]));
-//        assign d_val_cg_sr           [c][g] = $bitstoshortreal(float_16_to_32(d_val_cg          [c][g]));
+       for(genvar v=0; v<VALS_CONFIG; v=v+1) begin: vs
+         assign config_s_data_cgv_sr[c][g][v] = $bitstoshortreal(float_16_to_32(config_s_data_f16_cgv[c][g][v]));
+         assign config_fma1_cgv_sr  [c][g][v] = $bitstoshortreal(float_16_to_32(config_fma1_f16_cgv  [c][g][v]));
+       end
+       assign config_flat_2_cg_sr   [c][g] = $bitstoshortreal(float_16_to_32(config_flat_2_cg  [c][g]));
+       assign a_val_cg_sr           [c][g] = $bitstoshortreal(float_16_to_32(a_val_cg          [c][g]));
+       assign d_val_cg_sr           [c][g] = $bitstoshortreal(float_16_to_32(d_val_cg          [c][g]));
 
-//        for (genvar clr=0; clr<3; clr++)
-//          for (genvar mtb=0; mtb<3; mtb++)
-//            assign b_cg_clr_mtb_sr   [c][g][clr][mtb] = $bitstoshortreal(float_16_to_32(b_cg_clr_mtb_f16 [c][g][clr][mtb]));
-//      end
-//    end
-//  endgenerate
+       for (genvar clr=0; clr<3; clr++)
+         for (genvar mtb=0; mtb<3; mtb++)
+           assign b_cg_clr_mtb_sr   [c][g][clr][mtb] = $bitstoshortreal(float_16_to_32(b_cg_clr_mtb_f16 [c][g][clr][mtb]));
+     end
+   end
+ endgenerate
 endmodule
