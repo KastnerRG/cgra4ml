@@ -3,31 +3,54 @@
 # %%
 import numpy as np 
 import pickle
+
 from yolov2_mod_numpy import YOLOv2_Modified_Numpy
 
 layers = pickle.load(open('yolov2_mod_int8_dict.pickle', 'rb'))
 
 
 # %%
-layer_lrelu = layers['leaky_relu_1']
-layer_conv = layer_lrelu.prev_layer
+UNITS   = 8
+GROUPS  = 1
+COPIES  = 1
+MEMBERS = 4
 
+WORD_WIDTH_CONFIG = 8
+KW_MAX    = 3
+
+prefix_conv = 'conv_'
+prefix_max = 'maxpool_'
+prefix_lrelu = 'leaky_relu_'
+
+assert MEMBERS % 2 == 0
+
+
+# %%
+i = 4
+COLS   = 3
+BLOCKS = 3
+WIDTH  = COLS * BLOCKS
+
+layer_lrelu = layers[f'leaky_relu_{i}']
+layer_conv = layer_lrelu.prev_layer
 params = layer_lrelu.requantize_params
 
+_,H,W,COUT = params['B'].shape
+KH,KW,CIN,COUT = layer_conv.weights.shape
+SUB_CORES = KW_MAX//KW
+
+# %% [markdown]
+# ## Transform and append D,A,B
 
 # %%
 '''
 A, B, D parameters
 '''
 
-_,H,W,COUT = params['B'].shape
-K,_,CIN,COUT = layer_conv.weights.shape
-
-b_cout_clr_mtb = np.zeros((COUT,K,K), np.float16)
-
+b_cout_clr_mtb = np.zeros((COUT,KW,KH), np.float16)
 b_cout_clr_mtb[:,0,0] = params['B'][0,1,1,:]            # for both K=1 and K=3
 
-if K == 3:
+if KW == 3:
     b_cout_clr_mtb[:,0,1] = params['B'][0,  0,  1,:]
     b_cout_clr_mtb[:,0,2] = params['B'][0,H-1,  1,:]
 
@@ -42,60 +65,18 @@ if K == 3:
 a_cout = params['A'][0,0,0,:]
 d = params['D']
 
+a = a_cout[0:SUB_CORES*MEMBERS*COPIES*GROUPS]
+b = b_cout_clr_mtb[0:SUB_CORES*MEMBERS*COPIES*GROUPS,:,:]
 
-# %%
-UNITS   = 8
-GROUPS  = 1
-COPIES  = 1
-MEMBERS = 2
-
-COLS   = 3
-BLOCKS = 3
-WIDTH  = COLS * BLOCKS
-
-WORD_WIDTH_CONFIG = 8
-
-BEATS = 16 // WORD_WIDTH_CONFIG;
-VALS_CONFIG = MEMBERS // BEATS;
-
-if K==3:
-    K_MEMBERS = 1
-    B_VALS = 3
-else:
-    K_MEMBERS = 3
-    B_VALS = 1
+a_smcg = a.reshape(SUB_CORES,MEMBERS,COPIES,GROUPS)
+b_smcg_clr_mtb = b.reshape(SUB_CORES,MEMBERS,COPIES,GROUPS, KW, KH)
 
 
 # %%
-def transform_data(data): #(H,W,C)
-    data = data[0:UNITS, 0:WIDTH, 0:K_MEMBERS*GROUPS*COPIES*MEMBERS]
-    data = data.reshape((UNITS, WIDTH, K_MEMBERS, MEMBERS, COPIES, GROUPS))
-    data_bkmcgu = data.transpose(1,2,3,4,5,0)
-    return data_bkmcgu
+def append_lrelu_config(arr,config_mcg,is_one_beat=False):
 
-data_in_bkmcgu = transform_data(layer_lrelu.in_data[0])
-data_out_bkmcgu = transform_data(params['a_q'][0])
-
-
-# %%
-# list(np.frombuffer(data_in_bkmcgu.flatten().tobytes(),np.int8))
-
-
-# %%
-params.keys()
-
-
-# %%
-a = a_cout[0:K_MEMBERS*MEMBERS*COPIES*GROUPS]
-b = b_cout_clr_mtb[0:K_MEMBERS*MEMBERS*COPIES*GROUPS,:,:]
-
-a_kmcg = a.reshape(K_MEMBERS,MEMBERS,COPIES,GROUPS)
-b_kmcg_clr_mtb = b.reshape(K_MEMBERS,MEMBERS,COPIES,GROUPS, K, K)
-
-
-# %%
-def append_mcg(config_mcg, is_one_beat=False):
-    global s_data_bmcgu
+    BEATS = 16 // WORD_WIDTH_CONFIG;
+    VALS_CONFIG = MEMBERS // BEATS;
 
     assert config_mcg.shape == (MEMBERS,COPIES,GROUPS)
     config_cgm = config_mcg.transpose((1,2,0))
@@ -108,8 +89,10 @@ def append_mcg(config_mcg, is_one_beat=False):
         BEATS_TO_SEND = 1
 
     config_8_bcgm = np.frombuffer(config_bcgv.tobytes(), np.int8).reshape((BEATS_TO_SEND,COPIES,GROUPS,MEMBERS))
-    config_pad_bmcgu = config_8_bcgm.astype(np.int8)[...,np.newaxis].repeat(UNITS, axis=4)
-    s_data_bmcgu += list(config_pad_bmcgu.flatten())
+    # config_pad_bmcgu = config_8_bcgm.astype(np.int8)[...,np.newaxis].repeat(UNITS, axis=4)
+    config_pad_bmcgu = np.zeros((BEATS_TO_SEND,COPIES,GROUPS,MEMBERS,UNITS), config_8_bcgm.dtype)
+    config_pad_bmcgu[...,0] = config_8_bcgm.astype(np.int8)
+    arr += list(config_pad_bmcgu.flatten())
 
 
 # %%
@@ -120,116 +103,105 @@ D, A, B
 '''
 
 ''' d '''
-append_mcg(d*np.ones((MEMBERS,COPIES,GROUPS),np.float16), is_one_beat=True)
+append_lrelu_config(s_data_bmcgu,d*np.ones((MEMBERS,COPIES,GROUPS),np.float16), is_one_beat=True)
 
 ''' a '''
-for k in range(K_MEMBERS):
-    append_mcg(a_kmcg[k])
+for s in range(SUB_CORES):
+    append_lrelu_config(s_data_bmcgu,a_smcg[s])
 
 ''' b '''
-for k in range(K_MEMBERS):
-    for clr in range(K):
-        for mtb in range(K):
-            
-            append_mcg(b_kmcg_clr_mtb[k,:,:,:,clr,mtb])
+for s in range(SUB_CORES):
+    for clr in range(KW):
+        for mtb in range(KH):
+            append_lrelu_config(s_data_bmcgu, b_smcg_clr_mtb[s,:,:,:,clr,mtb])
 
-s_data_bmcgu += list(data_in_bkmcgu.flatten())
-
-
-# %%
-data_in_bkmcgu.shape
-
+# %% [markdown]
+# ## Transform and append input data
 
 # %%
-# b_kmcg_clr_mtb
-# list(b_kmcg_clr_mtb.flatten())
-# a_kmcg
-# d
+def transform_data(data): #(H,W,C)
+    data = data[0:UNITS, 0:WIDTH, 0:SUB_CORES*GROUPS*COPIES*MEMBERS]
+    data = data.reshape((UNITS, WIDTH, SUB_CORES, MEMBERS, COPIES, GROUPS))
+    data_bsmcgu = data.transpose(1,2,3,4,5,0)
+    return data_bsmcgu
+
+data_in_bsmcgu = transform_data(layer_lrelu.in_data[0])
+data_out_bsmcgu = transform_data(params['a_q'][0])
+
+s_data_bmcgu += list(data_in_bsmcgu.flatten())
 
 
 # %%
 file_path = "../fpga_support/lrelu_input.txt"
 np.savetxt(file_path, np.array(s_data_bmcgu).astype(np.int32), fmt="%d")
 
+# %% [markdown]
+# ## Calculate manually to check
 
 # %%
-# file_path = "../fpga_support/lrelu_np_output.txt"
-# np.savetxt(file_path, data_out_bkmcgu.flatten().astype(np.int32), fmt="%d")
+data = data_in_bsmcgu[:,:,:,0,0,:].reshape(BLOCKS,COLS,SUB_CORES,MEMBERS,UNITS)
 
-
-# %%
-data = data_in_bkmcgu[:,:,:,0,0,:].reshape(BLOCKS,COLS,K_MEMBERS,MEMBERS,UNITS)
-
-y1_bckmu = np.zeros((BLOCKS,COLS,K_MEMBERS,MEMBERS,UNITS),np.float32)
-y2_bckmu = np.zeros((BLOCKS,COLS,K_MEMBERS,MEMBERS,UNITS),np.float32)
+y1_bcsmu = np.zeros((BLOCKS,COLS,SUB_CORES,MEMBERS,UNITS),np.float32)
+y2_bcsmu = np.zeros((BLOCKS,COLS,SUB_CORES,MEMBERS,UNITS),np.float32)
 
 for b in range(BLOCKS):
     
-    if K==3:
+    if KW==3:
         if b == 0:
-            b_val_km_clr_t = b_kmcg_clr_mtb[:,:,0,0,:,1]
-            b_val_km_clr_m = b_kmcg_clr_mtb[:,:,0,0,:,0]
-            b_val_km_clr_b = b_kmcg_clr_mtb[:,:,0,0,:,0]
+            b_sm_clr_t = b_smcg_clr_mtb[:,:,0,0,:,1]
+            b_sm_clr_m = b_smcg_clr_mtb[:,:,0,0,:,0]
+            b_sm_clr_b = b_smcg_clr_mtb[:,:,0,0,:,0]
         elif b == BLOCKS-1:
-            b_val_km_clr_t = b_kmcg_clr_mtb[:,:,0,0,:,0]
-            b_val_km_clr_m = b_kmcg_clr_mtb[:,:,0,0,:,0]
-            b_val_km_clr_b = b_kmcg_clr_mtb[:,:,0,0,:,2]
+            b_sm_clr_t = b_smcg_clr_mtb[:,:,0,0,:,0]
+            b_sm_clr_m = b_smcg_clr_mtb[:,:,0,0,:,0]
+            b_sm_clr_b = b_smcg_clr_mtb[:,:,0,0,:,2]
         else:
-            b_val_km_clr_t = b_kmcg_clr_mtb[:,:,0,0,:,0]
-            b_val_km_clr_m = b_kmcg_clr_mtb[:,:,0,0,:,0]
-            b_val_km_clr_b = b_kmcg_clr_mtb[:,:,0,0,:,0]
+            b_sm_clr_t = b_smcg_clr_mtb[:,:,0,0,:,0]
+            b_sm_clr_m = b_smcg_clr_mtb[:,:,0,0,:,0]
+            b_sm_clr_b = b_smcg_clr_mtb[:,:,0,0,:,0]
 
     for c in range(COLS):
-        if K == 3:
+        if KW == 3:
             if c == 0:
-                b_val_km_t = b_val_km_clr_t[:,:,1]
-                b_val_km_m = b_val_km_clr_m[:,:,1]
-                b_val_km_b = b_val_km_clr_b[:,:,1]
+                b_sm_t = b_sm_clr_t[:,:,1]
+                b_sm_m = b_sm_clr_m[:,:,1]
+                b_sm_b = b_sm_clr_b[:,:,1]
             elif c == COLS-1:
-                b_val_km_t = b_val_km_clr_t[:,:,2]
-                b_val_km_m = b_val_km_clr_m[:,:,2]
-                b_val_km_b = b_val_km_clr_b[:,:,2]
+                b_sm_t = b_sm_clr_t[:,:,2]
+                b_sm_m = b_sm_clr_m[:,:,2]
+                b_sm_b = b_sm_clr_b[:,:,2]
             else:
-                b_val_km_t = b_val_km_clr_t[:,:,0]
-                b_val_km_m = b_val_km_clr_m[:,:,0]
-                b_val_km_b = b_val_km_clr_b[:,:,0]
+                b_sm_t = b_sm_clr_t[:,:,0]
+                b_sm_m = b_sm_clr_m[:,:,0]
+                b_sm_b = b_sm_clr_b[:,:,0]
 
         for u in range(UNITS):
 
-            if K==3:
+            if KW==3:
                 if u ==0:
-                    b_val_km = b_val_km_t
-                elif u ==1:
-                    b_val_km = b_val_km_m
+                    b_sm = b_sm_t
+                elif u == UNITS-1:
+                    b_sm = b_sm_b
                 else:
-                    b_val_km = b_val_km_b
+                    b_sm = b_sm_m
             else:
-                b_val_km = b_kmcg_clr_mtb[:,:,0,0,0,0]
+                b_sm = b_smcg_clr_mtb[:,:,0,0,0,0]
 
-            y1_bckmu[b,c,:,:,u] = data[b,c,:,:,u].astype(np.float32) * a_kmcg[:,:,0,0].astype(np.float32) + b_val_km.astype(np.float32)
+            y1_bcsmu[b,c,:,:,u] = data[b,c,:,:,u].astype(np.float32) * a_smcg[:,:,0,0].astype(np.float32) + b_sm.astype(np.float32)
 
-            y1_bckmu_f16 = np.float16(y1_bckmu)
-            y2_bckmu[b,c,:,:,u] = ((y1_bckmu_f16[b,c,:,:,u] > 0) + (y1_bckmu_f16[b,c,:,:,u] < 0)*np.array(0.1,np.float16))*y1_bckmu_f16[b,c,:,:,u] + d
-
-
-# %%
-# list(y2_bcmu.flatten())
+            y1_bcsmu_f16 = np.float16(y1_bcsmu)
+            y2_bcsmu[b,c,:,:,u] = ((y1_bcsmu_f16[b,c,:,:,u] > 0) + (y1_bcsmu_f16[b,c,:,:,u] < 0)*np.array(0.1,np.float16))*y1_bcsmu_f16[b,c,:,:,u] + d
+KW
 
 
 # %%
-fpga_out = np.loadtxt("../fpga_support/lrelu_output_2.txt", np.int8)
+fpga_out = np.loadtxt("../fpga_support/lrelu_output_1.txt", np.int8)
 
+error = fpga_out - np.round(y2_bcsmu).astype(np.int8).flatten()
+error_bcsmu = error.reshape((BLOCKS,COLS,SUB_CORES,MEMBERS,UNITS))
 
-# %%
-fpga_out - np.round(y2_bckmu).astype(np.int8).flatten()
-
-
-# %%
-# fpga_out
-
-
-# %%
-# np.round(y2_bckmu).astype(np.int8).flatten()
+# print(error_bcsmu.shape)
+print(np.sum(np.abs(error)))
 
 
 # %%
