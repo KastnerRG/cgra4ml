@@ -26,7 +26,7 @@ assert MEMBERS % 2 == 0
 
 
 # %%
-i = 4
+i = 1
 COLS   = 3
 BLOCKS = 3
 WIDTH  = COLS * BLOCKS
@@ -90,30 +90,30 @@ def append_lrelu_config(arr,config_mcg,is_one_beat=False):
 
     config_8_bcgm = np.frombuffer(config_bcgv.tobytes(), np.int8).reshape((BEATS_TO_SEND,COPIES,GROUPS,MEMBERS))
     # config_pad_bmcgu = config_8_bcgm.astype(np.int8)[...,np.newaxis].repeat(UNITS, axis=4)
-    config_pad_bmcgu = np.zeros((BEATS_TO_SEND,COPIES,GROUPS,MEMBERS,UNITS), config_8_bcgm.dtype)
-    config_pad_bmcgu[...,0] = config_8_bcgm.astype(np.int8)
-    arr += list(config_pad_bmcgu.flatten())
+    config_pad_bcgmu = np.zeros((BEATS_TO_SEND,COPIES,GROUPS,MEMBERS,UNITS), config_8_bcgm.dtype)
+    config_pad_bcgmu[...,0] = config_8_bcgm.astype(np.int8)
+    arr += list(config_pad_bcgmu.flatten())
 
 
 # %%
-s_data_bmcgu = []
+s_data_bcgmu = []
 
 '''
 D, A, B
 '''
 
 ''' d '''
-append_lrelu_config(s_data_bmcgu,d*np.ones((MEMBERS,COPIES,GROUPS),np.float16), is_one_beat=True)
+append_lrelu_config(s_data_bcgmu,d*np.ones((MEMBERS,COPIES,GROUPS),np.float16), is_one_beat=True)
 
 ''' a '''
 for s in range(SUB_CORES):
-    append_lrelu_config(s_data_bmcgu,a_smcg[s])
+    append_lrelu_config(s_data_bcgmu,a_smcg[s])
 
 ''' b '''
 for s in range(SUB_CORES):
     for clr in range(KW):
         for mtb in range(KH):
-            append_lrelu_config(s_data_bmcgu, b_smcg_clr_mtb[s,:,:,:,clr,mtb])
+            append_lrelu_config(s_data_bcgmu, b_smcg_clr_mtb[s,:,:,:,clr,mtb])
 
 # %% [markdown]
 # ## Transform and append input data
@@ -122,24 +122,24 @@ for s in range(SUB_CORES):
 def transform_data(data): #(H,W,C)
     data = data[0:UNITS, 0:WIDTH, 0:SUB_CORES*GROUPS*COPIES*MEMBERS]
     data = data.reshape((UNITS, WIDTH, SUB_CORES, MEMBERS, COPIES, GROUPS))
-    data_bsmcgu = data.transpose(1,2,3,4,5,0)
-    return data_bsmcgu
+    data_bscgmu = data.transpose(1,2,4,5,3,0)
+    return data_bscgmu
 
-data_in_bsmcgu = transform_data(layer_lrelu.in_data[0])
-data_out_bsmcgu = transform_data(params['a_q'][0])
+data_in_bscgmu = transform_data(layer_lrelu.in_data[0])
+data_out_bscgmu = transform_data(params['a_q'][0])
 
-s_data_bmcgu += list(data_in_bsmcgu.flatten())
+s_data_bcgmu += list(data_in_bscgmu.flatten())
 
 
 # %%
 file_path = "../fpga_support/lrelu_input.txt"
-np.savetxt(file_path, np.array(s_data_bmcgu).astype(np.int32), fmt="%d")
+np.savetxt(file_path, np.array(s_data_bcgmu).astype(np.int32), fmt="%d")
 
 # %% [markdown]
 # ## Calculate manually to check
 
 # %%
-data = data_in_bsmcgu[:,:,:,0,0,:].reshape(BLOCKS,COLS,SUB_CORES,MEMBERS,UNITS)
+data = data_in_bscgmu[:,:,0,0,:,:].reshape(BLOCKS,COLS,SUB_CORES,MEMBERS,UNITS)
 
 y1_bcsmu = np.zeros((BLOCKS,COLS,SUB_CORES,MEMBERS,UNITS),np.float32)
 y2_bcsmu = np.zeros((BLOCKS,COLS,SUB_CORES,MEMBERS,UNITS),np.float32)
@@ -195,7 +195,7 @@ KW
 
 
 # %%
-fpga_out = np.loadtxt("../fpga_support/lrelu_output_1.txt", np.int8)
+fpga_out = np.loadtxt("../fpga_support/lrelu_output_2.txt", np.int8)
 
 error = fpga_out - np.round(y2_bcsmu).astype(np.int8).flatten()
 error_bcsmu = error.reshape((BLOCKS,COLS,SUB_CORES,MEMBERS,UNITS))

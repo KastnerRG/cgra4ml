@@ -114,8 +114,7 @@ module lrelu_engine (
     CONFIG HANDLING
 
     s_axis_tdata
-    s_data_conv_out
-    s_data_conv_out_mcgu
+    s_data_conv_out - cgmu
     s_data_config_cgm
     s_data_config_flat_cg
       config_s_data_cgv_sr
@@ -123,16 +122,16 @@ module lrelu_engine (
   input  logic resetn_config, s_valid_config, is_1x1_config;
   input  logic [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_data_conv_out;
 
-  logic [WORD_WIDTH_IN    -1:0] s_data_conv_out_mcgu [MEMBERS-1:0][COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+  logic [WORD_WIDTH_IN    -1:0] s_data_conv_out_cmgu [COPIES-1:0][MEMBERS-1:0][GROUPS-1:0][UNITS-1:0];
   logic [WORD_WIDTH_CONFIG-1:0] s_data_config_cgm    [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0];
   logic [MEMBERS * WORD_WIDTH_CONFIG-1:0] s_data_config_flat_cg [COPIES-1:0][GROUPS-1:0];
 
-  assign s_data_conv_out_mcgu = {>>{s_data_conv_out}};
+  assign s_data_conv_out_cmgu = {>>{s_data_conv_out}};
   generate
     for (genvar c = 0; c < COPIES; c++)
       for (genvar g = 0; g < GROUPS; g++) begin
         for (genvar m = 0; m < MEMBERS; m++)
-            assign s_data_config_cgm[c][g][m] = WORD_WIDTH_CONFIG'(s_data_conv_out_mcgu[m][c][g][0]);
+            assign s_data_config_cgm[c][g][m] = WORD_WIDTH_CONFIG'(s_data_conv_out_cmgu[c][m][g][0]);
 
         assign {>>{s_data_config_flat_cg [c][g]}} = s_data_config_cgm[c][g];
       end

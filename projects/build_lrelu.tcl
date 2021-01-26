@@ -82,7 +82,7 @@ set IP_NAMES [list ]
 
 #*********** LRELU **********#
 
-set IP_NAME "axis_dw_gum_gu_active"
+set IP_NAME "axis_dw_lrelu_active"
 lappend IP_NAMES $IP_NAME
 set S_BYTES [expr "$MEMBERS * $GROUPS * $UNITS * $WORD_WIDTH_CONV_OUT / 8"]
 set M_BYTES [expr "$GROUPS * $UNITS * $WORD_WIDTH_CONV_OUT / 8"]
@@ -92,7 +92,7 @@ set T_KEEP 0
 create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.TID_WIDTH $TID_WIDTH CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
 
-set IP_NAME "axis_dw_gum_gu"
+set IP_NAME "axis_dw_lrelu_gu"
 lappend IP_NAMES $IP_NAME
 set S_BYTES [expr "$MEMBERS * $GROUPS * $UNITS * $WORD_WIDTH_CONV_OUT / 8"]
 set M_BYTES [expr "$GROUPS * $UNITS * $WORD_WIDTH_CONV_OUT / 8"]
