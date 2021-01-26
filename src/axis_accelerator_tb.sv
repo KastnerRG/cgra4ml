@@ -14,17 +14,17 @@ module axis_accelerator_tb ();
     IMAGE & KERNEL PARAMETERS
   */
 
-  // //################ LAYER 1 : 3x3, maxpool ####################
+  //################ LAYER 1 : 3x3, maxpool ####################
   
-  // localparam K          = 3;
-  // localparam MAX_FACTOR = 2;
-  // localparam IM_HEIGHT  = 256;
-  // localparam IM_WIDTH   = 384;
-  // localparam IM_CIN     = 3;
-  // string path_im_1    = "D:/Vision Traffic/soc/data/1_conv_in_0.txt";
-  // string path_im_2    = "D:/Vision Traffic/soc/data/1_conv_in_1.txt";
-  // string path_weights = "D:/Vision Traffic/soc/data/1_weights.txt";
-  // string path_out     = "D:/Vision Traffic/soc/data/1_conv_out_fpga.txt";
+  localparam K          = 3;
+  localparam MAX_FACTOR = 2;
+  localparam IM_HEIGHT  = 256;
+  localparam IM_WIDTH   = 384;
+  localparam IM_CIN     = 3;
+  string path_im_1    = "D:/Vision Traffic/soc/data/1_conv_in_0.txt";
+  string path_im_2    = "D:/Vision Traffic/soc/data/1_conv_in_1.txt";
+  string path_weights = "D:/Vision Traffic/soc/data/1_weights.txt";
+  string path_out     = "D:/Vision Traffic/soc/data/1_lrelu_out_fpga.txt";
 
   // //############ LAYER 3 : 3x3, non-maxpool ####################
 
@@ -38,17 +38,17 @@ module axis_accelerator_tb ();
   // string path_weights = "D:/Vision Traffic/soc/data/3_weights.txt";
   // string path_out     = "D:/Vision Traffic/soc/data/3_conv_out_fpga.txt";
 
-  //#################### LAYER 4 : 1x1 ####################
+  // //#################### LAYER 4 : 1x1 ####################
 
-  localparam K          = 1;
-  localparam MAX_FACTOR = 1;
-  localparam IM_HEIGHT  = 64;
-  localparam IM_WIDTH   = 96;
-  localparam IM_CIN     = 128;
-  string path_im_1    = "D:/Vision Traffic/soc/data/4_conv_in_0.txt";
-  string path_im_2    = "D:/Vision Traffic/soc/data/4_conv_in_1.txt";
-  string path_weights = "D:/Vision Traffic/soc/data/4_weights.txt";
-  string path_out     = "D:/Vision Traffic/soc/data/4_conv_out_fpga.txt";
+  // localparam K          = 1;
+  // localparam MAX_FACTOR = 1;
+  // localparam IM_HEIGHT  = 64;
+  // localparam IM_WIDTH   = 96;
+  // localparam IM_CIN     = 128;
+  // string path_im_1    = "D:/Vision Traffic/soc/data/4_conv_in_0.txt";
+  // string path_im_2    = "D:/Vision Traffic/soc/data/4_conv_in_1.txt";
+  // string path_weights = "D:/Vision Traffic/soc/data/4_weights.txt";
+  // string path_out     = "D:/Vision Traffic/soc/data/4_conv_out_fpga.txt";
 
   
   localparam REPEATS = 1;
@@ -60,7 +60,7 @@ module axis_accelerator_tb ();
   localparam UNITS               = 4;
   localparam GROUPS              = 1;
   localparam COPIES              = 2;
-  localparam MEMBERS             = 1;
+  localparam MEMBERS             = 4;
   localparam WORD_WIDTH          = 8; 
   localparam WORD_WIDTH_ACC      = 32; 
   localparam KERNEL_H_MAX        = 3;   // odd number
@@ -71,11 +71,18 @@ module axis_accelerator_tb ();
   localparam WEIGHTS_DMA_BITS    = 32;
   localparam LRELU_ALPHA         = 16'd11878;
 
+  localparam BITS_EXP_CONFIG       = 5;
+  localparam BITS_FRA_CONFIG       = 10;
+  localparam BITS_EXP_FMA_1        = 8;
+  localparam BITS_FRA_FMA_1        = 23;
+  localparam BITS_EXP_FMA_2        = 5;
+  localparam BITS_FRA_FMA_2        = 10;
+  localparam LATENCY_FMA_1         = 16;
+  localparam LATENCY_FMA_2         = 16;
+  localparam LATENCY_FIXED_2_FLOAT =  6;
   localparam BRAM_LATENCY          = 2;
   localparam ACCUMULATOR_DELAY     = 2;
   localparam MULTIPLIER_DELAY      = 3;
-  localparam LATENCY_FIXED_2_FLOAT = 6;
-  localparam LATENCY_FLOAT_32      = 16;
   localparam BEATS_CONFIG_3X3_1    = 21-1;
   localparam BEATS_CONFIG_1X1_1    = 13-1;
 
@@ -164,10 +171,10 @@ module axis_accelerator_tb ();
   logic m_axis_tready;
   logic m_axis_tvalid;
   logic m_axis_tlast;
-  logic [TUSER_WIDTH_LRELU_IN-1:0] m_axis_tuser;
 
-  logic [WORD_WIDTH_ACC*CORES*UNITS-1:0] m_axis_tdata;
-  logic [WORD_WIDTH_ACC-1:0]             m_data [CORES-1:0][UNITS-1:0];
+  logic [TUSER_WIDTH_MAXPOOL_IN-1:0]         m_axis_tuser;
+  logic [WORD_WIDTH*COPIES*GROUPS*UNITS-1:0] m_axis_tdata;
+  logic [WORD_WIDTH-1:0]                     m_data [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
   logic [GROUPS*UNITS_EDGES*COPIES-1:0]      m_axis_tkeep;
 
   axis_accelerator #(
@@ -191,8 +198,15 @@ module axis_accelerator_tb ();
     .IM_COLS_MAX               (IM_COLS_MAX               ),
     .WEIGHTS_DMA_BITS          (WEIGHTS_DMA_BITS          ),
     .LRELU_ALPHA               (LRELU_ALPHA               ),
+    .BITS_EXP_CONFIG           (BITS_EXP_CONFIG           ),
+    .BITS_FRA_CONFIG           (BITS_FRA_CONFIG           ),
+    .BITS_EXP_FMA_1            (BITS_EXP_FMA_1            ),
+    .BITS_FRA_FMA_1            (BITS_FRA_FMA_1            ),
+    .BITS_EXP_FMA_2            (BITS_EXP_FMA_2            ),
+    .BITS_FRA_FMA_2            (BITS_FRA_FMA_2            ),
+    .LATENCY_FMA_1             (LATENCY_FMA_1             ),
+    .LATENCY_FMA_2             (LATENCY_FMA_2             ),
     .LATENCY_FIXED_2_FLOAT     (LATENCY_FIXED_2_FLOAT     ),
-    .LATENCY_FLOAT_32          (LATENCY_FLOAT_32          ),
     .BRAM_LATENCY              (BRAM_LATENCY              ),
     .ACCUMULATOR_DELAY         (ACCUMULATOR_DELAY         ),
     .MULTIPLIER_DELAY          (MULTIPLIER_DELAY          ),
@@ -240,8 +254,9 @@ module axis_accelerator_tb ();
   localparam WORDS_W          = (W_BEATS-1) * KERNEL_W_MAX * CORES + WEIGHTS_DMA_BITS/WORD_WIDTH;
   localparam W_WORDS_PER_BEAT = WEIGHTS_DMA_BITS/WORD_WIDTH;
 
-  localparam BEATS_OUT = CONFIG_BEATS_1+1 + (IM_BLOCKS/MAX_FACTOR)*IM_COLS*(KERNEL_W_MAX/K);
-  localparam WORDS_OUT = BEATS_OUT*COPIES*MEMBERS*GROUPS*UNITS;
+  // localparam BEATS_OUT = CONFIG_BEATS_1+1 + (IM_BLOCKS/MAX_FACTOR)*IM_COLS*(KERNEL_W_MAX/K);
+  localparam BEATS_OUT = (IM_BLOCKS/MAX_FACTOR)*IM_COLS*(KERNEL_W_MAX/K)*MEMBERS;
+  localparam WORDS_OUT = BEATS_OUT*COPIES*GROUPS*UNITS;
 
   int s_words_1 = 0; 
   int s_words_2 = 0; 
@@ -351,10 +366,12 @@ module axis_accelerator_tb ();
     if (start_o) begin
       if (m_axis_tvalid) begin
         if (m_words < WORDS_OUT) begin
-          for (int r=0; r < CORES; r++) begin
-            for (int u=0; u < UNITS; u++) begin
-              $fdisplay(file_out, "%d", signed'(m_data[r][u]));
-              m_words = m_words + 1;
+          for (int c=0; c < COPIES; c++) begin
+            for (int g=0; g < GROUPS; g++) begin
+              for (int u=0; u < UNITS; u++) begin
+                $fdisplay(file_out, "%d", signed'(m_data[c][g][u]));
+                m_words = m_words + 1;
+              end
             end
           end
         end

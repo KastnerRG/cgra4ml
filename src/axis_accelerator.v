@@ -62,11 +62,17 @@ module axis_accelerator (
   parameter LRELU_ALPHA        = 16'd11878;
 
   /*
-    LATENCIES
+    LATENCIES & float widths
   */
-
+  parameter BITS_EXP_CONFIG       = 5;
+  parameter BITS_FRA_CONFIG       = 10;
+  parameter BITS_EXP_FMA_1        = 8;
+  parameter BITS_FRA_FMA_1        = 23;
+  parameter BITS_EXP_FMA_2        = 5;
+  parameter BITS_FRA_FMA_2        = 10;
+  parameter LATENCY_FMA_1         = 16;
+  parameter LATENCY_FMA_2         = 16;
   parameter LATENCY_FIXED_2_FLOAT = 6;
-  parameter LATENCY_FLOAT_32      = 16;
   parameter BRAM_LATENCY          = 2;
   parameter ACCUMULATOR_DELAY     = 2;
   parameter MULTIPLIER_DELAY      = 3;
@@ -141,19 +147,18 @@ module axis_accelerator (
   wire lrelu_s_axis_tready;
   wire lrelu_s_axis_tvalid;
   wire lrelu_s_axis_tlast ;
-  wire [WORD_WIDTH_ACC*CORES*UNITS     -1:0] lrelu_s_axis_tdata_cmgu;
-  wire [WORD_WIDTH_ACC*CORES*UNITS     -1:0] lrelu_s_axis_tdata_mcgu;
   wire [TUSER_WIDTH_LRELU_IN  -1:0] lrelu_s_axis_tuser;
+  wire [COPIES*MEMBERS*GROUPS*UNITS*WORD_WIDTH_ACC-1:0] lrelu_s_axis_tdata; // cmgu
 
   wire maxpool_s_axis_tvalid;
   wire maxpool_s_axis_tready;
-  wire [WORD_WIDTH*UNITS*CORES    -1:0] maxpool_s_axis_tdata;
+  wire [COPIES*GROUPS*UNITS*WORD_WIDTH -1:0] maxpool_s_axis_tdata;
   wire [TUSER_WIDTH_MAXPOOL_IN-1:0] maxpool_s_axis_tuser;
 
   wire maxpool_m_axis_tvalid;
   wire maxpool_m_axis_tready;
-  wire [GROUPS*UNITS_EDGES*COPIES*WORD_WIDTH -1:0] maxpool_m_axis_tdata;
-  wire [GROUPS*UNITS_EDGES*COPIES-1:0] maxpool_m_axis_tkeep;
+  wire [COPIES*GROUPS*UNITS_EDGES*WORD_WIDTH -1:0] maxpool_m_axis_tdata;
+  wire [COPIES*GROUPS*UNITS_EDGES-1:0] maxpool_m_axis_tkeep;
 
   input  wire m_axis_tready;
   output wire m_axis_tvalid;
@@ -164,13 +169,13 @@ module axis_accelerator (
 
   //*********** CONNECT OUTPUT FOR DEBUGGING ***********
 
-  output wire [WORD_WIDTH_ACC*CORES*UNITS   -1:0] m_axis_tdata;
-  output wire [TUSER_WIDTH_LRELU_IN-1:0] m_axis_tuser;
+  output wire [WORD_WIDTH*COPIES*GROUPS*UNITS   -1:0] m_axis_tdata;
+  output wire [TUSER_WIDTH_MAXPOOL_IN-1:0] m_axis_tuser;
 
-  assign lrelu_s_axis_tready = m_axis_tready;
-  assign m_axis_tvalid       = lrelu_s_axis_tvalid;
-  assign m_axis_tuser        = lrelu_s_axis_tuser;
-  assign m_axis_tdata        = lrelu_s_axis_tdata_cmgu;
+  assign maxpool_s_axis_tready = m_axis_tready;
+  assign m_axis_tvalid         = maxpool_s_axis_tvalid;
+  assign m_axis_tuser          = maxpool_s_axis_tuser;
+  assign m_axis_tdata          = maxpool_s_axis_tdata;
 
   axis_input_pipe #(
     .UNITS                     (UNITS                    ),
@@ -273,62 +278,58 @@ module axis_accelerator (
     .s_axis_tdata_weights (conv_s_axis_weights_tdata ), // cr = cmg
     .m_axis_tvalid        (lrelu_s_axis_tvalid       ),
     .m_axis_tready        (lrelu_s_axis_tready       ),
-    .m_axis_tdata         (lrelu_s_axis_tdata_cmgu   ), // cmgu
+    .m_axis_tdata         (lrelu_s_axis_tdata), // cmgu
     .m_axis_tlast         (lrelu_s_axis_tlast        ),
     .m_axis_tuser         (lrelu_s_axis_tuser        )
     );
     /*
         Convert conv_out (cmgu) into lrelu_in (mcgu)
     */
-    generate
-      for (genvar c=0; c < COPIES; c=c+1) begin
-        for (genvar m=0; m < MEMBERS; m=m+1) begin
-          for (genvar g=0; g < GROUPS; g=g+1) begin
-            for (genvar u=0; u < UNITS; u=u+1) begin
-              assign lrelu_s_axis_tdata_mcgu[(m*COPIES*GROUPS*UNITS + c*GROUPS*UNITS + g*UNITS + u +1)*WORD_WIDTH_ACC-1:(m*COPIES*GROUPS*UNITS + c*GROUPS*UNITS + g*UNITS + u)*WORD_WIDTH_ACC] = lrelu_s_axis_tdata_cmgu[(c*MEMBERS*GROUPS*UNITS + m*GROUPS*UNITS + g*UNITS + u +1)*WORD_WIDTH_ACC-1:(c*MEMBERS*GROUPS*UNITS + m*GROUPS*UNITS + g*UNITS + u)*WORD_WIDTH_ACC];
-            end
-          end
-        end
-      end
-    endgenerate
 
-  // axis_lrelu_engine #(
-  //   .WORD_WIDTH_IN              (WORD_WIDTH_ACC            ),
-  //   .WORD_WIDTH_OUT             (WORD_WIDTH                ),
-  //   .UNITS                      (UNITS                     ),
-  //   .GROUPS                     (GROUPS                    ),
-  //   .COPIES                     (COPIES                    ),
-  //   .MEMBERS                    (MEMBERS                   ),
-  //   .ALPHA                      (LRELU_ALPHA               ),
-  //   .CONFIG_BEATS_3X3_2         (BEATS_CONFIG_3X3_1    -1  ),
-  //   .CONFIG_BEATS_1X1_2         (BEATS_CONFIG_1X1_1    -1  ),
-  //   .LATENCY_FIXED_2_FLOAT      (LATENCY_FIXED_2_FLOAT     ),
-  //   .LATENCY_FLOAT_32           (LATENCY_FLOAT_32          ),
-  //   .BRAM_LATENCY               (BRAM_LATENCY              ),
-  //   .I_IS_MAX                   (I_IS_MAX                  ),
-  //   .I_IS_NOT_MAX               (I_IS_NOT_MAX              ),
-  //   .I_IS_LRELU                 (I_IS_LRELU                ),
-  //   .I_IS_TOP_BLOCK             (I_IS_TOP_BLOCK            ),
-  //   .I_IS_BOTTOM_BLOCK          (I_IS_BOTTOM_BLOCK         ),
-  //   .I_IS_LEFT_COL              (I_IS_LEFT_COL             ),
-  //   .I_IS_RIGHT_COL             (I_IS_RIGHT_COL            ),
-  //   .I_IS_1X1                   (I_IS_1X1                  ),
-  //   .TUSER_WIDTH_LRELU_IN       (TUSER_WIDTH_LRELU_IN      ),
-  //   .TUSER_WIDTH_LRELU_FMA_1_IN (TUSER_WIDTH_LRELU_FMA_1_IN),
-  //   .TUSER_WIDTH_MAXPOOL_IN     (TUSER_WIDTH_MAXPOOL_IN    )
-  // ) LRELU_ENGINE (
-  //   .aclk          (aclk                   ),
-  //   .aresetn       (aresetn                ),
-  //   .s_axis_tvalid (lrelu_s_axis_tvalid    ),
-  //   .s_axis_tready (lrelu_s_axis_tready    ),
-  //   .s_axis_tdata  (lrelu_s_axis_tdata_mcgu), // mcgu
-  //   .s_axis_tlast  (lrelu_s_axis_tlast     ),
-  //   .s_axis_tuser  (lrelu_s_axis_tuser     ),
-  //   .m_axis_tvalid (maxpool_s_axis_tvalid  ),
-  //   .m_axis_tready (maxpool_s_axis_tready  ),
-  //   .m_axis_tdata  (maxpool_s_axis_tdata   ), // cgu
-  //   .m_axis_tuser  (maxpool_s_axis_tuser   )
-  // );
+  axis_lrelu_engine #(
+    .WORD_WIDTH_IN              (WORD_WIDTH_ACC            ),
+    .WORD_WIDTH_OUT             (WORD_WIDTH                ),
+    .UNITS                      (UNITS                     ),
+    .GROUPS                     (GROUPS                    ),
+    .COPIES                     (COPIES                    ),
+    .MEMBERS                    (MEMBERS                   ),
+    .ALPHA                      (LRELU_ALPHA               ),
+    .CONFIG_BEATS_3X3_2         (BEATS_CONFIG_3X3_1    -1  ),
+    .CONFIG_BEATS_1X1_2         (BEATS_CONFIG_1X1_1    -1  ),    
+    .BITS_EXP_CONFIG            (BITS_EXP_CONFIG           ),
+    .BITS_FRA_CONFIG            (BITS_FRA_CONFIG           ),
+    .BITS_EXP_FMA_1             (BITS_EXP_FMA_1            ),
+    .BITS_FRA_FMA_1             (BITS_FRA_FMA_1            ),
+    .BITS_EXP_FMA_2             (BITS_EXP_FMA_2            ),
+    .BITS_FRA_FMA_2             (BITS_FRA_FMA_2            ),
+    .LATENCY_FMA_1              (LATENCY_FMA_1             ),
+    .LATENCY_FMA_2              (LATENCY_FMA_2             ),
+    .LATENCY_FIXED_2_FLOAT      (LATENCY_FIXED_2_FLOAT     ),
+    .BRAM_LATENCY               (BRAM_LATENCY              ),
+    .I_IS_MAX                   (I_IS_MAX                  ),
+    .I_IS_NOT_MAX               (I_IS_NOT_MAX              ),
+    .I_IS_LRELU                 (I_IS_LRELU                ),
+    .I_IS_TOP_BLOCK             (I_IS_TOP_BLOCK            ),
+    .I_IS_BOTTOM_BLOCK          (I_IS_BOTTOM_BLOCK         ),
+    .I_IS_LEFT_COL              (I_IS_LEFT_COL             ),
+    .I_IS_RIGHT_COL             (I_IS_RIGHT_COL            ),
+    .I_IS_1X1                   (I_IS_1X1                  ),
+    .TUSER_WIDTH_LRELU_IN       (TUSER_WIDTH_LRELU_IN      ),
+    .TUSER_WIDTH_LRELU_FMA_1_IN (TUSER_WIDTH_LRELU_FMA_1_IN),
+    .TUSER_WIDTH_MAXPOOL_IN     (TUSER_WIDTH_MAXPOOL_IN    )
+  ) LRELU_ENGINE (
+    .aclk          (aclk                   ),
+    .aresetn       (aresetn                ),
+    .s_axis_tvalid (lrelu_s_axis_tvalid    ),
+    .s_axis_tready (lrelu_s_axis_tready    ),
+    .s_axis_tdata  (lrelu_s_axis_tdata     ), // cmgu
+    .s_axis_tlast  (lrelu_s_axis_tlast     ),
+    .s_axis_tuser  (lrelu_s_axis_tuser     ),
+    .m_axis_tvalid (maxpool_s_axis_tvalid  ),
+    .m_axis_tready (maxpool_s_axis_tready  ),
+    .m_axis_tdata  (maxpool_s_axis_tdata   ), // cgu
+    .m_axis_tuser  (maxpool_s_axis_tuser   )
+  );
 
   // axis_maxpool_engine #(
   //   .UNITS            (UNITS        ),
