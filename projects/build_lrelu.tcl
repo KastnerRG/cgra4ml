@@ -9,9 +9,9 @@ set WORD_WIDTH_LRELU_1   32
 set WORD_WIDTH_LRELU_2   16
 set WORD_WIDTH_LRELU_OUT 8
 
-set UNITS   8
-set GROUPS  1
-set COPIES  1
+set UNITS   4
+set GROUPS  2
+set COPIES  2
 set MEMBERS 4
 
 set WEIGHTS_DMA_BITS 32
@@ -75,9 +75,9 @@ set TUSER_WIDTH_CONV_IN        [expr $BITS_KERNEL_W + $I_KERNEL_W_1]
 set IP_NAMES [list ]
 
 
-# # create project
-# create_project $PROJ_NAME ./$PROJ_FOLDER -part xc7z045ffg900-2
-# set_property board_part xilinx.com:zc706:part0:1.4 [current_project]
+# create project
+create_project $PROJ_NAME ./$PROJ_FOLDER -part xc7z045ffg900-2
+set_property board_part xilinx.com:zc706:part0:1.4 [current_project]
 
 
 #*********** LRELU **********#
@@ -92,7 +92,7 @@ set T_KEEP 0
 create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.TID_WIDTH $TID_WIDTH CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
 
-set IP_NAME "axis_dw_lrelu_gu"
+set IP_NAME "axis_dw_lrelu"
 lappend IP_NAMES $IP_NAME
 set S_BYTES [expr "$MEMBERS * $GROUPS * $UNITS * $WORD_WIDTH_CONV_OUT / 8"]
 set M_BYTES [expr "$GROUPS * $UNITS * $WORD_WIDTH_CONV_OUT / 8"]

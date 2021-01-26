@@ -15,9 +15,9 @@ module axis_lrelu_engine_tb();
   localparam COLS    = 3;
   localparam BLOCKS  = 3;
 
-  localparam UNITS   = 8;
-  localparam GROUPS  = 1;
-  localparam COPIES  = 1;
+  localparam UNITS   = 4;
+  localparam GROUPS  = 2;
+  localparam COPIES  = 2;
   localparam MEMBERS = 4;
 
   localparam WORD_WIDTH_IN     = 32;
