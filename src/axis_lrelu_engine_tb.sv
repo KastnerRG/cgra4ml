@@ -9,7 +9,7 @@ module axis_lrelu_engine_tb();
     forever #(CLK_PERIOD/2) aclk <= ~aclk;
   end
 
-  localparam IS_1X1  = 0;
+  localparam IS_1X1  = 1;
   localparam IS_RELU = 1;
 
   localparam COLS    = 3;
@@ -18,7 +18,7 @@ module axis_lrelu_engine_tb();
   localparam UNITS   = 8;
   localparam GROUPS  = 1;
   localparam COPIES  = 1;
-  localparam MEMBERS = 2;
+  localparam MEMBERS = 4;
 
   localparam WORD_WIDTH_IN     = 32;
   localparam WORD_WIDTH_OUT    = 8 ;
@@ -29,8 +29,16 @@ module axis_lrelu_engine_tb();
   localparam CONFIG_BEATS_3X3_2 = 19; // D(1) + A(2) + B(9*2) -2   = 21 -2 = 19
   localparam CONFIG_BEATS_1X1_2 = 11; // D(1) + A(2*3) + B(2*3) -2 = 13 -2 = 11
 
+
+  localparam BITS_EXP_CONFIG       = 5;
+  localparam BITS_FRA_CONFIG       = 10;
+  localparam BITS_EXP_FMA_1        = 8;
+  localparam BITS_FRA_FMA_1        = 23;
+  localparam BITS_EXP_FMA_2        = 5;
+  localparam BITS_FRA_FMA_2        = 10;
+  localparam LATENCY_FMA_1         = 16;
+  localparam LATENCY_FMA_2         = 16;
   localparam LATENCY_FIXED_2_FLOAT =  6;
-  localparam LATENCY_FLOAT_32      = 16;
   localparam BRAM_LATENCY          =  2;
 
   localparam I_IS_NOT_MAX      = 0;
@@ -78,8 +86,15 @@ module axis_lrelu_engine_tb();
     .CONFIG_BEATS_3X3_2 (CONFIG_BEATS_3X3_2),
     .CONFIG_BEATS_1X1_2 (CONFIG_BEATS_1X1_2),
 
+    .BITS_EXP_CONFIG      (BITS_EXP_CONFIG      ),
+    .BITS_FRA_CONFIG      (BITS_FRA_CONFIG      ),
+    .BITS_EXP_FMA_1       (BITS_EXP_FMA_1       ),
+    .BITS_FRA_FMA_1       (BITS_FRA_FMA_1       ),
+    .BITS_EXP_FMA_2       (BITS_EXP_FMA_2       ),
+    .BITS_FRA_FMA_2       (BITS_FRA_FMA_2       ),
+    .LATENCY_FMA_1        (LATENCY_FMA_1        ),
+    .LATENCY_FMA_2        (LATENCY_FMA_2        ),
     .LATENCY_FIXED_2_FLOAT(LATENCY_FIXED_2_FLOAT),
-    .LATENCY_FLOAT_32     (LATENCY_FLOAT_32     ),
     .BRAM_LATENCY         (BRAM_LATENCY         ),
 
     .I_IS_MAX             (I_IS_MAX            ),

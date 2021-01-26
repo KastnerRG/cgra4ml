@@ -1,36 +1,54 @@
-function logic [31:0] float_16_to_32 (input logic [15:0] float_16);
-    logic [31:0] float_32;
-    
+virtual class float_downsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);
+  static function logic [EXP_OUT+FRA_OUT:0] downsize (input logic [EXP_IN+FRA_IN:0] float_in);
+    /*
+      Downsize
+      * eg: Float32 -> Float16
+          - EXP_IN  : 8
+          - FRA_IN  : 23
+          - EXP_OUT : 5
+          - FRA_OUT : 10
+      * Mantissa is rounded to avoid error
+    */
     logic sign;
-    logic [4 :0] exp_16;
-    logic [9 :0] fra_16;
-
-    logic [7 :0] exp_32;
-    logic [22:0] fra_32;
-
-    {sign, exp_16, fra_16} = float_16;
-    fra_32 = fra_16 << 13; // 23-10
-    exp_32 = exp_16 + 7'd112; //- 15 + 127;
-    float_32 = {sign, exp_32, fra_32};
-    return float_32;
+    logic [EXP_IN -1:0] exp_in;
+    logic [FRA_IN -1:0] fra_in;
+    logic [EXP_OUT-1:0] exp_out;
+    logic [FRA_OUT  :0] fra_out_extra, fra_out_round;
+    logic [FRA_OUT-1:0] fra_out;
+    
+    {sign, exp_in, fra_in} = float_in;
+    exp_out = exp_in - (2**(EXP_IN-1)-2**(EXP_OUT-1));
+    fra_out_extra = fra_in >> (FRA_IN-FRA_OUT-1);
+    // fra_out_round = sign ? fra_out_extra - fra_in[FRA_IN-FRA_OUT]: fra_out_extra + fra_in[FRA_IN-FRA_OUT];
+    // fra_out = fra_out_round >> 1;
+    fra_out = fra_in >> (FRA_IN-FRA_OUT);
+    return {sign, exp_out, fra_out};
   endfunction
+endclass
 
-function logic [15:0] float_32_to_16 (input logic [31:0] float_32);
-  logic [15:0] float_16;
-  
-  logic sign;
-  logic [4 :0] exp_16;
-  logic [9 :0] fra_16;
-
-  logic [7 :0] exp_32;
-  logic [22:0] fra_32;
-
-  {sign, exp_32, fra_32} = float_32;
-  fra_16 = fra_32 >> 13 ;
-  exp_16 = exp_32 - 7'd112; //- 15 + 127;
-  float_16 = {sign, exp_16, fra_16};
-  return float_16;
-endfunction
+virtual class float_upsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);  
+  static function logic [EXP_OUT+FRA_OUT:0] upsize (input logic [EXP_IN+FRA_IN:0] float_in);
+    /*
+      Upsize
+      * eg: Float32 -> Float16
+          - EXP_IN  : 5
+          - FRA_IN  : 10
+          - EXP_OUT : 8
+          - FRA_OUT : 23
+      * No need to round
+    */
+    logic sign;
+    logic [EXP_IN -1:0] exp_in;
+    logic [FRA_IN -1:0] fra_in;
+    logic [EXP_OUT-1:0] exp_out;
+    logic [FRA_OUT-1:0] fra_out;
+    
+    {sign, exp_in, fra_in} = float_in;
+    exp_out = exp_in + (2**(EXP_OUT-1)-2**(EXP_IN-1));
+    fra_out = fra_in << (FRA_OUT-FRA_IN);
+    return {sign, exp_out, fra_out};
+  endfunction
+endclass
 
 module lrelu_engine (
   clk     ,
@@ -57,8 +75,16 @@ module lrelu_engine (
   parameter COPIES  = 2;
   parameter MEMBERS = 2;
   parameter ALPHA = 16'd11878;
+
+  parameter BITS_EXP_CONFIG       = 5;
+  parameter BITS_FRA_CONFIG       = 10;
+  parameter BITS_EXP_FMA_1        = 8;
+  parameter BITS_FRA_FMA_1        = 23;
+  parameter BITS_EXP_FMA_2        = 5;
+  parameter BITS_FRA_FMA_2        = 10;
+  parameter LATENCY_FMA_1         = 16;
+  parameter LATENCY_FMA_2         = 16;
   parameter LATENCY_FIXED_2_FLOAT =  6;
-  parameter LATENCY_FLOAT_32      = 16;
   parameter BRAM_LATENCY          =  2;
 
   parameter I_IS_NOT_MAX      = 0;
@@ -132,6 +158,9 @@ module lrelu_engine (
 
   localparam BITS_BRAM_R_DEPTH = $clog2(BRAM_R_DEPTH_1X1);
   localparam BITS_BRAM_W_DEPTH = $clog2(BRAM_W_DEPTH_1X1);
+
+  localparam BITS_FMA_1 = BITS_FRA_FMA_1 + BITS_EXP_FMA_1 + 1;
+  localparam BITS_FMA_2 = BITS_FRA_FMA_2 + BITS_EXP_FMA_2 + 1;
 
   /*
     CONTROL LOGIC
@@ -246,7 +275,7 @@ module lrelu_engine (
   );
   logic w_sel_bram_2;
   n_delay #(
-    .N          (LATENCY_FLOAT_32),
+    .N          (LATENCY_FMA_1),
     .WORD_WIDTH (1)
   ) W_SEL_BRAM_2 (
     .clk      (clk),
@@ -269,7 +298,7 @@ module lrelu_engine (
   );
   logic valid_config_2;
   n_delay #(
-    .N          (LATENCY_FLOAT_32),
+    .N          (LATENCY_FMA_1),
     .WORD_WIDTH (1)
   ) CONFIG_VALID_2 (
     .clk      (clk),
@@ -292,7 +321,7 @@ module lrelu_engine (
   );
   logic resetn_config_2;
   n_delay #(
-    .N          (LATENCY_FLOAT_32),
+    .N          (LATENCY_FMA_1),
     .WORD_WIDTH (1)
   ) CONFIG_RESETN_2 (
     .clk      (clk),
@@ -336,31 +365,31 @@ module lrelu_engine (
   */
   localparam VALS_CONFIG = MEMBERS * WORD_WIDTH_CONFIG / 16;
 
-  logic [15:0] config_s_data_f16_cgv[COPIES-1:0][GROUPS-1:0][VALS_CONFIG-1:0];
-  logic [15:0] config_fma1_f16_cgv  [COPIES-1:0][GROUPS-1:0][VALS_CONFIG-1:0];
-  logic [15:0] config_fma2_f16_cg   [COPIES-1:0][GROUPS-1:0];
+  logic [BITS_FMA_2-1:0] config_s_data_f16_cgv[COPIES-1:0][GROUPS-1:0][VALS_CONFIG-1:0];
+  logic [BITS_FMA_2-1:0] config_fma1_f16_cgv  [COPIES-1:0][GROUPS-1:0][VALS_CONFIG-1:0];
+  logic [BITS_FMA_2-1:0] config_fma2_f16_cg   [COPIES-1:0][GROUPS-1:0];
 
   logic [WORD_WIDTH_CONFIG * MEMBERS-1:0] config_flat_1_cg [COPIES-1:0][GROUPS-1:0];
   logic [BRAM_R_WIDTH-1:0] a_val_cg     [COPIES-1:0][GROUPS-1:0];
-  logic [31:0]             a_val_f32_cg [COPIES-1:0][GROUPS-1:0];
+  logic [BITS_FMA_1-1:0]             a_val_f32_cg [COPIES-1:0][GROUPS-1:0];
   logic                    b_ready_cg_clr_mtb[COPIES-1:0][GROUPS-1:0][2:0][2:0];
   logic [BRAM_R_WIDTH-1:0] b_cg_clr_mtb_f16  [COPIES-1:0][GROUPS-1:0][2:0][2:0];
-  logic [31:0] b_mid_f32_cg [COPIES-1:0][GROUPS-1:0];
-  logic [31:0] b_top_f32_cg [COPIES-1:0][GROUPS-1:0]; 
-  logic [31:0] b_bot_f32_cg [COPIES-1:0][GROUPS-1:0];
-  logic [15:0] d_val_cg     [COPIES-1:0][GROUPS-1:0];
+  logic [BITS_FMA_1-1:0] b_mid_f32_cg [COPIES-1:0][GROUPS-1:0];
+  logic [BITS_FMA_1-1:0] b_top_f32_cg [COPIES-1:0][GROUPS-1:0]; 
+  logic [BITS_FMA_1-1:0] b_bot_f32_cg [COPIES-1:0][GROUPS-1:0];
+  logic [BITS_FMA_2-1:0] d_val_cg     [COPIES-1:0][GROUPS-1:0];
   logic [BRAM_R_WIDTH -1:0] config_flat_2_cg [COPIES-1:0][GROUPS-1:0];
 
 
   localparam WIDTH_FIXED_2_FLOAT_S_DATA = (WORD_WIDTH_IN/8 + ((WORD_WIDTH_IN % 8) !=0))*8; // ceil(WORD_WIDTH_IN/8.0)*8
   logic signed [WIDTH_FIXED_2_FLOAT_S_DATA-1:0] s_data_fix2float_cgu [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
 
-  logic [31:0] m_data_float32_cgu   [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
-  logic [31:0] m_data_fma_1_cgu     [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
-  logic [15:0] m_data_fma_1_cgu_f16 [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
-  logic [15:0] m_data_fma_2_cgu     [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
-  logic [15:0] c_val_cgu            [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
-  logic [31:0] b_val_f32_cgu        [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+  logic [BITS_FMA_1-1:0] m_data_float32_cgu   [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+  logic [BITS_FMA_1-1:0] m_data_fma_1_cgu     [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+  logic [BITS_FMA_2-1:0] m_data_fma_1_cgu_f16 [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+  logic [BITS_FMA_2-1:0] m_data_fma_2_cgu     [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+  logic [BITS_FMA_2-1:0] c_val_cgu            [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+  logic [BITS_FMA_1-1:0] b_val_f32_cgu        [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
   logic is_top_cgu                  [COPIES-1:0][GROUPS-1:0][UNITS-1:0]; 
   logic is_bot_cgu                  [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
   logic is_lrelu_cgu                [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
@@ -403,7 +432,7 @@ module lrelu_engine (
         /*
           BRAM A
         */
-        assign a_val_f32_cg [c][g] = float_16_to_32(a_val_cg [c][g]);
+        assign a_val_f32_cg [c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(a_val_cg [c][g]);
 
         always_valid_cyclic_bram #(
           .W_DEPTH (BRAM_W_DEPTH_1X1), 
@@ -489,16 +518,16 @@ module lrelu_engine (
         */
 
         always_comb begin
-          b_mid_f32_cg[c][g] = float_16_to_32(b_cg_clr_mtb_f16[c][g][fma1_index_clr][0]);
-          b_top_f32_cg[c][g] = float_16_to_32(b_cg_clr_mtb_f16[c][g][fma1_index_clr][1]);
-          b_bot_f32_cg[c][g] = float_16_to_32(b_cg_clr_mtb_f16[c][g][fma1_index_clr][2]);
+          b_mid_f32_cg[c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(b_cg_clr_mtb_f16[c][g][fma1_index_clr][0]);
+          b_top_f32_cg[c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(b_cg_clr_mtb_f16[c][g][fma1_index_clr][1]);
+          b_bot_f32_cg[c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(b_cg_clr_mtb_f16[c][g][fma1_index_clr][2]);
         end
 
         /*
           DELAY CONFIG FOR REGISTER
         */
         n_delay #(
-          .N          (LATENCY_FLOAT_32),
+          .N          (LATENCY_FMA_1),
           .WORD_WIDTH (BRAM_R_WIDTH)
         ) CONFIG_DATA_FLAT_2 (
           .clk      (clk),
@@ -549,13 +578,13 @@ module lrelu_engine (
             end
           end
 
-          assign m_data_fma_1_cgu_f16[c][g][u] = float_32_to_16(m_data_fma_1_cgu[c][g][u]);
+          assign m_data_fma_1_cgu_f16[c][g][u] = float_downsize #(BITS_EXP_FMA_1,BITS_FRA_FMA_1,BITS_EXP_FMA_2,BITS_FRA_FMA_2) :: downsize(m_data_fma_1_cgu[c][g][u]);
 
           /*
             LRELU
           */
 
-          assign is_lrelu_cgu[c][g][u] = m_user_fma_1[I_IS_LRELU      ] && m_data_fma_1_cgu[c][g][u][31];
+          assign is_lrelu_cgu[c][g][u] = m_user_fma_1[I_IS_LRELU      ] && m_data_fma_1_cgu[c][g][u][BITS_FMA_1-1];
           assign c_val_cgu   [c][g][u] = is_lrelu_cgu[c][g][u] ? ALPHA : 16'd15360 ; // 0.1 or 1
 
           if (c==0 && g==0 && u==0) begin
@@ -704,25 +733,25 @@ module lrelu_engine (
    for(genvar c=0; c<COPIES; c=c+1) begin: cs
      for(genvar g=0; g<GROUPS; g=g+1) begin: gs
        for(genvar u=0; u<UNITS; u=u+1) begin: us
-         assign m_data_fma_1_cgu_sr [c][g][u] = $bitstoshortreal(float_16_to_32(m_data_fma_1_cgu_f16[c][g][u]));
-         assign m_data_fma_2_cgu_sr [c][g][u] = $bitstoshortreal(float_16_to_32(m_data_fma_2_cgu    [c][g][u]));
-         assign c_val_cgu_sr        [c][g][u] = $bitstoshortreal(float_16_to_32(c_val_cgu           [c][g][u]));
+         assign m_data_fma_1_cgu_sr [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(m_data_fma_1_cgu_f16[c][g][u]));
+         assign m_data_fma_2_cgu_sr [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(m_data_fma_2_cgu    [c][g][u]));
+         assign c_val_cgu_sr        [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(c_val_cgu           [c][g][u]));
        end
 
        assign config_s_data_f16_cgv [c][g] = {>>{s_data_config_flat_cg [c][g]}};
        assign config_fma1_f16_cgv   [c][g] = {>>{config_flat_1_cg [c][g]}};
 
        for(genvar v=0; v<VALS_CONFIG; v=v+1) begin: vs
-         assign config_s_data_cgv_sr[c][g][v] = $bitstoshortreal(float_16_to_32(config_s_data_f16_cgv[c][g][v]));
-         assign config_fma1_cgv_sr  [c][g][v] = $bitstoshortreal(float_16_to_32(config_fma1_f16_cgv  [c][g][v]));
+         assign config_s_data_cgv_sr[c][g][v] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_s_data_f16_cgv[c][g][v]));
+         assign config_fma1_cgv_sr  [c][g][v] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_fma1_f16_cgv  [c][g][v]));
        end
-       assign config_flat_2_cg_sr   [c][g] = $bitstoshortreal(float_16_to_32(config_flat_2_cg  [c][g]));
-       assign a_val_cg_sr           [c][g] = $bitstoshortreal(float_16_to_32(a_val_cg          [c][g]));
-       assign d_val_cg_sr           [c][g] = $bitstoshortreal(float_16_to_32(d_val_cg          [c][g]));
+       assign config_flat_2_cg_sr   [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_flat_2_cg  [c][g]));
+       assign a_val_cg_sr           [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(a_val_cg          [c][g]));
+       assign d_val_cg_sr           [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(d_val_cg          [c][g]));
 
        for (genvar clr=0; clr<3; clr++)
          for (genvar mtb=0; mtb<3; mtb++)
-           assign b_cg_clr_mtb_sr   [c][g][clr][mtb] = $bitstoshortreal(float_16_to_32(b_cg_clr_mtb_f16 [c][g][clr][mtb]));
+           assign b_cg_clr_mtb_sr   [c][g][clr][mtb] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(b_cg_clr_mtb_f16 [c][g][clr][mtb]));
      end
    end
  endgenerate

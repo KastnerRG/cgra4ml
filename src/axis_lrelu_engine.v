@@ -51,8 +51,15 @@ module axis_lrelu_engine (
     parameter CONFIG_BEATS_3X3_2 = 19; // D(1) + A(2) + B(9*2) -2 = 21-2 = 19
     parameter CONFIG_BEATS_1X1_2 = 11; // D(1) + A(2*3) + B(2*3) -2 = 13 -2 = 11
 
+    parameter BITS_EXP_CONFIG       = 5;
+    parameter BITS_FRA_CONFIG       = 10;
+    parameter BITS_EXP_FMA_1        = 8;
+    parameter BITS_FRA_FMA_1        = 23;
+    parameter BITS_EXP_FMA_2        = 5;
+    parameter BITS_FRA_FMA_2        = 10;
+    parameter LATENCY_FMA_1         = 16;
+    parameter LATENCY_FMA_2         = 16;
     parameter LATENCY_FIXED_2_FLOAT = 6 ;
-    parameter LATENCY_FLOAT_32      = 16;
     parameter BRAM_LATENCY          = 2 ;
 
     parameter I_IS_NOT_MAX      = 0;
@@ -362,7 +369,14 @@ module axis_lrelu_engine (
       .ALPHA   (ALPHA),
 
       .LATENCY_FIXED_2_FLOAT (LATENCY_FIXED_2_FLOAT),
-      .LATENCY_FLOAT_32      (LATENCY_FLOAT_32     ),
+      .BITS_EXP_CONFIG       (BITS_EXP_CONFIG      ),
+      .BITS_FRA_CONFIG       (BITS_FRA_CONFIG      ),
+      .BITS_EXP_FMA_1        (BITS_EXP_FMA_1       ),
+      .BITS_FRA_FMA_1        (BITS_FRA_FMA_1       ),
+      .BITS_EXP_FMA_2        (BITS_EXP_FMA_2       ),
+      .BITS_FRA_FMA_2        (BITS_FRA_FMA_2       ),
+      .LATENCY_FMA_1         (LATENCY_FMA_1        ),
+      .LATENCY_FMA_2         (LATENCY_FMA_2        ),
 
       .I_IS_MAX             (I_IS_MAX            ),
       .I_IS_NOT_MAX         (I_IS_NOT_MAX        ),
