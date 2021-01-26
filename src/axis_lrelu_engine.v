@@ -85,8 +85,6 @@ module axis_lrelu_engine (
     input  wire [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_axis_tdata;
     output wire [          COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_axis_tdata;
 
-    wire [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_axis_tdata;
-
     wire [COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_data_e, s_dw_slice_data;
     wire [COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_data_e;
     wire s_valid_e, s_last_e, m_valid_e;
