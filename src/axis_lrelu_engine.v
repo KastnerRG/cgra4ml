@@ -29,7 +29,7 @@ module axis_lrelu_engine (
     aresetn      ,
     s_axis_tvalid,
     s_axis_tready,
-    s_axis_tdata , // mcgu
+    s_axis_tdata , // cmgu
     s_axis_tuser ,
     s_axis_tlast ,
     m_axis_tvalid,
@@ -85,7 +85,7 @@ module axis_lrelu_engine (
     input  wire [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_axis_tdata;
     output wire [          COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_axis_tdata;
 
-    wire [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_axis_tdata_cmgu;
+    wire [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_axis_tdata;
 
     wire [COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_data_e, s_dw_slice_data;
     wire [COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_data_e;
@@ -283,29 +283,20 @@ module axis_lrelu_engine (
     /*
       DATAWIDTH CONVERTER BANKS
 
-      * Size: GUM(W) -> GU(W) : 2*8*8*(26) -> 2*8*(26) : 3328 -> 416 : 416B -> 52B
+      * Size: MGU(W) -> GU(W) : 2*8*8*(26) -> 2*8*(26) : 3328 -> 416 : 416B -> 52B
       * Number: 2 (one per copy)
     */
     generate
       for(genvar c=0; c<COPIES; c=c+1) begin: c_gen
 
-        // Transpose MCGU -> CGUM
-        for (genvar g=0; g<GROUPS; g=g+1) begin: g_gen
-          for (genvar u=0; u<UNITS; u=u+1) begin: u_gen
-            for (genvar m=0; m<MEMBERS; m=m+1) begin: m_gen
-              assign s_axis_tdata_cmgu [(c*MEMBERS*GROUPS*UNITS + m*GROUPS*UNITS + g*UNITS + u +1)*WORD_WIDTH_IN-1:(c*MEMBERS*GROUPS*UNITS + m*GROUPS*UNITS + g*UNITS + u)*WORD_WIDTH_IN] = s_axis_tdata[(m*COPIES*GROUPS*UNITS + c*GROUPS*UNITS + g*UNITS + u +1)*WORD_WIDTH_IN-1:(m*COPIES*GROUPS*UNITS + c*GROUPS*UNITS + g*UNITS + u)*WORD_WIDTH_IN];
-            end
-          end
-        end
-
         wire [MEMBERS * GROUPS * UNITS * WORD_WIDTH_IN-1:0] dw_s_data_mgu;
         wire [          GROUPS * UNITS * WORD_WIDTH_IN-1:0] dw_m_data_gu ;
         
-        assign dw_s_data_mgu = s_axis_tdata_cmgu[(c+1)*MEMBERS*GROUPS*UNITS*WORD_WIDTH_IN-1:(c)*MEMBERS*GROUPS*UNITS*WORD_WIDTH_IN];
+        assign dw_s_data_mgu = s_axis_tdata[(c+1)*MEMBERS*GROUPS*UNITS*WORD_WIDTH_IN-1:(c)*MEMBERS*GROUPS*UNITS*WORD_WIDTH_IN];
         assign s_dw_slice_data[(c+1)*GROUPS*UNITS*WORD_WIDTH_IN-1:(c)*GROUPS*UNITS*WORD_WIDTH_IN] = dw_m_data_gu;
 
         if (c==0) begin
-          axis_dw_gum_gu_active dw (
+          axis_dw_lrelu_active dw (
             .aclk           (aclk),          
             .aresetn        (aresetn),             
             .s_axis_tvalid  (dw_s_valid),  
@@ -322,7 +313,7 @@ module axis_lrelu_engine (
           );
         end
         else begin
-          axis_dw_gum_gu dw (
+          axis_dw_lrelu dw (
             .aclk           (aclk),          
             .aresetn        (aresetn),             
             .s_axis_tvalid  (dw_s_valid),  

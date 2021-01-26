@@ -9,7 +9,7 @@ module axis_lrelu_engine_tb();
     forever #(CLK_PERIOD/2) aclk <= ~aclk;
   end
 
-  localparam IS_1X1  = 1;
+  localparam IS_1X1  = 0;
   localparam IS_RELU = 1;
 
   localparam COLS    = 3;
@@ -60,16 +60,16 @@ module axis_lrelu_engine_tb();
   logic s_axis_tlast ;
   logic m_axis_tvalid;
   logic m_axis_tready;
-  logic [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_axis_tdata ; // mcgu
+  logic [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_axis_tdata ; // cmgu
   logic [          COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_axis_tdata ; // cgu
   logic [TUSER_WIDTH_LRELU_IN  -1:0] s_axis_tuser ;
   logic [TUSER_WIDTH_MAXPOOL_IN-1:0] m_axis_tuser ;
 
-  logic [WORD_WIDTH_IN  -1:0] s_data_int_mcgu [MEMBERS-1:0][COPIES-1:0][GROUPS-1:0][UNITS-1:0];
-  logic [WORD_WIDTH_OUT -1:0] m_data_cgu               [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+  logic [WORD_WIDTH_IN  -1:0] s_data_int_cmgu [COPIES-1:0][MEMBERS-1:0][GROUPS-1:0][UNITS-1:0];
+  logic [WORD_WIDTH_OUT -1:0] m_data_cgu      [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
   
 
-  assign {>>{s_axis_tdata}} = s_data_int_mcgu;
+  assign {>>{s_axis_tdata}} = s_data_int_cmgu;
   assign m_data_cgu = {>>{m_axis_tdata}};
 
   axis_lrelu_engine #(
@@ -192,7 +192,7 @@ module axis_lrelu_engine_tb();
     s_axis_tuser [I_IS_1X1  ] <= IS_1X1;
     s_axis_tuser [I_IS_LRELU] <= IS_RELU;
     s_axis_tlast  <= 0;
-    s_data_int_mcgu  <= '{default:0};
+    s_data_int_cmgu  <= '{default:0};
     sub_cores <= IS_1X1 ? 3 : 1;
 
     @(posedge aclk);
@@ -251,11 +251,11 @@ module axis_lrelu_engine_tb();
           data_beats <= data_beats + 1;
         end
 
-        for (int m=0; m < MEMBERS; m++)
-          for (int c=0; c < COPIES; c++)
+        for (int c=0; c < COPIES; c++)
+          for (int m=0; m < MEMBERS; m++)
             for (int g=0; g < GROUPS; g++)
               for (int u=0; u < UNITS; u++)
-                status = $fscanf(file_data_in,"%d\n",s_data_int_mcgu[m][c][g][u]);
+                status = $fscanf(file_data_in,"%d\n",s_data_int_cmgu[c][m][g][u]);
   endtask
 
 endmodule
