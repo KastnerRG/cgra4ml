@@ -12,7 +12,7 @@ set WORD_WIDTH_LRELU_OUT 8
 set UNITS   4
 set GROUPS  1
 set COPIES  2
-set MEMBERS 1
+set MEMBERS 4
 
 set WEIGHTS_DMA_BITS 32
 
@@ -75,9 +75,9 @@ set TUSER_WIDTH_CONV_IN        [expr $BITS_KERNEL_W + $I_KERNEL_W_1]
 set IP_NAMES [list ]
 
 
-# create project
-create_project $PROJ_NAME ./$PROJ_FOLDER -part xc7z045ffg900-2
-set_property board_part xilinx.com:zc706:part0:1.4 [current_project]
+# # create project
+# create_project $PROJ_NAME ./$PROJ_FOLDER -part xc7z045ffg900-2
+# set_property board_part xilinx.com:zc706:part0:1.4 [current_project]
 
 #*********** INPUT PIPE **********#
 
@@ -155,7 +155,7 @@ set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $
 
 #*********** LRELU **********#
 
-set IP_NAME "axis_dw_gum_gu_active"
+set IP_NAME "axis_dw_lrelu_active"
 lappend IP_NAMES $IP_NAME
 set S_BYTES [expr "$MEMBERS * $GROUPS * $UNITS * $WORD_WIDTH_CONV_OUT / 8"]
 set M_BYTES [expr "$GROUPS * $UNITS * $WORD_WIDTH_CONV_OUT / 8"]
@@ -165,7 +165,7 @@ set T_KEEP 0
 create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.TID_WIDTH $TID_WIDTH CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
 
-set IP_NAME "axis_dw_gum_gu"
+set IP_NAME "axis_dw_lrelu"
 lappend IP_NAMES $IP_NAME
 set S_BYTES [expr "$MEMBERS * $GROUPS * $UNITS * $WORD_WIDTH_CONV_OUT / 8"]
 set M_BYTES [expr "$GROUPS * $UNITS * $WORD_WIDTH_CONV_OUT / 8"]
@@ -240,23 +240,23 @@ lappend IP_NAMES $IP_NAME
 create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME
 set_property -dict [list  CONFIG.Operation_Type {Float_to_fixed} CONFIG.A_Precision_Type {Half} CONFIG.C_Result_Exponent_Width {8} CONFIG.C_Result_Fraction_Width {0} CONFIG.Flow_Control {NonBlocking} CONFIG.Has_ACLKEN {true} CONFIG.Has_ARESETn {false} CONFIG.C_A_Exponent_Width {5} CONFIG.C_A_Fraction_Width {11} CONFIG.Result_Precision_Type {Custom} CONFIG.C_Accum_Msb {32} CONFIG.C_Accum_Lsb {-24} CONFIG.C_Accum_Input_Msb {15} CONFIG.C_Mult_Usage {No_Usage} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Latency {5} CONFIG.C_Rate {1}] [get_ips $IP_NAME]
 
-# set IP_NAME "bram_lrelu"
-# lappend IP_NAMES $IP_NAME
-# set R_WIDTH 16
-# set R_DEPTH [expr "$MEMBERS * $KERNEL_W_MAX"]
-# set W_WIDTH [expr "$MEMBERS * $WORD_WIDTH_IN"]
-# set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
-# create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
-# set_property -dict [list  CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A $W_WIDTH CONFIG.Write_Depth_A $W_DEPTH CONFIG.Read_Width_A $W_WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $R_WIDTH CONFIG.Read_Width_B $R_WIDTH CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100}] [get_ips $IP_NAME]
+set IP_NAME "bram_lrelu"
+lappend IP_NAMES $IP_NAME
+set R_WIDTH 16
+set R_DEPTH [expr "$MEMBERS * $KERNEL_W_MAX"]
+set W_WIDTH [expr "$MEMBERS * $WORD_WIDTH_IN"]
+set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
+create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
+set_property -dict [list  CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A $W_WIDTH CONFIG.Write_Depth_A $W_DEPTH CONFIG.Read_Width_A $W_WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $R_WIDTH CONFIG.Read_Width_B $R_WIDTH CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100}] [get_ips $IP_NAME]
 
-# set IP_NAME "bram_lrelu_edge"
-# lappend IP_NAMES $IP_NAME
-# set R_WIDTH 16
-# set R_DEPTH [expr "$MEMBERS"]
-# set W_WIDTH [expr "$MEMBERS * $WORD_WIDTH_IN"]
-# set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
-# create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
-# set_property -dict [list  CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A $W_WIDTH CONFIG.Write_Depth_A $W_DEPTH CONFIG.Read_Width_A $W_WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $R_WIDTH CONFIG.Read_Width_B $R_WIDTH CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100}] [get_ips $IP_NAME]
+set IP_NAME "bram_lrelu_edge"
+lappend IP_NAMES $IP_NAME
+set R_WIDTH 16
+set R_DEPTH [expr "$MEMBERS"]
+set W_WIDTH [expr "$MEMBERS * $WORD_WIDTH_IN"]
+set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
+create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
+set_property -dict [list  CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A $W_WIDTH CONFIG.Write_Depth_A $W_DEPTH CONFIG.Read_Width_A $W_WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $R_WIDTH CONFIG.Read_Width_B $R_WIDTH CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100}] [get_ips $IP_NAME]
 
 #*********** MAXPOOL **********#
 
