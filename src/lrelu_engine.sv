@@ -559,10 +559,19 @@ module lrelu_engine (
 
           /*
             Assign MTB BRAMs to each unit
+
+            * Top if:
+              - top unit (u=0) 
+              - if max: first copy  (c=0)
+              - else  : both copies
+            * Bottom if:
+              - bottom unit (u=-1) 
+              - if max: second copy  (c=1)
+              - else  : both copies 
           */
           
-          assign is_top_cgu[c][g][u] = (u == 0      ) && m_user_float32[I_IS_TOP_BLOCK];
-          assign is_bot_cgu[c][g][u] = (u == UNITS-1) && m_user_float32[I_IS_BOTTOM_BLOCK];
+          assign is_top_cgu[c][g][u] = (u == 0      ) & (m_user_float32[I_IS_MAX] ? (c==0) : 1) & m_user_float32[I_IS_TOP_BLOCK];
+          assign is_bot_cgu[c][g][u] = (u == UNITS-1) & (m_user_float32[I_IS_MAX] ? (c==1) : 1) & m_user_float32[I_IS_BOTTOM_BLOCK];
 
           always_comb begin
             if (m_user_float32[I_IS_1X1]) begin
