@@ -27,6 +27,7 @@ assert MEMBERS % 2 == 0
 
 # %%
 i = 1
+IS_MAX = 1
 COLS   = 3
 BLOCKS = 3
 WIDTH  = COLS * BLOCKS
@@ -177,22 +178,22 @@ for b in range(BLOCKS):
                 b_smcg_b = b_smcg_clr_b[...,0]
 
         for u in range(UNITS):
+            for p in range(COPIES):
 
-            if KW==3:
-                if u ==0:
-                    b_smcg = b_smcg_t
-                elif u == UNITS-1:
-                    b_smcg = b_smcg_b
+                if KW==3:
+                    if (u ==0) and ( p==0 if IS_MAX else True):
+                        b_smcg = b_smcg_t
+                    elif (u == UNITS-1) and (p==COPIES-1 if IS_MAX else True):
+                        b_smcg = b_smcg_b
+                    else:
+                        b_smcg = b_smcg_m
                 else:
-                    b_smcg = b_smcg_m
-            else:
-                b_smcg = b_smcg_clr_mtb[...,0,0]
+                    b_smcg = b_smcg_clr_mtb[...,0,0]
 
-            y1_bc_smcgu[b,c,...,u] = data_in_bc_smcgu[b,c,...,u].astype(np.float32) * a_smcg.astype(np.float32) + b_smcg.astype(np.float32)
+                y1_bc_smcgu[b,c,:,:,p,:,u] = data_in_bc_smcgu[b,c,:,:,p,:,u].astype(np.float32) * a_smcg[:,:,p,:].astype(np.float32) + b_smcg[:,:,p,:].astype(np.float32)
 
-            y1_bc_smcgu_f16 = np.float16(y1_bc_smcgu)
-            y2_bc_smcgu[b,c,...,u] = ((y1_bc_smcgu_f16[b,c,...,u] > 0) + (y1_bc_smcgu_f16[b,c,...,u] < 0)*np.array(0.1,np.float16))*y1_bc_smcgu_f16[b,c,...,u] + d
-KW
+                y1_bc_smcgu_f16 = np.float16(y1_bc_smcgu)
+                y2_bc_smcgu[b,c,:,:,p,:,u] = ((y1_bc_smcgu_f16[b,c,:,:,p,:,u] > 0) + (y1_bc_smcgu_f16[b,c,:,:,p,:,u] < 0)*np.array(0.1,np.float16))*y1_bc_smcgu_f16[b,c,:,:,p,:,u] + d
 
 
 # %%

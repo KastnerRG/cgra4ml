@@ -10,6 +10,7 @@ module axis_lrelu_engine_tb();
   end
 
   localparam IS_1X1  = 0;
+  localparam IS_MAX  = 1;
   localparam IS_RELU = 1;
 
   localparam COLS    = 3;
@@ -167,7 +168,7 @@ module axis_lrelu_engine_tb();
     s_axis_tlast  <= 0;
 
     s_axis_tuser [I_IS_1X1    ] <= IS_1X1;
-    s_axis_tuser [I_IS_MAX    ] <= 0;
+    s_axis_tuser [I_IS_MAX    ] <= IS_MAX;
     s_axis_tuser [I_IS_NOT_MAX] <= 1;
     s_axis_tuser [I_IS_LRELU  ] <= IS_RELU;
 
