@@ -132,7 +132,6 @@ def get_lrelu_config(i, layers, KW_MAX, CORES, prefix_max, prefix_lrelu):
             BEATS_TO_SEND = 1
 
         config_8_bcgm = np.frombuffer(config_bcgv.tobytes(), np.int8).reshape((BEATS_TO_SEND,COPIES,GROUPS,MEMBERS))
-        # config_pad_bmcgu = config_8_bcgm.astype(np.int8)[...,np.newaxis].repeat(UNITS, axis=4)
         config_pad_bcgmk = np.zeros((BEATS_TO_SEND,COPIES,GROUPS,MEMBERS,KW_MAX), config_8_bcgm.dtype)
         config_pad_bcgmk[...,0] = config_8_bcgm.astype(np.int8)
         arr += [list(config_pad_bcgmk.reshape(BEATS_TO_SEND,CORES,KW_MAX))]
@@ -393,16 +392,6 @@ assert image_out.shape == (ITR, (21 if KW==3 else 13) + BLOCKS_PER_ARR*W*SUB_COR
 # %%
 np.savetxt(f"D:/Vision Traffic/soc/data/{i}_conv_out.txt", image_out[0].flatten(), fmt='%d')
 
-
-# %%
-image_out_fpga = np.loadtxt(f"D:/Vision Traffic/soc/data/{i}_conv_out_fpga.txt",np.int32)
-
-np.sum(image_out[0].flatten()-image_out_fpga)
-
-
-# %%
-i
-
 # %% [markdown]
 # # Leaky Relu Out / Max In
 # 
@@ -414,62 +403,18 @@ image = layers[f'{prefix_lrelu}{i}'].np_out_data[0]
 max_factor = 2 if f'{prefix_max}{i}' in layers.keys() else 1
 KW    = layers[f'{prefix_conv}{i}'].weights.shape[0]
 
-image_out = reshape_image_out(image=image,order='mcg',KW=KW,max_factor=max_factor,CONV_UNITS=CONV_UNITS)
+lrelu_out = reshape_image_out(image=image,order='mcg',KW=KW,max_factor=max_factor,CONV_UNITS=CONV_UNITS)
 ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS = image_out.shape
 
 
 # %%
 image_out_fpga = np.loadtxt(f"D:/Vision Traffic/soc/data/{i}_lrelu_out_fpga.txt",np.int8)
+fpga = image_out_fpga.reshape((BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS))
 
-np.sum(image_out[0].flatten()-image_out_fpga)
+error = lrelu_out[0] - fpga
+sum_abs_error = np.sum(np.abs(error))
 
-
-# %%
-a = image_out_fpga.reshape((BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS))
-error = a - image_out[0]
-
-
-# %%
-error[0,0,0,:,:]
-
-
-# %%
-np.sum(abs(error)>10)/error.size
-
-
-# %%
-layers[f'{prefix_lrelu}{i}'].requantize_params['D']
-
-
-# %%
-np.savetxt("where_err.txt", np.argwhere(abs(error)>5), fmt='%d')
-
-
-# %%
-np.sum(abs(error))/np.sum(abs(image_out[0]))
-
-
-# %%
-from matplotlib import pyplot as plt
-
-error_img = error #(BLOCKS,W,SUB_CORES,CORES,UNITS)
-error_img = error_img.transpose(0,4,1,2,3)
-error_img = error_img.reshape((BLOCKS//max_factor*CONV_UNITS,W,SUB_CORES*CORES))
-error_img = 255.0 * (error_img / np.max(np.abs(error_img),axis=(0,1)))
-
-plt.imshow(error_img[:,:,7],cmap='gray',interpolation='none'); plt.show()
-
-
-# %%
-CORES
-
-
-# %%
-
-
-
-# %%
-
+print(sum_abs_error/image_out_fpga.size)
 
 # %% [markdown]
 # # System Out
