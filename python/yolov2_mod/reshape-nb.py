@@ -7,6 +7,8 @@ from yolov2_mod_numpy import YOLOv2_Modified_Numpy
 
 layers = pickle.load(open('yolov2_mod_int8_dict.pickle', 'rb'))
 
+i = 3
+
 CONV_UNITS = 4
 MEMBERS    = 4
 COPIES     = 2
@@ -169,8 +171,6 @@ def get_lrelu_config(i, layers, KW_MAX, CORES, prefix_max, prefix_lrelu):
 # ```(KH,KW,CIN,COUT) -> (ITR, DMA_BEATS = 4 + (LRELU_BEATS + CIN*KH) * COPIES * MEMBERS * GROUPS * KW_MAX)```
 
 # %%
-i = 1
-
 weights = layers[f'{prefix_conv}{i}'].weights
 
 KH, KW, CIN, COUT = weights.shape
@@ -190,14 +190,14 @@ weights = weights.transpose(0,4,2,1,3) #(ITR,CIN,KH,EFF_CORES,KW)
 * Data comes out of conv in the order   : S,CMGU and is transposed into S,MCGUby hardware
 * Conv in takes weights in order        : CMGS
 
-* Since conv_out is SCMG, first invalid should be filled that way, so that output data is continous and cin matches cout
+* Since system_out is SMCG, first invalid should be filled that way, so that output data is continous and cin matches cout
 * After filling, we transpose it to CMGS
 '''
 
 SUB_CORES = KW_MAX//KW
-weights = weights.reshape((ITR,CIN,KH, SUB_CORES,CORES//max_factor ,KW)) # EFF_CORES = (SUBCORES,CORES//max)
-weights = weights.transpose(0,1,2,4,3,5)
-weights = weights.reshape((ITR,CIN,KH,1,CORES//max_factor,KW_MAX)) # (CMGS)
+weights = weights.reshape((ITR,CIN,KH, SUB_CORES,MEMBERS,COPIES//max_factor,GROUPS ,KW)) # EFF_CORES = (SMCG)
+weights = weights.transpose(0,1,2, 5,4,6, 3,7) # CMGS
+weights = weights.reshape((ITR,CIN,KH,1,COPIES//max_factor,MEMBERS,GROUPS,KW_MAX)) # (CMGS)
 weights = np.repeat(weights,repeats=max_factor,axis=3)
 weights = weights.reshape((ITR,CIN,KH,CORES,KW_MAX))
 
@@ -257,8 +257,6 @@ np.savetxt(f"D:/Vision Traffic/soc/data/{i}_weights.txt", weights_dma_beats[0].f
 # im_arrays[!0]: (BLOCKS//max_factor, W, CIN, CONV_UNITS_EDGES)```
 
 # %%
-i = 1
-
 image = layers[f'{prefix_conv}{i}'].in_data[0]
 max_factor = 2 if f'{prefix_max}{i}' in layers.keys() else 1
 H,W,CIN = image.shape
@@ -325,8 +323,6 @@ for m in range(max_factor):
 # ```(1, H, W, CIN) -> (ITR, LRELU_BEATS + BLOCKS_PER_ARR*W*SUB_CORES, COPIES*MEMBERS*GROUPS, CONV_UNITS)```
 
 # %%
-i = 1
-
 image = layers[f'{prefix_conv}{i}'].np_out_data[0]
 max_factor = 2 if f'{prefix_max}{i}' in layers.keys() else 1
 KW    = layers[f'{prefix_conv}{i}'].weights.shape[0]
@@ -398,23 +394,96 @@ np.savetxt(f"D:/Vision Traffic/soc/data/{i}_conv_out.txt", image_out[0].flatten(
 # ```(1, H, W, CIN) -> (ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS)```
 
 # %%
-i = 1
 image = layers[f'{prefix_lrelu}{i}'].np_out_data[0]
 max_factor = 2 if f'{prefix_max}{i}' in layers.keys() else 1
 KW    = layers[f'{prefix_conv}{i}'].weights.shape[0]
 
 lrelu_out = reshape_image_out(image=image,order='mcg',KW=KW,max_factor=max_factor,CONV_UNITS=CONV_UNITS)
-ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS = image_out.shape
+ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS = lrelu_out.shape
 
 
 # %%
 image_out_fpga = np.loadtxt(f"D:/Vision Traffic/soc/data/{i}_lrelu_out_fpga.txt",np.int8)
 fpga = image_out_fpga.reshape((BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS))
 
+'''
+Invalid cores output 0+d=d. Remove d to compare.
+'''
+
+for s in range(SUB_CORES):
+    for c in range(CORES):
+        if np.all(fpga[:,:,s,c,:]==layers[f'{prefix_lrelu}{i}'].requantize_params['D']):
+            fpga[:,:,s,c,:] = 0
+
 error = lrelu_out[0] - fpga
 sum_abs_error = np.sum(np.abs(error))
 
 print(sum_abs_error/image_out_fpga.size)
+
+
+# %%
+np.sum(error>1)
+
+
+# %%
+np.savetxt("where_err.txt",np.argwhere(error > 1),fmt='%d')
+
+
+# %%
+b = layers[f'{prefix_lrelu}{i}'].requantize_params['B']
+a = layers[f'{prefix_lrelu}{i}'].requantize_params['A']
+d = layers[f'{prefix_lrelu}{i}'].requantize_params['D']
+b[0,1,0,0:8]
+d
+
+
+# %%
+a[0,0,0,0:8]
+
+
+# %%
+d
+
+
+# %%
+im_out = layers[f'{prefix_lrelu}{i}'].np_out_data[0]
+im_out[1,0,0:8]
+
+
+# %%
+lrelu_out[0,0,0,0,:,1]
+
+
+# %%
+fpga[0,0,0,:,1]
+
+
+# %%
+np.argwhere(fpga-lrelu_out[0] !=0)
+
+
+# %%
+relu_in = layers[f'{prefix_lrelu}{i}'].in_data[0]
+
+
+# %%
+b = layers[f'{prefix_lrelu}{i}'].requantize_params['B']
+
+b[0,0,0,0:8]
+
+
+# %%
+relu_in[0,0,0:8]
+
+
+# %%
+w = layers[f'{prefix_conv}{i}'].weights
+
+w[0,0,0,0:20]
+
+
+# %%
+
 
 # %% [markdown]
 # # System Out
