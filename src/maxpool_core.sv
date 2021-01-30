@@ -5,7 +5,7 @@ Engineer: Abarajithan G.
 Create Date: 04/11/2020
 Design Name: MAXPOOL CORE
 Tool Versions: Vivado 2018.2
-Description: * Performs 2x2 maxpool on input data
+Description: * Performs 2x2 maxpool on input data for constant number of MEMBERS
              * Can optionally give out maxpool and non-maxpool data in consecutive clocks
              * Pulls s_ready down when comparing two stored values
              * TLAST 
@@ -23,6 +23,8 @@ Description: * Performs 2x2 maxpool on input data
                     * Goes high at every beat
                     * non-max packet = units(8) * copies(2) * groups(2)   = 32   = 32 bytes
                     * max packet     = units(8) * copies(2) * groups(2)/2 = 32/2 = 16 bytes
+
+Limitations: * For KW != KW_MAX (1x1), can only do non-max
 
 Revision:
 Revision 0.01 - File Created
@@ -51,16 +53,22 @@ module maxpool_core(
   parameter GROUPS     = 2;
   parameter MEMBERS    = 8;
   parameter WORD_WIDTH = 8;
+  parameter KERNEL_W_MAX = 3;
+
+  localparam BITS_KERNEL_W = $clog2(KERNEL_W_MAX);
 
   parameter I_IS_NOT_MAX = 0;
-  parameter I_IS_MAX     = 1;
+  parameter I_IS_MAX     = I_IS_NOT_MAX + 1;
+  parameter I_IS_1X1     = I_IS_MAX     + 1;
+
+  localparam TUSER_WIDTH = I_IS_1X1 + 1;
 
   typedef logic signed [WORD_WIDTH-1:0] word_t;
 
   input  logic clk, clken, resetn;
   input  logic s_valid;
   output logic m_valid, s_ready, m_last;
-  input  logic [1:0] s_user;
+  input  logic [TUSER_WIDTH-1:0] s_user;
 
   input  word_t s_data_uc [UNITS-1:0][1:0];
   output word_t m_data_uc [UNITS-1:0][1:0];
@@ -76,13 +84,15 @@ module maxpool_core(
               & first 8 handshakes of maxpool
     * state = MAX_4 during latter 8 handshakes of maxpool : we select max from 4
   */
-  localparam MEMEBERS_BITS = $clog2(MEMBERS );
-  logic [MEMEBERS_BITS-1:0] in_count, in_count_next;
+  localparam SUB_MEMBERS_BITS = $clog2(MEMBERS*KERNEL_W_MAX);
+  logic [SUB_MEMBERS_BITS-1:0] in_count, in_count_next, ref_sub_members_1;
 
-  assign in_count_next = (in_count == MEMBERS -1) ? 0 : in_count  + 1;
+  assign ref_sub_members_1 = s_user[I_IS_1X1] ? KERNEL_W_MAX * MEMBERS-1 : MEMBERS-1;
+
+  assign in_count_next = (in_count == ref_sub_members_1) ? 0 : in_count  + 1;
 
   register #(
-    .WORD_WIDTH   (MEMEBERS_BITS), 
+    .WORD_WIDTH   (SUB_MEMBERS_BITS), 
     .RESET_VALUE  (0)
   ) IN_COUNT (
     .clock        (clk   ),
@@ -96,7 +106,7 @@ module maxpool_core(
   localparam MAX_4 = 1;
   logic state, state_trigger;
 
-  assign state_trigger = s_handshake && (in_count == MEMBERS -1) && s_user[I_IS_MAX];
+  assign state_trigger = s_handshake && (in_count == ref_sub_members_1) && s_user[I_IS_MAX];
 
   register #(
     .WORD_WIDTH   (1), 

@@ -14,9 +14,11 @@ module maxpool_engine #(
     parameter GROUPS     = 2,
     parameter MEMBERS    = 8,
     parameter WORD_WIDTH = 8,
+    parameter KERNEL_W_MAX = 3,
 
     parameter I_IS_NOT_MAX = 0,
-    parameter I_IS_MAX     = 1
+    parameter I_IS_MAX     = 1,
+    parameter I_IS_1X1     = 2
   )(
     clk,
     clken,
@@ -33,10 +35,12 @@ module maxpool_engine #(
     m_last
   );
 
+  localparam TUSER_WIDTH = I_IS_1X1 + 1;
+
   input  logic clk, clken, resetn;
   input  logic s_valid;
   output logic m_valid, s_ready, m_last;
-  input  logic [1:0] s_user;
+  input  logic [TUSER_WIDTH-1:0] s_user;
 
   input  logic [GROUPS*UNITS*2*WORD_WIDTH-1:0] s_data_flat_cgu;
   output logic [GROUPS*UNITS*2*WORD_WIDTH-1:0] m_data_flat_cgu;
@@ -90,8 +94,10 @@ module maxpool_engine #(
         .UNITS            (UNITS           ),
         .MEMBERS          (MEMBERS         ),
         .WORD_WIDTH       (WORD_WIDTH      ),
-        .I_IS_NOT_MAX (I_IS_NOT_MAX),
-        .I_IS_MAX     (I_IS_MAX    )
+        .KERNEL_W_MAX     (KERNEL_W_MAX    ),
+        .I_IS_NOT_MAX     (I_IS_NOT_MAX    ),
+        .I_IS_MAX         (I_IS_MAX        ),
+        .I_IS_1X1         (I_IS_1X1        )
       ) max_core (
         .clk      (clk             ),
         .clken    (clken           ),

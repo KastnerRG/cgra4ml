@@ -14,18 +14,25 @@ module axis_maxpool_engine_tb();
   localparam MEMBERS    = 8;
   localparam WORD_WIDTH = 8;
 
+  localparam IS_1X1      = 1;
+  localparam SUB_MEMBERS = IS_1X1 ? KERNEL_W_MAX*MEMBERS : MEMBERS;
+
   localparam KERNEL_H_MAX = 3; // odd
+  localparam KERNEL_W_MAX = 3; // odd
   localparam UNITS_EDGES  = UNITS + KERNEL_H_MAX-1;
 
   localparam I_IS_NOT_MAX = 0;
-  localparam I_IS_MAX     = 1;
+  localparam I_IS_MAX     = I_IS_NOT_MAX + 1;
+  localparam I_IS_1X1     = I_IS_MAX + 1;
+
+  localparam TUSER_WIDTH  = I_IS_1X1 + 1;
 
   typedef logic signed [WORD_WIDTH-1:0] word_t;
 
   logic aresetn;
   logic s_valid, s_ready, m_ready, m_valid, m_last;
   
-  logic [1:0] s_user;
+  logic [TUSER_WIDTH-1:0] s_user;
 
   logic [GROUPS*UNITS*2*WORD_WIDTH-1:0] s_data_flat_cgu;
   logic [GROUPS*UNITS_EDGES*2*WORD_WIDTH-1:0] m_data_flat_cgu;
@@ -64,8 +71,10 @@ module axis_maxpool_engine_tb();
     .MEMBERS          (MEMBERS         ),
     .WORD_WIDTH       (WORD_WIDTH      ),
     .KERNEL_H_MAX     (KERNEL_H_MAX    ),
+    .KERNEL_W_MAX     (KERNEL_W_MAX    ),
     .I_IS_NOT_MAX     (I_IS_NOT_MAX    ),
-    .I_IS_MAX         (I_IS_MAX        )
+    .I_IS_MAX         (I_IS_MAX        ),
+    .I_IS_1X1         (I_IS_1X1        )
   )dut(
     .aclk         (aclk       ),
     .aresetn      (aresetn    ),
@@ -80,13 +89,14 @@ module axis_maxpool_engine_tb();
     .m_axis_tlast (m_last     )
   );
 
-  task fill_data (input int init, input logic is_max, is_not_max);
+  task fill_data (input int init, input logic is_max, is_not_max, is_1x1);
     @(posedge aclk);
     foreach (s_data_guc[g,u,c]) s_data_guc[g][u][c] <= init + 10*u + c;
 
     s_valid      <= 1;
     s_user[I_IS_MAX    ] <= is_max;
     s_user[I_IS_NOT_MAX] <= is_not_max;
+    s_user[I_IS_1X1    ] <= is_1x1;
   endtask
 
   initial begin
@@ -96,9 +106,18 @@ module axis_maxpool_engine_tb();
 
     // NO MAXPOOL
 
-    for (int i=0; i < MEMBERS ; i++) begin
+    for (int i=0; i < SUB_MEMBERS ; i++) begin
       repeat (1) @(posedge aclk);
-      fill_data(100 + i, 0, 1);
+      fill_data(100 + i, 0, 1, 0);
+      @(posedge aclk);
+      s_valid <= 0;
+    end
+
+    // NO MAXPOOL 1x1
+
+    for (int i=0; i < SUB_MEMBERS ; i++) begin
+      repeat (1) @(posedge aclk);
+      fill_data(100 + i, 0, 1, 1);
       @(posedge aclk);
       s_valid <= 0;
     end
@@ -108,18 +127,18 @@ module axis_maxpool_engine_tb();
 
     // MAXPOOL ONLY
 
-    for (int i=0; i < MEMBERS ; i++) begin
+    for (int i=0; i < SUB_MEMBERS ; i++) begin
       repeat (3) @(posedge aclk);
-      fill_data(100 + i, 1, 0);
+      fill_data(100 + i, 1, 0, 0);
       @(posedge aclk);
       s_valid <= 0;
     end
 
     repeat (5) @(posedge aclk);
 
-    for (int i=0; i < MEMBERS ; i++) begin
+    for (int i=0; i < SUB_MEMBERS ; i++) begin
       repeat (3) @(posedge aclk);
-      fill_data(i, 1, 0);
+      fill_data(i, 1, 0, 0);
       @(posedge aclk);
       s_valid <= 0;
     end
@@ -128,18 +147,18 @@ module axis_maxpool_engine_tb();
 
     repeat (5) @(posedge aclk);
 
-    for (int i=0; i < MEMBERS ; i++) begin
+    for (int i=0; i < SUB_MEMBERS ; i++) begin
       repeat (3) @(posedge aclk);
-      fill_data(100+i, 1, 1);
+      fill_data(100+i, 1, 1, 0);
       @(posedge aclk);
       s_valid <= 0;
     end
 
     repeat (5) @(posedge aclk);
 
-    for (int i=0; i < MEMBERS ; i++) begin
+    for (int i=0; i < SUB_MEMBERS ; i++) begin
       repeat (3) @(posedge aclk);
-      fill_data(i, 1, 1);
+      fill_data(i, 1, 1, 0);
       @(posedge aclk);
       s_valid <= 0;
     end
