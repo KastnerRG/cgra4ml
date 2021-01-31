@@ -11,9 +11,9 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="11900fs"></ZoomStartTime>
-      <ZoomEndTime time="73301fs"></ZoomEndTime>
-      <Cursor1Time time="23800fs"></Cursor1Time>
+      <ZoomStartTime time="737224500fs"></ZoomStartTime>
+      <ZoomEndTime time="737327101fs"></ZoomEndTime>
+      <Cursor1Time time="737259100fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="304"></NameColumnWidth>
@@ -57,7 +57,6 @@
          <obj_property name="ElementShortName">s_axis_tdata_cgu[1:0][0:0][3:0][7:0]</obj_property>
          <obj_property name="ObjectShortName">s_axis_tdata_cgu[1:0][0:0][3:0][7:0]</obj_property>
          <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-         <obj_property name="isExpanded"></obj_property>
          <wvobject fp_name="/axis_maxpool_engine_tb/s_axis_tdata_cgu[1]" type="array">
             <obj_property name="ElementShortName">[1][0:0][3:0][7:0]</obj_property>
             <obj_property name="ObjectShortName">[1][0:0][3:0][7:0]</obj_property>
@@ -134,6 +133,82 @@
                   <obj_property name="ObjectShortName">[0][7:0]</obj_property>
                   <obj_property name="CustomSignalColor">#FFFF00</obj_property>
                   <obj_property name="UseCustomSignalColor">true</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+            </wvobject>
+         </wvobject>
+      </wvobject>
+      <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/s_data_gup" type="array">
+         <obj_property name="ElementShortName">s_data_gup[0:0][3:0][1:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">s_data_gup[0:0][3:0][1:0][7:0]</obj_property>
+         <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/s_data_gup[0]" type="array">
+            <obj_property name="ElementShortName">[0][3:0][1:0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][3:0][1:0][7:0]</obj_property>
+            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+            <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/s_data_gup[0][3]" type="array">
+               <obj_property name="ElementShortName">[3][1:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[3][1:0][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               <obj_property name="isExpanded"></obj_property>
+               <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/s_data_gup[0][3][1]" type="array">
+                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/s_data_gup[0][3][0]" type="array">
+                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+            </wvobject>
+            <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/s_data_gup[0][2]" type="array">
+               <obj_property name="ElementShortName">[2][1:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[2][1:0][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               <obj_property name="isExpanded"></obj_property>
+               <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/s_data_gup[0][2][1]" type="array">
+                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/s_data_gup[0][2][0]" type="array">
+                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+            </wvobject>
+            <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/s_data_gup[0][1]" type="array">
+               <obj_property name="ElementShortName">[1][1:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[1][1:0][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               <obj_property name="isExpanded"></obj_property>
+               <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/s_data_gup[0][1][1]" type="array">
+                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/s_data_gup[0][1][0]" type="array">
+                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+            </wvobject>
+            <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/s_data_gup[0][0]" type="array">
+               <obj_property name="ElementShortName">[0][1:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[0][1:0][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               <obj_property name="isExpanded"></obj_property>
+               <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/s_data_gup[0][0][1]" type="array">
+                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_maxpool_engine_tb/dut/engine/s_data_gup[0][0][0]" type="array">
+                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
                   <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                </wvobject>
             </wvobject>
@@ -259,6 +334,7 @@
       <wvobject fp_name="/axis_maxpool_engine_tb/start_out" type="array">
          <obj_property name="ElementShortName">start_out[31:0]</obj_property>
          <obj_property name="ObjectShortName">start_out[31:0]</obj_property>
+         <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_maxpool_engine_tb/m_words" type="array">
          <obj_property name="ElementShortName">m_words[31:0]</obj_property>

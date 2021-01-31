@@ -7,7 +7,7 @@ from yolov2_mod_numpy import YOLOv2_Modified_Numpy
 
 layers = pickle.load(open('yolov2_mod_int8_dict.pickle', 'rb'))
 
-i = 3
+i = 4
 
 CONV_UNITS = 4
 MEMBERS    = 4
@@ -327,7 +327,7 @@ image = layers[f'{prefix_conv}{i}'].np_out_data[0]
 max_factor = 2 if f'{prefix_max}{i}' in layers.keys() else 1
 KW    = layers[f'{prefix_conv}{i}'].weights.shape[0]
 
-def reshape_image_out(image,order,KW,max_factor,CONV_UNITS):
+def reshape_image_out(image,order,KW,max_factor,CONV_UNITS,copy_factor=1,flip_cols=True):
     assert order == 'cmg' or order == 'mcg'
 
     H,W,COUT = image.shape
@@ -336,12 +336,12 @@ def reshape_image_out(image,order,KW,max_factor,CONV_UNITS):
     assert BLOCKS % max_factor == 0
     
     '''Flip last cols to imitate conv'''
-    if KW != 1:
+    if flip_cols and KW != 1:
         image = np.concatenate([image[:,:-(KW-1),:], np.flip(image[:,-(KW-1):,:],axis=1)],axis=1)
 
     image = image.reshape((BLOCKS//max_factor,max_factor,CONV_UNITS,W,COUT))
     image = image.transpose(4,0,3,1,2) #(COUT,BLOCKS_PER_ARR,W,max_factor,CONV_UNITS)
-    image = fill_invalid_smcg(image,KW=KW,KW_MAX=KW_MAX,CORES=CORES,max_factor=max_factor)
+    image = fill_invalid_smcg(image,KW=KW,KW_MAX=KW_MAX,CORES=CORES//copy_factor,max_factor=max_factor)
     ITR, EFF_CORES,BLOCKS_PER_ARR, W, max_factor, CONV_UNITS = image.shape
 
     '''
@@ -356,7 +356,7 @@ def reshape_image_out(image,order,KW,max_factor,CONV_UNITS):
         - if     max: eff_c = 1, max_factor = 2, that dim has 2 blocks
         - if not max: eff_c = 2, max_factor = 1, that dim has 2 channels
     '''
-    eff_c  = 2//max_factor
+    eff_c  = 2//max_factor//copy_factor
     SUB_CORES = KW_MAX//KW
     image = image.reshape(ITR, SUB_CORES,MEMBERS,eff_c,GROUPS, BLOCKS_PER_ARR,W,max_factor,CONV_UNITS) # (EFF_CORES -> SMCG)
 
@@ -364,7 +364,7 @@ def reshape_image_out(image,order,KW,max_factor,CONV_UNITS):
         image = image.transpose(0,5,6,1, 2,3,7,4, 8) #(ITR,BLOCKS_PER_ARR,W,SUB_CORES, MEMBERS,eff_c,max_factor,GROUPS, CONV_UNITS)
     if order == 'cmg':
         image = image.transpose(0,5,6,1, 3,7,2,4, 8) #(ITR,BLOCKS_PER_ARR,W,SUB_CORES, eff_c,max_factor,MEMBERS,GROUPS, CONV_UNITS)
-    return image.reshape(ITR,BLOCKS_PER_ARR,W,SUB_CORES, CORES, CONV_UNITS)
+    return image.reshape(ITR,BLOCKS_PER_ARR,W,SUB_CORES, CORES//copy_factor, CONV_UNITS)
 
 image = reshape_image_out(image=image,order='cmg',KW=KW,max_factor=max_factor,CONV_UNITS=CONV_UNITS)
 ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS = image.shape
@@ -418,81 +418,24 @@ for s in range(SUB_CORES):
 error = lrelu_out[0] - fpga
 sum_abs_error = np.sum(np.abs(error))
 
-print(sum_abs_error/image_out_fpga.size)
-
-
-# %%
-np.sum(error>1)
-
-
-# %%
 np.savetxt("where_err.txt",np.argwhere(error > 1),fmt='%d')
 
-
-# %%
-b = layers[f'{prefix_lrelu}{i}'].requantize_params['B']
-a = layers[f'{prefix_lrelu}{i}'].requantize_params['A']
-d = layers[f'{prefix_lrelu}{i}'].requantize_params['D']
-b[0,1,0,0:8]
-d
-
-
-# %%
-a[0,0,0,0:8]
-
-
-# %%
-d
-
-
-# %%
-im_out = layers[f'{prefix_lrelu}{i}'].np_out_data[0]
-im_out[1,0,0:8]
-
-
-# %%
-lrelu_out[0,0,0,0,:,1]
-
-
-# %%
-fpga[0,0,0,:,1]
-
-
-# %%
-np.argwhere(fpga-lrelu_out[0] !=0)
-
-
-# %%
-relu_in = layers[f'{prefix_lrelu}{i}'].in_data[0]
-
-
-# %%
-b = layers[f'{prefix_lrelu}{i}'].requantize_params['B']
-
-b[0,0,0,0:8]
-
-
-# %%
-relu_in[0,0,0:8]
-
-
-# %%
-w = layers[f'{prefix_conv}{i}'].weights
-
-w[0,0,0,0:20]
-
-
-# %%
-
+print(np.sum(error>1))
+print(sum_abs_error/image_out_fpga.size)
 
 # %% [markdown]
 # # System Out
 # ```(1, H, W, CIN) -> (ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS_EDGES)```
 
 # %%
-i = 4
+is_max = False
+copy_factor = 1
+flip_cols = True
 
 if f'{prefix_max}{i}' in layers.keys():
+    is_max = True
+    copy_factor = 2
+    flip_cols = False
     image = layers[f'{prefix_max}{i}'].np_out_data[0]
 elif f'{prefix_lrelu}{i}' in layers.keys():
     image = layers[f'{prefix_lrelu}{i}'].np_out_data[0]
@@ -503,10 +446,29 @@ max_factor = 2 if f'{prefix_max}{i}' in layers.keys() else 1
 KW    = layers[f'{prefix_conv}{i}'].weights.shape[0]
 
 '''Force max_factor=1, since output is always one set of blocks'''
-image = reshape_image_out(image=image,order=order,KW=KW,max_factor=1,CONV_UNITS=CONV_UNITS)
-ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS = image.shape
+image = reshape_image_out(image=image,order='mcg',KW=KW,max_factor=1,copy_factor=copy_factor,CONV_UNITS=CONV_UNITS, flip_cols= flip_cols)
 
+ITR,BLOCKS_PER_ARR,W,SUB_CORES,_,CONV_UNITS = image.shape
 image_padded = np.pad(image,((0,0),(0,0),(0,0),(0,0),(0,0),(KH_MAX//2,KH_MAX//2)),mode='constant')
+
+
+# %%
+image_out_fpga = np.loadtxt(f"D:/Vision Traffic/soc/data/{i}_max_unit_out_fpga.txt",np.int8)
+fpga = image_out_fpga.reshape((BLOCKS_PER_ARR,W,SUB_CORES,CORES//copy_factor,CONV_UNITS_EDGES))
+
+'''
+Invalid cores output 0+d=d. Remove d to compare.
+'''
+
+for s in range(SUB_CORES):
+    for c in range(CORES//copy_factor):
+        if np.all(fpga[:,:,s,c,1:-1]==layers[f'{prefix_lrelu}{i}'].requantize_params['D']):
+            fpga[:,:,s,c,:] = 0
+
+error = image_padded[0] - fpga
+sum_abs_error = np.sum(np.abs(error))
+
+print(sum_abs_error/image_out_fpga.size)
 
 
 # %%

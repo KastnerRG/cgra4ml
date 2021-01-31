@@ -119,11 +119,11 @@ module axis_maxpool_engine_tb();
             end
           end
         end
-        else begin
-          m_words   <= 0;
-          $fclose(file_out);
-          start_out  = 0;
-        end
+      end
+      if (m_words >= M_WORDS) begin
+        m_words   = 0;
+        $fclose(file_out);
+        start_out = 0;
       end
     end
   endtask
@@ -140,7 +140,17 @@ module axis_maxpool_engine_tb();
     m_axis_tready <= 1;
     s_axis_tvalid <= 0;
 
-    // // 3x3 Non maxpool
+    // // Layer 1: 3x3 maxpool
+    // k          = 3;
+    // max_factor = 2;
+    // is_not_max = 0;
+    // im_height  = 256;
+    // im_width   = 384;
+    // im_cin     = 3;
+    // path_in    = "D:/Vision Traffic/soc/data/1_lrelu_out_fpga.txt";
+    // path_out   = "D:/Vision Traffic/soc/data/1_max_unit_out_fpga.txt";
+
+    // // Layer 3: 3x3 Non maxpool
     // k          = 3;
     // max_factor = 1;
     // is_not_max = 1;
@@ -150,30 +160,15 @@ module axis_maxpool_engine_tb();
     // path_in      = "D:/Vision Traffic/soc/data/3_lrelu_out_fpga.txt";
     // path_out     = "D:/Vision Traffic/soc/data/3_max_unit_out_fpga.txt";
 
-    // S_WORDS   = (im_height/UNITS/max_factor)*im_width*(KERNEL_W_MAX/k)*MEMBERS*2*GROUPS*UNITS;
-    // M_WORDS   = (S_WORDS/UNITS)*UNITS_EDGES/(max_factor**2);
-    // is_max    = max_factor != 1;
-    // is_1x1    = k == 1;
-    // start_in  = 1;
-    // start_out = 1;
-    // s_words   = 0;
-    // m_words   = 0;
-
-    // file_in   = $fopen(path_in ,"r");
-    // file_out  = $fopen(path_out,"w");
-
-    // wait(start_out==0);
-    // $finish();
-
-    // 3x3 maxpool
-    k          = 3;
-    max_factor = 2;
-    is_not_max = 0;
-    im_height  = 256;
-    im_width   = 384;
-    im_cin     = 3;
-    path_in    = "D:/Vision Traffic/soc/data/1_lrelu_out_fpga.txt";
-    path_out   = "D:/Vision Traffic/soc/data/1_max_unit_out_fpga.txt";
+    // Layer 4: 1x1 Non maxpool
+    k          = 1;
+    max_factor = 1;
+    is_not_max = 1;
+    im_height  = 64;
+    im_width   = 96;
+    im_cin     = 128;
+    path_in      = "D:/Vision Traffic/soc/data/4_lrelu_out_fpga.txt";
+    path_out     = "D:/Vision Traffic/soc/data/4_max_unit_out_fpga.txt";
 
     S_WORDS   = (im_height/UNITS/max_factor)*im_width*(KERNEL_W_MAX/k)*MEMBERS*2*GROUPS*UNITS;
     M_WORDS   = (S_WORDS/UNITS)*UNITS_EDGES/(max_factor**2);
@@ -183,10 +178,10 @@ module axis_maxpool_engine_tb();
     start_out = 1;
     s_words   = 0;
     m_words   = 0;
-
     file_in   = $fopen(path_in ,"r");
     file_out  = $fopen(path_out,"w");
 
+    @(posedge aclk);
     wait(start_out==0);
     $finish();
 
