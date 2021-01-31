@@ -49,7 +49,7 @@ module axis_maxpool_engine_tb();
   string path_in, path_out;
   int file_in, file_out, status, s_words, m_words, S_WORDS, M_WORDS, start_in,start_out;
   int k, max_factor, im_height, im_width, im_cin;
-  logic is_1x1, is_max, is_not_max;    
+  logic is_1x1, is_max, is_not_max;
 
   axis_maxpool_engine #(
     .UNITS            (UNITS           ),
@@ -106,7 +106,7 @@ module axis_maxpool_engine_tb();
     @(posedge aclk);
     #(CLK_PERIOD/2);
     if (start_out) begin
-      if (m_axis_tvalid) begin
+      if (m_axis_tvalid & m_axis_tready) begin
         if (m_words < M_WORDS) begin
           for (int c=0; c < 2; c++) begin
             for (int g=0; g < GROUPS; g++) begin
@@ -135,9 +135,31 @@ module axis_maxpool_engine_tb();
     forever axis_receive;
   end
 
+  /*
+    Test AXIS functionality
+    Randomize m_ready with P(1) = 0.7
+  */
+
+  class Random_Bit;
+    rand bit rand_bit;
+    constraint c {
+      rand_bit dist { 0 := 3, 1 := 7};
+    }
+  endclass
+
+  Random_Bit rand_obj = new();
+
+  initial begin
+    forever begin
+      @(posedge aclk);
+      #1;
+      rand_obj.randomize();
+      m_axis_tready = rand_obj.rand_bit;
+    end
+  end
+
   initial begin
     aresetn       <= 1;
-    m_axis_tready <= 1;
     s_axis_tvalid <= 0;
 
     // // Layer 1: 3x3 maxpool
@@ -169,6 +191,8 @@ module axis_maxpool_engine_tb();
     im_cin     = 128;
     path_in      = "D:/Vision Traffic/soc/data/4_lrelu_out_fpga.txt";
     path_out     = "D:/Vision Traffic/soc/data/4_max_unit_out_fpga.txt";
+
+    //********** DONT COMMENT BELOW *********
 
     S_WORDS   = (im_height/UNITS/max_factor)*im_width*(KERNEL_W_MAX/k)*MEMBERS*2*GROUPS*UNITS;
     M_WORDS   = (S_WORDS/UNITS)*UNITS_EDGES/(max_factor**2);
