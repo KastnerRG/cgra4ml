@@ -364,7 +364,7 @@ module axis_accelerator_tb ();
     @(posedge aclk);
     #(CLK_PERIOD/2);
     if (start_o) begin
-      if (m_axis_tvalid) begin
+      if (m_axis_tvalid & m_axis_tready) begin
         if (m_words < WORDS_OUT) begin
           for (int c=0; c < COPIES; c++) begin
             for (int g=0; g < GROUPS; g++) begin
