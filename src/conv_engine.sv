@@ -18,7 +18,33 @@ Revision 0.01 - File Created
 Additional Comments: 
 //////////////////////////////////////////////////////////////////////////////////*/
 
-module conv_engine (
+module conv_engine 
+  #(
+    CORES               ,
+    UNITS               ,
+    WORD_WIDTH_IN       ,
+    WORD_WIDTH_OUT      ,
+    LATENCY_ACCUMULATOR   ,
+    LATENCY_MULTIPLIER    ,
+    KERNEL_W_MAX        ,
+    KERNEL_H_MAX        , // odd number
+    IM_CIN_MAX          ,
+    IM_COLS_MAX         ,
+    I_IS_NOT_MAX        ,
+    I_IS_MAX            ,
+    I_IS_1X1            ,
+    I_IS_LRELU          ,
+    I_IS_TOP_BLOCK      ,
+    I_IS_BOTTOM_BLOCK   ,
+    I_IS_COLS_1_K2      ,
+    I_IS_CONFIG         ,
+    I_IS_CIN_LAST       ,
+    I_KERNEL_W_1        ,
+    I_IS_LEFT_COL       ,
+    I_IS_RIGHT_COL      ,
+    TUSER_WIDTH_CONV_IN ,
+    TUSER_WIDTH_CONV_OUT
+  )(
     clk            ,
     clken          ,
     resetn         ,
@@ -34,38 +60,11 @@ module conv_engine (
     m_last         ,
     m_user         
   );
-
-  parameter  CORES              = 32 ;
-  parameter  UNITS              = 8  ;
-  parameter  WORD_WIDTH_IN      =  8 ; 
-  parameter  WORD_WIDTH_OUT     = 25 ; 
-  parameter  ACCUMULATOR_DELAY  =  2 ;
-  parameter  MULTIPLIER_DELAY   =  3 ;
-  parameter  KERNEL_W_MAX       =  3 ; 
-  parameter  KERNEL_H_MAX       =  3 ;   // odd number
-  parameter  IM_CIN_MAX         = 1024;
-  parameter  IM_COLS_MAX        = 1024;
+  
   localparam BITS_IM_CIN        = $clog2(IM_CIN_MAX);
   localparam BITS_IM_COLS       = $clog2(IM_COLS_MAX);
   localparam BITS_KERNEL_W      = $clog2(KERNEL_W_MAX   + 1);
   localparam BITS_KERNEL_H      = $clog2(KERNEL_H_MAX   + 1);
-
-  parameter I_IS_NOT_MAX        = 0;
-  parameter I_IS_MAX            = I_IS_NOT_MAX      + 1;
-  parameter I_IS_LRELU          = I_IS_MAX          + 1;
-  parameter I_IS_TOP_BLOCK      = I_IS_LRELU        + 1;
-  parameter I_IS_BOTTOM_BLOCK   = I_IS_TOP_BLOCK    + 1;
-  parameter I_IS_1X1            = I_IS_BOTTOM_BLOCK + 1;
-  parameter I_IS_COLS_1_K2      = I_IS_1X1          + 1;
-  parameter I_IS_CONFIG         = I_IS_COLS_1_K2    + 1;
-  parameter I_IS_ACC_LAST       = I_IS_CONFIG       + 1;
-  parameter I_KERNEL_W_1        = I_IS_ACC_LAST     + 1; 
-
-  parameter I_IS_LEFT_COL       = I_IS_1X1          + 1;
-  parameter I_IS_RIGHT_COL      = I_IS_LEFT_COL     + 1;
-
-  parameter TUSER_WIDTH_CONV_IN = BITS_KERNEL_W + I_KERNEL_W_1;
-  parameter TUSER_WIDTH_CONV_OUT= 1 + I_IS_RIGHT_COL;
 
   input  logic clk;
   input  logic clken;
@@ -178,7 +177,7 @@ module conv_engine (
   step_buffer  #(
     .WORD_WIDTH       (WORD_WIDTH_IN),
     .STEPS            (KERNEL_W_MAX),
-    .ACCUMULATOR_DELAY(ACCUMULATOR_DELAY),
+    .LATENCY_ACCUMULATOR(LATENCY_ACCUMULATOR),
     .TUSER_WIDTH      (TUSER_WIDTH_CONV_IN)
   ) STEP_PIXELS_CONTROL (
     .aclk       (clk                        ),
@@ -204,10 +203,10 @@ module conv_engine (
       */
 
       n_delay_stream #(
-        .N          (MULTIPLIER_DELAY),
+        .N          (LATENCY_MULTIPLIER),
         .WORD_WIDTH (WORD_WIDTH_IN   ),
         .TUSER_WIDTH(TUSER_WIDTH_CONV_IN)
-      ) MULTIPLIER_DELAY_CONTROL (
+      ) LATENCY_MULTIPLIER_CONTROL (
         .aclk       (clk),
         .aclken     (clken_mul),
         .aresetn    (resetn),
@@ -246,7 +245,7 @@ module conv_engine (
       if (w !=0 ) begin
         assign selected_valid [w] = (mux_sel[w]==0) ? mul_m_valid [w] : acc_m_valid [w-1];
         assign mux_sel_en     [w] = clken && selected_valid [w];
-        assign mux_sel_next   [w] = mul_m_user[w][I_IS_ACC_LAST] && (!mul_m_user[w][I_IS_1X1]);
+        assign mux_sel_next   [w] = mul_m_user[w][I_IS_CIN_LAST] && (!mul_m_user[w][I_IS_1X1]);
         
         register #(
           .WORD_WIDTH     (1),
@@ -290,7 +289,7 @@ module conv_engine (
         * enable: acc_s_valid, to delay by a data beat
       */
 
-      assign bypass_next [w] = mul_m_user [w][I_IS_CONFIG] || mul_m_user [w][I_IS_ACC_LAST];
+      assign bypass_next [w] = mul_m_user [w][I_IS_CONFIG] || mul_m_user [w][I_IS_CIN_LAST];
 
       register #(
         .WORD_WIDTH     (1),
@@ -311,13 +310,13 @@ module conv_engine (
           - for every beat during config
       */
 
-      assign acc_m_valid_delay_in [w] = acc_s_valid [w] && (mul_m_user[w][I_IS_ACC_LAST] || mul_m_user[w][I_IS_CONFIG]);
+      assign acc_m_valid_delay_in [w] = acc_s_valid [w] && (mul_m_user[w][I_IS_CIN_LAST] || mul_m_user[w][I_IS_CONFIG]);
 
       n_delay_stream #(
-        .N              (ACCUMULATOR_DELAY),
+        .N              (LATENCY_ACCUMULATOR),
         .WORD_WIDTH     (WORD_WIDTH_IN    ),
         .TUSER_WIDTH    (TUSER_WIDTH_CONV_IN )
-      ) ACCUMULATOR_DELAY_CONTROL (
+      ) LATENCY_ACCUMULATOR_CONTROL (
         .aclk       (clk   ),
         .aclken     (clken_acc   [w]),
         .aresetn    (resetn),
@@ -395,7 +394,7 @@ module conv_engine (
         assign shift_in_valid [w] = shift_sel  [w] ? shift_out_valid [w+1] : acc_m_valid_masked [w];
         assign shift_in_last  [w] = shift_sel  [w] ? shift_out_last  [w+1] : acc_m_last_masked  [w];
 
-        assign shift_in_user  [w][I_IS_1X1:I_IS_NOT_MAX] = shift_sel  [w] ? shift_out_user  [w+1][I_IS_1X1:I_IS_NOT_MAX] : acc_m_user      [w][I_IS_1X1:I_IS_NOT_MAX];
+        assign shift_in_user  [w][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX] = shift_sel  [w] ? shift_out_user  [w+1][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX] : acc_m_user [w][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX];
         assign shift_in_user  [w][I_IS_LEFT_COL ]        = shift_sel  [w] ? shift_out_user  [w+1][I_IS_LEFT_COL ]        : pad_is_left_col [w];
         assign shift_in_user  [w][I_IS_RIGHT_COL]        = shift_sel  [w] ? shift_out_user  [w+1][I_IS_RIGHT_COL]        : pad_is_right_col[w];
       end
@@ -403,7 +402,7 @@ module conv_engine (
         assign shift_in_valid [w] = acc_m_valid_masked [w];
         assign shift_in_last  [w] = acc_m_last_masked  [w];
 
-        assign shift_in_user  [w][I_IS_1X1:I_IS_NOT_MAX] = acc_m_user       [w][I_IS_1X1:I_IS_NOT_MAX];
+        assign shift_in_user  [w][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX] = acc_m_user [w][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX];
         assign shift_in_user  [w][I_IS_LEFT_COL        ] = pad_is_left_col  [w];
         assign shift_in_user  [w][I_IS_RIGHT_COL       ] = pad_is_right_col [w];
       end
@@ -439,7 +438,7 @@ module conv_engine (
     .I_IS_COLS_1_K2(I_IS_COLS_1_K2     ),
     .I_IS_CONFIG   (I_IS_CONFIG        ),
     .I_IS_1X1      (I_IS_1X1           ),
-    .I_IS_ACC_LAST (I_IS_ACC_LAST      ),
+    .I_IS_CIN_LAST (I_IS_CIN_LAST      ),
     .I_KERNEL_W_1  (I_KERNEL_W_1       )
   )
   pad_filter_dut
@@ -477,7 +476,7 @@ module conv_engine (
         step_buffer  #(
           .WORD_WIDTH       (WORD_WIDTH_IN    ),
           .STEPS            (KERNEL_W_MAX     ),
-          .ACCUMULATOR_DELAY(ACCUMULATOR_DELAY),
+          .LATENCY_ACCUMULATOR(LATENCY_ACCUMULATOR),
           .TUSER_WIDTH      (TUSER_WIDTH_CONV_IN )
         ) STEP_WEIGHTS (
           .aclk       (clk),
@@ -499,7 +498,7 @@ module conv_engine (
         step_buffer  #(
           .WORD_WIDTH       (WORD_WIDTH_IN),
           .STEPS            (KERNEL_W_MAX),
-          .ACCUMULATOR_DELAY(ACCUMULATOR_DELAY),
+          .LATENCY_ACCUMULATOR(LATENCY_ACCUMULATOR),
           .TUSER_WIDTH      (TUSER_WIDTH_CONV_IN)
         ) STEP_PIXELS (
           .aclk       (clk          ),

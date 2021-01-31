@@ -14,31 +14,29 @@ module axis_weight_rotator_tb ();
   localparam BLOCKS_1 = 1-1; 
 
   localparam CORES             = 4;
-  localparam WORD_WIDTH        = 8; 
-  localparam KERNEL_H_MAX      = 3;   // odd number
-  localparam KERNEL_W_MAX      = 3;
-  localparam IM_CIN_MAX        = 1024;
-  localparam IM_BLOCKS_MAX     = 32;
-  localparam IM_COLS_MAX       = 384;
-  localparam WEIGHTS_DMA_BITS  = 32;
 
-  localparam BEATS_CONFIG_3X3_1   = 21-1;
-  localparam BEATS_CONFIG_1X1_1   = 13-1;
+  localparam WORD_WIDTH         = `WORD_WIDTH        ; 
+  localparam KERNEL_H_MAX       = `KERNEL_H_MAX      ;   // odd number
+  localparam KERNEL_W_MAX       = `KERNEL_W_MAX      ;
+  localparam IM_CIN_MAX         = `IM_CIN_MAX        ;
+  localparam IM_BLOCKS_MAX      = `IM_BLOCKS_MAX     ;
+  localparam IM_COLS_MAX        = `IM_COLS_MAX       ;
+  localparam WEIGHTS_DMA_BITS   = `WEIGHTS_DMA_BITS  ;
+  localparam BEATS_CONFIG_3X3_1 = `BEATS_CONFIG_3X3_1;
+  localparam BEATS_CONFIG_1X1_1 = `BEATS_CONFIG_1X1_1;
 
-  localparam BRAM_LATENCY =  2;
+  localparam LATENCY_BRAM  = `LATENCY_BRAM ;
+  localparam BITS_KERNEL_W = `BITS_KERNEL_W;
+  localparam BITS_KERNEL_H = `BITS_KERNEL_H;
 
-  localparam BITS_KERNEL_W = $clog2(KERNEL_W_MAX);
-  localparam BITS_KERNEL_H = $clog2(KERNEL_H_MAX);
-
-  localparam I_WEIGHTS_IS_TOP_BLOCK    = 0;
-  localparam I_WEIGHTS_IS_BOTTOM_BLOCK = I_WEIGHTS_IS_TOP_BLOCK    + 1;
-  localparam I_WEIGHTS_IS_1X1          = I_WEIGHTS_IS_BOTTOM_BLOCK + 1;
-  localparam I_WEIGHTS_IS_COLS_1_K2    = I_WEIGHTS_IS_1X1          + 1;
-  localparam I_WEIGHTS_IS_CONFIG       = I_WEIGHTS_IS_COLS_1_K2    + 1;
-  localparam I_WEIGHTS_IS_ACC_LAST     = I_WEIGHTS_IS_CONFIG       + 1;
-  localparam I_WEIGHTS_KERNEL_W_1      = I_WEIGHTS_IS_ACC_LAST     + 1; 
-
-  localparam TUSER_WIDTH_WEIGHTS_OUT  = I_WEIGHTS_KERNEL_W_1 + BITS_KERNEL_W;
+  localparam I_WEIGHTS_IS_TOP_BLOCK    = `I_WEIGHTS_IS_TOP_BLOCK   ;
+  localparam I_WEIGHTS_IS_BOTTOM_BLOCK = `I_WEIGHTS_IS_BOTTOM_BLOCK;
+  localparam I_WEIGHTS_IS_1X1          = `I_WEIGHTS_IS_1X1         ;
+  localparam I_WEIGHTS_IS_COLS_1_K2    = `I_WEIGHTS_IS_COLS_1_K2   ;
+  localparam I_WEIGHTS_IS_CONFIG       = `I_WEIGHTS_IS_CONFIG      ;
+  localparam I_WEIGHTS_IS_CIN_LAST     = `I_WEIGHTS_IS_CIN_LAST    ;
+  localparam I_WEIGHTS_KERNEL_W_1      = `I_WEIGHTS_KERNEL_W_1     ; 
+  localparam TUSER_WIDTH_WEIGHTS_OUT   = `TUSER_WIDTH_WEIGHTS_OUT;
 
   localparam BITS_CONFIG_COUNT    = $clog2(BEATS_CONFIG_3X3_1+1);
   localparam M_WIDTH              = WORD_WIDTH*CORES*KERNEL_W_MAX;
@@ -78,13 +76,13 @@ module axis_weight_rotator_tb ();
     .WEIGHTS_DMA_BITS    (WEIGHTS_DMA_BITS   ),
     .BEATS_CONFIG_3X3_1  (BEATS_CONFIG_3X3_1 ),
     .BEATS_CONFIG_1X1_1  (BEATS_CONFIG_1X1_1 ),
-    .BRAM_LATENCY        (BRAM_LATENCY       ),   
+    .LATENCY_BRAM        (LATENCY_BRAM       ),   
     .I_WEIGHTS_IS_TOP_BLOCK      (I_WEIGHTS_IS_TOP_BLOCK     ),
     .I_WEIGHTS_IS_BOTTOM_BLOCK   (I_WEIGHTS_IS_BOTTOM_BLOCK  ),
     .I_WEIGHTS_IS_1X1            (I_WEIGHTS_IS_1X1           ),
     .I_WEIGHTS_IS_COLS_1_K2      (I_WEIGHTS_IS_COLS_1_K2     ),
     .I_WEIGHTS_IS_CONFIG         (I_WEIGHTS_IS_CONFIG        ),
-    .I_WEIGHTS_IS_ACC_LAST       (I_WEIGHTS_IS_ACC_LAST      ),
+    .I_WEIGHTS_IS_CIN_LAST       (I_WEIGHTS_IS_CIN_LAST      ),
     .I_WEIGHTS_KERNEL_W_1        (I_WEIGHTS_KERNEL_W_1       ),
     .TUSER_WIDTH_WEIGHTS_OUT(TUSER_WIDTH_WEIGHTS_OUT)
   ) pipe (.*);
@@ -99,8 +97,8 @@ module axis_weight_rotator_tb ();
 
   string path_weights = "D:/Vision Traffic/soc/mem_yolo/txt/weights_rot_in.txt";
   
-  localparam CONFIG_BEATS_1 = K_1 == 0 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
-  localparam W_BEATS = 1 + CONFIG_BEATS_1+1 + (K_1+1)*(CIN_1+1);
+  localparam BEATS_CONFIG_1 = K_1 == 0 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
+  localparam W_BEATS = 1 + BEATS_CONFIG_1+1 + (K_1+1)*(CIN_1+1);
   localparam W_WORDS = (W_BEATS-1) * KERNEL_W_MAX * CORES + WEIGHTS_DMA_BITS/WORD_WIDTH;
   localparam W_WORDS_PER_BEAT = WEIGHTS_DMA_BITS/WORD_WIDTH;
 

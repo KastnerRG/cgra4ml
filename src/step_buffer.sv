@@ -60,7 +60,7 @@ Additional Comments:
 module step_buffer  #(
     parameter WORD_WIDTH       ,
     parameter STEPS            ,
-    parameter ACCUMULATOR_DELAY,
+    parameter LATENCY_ACCUMULATOR,
     parameter TUSER_WIDTH      
 )(
     aclk,
@@ -118,11 +118,11 @@ module step_buffer  #(
     genvar i;
     generate
 
-        // DELAYS for i > 0:    i*(ACCUMULATOR_DELAY-1)-(i-1)  = i*(ACCUMULATOR_DELAY-2) + 1
+        // DELAYS for i > 0:    i*(LATENCY_ACCUMULATOR-1)-(i-1)  = i*(LATENCY_ACCUMULATOR-2) + 1
 
         for (i=1 ;  i < STEPS;  i = i+1) begin : delays_gen
             
-            localparam DELAY = i * (ACCUMULATOR_DELAY-2) + 1;
+            localparam DELAY = i * (LATENCY_ACCUMULATOR-2) + 1;
 
             n_delay_stream #(
                 .N              (DELAY),

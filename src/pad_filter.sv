@@ -31,13 +31,14 @@ Additional Comments:
 //////////////////////////////////////////////////////////////////////////////////*/
 
 
-module pad_filter # (
+module pad_filter 
+# (
     KERNEL_W_MAX  ,
     TUSER_WIDTH   ,
     I_IS_1X1      ,
     I_IS_COLS_1_K2,
     I_IS_CONFIG   ,
-    I_IS_ACC_LAST ,
+    I_IS_CIN_LAST ,
     I_KERNEL_W_1 
 )(
     aclk,
@@ -118,7 +119,7 @@ module pad_filter # (
             assign kw2_wire[w] = kw_wire[w] / 2; // kw = 7 : kw2_wire = 3,   kw = 5 : kw2_wire = 2,   kw = 3 : kw2_wire = 1
 
 
-            assign reg_clken[w] = user_in [w][I_IS_ACC_LAST] && aclken[w] && valid_in[w];
+            assign reg_clken[w] = user_in [w][I_IS_CIN_LAST] && aclken[w] && valid_in[w];
 
             assign col_end_in         [w][1]  = user_in[w][I_IS_COLS_1_K2];
             assign col_start_in       [w][1]  = col_end[w][kw2_wire[w]]; // This is a mux
