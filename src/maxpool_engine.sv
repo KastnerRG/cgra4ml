@@ -85,6 +85,7 @@ module maxpool_engine #(
   logic buf_0_en, buf_n_en, buf_delay_en;
   logic buf_en_m [MEMBERS :0];
 
+
   logic signed [WORD_WIDTH-1:0] delay_data_cgu [1:0][GROUPS-1:0][UNITS-1:0];
   logic signed [WORD_WIDTH-1:0] buffer_gum          [GROUPS-1:0][UNITS-1:0][MEMBERS + 2];
   logic signed [WORD_WIDTH-1:0] max_in_1_gu         [GROUPS-1:0][UNITS-1:0];
@@ -98,6 +99,28 @@ module maxpool_engine #(
   assign s_data_cgu = {>>{s_data_flat_cgu}};
   assign {>>{m_data_flat_cgu}} = m_data_cgu;
   assign {>>{m_keep_flat_cgu}} = m_keep_cgu;
+
+  /*
+    Transpose and reshape for comparison
+
+    * Input: s_data_cgu
+    * During max, c contains two blocks
+    * Comparison should be done for adjacent pixels of u
+    * max_out_cgu[c,g,u] = max( s_data_cgu [c,g,u], s_data_cgu [c,g,u+1])
+
+    * For this, we transpose and reshape s_data_cgu into s_data_gup
+  */
+  logic [WORD_WIDTH-1:0] s_data_flat_gup   [2*GROUPS*UNITS-1:0];
+  logic signed [WORD_WIDTH-1:0] s_data_gup [GROUPS-1:0][UNITS-1:0][1:0];
+  logic signed [WORD_WIDTH-1:0] s_data_gcu [GROUPS-1:0][1:0][UNITS-1:0];
+  generate
+    for (genvar c=0; c<2; c++)
+      for (genvar g=0; g<GROUPS; g++)
+        for (genvar u=0; u<UNITS; u++)
+          assign s_data_gcu [g][c][u] = s_data_cgu[c][g][u];
+  endgenerate
+  assign {>>{s_data_flat_gup}} = s_data_gcu;
+  assign s_data_gup = {>>{s_data_flat_gup}};
 
   assign s_handshake = s_valid && s_ready;
 
@@ -219,8 +242,8 @@ module maxpool_engine #(
           COMPARATOR
         */
         assign max_out_gu  [g][u] = (max_in_1_gu [g][u] > max_in_2_gu [g][u]) ? max_in_1_gu [g][u] : max_in_2_gu [g][u];
-        assign max_in_1_gu [g][u] = sel_max_4_in ? buffer_gum [g][u][1]          : s_data_cgu [0][g][u];
-        assign max_in_2_gu [g][u] = sel_max_4_in ? buffer_gum [g][u][MEMBERS +1] : s_data_cgu [1][g][u];
+        assign max_in_1_gu [g][u] = sel_max_4_in ? buffer_gum [g][u][1]          : s_data_gup [g][u][0];
+        assign max_in_2_gu [g][u] = sel_max_4_in ? buffer_gum [g][u][MEMBERS +1] : s_data_gup [g][u][1];
 
         /*
           OUTPUT
