@@ -84,8 +84,8 @@ module axis_maxpool_engine (
     .aresetn        (aresetn        ),  // input wire aresetn
     .s_axis_tvalid  (m_valid        ),  // input wire s_axis_tvalid
     .s_axis_tready  (slice_ready    ),  // output wire s_axis_tready
-    .s_axis_tdata   (engine_m_data_flat         ),  // input wire [2047 : 0] s_axis_tdata
-    .s_axis_tkeep   (engine_m_keep_flat         ),  // input wire [255 : 0] s_axis_tkeep
+    .s_axis_tdata   (engine_m_data_flat),  // input wire [2047 : 0] s_axis_tdata
+    .s_axis_tkeep   (engine_m_keep_flat),  // input wire [255 : 0] s_axis_tkeep
     .s_axis_tlast   (m_last         ),  // input wire s_axis_tlast
 
     .m_axis_tvalid  (m_axis_tvalid  ),  // output wire m_axis_tvalid

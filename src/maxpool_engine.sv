@@ -1,24 +1,46 @@
-  /*
-    OUTPUT REORDER SCHEME
+/*//////////////////////////////////////////////////////////////////////////////////
+Group : ABruTECH
+Engineer: Abarajithan G.
 
-    - Input and output of maxpool is in big-endian GUC order.
-        This is to make it easier to write RTL for loops:
-          for g:cores, for u:units and then max across c.
-    - But DMA might need continous tkeep values, with high at index:0 and low at index:max
-    - So, m_data_guc[G][U][C] is reordered into m_data_guc[C-0][G-0][U-0] and flattened
-  
-  */
+Create Date: 04/11/2020
+Design Name: MAXPOOL CORE
+Tool Versions: Vivado 2018.2
+Description: * Performs 2x2 maxpool on input data for constant number of MEMBERS
+             * Can optionally give out maxpool and non-maxpool data in consecutive clocks
+             * Pulls s_ready down when comparing two stored values
+             * TLAST 
+                - non-max only
+                  * Goes high after all members
+                  * 1 packet = members(8) * units(8) * copies(2) * groups(2)   = 32*8 = 256 bytes
+                - max-only
+                  * Goes high after all members
+                  * 1 packet = members(8) * units(8) * copies(2) * groups(2)/2 = 32*8/2 = 128 bytes
+                - max-and-non-max
+                  - MAX_2_S state
+                    * Goes high after all members
+                    * 1 packet = members(8) * units(8) * copies(2) * groups(2) = 32*8 = 64 bytes
+                  - MAX_4_S state
+                    * Goes high at every beat
+                    * non-max packet = units(8) * copies(2) * groups(2)   = 32   = 32 bytes
+                    * max packet     = units(8) * copies(2) * groups(2)/2 = 32/2 = 16 bytes
+
+Limitations: * For KW != KW_MAX (1x1), can only do non-max
+
+Revision:
+Revision 0.01 - File Created
+Additional Comments: 
+
+//////////////////////////////////////////////////////////////////////////////////*/
 
 module maxpool_engine #(
-    parameter UNITS      = 2,
-    parameter GROUPS     = 2,
-    parameter MEMBERS    = 8,
-    parameter WORD_WIDTH = 8,
-    parameter KERNEL_W_MAX = 3,
-
-    parameter I_IS_NOT_MAX = 0,
-    parameter I_IS_MAX     = 1,
-    parameter I_IS_1X1     = 2
+    UNITS       ,
+    GROUPS      ,
+    MEMBERS     ,
+    WORD_WIDTH  ,
+    KERNEL_W_MAX,
+    I_IS_NOT_MAX,
+    I_IS_MAX    ,
+    I_IS_1X1    
   )(
     clk,
     clken,
@@ -42,76 +64,222 @@ module maxpool_engine #(
   output logic m_valid, s_ready, m_last;
   input  logic [TUSER_WIDTH-1:0] s_user;
 
-  input  logic [GROUPS*UNITS*2*WORD_WIDTH-1:0] s_data_flat_cgu;
-  output logic [GROUPS*UNITS*2*WORD_WIDTH-1:0] m_data_flat_cgu;
-  output logic [GROUPS*UNITS*2-1:0]            m_keep_flat_cgu;
+  input  logic [2*GROUPS*UNITS*WORD_WIDTH-1:0] s_data_flat_cgu;
+  output logic [2*GROUPS*UNITS*WORD_WIDTH-1:0] m_data_flat_cgu;
+  output logic [2*GROUPS*UNITS-1:0]            m_keep_flat_cgu;
 
   logic signed [WORD_WIDTH-1:0] s_data_cgu [1:0][GROUPS-1:0][UNITS-1:0];
   logic signed [WORD_WIDTH-1:0] m_data_cgu [1:0][GROUPS-1:0][UNITS-1:0];
   logic                         m_keep_cgu [1:0][GROUPS-1:0][UNITS-1:0];
+  
+  logic s_handshake;
+  localparam SUB_MEMBERS_BITS = $clog2(MEMBERS*KERNEL_W_MAX);
+  logic [SUB_MEMBERS_BITS-1:0] in_count, in_count_next, ref_sub_members_1;
+
+  localparam MAX_2_S = 0;
+  localparam MAX_4_S = 1;
+  logic state, state_en;
+
+  logic max_4_handshake, max_4_handshake_delay;
+  logic sel_max_4_in; 
+  logic buf_0_en, buf_n_en, buf_delay_en;
+  logic buf_en_m [MEMBERS :0];
+
+  logic signed [WORD_WIDTH-1:0] delay_data_cgu [1:0][GROUPS-1:0][UNITS-1:0];
+  logic signed [WORD_WIDTH-1:0] buffer_gum          [GROUPS-1:0][UNITS-1:0][MEMBERS + 2];
+  logic signed [WORD_WIDTH-1:0] max_in_1_gu         [GROUPS-1:0][UNITS-1:0];
+  logic signed [WORD_WIDTH-1:0] max_in_2_gu         [GROUPS-1:0][UNITS-1:0]; 
+  logic signed [WORD_WIDTH-1:0] max_out_gu          [GROUPS-1:0][UNITS-1:0];
+
+  logic out_delay_valid;
+  logic out_max_valid, out_max_valid_next;
+  logic max_4_max_and_non_max_delay;
 
   assign s_data_cgu = {>>{s_data_flat_cgu}};
   assign {>>{m_data_flat_cgu}} = m_data_cgu;
   assign {>>{m_keep_flat_cgu}} = m_keep_cgu;
 
-  logic signed [WORD_WIDTH-1:0] s_data_guc [GROUPS-1:0][UNITS-1:0][1:0];
-  logic signed [WORD_WIDTH-1:0] m_data_guc [GROUPS-1:0][UNITS-1:0][1:0];
-  logic                         m_keep_guc [GROUPS-1:0][UNITS-1:0][1:0];
+  assign s_handshake = s_valid && s_ready;
+
+  /*
+    STATE LOGIC
+
+    * state = MAX_2_S during 8 (=members) handshakes of pure non maxpool 
+              & first 8 handshakes of maxpool
+    * state = MAX_4_S during latter 8 handshakes of maxpool : we select max from 4
+  */
+
+  assign ref_sub_members_1 = s_user[I_IS_1X1] ? KERNEL_W_MAX * MEMBERS-1 : MEMBERS-1;
+
+  assign in_count_next = (in_count == ref_sub_members_1) ? 0 : in_count  + 1;
+
+  register #(
+    .WORD_WIDTH   (SUB_MEMBERS_BITS), 
+    .RESET_VALUE  (0)
+  ) IN_COUNT (
+    .clock        (clk   ),
+    .resetn       (resetn),
+    .clock_enable (clken && s_handshake),
+    .data_in      (in_count_next),
+    .data_out     (in_count)
+  );
+
+  assign state_en = s_handshake && (in_count == ref_sub_members_1) && s_user[I_IS_MAX];
+
+  register #(
+    .WORD_WIDTH   (1), 
+    .RESET_VALUE  (MAX_2_S)
+  ) STATE (
+    .clock        (clk   ),
+    .resetn       (resetn),
+    .clock_enable (clken && state_en),
+    .data_in      (~state),
+    .data_out     (state )
+  );
+
+  /*
+    MAX_4_HANDSHAKE DELAY
+
+    * The most important signal
+    * goes high one clock after the input handshake at state = MAX_4_S
+    * signifies the clockcycle where max inputs chosen from buffers (instead of s_data_uc)
+  */
+
+  assign max_4_handshake = s_handshake && (state==MAX_4_S);
+
+  register #(
+    .WORD_WIDTH   (1), 
+    .RESET_VALUE  (0)
+  ) MAX_4_HANDSHAKE (
+    .clock        (clk   ),
+    .resetn       (resetn),
+    .clock_enable (clken ),
+    .data_in      (max_4_handshake),
+    .data_out     (max_4_handshake_delay)
+  );
+
+  assign s_ready = ~max_4_handshake_delay;
+
+  // Sel bit for the 2 multiplexer at comparator's inputs
+  assign sel_max_4_in = max_4_handshake_delay;
+
+  /*
+    BUFFER ENABLES - to save power
+  */
+
+  assign buf_0_en = s_user[I_IS_MAX] && (s_handshake || max_4_handshake_delay);
+  assign buf_n_en = s_handshake && s_user[I_IS_MAX];
+  assign buf_delay_en = s_handshake && s_user[I_IS_NOT_MAX];
 
   generate
-    for (genvar c=0; c<2; c++) begin
-      for (genvar g=0; g<GROUPS; g++) begin
-        for (genvar u=0; u<UNITS; u++) begin
-          
-          assign s_data_guc[g][u][c] = s_data_cgu[c][g][u];
+    for (genvar m = 0; m < MEMBERS+1; m++) assign buf_en_m[m] = (m==0) ? buf_0_en : buf_n_en;
+  endgenerate
 
-          assign m_data_cgu[c][g][u] = m_data_guc[g][u][c];
-          assign m_keep_cgu[c][g][u] = m_keep_guc[g][u][c];
-          
-          /*
-            Same, less readable
-
-            assign m_data_flat_cgu[(GROUPS*UNITS*c + UNITS*g + u +1)*WORD_WIDTH-1:(GROUPS*UNITS*c + UNITS*g + u)*WORD_WIDTH] = m_data_guc[g][u][c];
-            assign m_keep_flat_cgu[(GROUPS*UNITS*c + UNITS*g + u +1)           -1:(GROUPS*UNITS*c + UNITS*g + u)           ] = m_keep_guc[g][u][c];
-          */
+  /*
+    Data
+  */
+  generate
+    for (genvar g = 0; g < GROUPS; g++) begin: cores
+      for (genvar u=0; u < UNITS; u++) begin: units
+        /*
+          Delay s_data
+        */
+        for (genvar c=0; c < 2; c++) begin: two
+          register #(
+            .WORD_WIDTH   (WORD_WIDTH), 
+            .RESET_VALUE  (0)
+          ) DATA_DELAY (
+            .clock        (clk   ),
+            .resetn       (resetn),
+            .clock_enable (clken && buf_delay_en),
+            .data_in      (s_data_cgu     [c][g][u]),
+            .data_out     (delay_data_cgu [c][g][u])
+          );
         end
+
+        /*
+          BUFFER
+        */
+        assign buffer_gum [g][u][0] = max_out_gu [g][u];
+
+        for (genvar m=0; m < MEMBERS + 1; m++) begin: bufgen
+          register #(
+            .WORD_WIDTH   (WORD_WIDTH), 
+            .RESET_VALUE  (0)
+          ) BUFFER (
+            .clock        (clk   ),
+            .resetn       (resetn),
+            .clock_enable (clken && buf_en_m[m]),
+            .data_in      (buffer_gum [g][u][m  ]),
+            .data_out     (buffer_gum [g][u][m+1])
+          );
+        end
+
+        /*
+          COMPARATOR
+        */
+        assign max_out_gu  [g][u] = (max_in_1_gu [g][u] > max_in_2_gu [g][u]) ? max_in_1_gu [g][u] : max_in_2_gu [g][u];
+        assign max_in_1_gu [g][u] = sel_max_4_in ? buffer_gum [g][u][1]          : s_data_cgu [0][g][u];
+        assign max_in_2_gu [g][u] = sel_max_4_in ? buffer_gum [g][u][MEMBERS +1] : s_data_cgu [1][g][u];
+
+        /*
+          OUTPUT
+        */
+        assign m_data_cgu [0][g][u] = out_max_valid ? buffer_gum [g][u][1] : delay_data_cgu[0][g][u];
+        assign m_data_cgu [1][g][u] = delay_data_cgu [1][g][u];
+        
+        assign m_keep_cgu [0][g][u] = 1;
+        assign m_keep_cgu [1][g][u] = out_max_valid ? 0 : 1;
+
       end
     end
   endgenerate
 
+  /*
+    Valid
+  */
+  register #(
+    .WORD_WIDTH   (1), 
+    .RESET_VALUE  (0)
+  ) OUT_DELAY_VALID (
+    .clock        (clk   ),
+    .resetn       (resetn),
+    .clock_enable (clken ),
+    .data_in      (s_handshake && s_user[I_IS_NOT_MAX]),
+    .data_out     (out_delay_valid)
+  );
 
-  logic s_ready_cores [GROUPS];
-  logic m_valid_cores [GROUPS];
-  logic m_last_cores  [GROUPS];
+  assign out_max_valid_next = s_handshake && s_user[I_IS_MAX] && (state == MAX_4_S);
+  n_delay #(
+      .N          (2),
+      .WORD_WIDTH (1)
+  ) OUT_MAX_VALID (
+      .clk        (clk         ),
+      .resetn     (resetn      ),
+      .clken      (clken       ),
+      .data_in    (out_max_valid_next),
+      .data_out   (out_max_valid     )
+  );
 
-  assign s_ready = s_ready_cores[0];
-  assign m_valid = m_valid_cores[0];
-  assign m_last  = m_last_cores [0];
+  assign m_valid = out_max_valid ? out_max_valid : out_delay_valid;
 
-  generate
-    for (genvar i = 0; i < GROUPS; i++) begin: cores
-      maxpool_core #(
-        .UNITS            (UNITS           ),
-        .MEMBERS          (MEMBERS         ),
-        .WORD_WIDTH       (WORD_WIDTH      ),
-        .KERNEL_W_MAX     (KERNEL_W_MAX    ),
-        .I_IS_NOT_MAX     (I_IS_NOT_MAX    ),
-        .I_IS_MAX         (I_IS_MAX        ),
-        .I_IS_1X1         (I_IS_1X1        )
-      ) max_core (
-        .clk      (clk             ),
-        .clken    (clken           ),
-        .resetn   (resetn          ),
-        .s_valid  (s_valid         ),
-        .s_data_uc(s_data_guc   [i]),
-        .s_ready  (s_ready_cores[i]),
-        .s_user   (s_user          ),
-        .m_valid  (m_valid_cores[i]),
-        .m_data_uc(m_data_guc   [i]),
-        .m_keep_uc(m_keep_guc   [i]),
-        .m_last   (m_last_cores [i])
-      );
-    end
-  endgenerate
+  /*
+    MLAST GENERATION
+
+    * For max-only / non-max only: high at in_count=0
+    * For both: max_4_max_and_non_max_delay (this goes low before last out. but then in_count==0 happens there)
+  */
+  register #(
+    .WORD_WIDTH   (1), 
+    .RESET_VALUE  (0)
+  ) MAX_NON_DELAY (
+    .clock        (clk   ),
+    .resetn       (resetn),
+    .clock_enable (clken && s_handshake),
+    .data_in      (s_user[I_IS_NOT_MAX] && s_user[I_IS_MAX] && state==MAX_4_S),
+    .data_out     (max_4_max_and_non_max_delay)
+  );
+
+  assign m_last = (in_count == 0) | max_4_max_and_non_max_delay;
 
 endmodule
