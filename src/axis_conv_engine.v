@@ -1,5 +1,33 @@
 
-module axis_conv_engine (
+`include "params.v"
+
+module axis_conv_engine 
+  #(
+    CORES               = `CORES               ,
+    UNITS               = `UNITS               ,
+    WORD_WIDTH_IN       = `WORD_WIDTH          , 
+    WORD_WIDTH_OUT      = `WORD_WIDTH_ACC      , 
+    LATENCY_ACCUMULATOR = `LATENCY_ACCUMULATOR ,
+    LATENCY_MULTIPLIER  = `LATENCY_MULTIPLIER  ,
+    KERNEL_W_MAX        = `KERNEL_W_MAX        , 
+    KERNEL_H_MAX        = `KERNEL_H_MAX        ,   // odd number
+    IM_CIN_MAX          = `IM_CIN_MAX          ,
+    IM_COLS_MAX         = `IM_COLS_MAX         ,
+    I_IS_NOT_MAX        = `I_IS_NOT_MAX        ,
+    I_IS_MAX            = `I_IS_MAX            ,
+    I_IS_1X1            = `I_IS_1X1            ,
+    I_IS_LRELU          = `I_IS_LRELU          ,
+    I_IS_TOP_BLOCK      = `I_IS_TOP_BLOCK      ,
+    I_IS_BOTTOM_BLOCK   = `I_IS_BOTTOM_BLOCK   ,
+    I_IS_COLS_1_K2      = `I_IS_COLS_1_K2      ,
+    I_IS_CONFIG         = `I_IS_CONFIG         ,
+    I_IS_CIN_LAST       = `I_IS_CIN_LAST       ,
+    I_KERNEL_W_1        = `I_KERNEL_W_1        , 
+    I_IS_LEFT_COL       = `I_IS_LEFT_COL       ,
+    I_IS_RIGHT_COL      = `I_IS_RIGHT_COL      ,
+    TUSER_WIDTH_CONV_IN = `TUSER_WIDTH_CONV_IN ,
+    TUSER_WIDTH_CONV_OUT= `TUSER_WIDTH_LRELU_IN
+  )(
     aclk                 ,
     aresetn              ,
     s_axis_tvalid        ,
@@ -16,37 +44,10 @@ module axis_conv_engine (
     m_axis_tuser         
   );
 
-  parameter  CORES              = 32 ;
-  parameter  UNITS              = 8  ;
-  parameter  WORD_WIDTH_IN      =  8 ; 
-  parameter  WORD_WIDTH_OUT     = 25 ; 
-  parameter  ACCUMULATOR_DELAY  =  2 ;
-  parameter  MULTIPLIER_DELAY   =  3 ;
-  parameter  KERNEL_W_MAX       =  3 ; 
-  parameter  KERNEL_H_MAX       =  3 ;   // odd number
-  parameter  IM_CIN_MAX         = 1024;
-  parameter  IM_COLS_MAX        = 1024;
   localparam BITS_IM_CIN        = $clog2(IM_CIN_MAX);
   localparam BITS_IM_COLS       = $clog2(IM_COLS_MAX);
   localparam BITS_KERNEL_W      = $clog2(KERNEL_W_MAX   + 1);
   localparam BITS_KERNEL_H      = $clog2(KERNEL_H_MAX   + 1);
-
-  parameter I_IS_NOT_MAX        = 0;
-  parameter I_IS_MAX            = I_IS_NOT_MAX      + 1;
-  parameter I_IS_LRELU          = I_IS_MAX          + 1;
-  parameter I_IS_TOP_BLOCK      = I_IS_LRELU        + 1;
-  parameter I_IS_BOTTOM_BLOCK   = I_IS_TOP_BLOCK    + 1;
-  parameter I_IS_1X1            = I_IS_BOTTOM_BLOCK + 1;
-  parameter I_IS_COLS_1_K2      = I_IS_1X1          + 1;
-  parameter I_IS_CONFIG         = I_IS_COLS_1_K2    + 1;
-  parameter I_IS_ACC_LAST       = I_IS_CONFIG       + 1;
-  parameter I_KERNEL_W_1        = I_IS_ACC_LAST     + 1; 
-
-  parameter I_IS_LEFT_COL       = I_IS_1X1          + 1;
-  parameter I_IS_RIGHT_COL      = I_IS_LEFT_COL     + 1;
-
-  parameter TUSER_WIDTH_CONV_IN  = BITS_KERNEL_W + I_KERNEL_W_1;
-  parameter TUSER_WIDTH_CONV_OUT = 1 + I_IS_RIGHT_COL;
 
   input  wire aclk;
   input  wire aresetn;
@@ -79,21 +80,21 @@ module axis_conv_engine (
     .UNITS                (UNITS               ),
     .WORD_WIDTH_IN        (WORD_WIDTH_IN       ), 
     .WORD_WIDTH_OUT       (WORD_WIDTH_OUT      ), 
-    .ACCUMULATOR_DELAY    (ACCUMULATOR_DELAY   ),
-    .MULTIPLIER_DELAY     (MULTIPLIER_DELAY    ),
+    .LATENCY_ACCUMULATOR    (LATENCY_ACCUMULATOR   ),
+    .LATENCY_MULTIPLIER     (LATENCY_MULTIPLIER    ),
     .KERNEL_W_MAX         (KERNEL_W_MAX        ), 
     .KERNEL_H_MAX         (KERNEL_H_MAX        ),
     .IM_CIN_MAX           (IM_CIN_MAX          ),
     .IM_COLS_MAX          (IM_COLS_MAX         ),
     .I_IS_NOT_MAX         (I_IS_NOT_MAX        ),
     .I_IS_MAX             (I_IS_MAX            ),
+    .I_IS_1X1             (I_IS_1X1            ),
     .I_IS_LRELU           (I_IS_LRELU          ),
     .I_IS_TOP_BLOCK       (I_IS_TOP_BLOCK      ),
     .I_IS_BOTTOM_BLOCK    (I_IS_BOTTOM_BLOCK   ),
-    .I_IS_1X1             (I_IS_1X1            ),
     .I_IS_COLS_1_K2       (I_IS_COLS_1_K2      ),
     .I_IS_CONFIG          (I_IS_CONFIG         ),
-    .I_IS_ACC_LAST        (I_IS_ACC_LAST       ),
+    .I_IS_CIN_LAST        (I_IS_CIN_LAST       ),
     .I_KERNEL_W_1         (I_KERNEL_W_1        ), 
     .I_IS_LEFT_COL        (I_IS_LEFT_COL       ),
     .I_IS_RIGHT_COL       (I_IS_RIGHT_COL      ),

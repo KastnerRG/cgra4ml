@@ -1,3 +1,5 @@
+`include "params.v";
+
 module axis_maxpool_engine_tb();
   
   timeunit 1ns;
@@ -21,11 +23,10 @@ module axis_maxpool_engine_tb();
   localparam UNITS_EDGES  = UNITS + KERNEL_H_MAX-1;
   localparam SUB_MEMBERS = IS_1X1 ? KERNEL_W_MAX*MEMBERS : MEMBERS;
 
-  localparam I_IS_NOT_MAX = 0;
-  localparam I_IS_MAX     = I_IS_NOT_MAX + 1;
-  localparam I_IS_1X1     = I_IS_MAX + 1;
-
-  localparam TUSER_WIDTH  = I_IS_1X1 + 1;
+  localparam I_IS_NOT_MAX = `I_IS_NOT_MAX;
+  localparam I_IS_MAX     = `I_IS_MAX    ;
+  localparam I_IS_1X1     = `I_IS_1X1    ;
+  localparam TUSER_WIDTH  = `TUSER_WIDTH_MAXPOOL_IN;
 
   typedef logic signed [WORD_WIDTH-1:0] word_t;
 
@@ -60,7 +61,8 @@ module axis_maxpool_engine_tb();
     .KERNEL_W_MAX     (KERNEL_W_MAX    ),
     .I_IS_NOT_MAX     (I_IS_NOT_MAX    ),
     .I_IS_MAX         (I_IS_MAX        ),
-    .I_IS_1X1         (I_IS_1X1        )
+    .I_IS_1X1         (I_IS_1X1        ),
+    .TUSER_WIDTH      (TUSER_WIDTH     )
   )dut(
     .aclk         (aclk          ),
     .aresetn      (aresetn       ),

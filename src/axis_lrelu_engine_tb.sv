@@ -1,3 +1,5 @@
+`include "params.v";
+
 module axis_lrelu_engine_tb();
   
   timeunit 1ns;
@@ -25,35 +27,30 @@ module axis_lrelu_engine_tb();
   localparam WORD_WIDTH_OUT    = 8 ;
   localparam WORD_WIDTH_CONFIG = 8 ;
 
-  localparam ALPHA = 16'd11878;
-
-  localparam CONFIG_BEATS_3X3_2 = 19; // D(1) + A(2) + B(9*2) -2   = 21 -2 = 19
-  localparam CONFIG_BEATS_1X1_2 = 11; // D(1) + A(2*3) + B(2*3) -2 = 13 -2 = 11
-
-
-  localparam BITS_EXP_CONFIG       = 5;
-  localparam BITS_FRA_CONFIG       = 10;
-  localparam BITS_EXP_FMA_1        = 8;
-  localparam BITS_FRA_FMA_1        = 23;
-  localparam BITS_EXP_FMA_2        = 5;
-  localparam BITS_FRA_FMA_2        = 10;
-  localparam LATENCY_FMA_1         = 16;
-  localparam LATENCY_FMA_2         = 16;
-  localparam LATENCY_FIXED_2_FLOAT =  6;
-  localparam BRAM_LATENCY          =  2;
-
-  localparam I_IS_NOT_MAX      = 0;
-  localparam I_IS_MAX          = I_IS_NOT_MAX      + 1;
-  localparam I_IS_LRELU        = I_IS_MAX          + 1;
-  localparam I_IS_TOP_BLOCK    = I_IS_LRELU        + 1;
-  localparam I_IS_BOTTOM_BLOCK = I_IS_TOP_BLOCK    + 1;
-  localparam I_IS_1X1          = I_IS_BOTTOM_BLOCK + 1;
-  localparam I_IS_LEFT_COL     = I_IS_1X1          + 1;
-  localparam I_IS_RIGHT_COL    = I_IS_LEFT_COL     + 1;
-
-  localparam TUSER_WIDTH_MAXPOOL_IN     = 1 + I_IS_MAX  ;
-  localparam TUSER_WIDTH_LRELU_FMA_1_IN = 1 + I_IS_LRELU;
-  localparam TUSER_WIDTH_LRELU_IN       = 1 + I_IS_RIGHT_COL;
+  localparam LRELU_ALPHA                = `LRELU_ALPHA               ;
+  localparam BEATS_CONFIG_3X3_2         = `BEATS_CONFIG_3X3_2        ; // D(1) + A(2) + B(9*2) -2   = 21 -2 = 19
+  localparam BEATS_CONFIG_1X1_2         = `BEATS_CONFIG_1X1_2        ; // D(1) + A(2*3) + B(2*3) -2 = 13 -2 = 11
+  localparam BITS_EXP_CONFIG            = `BITS_EXP_CONFIG           ;
+  localparam BITS_FRA_CONFIG            = `BITS_FRA_CONFIG           ;
+  localparam BITS_EXP_FMA_1             = `BITS_EXP_FMA_1            ;
+  localparam BITS_FRA_FMA_1             = `BITS_FRA_FMA_1            ;
+  localparam BITS_EXP_FMA_2             = `BITS_EXP_FMA_2            ;
+  localparam BITS_FRA_FMA_2             = `BITS_FRA_FMA_2            ;
+  localparam LATENCY_FMA_1              = `LATENCY_FMA_1             ;
+  localparam LATENCY_FMA_2              = `LATENCY_FMA_2             ;
+  localparam LATENCY_FIXED_2_FLOAT      = `LATENCY_FIXED_2_FLOAT     ;
+  localparam LATENCY_BRAM               = `LATENCY_BRAM              ;
+  localparam I_IS_NOT_MAX               = `I_IS_NOT_MAX              ;
+  localparam I_IS_MAX                   = `I_IS_MAX                  ;
+  localparam I_IS_1X1                   = `I_IS_1X1                  ;
+  localparam I_IS_LRELU                 = `I_IS_LRELU                ;
+  localparam I_IS_TOP_BLOCK             = `I_IS_TOP_BLOCK            ;
+  localparam I_IS_BOTTOM_BLOCK          = `I_IS_BOTTOM_BLOCK         ;
+  localparam I_IS_LEFT_COL              = `I_IS_LEFT_COL             ;
+  localparam I_IS_RIGHT_COL             = `I_IS_RIGHT_COL            ;
+  localparam TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN    ;
+  localparam TUSER_WIDTH_LRELU_FMA_1_IN = `TUSER_WIDTH_LRELU_FMA_1_IN;
+  localparam TUSER_WIDTH_LRELU_IN       = `TUSER_WIDTH_LRELU_IN      ;
 
   logic aresetn      ;
   logic s_axis_tvalid;
@@ -82,10 +79,10 @@ module axis_lrelu_engine_tb();
     .COPIES  (COPIES ),
     .MEMBERS (MEMBERS),
 
-    .ALPHA   (ALPHA),
+    .LRELU_ALPHA   (LRELU_ALPHA),
 
-    .CONFIG_BEATS_3X3_2 (CONFIG_BEATS_3X3_2),
-    .CONFIG_BEATS_1X1_2 (CONFIG_BEATS_1X1_2),
+    .BEATS_CONFIG_3X3_2 (BEATS_CONFIG_3X3_2),
+    .BEATS_CONFIG_1X1_2 (BEATS_CONFIG_1X1_2),
 
     .BITS_EXP_CONFIG      (BITS_EXP_CONFIG      ),
     .BITS_FRA_CONFIG      (BITS_FRA_CONFIG      ),
@@ -96,16 +93,16 @@ module axis_lrelu_engine_tb();
     .LATENCY_FMA_1        (LATENCY_FMA_1        ),
     .LATENCY_FMA_2        (LATENCY_FMA_2        ),
     .LATENCY_FIXED_2_FLOAT(LATENCY_FIXED_2_FLOAT),
-    .BRAM_LATENCY         (BRAM_LATENCY         ),
+    .LATENCY_BRAM         (LATENCY_BRAM         ),
 
     .I_IS_MAX             (I_IS_MAX            ),
     .I_IS_NOT_MAX         (I_IS_NOT_MAX        ),
+    .I_IS_1X1             (I_IS_1X1            ),
     .I_IS_LRELU           (I_IS_LRELU          ),
     .I_IS_TOP_BLOCK       (I_IS_TOP_BLOCK      ),
     .I_IS_BOTTOM_BLOCK    (I_IS_BOTTOM_BLOCK   ),
     .I_IS_LEFT_COL        (I_IS_LEFT_COL       ),
     .I_IS_RIGHT_COL       (I_IS_RIGHT_COL      ),
-    .I_IS_1X1             (I_IS_1X1            ),
 
     .TUSER_WIDTH_LRELU_IN       (TUSER_WIDTH_LRELU_IN      ),
     .TUSER_WIDTH_LRELU_FMA_1_IN (TUSER_WIDTH_LRELU_FMA_1_IN),
@@ -217,7 +214,7 @@ module axis_lrelu_engine_tb();
   task axis_feed_data;
         s_axis_tvalid <= 1;
 
-        if (config_beats < (IS_1X1 ? CONFIG_BEATS_1X1_2+2 : CONFIG_BEATS_3X3_2+2)) 
+        if (config_beats < (IS_1X1 ? BEATS_CONFIG_1X1_2+2 : BEATS_CONFIG_3X3_2+2)) 
           config_beats <= config_beats + 1;
 
         else begin

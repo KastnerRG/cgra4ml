@@ -1,3 +1,4 @@
+`include "params.v"
 /*//////////////////////////////////////////////////////////////////////////////////
 Group : ABruTECH
 Engineer: Abarajithan G.
@@ -24,7 +25,40 @@ Additional Comments:
 //////////////////////////////////////////////////////////////////////////////////*/
 
 
-module axis_lrelu_engine (
+module axis_lrelu_engine 
+  #(
+    WORD_WIDTH_IN              = `WORD_WIDTH_ACC            ,
+    WORD_WIDTH_OUT             = `WORD_WIDTH                ,
+    WORD_WIDTH_CONFIG          = `WORD_WIDTH                ,
+    UNITS                      = `UNITS                     ,
+    GROUPS                     = `GROUPS                    ,
+    COPIES                     = `COPIES                    ,
+    MEMBERS                    = `MEMBERS                   ,
+    LRELU_ALPHA                = `LRELU_ALPHA               ,
+    BEATS_CONFIG_3X3_2         = `BEATS_CONFIG_3X3_1-1      , // D(1) + A(2) + B(9*2) -2 = 21-2 = 19
+    BEATS_CONFIG_1X1_2         = `BEATS_CONFIG_1X1_1-1      , // D(1) + A(2*3) + B(2*3) -2 = 13 -2 = 11
+    BITS_EXP_CONFIG            = `BITS_EXP_CONFIG           ,
+    BITS_FRA_CONFIG            = `BITS_FRA_CONFIG           ,
+    BITS_EXP_FMA_1             = `BITS_EXP_FMA_1            ,
+    BITS_FRA_FMA_1             = `BITS_FRA_FMA_1            ,
+    BITS_EXP_FMA_2             = `BITS_EXP_FMA_2            ,
+    BITS_FRA_FMA_2             = `BITS_FRA_FMA_2            ,
+    LATENCY_FMA_1              = `LATENCY_FMA_1             ,
+    LATENCY_FMA_2              = `LATENCY_FMA_2             ,
+    LATENCY_FIXED_2_FLOAT      = `LATENCY_FIXED_2_FLOAT     ,
+    LATENCY_BRAM               = `LATENCY_BRAM              ,
+    I_IS_NOT_MAX               = `I_IS_NOT_MAX              ,
+    I_IS_MAX                   = `I_IS_MAX                  ,
+    I_IS_1X1                   = `I_IS_1X1                  ,
+    I_IS_LRELU                 = `I_IS_LRELU                ,
+    I_IS_TOP_BLOCK             = `I_IS_TOP_BLOCK            ,
+    I_IS_BOTTOM_BLOCK          = `I_IS_BOTTOM_BLOCK         ,
+    I_IS_LEFT_COL              = `I_IS_LEFT_COL             ,
+    I_IS_RIGHT_COL             = `I_IS_RIGHT_COL            ,
+    TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN    ,
+    TUSER_WIDTH_LRELU_FMA_1_IN = `TUSER_WIDTH_LRELU_FMA_1_IN,
+    TUSER_WIDTH_LRELU_IN       = `TUSER_WIDTH_LRELU_IN      
+  )(
     aclk         ,
     aresetn      ,
     s_axis_tvalid,
@@ -37,43 +71,6 @@ module axis_lrelu_engine (
     m_axis_tdata , // cgu
     m_axis_tuser 
   );
-    parameter WORD_WIDTH_IN     = 32;
-    parameter WORD_WIDTH_OUT    = 8 ;
-    parameter WORD_WIDTH_CONFIG = 8 ;
-
-    parameter UNITS   = 8;
-    parameter GROUPS  = 2;
-    parameter COPIES  = 2;
-    parameter MEMBERS = 2;
-
-    parameter ALPHA = 16'd11878;
-
-    parameter CONFIG_BEATS_3X3_2 = 19; // D(1) + A(2) + B(9*2) -2 = 21-2 = 19
-    parameter CONFIG_BEATS_1X1_2 = 11; // D(1) + A(2*3) + B(2*3) -2 = 13 -2 = 11
-
-    parameter BITS_EXP_CONFIG       = 5;
-    parameter BITS_FRA_CONFIG       = 10;
-    parameter BITS_EXP_FMA_1        = 8;
-    parameter BITS_FRA_FMA_1        = 23;
-    parameter BITS_EXP_FMA_2        = 5;
-    parameter BITS_FRA_FMA_2        = 10;
-    parameter LATENCY_FMA_1         = 16;
-    parameter LATENCY_FMA_2         = 16;
-    parameter LATENCY_FIXED_2_FLOAT = 6 ;
-    parameter BRAM_LATENCY          = 2 ;
-
-    parameter I_IS_NOT_MAX      = 0;
-    parameter I_IS_MAX          = I_IS_NOT_MAX      + 1;
-    parameter I_IS_LRELU        = I_IS_MAX          + 1;
-    parameter I_IS_TOP_BLOCK    = I_IS_LRELU        + 1;
-    parameter I_IS_BOTTOM_BLOCK = I_IS_TOP_BLOCK    + 1;
-    parameter I_IS_1X1          = I_IS_BOTTOM_BLOCK + 1;
-    parameter I_IS_LEFT_COL     = I_IS_1X1          + 1;
-    parameter I_IS_RIGHT_COL    = I_IS_LEFT_COL     + 1;
-
-    parameter TUSER_WIDTH_MAXPOOL_IN     = 1 + I_IS_MAX  ;
-    parameter TUSER_WIDTH_LRELU_FMA_1_IN = 1 + I_IS_LRELU;
-    parameter TUSER_WIDTH_LRELU_IN       = 1 + I_IS_RIGHT_COL;
 
     input  wire aclk, aresetn;
     input  wire s_axis_tvalid, s_axis_tlast, m_axis_tready;
@@ -124,7 +121,7 @@ module axis_lrelu_engine (
         - when config_count = 0 and handshake, switch to PASS_S if 3x3 or to FILL_S if 1x1
       * FILL_S
         - For 1x1 case, since B_cm is needed immediately
-        - Block input and wait for (BRAM_LATENCY+1) clocks for BRAMs to get valid
+        - Block input and wait for (LATENCY_BRAM+1) clocks for BRAMs to get valid
         - For 3x3, B_rb is filled last and is needed after several clocks, so no need
       * default:
         - same as PASS_S
@@ -155,11 +152,11 @@ module axis_lrelu_engine (
       .data_out     (state)
     );
 
-    localparam CONFIG_BEATS_BITS = $clog2(CONFIG_BEATS_3X3_2 + 1);
-    wire [CONFIG_BEATS_BITS-1:0] count_config;
-    reg  [CONFIG_BEATS_BITS-1:0] count_config_next;
+    localparam BEATS_CONFIG_BITS = $clog2(BEATS_CONFIG_3X3_2 + 1);
+    wire [BEATS_CONFIG_BITS-1:0] count_config;
+    reg  [BEATS_CONFIG_BITS-1:0] count_config_next;
     register #(
-      .WORD_WIDTH   (CONFIG_BEATS_BITS), 
+      .WORD_WIDTH   (BEATS_CONFIG_BITS), 
       .RESET_VALUE  (0)
     ) COUNT_CONFIG (
       .clock        (aclk   ),
@@ -168,7 +165,7 @@ module axis_lrelu_engine (
       .data_in      (count_config_next),
       .data_out     (count_config)
     );
-    localparam FILL_DELAY = 2*BRAM_LATENCY-1;
+    localparam FILL_DELAY = 2*LATENCY_BRAM-1;
 
     localparam FILL_BITS = $clog2(FILL_DELAY);
     wire [FILL_BITS-1:0] count_fill;
@@ -242,7 +239,7 @@ module axis_lrelu_engine (
                     s_axis_tready     = s_ready_slice;
 
                     resetn_config     = 1;
-                    count_config_next = s_axis_tuser[I_IS_1X1] ? CONFIG_BEATS_1X1_2 : CONFIG_BEATS_3X3_2;
+                    count_config_next = s_axis_tuser[I_IS_1X1] ? BEATS_CONFIG_1X1_2 : BEATS_CONFIG_3X3_2;
                     count_fill_next   = 0;
                   end
         WRITE_2_S:begin
@@ -355,7 +352,7 @@ module axis_lrelu_engine (
       .COPIES  (COPIES ),
       .MEMBERS (MEMBERS),
 
-      .ALPHA   (ALPHA),
+      .LRELU_ALPHA   (LRELU_ALPHA),
 
       .LATENCY_FIXED_2_FLOAT (LATENCY_FIXED_2_FLOAT),
       .BITS_EXP_CONFIG       (BITS_EXP_CONFIG      ),

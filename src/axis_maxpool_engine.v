@@ -1,4 +1,18 @@
-module axis_maxpool_engine (
+`include "params.v";
+
+module axis_maxpool_engine 
+  #(
+    UNITS        = `UNITS       ,
+    GROUPS       = `GROUPS      ,
+    MEMBERS      = `MEMBERS     ,
+    WORD_WIDTH   = `WORD_WIDTH  ,
+    KERNEL_H_MAX = `KERNEL_H_MAX, // odd
+    KERNEL_W_MAX = `KERNEL_W_MAX, // odd
+    I_IS_NOT_MAX = `I_IS_NOT_MAX,
+    I_IS_MAX     = `I_IS_MAX    ,
+    I_IS_1X1     = `I_IS_1X1    ,
+    TUSER_WIDTH  = `TUSER_WIDTH_MAXPOOL_IN
+  )(
     aclk         ,
     aresetn      ,
     s_axis_tvalid,
@@ -12,18 +26,7 @@ module axis_maxpool_engine (
     m_axis_tlast 
   );
 
-  parameter UNITS      = 8;
-  parameter GROUPS     = 2;
-  parameter MEMBERS    = 8;
-  parameter WORD_WIDTH = 8;
-  parameter KERNEL_H_MAX = 3; // odd
-  parameter KERNEL_W_MAX = 3; // odd
   localparam UNITS_EDGES  = UNITS + KERNEL_H_MAX-1;
-  parameter I_IS_NOT_MAX = 0;
-  parameter I_IS_MAX     = I_IS_NOT_MAX+1;
-  parameter I_IS_1X1     = I_IS_MAX+1;
-
-  localparam TUSER_WIDTH = I_IS_1X1 + 1;
 
   input  wire aclk, aresetn;
   input  wire s_axis_tvalid, m_axis_tready;

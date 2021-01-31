@@ -34,7 +34,20 @@ Additional Comments:
 
 //////////////////////////////////////////////////////////////////////////////////*/
 
-module axis_image_pipe (
+module axis_image_pipe 
+  #(
+    UNITS                    ,
+    WORD_WIDTH               , 
+    KERNEL_H_MAX             ,   // odd number
+    BEATS_CONFIG_3X3_1       ,
+    BEATS_CONFIG_1X1_1       ,
+    I_IMAGE_IS_NOT_MAX       ,
+    I_IMAGE_IS_MAX           ,
+    I_IMAGE_IS_LRELU         ,
+    I_IMAGE_KERNEL_H_1       , 
+    TUSER_WIDTH_IM_SHIFT_IN  
+  )
+  (
     aclk           ,
     aresetn        ,
     s_axis_1_tready, 
@@ -53,24 +66,12 @@ module axis_image_pipe (
     m_axis_2_tdata ,
     m_axis_tuser
   );
-  parameter UNITS              = 2;
-  parameter WORD_WIDTH         = 8; 
-  parameter KERNEL_H_MAX       = 3;   // odd number
-  parameter BEATS_CONFIG_3X3_1 = 21-1;
-  parameter BEATS_CONFIG_1X1_1 = 13-1;
-  parameter BITS_OTHER         = 8;
-  
+
   localparam UNITS_EDGES       = UNITS + KERNEL_H_MAX-1;
   localparam IM_IN_S_DATA_WORDS= 2**$clog2(UNITS_EDGES);
   localparam BITS_CONFIG_COUNT = $clog2(BEATS_CONFIG_3X3_1);
   localparam BITS_KERNEL_H     = $clog2(KERNEL_H_MAX);
   localparam TKEEP_WIDTH_IM_IN = (WORD_WIDTH*IM_IN_S_DATA_WORDS)/8;
-
-  parameter I_IMAGE_IS_NOT_MAX       = 0;
-  parameter I_IMAGE_IS_MAX           = I_IMAGE_IS_NOT_MAX + 1;
-  parameter I_IMAGE_IS_LRELU         = I_IMAGE_IS_MAX     + 1;
-  parameter I_IMAGE_KERNEL_H_1       = I_IMAGE_IS_LRELU   + 1; 
-  parameter TUSER_WIDTH_IM_SHIFT_IN  = I_IMAGE_KERNEL_H_1 + BITS_KERNEL_H;
 
   input logic aclk;
   input logic aresetn;

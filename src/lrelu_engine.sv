@@ -74,7 +74,7 @@ module lrelu_engine (
   parameter GROUPS  = 2;
   parameter COPIES  = 2;
   parameter MEMBERS = 2;
-  parameter ALPHA = 16'd11878;
+  parameter LRELU_ALPHA = 16'd11878;
 
   parameter BITS_EXP_CONFIG       = 5;
   parameter BITS_FRA_CONFIG       = 10;
@@ -85,7 +85,7 @@ module lrelu_engine (
   parameter LATENCY_FMA_1         = 16;
   parameter LATENCY_FMA_2         = 16;
   parameter LATENCY_FIXED_2_FLOAT =  6;
-  parameter BRAM_LATENCY          =  2;
+  parameter LATENCY_BRAM          =  2;
 
   parameter I_IS_NOT_MAX      = 0;
   parameter I_IS_MAX          = I_IS_NOT_MAX      + 1;
@@ -437,7 +437,7 @@ module lrelu_engine (
           .W_DEPTH (BRAM_W_DEPTH_1X1), 
           .W_WIDTH (BRAM_W_WIDTH),
           .R_WIDTH (BRAM_R_WIDTH),
-          .LATENCY (BRAM_LATENCY),
+          .LATENCY (LATENCY_BRAM),
           .IP_TYPE (0)
         ) BRAM_A (
           .clk          (clk),
@@ -471,7 +471,7 @@ module lrelu_engine (
                 .W_DEPTH (BRAM_W_DEPTH_1X1), 
                 .W_WIDTH (BRAM_W_WIDTH),
                 .R_WIDTH (BRAM_R_WIDTH),
-                .LATENCY (BRAM_LATENCY),
+                .LATENCY (LATENCY_BRAM),
                 .IP_TYPE (0)
               ) BRAM_B (
                 .clk          (clk),
@@ -491,7 +491,7 @@ module lrelu_engine (
                 .W_DEPTH (BRAM_W_DEPTH_3X3), 
                 .W_WIDTH (BRAM_W_WIDTH),
                 .R_WIDTH (BRAM_R_WIDTH),
-                .LATENCY (BRAM_LATENCY),
+                .LATENCY (LATENCY_BRAM),
                 .IP_TYPE (1)
               ) BRAM_B (
                 .clk          (clk),
@@ -593,7 +593,7 @@ module lrelu_engine (
           */
 
           assign is_lrelu_cgu[c][g][u] = m_user_fma_1[I_IS_LRELU      ] && m_data_fma_1_cgu[c][g][u][BITS_FMA_1-1];
-          assign c_val_cgu   [c][g][u] = is_lrelu_cgu[c][g][u] ? ALPHA : 16'd15360 ; // 0.1 or 1
+          assign c_val_cgu   [c][g][u] = is_lrelu_cgu[c][g][u] ? LRELU_ALPHA : 16'd15360 ; // 0.1 or 1
 
           if (c==0 && g==0 && u==0) begin
             fixed_to_float_active FIX2FLOAT (

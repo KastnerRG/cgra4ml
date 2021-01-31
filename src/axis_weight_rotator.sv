@@ -25,7 +25,28 @@ Additional Comments:
 
 //////////////////////////////////////////////////////////////////////////////////*/
 
-module axis_weight_rotator (
+module axis_weight_rotator 
+  #(
+    CORES              ,
+    WORD_WIDTH         , 
+    KERNEL_H_MAX       ,   // odd number
+    KERNEL_W_MAX       ,   // odd number
+    IM_CIN_MAX         ,
+    IM_BLOCKS_MAX      ,
+    IM_COLS_MAX        ,
+    WEIGHTS_DMA_BITS   ,
+    BEATS_CONFIG_3X3_1 ,
+    BEATS_CONFIG_1X1_1 ,
+    LATENCY_BRAM       ,
+    I_WEIGHTS_IS_TOP_BLOCK    ,
+    I_WEIGHTS_IS_BOTTOM_BLOCK ,
+    I_WEIGHTS_IS_1X1          ,
+    I_WEIGHTS_IS_COLS_1_K2    ,
+    I_WEIGHTS_IS_CONFIG       ,
+    I_WEIGHTS_IS_CIN_LAST     ,
+    I_WEIGHTS_KERNEL_W_1      , 
+    TUSER_WIDTH_WEIGHTS_OUT   
+  )(
     aclk         ,
     aresetn      ,
     s_axis_tready, 
@@ -39,32 +60,9 @@ module axis_weight_rotator (
     m_axis_tlast ,
     m_axis_tuser  
   );
-  parameter CORES             = 2;
-  parameter WORD_WIDTH        = 8; 
-  parameter KERNEL_H_MAX      = 3;   // odd number
-  parameter KERNEL_W_MAX      = 3;   // odd number
-  parameter IM_CIN_MAX        = 1024;
-  parameter IM_BLOCKS_MAX     = 32;
-  parameter IM_COLS_MAX       = 384;
-  parameter WEIGHTS_DMA_BITS  = 32;
 
-  parameter BEATS_CONFIG_3X3_1   = 21-1;
-  parameter BEATS_CONFIG_1X1_1   = 13-1;
-
-  parameter BRAM_LATENCY =  2;
-
-  localparam BITS_KERNEL_W = $clog2(KERNEL_W_MAX);
-  localparam BITS_KERNEL_H = $clog2(KERNEL_H_MAX);
-
-  parameter I_WEIGHTS_IS_TOP_BLOCK    = 0;
-  parameter I_WEIGHTS_IS_BOTTOM_BLOCK = I_WEIGHTS_IS_TOP_BLOCK    + 1;
-  parameter I_WEIGHTS_IS_1X1          = I_WEIGHTS_IS_BOTTOM_BLOCK + 1;
-  parameter I_WEIGHTS_IS_COLS_1_K2    = I_WEIGHTS_IS_1X1          + 1;
-  parameter I_WEIGHTS_IS_CONFIG       = I_WEIGHTS_IS_COLS_1_K2    + 1;
-  parameter I_WEIGHTS_IS_ACC_LAST     = I_WEIGHTS_IS_CONFIG       + 1;
-  parameter I_WEIGHTS_KERNEL_W_1      = I_WEIGHTS_IS_ACC_LAST     + 1; 
-  parameter TUSER_WIDTH_WEIGHTS_OUT   = I_WEIGHTS_KERNEL_W_1 + BITS_KERNEL_W;
-
+  localparam BITS_KERNEL_W        = $clog2(KERNEL_W_MAX);
+  localparam BITS_KERNEL_H        = $clog2(KERNEL_H_MAX);
   localparam BITS_CONFIG_COUNT    = $clog2(BEATS_CONFIG_3X3_1+1);
   localparam M_WIDTH              = WORD_WIDTH*CORES*KERNEL_W_MAX;
 
@@ -376,7 +374,7 @@ module axis_weight_rotator (
         .W_DEPTH (BRAM_DEPTH), 
         .W_WIDTH (BRAM_WIDTH),
         .R_WIDTH (BRAM_WIDTH),
-        .LATENCY (BRAM_LATENCY),
+        .LATENCY (LATENCY_BRAM),
         .IP_TYPE (2)
       ) BRAM (
         .clk          (aclk),
@@ -559,7 +557,7 @@ module axis_weight_rotator (
   assign m_axis_tuser [I_WEIGHTS_IS_1X1     ] = ref_1_kw[i_read] == 0;
   assign m_axis_tuser [I_WEIGHTS_KERNEL_W_1+BITS_KERNEL_W-1: I_WEIGHTS_KERNEL_W_1] = ref_1_kw [i_read];
 
-  assign m_axis_tuser [I_WEIGHTS_IS_ACC_LAST    ] = (last_kh && last_cin);
+  assign m_axis_tuser [I_WEIGHTS_IS_CIN_LAST    ] = (last_kh && last_cin);
   assign m_axis_tuser [I_WEIGHTS_IS_COLS_1_K2   ] = count_cols   == ref_1_kw     [i_read]/2; // i = cols-1-k/2 === [cols-1-i] = k/2
   assign m_axis_tuser [I_WEIGHTS_IS_TOP_BLOCK   ] = count_blocks == ref_1_blocks [i_read];
   assign m_axis_tuser [I_WEIGHTS_IS_BOTTOM_BLOCK] = last_blocks;

@@ -1,4 +1,48 @@
-module axis_input_pipe (
+`include "params.v"
+
+module axis_input_pipe 
+  #(
+    UNITS                     = `UNITS                    ,
+    CORES                     = `CORES                    ,
+    WORD_WIDTH                = `WORD_WIDTH               , 
+    KERNEL_H_MAX              = `KERNEL_H_MAX             ,   // odd number
+    KERNEL_W_MAX              = `KERNEL_W_MAX             ,
+    BEATS_CONFIG_3X3_1        = `BEATS_CONFIG_3X3_1       ,
+    BEATS_CONFIG_1X1_1        = `BEATS_CONFIG_1X1_1       ,
+    //  IMAGE TUSER INDICES 
+    I_IMAGE_IS_NOT_MAX        = `I_IMAGE_IS_NOT_MAX       ,
+    I_IMAGE_IS_MAX            = `I_IMAGE_IS_MAX           ,
+    I_IMAGE_IS_LRELU          = `I_IMAGE_IS_LRELU         ,
+    I_IMAGE_KERNEL_H_1        = `I_IMAGE_KERNEL_H_1       , 
+    TUSER_WIDTH_IM_SHIFT_IN   = `TUSER_WIDTH_IM_SHIFT_IN  ,
+    TUSER_WIDTH_IM_SHIFT_OUT  = `TUSER_WIDTH_IM_SHIFT_OUT ,
+    IM_CIN_MAX                = `IM_CIN_MAX               ,
+    IM_BLOCKS_MAX             = `IM_BLOCKS_MAX            ,
+    IM_COLS_MAX               = `IM_COLS_MAX              ,
+    WEIGHTS_DMA_BITS          = `WEIGHTS_DMA_BITS         ,
+    LATENCY_BRAM              = `LATENCY_BRAM             ,
+    // WEIGHTS TUSER INDICES 
+    I_WEIGHTS_IS_TOP_BLOCK    = `I_WEIGHTS_IS_TOP_BLOCK   ,
+    I_WEIGHTS_IS_BOTTOM_BLOCK = `I_WEIGHTS_IS_BOTTOM_BLOCK,
+    I_WEIGHTS_IS_1X1          = `I_WEIGHTS_IS_1X1         ,
+    I_WEIGHTS_IS_COLS_1_K2    = `I_WEIGHTS_IS_COLS_1_K2   ,
+    I_WEIGHTS_IS_CONFIG       = `I_WEIGHTS_IS_CONFIG      ,
+    I_WEIGHTS_IS_CIN_LAST     = `I_WEIGHTS_IS_CIN_LAST    ,
+    I_WEIGHTS_KERNEL_W_1      = `I_WEIGHTS_KERNEL_W_1     , 
+    TUSER_WIDTH_WEIGHTS_OUT   = `TUSER_WIDTH_WEIGHTS_OUT  ,
+    //  CONV TUSER INDICES   
+    I_IS_NOT_MAX              = `I_IS_NOT_MAX             ,
+    I_IS_MAX                  = `I_IS_MAX                 ,
+    I_IS_1X1                  = `I_IS_1X1                 ,
+    I_IS_LRELU                = `I_IS_LRELU               ,
+    I_IS_TOP_BLOCK            = `I_IS_TOP_BLOCK           ,
+    I_IS_BOTTOM_BLOCK         = `I_IS_BOTTOM_BLOCK        ,
+    I_IS_COLS_1_K2            = `I_IS_COLS_1_K2           ,
+    I_IS_CONFIG               = `I_IS_CONFIG              ,
+    I_IS_CIN_LAST             = `I_IS_CIN_LAST            ,
+    I_KERNEL_W_1              = `I_KERNEL_W_1             , 
+    TUSER_WIDTH_CONV_IN       = `TUSER_WIDTH_CONV_IN      
+  )(
     aclk                  ,
     aresetn               ,
     s_axis_pixels_1_tready, 
@@ -25,62 +69,13 @@ module axis_input_pipe (
     m_axis_weights_tdata  
   ); 
 
-  parameter UNITS              = 2;
-  parameter WORD_WIDTH         = 8; 
-  parameter KERNEL_H_MAX       = 3;   // odd number
-  parameter KERNEL_W_MAX       = 3;
-  parameter BEATS_CONFIG_3X3_1 = 21-1;
-  parameter BEATS_CONFIG_1X1_1 = 13-1;
 
   localparam UNITS_EDGES       = UNITS + KERNEL_H_MAX-1;
   localparam IM_IN_S_DATA_WORDS= 2**$clog2(UNITS_EDGES);
   localparam BITS_CONFIG_COUNT = $clog2(BEATS_CONFIG_3X3_1);
   localparam BITS_KERNEL_H     = $clog2(KERNEL_H_MAX);
   localparam BITS_KERNEL_W     = $clog2(KERNEL_W_MAX);
-
   localparam TKEEP_WIDTH_IM_IN = (WORD_WIDTH*IM_IN_S_DATA_WORDS)/8;
-  /*
-    IMAGE TUSER INDICES
-  */
-  parameter I_IMAGE_IS_NOT_MAX       = 0;
-  parameter I_IMAGE_IS_MAX           = I_IMAGE_IS_NOT_MAX + 1;
-  parameter I_IMAGE_IS_LRELU         = I_IMAGE_IS_MAX     + 1;
-  parameter I_IMAGE_KERNEL_H_1       = I_IMAGE_IS_LRELU   + 1; 
-  parameter TUSER_WIDTH_IM_SHIFT_IN  = I_IMAGE_KERNEL_H_1 + BITS_KERNEL_H;
-  parameter TUSER_WIDTH_IM_SHIFT_OUT = I_IMAGE_IS_LRELU   + 1;
-
-  parameter CORES             = 4;
-  parameter IM_CIN_MAX        = 1024;
-  parameter IM_BLOCKS_MAX     = 32;
-  parameter IM_COLS_MAX       = 384;
-  parameter WEIGHTS_DMA_BITS  = 32;
-  parameter BRAM_LATENCY      = 2;
-  
-  /*
-    WEIGHTS TUSER INDICES
-  */
-  parameter I_WEIGHTS_IS_TOP_BLOCK    = 0;
-  parameter I_WEIGHTS_IS_BOTTOM_BLOCK = I_WEIGHTS_IS_TOP_BLOCK    + 1;
-  parameter I_WEIGHTS_IS_1X1          = I_WEIGHTS_IS_BOTTOM_BLOCK + 1;
-  parameter I_WEIGHTS_IS_COLS_1_K2    = I_WEIGHTS_IS_1X1          + 1;
-  parameter I_WEIGHTS_IS_CONFIG       = I_WEIGHTS_IS_COLS_1_K2    + 1;
-  parameter I_WEIGHTS_IS_ACC_LAST     = I_WEIGHTS_IS_CONFIG       + 1;
-  parameter I_WEIGHTS_KERNEL_W_1      = I_WEIGHTS_IS_ACC_LAST     + 1; 
-  parameter TUSER_WIDTH_WEIGHTS_OUT   = I_WEIGHTS_KERNEL_W_1 + BITS_KERNEL_W;
-  /*
-    CONV TUSER INDICES
-  */
-  parameter I_IS_NOT_MAX         = 0;
-  parameter I_IS_MAX             = I_IS_NOT_MAX      + 1;
-  parameter I_IS_LRELU           = I_IS_MAX          + 1;
-  parameter I_IS_TOP_BLOCK       = I_IS_LRELU        + 1;
-  parameter I_IS_BOTTOM_BLOCK    = I_IS_TOP_BLOCK    + 1;
-  parameter I_IS_1X1             = I_IS_BOTTOM_BLOCK + 1;
-  parameter I_IS_COLS_1_K2       = I_IS_1X1          + 1;
-  parameter I_IS_CONFIG          = I_IS_COLS_1_K2    + 1;
-  parameter I_IS_ACC_LAST        = I_IS_CONFIG       + 1;
-  parameter I_KERNEL_W_1         = I_IS_ACC_LAST     + 1; 
-  parameter TUSER_WIDTH_CONV_IN  = BITS_KERNEL_W + I_KERNEL_W_1;  
 
   input wire aclk;
   input wire aresetn;
@@ -203,13 +198,13 @@ module axis_input_pipe (
     .WEIGHTS_DMA_BITS    (WEIGHTS_DMA_BITS   ),
     .BEATS_CONFIG_3X3_1  (BEATS_CONFIG_3X3_1 ),
     .BEATS_CONFIG_1X1_1  (BEATS_CONFIG_1X1_1 ),
-    .BRAM_LATENCY        (BRAM_LATENCY       ),   
+    .LATENCY_BRAM        (LATENCY_BRAM       ),   
     .I_WEIGHTS_IS_TOP_BLOCK      (I_WEIGHTS_IS_TOP_BLOCK     ),
     .I_WEIGHTS_IS_BOTTOM_BLOCK   (I_WEIGHTS_IS_BOTTOM_BLOCK  ),
     .I_WEIGHTS_IS_1X1            (I_WEIGHTS_IS_1X1           ),
     .I_WEIGHTS_IS_COLS_1_K2      (I_WEIGHTS_IS_COLS_1_K2     ),
     .I_WEIGHTS_IS_CONFIG         (I_WEIGHTS_IS_CONFIG        ),
-    .I_WEIGHTS_IS_ACC_LAST       (I_WEIGHTS_IS_ACC_LAST      ),
+    .I_WEIGHTS_IS_CIN_LAST       (I_WEIGHTS_IS_CIN_LAST      ),
     .I_WEIGHTS_KERNEL_W_1        (I_WEIGHTS_KERNEL_W_1       ),
     .TUSER_WIDTH_WEIGHTS_OUT(TUSER_WIDTH_WEIGHTS_OUT)
   ) WEIGHTS_ROTATOR (
@@ -245,12 +240,12 @@ module axis_input_pipe (
   assign m_axis_tuser [I_IS_MAX         ] = pixels_m_user  [I_IMAGE_IS_MAX    ];
   assign m_axis_tuser [I_IS_LRELU       ] = pixels_m_user  [I_IMAGE_IS_LRELU  ];
 
+  assign m_axis_tuser [I_IS_1X1         ] = weights_m_user [I_WEIGHTS_IS_1X1         ];
   assign m_axis_tuser [I_IS_TOP_BLOCK   ] = weights_m_user [I_WEIGHTS_IS_TOP_BLOCK   ] && m_axis_tvalid;
   assign m_axis_tuser [I_IS_BOTTOM_BLOCK] = weights_m_user [I_WEIGHTS_IS_BOTTOM_BLOCK] && m_axis_tvalid;
-  assign m_axis_tuser [I_IS_1X1         ] = weights_m_user [I_WEIGHTS_IS_1X1         ];
   assign m_axis_tuser [I_IS_COLS_1_K2   ] = weights_m_user [I_WEIGHTS_IS_COLS_1_K2   ] && m_axis_tvalid;
   assign m_axis_tuser [I_IS_CONFIG      ] = weights_m_user [I_WEIGHTS_IS_CONFIG      ];
-  assign m_axis_tuser [I_IS_ACC_LAST    ] = weights_m_user [I_WEIGHTS_IS_ACC_LAST    ] && m_axis_tvalid;
+  assign m_axis_tuser [I_IS_CIN_LAST    ] = weights_m_user [I_WEIGHTS_IS_CIN_LAST    ] && m_axis_tvalid;
   assign m_axis_tuser [I_KERNEL_W_1 + BITS_KERNEL_W-1: I_KERNEL_W_1] = weights_m_user [I_WEIGHTS_KERNEL_W_1 + BITS_KERNEL_W-1: I_WEIGHTS_KERNEL_W_1];
 
   /*
