@@ -1,4 +1,4 @@
-`include "params.v";
+`include "params.v"
 
 module axis_input_pipe_tb ();
   timeunit 1ns;
@@ -37,7 +37,7 @@ module axis_input_pipe_tb ();
   localparam IM_CIN_MAX            = `IM_CIN_MAX    ;
   localparam IM_BLOCKS_MAX         = `IM_BLOCKS_MAX ;
   localparam IM_COLS_MAX           = `IM_COLS_MAX   ;
-  localparam WEIGHTS_DMA_BITS      = `WEIGHTS_DMA_BITS;
+  localparam S_WEIGHTS_WIDTH       = `S_WEIGHTS_WIDTH ;
   localparam LRELU_ALPHA           = `LRELU_ALPHA;
   localparam BITS_EXP_CONFIG       = `BITS_EXP_CONFIG      ;
   localparam BITS_FRA_CONFIG       = `BITS_FRA_CONFIG      ;
@@ -101,8 +101,8 @@ module axis_input_pipe_tb ();
   logic s_axis_weights_tready;
   logic s_axis_weights_tvalid;
   logic s_axis_weights_tlast ;
-  logic [WEIGHTS_DMA_BITS   -1:0] s_axis_weights_tdata;
-  logic [WEIGHTS_DMA_BITS/8 -1:0] s_axis_weights_tkeep;
+  logic [S_WEIGHTS_WIDTH    -1:0] s_axis_weights_tdata;
+  logic [S_WEIGHTS_WIDTH /8 -1:0] s_axis_weights_tkeep;
 
   logic m_axis_tready;
   logic m_axis_tvalid;
@@ -129,7 +129,7 @@ module axis_input_pipe_tb ();
     .IM_CIN_MAX                (IM_CIN_MAX      ),
     .IM_BLOCKS_MAX             (IM_BLOCKS_MAX   ),
     .IM_COLS_MAX               (IM_COLS_MAX     ),
-    .WEIGHTS_DMA_BITS          (WEIGHTS_DMA_BITS),
+    .S_WEIGHTS_WIDTH           (S_WEIGHTS_WIDTH ),
     .LATENCY_BRAM              (LATENCY_BRAM    ),
     .I_WEIGHTS_IS_TOP_BLOCK    (I_WEIGHTS_IS_TOP_BLOCK   ),
     .I_WEIGHTS_IS_BOTTOM_BLOCK (I_WEIGHTS_IS_BOTTOM_BLOCK),
@@ -154,7 +154,7 @@ module axis_input_pipe_tb ();
 
   logic [WORD_WIDTH-1:0] s_data_pixels_1 [IM_IN_S_DATA_WORDS-1:0];
   logic [WORD_WIDTH-1:0] s_data_pixels_2 [IM_IN_S_DATA_WORDS-1:0];
-  logic [7:0]            s_data_weights  [WEIGHTS_DMA_BITS/8-1:0];
+  logic [7:0]            s_data_weights  [S_WEIGHTS_WIDTH /8-1:0];
   logic [WORD_WIDTH-1:0] m_data_pixels_1 [UNITS-1:0];
   logic [WORD_WIDTH-1:0] m_data_pixels_2 [UNITS-1:0];
   logic [WORD_WIDTH-1:0] m_data_weights  [CORES-1:0][KERNEL_W_MAX-1:0];
@@ -179,8 +179,8 @@ module axis_input_pipe_tb ();
   
   localparam BEATS_CONFIG_1   = K == 1 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
   localparam W_BEATS          = 1 + BEATS_CONFIG_1+1 + K*IM_CIN;
-  localparam WORDS_W          = (W_BEATS-1) * KERNEL_W_MAX * CORES + WEIGHTS_DMA_BITS/WORD_WIDTH;
-  localparam W_WORDS_PER_BEAT = WEIGHTS_DMA_BITS/WORD_WIDTH;
+  localparam WORDS_W          = (W_BEATS-1) * KERNEL_W_MAX * CORES + S_WEIGHTS_WIDTH /WORD_WIDTH;
+  localparam W_WORDS_PER_BEAT = S_WEIGHTS_WIDTH /WORD_WIDTH;
 
   int s_words_1 = 0; 
   int s_words_2 = 0; 
