@@ -130,27 +130,27 @@ lappend IP_NAMES $IP_NAME
 create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.Operation_Type {Fixed_to_float} CONFIG.A_Precision_Type {Custom} CONFIG.C_A_Exponent_Width $WORD_WIDTH_CONV_OUT CONFIG.Flow_Control {NonBlocking} CONFIG.C_A_Fraction_Width {0} CONFIG.Result_Precision_Type {Single} CONFIG.C_Result_Exponent_Width {8} CONFIG.C_Result_Fraction_Width {24} CONFIG.C_Accum_Msb {32} CONFIG.C_Accum_Lsb {-31} CONFIG.C_Accum_Input_Msb {32} CONFIG.C_Mult_Usage {No_Usage} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Latency {6} CONFIG.C_Rate {1} CONFIG.Has_ACLKEN {true} CONFIG.Has_ARESETn {false} ] [get_ips $IP_NAME]
 
-set IP_NAME "float_32_ma_active"
+set IP_NAME "fma_1_active"
 lappend IP_NAMES $IP_NAME
 set LATENCY 16
 set TUSER_WIDTH $TUSER_WIDTH_LRELU_FMA_1_IN
 create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME
 set_property -dict [list  CONFIG.Operation_Type {FMA} CONFIG.Add_Sub_Value {Add} CONFIG.Flow_Control {NonBlocking} CONFIG.Has_ACLKEN {true} CONFIG.Has_ARESETn {false} CONFIG.Has_A_TLAST {false} CONFIG.Has_A_TUSER {true} CONFIG.A_TUSER_Width $TUSER_WIDTH CONFIG.A_Precision_Type {Single} CONFIG.C_A_Exponent_Width {8} CONFIG.C_A_Fraction_Width {24} CONFIG.Result_Precision_Type {Single} CONFIG.C_Result_Exponent_Width {8} CONFIG.C_Result_Fraction_Width {24} CONFIG.C_Mult_Usage {Medium_Usage} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Latency $LATENCY CONFIG.C_Rate {1} CONFIG.RESULT_TLAST_Behv {Null}] [get_ips $IP_NAME]
 
-set IP_NAME "float_32_ma"
+set IP_NAME "fma_1"
 lappend IP_NAMES $IP_NAME
 set LATENCY 16
 create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME
 set_property -dict [list  CONFIG.Operation_Type {FMA} CONFIG.Add_Sub_Value {Add} CONFIG.C_Mult_Usage {Medium_Usage} CONFIG.Flow_Control {NonBlocking} CONFIG.Has_ACLKEN {true} CONFIG.Has_ACLKEN {true} CONFIG.Has_ARESETn {false} CONFIG.A_Precision_Type {Single} CONFIG.C_A_Exponent_Width {8} CONFIG.C_A_Fraction_Width {24} CONFIG.Result_Precision_Type {Single} CONFIG.C_Result_Exponent_Width {8} CONFIG.C_Result_Fraction_Width {24} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Latency $LATENCY CONFIG.C_Rate {1}] [get_ips $IP_NAME]
 
-set IP_NAME "float_16_ma_active"
+set IP_NAME "fma_2_active"
 lappend IP_NAMES $IP_NAME
 set LATENCY 15
 set TUSER_WIDTH $TUSER_WIDTH_MAXPOOL_IN
 create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME
 set_property -dict [list  CONFIG.Operation_Type {FMA} CONFIG.Add_Sub_Value {Add} CONFIG.A_Precision_Type {Half} CONFIG.Flow_Control {NonBlocking} CONFIG.Has_ACLKEN {true} CONFIG.Has_ARESETn {false} CONFIG.C_A_Exponent_Width {5} CONFIG.Has_A_TUSER {true} CONFIG.A_TUSER_Width $TUSER_WIDTH CONFIG.C_A_Fraction_Width {11} CONFIG.Result_Precision_Type {Half} CONFIG.C_Result_Exponent_Width {5} CONFIG.C_Result_Fraction_Width {11} CONFIG.C_Accum_Msb {32} CONFIG.C_Accum_Lsb {-24} CONFIG.C_Accum_Input_Msb {15} CONFIG.C_Mult_Usage {Medium_Usage} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Latency $LATENCY CONFIG.C_Rate {1}] [get_ips $IP_NAME]
 
-set IP_NAME "float_16_ma"
+set IP_NAME "fma_2"
 lappend IP_NAMES $IP_NAME
 set LATENCY 15
 create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME

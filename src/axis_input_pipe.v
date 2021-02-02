@@ -19,7 +19,7 @@ module axis_input_pipe
     IM_CIN_MAX                = `IM_CIN_MAX               ,
     IM_BLOCKS_MAX             = `IM_BLOCKS_MAX            ,
     IM_COLS_MAX               = `IM_COLS_MAX              ,
-    WEIGHTS_DMA_BITS          = `WEIGHTS_DMA_BITS         ,
+    S_WEIGHTS_WIDTH           = `S_WEIGHTS_WIDTH          ,
     LATENCY_BRAM              = `LATENCY_BRAM             ,
     // WEIGHTS TUSER INDICES 
     I_WEIGHTS_IS_TOP_BLOCK    = `I_WEIGHTS_IS_TOP_BLOCK   ,
@@ -95,8 +95,8 @@ module axis_input_pipe
   output wire s_axis_weights_tready;
   input  wire s_axis_weights_tvalid;
   input  wire s_axis_weights_tlast ;
-  input  wire [WEIGHTS_DMA_BITS   -1:0] s_axis_weights_tdata;
-  input  wire [WEIGHTS_DMA_BITS/8 -1:0] s_axis_weights_tkeep;
+  input  wire [S_WEIGHTS_WIDTH    -1:0] s_axis_weights_tdata;
+  input  wire [S_WEIGHTS_WIDTH /8 -1:0] s_axis_weights_tkeep;
 
   wire im_mux_m_ready;
   wire im_mux_m_valid;
@@ -195,7 +195,7 @@ module axis_input_pipe
     .IM_CIN_MAX          (IM_CIN_MAX         ),
     .IM_BLOCKS_MAX       (IM_BLOCKS_MAX      ),
     .IM_COLS_MAX         (IM_COLS_MAX        ),
-    .WEIGHTS_DMA_BITS    (WEIGHTS_DMA_BITS   ),
+    .S_WEIGHTS_WIDTH     (S_WEIGHTS_WIDTH    ),
     .BEATS_CONFIG_3X3_1  (BEATS_CONFIG_3X3_1 ),
     .BEATS_CONFIG_1X1_1  (BEATS_CONFIG_1X1_1 ),
     .LATENCY_BRAM        (LATENCY_BRAM       ),   

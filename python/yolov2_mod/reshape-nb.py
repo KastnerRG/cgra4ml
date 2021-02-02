@@ -7,12 +7,12 @@ from yolov2_mod_numpy import YOLOv2_Modified_Numpy
 
 layers = pickle.load(open('yolov2_mod_int8_dict.pickle', 'rb'))
 
-i = 4
+i = 1
 
 CONV_UNITS = 4
 MEMBERS    = 4
 COPIES     = 2
-GROUPS     = 1
+GROUPS     = 2
 CORES      = MEMBERS*COPIES*GROUPS
 WORD_WIDTH_CONFIG = 8
 
@@ -24,7 +24,7 @@ KW_MAX     = 3
 KH_MAX     = 3
 CIN_MAX    = 1024
 COLS_MAX   = 384
-BLOCKS_MAX = 32
+BLOCKS_MAX = COLS_MAX//CONV_UNITS
 
 assert KH_MAX  % 2 == 1
 assert MEMBERS % 2 == 0
@@ -67,6 +67,16 @@ def fill_invalid_smcg(arr, KW, KW_MAX, CORES, max_factor):
 
 # %%
 def get_lrelu_config(i, layers, KW_MAX, CORES, prefix_max, prefix_lrelu):
+    '''
+    LRelu config are accepted in (beats,CGM) format
+    * Say M = 4, S = 3
+    * Each CG needs 
+        - SM   =12 words of float16
+        - SM*2 =24 words of int8
+    * But are written horizontally into memory
+    * SM*2 (=24) words are flattened, broken into M (=4) per beat in parallel, as B (=6) beats
+    * M dimension contains M/2 (=2) float16 words broken as M (=4) int8 words
+    '''
 
     layer = layers[f'{prefix_lrelu}{i}']
 
@@ -216,6 +226,7 @@ CONFIG
 '''
 _,H,W,CIN = layers[f'{prefix_conv}{i}'].in_data.shape
 BLOCKS    = H // CONV_UNITS
+BLOCKS_PER_ARR = BLOCKS // max_factor
 
 BITS_KW_MAX     = int(np.ceil(np.log2(KW_MAX    )))
 BITS_KH_MAX     = int(np.ceil(np.log2(KH_MAX    )))
@@ -228,7 +239,7 @@ weights_config |= (KW    -1)
 weights_config |= (KH    -1) << (BITS_KW_MAX)
 weights_config |= (CIN   -1) << (BITS_KW_MAX + BITS_KH_MAX)
 weights_config |= (W     -1) << (BITS_KW_MAX + BITS_KH_MAX + BITS_CIN_MAX)
-weights_config |= (BLOCKS-1) << (BITS_KW_MAX + BITS_KH_MAX + BITS_CIN_MAX + BITS_COLS_MAX)
+weights_config |= (BLOCKS_PER_ARR-1) << (BITS_KW_MAX + BITS_KH_MAX + BITS_CIN_MAX + BITS_COLS_MAX)
 weights_config = np.frombuffer(np.int32(weights_config).tobytes(),np.int8)
 weights_config = np.repeat(weights_config[np.newaxis,...],repeats=ITR,axis=0)
 
@@ -238,10 +249,6 @@ ADD CONFIG BEATS
 weights_dma_beats = np.concatenate([weights_config,weights_beats.reshape(ITR,-1)], axis=1)
 
 assert weights_dma_beats.shape == (ITR, 4 + (LRELU_BEATS + CIN*KH)*CORES*KW_MAX)
-
-
-# %%
-LRELU_BEATS
 
 
 # %%
@@ -317,6 +324,10 @@ im_arrays[0] = np.concatenate([config [np.newaxis,:], im_arrays[0].reshape(BLOCK
 for m in range(max_factor):
     np.savetxt(f"D:/Vision Traffic/soc/data/{i}_conv_in_{m}.txt", im_arrays[m].flatten(), fmt='%d')
 
+
+# %%
+
+
 # %% [markdown]
 # # Reshape Conv Out = LeakyReLu in
 # 
@@ -388,6 +399,13 @@ assert image_out.shape == (ITR, (21 if KW==3 else 13) + BLOCKS_PER_ARR*W*SUB_COR
 # %%
 np.savetxt(f"D:/Vision Traffic/soc/data/{i}_conv_out.txt", image_out[0].flatten(), fmt='%d')
 
+
+# %%
+image_out_fpga = np.loadtxt(f"D:/Vision Traffic/soc/data/{i}_conv_out_fpga.txt",np.int32)
+
+error = image_out_fpga - image_out[0].flatten()
+np.sum(error)
+
 # %% [markdown]
 # # Leaky Relu Out / Max In
 # 
@@ -420,18 +438,79 @@ sum_abs_error = np.sum(np.abs(error))
 
 np.savetxt("where_err.txt",np.argwhere(error > 1),fmt='%d')
 
-print(np.sum(error>1))
+print(np.sum(abs(error)>1))
 print(sum_abs_error/image_out_fpga.size)
+
+
+# %%
+layers[f'{prefix_lrelu}{i}'].requantize_params['B'][0,1,1,0:4]
+
+
+# %%
+error = error.reshape((BLOCKS_PER_ARR,W,SUB_CORES,MEMBERS,COPIES,GROUPS,CONV_UNITS))
+np.savetxt("where_err.txt",np.argwhere(error > 1),fmt='%d')
+
+
+# %%
+BLOCKS_PER_ARR
+
+
+# %%
+lrelu_out_mcgu = lrelu_out[0].reshape((BLOCKS_PER_ARR,W,SUB_CORES,MEMBERS,COPIES,GROUPS,CONV_UNITS))
+
+lrelu_out_mcgu[0,4,0,1,0,0,:]
+
+
+# %%
+fpga_mcgu = image_out_fpga.reshape((BLOCKS_PER_ARR,W,SUB_CORES,MEMBERS,COPIES,GROUPS,CONV_UNITS))
+
+fpga_mcgu[0,4,0,1,0,0,:]
+
+
+# %%
+image_conv = image[0].reshape((BLOCKS_PER_ARR,W,SUB_CORES,COPIES,MEMBERS,GROUPS,CONV_UNITS))
+
+image_conv[0,4,0,0,1,0,:]
+
+
+# %%
+b = layers[f'{prefix_lrelu}{i}'].requantize_params['B'][0,0,0,0].astype(np.float16)
+a = layers[f'{prefix_lrelu}{i}'].requantize_params['A'][0,0,0,0].astype(np.float16)
+d = layers[f'{prefix_lrelu}{i}'].requantize_params['D'].astype(np.float16)
+
+b, a, d
+
+
+# %%
+(a*(2330) + b) + d
+
+
+# %%
+a*(2330) + b
+
+
+# %%
+a,b
+
+
+# %%
+print(np.sum(abs(error[:,:,0,0,0,0,0])>1))
+
+
+# %%
+error[:,:,0,1,0,0,0]
 
 # %% [markdown]
 # # System Out
 # ```(1, H, W, CIN) -> (ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS_EDGES)```
 
 # %%
+i = 1
+
+
 is_max = False
 copy_factor = 1
 flip_cols = True
-
 if f'{prefix_max}{i}' in layers.keys():
     is_max = True
     copy_factor = 2
@@ -453,7 +532,7 @@ image_padded = np.pad(image,((0,0),(0,0),(0,0),(0,0),(0,0),(KH_MAX//2,KH_MAX//2)
 
 
 # %%
-image_out_fpga = np.loadtxt(f"D:/Vision Traffic/soc/data/{i}_max_unit_out_fpga.txt",np.int8)
+image_out_fpga = np.loadtxt(f"D:/Vision Traffic/soc/data/{i}_max_out_fpga.txt",np.int8)
 fpga = image_out_fpga.reshape((BLOCKS_PER_ARR,W,SUB_CORES,CORES//copy_factor,CONV_UNITS_EDGES))
 
 '''
@@ -468,7 +547,12 @@ for s in range(SUB_CORES):
 error = image_padded[0] - fpga
 sum_abs_error = np.sum(np.abs(error))
 
+print(np.sum(error > 1))
 print(sum_abs_error/image_out_fpga.size)
+
+
+# %%
+np.savetxt("where_err.txt",np.argwhere(error > 1),fmt='%d')
 
 
 # %%

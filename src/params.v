@@ -3,17 +3,17 @@ Parameters of the system. Written from build.tcl
 */
 
 `define UNITS    4  
-`define GROUPS   1 
+`define GROUPS   2 
 `define COPIES   2 
 `define MEMBERS  4
-`define CORES    8
+`define CORES    16
 
 `define WORD_WIDTH          8         
 `define WORD_WIDTH_ACC      32    
 `define KERNEL_H_MAX        3      
 `define KERNEL_W_MAX        3      
-`define BEATS_CONFIG_3X3_1  21
-`define BEATS_CONFIG_1X1_1  13
+`define BEATS_CONFIG_3X3_1  20
+`define BEATS_CONFIG_1X1_1  12
 
 `define BITS_KERNEL_H  2
 `define BITS_KERNEL_W  2
@@ -30,7 +30,7 @@ Parameters of the system. Written from build.tcl
 `define IM_CIN_MAX       1024      
 `define IM_BLOCKS_MAX    64   
 `define IM_COLS_MAX      384     
-`define WEIGHTS_DMA_BITS 32
+`define S_WEIGHTS_WIDTH  32
 `define LRELU_ALPHA      11878     
 /*
   LATENCIES & float widths

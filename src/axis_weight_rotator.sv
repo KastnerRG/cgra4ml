@@ -34,7 +34,7 @@ module axis_weight_rotator
     IM_CIN_MAX         ,
     IM_BLOCKS_MAX      ,
     IM_COLS_MAX        ,
-    WEIGHTS_DMA_BITS   ,
+    S_WEIGHTS_WIDTH    ,
     BEATS_CONFIG_3X3_1 ,
     BEATS_CONFIG_1X1_1 ,
     LATENCY_BRAM       ,
@@ -80,8 +80,8 @@ module axis_weight_rotator
   output logic s_axis_tready;
   input  logic s_axis_tvalid;
   input  logic s_axis_tlast ;
-  input  logic [WEIGHTS_DMA_BITS   -1:0] s_axis_tdata;
-  input  logic [WEIGHTS_DMA_BITS/8 -1:0] s_axis_tkeep;
+  input  logic [S_WEIGHTS_WIDTH    -1:0] s_axis_tdata;
+  input  logic [S_WEIGHTS_WIDTH /8 -1:0] s_axis_tkeep;
 
   input  logic m_axis_tready;
   output logic m_axis_tvalid;
@@ -95,7 +95,7 @@ module axis_weight_rotator
   logic dw_m_ready, dw_m_valid, dw_m_last, dw_s_valid, dw_s_ready;
   logic [M_WIDTH -1:0] dw_m_data_flat;
 
-  logic [WORD_WIDTH-1:0] s_data    [WEIGHTS_DMA_BITS/WORD_WIDTH-1:0];
+  logic [WORD_WIDTH-1:0] s_data    [S_WEIGHTS_WIDTH /WORD_WIDTH-1:0];
   logic [WORD_WIDTH-1:0] m_data    [CORES-1:0][KERNEL_W_MAX-1:0];
   logic [WORD_WIDTH-1:0] dw_m_data [CORES-1:0][KERNEL_W_MAX-1:0];
 
@@ -306,7 +306,7 @@ module axis_weight_rotator
 
   /*
     Extract s_data into inputs of ref registers
-    This will give error if SUM_BITS > WEIGHTS_DMA_BITS
+    This will give error if SUM_BITS > S_WEIGHTS_WIDTH 
   */
   localparam SUM_BITS = BITS_KERNEL_W + BITS_KERNEL_H + BITS_IM_CIN + BITS_IM_COLS + BITS_IM_BLOCKS;
   assign {s_blocks_1, s_cols_1, s_cin_1, s_kh_1, s_kw_1} = s_axis_tdata[SUM_BITS-1:0];

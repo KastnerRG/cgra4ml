@@ -21,7 +21,7 @@ module axis_weight_rotator_tb ();
   localparam IM_CIN_MAX         = `IM_CIN_MAX        ;
   localparam IM_BLOCKS_MAX      = `IM_BLOCKS_MAX     ;
   localparam IM_COLS_MAX        = `IM_COLS_MAX       ;
-  localparam WEIGHTS_DMA_BITS   = `WEIGHTS_DMA_BITS  ;
+  localparam S_WEIGHTS_WIDTH    = `S_WEIGHTS_WIDTH   ;
   localparam BEATS_CONFIG_3X3_1 = `BEATS_CONFIG_3X3_1;
   localparam BEATS_CONFIG_1X1_1 = `BEATS_CONFIG_1X1_1;
 
@@ -41,7 +41,7 @@ module axis_weight_rotator_tb ();
   localparam BITS_CONFIG_COUNT    = $clog2(BEATS_CONFIG_3X3_1+1);
   localparam M_WIDTH              = WORD_WIDTH*CORES*KERNEL_W_MAX;
 
-  localparam BRAM_W_WIDTH = WEIGHTS_DMA_BITS;
+  localparam BRAM_W_WIDTH = S_WEIGHTS_WIDTH ;
   localparam BRAM_R_WIDTH = M_WIDTH;
   localparam BRAM_R_DEPTH = KERNEL_H_MAX * IM_CIN_MAX + BEATS_CONFIG_3X3_1;
   localparam BRAM_W_DEPTH = BRAM_R_DEPTH * BRAM_R_WIDTH / BRAM_W_WIDTH;
@@ -56,8 +56,8 @@ module axis_weight_rotator_tb ();
   logic s_axis_tready;
   logic s_axis_tvalid;
   logic s_axis_tlast ;
-  logic [WEIGHTS_DMA_BITS   -1:0] s_axis_tdata;
-  logic [WEIGHTS_DMA_BITS/8 -1:0] s_axis_tkeep;
+  logic [S_WEIGHTS_WIDTH    -1:0] s_axis_tdata;
+  logic [S_WEIGHTS_WIDTH /8 -1:0] s_axis_tkeep;
 
   logic m_axis_tready;
   logic m_axis_tvalid;
@@ -73,7 +73,7 @@ module axis_weight_rotator_tb ();
     .IM_CIN_MAX          (IM_CIN_MAX         ),
     .IM_BLOCKS_MAX       (IM_BLOCKS_MAX      ),
     .IM_COLS_MAX         (IM_COLS_MAX        ),
-    .WEIGHTS_DMA_BITS    (WEIGHTS_DMA_BITS   ),
+    .S_WEIGHTS_WIDTH     (S_WEIGHTS_WIDTH    ),
     .BEATS_CONFIG_3X3_1  (BEATS_CONFIG_3X3_1 ),
     .BEATS_CONFIG_1X1_1  (BEATS_CONFIG_1X1_1 ),
     .LATENCY_BRAM        (LATENCY_BRAM       ),   
@@ -87,7 +87,7 @@ module axis_weight_rotator_tb ();
     .TUSER_WIDTH_WEIGHTS_OUT(TUSER_WIDTH_WEIGHTS_OUT)
   ) pipe (.*);
 
-  logic [7:0] s_data_weights [WEIGHTS_DMA_BITS/8-1:0];
+  logic [7:0] s_data_weights [S_WEIGHTS_WIDTH /8-1:0];
   logic [WORD_WIDTH-1:0] m_data_weights [CORES-1:0][KERNEL_W_MAX-1:0];
 
   assign {>>{s_axis_tdata}} = s_data_weights;
@@ -99,8 +99,8 @@ module axis_weight_rotator_tb ();
   
   localparam BEATS_CONFIG_1 = K_1 == 0 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
   localparam W_BEATS = 1 + BEATS_CONFIG_1+1 + (K_1+1)*(CIN_1+1);
-  localparam W_WORDS = (W_BEATS-1) * KERNEL_W_MAX * CORES + WEIGHTS_DMA_BITS/WORD_WIDTH;
-  localparam W_WORDS_PER_BEAT = WEIGHTS_DMA_BITS/WORD_WIDTH;
+  localparam W_WORDS = (W_BEATS-1) * KERNEL_W_MAX * CORES + S_WEIGHTS_WIDTH /WORD_WIDTH;
+  localparam W_WORDS_PER_BEAT = S_WEIGHTS_WIDTH /WORD_WIDTH;
 
   int s_words_w = 0; 
 
