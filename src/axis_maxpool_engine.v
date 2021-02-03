@@ -1,4 +1,4 @@
-`include "params.v";
+`include "params.v"
 
 module axis_maxpool_engine 
   #(

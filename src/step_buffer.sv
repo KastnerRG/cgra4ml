@@ -87,9 +87,9 @@ module step_buffer  #(
   
     // N-delay'i slaves
 
-    input wire                      s_valid  [STEPS-1 : 0];
+    input wire [STEPS-1 : 0] s_valid;
+    input wire [STEPS-1 : 0] s_last ;
     input wire [WORD_WIDTH  - 1: 0] s_data   [STEPS-1 : 0];
-    input wire                      s_last   [STEPS-1 : 0];
     input wire [TUSER_WIDTH - 1: 0] s_user   [STEPS-1 : 0];
 
     // Hold'i master

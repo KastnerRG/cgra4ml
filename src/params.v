@@ -2,11 +2,14 @@
 Parameters of the system. Written from build.tcl
 */
 
-`define UNITS    4  
+`define UNITS    8  
 `define GROUPS   2 
 `define COPIES   2 
-`define MEMBERS  4
-`define CORES    16
+`define MEMBERS  8
+
+`define CORES              32
+`define UNITS_EDGES        10
+`define IM_IN_S_DATA_WORDS 16
 
 `define WORD_WIDTH          8         
 `define WORD_WIDTH_ACC      32    
@@ -15,8 +18,11 @@ Parameters of the system. Written from build.tcl
 `define BEATS_CONFIG_3X3_1  20
 `define BEATS_CONFIG_1X1_1  12
 
-`define BITS_KERNEL_H  2
-`define BITS_KERNEL_W  2
+`define BITS_KERNEL_H     2
+`define BITS_KERNEL_W     2
+`define TKEEP_WIDTH_IM_IN 16
+`define BITS_CONFIG_COUNT 5
+
 /*
   IMAGE TUSER INDICES
 */
@@ -28,9 +34,9 @@ Parameters of the system. Written from build.tcl
 `define TUSER_WIDTH_IM_SHIFT_OUT  3
 
 `define IM_CIN_MAX       1024      
-`define IM_BLOCKS_MAX    64   
+`define IM_BLOCKS_MAX    32   
 `define IM_COLS_MAX      384     
-`define S_WEIGHTS_WIDTH  32
+`define S_WEIGHTS_WIDTH 32
 `define LRELU_ALPHA      11878     
 /*
   LATENCIES & float widths

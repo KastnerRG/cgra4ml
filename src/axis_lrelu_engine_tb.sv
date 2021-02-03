@@ -28,8 +28,8 @@ module axis_lrelu_engine_tb();
   localparam WORD_WIDTH_CONFIG = 8 ;
 
   localparam LRELU_ALPHA                = `LRELU_ALPHA               ;
-  localparam BEATS_CONFIG_3X3_2         = `BEATS_CONFIG_3X3_2        ; // D(1) + A(2) + B(9*2) -2   = 21 -2 = 19
-  localparam BEATS_CONFIG_1X1_2         = `BEATS_CONFIG_1X1_2        ; // D(1) + A(2*3) + B(2*3) -2 = 13 -2 = 11
+  localparam BEATS_CONFIG_3X3_2         = `BEATS_CONFIG_3X3_1 -1     ; // D(1) + A(2) + B(9*2) -2   = 21 -2 = 19
+  localparam BEATS_CONFIG_1X1_2         = `BEATS_CONFIG_1X1_1 -1     ; // D(1) + A(2*3) + B(2*3) -2 = 13 -2 = 11
   localparam BITS_EXP_CONFIG            = `BITS_EXP_CONFIG           ;
   localparam BITS_FRA_CONFIG            = `BITS_FRA_CONFIG           ;
   localparam BITS_EXP_FMA_1             = `BITS_EXP_FMA_1            ;
