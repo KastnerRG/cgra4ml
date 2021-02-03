@@ -110,7 +110,6 @@ module conv_engine
   logic mul_m_valid [KERNEL_W_MAX-1: 0];
   logic mul_m_last  [KERNEL_W_MAX-1: 0];
   
-  logic bypass            [KERNEL_W_MAX-1: 0];
   logic bypass      [KERNEL_W_MAX-1: 0];
   logic bypass_next [KERNEL_W_MAX-1: 0];
 
@@ -184,8 +183,8 @@ module conv_engine
     .aclken     (s_ready                    ),
     .aresetn    (resetn                     ),
     .is_1x1     (s_user[I_IS_1X1]           ),
-    .s_valid    ({>>{{KERNEL_W_MAX{s_valid}}}}    ),
-    .s_last     ({>>{{KERNEL_W_MAX{s_last}}}}     ),
+    .s_valid    ({KERNEL_W_MAX{s_valid}}    ),
+    .s_last     ({KERNEL_W_MAX{s_last}}     ),
     .s_user     (s_step_pixels_repeated_user),
     .m_valid    (m_step_pixels_valid        ),
     .m_last     (m_step_pixels_last         ),
