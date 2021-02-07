@@ -95,7 +95,7 @@ module axis_weight_rotator_tb ();
 
   int status, file_weights;
 
-  string path_weights = "D:/Vision Traffic/soc/mem_yolo/txt/weights_rot_in.txt";
+  string path_weights = "D:/cnn-fpga/mem_yolo/txt/weights_rot_in.txt";
   
   localparam BEATS_CONFIG_1 = K_1 == 0 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
   localparam W_BEATS = 1 + BEATS_CONFIG_1+1 + (K_1+1)*(CIN_1+1);

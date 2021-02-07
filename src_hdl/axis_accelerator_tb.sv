@@ -23,12 +23,12 @@ module axis_accelerator_tb ();
   // localparam IM_HEIGHT  = 256;
   // localparam IM_WIDTH   = 384;
   // localparam IM_CIN     = 3;
-  // string path_im_1      = "D:/Vision Traffic/soc/data/1_conv_in_0.txt";
-  // string path_im_2      = "D:/Vision Traffic/soc/data/1_conv_in_1.txt";
-  // string path_weights   = "D:/Vision Traffic/soc/data/1_weights.txt";
-  // string path_conv_out  = "D:/Vision Traffic/soc/data/1_conv_out_fpga.txt";
-  // string path_lrelu_out = "D:/Vision Traffic/soc/data/1_lrelu_out_fpga.txt";
-  // string path_max_out   = "D:/Vision Traffic/soc/data/1_max_out_fpga.txt";
+  // string path_im_1      = "D:/cnn-fpga/data/1_conv_in_0.txt";
+  // string path_im_2      = "D:/cnn-fpga/data/1_conv_in_1.txt";
+  // string path_weights   = "D:/cnn-fpga/data/1_weights.txt";
+  // string path_conv_out  = "D:/cnn-fpga/data/1_conv_out_fpga.txt";
+  // string path_lrelu_out = "D:/cnn-fpga/data/1_lrelu_out_fpga.txt";
+  // string path_max_out   = "D:/cnn-fpga/data/1_max_out_fpga.txt";
 
   //############ LAYER 3 : 3x3, non-maxpool ####################
 
@@ -37,12 +37,12 @@ module axis_accelerator_tb ();
   localparam IM_HEIGHT  = 64;
   localparam IM_WIDTH   = 96;
   localparam IM_CIN     = 64;
-  string path_im_1      = "D:/Vision Traffic/soc/data/3_conv_in_0.txt";
-  string path_im_2      = "D:/Vision Traffic/soc/data/3_conv_in_1.txt";
-  string path_weights   = "D:/Vision Traffic/soc/data/3_weights.txt";
-  string path_conv_out  = "D:/Vision Traffic/soc/data/3_conv_out_fpga.txt";
-  string path_lrelu_out = "D:/Vision Traffic/soc/data/3_lrelu_out_fpga.txt";
-  string path_max_out   = "D:/Vision Traffic/soc/data/3_max_out_fpga.txt";
+  string path_im_1      = "D:/cnn-fpga/data/3_conv_in_0.txt";
+  string path_im_2      = "D:/cnn-fpga/data/3_conv_in_1.txt";
+  string path_weights   = "D:/cnn-fpga/data/3_weights.txt";
+  string path_conv_out  = "D:/cnn-fpga/data/3_conv_out_fpga.txt";
+  string path_lrelu_out = "D:/cnn-fpga/data/3_lrelu_out_fpga.txt";
+  string path_max_out   = "D:/cnn-fpga/data/3_max_out_fpga.txt";
 
   // // #################### LAYER 4 : 1x1 ####################
 
@@ -51,12 +51,12 @@ module axis_accelerator_tb ();
   // localparam IM_HEIGHT  = 64;
   // localparam IM_WIDTH   = 96;
   // localparam IM_CIN     = 128;
-  // string path_im_1      = "D:/Vision Traffic/soc/data/4_conv_in_0.txt";
-  // string path_im_2      = "D:/Vision Traffic/soc/data/4_conv_in_1.txt";
-  // string path_weights   = "D:/Vision Traffic/soc/data/4_weights.txt";
-  // string path_conv_out  = "D:/Vision Traffic/soc/data/4_conv_out_fpga.txt";
-  // string path_lrelu_out = "D:/Vision Traffic/soc/data/4_lrelu_out_fpga.txt";
-  // string path_max_out   = "D:/Vision Traffic/soc/data/4_max_out_fpga.txt";
+  // string path_im_1      = "D:/cnn-fpga/data/4_conv_in_0.txt";
+  // string path_im_2      = "D:/cnn-fpga/data/4_conv_in_1.txt";
+  // string path_weights   = "D:/cnn-fpga/data/4_weights.txt";
+  // string path_conv_out  = "D:/cnn-fpga/data/4_conv_out_fpga.txt";
+  // string path_lrelu_out = "D:/cnn-fpga/data/4_lrelu_out_fpga.txt";
+  // string path_max_out   = "D:/cnn-fpga/data/4_max_out_fpga.txt";
 
   /*
     SYSTEM PARAMS

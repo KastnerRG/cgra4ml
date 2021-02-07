@@ -110,9 +110,9 @@ module axis_lrelu_engine_tb();
   ) dut (.*);
 
   int status, file_data_in, file_data_out;
-  string data_in_path = "D:/Vision Traffic/soc/python/fpga_support/lrelu_input.txt";
-  string data_out_path_1 = "D:/Vision Traffic/soc/python/fpga_support/lrelu_output_1.txt";
-  string data_out_path_2 = "D:/Vision Traffic/soc/python/fpga_support/lrelu_output_2.txt";
+  string data_in_path = "D:/cnn-fpga/python/fpga_support/lrelu_input.txt";
+  string data_out_path_1 = "D:/cnn-fpga/python/fpga_support/lrelu_output_1.txt";
+  string data_out_path_2 = "D:/cnn-fpga/python/fpga_support/lrelu_output_2.txt";
 
   int config_beats = 0;
   int data_beats = 0;
