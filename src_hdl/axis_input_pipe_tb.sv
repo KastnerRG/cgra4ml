@@ -168,9 +168,9 @@ module axis_input_pipe_tb ();
 
   int status, file_im_1, file_im_2, file_weights;
 
-  string path_im_1 = "D:/Vision Traffic/soc/mem_yolo/txt/im_pipe_in.txt";
-  string path_im_2 = "D:/Vision Traffic/soc/mem_yolo/txt/im_pipe_in_2.txt";
-  string path_weights = "D:/Vision Traffic/soc/mem_yolo/txt/weights_rot_in.txt";
+  string path_im_1 = "D:/cnn-fpga/mem_yolo/txt/im_pipe_in.txt";
+  string path_im_2 = "D:/cnn-fpga/mem_yolo/txt/im_pipe_in_2.txt";
+  string path_weights = "D:/cnn-fpga/mem_yolo/txt/weights_rot_in.txt";
 
   localparam BEATS_2 = IM_BLOCKS * IM_COLS * IM_CIN;
   localparam WORDS_2 = BEATS_2 * UNITS_EDGES;

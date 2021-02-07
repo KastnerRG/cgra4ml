@@ -252,7 +252,7 @@ assert weights_dma_beats.shape == (ITR, 4 + (LRELU_BEATS + CIN*KH)*CORES*KW_MAX)
 
 
 # %%
-np.savetxt(f"D:/Vision Traffic/soc/data/{i}_weights.txt", weights_dma_beats[0].flatten(), fmt='%d')
+np.savetxt(f"D:/cnn-fpga/data/{i}_weights.txt", weights_dma_beats[0].flatten(), fmt='%d')
 
 # %% [markdown]
 # # Reshape Conv Image In
@@ -322,7 +322,7 @@ im_arrays[0] = np.concatenate([config [np.newaxis,:], im_arrays[0].reshape(BLOCK
 
 # %%
 for m in range(max_factor):
-    np.savetxt(f"D:/Vision Traffic/soc/data/{i}_conv_in_{m}.txt", im_arrays[m].flatten(), fmt='%d')
+    np.savetxt(f"D:/cnn-fpga/data/{i}_conv_in_{m}.txt", im_arrays[m].flatten(), fmt='%d')
 
 
 # %%
@@ -397,11 +397,11 @@ assert image_out.shape == (ITR, (21 if KW==3 else 13) + BLOCKS_PER_ARR*W*SUB_COR
 
 
 # %%
-np.savetxt(f"D:/Vision Traffic/soc/data/{i}_conv_out.txt", image_out[0].flatten(), fmt='%d')
+np.savetxt(f"D:/cnn-fpga/data/{i}_conv_out.txt", image_out[0].flatten(), fmt='%d')
 
 
 # %%
-image_out_fpga = np.loadtxt(f"D:/Vision Traffic/soc/data/{i}_conv_out_fpga.txt",np.int32)
+image_out_fpga = np.loadtxt(f"D:/cnn-fpga/data/{i}_conv_out_fpga.txt",np.int32)
 
 error = image_out_fpga - image_out[0].flatten()
 np.sum(error)
@@ -421,7 +421,7 @@ ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS = lrelu_out.shape
 
 
 # %%
-image_out_fpga = np.loadtxt(f"D:/Vision Traffic/soc/data/{i}_lrelu_out_fpga.txt",np.int8)
+image_out_fpga = np.loadtxt(f"D:/cnn-fpga/data/{i}_lrelu_out_fpga.txt",np.int8)
 fpga = image_out_fpga.reshape((BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS))
 
 '''
@@ -532,7 +532,7 @@ image_padded = np.pad(image,((0,0),(0,0),(0,0),(0,0),(0,0),(KH_MAX//2,KH_MAX//2)
 
 
 # %%
-image_out_fpga = np.loadtxt(f"D:/Vision Traffic/soc/data/{i}_max_out_fpga.txt",np.int8)
+image_out_fpga = np.loadtxt(f"D:/cnn-fpga/data/{i}_max_out_fpga.txt",np.int8)
 fpga = image_out_fpga.reshape((BLOCKS_PER_ARR,W,SUB_CORES,CORES//copy_factor,CONV_UNITS_EDGES))
 
 '''

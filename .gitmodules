@@ -1,0 +1,3 @@
+[submodule "src_c/zynq-oop-drivers"]
+	path = src_c/zynq-oop-drivers
+	url = https://github.com/abarajithan11/zynq-oop-drivers.git

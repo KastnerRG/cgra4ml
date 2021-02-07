@@ -171,8 +171,8 @@ module axis_maxpool_engine_tb();
     // im_height  = 256;
     // im_width   = 384;
     // im_cin     = 3;
-    // path_in    = "D:/Vision Traffic/soc/data/1_lrelu_out_fpga.txt";
-    // path_out   = "D:/Vision Traffic/soc/data/1_max_unit_out_fpga.txt";
+    // path_in    = "D:/cnn-fpga/data/1_lrelu_out_fpga.txt";
+    // path_out   = "D:/cnn-fpga/data/1_max_unit_out_fpga.txt";
 
     // // Layer 3: 3x3 Non maxpool
     // k          = 3;
@@ -181,8 +181,8 @@ module axis_maxpool_engine_tb();
     // im_height  = 64;
     // im_width   = 96;
     // im_cin     = 64;
-    // path_in      = "D:/Vision Traffic/soc/data/3_lrelu_out_fpga.txt";
-    // path_out     = "D:/Vision Traffic/soc/data/3_max_unit_out_fpga.txt";
+    // path_in      = "D:/cnn-fpga/data/3_lrelu_out_fpga.txt";
+    // path_out     = "D:/cnn-fpga/data/3_max_unit_out_fpga.txt";
 
     // Layer 4: 1x1 Non maxpool
     k          = 1;
@@ -191,8 +191,8 @@ module axis_maxpool_engine_tb();
     im_height  = 64;
     im_width   = 96;
     im_cin     = 128;
-    path_in      = "D:/Vision Traffic/soc/data/4_lrelu_out_fpga.txt";
-    path_out     = "D:/Vision Traffic/soc/data/4_max_unit_out_fpga.txt";
+    path_in      = "D:/cnn-fpga/data/4_lrelu_out_fpga.txt";
+    path_out     = "D:/cnn-fpga/data/4_max_unit_out_fpga.txt";
 
     //********** DONT COMMENT BELOW *********
 
