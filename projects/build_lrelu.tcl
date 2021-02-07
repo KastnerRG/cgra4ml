@@ -1,6 +1,6 @@
 set PROJ_NAME lrelu
 set PROJ_FOLDER lrelu
-set SOURCE_FOLDER ../src
+set SOURCE_FOLDER ../src_hdl
 
 set AXIS_FREQUENCY_MHZ   250
 set WORD_WIDTH_IN        8

@@ -1,6 +1,6 @@
 set PROJ_NAME support
 set PROJ_FOLDER support
-set SOURCE_FOLDER ../../src
+set SOURCE_FOLDER ../../src_hdl
 set WAVEFORM_FOLDER ../../wave
 
 create_project support . -part xc7z020clg484-1

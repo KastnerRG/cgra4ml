@@ -1,6 +1,6 @@
 set PROJ_NAME max
 set PROJ_FOLDER max
-set SOURCE_FOLDER ../src
+set SOURCE_FOLDER ../src_hdl
 
 set AXIS_FREQUENCY_MHZ   250
 set WORD_WIDTH_IN        8
