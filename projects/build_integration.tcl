@@ -1,6 +1,6 @@
 set PROJ_NAME int
 set PROJ_FOLDER int
-set SOURCE_FOLDER ../src
+set SOURCE_FOLDER ../src_hdl
 
 set AXIS_FREQUENCY_MHZ   250
 
