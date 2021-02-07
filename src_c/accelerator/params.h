@@ -1,0 +1,10 @@
+#define UNITS   8
+#define MEMBERS 8
+#define COPIES  2
+#define GROUPS  2
+#define KERNEL_W_MAX 3
+#define KERNEL_H_MAX 3
+#define UNITS_EDGES  10
+#define CORES        32
+#define BEATS_CONFIG_3X3 21
+#define BEATS_CONFIG_1X1 13
