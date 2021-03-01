@@ -5,20 +5,20 @@
    <db_ref_list>
       <db_ref path="axis_accelerator_tb_behav.wdb" id="1">
          <top_modules>
-            <top_module name="\$unit_axis_accelerator_tb_sv " />
+            <top_module name="\$unit_always_valid_cyclic_bram_sv " />
             <top_module name="axis_accelerator_tb" />
             <top_module name="glbl" />
          </top_modules>
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="697660000fs"></ZoomStartTime>
-      <ZoomEndTime time="729710001fs"></ZoomEndTime>
-      <Cursor1Time time="704660000fs"></Cursor1Time>
+      <ZoomStartTime time="80068333fs"></ZoomStartTime>
+      <ZoomEndTime time="80717334fs"></ZoomEndTime>
+      <Cursor1Time time="80608333fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="211"></NameColumnWidth>
-      <ValueColumnWidth column_width="176"></ValueColumnWidth>
+      <ValueColumnWidth column_width="168"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="54" />
    <wave_markers>
@@ -445,16 +445,6 @@
             <obj_property name="UseCustomSignalColor">true</obj_property>
             <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
             <obj_property name="isExpanded"></obj_property>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/ref_1_blocks[0]" type="array">
-               <obj_property name="ElementShortName">[0][5:0]</obj_property>
-               <obj_property name="ObjectShortName">[0][5:0]</obj_property>
-               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-            </wvobject>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/ref_1_blocks[1]" type="array">
-               <obj_property name="ElementShortName">[1][5:0]</obj_property>
-               <obj_property name="ObjectShortName">[1][5:0]</obj_property>
-               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-            </wvobject>
          </wvobject>
       </wvobject>
       <wvobject fp_name="group2740" type="group">
@@ -1029,42 +1019,6 @@
          <obj_property name="ElementShortName">m_user[7:0]</obj_property>
          <obj_property name="ObjectShortName">m_user[7:0]</obj_property>
          <obj_property name="isExpanded"></obj_property>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/m_user[7]" type="logic">
-            <obj_property name="ElementShortName">[7]</obj_property>
-            <obj_property name="ObjectShortName">[7]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/m_user[6]" type="logic">
-            <obj_property name="ElementShortName">[6]</obj_property>
-            <obj_property name="ObjectShortName">[6]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/m_user[5]" type="logic">
-            <obj_property name="DisplayName">label</obj_property>
-            <obj_property name="ElementShortName">[5]</obj_property>
-            <obj_property name="ObjectShortName">[5]</obj_property>
-            <obj_property name="label">bot</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/m_user[4]" type="logic">
-            <obj_property name="DisplayName">label</obj_property>
-            <obj_property name="ElementShortName">[4]</obj_property>
-            <obj_property name="ObjectShortName">[4]</obj_property>
-            <obj_property name="label">top</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/m_user[3]" type="logic">
-            <obj_property name="ElementShortName">[3]</obj_property>
-            <obj_property name="ObjectShortName">[3]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/m_user[2]" type="logic">
-            <obj_property name="ElementShortName">[2]</obj_property>
-            <obj_property name="ObjectShortName">[2]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/m_user[1]" type="logic">
-            <obj_property name="ElementShortName">[1]</obj_property>
-            <obj_property name="ObjectShortName">[1]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/m_user[0]" type="logic">
-            <obj_property name="ElementShortName">[0]</obj_property>
-            <obj_property name="ObjectShortName">[0]</obj_property>
-         </wvobject>
       </wvobject>
    </wvobject>
    <wvobject type="divider" fp_name="divider5106">
@@ -1118,15 +1072,6 @@
       <obj_property name="ElementShortName">a_val_cg_sr[1:0][1:0]</obj_property>
       <obj_property name="ObjectShortName">a_val_cg_sr[1:0][1:0]</obj_property>
       <obj_property name="isExpanded"></obj_property>
-      <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/a_val_cg_sr[1]" type="array">
-         <obj_property name="ElementShortName">[1][1:0]</obj_property>
-         <obj_property name="ObjectShortName">[1][1:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/a_val_cg_sr[0]" type="array">
-         <obj_property name="ElementShortName">[0][1:0]</obj_property>
-         <obj_property name="ObjectShortName">[0][1:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-      </wvobject>
    </wvobject>
    <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/b_val_f32_cgu" type="array">
       <obj_property name="ElementShortName">b_val_f32_cgu[1:0][1:0][3:0][31:0]</obj_property>
@@ -1143,61 +1088,6 @@
       <obj_property name="CustomSignalColor">#00FF00</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
       <obj_property name="isExpanded"></obj_property>
-      <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/b_cg_clr_mtb_sr[1]" type="array">
-         <obj_property name="ElementShortName">[1][1:0][2:0][2:0]</obj_property>
-         <obj_property name="ObjectShortName">[1][1:0][2:0][2:0]</obj_property>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/b_cg_clr_mtb_sr[1][1]" type="array">
-            <obj_property name="ElementShortName">[1][2:0][2:0]</obj_property>
-            <obj_property name="ObjectShortName">[1][2:0][2:0]</obj_property>
-            <obj_property name="isExpanded"></obj_property>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/b_cg_clr_mtb_sr[1][1][2]" type="array">
-               <obj_property name="ElementShortName">[2][2:0]</obj_property>
-               <obj_property name="ObjectShortName">[2][2:0]</obj_property>
-               <obj_property name="isExpanded"></obj_property>
-            </wvobject>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/b_cg_clr_mtb_sr[1][1][1]" type="array">
-               <obj_property name="ElementShortName">[1][2:0]</obj_property>
-               <obj_property name="ObjectShortName">[1][2:0]</obj_property>
-               <obj_property name="isExpanded"></obj_property>
-            </wvobject>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/b_cg_clr_mtb_sr[1][1][0]" type="array">
-               <obj_property name="ElementShortName">[0][2:0]</obj_property>
-               <obj_property name="ObjectShortName">[0][2:0]</obj_property>
-            </wvobject>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/b_cg_clr_mtb_sr[1][0]" type="array">
-            <obj_property name="ElementShortName">[0][2:0][2:0]</obj_property>
-            <obj_property name="ObjectShortName">[0][2:0][2:0]</obj_property>
-         </wvobject>
-      </wvobject>
-      <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/b_cg_clr_mtb_sr[0]" type="array">
-         <obj_property name="ElementShortName">[0][1:0][2:0][2:0]</obj_property>
-         <obj_property name="ObjectShortName">[0][1:0][2:0][2:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/b_cg_clr_mtb_sr[0][1]" type="array">
-            <obj_property name="ElementShortName">[1][2:0][2:0]</obj_property>
-            <obj_property name="ObjectShortName">[1][2:0][2:0]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/b_cg_clr_mtb_sr[0][0]" type="array">
-            <obj_property name="ElementShortName">[0][2:0][2:0]</obj_property>
-            <obj_property name="ObjectShortName">[0][2:0][2:0]</obj_property>
-            <obj_property name="isExpanded"></obj_property>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/b_cg_clr_mtb_sr[0][0][2]" type="array">
-               <obj_property name="ElementShortName">[2][2:0]</obj_property>
-               <obj_property name="ObjectShortName">[2][2:0]</obj_property>
-            </wvobject>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/b_cg_clr_mtb_sr[0][0][1]" type="array">
-               <obj_property name="ElementShortName">[1][2:0]</obj_property>
-               <obj_property name="ObjectShortName">[1][2:0]</obj_property>
-               <obj_property name="isExpanded"></obj_property>
-            </wvobject>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/b_cg_clr_mtb_sr[0][0][0]" type="array">
-               <obj_property name="ElementShortName">[0][2:0]</obj_property>
-               <obj_property name="ObjectShortName">[0][2:0]</obj_property>
-               <obj_property name="isExpanded"></obj_property>
-            </wvobject>
-         </wvobject>
-      </wvobject>
    </wvobject>
    <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/b_mid_f32_cg" type="array">
       <obj_property name="ElementShortName">b_mid_f32_cg[1:0][1:0][31:0]</obj_property>
@@ -1287,18 +1177,17 @@
          <obj_property name="ObjectShortName">m_axis_tlast</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_accelerator_tb/m_axis_tdata" type="array">
-         <obj_property name="ElementShortName">m_axis_tdata[191:0]</obj_property>
-         <obj_property name="ObjectShortName">m_axis_tdata[191:0]</obj_property>
+         <obj_property name="ElementShortName">m_axis_tdata[511:0]</obj_property>
+         <obj_property name="ObjectShortName">m_axis_tdata[511:0]</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_accelerator_tb/m_axis_tkeep" type="array">
-         <obj_property name="ElementShortName">m_axis_tkeep[23:0]</obj_property>
-         <obj_property name="ObjectShortName">m_axis_tkeep[23:0]</obj_property>
+         <obj_property name="ElementShortName">m_axis_tkeep[63:0]</obj_property>
+         <obj_property name="ObjectShortName">m_axis_tkeep[63:0]</obj_property>
       </wvobject>
    </wvobject>
    <wvobject fp_name="group290" type="group">
       <obj_property name="label">Other</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="/axis_accelerator_tb/status" type="array">
          <obj_property name="ElementShortName">status[31:0]</obj_property>
          <obj_property name="ObjectShortName">status[31:0]</obj_property>
