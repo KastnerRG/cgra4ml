@@ -1,11 +1,11 @@
-#define UNITS   8
-#define MEMBERS 8
+#define UNITS   4
+#define MEMBERS 4
 #define COPIES  2
 #define GROUPS  2
 #define KW_MAX 3
 #define KH_MAX 3
-#define UNITS_EDGES  10
-#define CORES        32
+#define UNITS_EDGES  6
+#define CORES        16
 #define BEATS_CONFIG_3X3 21
 #define BEATS_CONFIG_1X1 13
 #define S_WEIGHTS_WIDTH  32

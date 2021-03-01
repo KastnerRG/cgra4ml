@@ -4,10 +4,10 @@ set SOURCE_FOLDER ../src_hdl
 
 set SYS_FREQ_MHZ 70
 
-set UNITS   8
+set UNITS   4
 set GROUPS  2
 set COPIES  2
-set MEMBERS 8
+set MEMBERS 4
 
 set WORD_WIDTH       8
 set WORD_WIDTH_ACC   32

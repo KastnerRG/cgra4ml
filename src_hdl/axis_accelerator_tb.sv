@@ -16,47 +16,47 @@ module axis_accelerator_tb ();
     IMAGE & KERNEL PARAMETERS
   */
 
-  // // //################ LAYER 1 : 3x3, maxpool ####################
+   // //################ LAYER 1 : 3x3, maxpool ####################
   
-  // localparam K          = 3;
-  // localparam MAX_FACTOR = 2;
-  // localparam IM_HEIGHT  = 256;
-  // localparam IM_WIDTH   = 384;
-  // localparam IM_CIN     = 3;
-  // string path_im_1      = "D:/cnn-fpga/data/1_conv_in_0.txt";
-  // string path_im_2      = "D:/cnn-fpga/data/1_conv_in_1.txt";
-  // string path_weights   = "D:/cnn-fpga/data/1_weights.txt";
-  // string path_conv_out  = "D:/cnn-fpga/data/1_conv_out_fpga.txt";
-  // string path_lrelu_out = "D:/cnn-fpga/data/1_lrelu_out_fpga.txt";
-  // string path_max_out   = "D:/cnn-fpga/data/1_max_out_fpga.txt";
+   localparam K          = 3;
+   localparam MAX_FACTOR = 2;
+   localparam IM_HEIGHT  = 256;
+   localparam IM_WIDTH   = 384;
+   localparam IM_CIN     = 3;
+   string path_im_1      = "D:/cnn-fpga/data/1_conv_in_0.txt";
+   string path_im_2      = "D:/cnn-fpga/data/1_conv_in_1.txt";
+   string path_weights   = "D:/cnn-fpga/data/1_weights.txt";
+   string path_conv_out  = "D:/cnn-fpga/data/1_conv_out_fpga.txt";
+   string path_lrelu_out = "D:/cnn-fpga/data/1_lrelu_out_fpga.txt";
+   string path_max_out   = "D:/cnn-fpga/data/1_max_out_fpga.txt";
 
-  //############ LAYER 3 : 3x3, non-maxpool ####################
+////  ############ LAYER 3 : 3x3, non-maxpool ####################
 
-  localparam K          = 3;
-  localparam MAX_FACTOR = 1;
-  localparam IM_HEIGHT  = 64;
-  localparam IM_WIDTH   = 96;
-  localparam IM_CIN     = 64;
-  string path_im_1      = "D:/cnn-fpga/data/3_conv_in_0.txt";
-  string path_im_2      = "D:/cnn-fpga/data/3_conv_in_1.txt";
-  string path_weights   = "D:/cnn-fpga/data/3_weights.txt";
-  string path_conv_out  = "D:/cnn-fpga/data/3_conv_out_fpga.txt";
-  string path_lrelu_out = "D:/cnn-fpga/data/3_lrelu_out_fpga.txt";
-  string path_max_out   = "D:/cnn-fpga/data/3_max_out_fpga.txt";
+//  localparam K          = 3;
+//  localparam MAX_FACTOR = 1;
+//  localparam IM_HEIGHT  = 64;
+//  localparam IM_WIDTH   = 96;
+//  localparam IM_CIN     = 64;
+//  string path_im_1      = "D:/cnn-fpga/data/3_conv_in_0.txt";
+//  string path_im_2      = "D:/cnn-fpga/data/3_conv_in_1.txt";
+//  string path_weights   = "D:/cnn-fpga/data/3_weights.txt";
+//  string path_conv_out  = "D:/cnn-fpga/data/3_conv_out_fpga.txt";
+//  string path_lrelu_out = "D:/cnn-fpga/data/3_lrelu_out_fpga.txt";
+//  string path_max_out   = "D:/cnn-fpga/data/3_max_out_fpga.txt";
 
-  // // #################### LAYER 4 : 1x1 ####################
+//   // #################### LAYER 4 : 1x1 ####################
 
-  // localparam K          = 1;
-  // localparam MAX_FACTOR = 1;
-  // localparam IM_HEIGHT  = 64;
-  // localparam IM_WIDTH   = 96;
-  // localparam IM_CIN     = 128;
-  // string path_im_1      = "D:/cnn-fpga/data/4_conv_in_0.txt";
-  // string path_im_2      = "D:/cnn-fpga/data/4_conv_in_1.txt";
-  // string path_weights   = "D:/cnn-fpga/data/4_weights.txt";
-  // string path_conv_out  = "D:/cnn-fpga/data/4_conv_out_fpga.txt";
-  // string path_lrelu_out = "D:/cnn-fpga/data/4_lrelu_out_fpga.txt";
-  // string path_max_out   = "D:/cnn-fpga/data/4_max_out_fpga.txt";
+//   localparam K          = 1;
+//   localparam MAX_FACTOR = 1;
+//   localparam IM_HEIGHT  = 64;
+//   localparam IM_WIDTH   = 96;
+//   localparam IM_CIN     = 128;
+//   string path_im_1      = "D:/cnn-fpga/data/4_conv_in_0.txt";
+//   string path_im_2      = "D:/cnn-fpga/data/4_conv_in_1.txt";
+//   string path_weights   = "D:/cnn-fpga/data/4_weights.txt";
+//   string path_conv_out  = "D:/cnn-fpga/data/4_conv_out_fpga.txt";
+//   string path_lrelu_out = "D:/cnn-fpga/data/4_lrelu_out_fpga.txt";
+//   string path_max_out   = "D:/cnn-fpga/data/4_max_out_fpga.txt";
 
   /*
     SYSTEM PARAMS
@@ -76,6 +76,7 @@ module axis_accelerator_tb ();
   localparam IM_BLOCKS_MAX         = `IM_BLOCKS_MAX        ;
   localparam IM_COLS_MAX           = `IM_COLS_MAX          ;
   localparam S_WEIGHTS_WIDTH       = `S_WEIGHTS_WIDTH      ;
+  localparam M_DATA_WIDTH          = `M_DATA_WIDTH         ;
   localparam LRELU_ALPHA           = `LRELU_ALPHA          ;
   localparam BITS_EXP_CONFIG       = `BITS_EXP_CONFIG      ;
   localparam BITS_FRA_CONFIG       = `BITS_FRA_CONFIG      ;
@@ -166,8 +167,11 @@ module axis_accelerator_tb ();
   logic m_axis_tvalid;
   logic m_axis_tlast;
 
-  logic [COPIES*GROUPS*UNITS_EDGES*WORD_WIDTH -1:0] m_axis_tdata;
-  logic [COPIES*GROUPS*UNITS_EDGES-1:0]      m_axis_tkeep;
+  logic [M_DATA_WIDTH  -1:0] m_axis_tdata;
+  logic [M_DATA_WIDTH/8-1:0] m_axis_tkeep;
+
+  // logic [COPIES*GROUPS*UNITS_EDGES*WORD_WIDTH -1:0] m_axis_tdata;
+  // logic [COPIES*GROUPS*UNITS_EDGES-1:0]      m_axis_tkeep;
 
   logic [WORD_WIDTH-1:0] m_data [COPIES-1:0][GROUPS-1:0][UNITS_EDGES-1:0];
   logic                  m_axis_tkeep_cgu [1:0][GROUPS-1:0][UNITS_EDGES-1:0];
@@ -192,6 +196,7 @@ module axis_accelerator_tb ();
     .IM_BLOCKS_MAX             (IM_BLOCKS_MAX             ),
     .IM_COLS_MAX               (IM_COLS_MAX               ),
     .S_WEIGHTS_WIDTH           (S_WEIGHTS_WIDTH           ),
+    .M_DATA_WIDTH              (M_DATA_WIDTH              ),
     .LRELU_ALPHA               (LRELU_ALPHA               ),
     .BITS_EXP_CONFIG           (BITS_EXP_CONFIG           ),
     .BITS_FRA_CONFIG           (BITS_FRA_CONFIG           ),
@@ -236,10 +241,10 @@ module axis_accelerator_tb ();
   assign {>>{s_axis_pixels_1_tdata}} = s_data_pixels_1;
   assign {>>{s_axis_pixels_2_tdata}} = s_data_pixels_2;
   assign {>>{s_axis_weights_tdata}}  = s_data_weights;
-  assign m_data                      = {>>{m_axis_tdata}};
+  assign m_data                      = {>>{m_axis_tdata[COPIES*GROUPS*UNITS_EDGES*WORD_WIDTH-1:0]}};
   assign lrelu_m_data                = {>>{lrelu_m_axis_tdata}};
   assign conv_m_data                 = {>>{conv_m_axis_tdata}};
-  assign m_axis_tkeep_cgu = {>>{m_axis_tkeep}};
+  assign m_axis_tkeep_cgu = {>>{m_axis_tkeep[COPIES*GROUPS*UNITS_EDGES-1:0]}};
 
 
   localparam BEATS_2 = (IM_BLOCKS/MAX_FACTOR) * IM_COLS * IM_CIN;

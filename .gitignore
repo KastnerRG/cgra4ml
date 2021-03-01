@@ -16,5 +16,5 @@
 # allow all stuff inside any subfolder named "src"
 
 !*/
-!**/src/**
+!**/src_hdl/**
 !**/wave/**
