@@ -37,7 +37,7 @@ Parameters of the system. Written from build.tcl
 `define IM_BLOCKS_MAX    64   
 `define IM_COLS_MAX      384     
 `define S_WEIGHTS_WIDTH  32
-`define M_DATA_WIDTH     512
+`define M_DATA_WIDTH     128
 `define LRELU_ALPHA      11878     
 /*
   LATENCIES & float widths

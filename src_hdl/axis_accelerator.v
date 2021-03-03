@@ -95,11 +95,16 @@ module axis_accelerator
     lrelu_m_axis_tuser    ,
     lrelu_m_axis_tdata    ,
 
+    maxpool_m_axis_tvalid ,
+    maxpool_m_axis_tready ,
+    maxpool_m_axis_tdata  ,
+    maxpool_m_axis_tkeep  ,
+    maxpool_m_axis_tlast  ,
+
     m_axis_tvalid         ,
     m_axis_tready         ,
     m_axis_tdata          ,
     m_axis_tkeep          ,
-    // m_axis_tuser          ,
     m_axis_tlast
   ); 
 
@@ -142,43 +147,32 @@ module axis_accelerator
   wire [WORD_WIDTH*CORES*KERNEL_W_MAX-1:0] input_m_axis_weights_tdata ;
   wire [TUSER_WIDTH_CONV_IN          -1:0] input_m_axis_tuser         ;
 
- output conv_m_axis_tready;
- output conv_m_axis_tvalid;
- output conv_m_axis_tlast ;
- output [TUSER_WIDTH_LRELU_IN  -1:0] conv_m_axis_tuser;
- output [COPIES*MEMBERS*GROUPS*UNITS*WORD_WIDTH_ACC-1:0] conv_m_axis_tdata; // cmgu
+  output wire conv_m_axis_tready;
+  output wire conv_m_axis_tvalid;
+  output wire conv_m_axis_tlast ;
+  output wire [TUSER_WIDTH_LRELU_IN  -1:0] conv_m_axis_tuser;
+  output wire [COPIES*MEMBERS*GROUPS*UNITS*WORD_WIDTH_ACC-1:0] conv_m_axis_tdata; // cmgu
 
- output lrelu_m_axis_tvalid;
- output lrelu_m_axis_tready;
- output [COPIES*GROUPS*UNITS*WORD_WIDTH -1:0] lrelu_m_axis_tdata;
- output [TUSER_WIDTH_MAXPOOL_IN-1:0] lrelu_m_axis_tuser;
+  output wire lrelu_m_axis_tvalid;
+  output wire lrelu_m_axis_tready;
+  output wire [COPIES*GROUPS*UNITS*WORD_WIDTH -1:0] lrelu_m_axis_tdata;
+  output wire [TUSER_WIDTH_MAXPOOL_IN-1:0] lrelu_m_axis_tuser;
 
-//  wire conv_m_axis_tready;
-//  wire conv_m_axis_tvalid;
-//  wire conv_m_axis_tlast ;
-//  wire [TUSER_WIDTH_LRELU_IN  -1:0] conv_m_axis_tuser;
-//  wire [COPIES*MEMBERS*GROUPS*UNITS*WORD_WIDTH_ACC-1:0] conv_m_axis_tdata; // cmgu
-//  wire lrelu_m_axis_tvalid;
-//  wire lrelu_m_axis_tready;
-//  wire [COPIES*GROUPS*UNITS*WORD_WIDTH -1:0] lrelu_m_axis_tdata;
-//  wire [TUSER_WIDTH_MAXPOOL_IN-1:0] lrelu_m_axis_tuser;
+  output wire maxpool_m_axis_tvalid;
+  output wire maxpool_m_axis_tready;
+  output wire maxpool_m_axis_tlast;
+  output wire [COPIES*GROUPS*UNITS_EDGES -1:0]            maxpool_m_axis_tkeep;
+  output wire [COPIES*GROUPS*UNITS_EDGES*WORD_WIDTH -1:0] maxpool_m_axis_tdata;
 
   input  wire m_axis_tready;
   output wire m_axis_tvalid;
   output wire m_axis_tlast;
-  // output wire [COPIES*GROUPS*UNITS_EDGES*WORD_WIDTH -1:0] m_axis_tdata;
-  // output wire [GROUPS*UNITS_EDGES*COPIES-1:0] m_axis_tkeep;
   output wire [M_DATA_WIDTH  -1:0] m_axis_tdata;
   output wire [M_DATA_WIDTH/8-1:0] m_axis_tkeep;
 
-  wire [COPIES*GROUPS*UNITS_EDGES*WORD_WIDTH -1:0] maxpool_m_axis_tdata;
-  wire [GROUPS*UNITS_EDGES*COPIES-1:0] maxpool_m_axis_tkeep;
-  wire maxpool_m_axis_tlast;
-
-  assign m_axis_tdata = { {M_DATA_WIDTH  -COPIES*GROUPS*UNITS_EDGES*WORD_WIDTH{1'b0}}, maxpool_m_axis_tdata};
-  assign m_axis_tkeep = {(M_DATA_WIDTH/8){m_axis_tvalid}} & { {M_DATA_WIDTH/8-COPIES*GROUPS*UNITS_EDGES{1'b0}}, maxpool_m_axis_tkeep};
-  assign m_axis_tlast = m_axis_tvalid; // each transfer is only 1 beat
-
+  wire [GROUPS*UNITS_EDGES*WORD_WIDTH -1:0] max_dw_1_m_axis_tdata;
+  wire [GROUPS*UNITS_EDGES-1:0] max_dw_1_m_axis_tkeep;
+  wire max_dw_1_m_axis_tvalid, max_dw_1_m_axis_tready, max_dw_1_m_axis_tlast;
 
   axis_input_pipe #(
     .UNITS                     (UNITS                    ),
@@ -352,11 +346,41 @@ module axis_accelerator
     .s_axis_tready (lrelu_m_axis_tready   ),
     .s_axis_tdata  (lrelu_m_axis_tdata    ), // cgu
     .s_axis_tuser  (lrelu_m_axis_tuser    ),
-    .m_axis_tvalid (m_axis_tvalid         ),
-    .m_axis_tready (m_axis_tready         ),
+    .m_axis_tvalid (maxpool_m_axis_tvalid ),
+    .m_axis_tready (maxpool_m_axis_tready ),
     .m_axis_tdata  (maxpool_m_axis_tdata  ), //cgu
     .m_axis_tkeep  (maxpool_m_axis_tkeep  ),
     .m_axis_tlast  (maxpool_m_axis_tlast  )
+  );
+
+  axis_dw_max_1 DW_MAX_1 (
+    .aclk           (aclk                   ),           
+    .aresetn        (aresetn                ),        
+    .s_axis_tvalid  (maxpool_m_axis_tvalid  ),  
+    .s_axis_tready  (maxpool_m_axis_tready  ),  
+    .s_axis_tdata   (maxpool_m_axis_tdata   ),   
+    .s_axis_tkeep   (maxpool_m_axis_tkeep   ),   
+    .s_axis_tlast   (maxpool_m_axis_tlast   ),   
+    .m_axis_tvalid  (max_dw_1_m_axis_tvalid ),  
+    .m_axis_tready  (max_dw_1_m_axis_tready ),  
+    .m_axis_tdata   (max_dw_1_m_axis_tdata  ),   
+    .m_axis_tkeep   (max_dw_1_m_axis_tkeep  ),   
+    .m_axis_tlast   (max_dw_1_m_axis_tlast  )    
+  );
+
+  axis_dw_max_2 DW_MAX_2 (
+    .aclk           (aclk                   ),           
+    .aresetn        (aresetn                ),        
+    .s_axis_tvalid  (max_dw_1_m_axis_tvalid ),  
+    .s_axis_tready  (max_dw_1_m_axis_tready ),  
+    .s_axis_tdata   (max_dw_1_m_axis_tdata  ),   
+    .s_axis_tkeep   (max_dw_1_m_axis_tkeep  ),   
+    .s_axis_tlast   (max_dw_1_m_axis_tlast  ),   
+    .m_axis_tvalid  (m_axis_tvalid          ),  
+    .m_axis_tready  (m_axis_tready          ),  
+    .m_axis_tdata   (m_axis_tdata           ),   
+    .m_axis_tkeep   (m_axis_tkeep           ),   
+    .m_axis_tlast   (m_axis_tlast           )    
   );
 
 endmodule
