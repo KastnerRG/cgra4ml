@@ -162,19 +162,21 @@ module axis_accelerator_tb ();
   logic [COPIES*GROUPS*UNITS*WORD_WIDTH -1:0] lrelu_m_axis_tdata;
   logic [WORD_WIDTH-1:0] lrelu_m_data [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
   logic [TUSER_WIDTH_MAXPOOL_IN-1:0] lrelu_m_axis_tuser;
+
+  logic maxpool_m_axis_tvalid;
+  logic maxpool_m_axis_tready;
+  logic maxpool_m_axis_tlast;
+  logic [COPIES*GROUPS*UNITS_EDGES*WORD_WIDTH -1:0] maxpool_m_axis_tdata;
+  logic [COPIES*GROUPS*UNITS_EDGES -1:0]            maxpool_m_axis_tkeep;
+  logic [WORD_WIDTH-1:0] maxpool_m_data   [COPIES-1:0][GROUPS-1:0][UNITS_EDGES-1:0];
+  logic                  maxpool_keep_cgu [COPIES-1:0][GROUPS-1:0][UNITS_EDGES-1:0];
   
   logic m_axis_tready;
   logic m_axis_tvalid;
   logic m_axis_tlast;
-
   logic [M_DATA_WIDTH  -1:0] m_axis_tdata;
+  logic [WORD_WIDTH    -1:0] m_data        [M_DATA_WIDTH/WORD_WIDTH-1:0];
   logic [M_DATA_WIDTH/8-1:0] m_axis_tkeep;
-
-  // logic [COPIES*GROUPS*UNITS_EDGES*WORD_WIDTH -1:0] m_axis_tdata;
-  // logic [COPIES*GROUPS*UNITS_EDGES-1:0]      m_axis_tkeep;
-
-  logic [WORD_WIDTH-1:0] m_data [COPIES-1:0][GROUPS-1:0][UNITS_EDGES-1:0];
-  logic                  m_axis_tkeep_cgu [1:0][GROUPS-1:0][UNITS_EDGES-1:0];
 
   axis_accelerator #(
     .UNITS                     (UNITS                     ),
@@ -241,11 +243,11 @@ module axis_accelerator_tb ();
   assign {>>{s_axis_pixels_1_tdata}} = s_data_pixels_1;
   assign {>>{s_axis_pixels_2_tdata}} = s_data_pixels_2;
   assign {>>{s_axis_weights_tdata}}  = s_data_weights;
-  assign m_data                      = {>>{m_axis_tdata[COPIES*GROUPS*UNITS_EDGES*WORD_WIDTH-1:0]}};
-  assign lrelu_m_data                = {>>{lrelu_m_axis_tdata}};
   assign conv_m_data                 = {>>{conv_m_axis_tdata}};
-  assign m_axis_tkeep_cgu = {>>{m_axis_tkeep[COPIES*GROUPS*UNITS_EDGES-1:0]}};
-
+  assign lrelu_m_data                = {>>{lrelu_m_axis_tdata}};
+  assign maxpool_m_data              = {>>{maxpool_m_axis_tdata}};
+  assign maxpool_keep_cgu            = {>>{maxpool_m_axis_tkeep}};
+  assign m_data                      = {>>{m_axis_tdata}};
 
   localparam BEATS_2 = (IM_BLOCKS/MAX_FACTOR) * IM_COLS * IM_CIN;
   localparam WORDS_2 = BEATS_2 * UNITS_EDGES;
@@ -380,9 +382,9 @@ module axis_accelerator_tb ();
         if (m_words_max < WORDS_OUT_MAX) begin
           for (int c=0; c < COPIES; c++) begin
             for (int g=0; g < GROUPS; g++) begin
-              for (int u=0; u < UNITS_EDGES; u++) begin
-                if (m_axis_tkeep_cgu[c][g][u]) begin
-                  $fdisplay(file_out_max, "%d", signed'(m_data[c][g][u]));
+              for (int w=0; w < M_DATA_WIDTH/WORD_WIDTH; w++) begin
+                if (m_axis_tkeep[w]) begin
+                  $fdisplay(file_out_max, "%d", signed'(m_data[w]));
                   m_words_max = m_words_max + 1;
                 end
               end

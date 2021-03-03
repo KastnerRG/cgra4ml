@@ -45,6 +45,7 @@ set BITS_KERNEL_H      [expr int(ceil(log($KERNEL_H_MAX)/log(2)))]
 set BITS_CONFIG_COUNT  [expr int(ceil(log($BEATS_CONFIG_3X3)/log(2)))]
 set BITS_KERNEL_H      [expr int(ceil(log($KERNEL_H_MAX)/log(2)))]
 set BITS_KERNEL_W      [expr int(ceil(log($KERNEL_W_MAX)/log(2)))]
+set M_WIDTH            [expr $WORD_WIDTH * 2**int(ceil(log($GROUPS * $UNITS_EDGES)/log(2)))]
 
 set IM_IN_S_DATA_WORDS   [expr 2**int(ceil(log($UNITS_EDGES)/log(2)))]
 set WORD_WIDTH_LRELU_1   [expr 1 + $BITS_EXP_FMA_1 + $BITS_FRA_FMA_1]
@@ -386,6 +387,24 @@ set T_KEEP 1
 create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.HAS_TKEEP $T_KEEP CONFIG.HAS_TLAST $T_LAST] [get_ips $IP_NAME]
 
+set IP_NAME "axis_dw_max_1"
+lappend IP_NAMES $IP_NAME
+set S_BYTES [expr "$GROUPS * $COPIES * $UNITS_EDGES * $WORD_WIDTH    / 8"]
+set M_BYTES [expr "$GROUPS *           $UNITS_EDGES * $WORD_WIDTH    / 8"]
+set T_LAST 1
+set T_KEEP 1
+create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
+
+set IP_NAME "axis_dw_max_2"
+lappend IP_NAMES $IP_NAME
+set S_BYTES [expr "$GROUPS * $UNITS_EDGES * $WORD_WIDTH / 8"]
+set M_BYTES [expr "$M_WIDTH/8"]
+set T_LAST 1
+set T_KEEP 1
+create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
+
 # Generate IP output products
 
 foreach IP_NAME $IP_NAMES {
@@ -414,7 +433,7 @@ create_bd_cell -type module -reference axis_accelerator axis_accelerator_0
 # Weights & out DMA
 set IP_NAME "dma_weights_im_out"
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 $IP_NAME
-set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_m_axi_mm2s_data_width {32} CONFIG.c_m_axis_mm2s_tdata_width {32} CONFIG.c_mm2s_burst_size {8} CONFIG.c_sg_include_stscntrl_strm {0} CONFIG.c_include_mm2s_dre {1} CONFIG.c_m_axi_s2mm_data_width {512} CONFIG.c_s_axis_s2mm_tdata_width {512} CONFIG.c_include_s2mm_dre {1} CONFIG.c_s2mm_burst_size {16}] [get_bd_cells $IP_NAME]
+set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_m_axi_mm2s_data_width {32} CONFIG.c_m_axis_mm2s_tdata_width {32} CONFIG.c_mm2s_burst_size {8} CONFIG.c_sg_include_stscntrl_strm {0} CONFIG.c_include_mm2s_dre {1} CONFIG.c_m_axi_s2mm_data_width $M_WIDTH CONFIG.c_s_axis_s2mm_tdata_width M_WIDTH CONFIG.c_include_s2mm_dre {1} CONFIG.c_s2mm_burst_size {16}] [get_bd_cells $IP_NAME]
 
 # Im_in_1
 set IP_NAME "dma_im_in_1"
@@ -425,12 +444,6 @@ set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} C
 set IP_NAME "dma_im_in_2"
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 $IP_NAME
 set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_m_axi_mm2s_data_width {128} CONFIG.c_m_axis_mm2s_tdata_width {128} CONFIG.c_include_mm2s_dre {1} CONFIG.c_mm2s_burst_size {64} CONFIG.c_include_s2mm {0}] [get_bd_cells $IP_NAME]
-
-# Output DW
-create_bd_cell -type ip -vlnv xilinx.com:ip:axis_dwidth_converter:1.1 axis_dwidth_converter_0
-set_property -dict [list CONFIG.M_TDATA_NUM_BYTES {64}] [get_bd_cells axis_dwidth_converter_0]
-connect_bd_intf_net [get_bd_intf_pins axis_accelerator_0/m_axis] [get_bd_intf_pins axis_dwidth_converter_0/S_AXIS]
-connect_bd_intf_net [get_bd_intf_pins axis_dwidth_converter_0/M_AXIS] [get_bd_intf_pins dma_weights_im_out/S_AXIS_S2MM]
 
 # Interrupts
 create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat:2.1 xlconcat_0
@@ -445,6 +458,7 @@ connect_bd_net [get_bd_pins xlconcat_0/dout] [get_bd_pins processing_system7_0/I
 connect_bd_intf_net [get_bd_intf_pins dma_im_in_1/M_AXIS_MM2S] [get_bd_intf_pins axis_accelerator_0/s_axis_pixels_1]
 connect_bd_intf_net [get_bd_intf_pins dma_im_in_2/M_AXIS_MM2S] [get_bd_intf_pins axis_accelerator_0/s_axis_pixels_2]
 connect_bd_intf_net [get_bd_intf_pins dma_weights_im_out/M_AXIS_MM2S] [get_bd_intf_pins axis_accelerator_0/s_axis_weights]
+connect_bd_intf_net [get_bd_intf_pins dma_weights_im_out/S_AXIS_S2MM] [get_bd_intf_pins axis_accelerator_0/m_axis]
 
 # Connection automation
 startgroup
