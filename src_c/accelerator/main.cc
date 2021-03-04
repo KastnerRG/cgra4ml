@@ -16,6 +16,7 @@
 #if (!defined(DEBUG))
 extern void xil_printf(const char *format, ...);
 #endif
+#define DEBUG
 
 int status;
 bool done = false;
@@ -36,12 +37,7 @@ void restart_weights()
 	static int i_itr = 0, i_layers = I_LAYER;
 	static s8* weights_read_p = (s8*)WEIGHTS_P;
 
-	static int i = 0;
-
-//	if (i<2)
 	status = dma_weights.mm2s_start( (UINTPTR)weights_read_p, layers[i_layers].WORDS_WEIGHTS_PER_ITR);
-
-//	i++;
 
 	xil_printf("---------weights restarted. Reading from (i_layers,i_itr,:):\t (%d/%d, %d/%d, %d);\t ptr:%p \r\n",
 				i_layers,N_LAYERS,
@@ -100,34 +96,167 @@ void callback_image_2_mm2s_done()
 	xil_printf("image_1 mm2s_done \r\n");
 }
 
+
+void restart_output()
+{
+	static int i_w=0, i_blocks=0, i_arr=0, i_arr_prev=0, i_itr=0, i_layers=I_LAYER;
+	static volatile s8 * write_p [2] = {chunk_b.data_p[0], chunk_b.data_p[1]};
+
+	/* SET CONFIG BITS
+	 * - for first packet
+	 * - cannot set at the end, since next layer im_in might start before this layer is over
+	 */
+
+	static bool first_packet = true;
+	if (first_packet)
+	{
+		layers[(i_layers+1) % N_LAYERS].set_config(write_p[0]);
+
+		write_p[0]  += UNITS_EDGES;
+		first_packet = false;
+	}
+
+	// start transfer
+
+	dma_im_out.s2mm_start(  (UINTPTR)write_p[i_arr],
+							layers[i_layers].WORDS_OUT_PER_TRANSFER);
+
+//	xil_printf("Writing to (layer,arr,bpa,w,itr,cout_fpga*ue):\t (%d/%d, %d/%d, %d/%d, %d/%d, %d/%d, %d);\t ptr: %p \r\n",
+//			i_layers,N_LAYERS,
+//			i_arr	,layers[i_layers].OUT_MAX_FACTOR,
+//			i_blocks/layers[i_layers].OUT_MAX_FACTOR, layers[i_layers].OUT_BLOCKS_PER_ARR,
+//			i_w		,layers[i_layers].OUT_W_IN,
+//			i_itr	,layers[i_layers].ITR,
+//			layers[i_layers].WORDS_OUT_PER_TRANSFER,
+//			write_p[i_arr]);
+
+	// Padding
+
+	static volatile s8 * pad_prev_p  [2] = {write_p[0], write_p[1]};
+	static volatile s8 * pad_this_p [2] = {write_p[0], write_p[1]};
+
+	for (int i_cout=0; i_cout < layers[i_layers].EFF_CORES; i_cout++)
+	{
+		if (i_w != 0)
+		{
+			if (i_blocks != 0)
+			{
+				for (int i_kh2=0; i_kh2 < layers[i_layers].KH_IN/2; i_kh2++)
+				{
+					int i_prev_to   = KH_MAX/2 +UNITS + i_kh2;
+					int i_this_from = KH_MAX/2 + i_kh2;
+
+					pad_prev_p[i_arr][i_prev_to] = pad_this_p[i_arr_prev][i_this_from];
+
+					int i_this_to   = KH_MAX/2-1 - i_kh2;
+					int i_prev_from = KH_MAX/2 +UNITS-1 - i_kh2;
+
+					pad_this_p[i_arr_prev][i_this_to] = pad_prev_p[i_arr][i_prev_from];
+
+//					xil_printf("\t P[%d]<-T[%d]; \t P[%d]->T[%d]", i_prev_to, i_this_from, i_prev_from, i_this_to);
+				}
+				pad_prev_p[i_arr_prev] += UNITS_EDGES;
+			}
+			pad_this_p[i_arr] += UNITS_EDGES;
+		}
+	}
+
+	// PREPARE NEXT INDICES
+
+	// Next data beat next col (i_w) but same c_out & units_edges. Hence push this ptr to that point
+	// TODO - handle skip connection
+#ifdef DEBUG
+	Xil_DCacheFlushRange((UINTPTR)write_p[i_arr], layers[i_layers].WORDS_OUT_PER_TRANSFER);
+#endif
+
+	write_p[i_arr] += layers[i_layers].C_OUT * UNITS_EDGES;
+
+
+
+	if (i_w < layers[i_layers].OUT_W_IN-1)
+		i_w += 1;
+	else
+	{
+		i_w = 0;
+
+		xil_printf(" i_blocks: %d \r\n", i_blocks);
+
+
+		if (i_blocks < layers[i_layers].OUT_BLOCKS-1)
+		{
+			i_blocks  += 1;
+			i_arr_prev = i_arr;
+			i_arr      = i_blocks%layers[i_layers].OUT_MAX_FACTOR;
+		}
+		else
+		{
+			i_blocks   = 0;
+			i_arr      = 0;
+			i_arr_prev = 0;
+
+			xil_printf(" i_itr: %d \r\n", i_itr);
+
+			for (int m=0; m< layers[i_layers].OUT_MAX_FACTOR; m++)
+			{
+				write_p [m] = chunk_b.data_p[m];
+				pad_prev_p[m] = write_p [m];
+				pad_this_p[m] = write_p [m];
+			}
+			write_p [0] += UNITS_EDGES;
+
+
+			if (i_itr == 0)
+			{
+				i_itr += 1;
+
+				// TODO - handle skip connection
+				int offset = i_itr * layers[i_layers].COUT_VALID * UNITS_EDGES;
+
+				xil_printf("i_itr= %d, cout_off= %d, offset= %d \r\n",i_itr,layers[i_layers].COUT_VALID, offset);
+
+				for (int m=0; m< layers[i_layers].OUT_MAX_FACTOR; m++)
+					write_p [m] += offset;
+			}
+			else if (i_itr < layers[i_layers].ITR-1)
+			{
+				i_itr += 1;
+
+				// TODO - handle skip connection
+				int offset = i_itr * layers[i_layers].EFF_CORES * UNITS_EDGES;
+
+				xil_printf("i_itr= %d, cout_off= %d, offset= %d \r\n",i_itr,layers[i_layers].COUT_VALID, offset);
+
+				for (int m=0; m< layers[i_layers].OUT_MAX_FACTOR; m++)
+					write_p [m] += offset;
+			}
+			else
+			{
+				i_itr = 0;
+				first_packet = true;
+
+				if (i_layers < N_LAYERS-1)
+				{
+					i_layers += 1;
+					xil_printf(" layer: %d \r\n", i_layers);
+					getchar();
+				}
+				else
+				{
+					i_layers = 0;
+					xil_printf(" All Layers done");
+					done = true;
+				}
+			}
+		}
+	}
+}
+
 //// mwr -bin -file D:/cnn-fpga/data/1_weights.bin 0x0A000000 722; mwr -bin -file D:/cnn-fpga/data/1_conv_in_0.bin 0x02000000 55297; mwr -bin -file D:/cnn-fpga/data/1_conv_in_1.bin 0x03000000 55296;
 //// mwr -bin -file D:/cnn-fpga/data/3_weights.bin 0x0A000000 5114; mwr -bin -file D:/cnn-fpga/data/3_conv_in_0.bin 0x02000000 147457;
 //// mwr -bin -file D:/cnn-fpga/data/4_weights.bin 0x0A000000 3386; mwr -bin -file D:/cnn-fpga/data/4_conv_in_0.bin 0x02000000 294913;
 
 //mwr -bin -file D:/cnn-fpga/data/3_weights.bin 0x0A000000 20456; mwr -bin -file D:/cnn-fpga/data/3_conv_in_0.bin 0x02000000 147458;
 
-void out_done(){
-	static bool is_first_call = true;
-
-	if (!is_first_call)
-		dma_im_out.s2mm_start((UINTPTR)DATA_B0_P, 6*2*2*4);
-
-	is_first_call = false;
-	xil_printf("outDONE ");
-//	done = true;
-}
-void im1_done(){
-	xil_printf("im1DONE ");
-//	done = true;
-}
-void im2_done(){
-	xil_printf("im2DONE");
-//	done = true;
-}
-void weights_done(){
-	xil_printf("wDONE");
-//	done = true;
-}
 
 int main()
 {
@@ -158,29 +287,13 @@ int main()
 	dma_weights.mm2s_done_callback = restart_weights;
 	dma_im_in_1.mm2s_done_callback = restart_pixels;
 	dma_im_in_2.mm2s_done_callback = callback_image_2_mm2s_done;
-//	dma_im_out.s2mm_done_callback = restart_output;
-	dma_im_out.s2mm_done_callback = out_done;
-//
-//	// Start transfer
-//	restart_output();
-	out_done();
-	status = dma_im_out.s2mm_start((UINTPTR)DATA_B0_P, 6*2*2*4);
-//	xil_printf("%d \r\n",status);
+	dma_im_out.s2mm_done_callback = restart_output;
 
+//	// Start transfer
+	restart_output();
+//	dma_im_out.s2mm_start((UINTPTR)DATA_B0_P + UNITS_EDGES, layers[I_LAYER].WORDS_OUT_PER_TRANSFER);
 	restart_weights();
 	restart_pixels();
-
-//	dma_weights.mm2s_done_callback = weights_done;
-//	dma_im_in_1.mm2s_done_callback = im1_done;
-//	dma_im_in_2.mm2s_done_callback = im2_done;
-
-
-//	status = dma_weights.mm2s_start((UINTPTR)WEIGHTS_P, 10228);
-//	xil_printf("%d \r\n",status);
-//	status = dma_im_in_1.mm2s_start((UINTPTR)DATA_A0_P, 589830 + UNITS_EDGES);
-//	xil_printf("%d \r\n",status);
-//	if (0)
-//		status = dma_im_in_2.mm2s_start((UINTPTR)DATA_A1_P, 589830);
 
 	while (!done){};
 
