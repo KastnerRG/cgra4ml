@@ -16,12 +16,10 @@
 
 #define INPUT_LUT_P   0x00001000
 #define IMAGE_RGB_A_P 0x01000000
-#define DATA_A0_P     0x02000000
-#define DATA_A1_P     0x03000000
+#define DATA_A_P     0x02000000
 
 #define IMAGE_RGB_B_P 0x05000000
-#define DATA_B0_P     0x06000000
-#define DATA_B1_P     0x07000000
+#define DATA_B_P     0x06000000
 
 #define WEIGHTS_P     0x0A000000
 
