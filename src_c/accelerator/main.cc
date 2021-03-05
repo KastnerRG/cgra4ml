@@ -23,27 +23,28 @@ bool done = false;
 #define I_LAYER 3-1
 
 const std::array<Layer, N_LAYERS> layers = build_yolo_mod();
-const chunk_s chunk_a = {(s8*) IMAGE_RGB_A_P, {(s8*) DATA_A0_P, (s8*) DATA_A1_P} };
-const chunk_s chunk_b = {(s8*) IMAGE_RGB_B_P, {(s8*) DATA_B0_P, (s8*) DATA_B1_P} };
+const chunk_s chunk_a = {(s8*) IMAGE_RGB_A_P, (s8*) DATA_A_P, (s8*)DATA_A_P + UNITS_EDGES};
+const chunk_s chunk_b = {(s8*) IMAGE_RGB_B_P, (s8*) DATA_B_P, (s8*)DATA_B_P + UNITS_EDGES};
 
 My_DMA dma_im_in_1("im_in_1", XPAR_DMA_IM_IN_1_DEVICE_ID);
 My_DMA dma_im_in_2("im_in_2", XPAR_DMA_IM_IN_2_DEVICE_ID);
 My_DMA dma_weights("weights", XPAR_DMA_WEIGHTS_DEVICE_ID);
 My_DMA dma_im_out ("im_out", XPAR_DMA_IM_OUT_DEVICE_ID);
 
-
 void restart_weights()
 {
 	static int i_itr = 0, i_layers = I_LAYER;
 	static s8* weights_read_p = (s8*)WEIGHTS_P;
 
-	status = dma_weights.mm2s_start( (UINTPTR)weights_read_p, layers[i_layers].WORDS_WEIGHTS_PER_ITR);
+	status = dma_weights.mm2s_start((UINTPTR)weights_read_p, layers[i_layers].WORDS_WEIGHTS_PER_ITR);
 
+#if defined DEBUG
 	xil_printf("---------weights restarted. Reading from (i_layers,i_itr,:):\t (%d/%d, %d/%d, %d);\t ptr:%p \r\n",
 				i_layers,N_LAYERS,
 				i_itr	,layers[i_layers].ITR,
 				layers[i_layers].WORDS_WEIGHTS_PER_ITR,
 				weights_read_p);
+#endif
 
 	weights_read_p += layers[i_layers].WORDS_WEIGHTS_PER_ITR;
 
@@ -69,15 +70,26 @@ void restart_pixels()
 {
 	static int i_itr = 0, i_layers = I_LAYER;
 
-	status = dma_im_in_1.mm2s_start((UINTPTR) chunk_a.data_ps[0], layers[i_layers].WORDS_PIXELS_0);
-	if (layers[i_layers].IS_MAX)
-		status = dma_im_in_2.mm2s_start((UINTPTR) chunk_a.data_ps[1], layers[i_layers].WORDS_PIXELS_1);
+	s8 *read_p1, *read_p2;
+	unsigned long words_1, words_2;
 
+	read_p1 = chunk_a.data_p;
+	words_1 = UNITS_EDGES+layers[i_layers].WORDS_PIXELS_PER_ARR;
+
+	read_p2 = read_p1 + words_1;
+	words_2 = layers[i_layers].WORDS_PIXELS_PER_ARR;
+
+	status = dma_im_in_1.mm2s_start((UINTPTR)read_p1, words_1);
+	if (layers[i_layers].IS_MAX)
+		status = dma_im_in_2.mm2s_start((UINTPTR)(read_p2), words_2);
+
+#if defined DEBUG
 	xil_printf("----------pixels restarted. Reading from (i_layers,i_itr,:):\t (%d/%d, %d/%d, [%d,%d]);\t ptr: [%p, %p] \r\n",
 			i_layers,N_LAYERS,
 			i_itr	,layers[i_layers].ITR,
-			layers[i_layers].WORDS_PIXELS_0, layers[i_layers].WORDS_PIXELS_1,
-			chunk_a.data_ps[0], chunk_a.data_ps[1]);
+			words_1, words_2,
+			read_p1, read_p2);
+#endif
 
 	/* prepare next indices */
 
@@ -96,153 +108,123 @@ void callback_image_2_mm2s_done()
 	xil_printf("image_1 mm2s_done \r\n");
 }
 
-#define DEBUG_PAD
+volatile s8* unravel_index_5(volatile s8* base_p,
+		int& i_0, int& i_1, int& i_2, int& i_3, int& i_4,
+		const int D_0, const int D_1, const int D_2, const int D_3, const int D_4)
+{
+	 long idx = i_0*(D_1*D_2*D_3*D_4) + i_1*(D_2*D_3*D_4) + i_2*(D_3*D_4) + i_3*(D_4) + i_4;
+	 return base_p + idx;
+}
 
-void pad(volatile s8** write_ps_next,
-		int& i_arr_next,
-		int& i_blocks_next,
-		bool& is_new_itr_next,
-		int& itr_offset_next,
-		int& i_layers_next,
-		bool& is_new_layer_next
-#if defined DEBUG && defined DEBUG_PAD
-		,int& i_w_next, int&i_itr_next
-#endif
-		)
+volatile s8* unravel_image_abwcu(volatile s8* base_p,
+		int& i_arr, int& i_bpa, int& i_w, int& i_cout, int i_ue, int& i_layers)
+{
+	return unravel_index_5(base_p,
+
+							i_arr, i_bpa, i_w, i_cout, i_ue,
+
+							layers[i_layers].MAX_FACTOR,
+							layers[i_layers].OUT_BLOCKS_PER_ARR,
+							layers[i_layers].OUT_W_IN,
+							layers[i_layers].C_OUT,
+							UNITS_EDGES);
+}
+
+
+//#define DEBUG_PAD
+void pad_prev(	int& i_w_next,
+				int& i_blocks_next,
+				int& i_bpa_next,
+				int& i_arr_next,
+				int& i_cout_base_next,
+				int& i_layers_next,
+				volatile s8* pixels_p_next)
 {
 	/* Called with params of ongoing transaction.
 	 * Those are stored. Prev params are used to pad
 	 * */
+	static volatile s8* pixels_p = nullptr;
+	static int i_w, i_blocks, i_bpa, i_arr, i_cout_base, i_layers;
 
 	static bool is_sys_start = true;
-	static int i_arr, i_blocks, i_layers;
-	static volatile s8 * pad_this_ps [2] = {nullptr, nullptr};
-	static volatile s8 * pad_prev_ps [2] = {chunk_b.data_ps[0] + UNITS_EDGES, chunk_b.data_ps[1]};
-#ifdef DEBUG
-	static int i_w, i_itr;
-#endif
-
-	int i_arr_prev = (i_blocks-1)%layers[i_layers].MAX_FACTOR;
-
 	if (is_sys_start) is_sys_start = false;
 	else
 	{
-		for (int i_eff_cout=0; i_eff_cout < layers[i_layers].EFF_CORES; i_eff_cout++)
+		int i_arr_prev = (i_blocks-1) % layers[i_layers].MAX_FACTOR;
+		int i_bpa_prev = (i_blocks-1) / layers[i_layers].MAX_FACTOR;
+
+		for (int i_cout=i_cout_base; i_cout < i_cout_base + layers[i_layers].EFF_CORES; i_cout++)
 		{
+			volatile s8 *pad_prev_p = unravel_image_abwcu(pixels_p, i_arr_prev,i_bpa_prev,i_w,i_cout,0  , i_layers);
+			volatile s8 *pad_this_p = unravel_image_abwcu(pixels_p, i_arr     ,i_bpa     ,i_w,i_cout,0  , i_layers);
 			if (i_blocks != 0)
 			{
 				for (int i_kh2=0; i_kh2 < layers[i_layers].KH_IN/2; i_kh2++)
 				{
-					int i_prev_to   = KH_MAX/2 +UNITS + i_kh2;
-					int i_this_from = KH_MAX/2 + i_kh2;
+					// prev_top   <- this_bottom
 
-					pad_prev_ps[i_arr_prev][i_prev_to] = pad_this_ps[i_arr][i_this_from];
+					int i_prev_ue_to   = KH_MAX/2 +UNITS + i_kh2;
+					int i_this_ue_from = KH_MAX/2 + i_kh2;
 
-					int i_this_to   = KH_MAX/2-1 - i_kh2;
-					int i_prev_from = KH_MAX/2 +UNITS-1 - i_kh2;
+					pad_prev_p[i_prev_ue_to]  = pad_this_p[i_this_ue_from];
 
-					pad_this_ps[i_arr][i_this_to] = pad_prev_ps[i_arr_prev][i_prev_from];
+					// prev_bottom -> this_top
 
-//					xil_printf("\t P[%d]<-T[%d]; \t P[%d]->T[%d]", i_prev_to, i_this_from, i_prev_from, i_this_to);
+					int i_this_ue_to   = KH_MAX/2-1 - i_kh2;
+					int i_prev_ue_from = KH_MAX/2 +UNITS-1 - i_kh2;
+
+					pad_this_p[i_this_ue_to] = pad_prev_p[i_prev_ue_from];
 				}
-				pad_prev_ps[i_arr_prev] += UNITS_EDGES;
-
 #if defined DEBUG && defined DEBUG_PAD
-			const s8* im_p [2] = {chunk_b.data_ps[0] + UNITS_EDGES, chunk_b.data_ps[1]};
-			xil_printf("Padded [%p <-> %p] (arr,blocks,w,itr,eff_cores,ue): (%d,%d,%d,%d,%d,%d)->(%d,%d,%d,%d,%d,%d) {%d} \t (%d,%d,%d,%d,%d,%d)<-(%d,%d,%d,%d,%d,%d) {%d}  \r\n",
-					(UINTPTR)(pad_prev_ps[i_arr_prev]-im_p[i_arr_prev]), (UINTPTR)(pad_this_ps[i_arr]+(i_eff_cout*UNITS_EDGES) -im_p[i_arr]),
+			xil_printf("Padded [%p <-> %p] (abwcu): (%d,%d,%d,%d,%d)<-(%d,%d,%d,%d,%d) {%d} \t (%d,%d,%d,%d,%d)->(%d,%d,%d,%d,%d) {%d}  \r\n",
+					(UINTPTR)pad_prev_p, (UINTPTR)pad_this_p,
 
-					i_arr,i_blocks-1,i_w,i_itr,i_eff_cout,UNITS_EDGES-1,
-					i_arr,i_blocks,i_w,i_itr,i_eff_cout,0,
-					pad_prev_ps[i_arr_prev][UNITS_EDGES-2],
+					i_arr_prev,i_bpa_prev,i_w,i_cout, (KH_MAX/2 +UNITS),
+					i_arr     ,i_bpa     ,i_w,i_cout,  KH_MAX/2,
+					pad_this_p[KH_MAX/2],
 
-					i_arr,i_blocks-1,i_w,i_itr,i_eff_cout,UNITS_EDGES,
-					i_arr,i_blocks,i_w,i_itr,i_eff_cout,1,
-					pad_this_ps[i_arr][1]);
+					i_arr_prev,i_bpa_prev,i_w,i_cout,KH_MAX/2 +UNITS-1,
+					i_arr     ,i_bpa     ,i_w,i_cout,KH_MAX/2-1,
+					pad_prev_p[KH_MAX/2 +UNITS-1]);
 #endif
 			}
-			pad_this_ps[i_arr] += UNITS_EDGES;
 		}
 	}
 
-	/* UPDATE NEXT VALUES
-	 * */
-
-	if (is_new_itr_next)
-	{
-		if (is_new_layer_next)
-		{
-			for (int m=0; m< layers[i_layers].OUT_MAX_FACTOR; m++)
-				pad_prev_ps[m] = chunk_b.data_ps[m];
-
-			pad_prev_ps[0] += UNITS_EDGES;
-		}
-		else
-		{
-			for (int m=0; m< layers[i_layers].OUT_MAX_FACTOR; m++)
-				pad_prev_ps[m] = chunk_b.data_ps[m] + itr_offset_next;
-
-			pad_prev_ps[0] += UNITS_EDGES;
-		}
-	}
-	for (int m=0; m< layers[i_layers].OUT_MAX_FACTOR; m++)
-		pad_this_ps[m] = write_ps_next[m];
-
-	i_arr = i_arr_next;
-	i_blocks = i_blocks_next;
-	i_layers = i_layers_next;
-#if defined DEBUG && defined DEBUG_PAD
 	i_w = i_w_next;
-	i_itr = i_itr_next;
-#endif
+	i_blocks = i_blocks_next;
+	i_bpa = i_bpa_next;
+	i_arr = i_arr_next;
+	i_cout_base= i_cout_base_next;
+	i_layers = i_layers_next;
+	pixels_p = pixels_p_next;
 }
 
 void restart_output()
 {
-	static int i_w=0, i_blocks=0, i_arr=0, i_itr=0, i_layers=I_LAYER, itr_offset=0;
-	static volatile s8 * write_ps [2] = {chunk_b.data_ps[0] + UNITS_EDGES, chunk_b.data_ps[1]};
-	static bool is_new_itr = false, is_new_layer=true;
-
-	/* SET CONFIG BITS
-	 * - for first packet
-	 * - cannot set at the end, since next layer im_in might start before this layer is over
-	 */
-
+	const chunk_s* chunk_write_p = &chunk_b;
+	static volatile s8 * write_p = chunk_write_p->pixels_p;
+	static int i_w=0, i_blocks=0, i_bpa=0, i_arr=0, i_cout=0, i_itr=0, i_layers=I_LAYER;
+	static bool is_new_layer=true;
 
 	// start transfer
-
-	dma_im_out.s2mm_start(  (UINTPTR)write_ps[i_arr],
+	dma_im_out.s2mm_start(  (UINTPTR)write_p,
 							layers[i_layers].WORDS_OUT_PER_TRANSFER);
 
-	pad(	write_ps,
-			i_arr,
-			i_blocks,
-			is_new_itr,
-			itr_offset,
-			i_layers,
-			is_new_layer
-#if defined DEBUG && defined DEBUG_PAD
-			,i_w,i_itr
-#endif
-			);
+	pad_prev(i_w,i_blocks,i_bpa,i_arr,i_cout,i_layers,chunk_write_p->pixels_p);
 
+	// set config
 	if (is_new_layer)
 	{
-		layers[(i_layers+1) % N_LAYERS].set_config(write_ps[0]-UNITS_EDGES);
+		layers[(i_layers+1) % N_LAYERS].set_config(chunk_write_p->data_p);
 		is_new_layer = false;
 	}
 
-
-
 	// PREPARE NEXT INDICES
-
-	// Next data beat next col (i_w) but same c_out & units_edges. Hence push this ptr to that point
 	// TODO - handle skip connection
 #ifdef DEBUG
-	Xil_DCacheFlushRange((UINTPTR)write_ps[i_arr], layers[i_layers].WORDS_OUT_PER_TRANSFER);
+	Xil_DCacheFlushRange((UINTPTR)write_p, layers[i_layers].WORDS_OUT_PER_TRANSFER);
 #endif
-
-	write_ps[i_arr] += layers[i_layers].C_OUT * UNITS_EDGES;
 
 	if (i_w < layers[i_layers].OUT_W_IN-1)
 		i_w += 1;
@@ -255,53 +237,40 @@ void restart_output()
 		if (i_blocks < layers[i_layers].OUT_BLOCKS-1)
 		{
 			i_blocks  += 1;
-			i_arr      = i_blocks%layers[i_layers].OUT_MAX_FACTOR;
+			i_arr      = i_blocks % layers[i_layers].OUT_MAX_FACTOR;
+			i_bpa      = i_blocks / layers[i_layers].OUT_MAX_FACTOR;
 		}
 		else
 		{
-			is_new_itr = true;
 			i_blocks   = 0;
 			i_arr      = 0;
+			i_bpa      = 0;
 
 			xil_printf(" i_itr: %d \r\n", i_itr);
 
-			for (int m=0; m< layers[i_layers].OUT_MAX_FACTOR; m++)
-				write_ps [m] = chunk_b.data_ps[m];
-
-			write_ps [0] += UNITS_EDGES;
-
-
 			if (i_itr == 0)
 			{
-				i_itr += 1;
-
 				// TODO - handle skip connection
-				itr_offset = i_itr * layers[i_layers].COUT_VALID * UNITS_EDGES;
+				i_itr += 1;
+				i_cout = layers[i_layers].COUT_VALID;
 
-				xil_printf("i_itr= %d, cout_off= %d, offset= %d \r\n",i_itr,layers[i_layers].COUT_VALID, itr_offset);
-
-				for (int m=0; m< layers[i_layers].OUT_MAX_FACTOR; m++)
-					write_ps [m] += itr_offset;
+				xil_printf("i_itr= %d, i_cout= %d, offset= %d \r\n",i_itr, i_cout);
 			}
 			else if (i_itr < layers[i_layers].ITR-1)
 			{
-				i_itr += 1;
-
 				// TODO - handle skip connection
-				itr_offset = i_itr * layers[i_layers].EFF_CORES * UNITS_EDGES;
+				i_itr  += 1;
+				i_cout += layers[i_layers].EFF_CORES;
 
-				xil_printf("i_itr= %d, cout_off= %d, offset= %d \r\n",i_itr,layers[i_layers].COUT_VALID, itr_offset);
-
-				for (int m=0; m< layers[i_layers].OUT_MAX_FACTOR; m++)
-					write_ps [m] += itr_offset;
+				xil_printf("i_itr= %d, i_cout= %d, offset= %d \r\n",i_itr, i_cout);
 			}
 			else
 			{
 				is_new_layer = true;
 				i_itr = 0;
+				i_cout= 0;
 
-				write_ps [0] = chunk_b.data_ps[0] + UNITS_EDGES;
-				write_ps [1] = chunk_b.data_ps[1];
+				write_p = chunk_write_p->pixels_p;
 
 				if (i_layers < N_LAYERS-1)
 				{
@@ -318,6 +287,8 @@ void restart_output()
 			}
 		}
 	}
+
+	write_p = unravel_image_abwcu(chunk_write_p->pixels_p, i_arr,i_bpa,i_w,i_cout,0, i_layers);
 }
 
 //// mwr -bin -file D:/cnn-fpga/data/1_weights.bin 0x0A000000 722; mwr -bin -file D:/cnn-fpga/data/1_conv_in_0.bin 0x02000000 55297; mwr -bin -file D:/cnn-fpga/data/1_conv_in_1.bin 0x03000000 55296;
