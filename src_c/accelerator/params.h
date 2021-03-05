@@ -1,5 +1,7 @@
 #pragma once
 
+#define DEBUG
+
 #define UNITS   4
 #define MEMBERS 4
 #define COPIES  2
@@ -34,3 +36,7 @@
 #define IS_RELU_0    1
 #define KH_0         3
 #define KW_0         3
+
+#ifdef DEBUG
+	#pragma message("********* DEBUG is defined *************")
+#endif
