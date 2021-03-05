@@ -9,14 +9,14 @@
 #include <cmath>
 #include <iostream>
 
+#if (!defined(DEBUG))
+extern void xil_printf(const char *format, ...);
+#endif
+
 #include "params.h"
 #include "D:/cnn-fpga/src_c/zynq-oop-drivers/dma/my_dma.h"
 #include "cnn.h"
 
-#if (!defined(DEBUG))
-extern void xil_printf(const char *format, ...);
-#endif
-#define DEBUG
 
 int status;
 bool done = false;
@@ -69,15 +69,15 @@ void restart_pixels()
 {
 	static int i_itr = 0, i_layers = I_LAYER;
 
-	status = dma_im_in_1.mm2s_start((UINTPTR) chunk_a.data_p[0], layers[i_layers].WORDS_PIXELS_0);
+	status = dma_im_in_1.mm2s_start((UINTPTR) chunk_a.data_ps[0], layers[i_layers].WORDS_PIXELS_0);
 	if (layers[i_layers].IS_MAX)
-		status = dma_im_in_2.mm2s_start((UINTPTR) chunk_a.data_p[1], layers[i_layers].WORDS_PIXELS_1);
+		status = dma_im_in_2.mm2s_start((UINTPTR) chunk_a.data_ps[1], layers[i_layers].WORDS_PIXELS_1);
 
 	xil_printf("----------pixels restarted. Reading from (i_layers,i_itr,:):\t (%d/%d, %d/%d, [%d,%d]);\t ptr: [%p, %p] \r\n",
 			i_layers,N_LAYERS,
 			i_itr	,layers[i_layers].ITR,
 			layers[i_layers].WORDS_PIXELS_0, layers[i_layers].WORDS_PIXELS_1,
-			chunk_a.data_p[0], chunk_a.data_p[1]);
+			chunk_a.data_ps[0], chunk_a.data_ps[1]);
 
 	/* prepare next indices */
 
@@ -96,48 +96,38 @@ void callback_image_2_mm2s_done()
 	xil_printf("image_1 mm2s_done \r\n");
 }
 
+#define DEBUG_PAD
 
-void restart_output()
+void pad(volatile s8** write_ps_next,
+		int& i_arr_next,
+		int& i_blocks_next,
+		bool& is_new_itr_next,
+		int& itr_offset_next,
+		int& i_layers_next,
+		bool& is_new_layer_next
+#if defined DEBUG && defined DEBUG_PAD
+		,int& i_w_next, int&i_itr_next
+#endif
+		)
 {
-	static int i_w=0, i_blocks=0, i_arr=0, i_arr_prev=0, i_itr=0, i_layers=I_LAYER;
-	static volatile s8 * write_p [2] = {chunk_b.data_p[0], chunk_b.data_p[1]};
+	/* Called with params of ongoing transaction.
+	 * Those are stored. Prev params are used to pad
+	 * */
 
-	/* SET CONFIG BITS
-	 * - for first packet
-	 * - cannot set at the end, since next layer im_in might start before this layer is over
-	 */
+	static bool is_sys_start = true;
+	static int i_arr, i_blocks, i_layers;
+	static volatile s8 * pad_this_ps [2] = {nullptr, nullptr};
+	static volatile s8 * pad_prev_ps [2] = {chunk_b.data_ps[0] + UNITS_EDGES, chunk_b.data_ps[1]};
+#ifdef DEBUG
+	static int i_w, i_itr;
+#endif
 
-	static bool first_packet = true;
-	if (first_packet)
+	int i_arr_prev = (i_blocks-1)%layers[i_layers].MAX_FACTOR;
+
+	if (is_sys_start) is_sys_start = false;
+	else
 	{
-		layers[(i_layers+1) % N_LAYERS].set_config(write_p[0]);
-
-		write_p[0]  += UNITS_EDGES;
-		first_packet = false;
-	}
-
-	// start transfer
-
-	dma_im_out.s2mm_start(  (UINTPTR)write_p[i_arr],
-							layers[i_layers].WORDS_OUT_PER_TRANSFER);
-
-//	xil_printf("Writing to (layer,arr,bpa,w,itr,cout_fpga*ue):\t (%d/%d, %d/%d, %d/%d, %d/%d, %d/%d, %d);\t ptr: %p \r\n",
-//			i_layers,N_LAYERS,
-//			i_arr	,layers[i_layers].OUT_MAX_FACTOR,
-//			i_blocks/layers[i_layers].OUT_MAX_FACTOR, layers[i_layers].OUT_BLOCKS_PER_ARR,
-//			i_w		,layers[i_layers].OUT_W_IN,
-//			i_itr	,layers[i_layers].ITR,
-//			layers[i_layers].WORDS_OUT_PER_TRANSFER,
-//			write_p[i_arr]);
-
-	// Padding
-
-	static volatile s8 * pad_prev_p  [2] = {write_p[0], write_p[1]};
-	static volatile s8 * pad_this_p [2] = {write_p[0], write_p[1]};
-
-	for (int i_cout=0; i_cout < layers[i_layers].EFF_CORES; i_cout++)
-	{
-		if (i_w != 0)
+		for (int i_eff_cout=0; i_eff_cout < layers[i_layers].EFF_CORES; i_eff_cout++)
 		{
 			if (i_blocks != 0)
 			{
@@ -146,32 +136,113 @@ void restart_output()
 					int i_prev_to   = KH_MAX/2 +UNITS + i_kh2;
 					int i_this_from = KH_MAX/2 + i_kh2;
 
-					pad_prev_p[i_arr][i_prev_to] = pad_this_p[i_arr_prev][i_this_from];
+					pad_prev_ps[i_arr_prev][i_prev_to] = pad_this_ps[i_arr][i_this_from];
 
 					int i_this_to   = KH_MAX/2-1 - i_kh2;
 					int i_prev_from = KH_MAX/2 +UNITS-1 - i_kh2;
 
-					pad_this_p[i_arr_prev][i_this_to] = pad_prev_p[i_arr][i_prev_from];
+					pad_this_ps[i_arr][i_this_to] = pad_prev_ps[i_arr_prev][i_prev_from];
 
 //					xil_printf("\t P[%d]<-T[%d]; \t P[%d]->T[%d]", i_prev_to, i_this_from, i_prev_from, i_this_to);
 				}
-				pad_prev_p[i_arr_prev] += UNITS_EDGES;
+				pad_prev_ps[i_arr_prev] += UNITS_EDGES;
+
+#if defined DEBUG && defined DEBUG_PAD
+			const s8* im_p [2] = {chunk_b.data_ps[0] + UNITS_EDGES, chunk_b.data_ps[1]};
+			xil_printf("Padded [%p <-> %p] (arr,blocks,w,itr,eff_cores,ue): (%d,%d,%d,%d,%d,%d)->(%d,%d,%d,%d,%d,%d) {%d} \t (%d,%d,%d,%d,%d,%d)<-(%d,%d,%d,%d,%d,%d) {%d}  \r\n",
+					(UINTPTR)(pad_prev_ps[i_arr_prev]-im_p[i_arr_prev]), (UINTPTR)(pad_this_ps[i_arr]+(i_eff_cout*UNITS_EDGES) -im_p[i_arr]),
+
+					i_arr,i_blocks-1,i_w,i_itr,i_eff_cout,UNITS_EDGES-1,
+					i_arr,i_blocks,i_w,i_itr,i_eff_cout,0,
+					pad_prev_ps[i_arr_prev][UNITS_EDGES-2],
+
+					i_arr,i_blocks-1,i_w,i_itr,i_eff_cout,UNITS_EDGES,
+					i_arr,i_blocks,i_w,i_itr,i_eff_cout,1,
+					pad_this_ps[i_arr][1]);
+#endif
 			}
-			pad_this_p[i_arr] += UNITS_EDGES;
+			pad_this_ps[i_arr] += UNITS_EDGES;
 		}
 	}
+
+	/* UPDATE NEXT VALUES
+	 * */
+
+	if (is_new_itr_next)
+	{
+		if (is_new_layer_next)
+		{
+			for (int m=0; m< layers[i_layers].OUT_MAX_FACTOR; m++)
+				pad_prev_ps[m] = chunk_b.data_ps[m];
+
+			pad_prev_ps[0] += UNITS_EDGES;
+		}
+		else
+		{
+			for (int m=0; m< layers[i_layers].OUT_MAX_FACTOR; m++)
+				pad_prev_ps[m] = chunk_b.data_ps[m] + itr_offset_next;
+
+			pad_prev_ps[0] += UNITS_EDGES;
+		}
+	}
+	for (int m=0; m< layers[i_layers].OUT_MAX_FACTOR; m++)
+		pad_this_ps[m] = write_ps_next[m];
+
+	i_arr = i_arr_next;
+	i_blocks = i_blocks_next;
+	i_layers = i_layers_next;
+#if defined DEBUG && defined DEBUG_PAD
+	i_w = i_w_next;
+	i_itr = i_itr_next;
+#endif
+}
+
+void restart_output()
+{
+	static int i_w=0, i_blocks=0, i_arr=0, i_itr=0, i_layers=I_LAYER, itr_offset=0;
+	static volatile s8 * write_ps [2] = {chunk_b.data_ps[0] + UNITS_EDGES, chunk_b.data_ps[1]};
+	static bool is_new_itr = false, is_new_layer=true;
+
+	/* SET CONFIG BITS
+	 * - for first packet
+	 * - cannot set at the end, since next layer im_in might start before this layer is over
+	 */
+
+
+	// start transfer
+
+	dma_im_out.s2mm_start(  (UINTPTR)write_ps[i_arr],
+							layers[i_layers].WORDS_OUT_PER_TRANSFER);
+
+	pad(	write_ps,
+			i_arr,
+			i_blocks,
+			is_new_itr,
+			itr_offset,
+			i_layers,
+			is_new_layer
+#if defined DEBUG && defined DEBUG_PAD
+			,i_w,i_itr
+#endif
+			);
+
+	if (is_new_layer)
+	{
+		layers[(i_layers+1) % N_LAYERS].set_config(write_ps[0]-UNITS_EDGES);
+		is_new_layer = false;
+	}
+
+
 
 	// PREPARE NEXT INDICES
 
 	// Next data beat next col (i_w) but same c_out & units_edges. Hence push this ptr to that point
 	// TODO - handle skip connection
 #ifdef DEBUG
-	Xil_DCacheFlushRange((UINTPTR)write_p[i_arr], layers[i_layers].WORDS_OUT_PER_TRANSFER);
+	Xil_DCacheFlushRange((UINTPTR)write_ps[i_arr], layers[i_layers].WORDS_OUT_PER_TRANSFER);
 #endif
 
-	write_p[i_arr] += layers[i_layers].C_OUT * UNITS_EDGES;
-
-
+	write_ps[i_arr] += layers[i_layers].C_OUT * UNITS_EDGES;
 
 	if (i_w < layers[i_layers].OUT_W_IN-1)
 		i_w += 1;
@@ -181,28 +252,23 @@ void restart_output()
 
 		xil_printf(" i_blocks: %d \r\n", i_blocks);
 
-
 		if (i_blocks < layers[i_layers].OUT_BLOCKS-1)
 		{
 			i_blocks  += 1;
-			i_arr_prev = i_arr;
 			i_arr      = i_blocks%layers[i_layers].OUT_MAX_FACTOR;
 		}
 		else
 		{
+			is_new_itr = true;
 			i_blocks   = 0;
 			i_arr      = 0;
-			i_arr_prev = 0;
 
 			xil_printf(" i_itr: %d \r\n", i_itr);
 
 			for (int m=0; m< layers[i_layers].OUT_MAX_FACTOR; m++)
-			{
-				write_p [m] = chunk_b.data_p[m];
-				pad_prev_p[m] = write_p [m];
-				pad_this_p[m] = write_p [m];
-			}
-			write_p [0] += UNITS_EDGES;
+				write_ps [m] = chunk_b.data_ps[m];
+
+			write_ps [0] += UNITS_EDGES;
 
 
 			if (i_itr == 0)
@@ -210,29 +276,32 @@ void restart_output()
 				i_itr += 1;
 
 				// TODO - handle skip connection
-				int offset = i_itr * layers[i_layers].COUT_VALID * UNITS_EDGES;
+				itr_offset = i_itr * layers[i_layers].COUT_VALID * UNITS_EDGES;
 
-				xil_printf("i_itr= %d, cout_off= %d, offset= %d \r\n",i_itr,layers[i_layers].COUT_VALID, offset);
+				xil_printf("i_itr= %d, cout_off= %d, offset= %d \r\n",i_itr,layers[i_layers].COUT_VALID, itr_offset);
 
 				for (int m=0; m< layers[i_layers].OUT_MAX_FACTOR; m++)
-					write_p [m] += offset;
+					write_ps [m] += itr_offset;
 			}
 			else if (i_itr < layers[i_layers].ITR-1)
 			{
 				i_itr += 1;
 
 				// TODO - handle skip connection
-				int offset = i_itr * layers[i_layers].EFF_CORES * UNITS_EDGES;
+				itr_offset = i_itr * layers[i_layers].EFF_CORES * UNITS_EDGES;
 
-				xil_printf("i_itr= %d, cout_off= %d, offset= %d \r\n",i_itr,layers[i_layers].COUT_VALID, offset);
+				xil_printf("i_itr= %d, cout_off= %d, offset= %d \r\n",i_itr,layers[i_layers].COUT_VALID, itr_offset);
 
 				for (int m=0; m< layers[i_layers].OUT_MAX_FACTOR; m++)
-					write_p [m] += offset;
+					write_ps [m] += itr_offset;
 			}
 			else
 			{
+				is_new_layer = true;
 				i_itr = 0;
-				first_packet = true;
+
+				write_ps [0] = chunk_b.data_ps[0] + UNITS_EDGES;
+				write_ps [1] = chunk_b.data_ps[1];
 
 				if (i_layers < N_LAYERS-1)
 				{
@@ -260,17 +329,16 @@ void restart_output()
 
 int main()
 {
-	int status;
 
 	xil_printf("\r\n--- Entering main() --- \r\n");
 
-//	preprocess_input(image_rgb_p_A, chunk_a.data_p, IS_NOT_MAX_0, IS_MAX_0, IS_RELU_0, KH_0);
+//	preprocess_input(image_rgb_p_A, chunk_a.data_ps, IS_NOT_MAX_0, IS_MAX_0, IS_RELU_0, KH_0);
 
 	// Initiate DMAs
-	status = dma_weights.intr_init_mm2s(XPAR_FABRIC_DMA_WEIGHTS_MM2S_INTROUT_INTR);
-	status = dma_im_in_1.intr_init_mm2s(XPAR_FABRIC_DMA_IM_IN_1_MM2S_INTROUT_INTR);
-	status = dma_im_in_2.intr_init_mm2s(XPAR_FABRIC_DMA_IM_IN_2_MM2S_INTROUT_INTR);
-	status = dma_im_out.intr_init_s2mm (XPAR_FABRIC_DMA_IM_OUT_S2MM_INTROUT_INTR);
+	dma_weights.intr_init_mm2s(XPAR_FABRIC_DMA_WEIGHTS_MM2S_INTROUT_INTR);
+	dma_im_in_1.intr_init_mm2s(XPAR_FABRIC_DMA_IM_IN_1_MM2S_INTROUT_INTR);
+	dma_im_in_2.intr_init_mm2s(XPAR_FABRIC_DMA_IM_IN_2_MM2S_INTROUT_INTR);
+	dma_im_out.intr_init_s2mm (XPAR_FABRIC_DMA_IM_OUT_S2MM_INTROUT_INTR);
 
 	// Layer Details
 
