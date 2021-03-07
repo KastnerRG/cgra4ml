@@ -18,8 +18,9 @@ extern void xil_printf(const char *format, ...);
 
 My_DMA dma_im_in_1("im_in_1", XPAR_DMA_IM_IN_1_DEVICE_ID);
 My_DMA dma_im_in_2("im_in_2", XPAR_DMA_IM_IN_2_DEVICE_ID);
-My_DMA dma_weights("weights", XPAR_DMA_WEIGHTS_DEVICE_ID);
-My_DMA dma_im_out("im_out", XPAR_DMA_IM_OUT_DEVICE_ID);
+//My_DMA dma_weights("weights", XPAR_DMA_WEIGHTS_DEVICE_ID);
+//My_DMA dma_im_out("im_out", XPAR_DMA_IM_OUT_DEVICE_ID);
+My_DMA dma_weights_im_out("weights_im_out", XPAR_DMA_WEIGHTS_IM_OUT_DEVICE_ID);
 
 ////// Layer 1:
 //// mwr -bin -file D:/cnn-fpga/data/1_weights.bin 0x0A000000 722; mwr -bin -file D:/cnn-fpga/data/1_conv_in_0.bin 0x02000000 55297; mwr -bin -file D:/cnn-fpga/data/1_conv_in_1.bin 0x03000000 55296;
@@ -46,7 +47,6 @@ My_DMA dma_im_out("im_out", XPAR_DMA_IM_OUT_DEVICE_ID);
 void callback_weights_mm2s_done()
 {
 	xil_printf("weights mm2s_done \r\n");
-//	dma_weights.mm2s_start((UINTPTR)WEIGHTS_P, WEIGHTS_BYTES);
 }
 void callback_image_1_mm2s_done()
 {
@@ -73,14 +73,14 @@ int main()
 	xil_printf("\r\n--- Entering main() --- \r\n");
 
 	// Initiate DMAs
-	status = dma_weights.intr_init_mm2s(XPAR_FABRIC_DMA_WEIGHTS_MM2S_INTROUT_INTR);
-	status = dma_im_out.intr_init_s2mm(XPAR_FABRIC_DMA_IM_OUT_S2MM_INTROUT_INTR);
+	status = dma_weights_im_out.intr_init_mm2s(XPAR_FABRIC_DMA_WEIGHTS_IM_OUT_MM2S_INTROUT_INTR);
+	status = dma_weights_im_out.intr_init_s2mm(XPAR_FABRIC_DMA_WEIGHTS_IM_OUT_S2MM_INTROUT_INTR);
 	status = dma_im_in_1.intr_init_mm2s(XPAR_FABRIC_DMA_IM_IN_1_MM2S_INTROUT_INTR);
 	status = dma_im_in_2.intr_init_mm2s(XPAR_FABRIC_DMA_IM_IN_2_MM2S_INTROUT_INTR);
 
 	// Attach custom callbacks
-	dma_weights.mm2s_done_callback = callback_weights_mm2s_done;
-	dma_im_out.s2mm_done_callback = callback_output_s2mm_done;
+	dma_weights_im_out.mm2s_done_callback = callback_weights_mm2s_done;
+	dma_weights_im_out.s2mm_done_callback = callback_output_s2mm_done;
 	dma_im_in_1.mm2s_done_callback = callback_image_1_mm2s_done;
 	dma_im_in_2.mm2s_done_callback = callback_image_2_mm2s_done;
 
@@ -90,7 +90,7 @@ int main()
 
 	for (int i_itr=0; i_itr<3; i_itr++)
 	{
-		status = dma_weights.mm2s_start((UINTPTR)WEIGHTS_P, WEIGHTS_BYTES);
+		status = dma_weights_im_out.mm2s_start((UINTPTR)WEIGHTS_P, WEIGHTS_BYTES);
 		xil_printf("%d \r\n",status);
 		status = dma_im_in_1.mm2s_start((UINTPTR)DATA_A_P, IM_IN_BYTES + UNITS_EDGES);
 		xil_printf("%d \r\n",status);
@@ -101,7 +101,7 @@ int main()
 		xil_printf("starting out itr done: i_itr = %d, address = %p \r\n", i_itr, write_p);
 		for (int i_out=0; i_out<NUM_TRANSFERS; i_out++)
 		{
-			status = dma_im_out.s2mm_start((UINTPTR)write_p, IM_OUT_BYTES);
+			status = dma_weights_im_out.s2mm_start((UINTPTR)write_p, IM_OUT_BYTES);
 			while(!done){}
 			done=false;
 			Xil_DCacheFlushRange((UINTPTR)write_p, IM_OUT_BYTES);
