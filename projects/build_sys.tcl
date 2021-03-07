@@ -45,7 +45,7 @@ set BITS_KERNEL_H      [expr int(ceil(log($KERNEL_H_MAX)/log(2)))]
 set BITS_CONFIG_COUNT  [expr int(ceil(log($BEATS_CONFIG_3X3)/log(2)))]
 set BITS_KERNEL_H      [expr int(ceil(log($KERNEL_H_MAX)/log(2)))]
 set BITS_KERNEL_W      [expr int(ceil(log($KERNEL_W_MAX)/log(2)))]
-set M_WIDTH            [expr $WORD_WIDTH * 2**int(ceil(log($GROUPS * $UNITS_EDGES)/log(2)))]
+set M_DATA_WIDTH       [expr $WORD_WIDTH * 2**int(ceil(log($GROUPS * $UNITS_EDGES)/log(2)))]
 
 set IM_IN_S_DATA_WORDS   [expr 2**int(ceil(log($UNITS_EDGES)/log(2)))]
 set WORD_WIDTH_LRELU_1   [expr 1 + $BITS_EXP_FMA_1 + $BITS_FRA_FMA_1]
@@ -136,6 +136,7 @@ Parameters of the system. Written from build.tcl
 `define IM_BLOCKS_MAX    $IM_BLOCKS_MAX   
 `define IM_COLS_MAX      $IM_COLS_MAX     
 `define S_WEIGHTS_WIDTH $S_WEIGHTS_WIDTH
+`define M_DATA_WIDTH     $M_DATA_WIDTH
 `define LRELU_ALPHA      $LRELU_ALPHA     
 /*
   LATENCIES & float widths
@@ -399,7 +400,7 @@ set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BY
 set IP_NAME "axis_dw_max_2"
 lappend IP_NAMES $IP_NAME
 set S_BYTES [expr "$GROUPS * $UNITS_EDGES * $WORD_WIDTH / 8"]
-set M_BYTES [expr "$M_WIDTH/8"]
+set M_BYTES [expr "$M_DATA_WIDTH/8"]
 set T_LAST 1
 set T_KEEP 1
 create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
@@ -433,17 +434,17 @@ create_bd_cell -type module -reference axis_accelerator axis_accelerator_0
 # Weights & out DMA
 set IP_NAME "dma_weights_im_out"
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 $IP_NAME
-set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_m_axi_mm2s_data_width {32} CONFIG.c_m_axis_mm2s_tdata_width {32} CONFIG.c_mm2s_burst_size {8} CONFIG.c_sg_include_stscntrl_strm {0} CONFIG.c_include_mm2s_dre {1} CONFIG.c_m_axi_s2mm_data_width $M_WIDTH CONFIG.c_s_axis_s2mm_tdata_width M_WIDTH CONFIG.c_include_s2mm_dre {1} CONFIG.c_s2mm_burst_size {16}] [get_bd_cells $IP_NAME]
+set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_m_axi_mm2s_data_width {32} CONFIG.c_m_axis_mm2s_tdata_width {32} CONFIG.c_mm2s_burst_size {8} CONFIG.c_sg_include_stscntrl_strm {0} CONFIG.c_include_mm2s_dre {1} CONFIG.c_m_axi_s2mm_data_width "$M_DATA_WIDTH" CONFIG.c_s_axis_s2mm_tdata_width "$M_DATA_WIDTH" CONFIG.c_include_s2mm_dre {1} CONFIG.c_s2mm_burst_size {16}] [get_bd_cells $IP_NAME]
 
 # Im_in_1
 set IP_NAME "dma_im_in_1"
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 $IP_NAME
-set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_m_axi_mm2s_data_width {128} CONFIG.c_m_axis_mm2s_tdata_width {128} CONFIG.c_include_mm2s_dre {1} CONFIG.c_mm2s_burst_size {64} CONFIG.c_include_s2mm {0}] [get_bd_cells $IP_NAME]
+set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_m_axi_mm2s_data_width [expr $IM_IN_S_DATA_WORDS*8] CONFIG.c_m_axis_mm2s_tdata_width [expr $IM_IN_S_DATA_WORDS*8] CONFIG.c_include_mm2s_dre {1} CONFIG.c_mm2s_burst_size {64} CONFIG.c_include_s2mm {0}] [get_bd_cells $IP_NAME]
 
 # Im_in_2
 set IP_NAME "dma_im_in_2"
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 $IP_NAME
-set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_m_axi_mm2s_data_width {128} CONFIG.c_m_axis_mm2s_tdata_width {128} CONFIG.c_include_mm2s_dre {1} CONFIG.c_mm2s_burst_size {64} CONFIG.c_include_s2mm {0}] [get_bd_cells $IP_NAME]
+set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_m_axi_mm2s_data_width [expr $IM_IN_S_DATA_WORDS*8] CONFIG.c_m_axis_mm2s_tdata_width [expr $IM_IN_S_DATA_WORDS*8] CONFIG.c_include_mm2s_dre {1} CONFIG.c_mm2s_burst_size {64} CONFIG.c_include_s2mm {0}] [get_bd_cells $IP_NAME]
 
 # Interrupts
 create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat:2.1 xlconcat_0
@@ -462,7 +463,6 @@ connect_bd_intf_net [get_bd_intf_pins dma_weights_im_out/S_AXIS_S2MM] [get_bd_in
 
 # Connection automation
 startgroup
-apply_bd_automation -rule xilinx.com:bd_rule:clkrst -config { Clk {/processing_system7_0/FCLK_CLK1 (70 MHz)} Freq 70 Ref_Clk0 {None} Ref_Clk1 {None} Ref_Clk2 {None}}  [get_bd_pins axis_dwidth_converter_0/aclk]
 apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK0 (50 MHz)} Clk_slave {/processing_system7_0/FCLK_CLK0 (50 MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK0 (50 MHz)} Master {/processing_system7_0/M_AXI_GP0} Slave {/dma_im_in_1/S_AXI_LITE} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}}  [get_bd_intf_pins dma_im_in_1/S_AXI_LITE]
 apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK0 (50 MHz)} Clk_slave {/processing_system7_0/FCLK_CLK0 (50 MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK0 (50 MHz)} Master {/processing_system7_0/M_AXI_GP0} Slave {/dma_im_in_2/S_AXI_LITE} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}}  [get_bd_intf_pins dma_im_in_2/S_AXI_LITE]
 apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK0 (50 MHz)} Clk_slave {/processing_system7_0/FCLK_CLK0 (50 MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK0 (50 MHz)} Master {/processing_system7_0/M_AXI_GP0} Slave {/dma_weights_im_out/S_AXI_LITE} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}}  [get_bd_intf_pins dma_weights_im_out/S_AXI_LITE]
@@ -474,6 +474,9 @@ apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/process
 apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_slave {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK1 (70 MHz)} Master {/dma_weights_im_out/M_AXI_S2MM} Slave {/processing_system7_0/S_AXI_HP0} ddr_seg {Auto} intc_ip {/axi_mem_intercon} master_apm {0}}  [get_bd_intf_pins dma_weights_im_out/M_AXI_S2MM]
 endgroup
 
+connect_bd_net [get_bd_pins axis_accelerator_0/aclk] [get_bd_pins processing_system7_0/FCLK_CLK1]
+connect_bd_net [get_bd_pins axis_accelerator_0/aresetn] [get_bd_pins rst_ps7_0_71M/peripheral_aresetn]
+
 validate_bd_design
 
 generate_target all [get_files  $PROJ_FOLDER/$PROJ_NAME.srcs/sources_1/bd/sys/sys.bd]
@@ -481,5 +484,5 @@ make_wrapper -files [get_files $PROJ_FOLDER/$PROJ_NAME.srcs/sources_1/bd/sys/sys
 add_files -norecurse $PROJ_FOLDER/$PROJ_NAME.gen/sources_1/bd/sys/hdl/sys_wrapper.v
 set_property top sys_wrapper [current_fileset]
 
-set_property strategy {Best - with retiming and all} [get_runs synth_1]
-set_property strategy {Best - with retiming} [get_runs impl_1]
+# set_property strategy {Best - with retiming and all} [get_runs synth_1]
+# set_property strategy {Best - with retiming} [get_runs impl_1]
