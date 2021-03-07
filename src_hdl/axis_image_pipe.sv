@@ -173,9 +173,9 @@ module axis_image_pipe
   always_comb begin
     state_next = state;
     unique case (state)
-      SET_S   : if (dw_1_handshake)             state_next = ONES_S;
-      ONES_S  : if (ones_count == beats_config) state_next = PASS_S;
-      default : if (dw_1_handshake_last)        state_next = SET_S ;
+      SET_S   : if (dw_1_handshake)                               state_next = ONES_S;
+      ONES_S  : if (ones_count == beats_config && m_axis_tready)  state_next = PASS_S;
+      default : if (dw_1_handshake_last)                          state_next = SET_S ;
     endcase
   end
 
@@ -184,7 +184,10 @@ module axis_image_pipe
     unique case (state)
       SET_S   : begin
                   en_config     = dw_1_m_valid;
-                  en_ones_count = 0;
+
+                  en_ones_count = 1;
+                  ones_count_next = 0;
+
                   m_axis_tvalid = 0;
                   dw_1_m_ready  = m_axis_tready;
                   dw_2_m_ready  = 0;
@@ -192,7 +195,10 @@ module axis_image_pipe
                 end
       ONES_S  : begin
                   en_config     = 0;
+
                   en_ones_count = m_axis_tready;
+                  ones_count_next = ones_count + 1;
+
                   m_axis_tvalid = 1;
                   dw_1_m_ready  = 0;
                   dw_2_m_ready  = 0;
@@ -200,7 +206,10 @@ module axis_image_pipe
                 end
       default : begin // PASS_S
                   en_config     = 0;
+
                   en_ones_count = 0;
+                  ones_count_next = 0;
+
                   m_axis_tvalid = is_max_out ? (dw_1_m_valid  && dw_2_m_valid) : dw_1_m_valid;
                   dw_1_m_ready  = is_max_out ? (m_axis_tready && dw_2_m_valid) : m_axis_tready;
                   dw_2_m_ready  = is_max_out ? (m_axis_tready && dw_1_m_valid) : 0;
@@ -222,7 +231,6 @@ module axis_image_pipe
   );
 
   assign beats_config    = (kernel_h_1_out == 0       ) ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
-  assign ones_count_next = (ones_count == beats_config) ? 0 : ones_count + 1;
 
   register #(
     .WORD_WIDTH     (BITS_CONFIG_COUNT),
