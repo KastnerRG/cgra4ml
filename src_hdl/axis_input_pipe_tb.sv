@@ -17,7 +17,7 @@ module axis_input_pipe_tb ();
   localparam K          = 3;
   localparam IM_HEIGHT  = 2;
   localparam IM_WIDTH   = 4;
-  localparam IM_CIN     = 3;
+  localparam IM_CIN     = 4;
 
   localparam ITERATIONS = 5;
 
@@ -168,9 +168,9 @@ module axis_input_pipe_tb ();
 
   int status, file_im_1, file_im_2, file_weights;
 
-  string path_im_1 = "D:/cnn-fpga/mem_yolo/txt/im_pipe_in.txt";
-  string path_im_2 = "D:/cnn-fpga/mem_yolo/txt/im_pipe_in_2.txt";
-  string path_weights = "D:/cnn-fpga/mem_yolo/txt/weights_rot_in.txt";
+  string path_im_1 = "D:/cnn-fpga/data/im_pipe_in.txt";
+  string path_im_2 = "D:/cnn-fpga/data/im_pipe_in_2.txt";
+  string path_weights = "D:/cnn-fpga/data/weights_rot_in.txt";
 
   localparam BEATS_2 = IM_BLOCKS * IM_COLS * IM_CIN;
   localparam WORDS_2 = BEATS_2 * UNITS_EDGES;
@@ -220,6 +220,7 @@ module axis_input_pipe_tb ();
             file_im_1               = $fopen(path_im_1   ,"r");
             itr_count_im_1          = itr_count_im_1 + 1;
           end
+          else start_1 <= 0;
         end
       end
     end
@@ -253,6 +254,7 @@ module axis_input_pipe_tb ();
             file_im_2               = $fopen(path_im_2   ,"r");
             itr_count_im_2          = itr_count_im_2 + 1;
           end
+          else start_2 <= 0;
         end
       end
     end
@@ -285,21 +287,33 @@ module axis_input_pipe_tb ();
             file_weights         = $fopen(path_weights ,"r");
             itr_count_w          = itr_count_w + 1;
           end
+          else start_w <= 0;
         end
       end
     end
   endtask
 
-  initial begin
-    forever axis_feed_pixels_1;
-  end
+  initial forever axis_feed_pixels_1;
+  initial forever axis_feed_pixels_2;
+  initial forever axis_feed_weights;
+
+  class Random_Bit;
+  rand bit rand_bit;
+  constraint c {
+      rand_bit dist { 0 := 8, 1 := 2};
+    }
+  endclass
+
+  Random_Bit rand_obj = new();
 
   initial begin
-    forever axis_feed_pixels_2;
-  end
-
-  initial begin
-    forever axis_feed_weights;
+    forever begin
+      @(posedge aclk);
+      #1;
+      rand_obj.randomize();
+      m_axis_tready = rand_obj.rand_bit;
+      // m_axis_tready = 1;
+    end
   end
 
   initial begin
@@ -311,7 +325,6 @@ module axis_input_pipe_tb ();
     s_axis_pixels_1_tlast  <= 0;
     s_axis_pixels_2_tlast  <= 0;
     s_axis_weights_tlast   <= 0;
-    m_axis_tready          <= 0;
 
     s_axis_pixels_1_tkeep  <= -1;
     s_axis_pixels_2_tkeep  <= -1;
@@ -322,7 +335,6 @@ module axis_input_pipe_tb ();
     
     @(posedge aclk);
     aresetn         <= 1;
-    m_axis_tready   <= 1;
     
     @(posedge aclk);
     file_im_1    = $fopen(path_im_1   ,"r");
