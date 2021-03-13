@@ -25,6 +25,12 @@ module axis_accelerator
     S_WEIGHTS_WIDTH            = `S_WEIGHTS_WIDTH           ,
     M_DATA_WIDTH               = `M_DATA_WIDTH              ,
     LRELU_ALPHA                = `LRELU_ALPHA               ,
+    // DEBUG WIDTHS
+    DEBUG_CONFIG_WIDTH_W_ROT   = `DEBUG_CONFIG_WIDTH_W_ROT  ,
+    DEBUG_CONFIG_WIDTH_IM_PIPE = `DEBUG_CONFIG_WIDTH_IM_PIPE,
+    DEBUG_CONFIG_WIDTH_LRELU   = `DEBUG_CONFIG_WIDTH_LRELU  ,
+    DEBUG_CONFIG_WIDTH_MAXPOOL = `DEBUG_CONFIG_WIDTH_MAXPOOL,
+    DEBUG_CONFIG_WIDTH         = `DEBUG_CONFIG_WIDTH        ,
     // LATENCIES & float widths 
     BITS_EXP_CONFIG            = `BITS_EXP_CONFIG           ,
     BITS_FRA_CONFIG            = `BITS_FRA_CONFIG           ,
@@ -68,6 +74,7 @@ module axis_accelerator
   )(
     aclk                  ,
     aresetn               ,
+    debug_config          ,
     s_axis_pixels_1_tready, 
     s_axis_pixels_1_tvalid, 
     s_axis_pixels_1_tlast , 
@@ -120,6 +127,8 @@ module axis_accelerator
 
   input  wire aclk;
   input  wire aresetn;
+
+  output wire [DEBUG_CONFIG_WIDTH-1:0] debug_config;
 
   output wire s_axis_pixels_1_tready;
   input  wire s_axis_pixels_1_tvalid;
@@ -174,10 +183,20 @@ module axis_accelerator
   wire [GROUPS*UNITS_EDGES-1:0] max_dw_1_m_axis_tkeep;
   wire max_dw_1_m_axis_tvalid, max_dw_1_m_axis_tready, max_dw_1_m_axis_tlast;
 
+  wire [2*BITS_KERNEL_H+DEBUG_CONFIG_WIDTH_IM_PIPE+DEBUG_CONFIG_WIDTH_W_ROT-1:0] debug_config_input_pipe;
+  wire [DEBUG_CONFIG_WIDTH_LRELU  -1:0] debug_config_lrelu;
+  wire [DEBUG_CONFIG_WIDTH_MAXPOOL-1:0] debug_config_maxpool;
+
+  assign debug_config = {debug_config_maxpool, debug_config_lrelu, debug_config_input_pipe};
+
   axis_input_pipe #(
     .UNITS                     (UNITS                    ),
     .CORES                     (CORES                    ),
     .WORD_WIDTH                (WORD_WIDTH               ),
+
+    .DEBUG_CONFIG_WIDTH_W_ROT  (DEBUG_CONFIG_WIDTH_W_ROT  ),
+    .DEBUG_CONFIG_WIDTH_IM_PIPE(DEBUG_CONFIG_WIDTH_IM_PIPE),
+
     .KERNEL_H_MAX              (KERNEL_H_MAX             ),
     .BEATS_CONFIG_3X3_1        (BEATS_CONFIG_3X3_1       ),
     .BEATS_CONFIG_1X1_1        (BEATS_CONFIG_1X1_1       ),
@@ -214,6 +233,7 @@ module axis_accelerator
   ) input_pipe (
     .aclk                      (aclk                      ),
     .aresetn                   (aresetn                   ),
+    .debug_config              (debug_config_input_pipe   ),
     .s_axis_pixels_1_tready    (s_axis_pixels_1_tready    ), 
     .s_axis_pixels_1_tvalid    (s_axis_pixels_1_tvalid    ), 
     .s_axis_pixels_1_tlast     (s_axis_pixels_1_tlast     ), 
@@ -286,6 +306,7 @@ module axis_accelerator
   axis_lrelu_engine #(
     .WORD_WIDTH_IN              (WORD_WIDTH_ACC            ),
     .WORD_WIDTH_OUT             (WORD_WIDTH                ),
+    .DEBUG_CONFIG_WIDTH_LRELU   (DEBUG_CONFIG_WIDTH_LRELU  ),
     .UNITS                      (UNITS                     ),
     .GROUPS                     (GROUPS                    ),
     .COPIES                     (COPIES                    ),
@@ -317,6 +338,7 @@ module axis_accelerator
   ) LRELU_ENGINE (
     .aclk          (aclk                 ),
     .aresetn       (aresetn              ),
+    .debug_config  (debug_config_lrelu   ),
     .s_axis_tvalid (conv_m_axis_tvalid   ),
     .s_axis_tready (conv_m_axis_tready   ),
     .s_axis_tdata  (conv_m_axis_tdata    ), // cmgu
@@ -333,6 +355,7 @@ module axis_accelerator
     .GROUPS       (GROUPS      ),
     .MEMBERS      (MEMBERS     ),
     .WORD_WIDTH   (WORD_WIDTH  ),
+    .DEBUG_CONFIG_WIDTH_MAXPOOL (DEBUG_CONFIG_WIDTH_MAXPOOL),
     .KERNEL_H_MAX (KERNEL_H_MAX),
     .KERNEL_W_MAX (KERNEL_W_MAX),
     .I_IS_NOT_MAX (I_IS_NOT_MAX),
@@ -342,6 +365,7 @@ module axis_accelerator
   ) MAXPOOL_ENGINE (
     .aclk          (aclk                  ),
     .aresetn       (aresetn               ),
+    .debug_config  (debug_config_maxpool  ),
     .s_axis_tvalid (lrelu_m_axis_tvalid   ),
     .s_axis_tready (lrelu_m_axis_tready   ),
     .s_axis_tdata  (lrelu_m_axis_tdata    ), // cgu

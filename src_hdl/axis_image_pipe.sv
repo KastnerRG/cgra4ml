@@ -38,6 +38,7 @@ module axis_image_pipe
   #(
     UNITS                    ,
     WORD_WIDTH               , 
+    DEBUG_CONFIG_WIDTH_IM_PIPE,
     KERNEL_H_MAX             ,   // odd number
     BEATS_CONFIG_3X3_1       ,
     BEATS_CONFIG_1X1_1       ,
@@ -50,6 +51,7 @@ module axis_image_pipe
   (
     aclk           ,
     aresetn        ,
+    debug_config   ,
     s_axis_1_tready, 
     s_axis_1_tvalid, 
     s_axis_1_tlast , 
@@ -144,6 +146,10 @@ module axis_image_pipe
   logic [WORD_WIDTH-1:0] dw_2_m_data [UNITS_EDGES-1:0];
   logic [WORD_WIDTH-1:0] m_data_1    [UNITS_EDGES-1:0];
   logic [WORD_WIDTH-1:0] m_data_2    [UNITS_EDGES-1:0];
+
+  output logic [DEBUG_CONFIG_WIDTH_IM_PIPE-1:0] debug_config;
+
+  assign debug_config = {is_max_out, is_not_max_out, is_lrelu_out, state, kernel_h_1_out, beats_config, ones_count};
 
   assign dw_1_handshake      = dw_1_m_ready && dw_1_m_valid;
   assign dw_1_handshake_last = dw_1_m_last  && dw_1_m_ready && dw_1_m_valid;
@@ -335,6 +341,7 @@ endmodule
 module axis_image_shift_buffer (
     aclk         ,
     aresetn      ,
+    debug_config ,
 
     s_axis_tready,  
     s_axis_tvalid,  
@@ -380,6 +387,9 @@ module axis_image_shift_buffer (
 
   logic aclken;
   logic [BITS_KERNEL_H-1:0] count_next, count;
+
+  output logic [BITS_KERNEL_H-1:0] debug_config;
+  assign debug_config = count;
 
   logic [WORD_WIDTH-1:0] s_data            [UNITS_EDGES-1:0];
   logic [WORD_WIDTH-1:0] s_data_decentered [UNITS_EDGES-1:0][KERNEL_H_MAX/2 +1-1:0];

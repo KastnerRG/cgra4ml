@@ -42,9 +42,11 @@ set UNITS_EDGES        [expr $UNITS + $KERNEL_H_MAX-1]
 set CORES              [expr $MEMBERS * $GROUPS * $COPIES]
 set BITS_KERNEL_W      [expr int(ceil(log($KERNEL_W_MAX)/log(2)))]
 set BITS_KERNEL_H      [expr int(ceil(log($KERNEL_H_MAX)/log(2)))]
+set BITS_IM_COLS       [expr int(ceil(log($IM_COLS_MAX)/log(2)))]
+set BITS_IM_ROWS       [expr int(ceil(log($IM_ROWS_MAX)/log(2)))]
+set BITS_IM_CIN        [expr int(ceil(log($IM_CIN_MAX)/log(2)))]
+set BITS_IM_BLOCKS     [expr int(ceil(log($IM_ROWS_MAX/$UNITS)/log(2)))]
 set BITS_CONFIG_COUNT  [expr int(ceil(log($BEATS_CONFIG_3X3)/log(2)))]
-set BITS_KERNEL_H      [expr int(ceil(log($KERNEL_H_MAX)/log(2)))]
-set BITS_KERNEL_W      [expr int(ceil(log($KERNEL_W_MAX)/log(2)))]
 set M_DATA_WIDTH       [expr $WORD_WIDTH * 2**int(ceil(log($GROUPS * $UNITS_EDGES)/log(2)))]
 
 set IM_IN_S_DATA_WORDS   [expr 2**int(ceil(log($UNITS_EDGES)/log(2)))]
@@ -55,6 +57,9 @@ set TKEEP_WIDTH_IM_IN    [expr $WORD_WIDTH * 2**int(ceil(log($UNITS_EDGES)/log(2
 
 set BEATS_CONFIG_3X3_1 [expr $BEATS_CONFIG_3X3-1]
 set BEATS_CONFIG_1X1_1 [expr $BEATS_CONFIG_1X1-1]
+
+set BITS_FMA_1 [expr $BITS_FRA_FMA_1 + $BITS_EXP_FMA_1 + 1]
+set BITS_FMA_2 [expr $BITS_FRA_FMA_2 + $BITS_EXP_FMA_2 + 1]
 
 # IMAGE TUSER INDICES
 set I_IMAGE_IS_NOT_MAX       0
@@ -94,6 +99,12 @@ set TUSER_WIDTH_LRELU_IN       [expr 1 + $I_IS_RIGHT_COL]
 set TUSER_WIDTH_LRELU_FMA_1_IN [expr 1 + $I_IS_LRELU    ]
 set TUSER_WIDTH_CONV_IN        [expr $BITS_KERNEL_W + $I_KERNEL_W_1]
 
+set DEBUG_CONFIG_WIDTH_W_ROT   [expr 1 + 2*$BITS_KERNEL_W + 3*($BITS_KERNEL_H + $BITS_IM_CIN + $BITS_IM_COLS + $BITS_IM_BLOCKS)]
+set DEBUG_CONFIG_WIDTH_IM_PIPE [expr 3 + 2 + $BITS_KERNEL_H + $BITS_CONFIG_COUNT + $BITS_CONFIG_COUNT]
+set DEBUG_CONFIG_WIDTH_LRELU   [expr 3 + 4 + $BITS_FMA_2]
+set DEBUG_CONFIG_WIDTH_MAXPOOL 1
+set DEBUG_CONFIG_WIDTH         [expr $DEBUG_CONFIG_WIDTH_MAXPOOL + $DEBUG_CONFIG_WIDTH_LRELU + 2*$BITS_KERNEL_H + $DEBUG_CONFIG_WIDTH_IM_PIPE + $DEBUG_CONFIG_WIDTH_W_ROT]
+
 #********** STORE PARAMS *************
 
 set file_param [open $SOURCE_FOLDER/params.v w]
@@ -121,6 +132,12 @@ Parameters of the system. Written from build.tcl
 `define BITS_KERNEL_W     $BITS_KERNEL_W
 `define TKEEP_WIDTH_IM_IN $TKEEP_WIDTH_IM_IN
 `define BITS_CONFIG_COUNT $BITS_CONFIG_COUNT
+
+`define DEBUG_CONFIG_WIDTH_W_ROT   $DEBUG_CONFIG_WIDTH_W_ROT  
+`define DEBUG_CONFIG_WIDTH_IM_PIPE $DEBUG_CONFIG_WIDTH_IM_PIPE
+`define DEBUG_CONFIG_WIDTH_LRELU   $DEBUG_CONFIG_WIDTH_LRELU  
+`define DEBUG_CONFIG_WIDTH_MAXPOOL $DEBUG_CONFIG_WIDTH_MAXPOOL
+`define DEBUG_CONFIG_WIDTH         $DEBUG_CONFIG_WIDTH        
 
 /*
   IMAGE TUSER INDICES

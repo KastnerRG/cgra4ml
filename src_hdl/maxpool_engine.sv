@@ -37,6 +37,7 @@ module maxpool_engine #(
     GROUPS      ,
     MEMBERS     ,
     WORD_WIDTH  ,
+    DEBUG_CONFIG_WIDTH_MAXPOOL,
     KERNEL_W_MAX,
     I_IS_NOT_MAX,
     I_IS_MAX    ,
@@ -45,6 +46,7 @@ module maxpool_engine #(
     clk,
     clken,
     resetn,
+    debug_config,
 
     s_valid,
     s_data_flat_cgu,
@@ -79,6 +81,8 @@ module maxpool_engine #(
   localparam MAX_2_S = 0;
   localparam MAX_4_S = 1;
   logic state, state_en;
+  output logic [DEBUG_CONFIG_WIDTH_MAXPOOL-1:0] debug_config;
+  assign debug_config = state;
 
   logic max_4_handshake, max_4_handshake_delay;
   logic sel_max_4_in; 

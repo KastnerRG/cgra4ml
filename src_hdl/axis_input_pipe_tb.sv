@@ -112,6 +112,9 @@ module axis_input_pipe_tb ();
   logic [WORD_WIDTH*CORES*KERNEL_W_MAX-1:0] m_axis_weights_tdata;
   logic [TUSER_WIDTH_CONV_IN-1:0] m_axis_tuser;
 
+  localparam DEBUG_CONFIG_WIDTH = 2*BITS_KERNEL_H + `DEBUG_CONFIG_WIDTH_IM_PIPE + `DEBUG_CONFIG_WIDTH_W_ROT;
+  logic [DEBUG_CONFIG_WIDTH-1:0] debug_config;
+
   axis_input_pipe #(
     .UNITS              (UNITS             ),
     .CORES              (CORES             ),

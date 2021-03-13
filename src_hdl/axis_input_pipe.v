@@ -9,6 +9,9 @@ module axis_input_pipe
     KERNEL_W_MAX              = `KERNEL_W_MAX             ,
     BEATS_CONFIG_3X3_1        = `BEATS_CONFIG_3X3_1       ,
     BEATS_CONFIG_1X1_1        = `BEATS_CONFIG_1X1_1       ,
+    // DEBUG WIDTHS
+    DEBUG_CONFIG_WIDTH_W_ROT  = `DEBUG_CONFIG_WIDTH_W_ROT  ,
+    DEBUG_CONFIG_WIDTH_IM_PIPE= `DEBUG_CONFIG_WIDTH_IM_PIPE,
     //  IMAGE TUSER INDICES 
     I_IMAGE_IS_NOT_MAX        = `I_IMAGE_IS_NOT_MAX       ,
     I_IMAGE_IS_MAX            = `I_IMAGE_IS_MAX           ,
@@ -45,6 +48,7 @@ module axis_input_pipe
   )(
     aclk                  ,
     aresetn               ,
+    debug_config          ,
     s_axis_pixels_1_tready, 
     s_axis_pixels_1_tvalid, 
     s_axis_pixels_1_tlast , 
@@ -121,9 +125,18 @@ module axis_input_pipe
   output wire [WORD_WIDTH*CORES*KERNEL_W_MAX-1:0] m_axis_weights_tdata;
   output wire [TUSER_WIDTH_CONV_IN-1:0] m_axis_tuser;
 
+  wire [DEBUG_CONFIG_WIDTH_IM_PIPE-1:0] image_pipe_debug_config;
+  wire [BITS_KERNEL_H-1:0]              im_shift_1_debug_config, im_shift_2_debug_config;
+  wire [DEBUG_CONFIG_WIDTH_W_ROT  -1:0] w_rot_debug_config;
+
+  localparam DEBUG_CONFIG_WIDTH = 2*BITS_KERNEL_H + DEBUG_CONFIG_WIDTH_IM_PIPE + DEBUG_CONFIG_WIDTH_W_ROT;
+  output wire [DEBUG_CONFIG_WIDTH-1:0] debug_config;
+  assign debug_config = {im_shift_2_debug_config, im_shift_1_debug_config, image_pipe_debug_config, w_rot_debug_config};
+
   axis_image_pipe #(
     .UNITS              (UNITS             ),
     .WORD_WIDTH         (WORD_WIDTH        ),
+    .DEBUG_CONFIG_WIDTH_IM_PIPE(DEBUG_CONFIG_WIDTH_IM_PIPE),
     .KERNEL_H_MAX       (KERNEL_H_MAX      ),
     .BEATS_CONFIG_3X3_1 (BEATS_CONFIG_3X3_1),
     .BEATS_CONFIG_1X1_1 (BEATS_CONFIG_1X1_1),
@@ -135,6 +148,7 @@ module axis_input_pipe
   ) IM_MUX (
     .aclk            (aclk   ),
     .aresetn         (aresetn),
+    .debug_config    (image_pipe_debug_config),
     .s_axis_1_tready (s_axis_pixels_1_tready), 
     .s_axis_1_tvalid (s_axis_pixels_1_tvalid), 
     .s_axis_1_tlast  (s_axis_pixels_1_tlast ), 
@@ -161,6 +175,7 @@ module axis_input_pipe
   ) IM_SHIFT_1 (
     .aclk          (aclk           ),
     .aresetn       (aresetn        ),
+    .debug_config  (im_shift_1_debug_config),
     .s_axis_tready (im_mux_m_ready ),  
     .s_axis_tvalid (im_mux_m_valid ),  
     .s_axis_tdata  (im_mux_m_data_1),   
@@ -180,6 +195,7 @@ module axis_input_pipe
   ) IM_SHIFT_2 (
     .aclk          (aclk           ),
     .aresetn       (aresetn        ),
+    .debug_config  (im_shift_2_debug_config),
     .s_axis_tvalid (im_mux_m_valid ),  
     .s_axis_tdata  (im_mux_m_data_2),   
     .s_axis_tuser  (im_mux_m_user  ),   
@@ -190,6 +206,7 @@ module axis_input_pipe
   axis_weight_rotator #(
     .CORES               (CORES              ),
     .WORD_WIDTH          (WORD_WIDTH         ),
+    .DEBUG_CONFIG_WIDTH_W_ROT (DEBUG_CONFIG_WIDTH_W_ROT),
     .KERNEL_H_MAX        (KERNEL_H_MAX       ),
     .KERNEL_W_MAX        (KERNEL_W_MAX       ),
     .IM_CIN_MAX          (IM_CIN_MAX         ),
@@ -210,6 +227,7 @@ module axis_input_pipe
   ) WEIGHTS_ROTATOR (
     .aclk          (aclk                 ),
     .aresetn       (aresetn              ),
+    .debug_config  (w_rot_debug_config   ),
     .s_axis_tready (s_axis_weights_tready), 
     .s_axis_tvalid (s_axis_weights_tvalid), 
     .s_axis_tlast  (s_axis_weights_tlast ), 

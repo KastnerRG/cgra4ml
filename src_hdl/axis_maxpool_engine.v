@@ -6,6 +6,7 @@ module axis_maxpool_engine
     GROUPS       = `GROUPS      ,
     MEMBERS      = `MEMBERS     ,
     WORD_WIDTH   = `WORD_WIDTH  ,
+    DEBUG_CONFIG_WIDTH_MAXPOOL = `DEBUG_CONFIG_WIDTH_MAXPOOL,
     KERNEL_H_MAX = `KERNEL_H_MAX, // odd
     KERNEL_W_MAX = `KERNEL_W_MAX, // odd
     I_IS_NOT_MAX = `I_IS_NOT_MAX,
@@ -15,6 +16,7 @@ module axis_maxpool_engine
   )(
     aclk         ,
     aresetn      ,
+    debug_config ,
     s_axis_tvalid,
     s_axis_tready,
     s_axis_tdata , // cgu
@@ -36,6 +38,8 @@ module axis_maxpool_engine
   input wire  [GROUPS*UNITS*2*WORD_WIDTH-1:0]       s_axis_tdata;
   output wire [GROUPS*UNITS_EDGES*2*WORD_WIDTH-1:0] m_axis_tdata;
   output wire [GROUPS*UNITS_EDGES*2-1:0]            m_axis_tkeep;
+
+  output wire [DEBUG_CONFIG_WIDTH_MAXPOOL-1:0] debug_config;
 
   wire [GROUPS*UNITS*2*WORD_WIDTH-1:0] slice_m_data_flat;
   wire [GROUPS*UNITS*2-1:0]            slice_m_keep_flat;
@@ -61,6 +65,7 @@ module axis_maxpool_engine
     .UNITS            (UNITS           ),
     .GROUPS           (GROUPS          ),
     .MEMBERS          (MEMBERS         ),
+    .DEBUG_CONFIG_WIDTH_MAXPOOL (DEBUG_CONFIG_WIDTH_MAXPOOL),
     .WORD_WIDTH       (WORD_WIDTH      ),
     .KERNEL_W_MAX     (KERNEL_W_MAX    ),
     .I_IS_NOT_MAX     (I_IS_NOT_MAX    ),
@@ -72,6 +77,7 @@ module axis_maxpool_engine
     .clk         (aclk         ),
     .clken       (engine_clken ),
     .resetn      (aresetn      ),
+    .debug_config(debug_config ),
     .s_valid     (s_axis_tvalid),
     .s_data_flat_cgu (s_axis_tdata ),
     .s_ready     (engine_ready ),

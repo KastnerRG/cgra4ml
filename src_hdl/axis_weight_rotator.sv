@@ -29,6 +29,7 @@ module axis_weight_rotator
   #(
     CORES              ,
     WORD_WIDTH         , 
+    DEBUG_CONFIG_WIDTH_W_ROT,
     KERNEL_H_MAX       ,   // odd number
     KERNEL_W_MAX       ,   // odd number
     IM_CIN_MAX         ,
@@ -49,6 +50,7 @@ module axis_weight_rotator
   )(
     aclk         ,
     aresetn      ,
+    debug_config ,
     s_axis_tready, 
     s_axis_tvalid, 
     s_axis_tlast , 
@@ -129,6 +131,13 @@ module axis_weight_rotator
 
   logic last_config, last_kh, last_cin, last_cols, last_blocks;
   logic last_next_config, last_next_kh, last_next_cin, last_next_cols, last_next_blocks;
+
+  output logic [DEBUG_CONFIG_WIDTH_W_ROT-1:0] debug_config;
+  
+  assign debug_config = {state_dw, ref_1_kw[0], ref_1_kw[1], 
+                        ref_1_kh[0], ref_1_cin[0], ref_1_cols[0], ref_1_blocks[0], 
+                        ref_1_kh[1], ref_1_cin[1], ref_1_cols[1], ref_1_blocks[1], 
+                        count_kh, count_cin, count_cols, count_blocks};
 
   axis_dw_weights_input DW (
     .aclk           (aclk),

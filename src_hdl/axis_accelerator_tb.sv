@@ -16,33 +16,33 @@ module axis_accelerator_tb ();
     IMAGE & KERNEL PARAMETERS
   */
 
-   // //################ LAYER 1 : 3x3, maxpool ####################
+  //  // //################ LAYER 1 : 3x3, maxpool ####################
   
-   localparam K          = 3;
-   localparam MAX_FACTOR = 2;
-   localparam IM_HEIGHT  = 256;
-   localparam IM_WIDTH   = 384;
-   localparam IM_CIN     = 3;
-   string path_im_1      = "D:/cnn-fpga/data/1_conv_in_0.txt";
-   string path_im_2      = "D:/cnn-fpga/data/1_conv_in_1.txt";
-   string path_weights   = "D:/cnn-fpga/data/1_weights.txt";
-   string path_conv_out  = "D:/cnn-fpga/data/1_conv_out_fpga.txt";
-   string path_lrelu_out = "D:/cnn-fpga/data/1_lrelu_out_fpga.txt";
-   string path_max_out   = "D:/cnn-fpga/data/1_max_out_fpga.txt";
+  //  localparam K          = 3;
+  //  localparam MAX_FACTOR = 2;
+  //  localparam IM_HEIGHT  = 256;
+  //  localparam IM_WIDTH   = 384;
+  //  localparam IM_CIN     = 3;
+  //  string path_im_1      = "D:/cnn-fpga/data/1_conv_in_0.txt";
+  //  string path_im_2      = "D:/cnn-fpga/data/1_conv_in_1.txt";
+  //  string path_weights   = "D:/cnn-fpga/data/1_weights.txt";
+  //  string path_conv_out  = "D:/cnn-fpga/data/1_conv_out_fpga_";
+  //  string path_lrelu_out = "D:/cnn-fpga/data/1_lrelu_out_fpga_";
+  //  string path_max_out   = "D:/cnn-fpga/data/1_max_out_fpga_";
 
-////  ############ LAYER 3 : 3x3, non-maxpool ####################
+//  ############ LAYER 3 : 3x3, non-maxpool ####################
 
-//  localparam K          = 3;
-//  localparam MAX_FACTOR = 1;
-//  localparam IM_HEIGHT  = 64;
-//  localparam IM_WIDTH   = 96;
-//  localparam IM_CIN     = 64;
-//  string path_im_1      = "D:/cnn-fpga/data/3_conv_in_0.txt";
-//  string path_im_2      = "D:/cnn-fpga/data/3_conv_in_1.txt";
-//  string path_weights   = "D:/cnn-fpga/data/3_weights.txt";
-//  string path_conv_out  = "D:/cnn-fpga/data/3_conv_out_fpga.txt";
-//  string path_lrelu_out = "D:/cnn-fpga/data/3_lrelu_out_fpga.txt";
-//  string path_max_out   = "D:/cnn-fpga/data/3_max_out_fpga.txt";
+ localparam K          = 3;
+ localparam MAX_FACTOR = 1;
+ localparam IM_HEIGHT  = 64;
+ localparam IM_WIDTH   = 96;
+ localparam IM_CIN     = 64;
+ string path_im_1      = "D:/cnn-fpga/data/3_conv_in_0.txt";
+ string path_im_2      = "D:/cnn-fpga/data/3_conv_in_1.txt";
+ string path_weights   = "D:/cnn-fpga/data/3_weights.txt";
+ string path_conv_out  = "D:/cnn-fpga/data/3_conv_out_fpga_";
+ string path_lrelu_out = "D:/cnn-fpga/data/3_lrelu_out_fpga_";
+ string path_max_out   = "D:/cnn-fpga/data/3_max_out_fpga_";
 
 //   // #################### LAYER 4 : 1x1 ####################
 
@@ -54,9 +54,9 @@ module axis_accelerator_tb ();
 //   string path_im_1      = "D:/cnn-fpga/data/4_conv_in_0.txt";
 //   string path_im_2      = "D:/cnn-fpga/data/4_conv_in_1.txt";
 //   string path_weights   = "D:/cnn-fpga/data/4_weights.txt";
-//   string path_conv_out  = "D:/cnn-fpga/data/4_conv_out_fpga.txt";
-//   string path_lrelu_out = "D:/cnn-fpga/data/4_lrelu_out_fpga.txt";
-//   string path_max_out   = "D:/cnn-fpga/data/4_max_out_fpga.txt";
+//   string path_conv_out  = "D:/cnn-fpga/data/4_conv_out_fpga_";
+//   string path_lrelu_out = "D:/cnn-fpga/data/4_lrelu_out_fpga_";
+//   string path_max_out   = "D:/cnn-fpga/data/4_max_out_fpga_";
 
   /*
     SYSTEM PARAMS
@@ -68,6 +68,11 @@ module axis_accelerator_tb ();
   localparam CORES                 = `CORES                ;
   localparam WORD_WIDTH            = `WORD_WIDTH           ; 
   localparam WORD_WIDTH_ACC        = `WORD_WIDTH_ACC       ; 
+  localparam DEBUG_CONFIG_WIDTH_W_ROT   = `DEBUG_CONFIG_WIDTH_W_ROT  ;
+  localparam DEBUG_CONFIG_WIDTH_IM_PIPE = `DEBUG_CONFIG_WIDTH_IM_PIPE;
+  localparam DEBUG_CONFIG_WIDTH_LRELU   = `DEBUG_CONFIG_WIDTH_LRELU  ;
+  localparam DEBUG_CONFIG_WIDTH_MAXPOOL = `DEBUG_CONFIG_WIDTH_MAXPOOL;
+  localparam DEBUG_CONFIG_WIDTH         = `DEBUG_CONFIG_WIDTH        ;
   localparam KERNEL_H_MAX          = `KERNEL_H_MAX         ;   // odd number
   localparam KERNEL_W_MAX          = `KERNEL_W_MAX         ;
   localparam BITS_KERNEL_W         = `BITS_KERNEL_W        ;
@@ -128,7 +133,7 @@ module axis_accelerator_tb ();
   localparam TKEEP_WIDTH_IM_IN  = WORD_WIDTH*IM_IN_S_DATA_WORDS/8;
   localparam IM_BLOCKS          = IM_HEIGHT/UNITS;
   localparam IM_COLS            = IM_WIDTH;
-  localparam REPEATS = 1;
+  localparam REPEATS = 3;
 
 
   logic aresetn;
@@ -177,6 +182,17 @@ module axis_accelerator_tb ();
   logic [M_DATA_WIDTH  -1:0] m_axis_tdata;
   logic [WORD_WIDTH    -1:0] m_data        [M_DATA_WIDTH/WORD_WIDTH-1:0];
   logic [M_DATA_WIDTH/8-1:0] m_axis_tkeep;
+
+  logic [DEBUG_CONFIG_WIDTH_W_ROT  -1:0] debug_config_w_rot;
+  logic [DEBUG_CONFIG_WIDTH_IM_PIPE-1:0] debug_config_im_pipe;
+  logic [BITS_KERNEL_H-1           -1:0] debug_config_im_shift_1, debug_config_im_shift_2;
+  logic [DEBUG_CONFIG_WIDTH_LRELU  -1:0] debug_config_lrelu  ;
+  logic [DEBUG_CONFIG_WIDTH_MAXPOOL-1:0] debug_config_maxpool;
+
+  logic [DEBUG_CONFIG_WIDTH-1:0] debug_config;
+  assign {debug_config_maxpool,debug_config_lrelu,debug_config_im_pipe,debug_config_im_shift_2,debug_config_im_shift_1,debug_config_w_rot} = debug_config;
+
+  splitter sp (.input_0(debug_config));
 
   axis_accelerator #(
     .UNITS                     (UNITS                     ),
@@ -284,6 +300,7 @@ module axis_accelerator_tb ();
   int repeats_out_max    = 0;
   int repeats_out_lrelu  = 0;
   int repeats_out_conv   = 0;
+  string repeats;
 
   task axis_feed_pixels_1;
     @(posedge aclk);
@@ -395,6 +412,10 @@ module axis_accelerator_tb ();
           m_words_max           <= 0;
           if (repeats_out_max < REPEATS-1) begin
             repeats_out_max   = repeats_out_max + 1;
+            $fclose(file_out_max);
+
+            repeats.itoa(repeats_out_max);
+            file_out_max = $fopen({path_max_out, repeats},  "w");
           end
           else begin
             $fclose(file_out_max);
@@ -425,11 +446,14 @@ module axis_accelerator_tb ();
           m_words_lrelu           <= 0;
           if (repeats_out_lrelu < REPEATS-1) begin
             repeats_out_lrelu   = repeats_out_lrelu + 1;
+            $fclose(file_out_lrelu);
+
+            repeats.itoa(repeats_out_lrelu);
+            file_out_lrelu = $fopen({path_lrelu_out, repeats},  "w");
           end
           else begin
             $fclose(file_out_lrelu);
             start_o_lrelu = 0;
-            // $finish();
           end
         end
       end
@@ -457,6 +481,10 @@ module axis_accelerator_tb ();
           m_words_conv           <= 0;
           if (repeats_out_conv < REPEATS-1) begin
             repeats_out_conv   = repeats_out_conv + 1;
+            $fclose(file_out_conv);
+
+            repeats.itoa(repeats_out_conv);
+            file_out_conv = $fopen({path_conv_out, repeats},  "w");
           end
           else begin
             $fclose(file_out_conv);
@@ -523,9 +551,11 @@ module axis_accelerator_tb ();
     file_im_1     = $fopen(path_im_1   ,"r");
     file_im_2     = $fopen(path_im_2   ,"r");
     file_weights  = $fopen(path_weights,"r");
-    file_out_max  = $fopen(path_max_out,  "w");
-    file_out_conv = $fopen(path_conv_out, "w");
-    file_out_lrelu= $fopen(path_lrelu_out,"w");
+
+    repeats.itoa(0);
+    file_out_max  = $fopen({path_max_out  ,repeats}, "w");
+    file_out_conv = $fopen({path_conv_out ,repeats}, "w");
+    file_out_lrelu= $fopen({path_lrelu_out,repeats}, "w");
     start_1 = 1;
     start_2 = 1;
     start_w = 1;

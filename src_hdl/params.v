@@ -23,6 +23,12 @@ Parameters of the system. Written from build.tcl
 `define TKEEP_WIDTH_IM_IN 8
 `define BITS_CONFIG_COUNT 5
 
+`define DEBUG_CONFIG_WIDTH_W_ROT   86  
+`define DEBUG_CONFIG_WIDTH_IM_PIPE 17
+`define DEBUG_CONFIG_WIDTH_LRELU   23  
+`define DEBUG_CONFIG_WIDTH_MAXPOOL 1
+`define DEBUG_CONFIG_WIDTH         131        
+
 /*
   IMAGE TUSER INDICES
 */
