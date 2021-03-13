@@ -128,7 +128,7 @@ module axis_lrelu_engine_tb();
       @(posedge aclk);
 
       #(CLK_PERIOD/2);
-      if (m_axis_tvalid) begin
+      if (m_axis_tvalid && m_axis_tready) begin
         for (int c=0; c < COPIES; c++)
           for (int g=0; g < GROUPS; g++)
             for (int u=0; u < UNITS; u++) begin
@@ -155,12 +155,31 @@ module axis_lrelu_engine_tb();
     
   end
 
+  class Random_Bit;
+  rand bit rand_bit;
+  constraint c {
+    rand_bit dist { 0 := 99, 1 := 1};
+    }
+  endclass
+
+  Random_Bit rand_obj = new();
+
+  initial begin
+    forever begin
+      @(posedge aclk);
+      #1;
+      rand_obj.randomize();
+      m_axis_tready = rand_obj.rand_bit;
+      // m_axis_tready = 1;
+    end
+  end
+
   initial begin
     file_data_in    = $fopen(data_in_path   ,"r");
     file_data_out   = $fopen(data_out_path_1,"w");
 
     aresetn       <= 1;
-    m_axis_tready <= 1;
+    // m_axis_tready <= 1;
     s_axis_tvalid <= 0;
     s_axis_tlast  <= 0;
 

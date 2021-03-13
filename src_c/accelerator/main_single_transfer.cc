@@ -8,6 +8,7 @@
 #include <machine/_default_types.h>
 #include <cmath>
 #include <iostream>
+#include <bitset>
 
 #include "params.h"
 #include "D:/cnn-fpga/src_c/zynq-oop-drivers/dma/my_dma.h"
@@ -66,6 +67,28 @@ void callback_output_s2mm_done()
 	done = true;
 }
 
+void read_gpios()
+{
+	UINTPTR gpio_bases[5] = {
+			XPAR_AXI_GPIO_0_BASEADDR,
+			XPAR_AXI_GPIO_1_BASEADDR,
+			XPAR_AXI_GPIO_2_BASEADDR,
+			XPAR_AXI_GPIO_3_BASEADDR,
+			XPAR_AXI_GPIO_4_BASEADDR
+	};
+
+	u32 * extracted_ptr = (u32*)0x00002000;
+
+	for (int i=0; i<5; i++){
+		extracted_ptr[i] = Xil_In32(gpio_bases[i]);
+//		Xil_DCacheFlushRange((UINTPTR)(gpio_bases[i]), 4);
+
+		std::bitset<32> bits(extracted_ptr[i]);
+		xil_printf("bits at %d : %s \r\n", i, bits.to_string().c_str());
+	}
+
+}
+
 int main()
 {
 	int status;
@@ -92,13 +115,18 @@ int main()
 	{
 		status = dma_weights_im_out.mm2s_start((UINTPTR)WEIGHTS_P, WEIGHTS_BYTES);
 		xil_printf("%d \r\n",status);
+		xil_printf("-------INITIAL------- \r\n");
+		read_gpios();
+
+		xil_printf("Done reading \r\n");
+
 		status = dma_im_in_1.mm2s_start((UINTPTR)DATA_A_P, IM_IN_BYTES + UNITS_EDGES);
 		xil_printf("%d \r\n",status);
 		if (IS_MAX_)
 			status = dma_im_in_2.mm2s_start((UINTPTR)(DATA_A_P+UNITS_EDGES+IM_IN_BYTES), IM_IN_BYTES);
 		xil_printf("%d \r\n",status);
 
-		xil_printf("starting out itr done: i_itr = %d, address = %p \r\n", i_itr, write_p);
+		xil_printf("starting out i_itr = %d, address = %p \r\n", i_itr, write_p);
 		for (int i_out=0; i_out<NUM_TRANSFERS; i_out++)
 		{
 			status = dma_weights_im_out.s2mm_start((UINTPTR)write_p, IM_OUT_BYTES);
@@ -106,12 +134,17 @@ int main()
 			done=false;
 			Xil_DCacheFlushRange((UINTPTR)write_p, IM_OUT_BYTES);
 
-//			xil_printf("out s2mm done: i_out = %d /%d, address = %p \r\n", i_out, NUM_TRANSFERS, write_p);
 			write_p += IM_OUT_BYTES;
 		}
+		read_gpios();
+		xil_printf("done itr \r\n");
 	}
 
 	xil_printf("--- Exiting main() --- \r\n");
 	return XST_SUCCESS;
 
 }
+
+////			if (i_out==0 && i_itr==1)
+//
+////			xil_printf("out s2mm done: i_out = %d /%d, address = %p \r\n", i_out, NUM_TRANSFERS, write_p);

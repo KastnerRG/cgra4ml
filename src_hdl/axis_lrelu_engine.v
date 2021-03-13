@@ -30,6 +30,7 @@ module axis_lrelu_engine
     WORD_WIDTH_IN              = `WORD_WIDTH_ACC            ,
     WORD_WIDTH_OUT             = `WORD_WIDTH                ,
     WORD_WIDTH_CONFIG          = `WORD_WIDTH                ,
+    DEBUG_CONFIG_WIDTH_LRELU   = `DEBUG_CONFIG_WIDTH_LRELU  ,
     UNITS                      = `UNITS                     ,
     GROUPS                     = `GROUPS                    ,
     COPIES                     = `COPIES                    ,
@@ -61,6 +62,7 @@ module axis_lrelu_engine
   )(
     aclk         ,
     aresetn      ,
+    debug_config ,
     s_axis_tvalid,
     s_axis_tready,
     s_axis_tdata , // cmgu
@@ -78,6 +80,7 @@ module axis_lrelu_engine
     output reg  s_axis_tready;
     input  wire [TUSER_WIDTH_LRELU_IN  -1:0] s_axis_tuser;
     output wire [TUSER_WIDTH_MAXPOOL_IN-1:0] m_axis_tuser;
+    output wire [DEBUG_CONFIG_WIDTH_LRELU-1:0] debug_config;
 
     input  wire [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_axis_tdata;
     output wire [          COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_axis_tdata;
@@ -89,6 +92,7 @@ module axis_lrelu_engine
     wire [TUSER_WIDTH_LRELU_IN  -1:0] s_user_e, s_dw_slice_user;
     wire [TUSER_WIDTH_MAXPOOL_IN-1:0] m_user_e;
     wire s_ready_slice;
+
 
     localparam BYTES_IN = WORD_WIDTH_IN/8;
 
@@ -151,6 +155,9 @@ module axis_lrelu_engine
       .data_in      (state_next),
       .data_out     (state)
     );
+    
+    wire [DEBUG_CONFIG_WIDTH_LRELU-3-1:0] debug_config_lrelu_engine;
+    assign debug_config = {state,debug_config_lrelu_engine};
 
     localparam BEATS_CONFIG_BITS = $clog2(BEATS_CONFIG_3X3_2 + 1);
     wire [BEATS_CONFIG_BITS-1:0] count_config;
@@ -346,6 +353,7 @@ module axis_lrelu_engine
       .WORD_WIDTH_IN  (WORD_WIDTH_IN ),
       .WORD_WIDTH_OUT (WORD_WIDTH_OUT),
       .WORD_WIDTH_CONFIG(WORD_WIDTH_CONFIG ),
+      .DEBUG_CONFIG_WIDTH_LRELU(DEBUG_CONFIG_WIDTH_LRELU),
 
       .UNITS   (UNITS  ),
       .GROUPS  (GROUPS ),
@@ -382,6 +390,7 @@ module axis_lrelu_engine
       .clk              (aclk    ),
       .clken            (s_ready_slice),
       .resetn           (aresetn  ),
+      .debug_config     (debug_config_lrelu_engine ),
       .s_valid          (s_valid_e),
       .s_user           (s_user_e ),
       .m_valid          (m_valid_e),

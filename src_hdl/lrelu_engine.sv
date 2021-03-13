@@ -1,3 +1,5 @@
+`include "params.v"
+
 virtual class float_downsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);
   static function logic [EXP_OUT+FRA_OUT:0] downsize (input logic [EXP_IN+FRA_IN:0] float_in);
     /*
@@ -54,6 +56,7 @@ module lrelu_engine (
   clk     ,
   clken   ,
   resetn  ,
+  debug_config,
   s_valid ,
   s_user  ,
   m_valid ,
@@ -99,6 +102,8 @@ module lrelu_engine (
   parameter TUSER_WIDTH_MAXPOOL_IN     = 1 + I_IS_MAX  ;
   parameter TUSER_WIDTH_LRELU_FMA_1_IN = 1 + I_IS_LRELU;
   parameter TUSER_WIDTH_LRELU_IN       = 1 + I_IS_RIGHT_COL;
+
+  parameter DEBUG_CONFIG_WIDTH_LRELU   = `DEBUG_CONFIG_WIDTH_LRELU;
 
   input  logic clk     ;
   input  logic clken   ;
@@ -392,6 +397,9 @@ module lrelu_engine (
   logic is_top_cgu                  [COPIES-1:0][GROUPS-1:0][UNITS-1:0]; 
   logic is_bot_cgu                  [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
   logic is_lrelu_cgu                [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+
+  output logic [DEBUG_CONFIG_WIDTH_LRELU-3-1:0] debug_config;
+  assign debug_config = {w_sel_bram + d_val_cg[0][0]};
 
   /*
     CLR mux for B-BRAM
