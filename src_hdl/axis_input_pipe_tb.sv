@@ -1,4 +1,5 @@
 `include "params.v"
+`include "axis_tb.sv"
 
 module axis_input_pipe_tb ();
   timeunit 1ns;
@@ -85,6 +86,22 @@ module axis_input_pipe_tb ();
   localparam IM_BLOCKS          = IM_HEIGHT/UNITS;
   localparam IM_COLS            = IM_WIDTH;
 
+  string path_im_1     = "D:/cnn-fpga/data/im_pipe_in.txt";
+  string path_im_2     = "D:/cnn-fpga/data/im_pipe_in_2.txt";
+  string path_weights  = "D:/cnn-fpga/data/weights_rot_in.txt";
+  string base_im_out_1 = "D:/cnn-fpga/data/im_pipe_out_1_";
+  string base_im_out_2 = "D:/cnn-fpga/data/im_pipe_out_2_";
+
+  localparam BEATS_2 = IM_BLOCKS * IM_COLS * IM_CIN;
+  localparam WORDS_2 = BEATS_2 * UNITS_EDGES;
+  localparam BEATS_1 = BEATS_2 + 1;
+  localparam WORDS_1 = BEATS_1 * UNITS_EDGES;
+  
+  localparam BEATS_CONFIG_1   = K == 1 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
+  localparam W_BEATS          = 1 + BEATS_CONFIG_1+1 + K*IM_CIN;
+  localparam WORDS_W          = (W_BEATS-1) * KERNEL_W_MAX * CORES + S_WEIGHTS_WIDTH /WORD_WIDTH;
+  localparam W_WORDS_PER_BEAT = S_WEIGHTS_WIDTH /WORD_WIDTH;
+
   logic aresetn;
   logic s_axis_pixels_1_tready;
   logic s_axis_pixels_1_tvalid;
@@ -161,6 +178,8 @@ module axis_input_pipe_tb ();
   logic [WORD_WIDTH-1:0] m_data_pixels_1 [UNITS-1:0];
   logic [WORD_WIDTH-1:0] m_data_pixels_2 [UNITS-1:0];
   logic [WORD_WIDTH-1:0] m_data_weights  [CORES-1:0][KERNEL_W_MAX-1:0];
+  logic [WORD_WIDTH-1:0] m_data_weights_linear  [CORES*KERNEL_W_MAX-1:0];
+  logic [UNITS-1:0] m_axis_tkeep = {UNITS{1'b1}};
 
   assign {>>{s_axis_pixels_1_tdata}} = s_data_pixels_1;
   assign {>>{s_axis_pixels_2_tdata}} = s_data_pixels_2;
@@ -168,184 +187,52 @@ module axis_input_pipe_tb ();
   assign m_data_pixels_1 = {>>{m_axis_pixels_1_tdata}};
   assign m_data_pixels_2 = {>>{m_axis_pixels_2_tdata}};
   assign m_data_weights  = {>>{m_axis_weights_tdata }};
+  assign m_data_weights_linear  = {>>{m_axis_weights_tdata}};
 
   int status, file_im_1, file_im_2, file_weights;
 
-  string path_im_1 = "D:/cnn-fpga/data/im_pipe_in.txt";
-  string path_im_2 = "D:/cnn-fpga/data/im_pipe_in_2.txt";
-  string path_weights = "D:/cnn-fpga/data/weights_rot_in.txt";
-
-  localparam BEATS_2 = IM_BLOCKS * IM_COLS * IM_CIN;
-  localparam WORDS_2 = BEATS_2 * UNITS_EDGES;
-  localparam BEATS_1 = BEATS_2 + 1;
-  localparam WORDS_1 = BEATS_1 * UNITS_EDGES;
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(10)) s_pixels_1  = new(.file_path(path_im_1   ), .words_per_packet(WORDS_1), .iterations(ITERATIONS));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(10)) s_pixels_2  = new(.file_path(path_im_2   ), .words_per_packet(WORDS_2), .iterations(ITERATIONS));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(S_WEIGHTS_WIDTH /8), .VALID_PROB(10)) s_weights   = new(.file_path(path_weights), .words_per_packet(WORDS_W), .iterations(ITERATIONS));
+  initial forever s_pixels_1.axis_feed(aclk, s_axis_pixels_1_tready, s_axis_pixels_1_tvalid, s_data_pixels_1, s_axis_pixels_1_tkeep, s_axis_pixels_1_tlast);
+  initial forever s_pixels_2.axis_feed(aclk, s_axis_pixels_2_tready, s_axis_pixels_2_tvalid, s_data_pixels_2, s_axis_pixels_2_tkeep, s_axis_pixels_2_tlast);
+  initial forever  s_weights.axis_feed(aclk, s_axis_weights_tready , s_axis_weights_tvalid , s_data_weights , s_axis_weights_tkeep , s_axis_weights_tlast);
   
-  localparam BEATS_CONFIG_1   = K == 1 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
-  localparam W_BEATS          = 1 + BEATS_CONFIG_1+1 + K*IM_CIN;
-  localparam WORDS_W          = (W_BEATS-1) * KERNEL_W_MAX * CORES + S_WEIGHTS_WIDTH /WORD_WIDTH;
-  localparam W_WORDS_PER_BEAT = S_WEIGHTS_WIDTH /WORD_WIDTH;
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(UNITS), .READY_PROB(10), .CLK_PERIOD(CLK_PERIOD)) m_pixels_1 = new(.file_base(base_im_out_1));
+  // AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(UNITS), .READY_PROB(70), .CLK_PERIOD(CLK_PERIOD)) m_pixels_2 = new(.file_base(base_im_out_2));
+  // AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(CORES*KERNEL_W_MAX), .READY_PROB(70), .CLK_PERIOD(CLK_PERIOD)) m_weights = new(.file_base(base_weights));
+  initial forever m_pixels_1.axis_read(aclk, m_axis_tready, m_axis_tvalid, m_data_pixels_1, m_axis_tkeep, m_axis_tlast);
+  // initial forever m_pixels_2.axis_read(aclk, m_axis_tready, m_axis_tvalid, m_data_pixels_2, {UNITS{1'b1}}, m_axis_tlast);
+  // initial forever m_weights .axis_read(aclk, m_axis_tready, m_axis_tvalid, m_data_weights_linear , {UNITS{1'b1}}, m_axis_tlast);
+  
 
-  int s_words_1 = 0; 
-  int s_words_2 = 0; 
-  int s_words_w = 0; 
-  int start_1 =0;
-  int start_2 =0;
-  int start_w =0;
-  int itr_count_im_1 = 0;
-  int itr_count_im_2 = 0;
-  int itr_count_w    = 0;
-
-  task axis_feed_pixels_1;
+  /*
+    Extract the counters to waveform
+  */
+  int s_words_1, s_words_2, s_words_w, m_words_1, m_words_w, s_itr_1, s_itr_2, s_itr_w, m_itr; 
+  initial forever begin
     @(posedge aclk);
-    if (start_1) begin
-      if (s_axis_pixels_1_tready) begin
-        if (s_words_1 < WORDS_1) begin
-          #1;
-          s_axis_pixels_1_tvalid <= 1;
-
-          for (int i=0; i < IM_IN_S_DATA_WORDS; i++) begin
-            if (~$feof(file_im_1))
-              status = $fscanf(file_im_1,"%d\n", s_data_pixels_1[i]);
-            
-            s_axis_pixels_1_tkeep[i] = s_words_1 < WORDS_1;
-            s_words_1 = s_words_1 + 1;
-          end
-
-          s_axis_pixels_1_tlast = ~(s_words_1 < WORDS_1);
-        end
-        else begin
-          #1;
-          s_axis_pixels_1_tvalid <= 0;
-          s_axis_pixels_1_tlast  <= 0;
-          s_words_1              <= 0;
-
-          if (itr_count_im_1 < ITERATIONS-1) begin
-            file_im_1               = $fopen(path_im_1   ,"r");
-            itr_count_im_1          = itr_count_im_1 + 1;
-          end
-          else start_1 <= 0;
-        end
-      end
-    end
-  endtask
-
-  task axis_feed_pixels_2;
-    @(posedge aclk);
-    if (start_2) begin
-      if (s_axis_pixels_2_tready) begin
-        if (s_words_2 < WORDS_2) begin
-          #1;
-          s_axis_pixels_2_tvalid <= 1;
-
-          for (int i=0; i < IM_IN_S_DATA_WORDS; i++) begin
-            if (~$feof(file_im_2))
-              status = $fscanf(file_im_2,"%d\n", s_data_pixels_2[i]);
-
-            s_axis_pixels_2_tkeep[i] = s_words_2 < WORDS_2;
-            s_words_2 = s_words_2 + 1;
-          end
-
-          s_axis_pixels_2_tlast = ~(s_words_2 < WORDS_2);
-        end
-        else begin
-          #1;
-          s_axis_pixels_2_tvalid <= 0;
-          s_axis_pixels_2_tlast  <= 0;
-          s_words_2              <= 0;
-
-          if (itr_count_im_2 < ITERATIONS-1) begin
-            file_im_2               = $fopen(path_im_2   ,"r");
-            itr_count_im_2          = itr_count_im_2 + 1;
-          end
-          else start_2 <= 0;
-        end
-      end
-    end
-  endtask
-
-  task axis_feed_weights;
-    @(posedge aclk);
-    if (start_w) begin
-      if (s_axis_weights_tready) begin
-        if (s_words_w < WORDS_W) begin
-          #1;
-          s_axis_weights_tvalid <= 1;
-          for (int i=0; i < W_WORDS_PER_BEAT; i++) begin
-            if (~$feof(file_weights))
-              status = $fscanf(file_weights,"%d\n", s_data_weights[i]);
-            
-            s_axis_weights_tkeep[i] = s_words_w < WORDS_W;
-            s_words_w = s_words_w + 1;
-          end
-
-          s_axis_weights_tlast = ~(s_words_w < WORDS_W);
-        end
-        else begin
-          #1;
-          s_axis_weights_tvalid <= 0;
-          s_axis_weights_tlast  <= 0;
-          s_words_w             <= 0;
-          
-          if (itr_count_w < ITERATIONS-1) begin
-            file_weights         = $fopen(path_weights ,"r");
-            itr_count_w          = itr_count_w + 1;
-          end
-          else start_w <= 0;
-        end
-      end
-    end
-  endtask
-
-  initial forever axis_feed_pixels_1;
-  initial forever axis_feed_pixels_2;
-  initial forever axis_feed_weights;
-
-  class Random_Bit;
-  rand bit rand_bit;
-  constraint c {
-      rand_bit dist { 0 := 8, 1 := 2};
-    }
-  endclass
-
-  Random_Bit rand_obj = new();
-
-  initial begin
-    forever begin
-      @(posedge aclk);
-      #1;
-      rand_obj.randomize();
-      m_axis_tready = rand_obj.rand_bit;
-      // m_axis_tready = 1;
-    end
+    s_words_1 = s_pixels_1.i_words;
+    s_words_2 = s_pixels_2.i_words;
+    s_words_w = s_weights.i_words;
+    // m_words_1 = m_pixels_1.i_words;
+    // m_words_w = m_weights.i_words;
+    s_itr_1 = s_pixels_1.i_itr;
+    s_itr_2 = s_pixels_2.i_itr;
+    s_itr_w = s_weights.i_itr;
+    m_itr = m_pixels_1.i_itr;
   end
 
   initial begin
-
-    aresetn                <= 0;
-    s_axis_pixels_1_tvalid <= 0;
-    s_axis_pixels_2_tvalid <= 0;
-    s_axis_weights_tvalid  <= 0;
-    s_axis_pixels_1_tlast  <= 0;
-    s_axis_pixels_2_tlast  <= 0;
-    s_axis_weights_tlast   <= 0;
-
-    s_axis_pixels_1_tkeep  <= -1;
-    s_axis_pixels_2_tkeep  <= -1;
-    s_axis_weights_tkeep   <= -1;
- 
-    @(posedge aclk);
+    aresetn           <= 0;
+    aresetn           <= 1;
     #(CLK_PERIOD*3)
-    
+
     @(posedge aclk);
-    aresetn         <= 1;
-    
-    @(posedge aclk);
-    file_im_1    = $fopen(path_im_1   ,"r");
-    file_im_2    = $fopen(path_im_2   ,"r");
-    file_weights = $fopen(path_weights,"r");
-    start_1 = 1;
-    start_2 = 1;
-    start_w = 1;
+    s_pixels_1.enable <= 1;
+    s_pixels_2.enable <= 1;
+    s_weights.enable  <= 1;
+    m_pixels_1.enable <= 1;
   end
 
 endmodule
