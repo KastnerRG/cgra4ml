@@ -5,21 +5,25 @@
    <db_ref_list>
       <db_ref path="axis_input_pipe_tb_behav.wdb" id="1">
          <top_modules>
+            <top_module name="\$unit_always_valid_cyclic_bram_sv " />
             <top_module name="axis_input_pipe_tb" />
             <top_module name="glbl" />
          </top_modules>
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="10924500fs"></ZoomStartTime>
-      <ZoomEndTime time="11711501fs"></ZoomEndTime>
-      <Cursor1Time time="11305000fs"></Cursor1Time>
+      <ZoomStartTime time="5000fs"></ZoomStartTime>
+      <ZoomEndTime time="13565001fs"></ZoomEndTime>
+      <Cursor1Time time="5065000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="196"></NameColumnWidth>
+      <NameColumnWidth column_width="184"></NameColumnWidth>
       <ValueColumnWidth column_width="58"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="57" />
+   <WVObjectSize size="59" />
+   <wave_markers>
+      <marker time="6325000" label="" />
+   </wave_markers>
    <wvobject fp_name="/axis_input_pipe_tb/aclk" type="logic">
       <obj_property name="ElementShortName">aclk</obj_property>
       <obj_property name="ObjectShortName">aclk</obj_property>
@@ -27,18 +31,6 @@
    <wvobject fp_name="/axis_input_pipe_tb/aresetn" type="logic">
       <obj_property name="ElementShortName">aresetn</obj_property>
       <obj_property name="ObjectShortName">aresetn</obj_property>
-   </wvobject>
-   <wvobject type="divider" fp_name="divider322">
-      <obj_property name="label">PIXELS</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/s_words_1" type="array">
-      <obj_property name="ElementShortName">s_words_1[31:0]</obj_property>
-      <obj_property name="ObjectShortName">s_words_1[31:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/axis_input_pipe_tb/s_words_2" type="array">
-      <obj_property name="ElementShortName">s_words_2[31:0]</obj_property>
-      <obj_property name="ObjectShortName">s_words_2[31:0]</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider1322">
       <obj_property name="label">Pixels Input</obj_property>
@@ -60,6 +52,10 @@
       <obj_property name="ElementShortName">s_axis_pixels_1_tvalid</obj_property>
       <obj_property name="ObjectShortName">s_axis_pixels_1_tvalid</obj_property>
    </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/s_words_1" type="array">
+      <obj_property name="ElementShortName">s_words_1[31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_words_1[31:0]</obj_property>
+   </wvobject>
    <wvobject fp_name="group1327" type="group">
       <obj_property name="label">s_pixels_1</obj_property>
       <obj_property name="DisplayName">label</obj_property>
@@ -79,11 +75,16 @@
       <wvobject fp_name="/axis_input_pipe_tb/s_data_pixels_1" type="array">
          <obj_property name="ElementShortName">s_data_pixels_1[3:0][7:0]</obj_property>
          <obj_property name="ObjectShortName">s_data_pixels_1[3:0][7:0]</obj_property>
+         <obj_property name="isExpanded"></obj_property>
       </wvobject>
       <wvobject fp_name="/axis_input_pipe_tb/s_axis_pixels_1_tkeep" type="array">
          <obj_property name="ElementShortName">s_axis_pixels_1_tkeep[3:0]</obj_property>
          <obj_property name="ObjectShortName">s_axis_pixels_1_tkeep[3:0]</obj_property>
       </wvobject>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/s_words_2" type="array">
+      <obj_property name="ElementShortName">s_words_2[31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_words_2[31:0]</obj_property>
    </wvobject>
    <wvobject fp_name="group1328" type="group">
       <obj_property name="label">s_pixels_2</obj_property>
@@ -140,27 +141,6 @@
       <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/dw_1_m_data" type="array">
          <obj_property name="ElementShortName">dw_1_m_data[3:0][7:0]</obj_property>
          <obj_property name="ObjectShortName">dw_1_m_data[3:0][7:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-         <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/dw_1_m_data[3]" type="array">
-            <obj_property name="ElementShortName">[3][7:0]</obj_property>
-            <obj_property name="ObjectShortName">[3][7:0]</obj_property>
-            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/dw_1_m_data[2]" type="array">
-            <obj_property name="ElementShortName">[2][7:0]</obj_property>
-            <obj_property name="ObjectShortName">[2][7:0]</obj_property>
-            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/dw_1_m_data[1]" type="array">
-            <obj_property name="ElementShortName">[1][7:0]</obj_property>
-            <obj_property name="ObjectShortName">[1][7:0]</obj_property>
-            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/dw_1_m_data[0]" type="array">
-            <obj_property name="ElementShortName">[0][7:0]</obj_property>
-            <obj_property name="ObjectShortName">[0][7:0]</obj_property>
-            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-         </wvobject>
       </wvobject>
       <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/en_config" type="logic">
          <obj_property name="ElementShortName">en_config</obj_property>
@@ -239,6 +219,7 @@
       <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/m_data_1" type="array">
          <obj_property name="ElementShortName">m_data_1[3:0][7:0]</obj_property>
          <obj_property name="ObjectShortName">m_data_1[3:0][7:0]</obj_property>
+         <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/m_data_2" type="array">
          <obj_property name="ElementShortName">m_data_2[3:0][7:0]</obj_property>
@@ -247,6 +228,10 @@
       <wvobject fp_name="/axis_input_pipe_tb/pipe/IM_MUX/m_axis_tuser" type="array">
          <obj_property name="ElementShortName">m_axis_tuser[4:0]</obj_property>
          <obj_property name="ObjectShortName">m_axis_tuser[4:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/s_itr_1" type="array">
+         <obj_property name="ElementShortName">s_itr_1[31:0]</obj_property>
+         <obj_property name="ObjectShortName">s_itr_1[31:0]</obj_property>
       </wvobject>
    </wvobject>
    <wvobject type="divider" fp_name="divider1348">
@@ -300,6 +285,10 @@
       <wvobject fp_name="/axis_input_pipe_tb/pipe/m_axis_pixels_2_tdata" type="array">
          <obj_property name="ElementShortName">m_axis_pixels_2_tdata[15:0]</obj_property>
          <obj_property name="ObjectShortName">m_axis_pixels_2_tdata[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/s_itr_2" type="array">
+         <obj_property name="ElementShortName">s_itr_2[31:0]</obj_property>
+         <obj_property name="ObjectShortName">s_itr_2[31:0]</obj_property>
       </wvobject>
    </wvobject>
    <wvobject type="divider" fp_name="divider323">
@@ -370,6 +359,10 @@
          <obj_property name="ElementShortName">m_axis_tuser[7:0]</obj_property>
          <obj_property name="ObjectShortName">m_axis_tuser[7:0]</obj_property>
       </wvobject>
+      <wvobject fp_name="/axis_input_pipe_tb/s_itr_w" type="array">
+         <obj_property name="ElementShortName">s_itr_w[31:0]</obj_property>
+         <obj_property name="ObjectShortName">s_itr_w[31:0]</obj_property>
+      </wvobject>
    </wvobject>
    <wvobject type="divider" fp_name="divider1357">
       <obj_property name="label">Output</obj_property>
@@ -390,6 +383,10 @@
       <obj_property name="ObjectShortName">m_axis_tready</obj_property>
       <obj_property name="CustomSignalColor">#FF00FF</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/m_words_1" type="array">
+      <obj_property name="ElementShortName">m_words_1[31:0]</obj_property>
+      <obj_property name="ObjectShortName">m_words_1[31:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/axis_input_pipe_tb/m_data_pixels_1" type="array">
       <obj_property name="ElementShortName">m_data_pixels_1[1:0][7:0]</obj_property>
@@ -423,6 +420,11 @@
          <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
       </wvobject>
    </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/m_words_w" type="array">
+      <obj_property name="ElementShortName">m_words_w[31:0]</obj_property>
+      <obj_property name="ObjectShortName">m_words_w[31:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+   </wvobject>
    <wvobject fp_name="/axis_input_pipe_tb/m_data_weights" type="array">
       <obj_property name="ElementShortName">m_data_weights[1:0][2:0][7:0]</obj_property>
       <obj_property name="ObjectShortName">m_data_weights[1:0][2:0][7:0]</obj_property>
@@ -432,11 +434,43 @@
          <obj_property name="ElementShortName">[1][2:0][7:0]</obj_property>
          <obj_property name="ObjectShortName">[1][2:0][7:0]</obj_property>
          <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/axis_input_pipe_tb/m_data_weights[1][2]" type="array">
+            <obj_property name="ElementShortName">[2][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+         </wvobject>
+         <wvobject fp_name="/axis_input_pipe_tb/m_data_weights[1][1]" type="array">
+            <obj_property name="ElementShortName">[1][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+         </wvobject>
+         <wvobject fp_name="/axis_input_pipe_tb/m_data_weights[1][0]" type="array">
+            <obj_property name="ElementShortName">[0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+         </wvobject>
       </wvobject>
       <wvobject fp_name="/axis_input_pipe_tb/m_data_weights[0]" type="array">
          <obj_property name="ElementShortName">[0][2:0][7:0]</obj_property>
          <obj_property name="ObjectShortName">[0][2:0][7:0]</obj_property>
          <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/axis_input_pipe_tb/m_data_weights[0][2]" type="array">
+            <obj_property name="ElementShortName">[2][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+         </wvobject>
+         <wvobject fp_name="/axis_input_pipe_tb/m_data_weights[0][1]" type="array">
+            <obj_property name="ElementShortName">[1][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+         </wvobject>
+         <wvobject fp_name="/axis_input_pipe_tb/m_data_weights[0][0]" type="array">
+            <obj_property name="ElementShortName">[0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+         </wvobject>
       </wvobject>
    </wvobject>
    <wvobject fp_name="/axis_input_pipe_tb/pipe/m_axis_tlast" type="logic">
@@ -449,6 +483,10 @@
       <obj_property name="ElementShortName">m_axis_tuser[0:10]</obj_property>
       <obj_property name="ObjectShortName">m_axis_tuser[0:10]</obj_property>
       <obj_property name="Reversed">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axis_input_pipe_tb/m_itr" type="array">
+      <obj_property name="ElementShortName">m_itr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">m_itr[31:0]</obj_property>
    </wvobject>
    <wvobject fp_name="group1321" type="group">
       <obj_property name="label">Params</obj_property>
