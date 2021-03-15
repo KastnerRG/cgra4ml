@@ -81,6 +81,7 @@ class AXIS_Slave #(WORD_WIDTH, WORDS_PER_BEAT, VALID_PROB);
         If s_last has passed with a handshake, packet done. start next itr
       */
       if(s_last) begin
+        #1;
 
         $fclose(file);
         i_itr = i_itr + 1;
@@ -92,8 +93,9 @@ class AXIS_Slave #(WORD_WIDTH, WORDS_PER_BEAT, VALID_PROB);
         end
         else return;
       end
+      else 
+        #1;
 
-      #1;
       this.fill_beat(s_data, s_keep, s_last);
       if (first_beat) first_beat = 0;
     end
@@ -111,18 +113,25 @@ class AXIS_Slave #(WORD_WIDTH, WORDS_PER_BEAT, VALID_PROB);
 endclass
 
 
-class AXIS_Master #(WORD_WIDTH, WORDS_PER_BEAT, READY_PROB, CLK_PERIOD);
+class AXIS_Master #(WORD_WIDTH, WORDS_PER_BEAT, READY_PROB, CLK_PERIOD, IS_ACTIVE=1);
   string file_base, file_path, s_itr;
-  int file, status;
+  int file, status, words_per_packet, packets_per_file;
   int i_itr = 0;
   int i_words = 0;
+  int i_packets = 0;
   bit enable = 0;
 
   rand bit m_ready;
   constraint c { m_ready dist { 0 := (100-READY_PROB), 1 := (READY_PROB)}; };
 
-  function new(string file_base);
+  function new(string file_base, int words_per_packet=-1, int packets_per_file=1);
+  /*
+    If (words_per_packet = -1), file is closed and reopened at tlast
+    Else, at words_per_packet
+  */
+    this.words_per_packet = words_per_packet;
     this.file_base = file_base;
+    this.packets_per_file = packets_per_file;
     open_file();
   endfunction
 
@@ -144,10 +153,17 @@ class AXIS_Master #(WORD_WIDTH, WORDS_PER_BEAT, READY_PROB, CLK_PERIOD);
         i_words  += 1;
       end
 
-    if(m_last) begin
-      $fclose(file);
-      i_itr += 1;
-      enable = 0;
+    if(words_per_packet == -1 ? m_last : i_words >= words_per_packet) begin
+
+      i_words = 0;
+      i_packets += 1;
+
+      if (i_packets >= packets_per_file) begin
+        $fclose(file);
+        i_itr += 1;
+        enable = 0;
+        i_packets = 0;
+      end
     end
   endfunction
 
@@ -160,14 +176,15 @@ class AXIS_Master #(WORD_WIDTH, WORDS_PER_BEAT, READY_PROB, CLK_PERIOD);
     ref logic m_last
   );
     @(posedge aclk);
-    this.randomize(); // random this.m_ready at every cycle
     #1;
-    m_ready = this.m_ready;
+    if (IS_ACTIVE) begin
+      this.randomize(); // random this.m_ready at every cycle
+      m_ready = this.m_ready;
+    end
 
     #(CLK_PERIOD/2); // read at the middlle
     
     if (~enable && m_valid) begin // reset and open new file if only m_valid
-      i_words = 0;
       enable = 1;
       open_file();
     end
@@ -190,9 +207,9 @@ module axis_tb_demo();
   end
 
   localparam WORD_WIDTH        = 8;
-  localparam WORDS_PER_PACKET  = 37;
+  localparam WORDS_PER_PACKET  = 40;
   localparam WORDS_PER_BEAT    = 4;
-  localparam ITERATIONS        = 5;
+  localparam ITERATIONS        = 6;
   localparam BEATS             = int'($ceil(real'(WORDS_PER_PACKET)/real'(WORDS_PER_BEAT)));
 
   logic [WORD_WIDTH      -1:0] data [WORDS_PER_BEAT-1:0];
@@ -216,9 +233,16 @@ module axis_tb_demo();
     .WORD_WIDTH    (WORD_WIDTH    ), 
     .WORDS_PER_BEAT(WORDS_PER_BEAT), 
     .READY_PROB    (70            ), 
-    .CLK_PERIOD    (CLK_PERIOD    )
-    ) master_obj = new(.file_base(out_base));
+    .CLK_PERIOD    (CLK_PERIOD    ),
+    .IS_ACTIVE     (1             )
+    ) master_obj = new(
+      .file_base(out_base),
+      .words_per_packet(-1),
+      .packets_per_file(2)
+      );
 
+  // assign ready = 1;
+  // logic m_last = 0;
   initial forever  slave_obj.axis_feed(aclk, ready, valid, data, keep, last);
   initial forever master_obj.axis_read(aclk, ready, valid, data, keep, last);
 
@@ -228,7 +252,7 @@ module axis_tb_demo();
     master_obj.enable <= 1;
   end
 
-  int s_words, s_itr, m_words, m_itr;
+  int s_words, s_itr, m_words, m_itr, m_packets, m_packets_per_file;
 
   initial begin
     forever begin
@@ -237,6 +261,8 @@ module axis_tb_demo();
       s_itr = slave_obj.i_itr;
       m_words = master_obj.i_words;
       m_itr = master_obj.i_itr;
+      m_packets = master_obj.i_packets;
+      m_packets_per_file = master_obj.packets_per_file;
     end
   end
 

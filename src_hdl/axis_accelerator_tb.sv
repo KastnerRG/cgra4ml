@@ -1,4 +1,5 @@
 `include "params.v"
+`include "axis_tb.sv"
 
 module axis_accelerator_tb ();
   timeunit 10ns;
@@ -10,7 +11,9 @@ module axis_accelerator_tb ();
     forever #(CLK_PERIOD/2) aclk <= ~aclk;
   end
 
-  int status, file_im_1, file_im_2, file_weights, file_out_conv, file_out_lrelu, file_out_max;
+  localparam ITERATIONS = 2;
+  localparam VALID_PROB = 100;
+  localparam READY_PROB = 100;
 
   /*
     IMAGE & KERNEL PARAMETERS
@@ -26,9 +29,10 @@ module axis_accelerator_tb ();
   //  string path_im_1      = "D:/cnn-fpga/data/1_conv_in_0.txt";
   //  string path_im_2      = "D:/cnn-fpga/data/1_conv_in_1.txt";
   //  string path_weights   = "D:/cnn-fpga/data/1_weights.txt";
-  //  string path_conv_out  = "D:/cnn-fpga/data/1_conv_out_fpga_";
-  //  string path_lrelu_out = "D:/cnn-fpga/data/1_lrelu_out_fpga_";
-  //  string path_max_out   = "D:/cnn-fpga/data/1_max_out_fpga_";
+  //  string base_conv_out  = "D:/cnn-fpga/data/1_conv_out_fpga_";
+  //  string base_lrelu_out = "D:/cnn-fpga/data/1_lrelu_out_fpga_";
+  //  string base_max_out   = "D:/cnn-fpga/data/1_maxpool_out_fpga_";
+  //  string base_output    = "D:/cnn-fpga/data/1_output_fpga_";
 
 //  ############ LAYER 3 : 3x3, non-maxpool ####################
 
@@ -40,9 +44,10 @@ module axis_accelerator_tb ();
  string path_im_1      = "D:/cnn-fpga/data/3_conv_in_0.txt";
  string path_im_2      = "D:/cnn-fpga/data/3_conv_in_1.txt";
  string path_weights   = "D:/cnn-fpga/data/3_weights.txt";
- string path_conv_out  = "D:/cnn-fpga/data/3_conv_out_fpga_";
- string path_lrelu_out = "D:/cnn-fpga/data/3_lrelu_out_fpga_";
- string path_max_out   = "D:/cnn-fpga/data/3_max_out_fpga_";
+ string base_conv_out  = "D:/cnn-fpga/data/3_conv_out_fpga_";
+ string base_lrelu_out = "D:/cnn-fpga/data/3_lrelu_out_fpga_";
+ string base_max_out   = "D:/cnn-fpga/data/3_maxpool_out_fpga_";
+ string base_output    = "D:/cnn-fpga/data/3_output_fpga_";
 
 //   // #################### LAYER 4 : 1x1 ####################
 
@@ -54,9 +59,10 @@ module axis_accelerator_tb ();
 //   string path_im_1      = "D:/cnn-fpga/data/4_conv_in_0.txt";
 //   string path_im_2      = "D:/cnn-fpga/data/4_conv_in_1.txt";
 //   string path_weights   = "D:/cnn-fpga/data/4_weights.txt";
-//   string path_conv_out  = "D:/cnn-fpga/data/4_conv_out_fpga_";
-//   string path_lrelu_out = "D:/cnn-fpga/data/4_lrelu_out_fpga_";
-//   string path_max_out   = "D:/cnn-fpga/data/4_max_out_fpga_";
+//   string base_conv_out  = "D:/cnn-fpga/data/4_conv_out_fpga_";
+//   string base_lrelu_out = "D:/cnn-fpga/data/4_lrelu_out_fpga_";
+//   string base_max_out   = "D:/cnn-fpga/data/4_maxpool_out_fpga_";
+//   string base_output    = "D:/cnn-fpga/data/4_output_fpga_";
 
   /*
     SYSTEM PARAMS
@@ -275,293 +281,97 @@ module axis_accelerator_tb ();
   localparam WORDS_W          = (W_BEATS-1) * KERNEL_W_MAX * CORES + S_WEIGHTS_WIDTH /WORD_WIDTH;
   localparam W_WORDS_PER_BEAT = S_WEIGHTS_WIDTH /WORD_WIDTH;
 
-  localparam BEATS_OUT = (IM_BLOCKS/MAX_FACTOR)*IM_COLS*(KERNEL_W_MAX/K)*MEMBERS;
-  localparam WORDS_OUT_LRELU = BEATS_OUT*COPIES*GROUPS*UNITS;
-  localparam WORDS_OUT_MAX   = BEATS_OUT*COPIES*GROUPS*UNITS_EDGES/(MAX_FACTOR**2);
+  localparam BEATS_PER_PACKET = (KERNEL_W_MAX/K)*MEMBERS;
+  localparam PACKETS_PER_ITR = (IM_BLOCKS/MAX_FACTOR)*IM_COLS;
+  localparam BEATS_PER_ITR = BEATS_PER_PACKET * PACKETS_PER_ITR;
+
+  localparam WORDS_PER_BEAT_RELU = COPIES*GROUPS*UNITS;
+  localparam WORDS_OUT_LRELU     = BEATS_PER_ITR * WORDS_PER_BEAT_RELU;
+
+  localparam WORDS_PER_BEAT_MAX  = COPIES*GROUPS*UNITS_EDGES/(MAX_FACTOR**2);
+  localparam WORDS_OUT_MAX       = BEATS_PER_ITR*WORDS_PER_BEAT_MAX;
 
   localparam BEATS_OUT_CONV = BEATS_CONFIG_1+1 + (IM_BLOCKS/MAX_FACTOR)*IM_COLS*(KERNEL_W_MAX/K);
-  localparam WORDS_OUT_CONV = BEATS_OUT_CONV*COPIES*MEMBERS*GROUPS*UNITS;
+  localparam WORDS_PER_BEAT_CONV = COPIES*MEMBERS*GROUPS*UNITS;
+  localparam WORDS_OUT_CONV = BEATS_OUT_CONV * WORDS_PER_BEAT_CONV;
 
-  int s_words_1 = 0; 
-  int s_words_2 = 0; 
-  int s_words_w = 0; 
-  int m_words_max   = 0; 
-  int m_words_lrelu = 0; 
-  int m_words_conv  = 0; 
-  int start_1   = 0;
-  int start_2   = 0;
-  int start_w   = 0;
-  int start_o_max   = 0;
-  int start_o_lrelu = 0;
-  int start_o_conv  = 0;
-  int repeats_im_1 = 0;
-  int repeats_im_2 = 0;
-  int repeats_w    = 0;
-  int repeats_out_max    = 0;
-  int repeats_out_lrelu  = 0;
-  int repeats_out_conv   = 0;
-  string repeats;
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(VALID_PROB)) s_pixels_1  = new(.file_path(path_im_1   ), .words_per_packet(WORDS_1), .iterations(ITERATIONS));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(VALID_PROB)) s_pixels_2  = new(.file_path(path_im_2   ), .words_per_packet(WORDS_2), .iterations(ITERATIONS));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(W_WORDS_PER_BEAT  ), .VALID_PROB(VALID_PROB)) s_weights   = new(.file_path(path_weights), .words_per_packet(WORDS_W), .iterations(ITERATIONS));
+  initial forever s_pixels_1.axis_feed(aclk, s_axis_pixels_1_tready, s_axis_pixels_1_tvalid, s_data_pixels_1, s_axis_pixels_1_tkeep, s_axis_pixels_1_tlast);
+  initial forever s_pixels_2.axis_feed(aclk, s_axis_pixels_2_tready, s_axis_pixels_2_tvalid, s_data_pixels_2, s_axis_pixels_2_tkeep, s_axis_pixels_2_tlast);
+  initial forever s_weights .axis_feed(aclk, s_axis_weights_tready , s_axis_weights_tvalid , s_data_weights , s_axis_weights_tkeep , s_axis_weights_tlast );
+  
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH_ACC), .WORDS_PER_BEAT(WORDS_PER_BEAT_CONV), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_conv    = new(.file_base(base_conv_out )); // sensitive to tlast
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(WORDS_PER_BEAT_RELU), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_lrelu   = new(.file_base(base_lrelu_out), .words_per_packet(WORDS_OUT_LRELU)); // sensitive to words_out
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(WORDS_PER_BEAT_MAX ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_maxpool = new(.file_base(base_max_out  ), .packets_per_file(PACKETS_PER_ITR)); // sensitive to tlast, but multiple tlasts per file
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(M_DATA_WIDTH/8     ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(1)) m_output  = new(.file_base(base_output   ), .packets_per_file(PACKETS_PER_ITR)); // sensitive to tlast, but multiple tlasts per file
+  
+  logic [WORDS_PER_BEAT_CONV-1:0] temp_keep_conv  = '1;
+  logic [WORDS_PER_BEAT_RELU-1:0] temp_keep_lrelu = '1;
+  logic zero_last = 0;
 
-  task axis_feed_pixels_1;
-    @(posedge aclk);
-    if (start_1) begin
-      if (s_axis_pixels_1_tready) begin
-        if (s_words_1 < WORDS_1) begin
-          #1;
-          s_axis_pixels_1_tvalid <= 1;
+  logic [WORD_WIDTH_ACC-1:0] conv_m_data_linear    [WORDS_PER_BEAT_CONV-1:0];
+  logic [WORD_WIDTH    -1:0] lrelu_m_data_linear   [WORDS_PER_BEAT_RELU-1:0];
+  logic [WORD_WIDTH    -1:0] maxpool_m_data_linear [WORDS_PER_BEAT_MAX -1:0];
+  logic [WORD_WIDTH    -1:0] m_data_linear         [M_DATA_WIDTH/8     -1:0];
 
-          for (int i=0; i < IM_IN_S_DATA_WORDS; i++) begin
-            if (~$feof(file_im_1))
-              status = $fscanf(file_im_1,"%d\n", s_data_pixels_1[i]);
-            
-            s_axis_pixels_1_tkeep[i] = s_words_1 < WORDS_1;
-            s_words_1 = s_words_1 + 1;
-          end
-
-          s_axis_pixels_1_tlast = ~(s_words_1 < WORDS_1);
-        end
-        else begin
-          s_axis_pixels_1_tvalid <= 0;
-          s_axis_pixels_1_tlast  <= 0;
-          s_words_1              <= 0;
-
-          file_im_1            = $fopen(path_im_1   ,"r");
-          repeats_im_1          = repeats_im_1 + 1;
-        end
-      end
-    end
-  endtask
-
-  task axis_feed_pixels_2;
-    @(posedge aclk);
-    if (start_2) begin
-      if (s_axis_pixels_2_tready) begin
-        if (s_words_2 < WORDS_2) begin
-          #1;
-          s_axis_pixels_2_tvalid <= 1;
-
-          for (int i=0; i < IM_IN_S_DATA_WORDS; i++) begin
-            if (~$feof(file_im_2))
-              status = $fscanf(file_im_2,"%d\n", s_data_pixels_2[i]);
-
-            s_axis_pixels_2_tkeep[i] = s_words_2 < WORDS_2;
-            s_words_2 = s_words_2 + 1;
-          end
-
-          s_axis_pixels_2_tlast = ~(s_words_2 < WORDS_2);
-        end
-        else begin
-          s_axis_pixels_2_tvalid <= 0;
-          s_axis_pixels_2_tlast  <= 0;
-          s_words_2              <= 0;
-
-          file_im_2               = $fopen(path_im_2   ,"r");
-          repeats_im_2             = repeats_im_2 + 1;
-        end
-      end
-    end
-  endtask
-
-  task axis_feed_weights;
-    @(posedge aclk);
-    if (start_w) begin
-      if (s_axis_weights_tready) begin
-        if (s_words_w < WORDS_W) begin
-          #1;
-          s_axis_weights_tvalid <= 1;
-          for (int i=0; i < W_WORDS_PER_BEAT; i++) begin
-            if (~$feof(file_weights))
-              status = $fscanf(file_weights,"%d\n", s_data_weights[i]);
-            
-            s_axis_weights_tkeep[i] = s_words_w < WORDS_W;
-            s_words_w = s_words_w + 1;
-          end
-
-          s_axis_weights_tlast = ~(s_words_w < WORDS_W);
-        end
-        else begin
-          s_axis_weights_tvalid <= 0;
-          s_axis_weights_tlast  <= 0;
-          s_words_w             <= 0;
-
-          file_weights         = $fopen(path_weights ,"r");
-          repeats_w             = repeats_w + 1;
-        end
-      end
-    end
-  endtask
-
-  task axis_receive_max;
-    @(posedge aclk);
-    #(CLK_PERIOD/2);
-    if (start_o_max) begin
-      if (m_axis_tvalid & m_axis_tready) begin
-        if (m_words_max < WORDS_OUT_MAX) begin
-          for (int c=0; c < COPIES; c++) begin
-            for (int g=0; g < GROUPS; g++) begin
-              for (int w=0; w < M_DATA_WIDTH/WORD_WIDTH; w++) begin
-                if (m_axis_tkeep[w]) begin
-                  $fdisplay(file_out_max, "%d", signed'(m_data[w]));
-                  m_words_max = m_words_max + 1;
-                end
-              end
-            end
-          end
-        end
-        else begin
-          m_words_max           <= 0;
-          if (repeats_out_max < REPEATS-1) begin
-            repeats_out_max   = repeats_out_max + 1;
-            $fclose(file_out_max);
-
-            repeats.itoa(repeats_out_max);
-            file_out_max = $fopen({path_max_out, repeats},  "w");
-          end
-          else begin
-            $fclose(file_out_max);
-            start_o_max = 0;
-            $finish();
-          end
-        end
-      end
-    end
-  endtask
-
-  task axis_receive_lrelu;
-    @(posedge aclk);
-    #(CLK_PERIOD/2);
-    if (start_o_lrelu) begin
-      if (lrelu_m_axis_tvalid & lrelu_m_axis_tready) begin
-        if (m_words_lrelu < WORDS_OUT_LRELU) begin
-          for (int c=0; c < COPIES; c++) begin
-            for (int g=0; g < GROUPS; g++) begin
-              for (int u=0; u < UNITS; u++) begin
-                $fdisplay(file_out_lrelu, "%d", signed'(lrelu_m_data[c][g][u]));
-                m_words_lrelu = m_words_lrelu + 1;
-              end
-            end
-          end
-        end
-        else begin
-          m_words_lrelu           <= 0;
-          if (repeats_out_lrelu < REPEATS-1) begin
-            repeats_out_lrelu   = repeats_out_lrelu + 1;
-            $fclose(file_out_lrelu);
-
-            repeats.itoa(repeats_out_lrelu);
-            file_out_lrelu = $fopen({path_lrelu_out, repeats},  "w");
-          end
-          else begin
-            $fclose(file_out_lrelu);
-            start_o_lrelu = 0;
-          end
-        end
-      end
-    end
-  endtask
-
-  task axis_receive_conv;
-    @(posedge aclk);
-    #(CLK_PERIOD/2);
-    if (start_o_conv) begin
-      if (conv_m_axis_tvalid & conv_m_axis_tready) begin
-        if (m_words_conv < WORDS_OUT_CONV) begin
-          for (int c=0; c < COPIES; c++) begin
-            for (int m=0; m < MEMBERS; m++) begin
-              for (int g=0; g < GROUPS; g++) begin
-                for (int u=0; u < UNITS; u++) begin
-                  $fdisplay(file_out_conv, "%d", signed'(conv_m_data[c][m][g][u]));
-                  m_words_conv = m_words_conv + 1;
-                end
-              end
-            end
-          end
-        end
-        else begin
-          m_words_conv           <= 0;
-          if (repeats_out_conv < REPEATS-1) begin
-            repeats_out_conv   = repeats_out_conv + 1;
-            $fclose(file_out_conv);
-
-            repeats.itoa(repeats_out_conv);
-            file_out_conv = $fopen({path_conv_out, repeats},  "w");
-          end
-          else begin
-            $fclose(file_out_conv);
-            start_o_conv = 0;
-          end
-        end
-      end
-    end
-  endtask
-
-
-  initial forever axis_feed_pixels_1;
-  initial forever axis_feed_pixels_2;
-  initial forever axis_feed_weights;
-  initial forever axis_receive_max;
-  initial forever axis_receive_lrelu;
-  initial forever axis_receive_conv;
+  assign conv_m_data_linear    = {>>{conv_m_axis_tdata}};
+  assign lrelu_m_data_linear   = {>>{lrelu_m_axis_tdata}};
+  assign maxpool_m_data_linear = {>>{maxpool_m_axis_tdata}};
+  assign m_data_linear         = {>>{m_axis_tdata}};
+  
+  initial forever m_conv    .axis_read(aclk, conv_m_axis_tready   , conv_m_axis_tvalid   , conv_m_data_linear    , temp_keep_conv      , conv_m_axis_tlast   );
+  initial forever m_lrelu   .axis_read(aclk, lrelu_m_axis_tready  , lrelu_m_axis_tvalid  , lrelu_m_data_linear   , temp_keep_lrelu     , zero_last           );
+  initial forever m_maxpool .axis_read(aclk, maxpool_m_axis_tready, maxpool_m_axis_tvalid, maxpool_m_data_linear , maxpool_m_axis_tkeep, maxpool_m_axis_tlast);
+  initial forever m_output  .axis_read(aclk, m_axis_tready        , m_axis_tvalid        , m_data_linear         , m_axis_tkeep        , m_axis_tlast        );
 
   /*
-    Test AXIS functionality
-    Randomize m_ready with P(1) = 0.7
+    Get counters from drivers
   */
 
-  class Random_Bit;
-    rand bit rand_bit;
-    constraint c {
-      rand_bit dist { 0 := 3, 1 := 7};
-    }
-  endclass
+  int s_words_1, s_words_2, s_words_w, s_itr_1, s_itr_2, s_itr_w; 
+  int m_words_out, m_words_max, m_words_lrelu, m_words_conv;  
+  int m_itr_out, m_itr_max, m_itr_lrelu, m_itr_conv;  
+  int m_packets_out, m_packets_max, m_packets_lrelu, m_packets_conv;
 
-  Random_Bit rand_obj = new();
+  initial forever begin
+    @(posedge aclk);
+    s_words_1     = s_pixels_1.i_words;
+    s_words_2     = s_pixels_2.i_words;
+    s_words_w     = s_weights .i_words;
+    m_words_out   = m_output  .i_words;
+    m_words_max   = m_maxpool .i_words;
+    m_words_lrelu = m_lrelu   .i_words;
+    m_words_conv  = m_conv    .i_words;
 
-  initial begin
-    forever begin
-      @(posedge aclk);
-      #1;
-      rand_obj.randomize();
-      m_axis_tready = rand_obj.rand_bit;
-      // m_axis_tready = 1;
-    end
+    s_itr_1       = s_pixels_1.i_itr;
+    s_itr_2       = s_pixels_2.i_itr;
+    s_itr_w       = s_weights .i_itr;
+    m_itr_out     = m_output  .i_itr;
+    m_itr_max     = m_maxpool .i_itr; 
+    m_itr_lrelu   = m_lrelu   .i_itr;
+    m_itr_conv    = m_conv    .i_itr;
+
+    m_packets_out   = m_output  .i_packets;
+    m_packets_max   = m_maxpool .i_packets;
+    m_packets_lrelu = m_lrelu   .i_packets;
+    m_packets_conv  = m_conv    .i_packets;
   end
 
   initial begin
 
-    aresetn                <= 0;
-    s_axis_pixels_1_tvalid <= 0;
-    s_axis_pixels_2_tvalid <= 0;
-    s_axis_weights_tvalid  <= 0;
-    s_axis_pixels_1_tlast  <= 0;
-    s_axis_pixels_2_tlast  <= 0;
-    s_axis_weights_tlast   <= 0;
+    aresetn <= 0;
+    repeat(2) @(posedge aclk);
+    aresetn <= 1;
 
-    s_axis_pixels_1_tkeep  <= -1;
-    s_axis_pixels_2_tkeep  <= -1;
-    s_axis_weights_tkeep   <= -1;
- 
-    @(posedge aclk);
-    #(CLK_PERIOD*3)
-
-    @(posedge aclk);
-    aresetn         <= 1;
-    
-    @(posedge aclk);
-    file_im_1     = $fopen(path_im_1   ,"r");
-    file_im_2     = $fopen(path_im_2   ,"r");
-    file_weights  = $fopen(path_weights,"r");
-
-    repeats.itoa(0);
-    file_out_max  = $fopen({path_max_out  ,repeats}, "w");
-    file_out_conv = $fopen({path_conv_out ,repeats}, "w");
-    file_out_lrelu= $fopen({path_lrelu_out,repeats}, "w");
-    start_1 = 1;
-    start_2 = 1;
-    start_w = 1;
-    start_o_conv  = 1;
-    start_o_lrelu = 1;
-    start_o_max   = 1;
+    s_pixels_1.enable = 1;
+    s_pixels_2.enable = 1;
+    s_weights .enable = 1;
+    m_conv.enable     = 1;
+    m_lrelu.enable    = 1;
+    m_maxpool.enable  = 1;
+    m_output.enable   = 1;
   end
 
 endmodule
