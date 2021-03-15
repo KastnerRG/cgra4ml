@@ -198,7 +198,7 @@ module axis_input_pipe_tb ();
   initial forever s_pixels_2.axis_feed(aclk, s_axis_pixels_2_tready, s_axis_pixels_2_tvalid, s_data_pixels_2, s_axis_pixels_2_tkeep, s_axis_pixels_2_tlast);
   initial forever  s_weights.axis_feed(aclk, s_axis_weights_tready , s_axis_weights_tvalid , s_data_weights , s_axis_weights_tkeep , s_axis_weights_tlast);
   
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(UNITS), .READY_PROB(10), .CLK_PERIOD(CLK_PERIOD)) m_pixels_1 = new(.file_base(base_im_out_1));
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(UNITS), .READY_PROB(10), .CLK_PERIOD(CLK_PERIOD)) m_pixels_1 = new(.file_base(base_im_out_1), .words_per_packet(-1));
   // AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(UNITS), .READY_PROB(70), .CLK_PERIOD(CLK_PERIOD)) m_pixels_2 = new(.file_base(base_im_out_2));
   // AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(CORES*KERNEL_W_MAX), .READY_PROB(70), .CLK_PERIOD(CLK_PERIOD)) m_weights = new(.file_base(base_weights));
   initial forever m_pixels_1.axis_read(aclk, m_axis_tready, m_axis_tvalid, m_data_pixels_1, m_axis_tkeep, m_axis_tlast);
