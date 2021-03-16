@@ -80,8 +80,7 @@ class AXIS_Slave #(WORD_WIDTH, WORDS_PER_BEAT, VALID_PROB);
       /*
         If s_last has passed with a handshake, packet done. start next itr
       */
-      if(s_last) begin
-        #1;
+      if(s_last) begin #1;
 
         $fclose(file);
         i_itr = i_itr + 1;
@@ -93,12 +92,12 @@ class AXIS_Slave #(WORD_WIDTH, WORDS_PER_BEAT, VALID_PROB);
         end
         else return;
       end
-      else 
-        #1;
+      else #1;
 
       this.fill_beat(s_data, s_keep, s_last);
       if (first_beat) first_beat = 0;
     end
+    else #1;
     
     /*
       Randomized valid is not assigned to the wire until we fill the first beat

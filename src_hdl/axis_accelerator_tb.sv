@@ -12,8 +12,8 @@ module axis_accelerator_tb ();
   end
 
   localparam ITERATIONS = 2;
-  localparam VALID_PROB = 100;
-  localparam READY_PROB = 100;
+  localparam VALID_PROB = 30;
+  localparam READY_PROB = 30;
 
   /*
     IMAGE & KERNEL PARAMETERS
@@ -361,9 +361,9 @@ module axis_accelerator_tb ();
 
   initial begin
 
-    aresetn <= 0;
+    aresetn = 0;
     repeat(2) @(posedge aclk);
-    aresetn <= 1;
+    aresetn = 1;
 
     s_pixels_1.enable = 1;
     s_pixels_2.enable = 1;

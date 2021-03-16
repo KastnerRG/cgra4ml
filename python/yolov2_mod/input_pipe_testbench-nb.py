@@ -6,7 +6,7 @@
 # %%
 import numpy as np 
 
-K          = 1
+K          = 3
 CIN        = 4
 HEIGHT     = 2
 WIDTH      = 4
