@@ -160,8 +160,10 @@ module lrelu_engine (
   localparam BRAM_R_DEPTH_1X1 = MEMBERS * 3; ;
   localparam BRAM_W_DEPTH_1X1 = BRAM_R_DEPTH_1X1 * BRAM_R_WIDTH / BRAM_W_WIDTH;
 
-  localparam BITS_BRAM_R_DEPTH = $clog2(BRAM_R_DEPTH_1X1);
-  localparam BITS_BRAM_W_DEPTH = $clog2(BRAM_W_DEPTH_1X1);
+  localparam BITS_BRAM_R_DEPTH_1X1 = $clog2(BRAM_R_DEPTH_1X1);
+  localparam BITS_BRAM_W_DEPTH_1X1 = $clog2(BRAM_W_DEPTH_1X1);
+  localparam BITS_BRAM_R_DEPTH_3X3 = $clog2(BRAM_R_DEPTH_3X3);
+  localparam BITS_BRAM_W_DEPTH_3X3 = $clog2(BRAM_W_DEPTH_3X3);
 
   localparam BITS_FMA_1 = BITS_FRA_FMA_1 + BITS_EXP_FMA_1 + 1;
   localparam BITS_FMA_2 = BITS_FRA_FMA_2 + BITS_EXP_FMA_2 + 1;
@@ -205,10 +207,10 @@ module lrelu_engine (
     .data_out     (w_sel_bram)
   );
 
-  logic [BITS_BRAM_W_DEPTH-1:0] bram_w_depth_1, bram_addr_next, bram_addr;
+  logic [BITS_BRAM_W_DEPTH_1X1-1:0] bram_w_depth_1, bram_addr_next, bram_addr;
   assign bram_w_depth_1 = is_1x1_config ? BRAM_W_DEPTH_1X1-1 : BRAM_W_DEPTH_3X3-1;
   register #(
-    .WORD_WIDTH   (BITS_BRAM_W_DEPTH), 
+    .WORD_WIDTH   (BITS_BRAM_W_DEPTH_1X1), 
     .RESET_VALUE  (0)
   ) BRAM_W_ADDR (
     .clock        (clk),
@@ -359,8 +361,8 @@ module lrelu_engine (
   assign s_user_fma_1 = TUSER_WIDTH_LRELU_FMA_1_IN'(m_user_float32);
   assign s_user_fma_2 = TUSER_WIDTH_MAXPOOL_IN'(m_user_fma_1);
   
-  logic [BITS_BRAM_R_DEPTH-1:0] b_r_addr_max  ; 
-  logic [BITS_BRAM_W_DEPTH-1:0] b_w_addr_max  ;
+  logic [BITS_BRAM_R_DEPTH_1X1-1:0] b_r_addr_max  ; 
+  logic [BITS_BRAM_W_DEPTH_1X1-1:0] b_w_addr_max  ;
   assign b_w_addr_max   = is_1x1_config_1          ? BRAM_W_DEPTH_1X1-1 : BRAM_W_DEPTH_3X3-1;
   assign b_r_addr_max   = m_user_float32[I_IS_1X1] ? BRAM_R_DEPTH_1X1-1 : BRAM_R_DEPTH_3X3-1;
 
@@ -455,7 +457,7 @@ module lrelu_engine (
           .s_data       (config_flat_1_cg [c][g]),
           .m_data       (a_val_cg [c][g]),
           .m_ready      (m_valid_float32),
-          .r_addr_min   (0),
+          .r_addr_min   (BITS_BRAM_R_DEPTH_1X1'('b0)),
           .r_addr_max   (b_r_addr_max  ),
           .w_addr_max   (b_w_addr_max  )
         );
@@ -489,7 +491,7 @@ module lrelu_engine (
                 .s_data       (config_flat_1_cg [c][g]),
                 .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
                 .m_ready      (b_ready_cg_clr_mtb[c][g][clr][mtb]),
-                .r_addr_min   (0),
+                .r_addr_min   (BITS_BRAM_R_DEPTH_1X1'('b0)),
                 .r_addr_max   (b_r_addr_max  ),
                 .w_addr_max   (b_w_addr_max  )
               );
@@ -509,9 +511,9 @@ module lrelu_engine (
                 .s_data       (config_flat_1_cg [c][g]),
                 .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
                 .m_ready      (b_ready_cg_clr_mtb[c][g][clr][mtb]),
-                .r_addr_min   (0),
-                .r_addr_max   (BRAM_R_DEPTH_3X3-1),
-                .w_addr_max   (BRAM_W_DEPTH_3X3-1)
+                .r_addr_min   (BITS_BRAM_R_DEPTH_3X3'('b0)),
+                .r_addr_max   (BITS_BRAM_R_DEPTH_3X3'(BRAM_R_DEPTH_3X3-1)),
+                .w_addr_max   (BITS_BRAM_W_DEPTH_3X3'(BRAM_W_DEPTH_3X3-1))
               );
             end
           end
