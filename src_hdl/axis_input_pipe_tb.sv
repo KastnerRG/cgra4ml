@@ -19,8 +19,9 @@ module axis_input_pipe_tb ();
   localparam IM_HEIGHT  = 2;
   localparam IM_WIDTH   = 4;
   localparam IM_CIN     = 4;
+  localparam IS_MAX     = 0;
 
-  localparam ITERATIONS = 5;
+  localparam ITERATIONS = 2;
 
   /*
     SYSTEM PARAMS
@@ -91,6 +92,7 @@ module axis_input_pipe_tb ();
   string path_weights  = "D:/cnn-fpga/data/weights_rot_in.txt";
   string base_im_out_1 = "D:/cnn-fpga/data/im_pipe_out_1_";
   string base_im_out_2 = "D:/cnn-fpga/data/im_pipe_out_2_";
+  string base_w_out    = "D:/cnn-fpga/data/im_pipe_out_w_";
 
   localparam BEATS_2 = IM_BLOCKS * IM_COLS * IM_CIN;
   localparam WORDS_2 = BEATS_2 * UNITS_EDGES;
@@ -179,7 +181,8 @@ module axis_input_pipe_tb ();
   logic [WORD_WIDTH-1:0] m_data_pixels_2 [UNITS-1:0];
   logic [WORD_WIDTH-1:0] m_data_weights  [CORES-1:0][KERNEL_W_MAX-1:0];
   logic [WORD_WIDTH-1:0] m_data_weights_linear  [CORES*KERNEL_W_MAX-1:0];
-  logic [UNITS-1:0] m_axis_tkeep = {UNITS{1'b1}};
+  logic [UNITS-1:0] m_axis_pixels_tkeep  = '1;
+  logic [CORES*KERNEL_W_MAX-1:0] m_axis_weights_tkeep = '1;
 
   assign {>>{s_axis_pixels_1_tdata}} = s_data_pixels_1;
   assign {>>{s_axis_pixels_2_tdata}} = s_data_pixels_2;
@@ -191,36 +194,47 @@ module axis_input_pipe_tb ();
 
   int status, file_im_1, file_im_2, file_weights;
 
-  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(10)) s_pixels_1  = new(.file_path(path_im_1   ), .words_per_packet(WORDS_1), .iterations(ITERATIONS));
-  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(10)) s_pixels_2  = new(.file_path(path_im_2   ), .words_per_packet(WORDS_2), .iterations(ITERATIONS));
-  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(S_WEIGHTS_WIDTH /8), .VALID_PROB(10)) s_weights   = new(.file_path(path_weights), .words_per_packet(WORDS_W), .iterations(ITERATIONS));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(10)) s_pixels_1  = new(.file_path(path_im_1   ), .words_per_packet(WORDS_1), .iterations(1));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(10)) s_pixels_2  = new(.file_path(path_im_2   ), .words_per_packet(WORDS_2), .iterations(1));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(S_WEIGHTS_WIDTH /8), .VALID_PROB(10)) s_weights   = new(.file_path(path_weights), .words_per_packet(WORDS_W), .iterations(1));
   initial forever s_pixels_1.axis_feed(aclk, s_axis_pixels_1_tready, s_axis_pixels_1_tvalid, s_data_pixels_1, s_axis_pixels_1_tkeep, s_axis_pixels_1_tlast);
   initial forever s_pixels_2.axis_feed(aclk, s_axis_pixels_2_tready, s_axis_pixels_2_tvalid, s_data_pixels_2, s_axis_pixels_2_tkeep, s_axis_pixels_2_tlast);
   initial forever  s_weights.axis_feed(aclk, s_axis_weights_tready , s_axis_weights_tvalid , s_data_weights , s_axis_weights_tkeep , s_axis_weights_tlast);
   
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(UNITS), .READY_PROB(10), .CLK_PERIOD(CLK_PERIOD)) m_pixels_1 = new(.file_base(base_im_out_1), .words_per_packet(-1));
-  // AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(UNITS), .READY_PROB(70), .CLK_PERIOD(CLK_PERIOD)) m_pixels_2 = new(.file_base(base_im_out_2));
-  // AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(CORES*KERNEL_W_MAX), .READY_PROB(70), .CLK_PERIOD(CLK_PERIOD)) m_weights = new(.file_base(base_weights));
-  initial forever m_pixels_1.axis_read(aclk, m_axis_tready, m_axis_tvalid, m_data_pixels_1, m_axis_tkeep, m_axis_tlast);
-  // initial forever m_pixels_2.axis_read(aclk, m_axis_tready, m_axis_tvalid, m_data_pixels_2, {UNITS{1'b1}}, m_axis_tlast);
-  // initial forever m_weights .axis_read(aclk, m_axis_tready, m_axis_tvalid, m_data_weights_linear , {UNITS{1'b1}}, m_axis_tlast);
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(UNITS             ), .READY_PROB(10 ), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(1)) m_pixels_1 = new(.file_base(base_im_out_1));
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(UNITS             ), .READY_PROB(100), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_pixels_2 = new(.file_base(base_im_out_2));
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(CORES*KERNEL_W_MAX), .READY_PROB(100), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_weights  = new(.file_base(base_w_out   ));
+
+  initial forever m_pixels_1.axis_read(aclk, m_axis_tready, m_axis_tvalid, m_data_pixels_1      , m_axis_pixels_tkeep , m_axis_tlast);
+  initial forever m_pixels_2.axis_read(aclk, m_axis_tready, m_axis_tvalid, m_data_pixels_2      , m_axis_pixels_tkeep , m_axis_tlast);
+  initial forever m_weights .axis_read(aclk, m_axis_tready, m_axis_tvalid, m_data_weights_linear, m_axis_weights_tkeep, m_axis_tlast);
   
 
   /*
     Extract the counters to waveform
   */
-  int s_words_1, s_words_2, s_words_w, m_words_1, m_words_w, s_itr_1, s_itr_2, s_itr_w, m_itr; 
+  bit s_en_1, s_en_2, s_en_w, m_en_1, m_en2;
+  int s_words_1, s_words_2, s_words_w, m_words_1, m_words_2, m_words_w, s_itr_1, s_itr_2, s_itr_w, m_itr_1, m_itr_2, m_itr_w; 
   initial forever begin
     @(posedge aclk);
+    s_en_1 = s_pixels_1.enable;
+    s_en_2 = s_pixels_2.enable;
+    s_en_w = s_weights.enable;
+    m_en_1 = m_pixels_1.enable;
+    
     s_words_1 = s_pixels_1.i_words;
     s_words_2 = s_pixels_2.i_words;
     s_words_w = s_weights.i_words;
-    // m_words_1 = m_pixels_1.i_words;
-    // m_words_w = m_weights.i_words;
+    m_words_1 = m_pixels_1.i_words;
+    m_words_2 = m_pixels_2.i_words;
+    m_words_w = m_weights.i_words;
+
     s_itr_1 = s_pixels_1.i_itr;
     s_itr_2 = s_pixels_2.i_itr;
     s_itr_w = s_weights.i_itr;
-    m_itr = m_pixels_1.i_itr;
+    m_itr_1 = m_pixels_1.i_itr;
+    m_itr_2 = m_pixels_2.i_itr;
+    m_itr_w = m_weights.i_itr;
   end
 
   initial begin
@@ -230,9 +244,29 @@ module axis_input_pipe_tb ();
 
     @(posedge aclk);
     s_pixels_1.enable <= 1;
-    s_pixels_2.enable <= 1;
+    if (IS_MAX) s_pixels_2.enable <= 1;
     s_weights.enable  <= 1;
     m_pixels_1.enable <= 1;
+    m_pixels_2.enable <= 1;
+    m_weights.enable  <= 1;
+
+    while (~m_axis_tlast) @(posedge aclk);
+    repeat(100) @(posedge aclk);
+
+    s_pixels_1.i_itr  <= 0;
+    s_pixels_1.enable <= 1;
+    if (IS_MAX) begin 
+      s_pixels_2.i_itr  <= 0;
+      s_pixels_2.enable <= 1;
+    end
+    s_weights.i_itr  <= 0;
+    s_weights.enable  <= 1;
+
+    m_pixels_1.enable <= 1;
+    m_pixels_2.enable <= 1;
+    m_weights.enable  <= 1;
+
+
   end
 
 endmodule
