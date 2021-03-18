@@ -1,7 +1,8 @@
 class AXIS_Slave #(WORD_WIDTH, WORDS_PER_BEAT, VALID_PROB);
 
   string file_path;
-  int words_per_packet, file, status, iterations, i_words;
+  int words_per_packet, status, iterations, i_words;
+  int file = 0;
   int i_itr = 0;
   bit enable = 0;
   bit first_beat = 1;
@@ -14,7 +15,6 @@ class AXIS_Slave #(WORD_WIDTH, WORDS_PER_BEAT, VALID_PROB);
     this.words_per_packet = words_per_packet;
     this.iterations = iterations;
 
-    file = $fopen(file_path, "r");
   endfunction
 
   function void fill_beat(
@@ -22,7 +22,8 @@ class AXIS_Slave #(WORD_WIDTH, WORDS_PER_BEAT, VALID_PROB);
     ref logic [WORDS_PER_BEAT-1:0] s_keep,
     ref logic s_last);
 
-    if($feof(file)) $fatal("EOF found at i_words=%d, i_itr=%d; path=%s \n",i_words,i_itr,file_path);
+    if($feof(file)) $fatal(1, "EOF found at i_words=%d, i_itr=%d; path=%s \n", i_words, i_itr, file_path);
+    if (first_beat) first_beat = 0;
 
     for (int i=0; i < WORDS_PER_BEAT; i++) begin
       status = $fscanf(file,"%d\n", s_data[i]);
@@ -47,6 +48,9 @@ class AXIS_Slave #(WORD_WIDTH, WORDS_PER_BEAT, VALID_PROB);
     s_last = 0;
     first_beat = 1;
     i_words = 0;
+
+    if (file != 0) $fclose(file);
+    file = $fopen(file_path, "r");
   endfunction
 
   task axis_feed(
@@ -82,20 +86,25 @@ class AXIS_Slave #(WORD_WIDTH, WORDS_PER_BEAT, VALID_PROB);
       */
       if(s_last) begin #1;
 
-        $fclose(file);
-        i_itr = i_itr + 1;
+        i_itr += 1;
         this.reset(s_valid, s_data, s_keep, s_last);
 
-        if (i_itr < iterations) begin
+        if (i_itr < iterations) 
           enable = 1;
-          file = $fopen(file_path, "r");
+        else begin
+          $fclose(file);
+          return;
         end
-        else return;
       end
       else #1;
 
-      this.fill_beat(s_data, s_keep, s_last);
-      if (first_beat) first_beat = 0;
+      // If file is not open, keep valid down.
+      if(file == 0) begin
+        s_valid = 0;
+        return;
+      end
+      else this.fill_beat(s_data, s_keep, s_last);
+
     end
     else #1;
     
@@ -114,7 +123,8 @@ endclass
 
 class AXIS_Master #(WORD_WIDTH, WORDS_PER_BEAT, READY_PROB, CLK_PERIOD, IS_ACTIVE=1);
   string file_base, file_path, s_itr;
-  int file, status, words_per_packet, packets_per_file;
+  int status, words_per_packet, packets_per_file;
+  int file = 0;
   int i_itr = 0;
   int i_words = 0;
   int i_packets = 0;
@@ -138,6 +148,8 @@ class AXIS_Master #(WORD_WIDTH, WORDS_PER_BEAT, READY_PROB, CLK_PERIOD, IS_ACTIV
     s_itr.itoa(i_itr);
     file_path = {file_base, s_itr, ".txt"};
     $display(file_path);
+
+    if (file==0) $fclose(file);
     file = $fopen(file_path, "w");
   endfunction
 
@@ -145,7 +157,7 @@ class AXIS_Master #(WORD_WIDTH, WORDS_PER_BEAT, READY_PROB, CLK_PERIOD, IS_ACTIV
     ref logic [WORD_WIDTH    -1:0] m_data [WORDS_PER_BEAT-1:0], 
     ref logic [WORDS_PER_BEAT-1:0] m_keep,
     ref logic m_last);
-
+    $display("file_path=%s, file=%d, itr=%d, words=%d, packets=%d \n", file_path, file, i_itr, i_words, i_packets);
     for (int i=0; i < WORDS_PER_BEAT; i++)
       if (m_keep[i]) begin
         $fdisplay(file, "%d", signed'(m_data[i]));
@@ -188,7 +200,7 @@ class AXIS_Master #(WORD_WIDTH, WORDS_PER_BEAT, READY_PROB, CLK_PERIOD, IS_ACTIV
       open_file();
     end
     
-    if (m_ready && m_valid) 
+    if (enable && m_ready && m_valid) 
       this.read_beat(m_data, m_keep, m_last);
 
   endtask
