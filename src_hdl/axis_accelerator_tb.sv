@@ -12,8 +12,8 @@ module axis_accelerator_tb ();
   end
 
   localparam ITERATIONS = 2;
-  localparam VALID_PROB = 30;
-  localparam READY_PROB = 30;
+  localparam VALID_PROB = 10;
+  localparam READY_PROB = 10;
 
   /*
     IMAGE & KERNEL PARAMETERS
@@ -295,9 +295,9 @@ module axis_accelerator_tb ();
   localparam WORDS_PER_BEAT_CONV = COPIES*MEMBERS*GROUPS*UNITS;
   localparam WORDS_OUT_CONV = BEATS_OUT_CONV * WORDS_PER_BEAT_CONV;
 
-  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(VALID_PROB)) s_pixels_1  = new(.file_path(path_im_1   ), .words_per_packet(WORDS_1), .iterations(ITERATIONS));
-  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(VALID_PROB)) s_pixels_2  = new(.file_path(path_im_2   ), .words_per_packet(WORDS_2), .iterations(ITERATIONS));
-  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(W_WORDS_PER_BEAT  ), .VALID_PROB(VALID_PROB)) s_weights   = new(.file_path(path_weights), .words_per_packet(WORDS_W), .iterations(ITERATIONS));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(VALID_PROB)) s_pixels_1  = new(.file_path(path_im_1   ), .words_per_packet(WORDS_1), .iterations(1));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(VALID_PROB)) s_pixels_2  = new(.file_path(path_im_2   ), .words_per_packet(WORDS_2), .iterations(1));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(W_WORDS_PER_BEAT  ), .VALID_PROB(VALID_PROB)) s_weights   = new(.file_path(path_weights), .words_per_packet(WORDS_W), .iterations(1));
   initial forever s_pixels_1.axis_feed(aclk, s_axis_pixels_1_tready, s_axis_pixels_1_tvalid, s_data_pixels_1, s_axis_pixels_1_tkeep, s_axis_pixels_1_tlast);
   initial forever s_pixels_2.axis_feed(aclk, s_axis_pixels_2_tready, s_axis_pixels_2_tvalid, s_data_pixels_2, s_axis_pixels_2_tkeep, s_axis_pixels_2_tlast);
   initial forever s_weights .axis_feed(aclk, s_axis_weights_tready , s_axis_weights_tvalid , s_data_weights , s_axis_weights_tkeep , s_axis_weights_tlast );
@@ -329,7 +329,7 @@ module axis_accelerator_tb ();
   /*
     Get counters from drivers
   */
-
+  bit s_en_1, s_en_2, s_en_w, m_en_conv, m_en_lrelu, m_en_max, m_en_out;
   int s_words_1, s_words_2, s_words_w, s_itr_1, s_itr_2, s_itr_w; 
   int m_words_out, m_words_max, m_words_lrelu, m_words_conv;  
   int m_itr_out, m_itr_max, m_itr_lrelu, m_itr_conv;  
@@ -337,6 +337,14 @@ module axis_accelerator_tb ();
 
   initial forever begin
     @(posedge aclk);
+    s_en_1     = s_pixels_1.enable;
+    s_en_2     = s_pixels_2.enable;
+    s_en_w     = s_weights.enable;
+    m_en_conv  = m_conv.enable;
+    m_en_lrelu = m_lrelu.enable;
+    m_en_max   = m_maxpool.enable;
+    m_en_out   = m_output.enable;
+
     s_words_1     = s_pixels_1.i_words;
     s_words_2     = s_pixels_2.i_words;
     s_words_w     = s_weights .i_words;
@@ -366,12 +374,26 @@ module axis_accelerator_tb ();
     aresetn = 1;
 
     s_pixels_1.enable = 1;
-    s_pixels_2.enable = 1;
+    if (MAX_FACTOR == 2) s_pixels_2.enable = 1;
     s_weights .enable = 1;
     m_conv.enable     = 1;
     m_lrelu.enable    = 1;
     m_maxpool.enable  = 1;
     m_output.enable   = 1;
+
+    while (m_output.i_itr == 0) begin
+      @(posedge aclk);
+    end
+
+    repeat(100) @(posedge aclk);
+    s_pixels_1.i_itr =0;
+    s_pixels_1.enable = 1;
+    s_pixels_2.i_itr =0;
+    if (MAX_FACTOR == 2) s_pixels_2.enable = 1;
+
+    s_weights.i_itr  = 0;
+    s_weights.enable = 1;
+
   end
 
 endmodule
