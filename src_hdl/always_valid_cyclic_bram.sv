@@ -57,6 +57,9 @@ module always_valid_cyclic_bram #(
   input  logic [R_ADDR_WIDTH-1:0] r_addr_min;
   input  logic [W_ADDR_WIDTH-1:0] w_addr_max;
 
+  logic [W_ADDR_WIDTH-1:0] addr_w_prev, addr_w;
+  logic bram_valid_out;
+  logic [PTR_WIDTH-1:0] w_ptr, w_ptr_next;
   
   logic m_valid_ready;
   assign m_valid_ready = m_valid && m_ready;
@@ -118,7 +121,6 @@ module always_valid_cyclic_bram #(
     BRAM_WRITE_ADDRESS
   */
 
-  logic [W_ADDR_WIDTH-1:0] addr_w_prev, addr_w;
   assign addr_w = (addr_w_prev == w_addr_max) ? 0 : addr_w_prev + 1;
 
   assign w_full = addr_w == w_addr_max;
@@ -163,7 +165,6 @@ module always_valid_cyclic_bram #(
     Simulates latency of BRAM for valid data
   */
 
-  logic bram_valid_out;
   n_delay #(
       .N          (LATENCY),
       .WORD_WIDTH (1),
@@ -186,7 +187,7 @@ module always_valid_cyclic_bram #(
         .addra(addr_w            ),
         .dina (s_data            ),
         .clkb (clk               ),
-        .enb  (clken             ),
+        .enb  (clken & ~s_valid_ready),
         .addrb(addr_r            ),
         .doutb(bram_r_data       )
       );
@@ -198,7 +199,7 @@ module always_valid_cyclic_bram #(
         .addra(addr_w            ),
         .dina (s_data            ),
         .clkb (clk               ),
-        .enb  (clken             ),
+        .enb  (clken & ~s_valid_ready),
         .addrb(addr_r            ),
         .doutb(bram_r_data       )
       );
@@ -210,7 +211,7 @@ module always_valid_cyclic_bram #(
         .addra(addr_w            ),
         .dina (s_data            ),
         .clkb (clk               ),
-        .enb  (clken             ),
+        .enb  (clken & ~s_valid_ready),
         .addrb(addr_r            ),
         .doutb(bram_r_data       )
       );
@@ -241,7 +242,6 @@ module always_valid_cyclic_bram #(
     .data_out     (w_ptr_reset_count)
   );
 
-  logic [PTR_WIDTH-1:0] w_ptr, w_ptr_next;
 
   assign w_ptr_next = (w_ptr == BUFFER_DEPTH-1) ? 0  : w_ptr + 1;
 
