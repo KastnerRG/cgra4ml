@@ -19,22 +19,20 @@ extern void xil_printf(const char *format, ...);
 
 My_DMA dma_im_in_1("im_in_1", XPAR_DMA_IM_IN_1_DEVICE_ID);
 My_DMA dma_im_in_2("im_in_2", XPAR_DMA_IM_IN_2_DEVICE_ID);
-//My_DMA dma_weights("weights", XPAR_DMA_WEIGHTS_DEVICE_ID);
-//My_DMA dma_im_out("im_out", XPAR_DMA_IM_OUT_DEVICE_ID);
 My_DMA dma_weights_im_out("weights_im_out", XPAR_DMA_WEIGHTS_IM_OUT_DEVICE_ID);
 
 ////// Layer 1:
 //// mwr -bin -file D:/cnn-fpga/data/1_weights.bin 0x0A000000 722; mwr -bin -file D:/cnn-fpga/data/1_conv_in_0.bin 0x02000000 55297; mwr -bin -file D:/cnn-fpga/data/1_conv_in_1.bin 0x03000000 55296;
 //#define IM_OUT_BYTES  6*2*2*4/2
 //#define WEIGHTS_BYTES 1444
-//#define IM_IN_BYTES   221184
+//#define IM_IN_BYTES   221184  - UNITS_EDGES
 //#define IS_MAX_ 1
 
 // Layer 3:
 // mwr -bin -file D:/cnn-fpga/data/3_weights.bin 0x0A000000 5114; mwr -bin -file D:/cnn-fpga/data/3_conv_in_0.bin 0x02000000 147458;
 #define IM_OUT_BYTES  6*2*2*4
 #define WEIGHTS_BYTES 10228
-#define IM_IN_BYTES   589830
+#define IM_IN_BYTES   589830 - UNITS_EDGES
 #define IS_MAX_ 0
 #define NUM_TRANSFERS 1*16*96
 
@@ -42,7 +40,7 @@ My_DMA dma_weights_im_out("weights_im_out", XPAR_DMA_WEIGHTS_IM_OUT_DEVICE_ID);
 //// mwr -bin -file D:/cnn-fpga/data/4_weights.bin 0x0A000000 3386; mwr -bin -file D:/cnn-fpga/data/4_conv_in_0.bin 0x02000000 294913;
 //#define IM_OUT_BYTES  6*2*2*4*3
 //#define WEIGHTS_BYTES 6772
-//#define IM_IN_BYTES   1179654
+//#define IM_IN_BYTES   1179654  - UNITS_EDGES
 //#define IS_MAX_ 0
 
 void callback_weights_mm2s_done()
@@ -66,28 +64,28 @@ void callback_output_s2mm_done()
 //	xil_printf("out s2mm done \r\n");
 	done = true;
 }
-
-void read_gpios()
-{
-	UINTPTR gpio_bases[5] = {
-			XPAR_AXI_GPIO_0_BASEADDR,
-			XPAR_AXI_GPIO_1_BASEADDR,
-			XPAR_AXI_GPIO_2_BASEADDR,
-			XPAR_AXI_GPIO_3_BASEADDR,
-			XPAR_AXI_GPIO_4_BASEADDR
-	};
-
-	u32 * extracted_ptr = (u32*)0x00002000;
-
-	for (int i=0; i<5; i++){
-		extracted_ptr[i] = Xil_In32(gpio_bases[i]);
-//		Xil_DCacheFlushRange((UINTPTR)(gpio_bases[i]), 4);
-
-		std::bitset<32> bits(extracted_ptr[i]);
-		xil_printf("bits at %d : %s \r\n", i, bits.to_string().c_str());
-	}
-
-}
+//
+//void read_gpios()
+//{
+//	UINTPTR gpio_bases[5] = {
+//			XPAR_AXI_GPIO_0_BASEADDR,
+//			XPAR_AXI_GPIO_1_BASEADDR,
+//			XPAR_AXI_GPIO_2_BASEADDR,
+//			XPAR_AXI_GPIO_3_BASEADDR,
+//			XPAR_AXI_GPIO_4_BASEADDR
+//	};
+//
+//	u32 * extracted_ptr = (u32*)0x00002000;
+//
+//	for (int i=0; i<5; i++){
+//		extracted_ptr[i] = Xil_In32(gpio_bases[i]);
+////		Xil_DCacheFlushRange((UINTPTR)(gpio_bases[i]), 4);
+//
+//		std::bitset<32> bits(extracted_ptr[i]);
+//		xil_printf("bits at %d : %s \r\n", i, bits.to_string().c_str());
+//	}
+//
+//}
 
 int main()
 {
@@ -116,7 +114,7 @@ int main()
 		status = dma_weights_im_out.mm2s_start((UINTPTR)WEIGHTS_P, WEIGHTS_BYTES);
 		xil_printf("%d \r\n",status);
 		xil_printf("-------INITIAL------- \r\n");
-		read_gpios();
+//		read_gpios();
 
 		xil_printf("Done reading \r\n");
 
@@ -136,7 +134,7 @@ int main()
 
 			write_p += IM_OUT_BYTES;
 		}
-		read_gpios();
+//		read_gpios();
 		xil_printf("done itr \r\n");
 	}
 
@@ -144,7 +142,3 @@ int main()
 	return XST_SUCCESS;
 
 }
-
-////			if (i_out==0 && i_itr==1)
-//
-////			xil_printf("out s2mm done: i_out = %d /%d, address = %p \r\n", i_out, NUM_TRANSFERS, write_p);
