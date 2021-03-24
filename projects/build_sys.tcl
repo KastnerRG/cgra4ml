@@ -2,8 +2,6 @@ set PROJ_NAME sys
 set PROJ_FOLDER sys
 set SOURCE_FOLDER ../src_hdl
 
-set SYS_FREQ_MHZ 70
-
 set UNITS   4
 set GROUPS  2
 set COPIES  2
@@ -442,7 +440,7 @@ create_bd_design "sys"
 # ZYNQ IP
 create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 processing_system7_0
 apply_bd_automation -rule xilinx.com:bd_rule:processing_system7 -config {make_external "FIXED_IO, DDR" apply_board_preset "1" Master "Disable" Slave "Disable" }  [get_bd_cells processing_system7_0]
-set_property -dict [list CONFIG.PCW_FPGA1_PERIPHERAL_FREQMHZ 70 CONFIG.PCW_USE_S_AXI_HP0 {1} CONFIG.PCW_USE_FABRIC_INTERRUPT {1} CONFIG.PCW_EN_CLK1_PORT {1} CONFIG.PCW_IRQ_F2P_INTR {1} CONFIG.PCW_QSPI_PERIPHERAL_ENABLE {0} CONFIG.PCW_SD0_PERIPHERAL_ENABLE {0} CONFIG.PCW_I2C0_PERIPHERAL_ENABLE {0} CONFIG.PCW_GPIO_MIO_GPIO_ENABLE {0}] [get_bd_cells processing_system7_0]
+set_property -dict [list CONFIG.PCW_FPGA1_PERIPHERAL_FREQMHZ {70} CONFIG.PCW_USE_S_AXI_ACP {1} CONFIG.PCW_USE_DEFAULT_ACP_USER_VAL {1} CONFIG.PCW_USE_FABRIC_INTERRUPT {1} CONFIG.PCW_EN_CLK1_PORT {1} CONFIG.PCW_IRQ_F2P_INTR {1} CONFIG.PCW_QSPI_PERIPHERAL_ENABLE {0} CONFIG.PCW_SD0_PERIPHERAL_ENABLE {0} CONFIG.PCW_I2C0_PERIPHERAL_ENABLE {0} CONFIG.PCW_GPIO_MIO_GPIO_ENABLE {0}] [get_bd_cells processing_system7_0]
 
 
 # Accelerator
@@ -483,12 +481,12 @@ startgroup
 apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK0 (50 MHz)} Clk_slave {/processing_system7_0/FCLK_CLK0 (50 MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK0 (50 MHz)} Master {/processing_system7_0/M_AXI_GP0} Slave {/dma_im_in_1/S_AXI_LITE} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}}  [get_bd_intf_pins dma_im_in_1/S_AXI_LITE]
 apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK0 (50 MHz)} Clk_slave {/processing_system7_0/FCLK_CLK0 (50 MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK0 (50 MHz)} Master {/processing_system7_0/M_AXI_GP0} Slave {/dma_im_in_2/S_AXI_LITE} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}}  [get_bd_intf_pins dma_im_in_2/S_AXI_LITE]
 apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK0 (50 MHz)} Clk_slave {/processing_system7_0/FCLK_CLK0 (50 MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK0 (50 MHz)} Master {/processing_system7_0/M_AXI_GP0} Slave {/dma_weights_im_out/S_AXI_LITE} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}}  [get_bd_intf_pins dma_weights_im_out/S_AXI_LITE]
-apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_slave {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK1 (70 MHz)} Master {/dma_weights_im_out/M_AXI_MM2S} Slave {/processing_system7_0/S_AXI_HP0} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}}  [get_bd_intf_pins processing_system7_0/S_AXI_HP0]
+apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_slave {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK1 (70 MHz)} Master {/dma_weights_im_out/M_AXI_MM2S} Slave {/processing_system7_0/S_AXI_ACP} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}}  [get_bd_intf_pins processing_system7_0/S_AXI_ACP]
 endgroup
 startgroup
-apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_slave {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK1 (70 MHz)} Master {/dma_im_in_1/M_AXI_MM2S} Slave {/processing_system7_0/S_AXI_HP0} ddr_seg {Auto} intc_ip {/axi_mem_intercon} master_apm {0}}  [get_bd_intf_pins dma_im_in_1/M_AXI_MM2S]
-apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_slave {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK1 (70 MHz)} Master {/dma_im_in_2/M_AXI_MM2S} Slave {/processing_system7_0/S_AXI_HP0} ddr_seg {Auto} intc_ip {/axi_mem_intercon} master_apm {0}}  [get_bd_intf_pins dma_im_in_2/M_AXI_MM2S]
-apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_slave {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK1 (70 MHz)} Master {/dma_weights_im_out/M_AXI_S2MM} Slave {/processing_system7_0/S_AXI_HP0} ddr_seg {Auto} intc_ip {/axi_mem_intercon} master_apm {0}}  [get_bd_intf_pins dma_weights_im_out/M_AXI_S2MM]
+apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_slave {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK1 (70 MHz)} Master {/dma_im_in_1/M_AXI_MM2S} Slave {/processing_system7_0/S_AXI_ACP} ddr_seg {Auto} intc_ip {/axi_mem_intercon} master_apm {0}}  [get_bd_intf_pins dma_im_in_1/M_AXI_MM2S]
+apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_slave {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK1 (70 MHz)} Master {/dma_im_in_2/M_AXI_MM2S} Slave {/processing_system7_0/S_AXI_ACP} ddr_seg {Auto} intc_ip {/axi_mem_intercon} master_apm {0}}  [get_bd_intf_pins dma_im_in_2/M_AXI_MM2S]
+apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_slave {/processing_system7_0/FCLK_CLK1 (70 MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK1 (70 MHz)} Master {/dma_weights_im_out/M_AXI_S2MM} Slave {/processing_system7_0/S_AXI_ACP} ddr_seg {Auto} intc_ip {/axi_mem_intercon} master_apm {0}}  [get_bd_intf_pins dma_weights_im_out/M_AXI_S2MM]
 endgroup
 
 connect_bd_net [get_bd_pins axis_accelerator_0/aclk] [get_bd_pins processing_system7_0/FCLK_CLK1]

@@ -2,7 +2,6 @@
 #include "xparameters.h"
 #include "xdebug.h"
 #include "xstatus.h"
-#include "xil_cache.h"
 #include "xil_printf.h"
 #include "xstatus.h"
 #include <machine/_default_types.h>
@@ -35,14 +34,12 @@ void callback_image_2_mm2s_done()
 	xil_printf("image_1 mm2s_done \r\n");
 }
 
-
 void restart_weights()
 {
 	static int i_itr = 0, i_layers = I_LAYER;
 	static s8* weights_read_p = (s8*)WEIGHTS_P;
 
 	status = dma_weights_im_out.mm2s_start((UINTPTR)weights_read_p, layers[i_layers].WORDS_WEIGHTS_PER_ITR);
-//	status = dma_weights_im_out.mm2s_start((UINTPTR)WEIGHTS_P, 10228);
 
 #if defined DEBUG
 	xil_printf("---------weights restarted. Reading from (i_layers,i_itr,:):\t (%d/%d, %d/%d, %d);\t ptr:%p; status:%d \r\n",
@@ -163,8 +160,6 @@ void pad_prev(	int& i_w_next,
 				volatile s8 *pad_prev_p = unravel_image_abwcu(pixels_p, i_arr_prev,i_bpa_prev,i_w,i_cout,0  , i_layers);
 				volatile s8 *pad_this_p = unravel_image_abwcu(pixels_p, i_arr     ,i_bpa     ,i_w,i_cout,0  , i_layers);
 
-				Xil_DCacheFlushRange((UINTPTR)pad_prev_p, UNITS_EDGES);
-				Xil_DCacheFlushRange((UINTPTR)pad_this_p, UNITS_EDGES);
 
 				for (int i_kh2=0; i_kh2 < layers[i_layers].KH_IN/2; i_kh2++)
 				{
@@ -182,8 +177,6 @@ void pad_prev(	int& i_w_next,
 
 					pad_this_p[i_this_ue_to] = pad_prev_p[i_prev_ue_from];
 				}
-				Xil_DCacheFlushRange((UINTPTR)pad_prev_p, UNITS_EDGES);
-				Xil_DCacheFlushRange((UINTPTR)pad_this_p, UNITS_EDGES);
 
 #if defined DEBUG && defined DEBUG_PAD
 			xil_printf("Padded [%p <-> %p] (abwcu): (%d,%d,%d,%d,%d)<-(%d,%d,%d,%d,%d) {%d} \t (%d,%d,%d,%d,%d)->(%d,%d,%d,%d,%d) {%d}  \r\n",
@@ -214,7 +207,7 @@ void restart_output()
 {
 	const chunk_s* chunk_write_p = &chunk_b;
 	static volatile s8 * write_p = chunk_write_p->pixels_p;
-	static int i_w=0, i_blocks=0, i_bpa=0, i_arr=0, i_cout=0, i_itr=0, i_layers=I_LAYER;
+	static int i_w=0, i_w_flipped=0, i_blocks=0, i_bpa=0, i_arr=0, i_cout=0, i_itr=0, i_layers=I_LAYER;
 	static bool is_new_layer=true;
 
 
@@ -226,7 +219,7 @@ void restart_output()
 									layers[i_layers].WORDS_OUT_PER_TRANSFER);
 
 
-	pad_prev(i_w,i_blocks,i_bpa,i_arr,i_cout,i_layers,chunk_write_p->pixels_p);
+	pad_prev(i_w_flipped,i_blocks,i_bpa,i_arr,i_cout,i_layers,chunk_write_p->pixels_p);
 
 	// set config
 	if (is_new_layer)
@@ -237,15 +230,23 @@ void restart_output()
 
 	// PREPARE NEXT INDICES
 	// TODO - handle skip connection
-#ifdef DEBUG
-	Xil_DCacheFlushRange((UINTPTR)write_p, layers[i_layers].WORDS_OUT_PER_TRANSFER);
-#endif
 
 	if (i_w < layers[i_layers].OUT_W_IN-1)
+	{
 		i_w += 1;
+
+		// Flip last KW-1 columns : flipped = 2w-(kw+iw)
+		if (i_w > layers[i_layers].OUT_W_IN - layers[i_layers].KW_IN){
+			i_w_flipped = 2 * layers[i_layers].OUT_W_IN - (layers[i_layers].KW_IN + i_w);
+			xil_printf("%d -> %d \r\n", i_w, i_w_flipped);
+		}
+		else
+			i_w_flipped = i_w;
+	}
 	else
 	{
 		i_w = 0;
+		i_w_flipped = 0;
 
 		xil_printf(" i_blocks: %d \r\n", i_blocks);
 
@@ -287,7 +288,7 @@ void restart_output()
 				{
 					i_layers += 1;
 					xil_printf(" layer: %d \r\n", i_layers);
-					getchar();
+					done = true; // to test an itr
 				}
 				else
 				{
@@ -299,7 +300,7 @@ void restart_output()
 		}
 	}
 
-	write_p = unravel_image_abwcu(chunk_write_p->pixels_p, i_arr,i_bpa,i_w,i_cout,0, i_layers);
+	write_p = unravel_image_abwcu(chunk_write_p->pixels_p, i_arr,i_bpa,i_w_flipped,i_cout,0, i_layers);
 }
 
 //// mwr -bin -file D:/cnn-fpga/data/1_weights.bin 0x0A000000 722; mwr -bin -file D:/cnn-fpga/data/1_conv_in_0.bin 0x02000000 55297; mwr -bin -file D:/cnn-fpga/data/1_conv_in_1.bin 0x03000000 55296;
@@ -316,17 +317,15 @@ int main()
 //	preprocess_input(image_rgb_p_A, chunk_a.data_ps, IS_NOT_MAX_0, IS_MAX_0, IS_RELU_0, KH_0);
 
 	// Initiate DMAs
-	status = dma_weights_im_out.intr_init_s2mm(XPAR_FABRIC_DMA_WEIGHTS_IM_OUT_S2MM_INTROUT_INTR);
 	status = dma_weights_im_out.intr_init_mm2s(XPAR_FABRIC_DMA_WEIGHTS_IM_OUT_MM2S_INTROUT_INTR);
+	status = dma_weights_im_out.intr_init_s2mm(XPAR_FABRIC_DMA_WEIGHTS_IM_OUT_S2MM_INTROUT_INTR);
 	status = dma_im_in_1.intr_init_mm2s(XPAR_FABRIC_DMA_IM_IN_1_MM2S_INTROUT_INTR);
 	status = dma_im_in_2.intr_init_mm2s(XPAR_FABRIC_DMA_IM_IN_2_MM2S_INTROUT_INTR);
 
 	// Attach custom callbacks
 	dma_weights_im_out.s2mm_done_callback = restart_output;
-	dma_weights_im_out.mm2s_done_callback = restart_weights;
 	dma_im_in_1.mm2s_done_callback = restart_pixels;
 	dma_im_in_2.mm2s_done_callback = callback_image_2_mm2s_done;
-
 
 	// Layer Details
 
@@ -339,14 +338,31 @@ int main()
 	xil_printf("ITR           : %d \r\n", layers[I_LAYER].ITR);
 	xil_printf("MAX_FACTOR    : %d \r\n", layers[I_LAYER].MAX_FACTOR);
 
+
 	// Start transfer
 	restart_output();
 	restart_pixels();
-	restart_weights();
 
-	while (!done){};
+	/* Restarting weights via interrupt does not work for first three restarts
+	 * 	- resulting sequence i_itr=(0,1,0,3,4,5...)
+	 * 	- note: i_itr is a static variable, incremented every time at function call. but gets 0 again.
+	 * 	- looks like a race condition
+	 * 	- tried:
+	 * 		- splitting the weights dma into two
+	 * 		- pre-loading w_rot with itr=(0,1) - then sequence is itr=(0,1,2,3,2,4,5,6)
+	 * 	- manually controlling it works
+	 * */
+	while(!done)
+	{
+		restart_weights();
+		while (!dma_weights_im_out.mm2s_done) {}
+	}
+
+	int zero = 0;
+	pad_prev(zero,zero,zero,zero,zero,zero,nullptr);
 
 	xil_printf("--- Exiting main() --- \r\n");
+	getchar();
 	return XST_SUCCESS;
 
 }
