@@ -484,8 +484,16 @@ np.savetxt(f"D:/cnn-fpga/data/{i}_conv_out.txt", image_out[0].flatten(), fmt='%d
 # %%
 image_out_fpga = np.loadtxt(f"D:/cnn-fpga/data/{i}_conv_out_fpga_0.txt",np.int32)
 
-error = image_out_fpga - image_out[0].flatten()
+error = image_out_fpga[0:21] - image_out[0].flatten()[0:21]
 np.sum(error)
+
+
+# %%
+image_out[0].flatten()[0:64]
+
+
+# %%
+image_out_fpga[0:64]
 
 # %% [markdown]
 # # Leaky Relu Out / Max In
@@ -542,10 +550,6 @@ layers[f'{prefix_lrelu}{i}'].requantize_params['B'][0,1,1,0:4]
 
 
 # %%
-error[error>1]
-
-
-# %%
 np.unravel_index(8,(MEMBERS,COPIES,GROUPS))
 
 
@@ -559,36 +563,6 @@ b, a, d
 
 # %%
 (0.003149 * 37710 + -118.75)-85.0
-
-
-# %%
-# lrelu_out_mcgu[error>1], fpga_mcgu[error>1]
-
-
-# %%
-fpga_mcgu = image_out_fpga.reshape((BLOCKS_PER_ARR,W,SUB_CORES,MEMBERS,COPIES,GROUPS,CONV_UNITS))
-
-fpga_mcgu[0,4,0,1,0,0,:]
-
-
-# %%
-(a*(2330) + b) + d
-
-
-# %%
-a*(2330) + b
-
-
-# %%
-a,b
-
-
-# %%
-print(np.sum(abs(error[:,:,0,0,0,0,0])>1))
-
-
-# %%
-error[:,:,0,1,0,0,0]
 
 # %% [markdown]
 # # System Out (SIM)
@@ -683,27 +657,18 @@ im_out = im_arrays_out[0].flatten()[UNITS_EDGES:].reshape(next_shape)
 fpga_out = im_arrays_fpga_out[0][UNITS_EDGES:].reshape(next_shape)
 
 error = im_out - fpga_out
+
+error = error.reshape(next_blocks//next_max_factor, next_w, ITR,EFF_CORES, UNITS_EDGES)
+im_out = im_out.reshape(next_blocks//next_max_factor, next_w, ITR,EFF_CORES, UNITS_EDGES)
+fpga_out = fpga_out.reshape(next_blocks//next_max_factor, next_w, ITR,EFF_CORES, UNITS_EDGES)
+
+np.savetxt("where_err.txt",np.argwhere(np.abs(error) > 1),fmt='%d')
+
 print(error.shape)
 
 
 # %%
-im_out[0,0,16,:]
-
-
-# %%
-im_out.size
-
-
-# %%
-image_padded[0][1,0,0,0,:]
-
-
-# %%
-np.sum(error)
-
-
-# %%
-im_arrays_fpga_out[0][:150]-im_arrays_out[0].flatten()[:150]
+error[abs(error)>1]
 
 # %% [markdown]
 # # Input LUT
