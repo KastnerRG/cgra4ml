@@ -7,7 +7,7 @@ from yolov2_mod_numpy import YOLOv2_Modified_Numpy
 
 layers = pickle.load(open('yolov2_mod_int8_dict.pickle', 'rb'))
 
-i = 3
+i = 4
 
 CONV_UNITS = 4
 MEMBERS    = 4
@@ -220,7 +220,13 @@ weights = weights.reshape(ITR,KERNEL_BEATS,CORES,KW_MAX)
 '''
 Add LRELU Beats
 '''
-lrelu = get_lrelu_config(i,layers=layers,KW_MAX=KW_MAX,CORES=CORES,prefix_max=prefix_max,prefix_lrelu=prefix_lrelu) # (ITR,LRELU_BEATS,CORES,KW_MAX)
+if f'{prefix_lrelu}{i}' in layers:
+    lrelu = get_lrelu_config(i,layers=layers,KW_MAX=KW_MAX,CORES=CORES,prefix_max=prefix_max,prefix_lrelu=prefix_lrelu) 
+    # (ITR,LRELU_BEATS,CORES,KW_MAX)
+else:
+    LRELU_BEATS = 13 if KW == 1 else 21
+    lrelu = np.zeros((ITR,LRELU_BEATS,CORES,KW_MAX),np.int8)
+    
 LRELU_BEATS = lrelu.shape[1]
 weights_beats = np.concatenate([lrelu,weights], axis=1) # (ITR, LRELU_BEATS + KERNEL_BEATS, CORES, KW_MAX)
 
@@ -289,6 +295,10 @@ def reshape_conv_in(layers, i):
     assert H % CONV_UNITS == 0
     assert BLOCKS % max_factor == 0
 
+    IS_LRELU = f'{prefix_lrelu}{i}' in layers.keys()
+    KH      = layers[f'{prefix_conv}{i}'].weights.shape[0]             
+    REMOVE_PAD = KH_MAX//2 - KH//2
+
     image = np.pad(image, ((KH_MAX//2, KH_MAX//2), (0, 0), (0, 0)), mode='constant')
 
     im_arrays = []
@@ -300,6 +310,13 @@ def reshape_conv_in(layers, i):
         h_index_end   = h_index_start + CONV_UNITS_EDGES
         block = image[h_index_start:h_index_end,:,:] # padding with prev & next block
         block = block.transpose([1, 2, 0]) # (H,W,C) -> (W,C,H)
+
+        '''
+        Zero out unnessasary padding
+        '''
+        block = np.copy(block)
+        block[:,:,:REMOVE_PAD] = 0
+        block[:,:,CONV_UNITS_EDGES-REMOVE_PAD:] = 0
 
         im_array_index = b %  max_factor
         blocks_index   = b // max_factor
@@ -323,9 +340,6 @@ def reshape_conv_in(layers, i):
                     if prev_i == i:
                         IS_NOT_MAX = 1
 
-    IS_LRELU = f'{prefix_lrelu}{i}' in layers.keys()
-    KH      = layers[f'{prefix_conv}{i}'].weights.shape[0]        
-
     config = np.zeros((CONV_UNITS_EDGES),np.int8)
     config[0] = IS_NOT_MAX
     config[1] = IS_MAX
@@ -338,6 +352,10 @@ def reshape_conv_in(layers, i):
     return im_arrays, (BLOCKS,max_factor,W,CIN, CONV_UNITS_EDGES)
 
 im_arrays, in_shape = reshape_conv_in(layers, i)
+
+
+# %%
+i
 
 
 # %%
@@ -383,31 +401,18 @@ weights.tofile(w_path)
 
 cmd_txt = f"mwr -bin -file {w_path} 0x0A000000 {int(np.ceil(weights.size/4))}; "
 
-im_0_file_size = int(np.ceil(im_arrays[0].size/4))*4
-im_0 = np.zeros(im_0_file_size, im_arrays[0].dtype)
-im_0[:im_arrays[0].size] = im_arrays[0].flatten()
+im_in_unpadded = np.concatenate([arr.flatten() for arr in im_arrays])
 
-im_0_path = f"{path}/{i}_conv_in_0.bin"
-im_arrays[0].tofile(im_0_path)
+im_file_size = int(np.ceil(im_in_unpadded.size/4))*4
+im_in = np.zeros(im_file_size, im_in_unpadded.dtype)
+im_in[:im_in_unpadded.size] = im_in_unpadded
 
-cmd_txt += f"mwr -bin -file {im_0_path} 0x02000000 {im_0_file_size//4}; "
+im_path = f"{path}/{i}_conv_in.bin"
+im_in.tofile(im_path)
 
-IS_MAX = f'{prefix_max}{i}' in layers.keys()
-if IS_MAX:
-    im_1_path = f"{path}/{i}_conv_in_1.bin"
-    im_arrays[1].tofile(im_1_path)
-
-    cmd_txt += f"mwr -bin -file {im_1_path} 0x03000000 {int(np.ceil(im_arrays[1].size/4))};"
+cmd_txt += f"mwr -bin -file {im_path} 0x02000000 {im_file_size//4}; "
 
 print(cmd_txt)
-
-
-# %%
-im_arrays[0].size
-
-
-# %%
-i
 
 # %% [markdown]
 # # Reshape Conv Out = LeakyReLu in
@@ -619,48 +624,67 @@ image_out_sim != layers[f'{prefix_lrelu}{i}'].requantize_params['D']
 # %%
 # np.savetxt("where_err.txt",np.argwhere(error > 1),fmt='%d')
 
+
+# %%
+
+
 # %% [markdown]
 # # Image Out FPGA
 
 # %%
-im_arrays_out, out_shape = reshape_conv_in(layers, i+1)
-
+if i == 21:
+    np_out = layers['conv_21'].np_out_data[0]
+    H, W, COUT = np_out.shape
+    BLOCKS = H//CONV_UNITS
+    np_out = np_out.reshape(BLOCKS, CONV_UNITS, W, COUT)
+    np_out = np_out.transpose(0,2,3,1)
+    np_out_zeros = np.zeros((BLOCKS,W,COUT,UNITS_EDGES),np_out.dtype)
+    np_out_zeros[:,:,:,KH//2:CONV_UNITS+KH//2] = np_out
+    im_arrays_out = np.concatenate([np.zeros((1,UNITS_EDGES),np_out.dtype), np_out_zeros.reshape(BLOCKS*W*COUT,UNITS_EDGES)],axis=0)
+    im_arrays_out = im_arrays_out[np.newaxis,:]
+    out_shape = im_arrays_out.shape
+else:
+    im_arrays_out, out_shape = reshape_conv_in(layers, i+1)
+    
 next_max_factor = len(im_arrays_out)
 
 
 # %%
 cmd = ""
 out_paths = []
-addrs = ['0x06000000', '0x07000000']
+addr = f'0x06000000'
 
-for m in range(next_max_factor):
-    out_paths += [f"{path}/{i}_fpga_out_{m}.bin"]
-    cmd += f"mrd -bin -file {out_paths[m]} {addrs[m]} {int(np.ceil((im_arrays_out[m].size)/4))}; "
+arr_size = (im_arrays_out[0][1:].size)*next_max_factor + UNITS_EDGES
 
+out_path = f"{path}/{i}_fpga_out.bin"
+cmd = f"mrd -bin -file {out_path} {addr} {int(np.ceil(arr_size/4))}; "
 print(cmd)
 
 
 # %%
-im_arrays_fpga_out = []
 
-for m in range(next_max_factor):
-    im_arrays_fpga_out += [np.fromfile(out_paths[m],np.int8)[0:im_arrays_out[m].size]]
 
 
 # %%
-# BLOCKS//max_factor, W, CIN, CONV_UNITS_EDGES
+im_arr_fpga_out = np.fromfile(out_path,np.int8)[0:arr_size]
+
 _, next_h, next_w, next_cin = layers[f'conv_{i+1}'].in_data.shape
 next_blocks = next_h//CONV_UNITS
-next_shape = next_blocks//next_max_factor, next_w, next_cin, UNITS_EDGES
+next_shape = next_max_factor, next_blocks//next_max_factor, next_w, next_cin, UNITS_EDGES
 
-im_out = im_arrays_out[0].flatten()[UNITS_EDGES:].reshape(next_shape)
-fpga_out = im_arrays_fpga_out[0][UNITS_EDGES:].reshape(next_shape)
+eq_arrays = []
+for m, arr in enumerate(im_arrays_out):
+    if m == 0:
+        eq_arrays += [arr.flatten()[UNITS_EDGES:]]
+    else:
+        eq_arrays += [arr.flatten()]
+
+im_out = np.concatenate(eq_arrays).reshape(next_shape)
+print("config bits: ",im_arr_fpga_out[:UNITS_EDGES]==im_arrays_out[0][0])
+
+fpga_out = im_arr_fpga_out[UNITS_EDGES:].reshape(next_shape)
 
 error = im_out - fpga_out
-
-error = error.reshape(next_blocks//next_max_factor, next_w, ITR,EFF_CORES, UNITS_EDGES)
-im_out = im_out.reshape(next_blocks//next_max_factor, next_w, ITR,EFF_CORES, UNITS_EDGES)
-fpga_out = fpga_out.reshape(next_blocks//next_max_factor, next_w, ITR,EFF_CORES, UNITS_EDGES)
 
 np.savetxt("where_err.txt",np.argwhere(np.abs(error) > 1),fmt='%d')
 
@@ -668,7 +692,23 @@ print(error.shape)
 
 
 # %%
-error[abs(error)>1]
+im_out[0,2,0,1,:], fpga_out[0,2,0,1,:]
+
+
+# %%
+im_arr_fpga_out[:UNITS_EDGES]
+
+
+# %%
+im_arrays_out[0][1,:]
+
+
+# %%
+im_out[0,2,83,28,1], im_out[1,1,83,28,5] #(0,2,83,28,5)<-(1,1,83,28,1)
+
+
+# %%
+
 
 # %% [markdown]
 # # Input LUT

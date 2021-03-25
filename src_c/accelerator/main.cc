@@ -18,7 +18,7 @@ extern void xil_printf(const char *format, ...);
 
 int status;
 bool done = false;
-#define I_LAYER 3-1
+#define I_LAYER 1-1
 
 const std::array<Layer, N_LAYERS> layers = build_yolo_mod();
 const chunk_s chunk_a = {(s8*) IMAGE_RGB_A_P, (s8*) DATA_A_P, (s8*)DATA_A_P + UNITS_EDGES};
@@ -83,6 +83,11 @@ void restart_pixels()
 	words_2 = layers[i_layers].WORDS_PIXELS_PER_ARR;
 
 	status = dma_im_in_1.mm2s_start((UINTPTR)read_p1, words_1);
+
+	while (layers[i_layers].IS_MAX && !dma_im_in_2.mm2s_done){
+		xil_printf("%d\r\n", dma_im_in_2.mm2s_done);
+	};
+
 	if (layers[i_layers].IS_MAX)
 		status = dma_im_in_2.mm2s_start((UINTPTR)(read_p2), words_2);
 
@@ -151,8 +156,8 @@ void pad_prev(	int& i_w_next,
 	{
 		if (i_blocks != 0)
 		{
-			int i_arr_prev = (i_blocks-1) % layers[i_layers].MAX_FACTOR;
-			int i_bpa_prev = (i_blocks-1) / layers[i_layers].MAX_FACTOR;
+			int i_arr_prev = (i_blocks-1) % layers[i_layers].OUT_MAX_FACTOR;
+			int i_bpa_prev = (i_blocks-1) / layers[i_layers].OUT_MAX_FACTOR;
 
 			for (int i_cout=i_cout_base; i_cout < i_cout_base + layers[i_layers].EFF_CORES; i_cout++)
 			{
@@ -161,7 +166,7 @@ void pad_prev(	int& i_w_next,
 				volatile s8 *pad_this_p = unravel_image_abwcu(pixels_p, i_arr     ,i_bpa     ,i_w,i_cout,0  , i_layers);
 
 
-				for (int i_kh2=0; i_kh2 < layers[i_layers].KH_IN/2; i_kh2++)
+				for (int i_kh2=0; i_kh2 < layers[i_layers].OUT_KH/2; i_kh2++)
 				{
 					// prev_top   <- this_bottom
 
@@ -236,8 +241,10 @@ void restart_output()
 		i_w += 1;
 
 		// Flip last KW-1 columns : flipped = 2w-(kw+iw)
-		if (i_w > layers[i_layers].OUT_W_IN - layers[i_layers].KW_IN){
-			i_w_flipped = 2 * layers[i_layers].OUT_W_IN - (layers[i_layers].KW_IN + i_w);
+		// For max: kw <- kw-2
+		if (i_w > layers[i_layers].OUT_W_IN - layers[i_layers].KW_PAD)
+		{
+			i_w_flipped = 2 * layers[i_layers].OUT_W_IN - (i_w + layers[i_layers].KW_PAD);
 			xil_printf("%d -> %d \r\n", i_w, i_w_flipped);
 		}
 		else
@@ -325,7 +332,7 @@ int main()
 	// Attach custom callbacks
 	dma_weights_im_out.s2mm_done_callback = restart_output;
 	dma_im_in_1.mm2s_done_callback = restart_pixels;
-	dma_im_in_2.mm2s_done_callback = callback_image_2_mm2s_done;
+
 
 	// Layer Details
 
@@ -340,6 +347,7 @@ int main()
 
 
 	// Start transfer
+	dma_im_in_2.mm2s_done = true;
 	restart_output();
 	restart_pixels();
 
