@@ -18,7 +18,7 @@ extern void xil_printf(const char *format, ...);
 
 int status;
 bool done = false;
-#define I_LAYER 1-1
+#define I_LAYER 21-1
 
 const std::array<Layer, N_LAYERS> layers = build_yolo_mod();
 const chunk_s chunk_a = {(s8*) IMAGE_RGB_A_P, (s8*) DATA_A_P, (s8*)DATA_A_P + UNITS_EDGES};
@@ -34,10 +34,13 @@ void callback_image_2_mm2s_done()
 	xil_printf("image_1 mm2s_done \r\n");
 }
 
+bool w_done = false; //debug
 void restart_weights()
 {
 	static int i_itr = 0, i_layers = I_LAYER;
 	static s8* weights_read_p = (s8*)WEIGHTS_P;
+
+	if (w_done) return;
 
 	status = dma_weights_im_out.mm2s_start((UINTPTR)weights_read_p, layers[i_layers].WORDS_WEIGHTS_PER_ITR);
 
@@ -65,6 +68,7 @@ void restart_weights()
 		{
 			i_layers = 0;
 			weights_read_p = (s8*)WEIGHTS_P;
+			w_done = true;
 		}
 	}
 }
@@ -271,19 +275,7 @@ void restart_output()
 
 			xil_printf(" i_itr: %d \r\n", i_itr);
 
-			if (i_itr == 0)
-			{
-				// TODO - handle skip connection
-				i_itr += 1;
-				i_cout = layers[i_layers].COUT_VALID;
-			}
-			else if (i_itr < layers[i_layers].ITR-1)
-			{
-				// TODO - handle skip connection
-				i_itr  += 1;
-				i_cout += layers[i_layers].EFF_CORES;
-			}
-			else
+			if (i_itr >= layers[i_layers].ITR-1)
 			{
 				is_new_layer = true;
 				i_itr = 0;
@@ -303,6 +295,18 @@ void restart_output()
 					xil_printf(" All Layers done");
 					done = true;
 				}
+			}
+			else if (i_itr == 0)
+			{
+				// TODO - handle skip connection
+				i_itr += 1;
+				i_cout = layers[i_layers].COUT_VALID;
+			}
+			else
+			{
+				// TODO - handle skip connection
+				i_itr  += 1;
+				i_cout += layers[i_layers].EFF_CORES;
 			}
 		}
 	}
@@ -360,7 +364,7 @@ int main()
 	 * 		- pre-loading w_rot with itr=(0,1) - then sequence is itr=(0,1,2,3,2,4,5,6)
 	 * 	- manually controlling it works
 	 * */
-	while(!done)
+	while(!done && !w_done)
 	{
 		restart_weights();
 		while (!dma_weights_im_out.mm2s_done) {}
