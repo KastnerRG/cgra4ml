@@ -1,5 +1,5 @@
 set PROJ_NAME sys
-set PROJ_FOLDER sys
+set PROJ_FOLDER $PROJ_NAME
 set SOURCE_FOLDER ../src_hdl
 
 set UNITS   4

@@ -16,12 +16,15 @@ module axis_input_pipe_tb ();
   */
   
   localparam K          = 3;
-  localparam IM_HEIGHT  = 2;
+  localparam IM_HEIGHT  = 4;
   localparam IM_WIDTH   = 4;
   localparam IM_CIN     = 4;
   localparam IS_MAX     = 0;
 
   localparam ITERATIONS = 2;
+
+  localparam VALID_PROB = 100;
+  localparam READY_PROB = 100;
 
   /*
     SYSTEM PARAMS
@@ -194,16 +197,16 @@ module axis_input_pipe_tb ();
 
   int status, file_im_1, file_im_2, file_weights;
 
-  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(10)) s_pixels_1  = new(.file_path(path_im_1   ), .words_per_packet(WORDS_1), .iterations(1));
-  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(10)) s_pixels_2  = new(.file_path(path_im_2   ), .words_per_packet(WORDS_2), .iterations(1));
-  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(S_WEIGHTS_WIDTH /8), .VALID_PROB(10)) s_weights   = new(.file_path(path_weights), .words_per_packet(WORDS_W), .iterations(1));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(VALID_PROB)) s_pixels_1  = new(.file_path(path_im_1   ), .words_per_packet(WORDS_1), .iterations(1));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(VALID_PROB)) s_pixels_2  = new(.file_path(path_im_2   ), .words_per_packet(WORDS_2), .iterations(1));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(S_WEIGHTS_WIDTH /8), .VALID_PROB(VALID_PROB)) s_weights   = new(.file_path(path_weights), .words_per_packet(WORDS_W), .iterations(1));
   initial forever s_pixels_1.axis_feed(aclk, s_axis_pixels_1_tready, s_axis_pixels_1_tvalid, s_data_pixels_1, s_axis_pixels_1_tkeep, s_axis_pixels_1_tlast);
   initial forever s_pixels_2.axis_feed(aclk, s_axis_pixels_2_tready, s_axis_pixels_2_tvalid, s_data_pixels_2, s_axis_pixels_2_tkeep, s_axis_pixels_2_tlast);
   initial forever  s_weights.axis_feed(aclk, s_axis_weights_tready , s_axis_weights_tvalid , s_data_weights , s_axis_weights_tkeep , s_axis_weights_tlast);
   
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(UNITS             ), .READY_PROB(10 ), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(1)) m_pixels_1 = new(.file_base(base_im_out_1));
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(UNITS             ), .READY_PROB(100), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_pixels_2 = new(.file_base(base_im_out_2));
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(CORES*KERNEL_W_MAX), .READY_PROB(100), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_weights  = new(.file_base(base_w_out   ));
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(UNITS             ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(1)) m_pixels_1 = new(.file_base(base_im_out_1));
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(UNITS             ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_pixels_2 = new(.file_base(base_im_out_2));
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(CORES*KERNEL_W_MAX), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_weights  = new(.file_base(base_w_out   ));
 
   initial forever m_pixels_1.axis_read(aclk, m_axis_tready, m_axis_tvalid, m_data_pixels_1      , m_axis_pixels_tkeep , m_axis_tlast);
   initial forever m_pixels_2.axis_read(aclk, m_axis_tready, m_axis_tvalid, m_data_pixels_2      , m_axis_pixels_tkeep , m_axis_tlast);

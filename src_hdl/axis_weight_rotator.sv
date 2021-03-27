@@ -119,7 +119,7 @@ module axis_weight_rotator
   logic [BITS_ADDR-1:0] s_addr_min; 
   logic [BITS_ADDR-1:0] r_addr_min    [2];
   logic [BITS_ADDR-1:0] addr_max      [2];
-  logic [BITS_CONFIG_COUNT-1:0] count_config, count_config_next;
+  logic [BITS_CONFIG_COUNT-1:0] count_config, count_next_config;
 
   logic [BITS_KERNEL_W-1:0] s_kw_1, ref_1_kw [2];
   logic [BITS_KERNEL_H-1:0] s_kh_1    , count_kh    , count_next_kh    , ref_1_kh     [2];
@@ -206,7 +206,7 @@ module axis_weight_rotator
   always_comb begin
 
     en_count_config   = 0;
-    count_config_next = (ref_1_kh[i_read] == 0) ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
+    count_next_config = (ref_1_kh[i_read] == 0) ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
     m_axis_tvalid     = 0;
 
     unique case (state_read)
@@ -214,7 +214,7 @@ module axis_weight_rotator
                           en_count_config = 1;
                         end
       R_PASS_CONFIG_S : begin
-                          count_config_next  = count_config -1;
+                          count_next_config  = count_config -1;
                           en_count_config    = m_axis_tready;
                           m_axis_tvalid      = 1;
                         end
@@ -550,11 +550,11 @@ module axis_weight_rotator
   assign count_next_cols   = (last_cols     || last_config || ref_1_cols   [i_read] == 0) ? ref_1_cols  [i_read] : count_cols   - 1;
   assign count_next_blocks = (last_blocks   || last_config || ref_1_blocks [i_read] == 0) ? ref_1_blocks[i_read] : count_blocks - 1;
 
-  assign last_next_config  = count_config == 1;
-  assign last_next_kh      = count_kh     == 1 || ref_1_kh     [i_read] == 0;
-  assign last_next_cin     = count_cin    == 1 || ref_1_cin    [i_read] == 0;
-  assign last_next_cols    = count_cols   == 1 || ref_1_cols   [i_read] == 0;
-  assign last_next_blocks  = count_blocks == 1 || ref_1_blocks [i_read] == 0;
+  assign last_next_config  = count_next_config == 0;
+  assign last_next_kh      = count_next_kh     == 0 || ref_1_kh     [i_read] == 0;
+  assign last_next_cin     = count_next_cin    == 0 || ref_1_cin    [i_read] == 0;
+  assign last_next_cols    = count_next_cols   == 0 || ref_1_cols   [i_read] == 0;
+  assign last_next_blocks  = count_next_blocks == 0 || ref_1_blocks [i_read] == 0;
 
   /*
     TLAST and TUSER
@@ -581,7 +581,7 @@ module axis_weight_rotator
     .clock        (aclk),
     .resetn       (aresetn),
     .clock_enable (en_count_config),
-    .data_in      (count_config_next),
+    .data_in      (count_next_config),
     .data_out     (count_config)
   );
 
