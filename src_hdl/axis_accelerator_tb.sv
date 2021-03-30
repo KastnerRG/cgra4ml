@@ -64,6 +64,21 @@ module axis_accelerator_tb ();
 //   string base_max_out   = "D:/cnn-fpga/data/4_maxpool_out_fpga_";
 //   string base_output    = "D:/cnn-fpga/data/4_output_fpga_";
 
+  // // #################### LAYER 14 : 3x3 ####################
+
+  // localparam K          = 3;
+  // localparam MAX_FACTOR = 1;
+  // localparam IM_HEIGHT  = 8;
+  // localparam IM_WIDTH   = 12;
+  // localparam IM_CIN     = 512;
+  // string path_im_1      = "D:/cnn-fpga/data/14_conv_in_0.txt";
+  // string path_im_2      = "D:/cnn-fpga/data/14_conv_in_1.txt";
+  // string path_weights   = "D:/cnn-fpga/data/14_weights.txt";
+  // string base_conv_out  = "D:/cnn-fpga/data/14_conv_out_fpga_";
+  // string base_lrelu_out = "D:/cnn-fpga/data/14_lrelu_out_fpga_";
+  // string base_max_out   = "D:/cnn-fpga/data/14_maxpool_out_fpga_";
+  // string base_output    = "D:/cnn-fpga/data/14_output_fpga_";
+
   /*
     SYSTEM PARAMS
   */

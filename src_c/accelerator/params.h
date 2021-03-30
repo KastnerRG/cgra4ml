@@ -15,13 +15,16 @@
 #define S_WEIGHTS_WIDTH  32
 
 #define INPUT_LUT_P   0x00001000
-#define IMAGE_RGB_A_P 0x01000000
-#define DATA_A_P     0x02000000
 
-#define IMAGE_RGB_B_P 0x05000000
-#define DATA_B_P     0x06000000
+#define TEMP_DATA_IN_P  0x02000000
+#define TEMP_DATA_OUT_P 0x03000000
 
-#define WEIGHTS_P     0x0A000000
+#define DATA_1_P     0x04000000
+#define DATA_2_P     0x05000000
+#define DATA_3_P     0x06000000
+#define DATA_4_P     0x07000000
+
+#define WEIGHTS_P     0x08000000
 
 #define H_RGB    256
 #define W_RGB    384
