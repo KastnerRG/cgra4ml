@@ -7,7 +7,7 @@ from yolov2_mod_numpy import YOLOv2_Modified_Numpy
 
 layers = pickle.load(open('yolov2_mod_int8_dict.pickle', 'rb'))
 
-i = 4
+i = 2
 
 CONV_UNITS = 4
 MEMBERS    = 4
@@ -81,13 +81,19 @@ def get_lrelu_config(i, layers, KW_MAX, CORES, prefix_max, prefix_lrelu):
     * M dimension contains M/2 (=2) float16 words broken as M (=4) int8 words
     '''
 
-    layer = layers[f'{prefix_lrelu}{i}']
+    if f'{prefix_lrelu}{i}' in layers:
+        layer = layers[f'{prefix_lrelu}{i}']
+        conv_layer = layer.prev_layer
+    else:
+        layer = layers[f'{prefix_conv}{i}']
+        conv_layer = layer
+
 
     '''
     Get max factor and sub cores
     '''
     max_factor = 2 if f'{prefix_max}{i}' in layers.keys() else 1
-    KH,KW,_,_ = layer.prev_layer.weights.shape
+    KH,KW,_,_ = conv_layer.weights.shape
     SUB_CORES = KW_MAX//KW
 
     '''
@@ -220,12 +226,7 @@ weights = weights.reshape(ITR,KERNEL_BEATS,CORES,KW_MAX)
 '''
 Add LRELU Beats
 '''
-if f'{prefix_lrelu}{i}' in layers:
-    lrelu = get_lrelu_config(i,layers=layers,KW_MAX=KW_MAX,CORES=CORES,prefix_max=prefix_max,prefix_lrelu=prefix_lrelu) 
-    # (ITR,LRELU_BEATS,CORES,KW_MAX)
-else:
-    LRELU_BEATS = 13 if KW == 1 else 21
-    lrelu = np.zeros((ITR,LRELU_BEATS,CORES,KW_MAX),np.int8)
+lrelu = get_lrelu_config(i,layers=layers,KW_MAX=KW_MAX,CORES=CORES,prefix_max=prefix_max, prefix_lrelu=prefix_lrelu) 
     
 LRELU_BEATS = lrelu.shape[1]
 weights_beats = np.concatenate([lrelu,weights], axis=1) # (ITR, LRELU_BEATS + KERNEL_BEATS, CORES, KW_MAX)
@@ -258,22 +259,25 @@ ADD CONFIG BEATS
 weights_dma_beats = np.concatenate([weights_config,weights_beats.reshape(ITR,-1)], axis=1)
 
 assert weights_dma_beats.shape == (ITR, 4 + (LRELU_BEATS + CIN*KH)*CORES*KW_MAX)
+print("weights_dma_beats.shape: ", weights_dma_beats.shape)
+
+np.savetxt(f"{path}/{i}_weights.txt", weights_dma_beats[0].flatten(), fmt='%d')
 
 
 # %%
-weights_dma_beats.shape
+KW,KH,CIN,W,BLOCKS_PER_ARR
 
 
 # %%
-layers[f'{prefix_conv}{i}'].weights[0,0,0,16]
+weights_dma_beats.flatten()[0:10]
 
 
 # %%
-weights_dma_beats[1,:][0:20]
+np.fromfile("D:/cnn-fpga/data/1_weights.bin", np.int8)[0:10]
 
 
 # %%
-np.savetxt(f"D:/cnn-fpga/data/{i}_weights.txt", weights_dma_beats[0].flatten(), fmt='%d')
+i
 
 # %% [markdown]
 # # Reshape Conv Image In
@@ -353,18 +357,16 @@ def reshape_conv_in(layers, i):
 
 im_arrays, in_shape = reshape_conv_in(layers, i)
 
+print("conv_in.shape: ", in_shape)
 
-# %%
-i
+max_factor = 2 if f'{prefix_max}{i}' in layers.keys() else 1
 
-
-# %%
-# im_arrays[1].size
-
-
-# %%
 for m in range(max_factor):
     np.savetxt(f"D:/cnn-fpga/data/{i}_conv_in_{m}.txt", im_arrays[m].flatten(), fmt='%d')
+
+
+# %%
+im_arrays[0].size
 
 
 # %%
@@ -393,13 +395,13 @@ for m in range(max_factor):
 # # FPGA Memory Load
 
 # %%
-path = 'D:/cnn-fpga/data'
+full_path = 'D:/cnn-fpga/data'
 
-w_path = f"{path}/{i}_weights.bin"
+w_path = f"{full_path}/{i}_weights.bin"
 weights = weights_dma_beats.flatten()
 weights.tofile(w_path)
 
-cmd_txt = f"mwr -bin -file {w_path} 0x0A000000 {int(np.ceil(weights.size/4))}; "
+cmd_txt = f"mwr -bin -file {w_path} 0x08000000 {int(np.ceil(weights.size/4))}; "
 
 im_in_unpadded = np.concatenate([arr.flatten() for arr in im_arrays])
 
@@ -407,13 +409,41 @@ im_file_size = int(np.ceil(im_in_unpadded.size/4))*4
 im_in = np.zeros(im_file_size, im_in_unpadded.dtype)
 im_in[:im_in_unpadded.size] = im_in_unpadded
 
-im_path = f"{path}/{i}_conv_in.bin"
+im_path = f"{full_path}/{i}_conv_in.bin"
 im_in.tofile(im_path)
 
 cmd_txt += f"mwr -bin -file {im_path} 0x02000000 {im_file_size//4}; "
 
 print(cmd_txt)
 
+
+# %%
+'''
+All weights
+'''
+
+weights_all = []
+
+for k in range(21):
+    weights_all += [make_weights(k+1,layers).flatten()]
+
+weights_all = np.concatenate(weights_all)
+print(f"\nSize (bytes): {weights_all.size}; MB: {weights_all.size/1024/1024:.2f} \n")
+
+w_all_path = f"{full_path}/weights_all.bin"
+weights_all.tofile(w_all_path)
+
+
+# %%
+make_weights(1,layers).flatten()[0:10]
+
+
+# %%
+cmd_txt = f"mwr -bin -file {w_all_path} 0x08000000 {int(np.ceil(weights_all.size/4))}; "
+print(cmd_txt)
+
+# %% [markdown]
+# mwr -bin -file D:/cnn-fpga/data/weights_all.bin 0x08000000 10232828; mwr -bin -file D:/cnn-fpga/data/21_conv_in.bin 0x02000000 36866; 
 # %% [markdown]
 # # Reshape Conv Out = LeakyReLu in
 # 
@@ -481,24 +511,20 @@ image_out = np.concatenate([lrelu_config_padded,image],axis=1)
 
 assert image_out.shape == (ITR, (21 if KW==3 else 13) + BLOCKS_PER_ARR*W*SUB_CORES, COPIES*MEMBERS*GROUPS,CONV_UNITS)
 
+print("image_out.shape: ", image_out.shape)
+
+np.savetxt(f"{path}/{i}_conv_out.txt", image_out[0].flatten(), fmt='%d')
+
 
 # %%
-np.savetxt(f"D:/cnn-fpga/data/{i}_conv_out.txt", image_out[0].flatten(), fmt='%d')
+# image_out_fpga = np.loadtxt(f"{path}/data/{i}_conv_out_fpga_0.txt",np.int32)
 
-
-# %%
-image_out_fpga = np.loadtxt(f"D:/cnn-fpga/data/{i}_conv_out_fpga_0.txt",np.int32)
-
-error = image_out_fpga[0:21] - image_out[0].flatten()[0:21]
-np.sum(error)
+# error = image_out_fpga[0:21] - image_out[0].flatten()[0:21]
+# np.sum(error)
 
 
 # %%
 image_out[0].flatten()[0:64]
-
-
-# %%
-image_out_fpga[0:64]
 
 # %% [markdown]
 # # Leaky Relu Out / Max In
@@ -515,25 +541,25 @@ ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS = lrelu_out.shape
 
 
 # %%
-image_out_fpga = np.loadtxt(f"D:/cnn-fpga/data/{i}_lrelu_out_fpga_0.txt",np.int8)
-fpga = image_out_fpga.reshape((BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS))
+# image_out_fpga = np.loadtxt(f"D:/cnn-fpga/data/{i}_lrelu_out_fpga_0.txt",np.int8)
+# fpga = image_out_fpga.reshape((BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS))
 
-'''
-Invalid cores output 0+d=d. Remove d to compare.
-'''
+# '''
+# Invalid cores output 0+d=d. Remove d to compare.
+# '''
 
-for s in range(SUB_CORES):
-    for c in range(CORES):
-        if np.all(fpga[:,:,s,c,:]==layers[f'{prefix_lrelu}{i}'].requantize_params['D']):
-            fpga[:,:,s,c,:] = 0
+# for s in range(SUB_CORES):
+#     for c in range(CORES):
+#         if np.all(fpga[:,:,s,c,:]==layers[f'{prefix_lrelu}{i}'].requantize_params['D']):
+#             fpga[:,:,s,c,:] = 0
 
-error = lrelu_out[0] - fpga
-sum_abs_error = np.sum(np.abs(error))
+# error = lrelu_out[0] - fpga
+# sum_abs_error = np.sum(np.abs(error))
 
-np.savetxt("where_err.txt",np.argwhere(error > 1),fmt='%d')
+# np.savetxt("where_err.txt",np.argwhere(error > 1),fmt='%d')
 
-print(np.sum(abs(error)>1))
-print(sum_abs_error/image_out_fpga.size)
+# print(np.sum(abs(error)>1))
+# print(sum_abs_error/image_out_fpga.size)
 
 
 # %%
@@ -624,22 +650,19 @@ image_out_sim != layers[f'{prefix_lrelu}{i}'].requantize_params['D']
 # %%
 # np.savetxt("where_err.txt",np.argwhere(error > 1),fmt='%d')
 
-
-# %%
-
-
 # %% [markdown]
 # # Image Out FPGA
 
 # %%
 if i == 21:
-    np_out = layers['conv_21'].np_out_data[0]
+    np_out = layers[f'conv_{i}'].quant_out_data[0]
+
     H, W, COUT = np_out.shape
     BLOCKS = H//CONV_UNITS
     np_out = np_out.reshape(BLOCKS, CONV_UNITS, W, COUT)
     np_out = np_out.transpose(0,2,3,1)
     np_out_zeros = np.zeros((BLOCKS,W,COUT,UNITS_EDGES),np_out.dtype)
-    np_out_zeros[:,:,:,KH//2:CONV_UNITS+KH//2] = np_out
+    np_out_zeros[:,:,:,KH_MAX//2:CONV_UNITS+KH_MAX//2] = np_out
     im_arrays_out = np.concatenate([np.zeros((1,UNITS_EDGES),np_out.dtype), np_out_zeros.reshape(BLOCKS*W*COUT,UNITS_EDGES)],axis=0)
     im_arrays_out = im_arrays_out[np.newaxis,:]
     out_shape = im_arrays_out.shape
@@ -650,13 +673,15 @@ next_max_factor = len(im_arrays_out)
 
 
 # %%
+data_dir = "D:/cnn-fpga/data"
+
 cmd = ""
 out_paths = []
-addr = f'0x06000000'
+addr = f'0x04000000'
 
 arr_size = (im_arrays_out[0][1:].size)*next_max_factor + UNITS_EDGES
 
-out_path = f"{path}/{i}_fpga_out.bin"
+out_path = f"{data_dir}/{i}_fpga_out.bin"
 cmd = f"mrd -bin -file {out_path} {addr} {int(np.ceil(arr_size/4))}; "
 print(cmd)
 
@@ -668,7 +693,11 @@ print(cmd)
 # %%
 im_arr_fpga_out = np.fromfile(out_path,np.int8)[0:arr_size]
 
-_, next_h, next_w, next_cin = layers[f'conv_{i+1}'].in_data.shape
+if i == 21:
+    _, next_h, next_w, next_cin = layers[f'conv_{i}'].quant_out_data.shape
+else:
+    _, next_h, next_w, next_cin = layers[f'conv_{i+1}'].in_data.shape
+
 next_blocks = next_h//CONV_UNITS
 next_shape = next_max_factor, next_blocks//next_max_factor, next_w, next_cin, UNITS_EDGES
 
@@ -692,23 +721,12 @@ print(error.shape)
 
 
 # %%
-im_out[0,2,0,1,:], fpga_out[0,2,0,1,:]
+k = 0
+im_out[0,0,0,k,:], fpga_out[0,0,0,k,:]
 
 
 # %%
-im_arr_fpga_out[:UNITS_EDGES]
-
-
-# %%
-im_arrays_out[0][1,:]
-
-
-# %%
-im_out[0,2,83,28,1], im_out[1,1,83,28,5] #(0,2,83,28,5)<-(1,1,83,28,1)
-
-
-# %%
-
+error[abs(error)>1]
 
 # %% [markdown]
 # # Input LUT
