@@ -7,7 +7,7 @@ from yolov2_mod_numpy import YOLOv2_Modified_Numpy
 
 layers = pickle.load(open('yolov2_mod_int8_dict.pickle', 'rb'))
 
-i = 2
+i = 1
 
 CONV_UNITS = 4
 MEMBERS    = 4
@@ -366,7 +366,7 @@ for m in range(max_factor):
 
 
 # %%
-im_arrays[0].size
+im_arrays[1].size
 
 
 # %%
@@ -443,7 +443,7 @@ cmd_txt = f"mwr -bin -file {w_all_path} 0x08000000 {int(np.ceil(weights_all.size
 print(cmd_txt)
 
 # %% [markdown]
-# mwr -bin -file D:/cnn-fpga/data/weights_all.bin 0x08000000 10232828; mwr -bin -file D:/cnn-fpga/data/21_conv_in.bin 0x02000000 36866; 
+# mwr -bin -file D:/cnn-fpga/data/weights_all.bin 0x08000000 10232828; mwr -bin -file D:/cnn-fpga/data/1_conv_in.bin 0x02000000 110594; 
 # %% [markdown]
 # # Reshape Conv Out = LeakyReLu in
 # 
@@ -654,6 +654,10 @@ image_out_sim != layers[f'{prefix_lrelu}{i}'].requantize_params['D']
 # # Image Out FPGA
 
 # %%
+i=5
+
+
+# %%
 if i == 21:
     np_out = layers[f'conv_{i}'].quant_out_data[0]
 
@@ -687,10 +691,6 @@ print(cmd)
 
 
 # %%
-
-
-
-# %%
 im_arr_fpga_out = np.fromfile(out_path,np.int8)[0:arr_size]
 
 if i == 21:
@@ -715,9 +715,13 @@ fpga_out = im_arr_fpga_out[UNITS_EDGES:].reshape(next_shape)
 
 error = im_out - fpga_out
 
-np.savetxt("where_err.txt",np.argwhere(np.abs(error) > 1),fmt='%d')
+np.savetxt("where_err.txt",np.argwhere(np.abs(error) > 3),fmt='%d')
 
 print(error.shape)
+
+
+# %%
+error[abs(error)>5]
 
 
 # %%

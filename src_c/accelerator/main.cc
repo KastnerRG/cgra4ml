@@ -35,9 +35,44 @@ My_DMA dma_im_in_2("im_in_2", XPAR_DMA_IM_IN_2_DEVICE_ID);
 My_DMA dma_weights_im_out("weights_im_out", XPAR_DMA_WEIGHTS_IM_OUT_DEVICE_ID);
 
 
-void callback_image_2_mm2s_done()
+void restart_im_2()
 {
-	PRINT("image_1 mm2s_done \r\n");
+	/* This callback can be started from outside or inside (as callback)
+	 *
+	 * i_layers=0, i_itr=0, called from restart_pixels()
+	 * 		enters IF, sets FLAG, starts first itr, calculates itr=1
+	 * if restart_pixels() calls it again, it returns because mm2s is set high
+	 * when completed, callback sets mm2s=false and calls this
+	 * at last itr, it calcs next i_layer
+	 *
+	 * if next layer has no MAX, this is called, but just increments counters.
+	 *
+	 * */
+	if (!dma_im_in_2.mm2s_done) return;
+
+	static int i_itr = 0, i_layers = i_layers_start;
+	s8 *read_p1, *read_p2;
+	unsigned long words_1, words_2;
+
+	if (layers[i_layers].IS_MAX)
+	{
+		read_p1 = (s8*)(layers[i_layers].input_chunk_p->data_p);
+		words_1 = UNITS_EDGES+layers[i_layers].WORDS_PIXELS_PER_ARR;
+		read_p2 = read_p1 + words_1;
+		words_2 = layers[i_layers].WORDS_PIXELS_PER_ARR;
+
+		status = dma_im_in_2.mm2s_start((UINTPTR)(read_p2), words_2);
+	}
+
+	if (i_itr < layers[i_layers].ITR-1)
+		i_itr += 1;
+	else
+	{
+		i_itr = 0;
+
+		if(i_layers < N_LAYERS-1) i_layers += 1;
+		else					  i_layers = 0;
+	}
 }
 
 bool w_done = false;
@@ -86,32 +121,22 @@ void restart_pixels()
 {
 	static int i_itr = 0, i_layers = i_layers_start;
 
-	s8 *read_p1, *read_p2;
-	unsigned long words_1, words_2;
+	s8 *read_p1; //, *read_p2;
+	unsigned long words_1; //, words_2;
 
 	read_p1 = (s8*)(layers[i_layers].input_chunk_p->data_p);
 	words_1 = UNITS_EDGES+layers[i_layers].WORDS_PIXELS_PER_ARR;
 
 	status = dma_im_in_1.mm2s_start((UINTPTR)read_p1, words_1);
-
-	if (layers[i_layers].IS_MAX)
-	{
-		while (!dma_im_in_2.mm2s_done) {};
-
-		read_p2 = read_p1 + words_1;
-		words_2 = layers[i_layers].WORDS_PIXELS_PER_ARR;
-
-		status = dma_im_in_2.mm2s_start((UINTPTR)(read_p2), words_2);
-
-		PRINT("Stuck in restart_pixels \r\n");
-	}
+	restart_im_2();
 
 #if defined DEBUG
-	PRINT("----------pixels restarted. Reading from (i_layers,i_itr,:):\t (%d/%d, %d/%d, [%d,%d]);\t ptr: [%p, %p] \r\n",
+	PRINT("----------pixels restarted. Reading from (i_layers,i_itr,:):\t (%d/%d, %d/%d, [%d]);\t ptr: [%p] \r\n",
 			i_layers,N_LAYERS,
 			i_itr	,layers[i_layers].ITR,
-			words_1, words_2,
-			read_p1, read_p2);
+			words_1,// words_2,
+			read_p1 //,read_p2
+			);
 #endif
 
 	if (i_itr == 0)
@@ -252,7 +277,8 @@ void pad_prev(	int& i_w_next,
 	if (i_layers != i_layers_next)
 	{
 		layers[i_layers].done_write = true;
-		PRINT("done writing & padding layer: %d \r\n", i_layers);
+		PRINT("done writing & padding layer: %d; addr: %p \r\n", i_layers, layers[i_layers].output_chunk_p->data_p);
+		PRINT("done layer \r\n");
 	}
 
 	i_w = i_w_next;
@@ -406,6 +432,7 @@ int main()
 	// Attach custom callbacks
 	dma_weights_im_out.s2mm_done_callback = restart_output;
 	dma_im_in_1.mm2s_done_callback = restart_pixels;
+	dma_im_in_2.mm2s_done_callback = restart_im_2;
 
 	Layer & layer_start = layers[i_layers_start];
 
