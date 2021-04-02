@@ -5,7 +5,65 @@ import tensorflow as tf
 import copy
 import cv2
 
+def float_convert(arr_in, bits_in, bits_out):
 
+    f16_tuple = (10, 5, np.int16, np.uint16)
+    f32_tuple = (23, 8, np.int32, np.uint32)
+
+    if bits_in == 16:
+        BITS_FRA_IN, BITS_EXP_IN, dtype_sint_in, dtype_uint_in = f16_tuple
+    elif bits_in == 32:
+        BITS_FRA_IN, BITS_EXP_IN, dtype_sint_in, dtype_uint_in = f32_tuple
+
+    if bits_out == 32:
+        BITS_FRA_OUT, BITS_EXP_OUT, dtype_sint_out, dtype_uint_out = f32_tuple
+        dtype_float_out = np.float32
+    elif bits_out == 16:
+        BITS_FRA_OUT, BITS_EXP_OUT, dtype_sint_out, dtype_uint_out = f16_tuple
+        dtype_float_out = np.float16
+
+    shape = arr_in.shape
+
+    # Decode
+
+    int_in = np.frombuffer(arr_in.tobytes(), dtype_uint_in)
+    int_in = int_in.astype(np.uint32) # Keep everything in 32 bits integers 
+
+    fra = np.bitwise_and(int_in, 2**BITS_FRA_IN-1)
+
+    exp = np.right_shift(int_in, BITS_FRA_IN)
+    exp = np.bitwise_and(exp, 2**BITS_EXP_IN-1)
+    exp = np.frombuffer(exp.tobytes(), np.int32)
+    exp = exp - (2**(BITS_EXP_IN-1)-1)
+
+    sign = np.right_shift(int_in, BITS_FRA_IN+BITS_EXP_IN)
+
+    # Encode
+
+    exp_out = exp + (2**(BITS_EXP_OUT-1)-1)
+    exp_out = exp_out.astype(dtype_sint_out)
+    exp_out = np.frombuffer(exp_out.tobytes(), dtype_uint_out)
+    exp_out = np.left_shift(exp_out,BITS_FRA_OUT)
+
+
+    sign_out = np.left_shift(sign, BITS_EXP_OUT+BITS_FRA_OUT)
+    sign_out = sign_out.astype(dtype_uint_out)
+
+    if bits_in < bits_out:
+        fra_out = np.left_shift(fra,BITS_FRA_OUT-BITS_FRA_IN)
+    else:
+        fra_out = np.right_shift(fra, BITS_FRA_IN-BITS_FRA_OUT)
+
+    fra_out = fra_out.astype(dtype_uint_out)
+
+    int_out = np.bitwise_or(np.bitwise_or(sign_out,exp_out),fra_out)
+
+    float_out = np.frombuffer(int_out.tobytes(), dtype_float_out)
+    float_out = float_out.reshape(shape)
+
+    float_out = np.nan_to_num(float_out)
+
+    return float_out
 class BoundBox:
     def __init__(self, xmin, ymin, xmax, ymax, c=None, classes=None, label=-1, score=-1):
         self.xmin = xmin

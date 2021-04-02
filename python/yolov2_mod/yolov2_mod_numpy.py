@@ -35,6 +35,7 @@ __status__ = "Research"
 class YOLOv2_Modified_Numpy():
     def __init__(self,
                  quantize=False,
+                 float_ieee = True,
                  np_dtype=np.float64,
                  np_dtype_sum=np.float64,
                  np_dtype_conv_out=np.float64,
@@ -51,6 +52,7 @@ class YOLOv2_Modified_Numpy():
         self.output = None
         self.weights_path = weights_path
         self.quantize = quantize
+        self.float_ieee = float_ieee
         self.quant_weights_path = quant_weights_path
         self.np_dtype = np_dtype
         self.np_dtype_sum = np_dtype_sum
@@ -235,13 +237,15 @@ class YOLOv2_Modified_Numpy():
                                               np_dtype_sum=self.np_dtype_sum,
                                               np_dtype_conv_out=self.np_dtype_conv_out,
                                               bits_conv_out=self.bits_conv_out,
-                                              quantize=self.quantize)
+                                              quantize=self.quantize,
+                                              float_ieee=self.float_ieee)
             prev_name = layer_name
             layer_name = 'leaky_relu_' + str(i)
             self.model.d[layer_name] = MyLeakyRelu(prev_layer=self.model.d[prev_name],
                                                    name=layer_name,
                                                    np_dtype=np_dtype,
-                                                   quantize=self.quantize)
+                                                   quantize=self.quantize,
+                                                   float_ieee=self.float_ieee)
 
             if i in [1, 2, 5, 8, 13]:
                 maxpool_i += 1
