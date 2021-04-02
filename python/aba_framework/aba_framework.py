@@ -12,6 +12,7 @@ from scipy.signal import convolve2d
 import keras
 import tensorflow as tf
 import numpy as np
+from utils import float_convert
 
 __author__ = "Abarajithan G"
 __copyright__ = "Copyright 2019, Final Year Project"
@@ -190,7 +191,7 @@ class MyLayer:
 
     '''
 
-    def __init__(self, prev_layer, name, np_dtype, quantize=False):
+    def __init__(self, prev_layer, name, np_dtype, quantize=False, float_ieee=True):
         # self.set_dtype(np_dtype)
         self.name = name
         self.prev_layer = prev_layer
@@ -205,6 +206,7 @@ class MyLayer:
         self.scale = None
         self.zero_point = None
         self.quantize = quantize
+        self.float_ieee = float_ieee
 
     # def set_dtype(self, np_dtype):
     #     dtype_dict = {
@@ -379,13 +381,15 @@ class MyConv(MyLayer):
                  np_dtype_sum=np.float64,
                  np_dtype_conv_out=np.float64,
                  bits_conv_out=32,
-                 quantize=False):
+                 quantize=False,
+                 float_ieee=True):
 
         MyLayer.__init__(self,
                          name=name,
                          prev_layer=prev_layer,
                          np_dtype=np_dtype,
-                         quantize=quantize)
+                         quantize=quantize,
+                         float_ieee=float_ieee)
         self.np_dtype_sum = np_dtype_sum
         self.np_dtype_conv_out = np_dtype_conv_out
 
@@ -466,7 +470,11 @@ class MyConv(MyLayer):
                 np_dtype=self.np_dtype)
 
             self.out_float_data = self.requantize_params['y'] * self.scale
-            self.quant_out_data = self.requantize_params['a_q']
+
+            if self.float_ieee:
+                self.quant_out_data = self.requantize_params['a_q']
+            else:
+                self.quant_out_data = self.requantize_params['a_q_custom']
 
         else:
             out = self.conv2d_einsum(self.in_data, self.weights)
@@ -713,11 +721,13 @@ class MyLeakyRelu(MyLayer):
                  prev_layer=None,
                  alpha=0.1, name='',
                  np_dtype=np.float64,
-                 quantize=False):
+                 quantize=False,
+                 float_ieee=True):
 
         MyLayer.__init__(self, prev_layer=prev_layer,
                          name=name, np_dtype=np_dtype,
-                         quantize=quantize)
+                         quantize=quantize,
+                         float_ieee=float_ieee)
         self.alpha = alpha
 
         self.weights_scales = None
@@ -774,23 +784,28 @@ class MyLeakyRelu(MyLayer):
         in_data = np.float32(in_data)
 
         y = A * in_data + B
+        y_custom = float_convert(A,16,32) * in_data + float_convert(B,16,32)
 
         D = a_0
         D = np.float16(D)
 
         alpha_arr = (y > 0) + (y < 0) * alpha
 
-        a_q_f16 = alpha_arr.astype(np.float16) * \
-            y.astype(np.float16) + D.astype(np.float16)
+        a_q_f16 = alpha_arr.astype(np.float16) * y.astype(np.float16) + D
+        a_q_f16_custom = alpha_arr.astype(np.float16) * float_convert(y_custom,32,16) + D
 
-        a_q = np.round(a_q_f16).astype(np_dtype)
+        a_q = np.around(a_q_f16).astype(np_dtype)
+        a_q_custom = np.around(a_q_f16_custom).astype(np_dtype)
 
         return {'A': A,
                 'B': B,
                 'y': y,
+                'y_custom': y_custom,
                 'D': D,
                 'a_q_f16': a_q_f16,
-                'a_q': a_q
+                'a_q_f16_custom': a_q_f16_custom,
+                'a_q': a_q,
+                'a_q_custom': a_q_custom
                 }
 
     def np_out(self, in_data):
@@ -811,7 +826,10 @@ class MyLeakyRelu(MyLayer):
                 alpha=0.1,
                 np_dtype=self.np_dtype)
 
-            self.np_out_data = self.requantize_params['a_q']
+            if self.float_ieee:
+                self.np_out_data = self.requantize_params['a_q']
+            else:
+                self.np_out_data = self.requantize_params['a_q_custom']
 
         else:
             self.np_out_data = x * ((x > 0) + (x < 0) * self.alpha)
