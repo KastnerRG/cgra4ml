@@ -27,6 +27,7 @@ int status;
 bool done = false;
 
 const int i_layers_start = 1-1;
+const int zero = 0;
 
 std::array<Layer, N_LAYERS> layers = build_yolo_mod();
 
@@ -121,8 +122,8 @@ void restart_pixels()
 {
 	static int i_itr = 0, i_layers = i_layers_start;
 
-	s8 *read_p1; //, *read_p2;
-	unsigned long words_1; //, words_2;
+	s8 *read_p1;
+	unsigned long words_1;
 
 	read_p1 = (s8*)(layers[i_layers].input_chunk_p->data_p);
 	words_1 = UNITS_EDGES+layers[i_layers].WORDS_PIXELS_PER_ARR;
@@ -169,14 +170,14 @@ void restart_pixels()
 }
 
 volatile s8* unravel_index_5(volatile s8* base_p,
-		int& i_0, int& i_1, int& i_2, int& i_3, int& i_4,
+		const int i_0, const int i_1, const int i_2, const int i_3, const int i_4,
 		const int D_0, const int D_1, const int D_2, const int D_3, const int D_4)
 {
 	 long idx = i_0*(D_1*D_2*D_3*D_4) + i_1*(D_2*D_3*D_4) + i_2*(D_3*D_4) + i_3*(D_4) + i_4;
 	 return base_p + idx;
 }
 
-volatile s8* unravel_image_abwcu(volatile s8* pixels_base_p, int& i_arr, int& i_bpa, int& i_w, int& i_cout, int i_ue, int& i_layers)
+volatile s8* unravel_image_abwcu(volatile s8* pixels_base_p, const int i_arr, const int i_bpa, const int i_w, const int i_cout, const int i_ue, const int i_layers)
 {
 	return unravel_index_5( pixels_base_p,
 
@@ -212,12 +213,12 @@ void read_gpios()
 }
 
 //#define DEBUG_PAD
-void pad_prev(	int& i_w_next,
-				int& i_blocks_next,
-				int& i_bpa_next,
-				int& i_arr_next,
-				int& i_cout_base_next,
-				int& i_layers_next)
+void pad_prev(	const int i_w_next,
+				const int i_blocks_next,
+				const int i_bpa_next,
+				const int i_arr_next,
+				const int i_cout_base_next,
+				const int i_layers_next)
 {
 	/* Called with params of ongoing transaction.
 	 * Those are stored. Prev params are used to pad
@@ -236,11 +237,6 @@ void pad_prev(	int& i_w_next,
 
 			for (int i_cout=i_cout_base; i_cout < i_cout_base + layers[i_layers].EFF_CORES; i_cout++)
 			{
-
-				volatile s8 *pad_prev_p = unravel_image_abwcu(output_pixels_base_p,i_arr_prev,i_bpa_prev,i_w,i_cout,0  , i_layers);
-				volatile s8 *pad_this_p = unravel_image_abwcu(output_pixels_base_p,i_arr     ,i_bpa     ,i_w,i_cout,0  , i_layers);
-
-
 				for (int i_kh2=0; i_kh2 < layers[i_layers].OUT_KH/2; i_kh2++)
 				{
 					// prev_top   <- this_bottom
@@ -248,28 +244,34 @@ void pad_prev(	int& i_w_next,
 					int i_prev_ue_to   = KH_MAX/2 +UNITS + i_kh2;
 					int i_this_ue_from = KH_MAX/2 + i_kh2;
 
-					pad_prev_p[i_prev_ue_to]  = pad_this_p[i_this_ue_from];
+					volatile s8 *pad_prev_p_to   = unravel_image_abwcu(output_pixels_base_p,i_arr_prev,i_bpa_prev,i_w,i_cout,i_prev_ue_to  ,i_layers);
+					volatile s8 *pad_this_p_from = unravel_image_abwcu(output_pixels_base_p,i_arr     ,i_bpa     ,i_w,i_cout,i_this_ue_from,i_layers);
+
+					*pad_prev_p_to = *pad_this_p_from;
+
 
 					// prev_bottom -> this_top
 
 					int i_this_ue_to   = KH_MAX/2-1 - i_kh2;
 					int i_prev_ue_from = KH_MAX/2 +UNITS-1 - i_kh2;
 
-					pad_this_p[i_this_ue_to] = pad_prev_p[i_prev_ue_from];
+					volatile s8 *pad_this_p_to   = unravel_image_abwcu(output_pixels_base_p,i_arr     ,i_bpa     ,i_w,i_cout,i_this_ue_to  , i_layers);
+					volatile s8 *pad_prev_p_from = unravel_image_abwcu(output_pixels_base_p,i_arr_prev,i_bpa_prev,i_w,i_cout,i_prev_ue_from, i_layers);
+
+					*pad_this_p_to = *pad_prev_p_from;
+
+#if defined DEBUG_PAD
+			PRINT("Padded (abwcu: addr): (%d,%d,%d,%d,%d: %p)<-(%d,%d,%d,%d,%d: %p) \t (%d,%d,%d,%d,%d :%p)<-(%d,%d,%d,%d,%d :%p) \r\n",
+
+					i_arr_prev,i_bpa_prev,i_w,i_cout, i_prev_ue_to  , (UINTPTR)pad_prev_p_to  ,
+					i_arr     ,i_bpa     ,i_w,i_cout, i_this_ue_from, (UINTPTR)pad_this_p_from,
+
+					i_arr_prev,i_bpa_prev,i_w,i_cout, i_this_ue_to  , (UINTPTR)pad_this_p_to  ,
+					i_arr     ,i_bpa     ,i_w,i_cout, i_prev_ue_from, (UINTPTR)pad_prev_p_from
+					);
+#endif
 				}
 
-#if defined DEBUG && defined DEBUG_PAD
-			PRINT("Padded [%p <-> %p] (abwcu): (%d,%d,%d,%d,%d)<-(%d,%d,%d,%d,%d) {%d} \t (%d,%d,%d,%d,%d)->(%d,%d,%d,%d,%d) {%d}  \r\n",
-					(UINTPTR)pad_prev_p, (UINTPTR)pad_this_p,
-
-					i_arr_prev,i_bpa_prev,i_w,i_cout, (KH_MAX/2 +UNITS),
-					i_arr     ,i_bpa     ,i_w,i_cout,  KH_MAX/2,
-					pad_this_p[KH_MAX/2],
-
-					i_arr_prev,i_bpa_prev,i_w,i_cout,KH_MAX/2 +UNITS-1,
-					i_arr     ,i_bpa     ,i_w,i_cout,KH_MAX/2-1,
-					pad_prev_p[KH_MAX/2 +UNITS-1]);
-#endif
 			}
 		}
 	}
@@ -288,6 +290,54 @@ void pad_prev(	int& i_w_next,
 	i_cout_base= i_cout_base_next;
 	i_layers = i_layers_next;
 	output_pixels_base_p = layers[i_layers].get_output_pixels_base_p();
+}
+
+void restart_output_flat()
+{
+	static int i_w=0, i_blocks=0, i_itr=0, i_layers=i_layers_start;
+	static volatile s8 * write_p = layers[i_layers].get_output_pixels_base_p();
+
+	dma_weights_im_out.s2mm_start((UINTPTR)write_p,
+								  layers[i_layers].WORDS_OUT_PER_TRANSFER);
+
+	write_p += layers[i_layers].WORDS_OUT_PER_TRANSFER;
+
+	if (i_w < layers[i_layers].OUT_W_IN-1)
+		i_w += 1;
+	else
+	{
+		i_w = 0;
+		PRINT(" i_blocks: %d, write_p: %p \r\n", i_blocks, write_p);
+
+		if (i_blocks < layers[i_layers].OUT_BLOCKS-1)
+			i_blocks  += 1;
+		else
+		{
+			i_blocks   = 0;
+			PRINT(" i_itr: %d \r\n", i_itr);
+
+			if (i_itr < layers[i_layers].ITR-1)
+				i_itr  += 1;
+			else
+			{
+				i_itr = 0;
+
+				long bytes = layers[i_layers].WORDS_OUT_PER_TRANSFER * layers[i_layers].TRANSFERS_OUT_PER_ITR * layers[i_layers].ITR + UNITS_EDGES;
+
+				PRINT("Layer %d done. out_bytes: %d, addr: %d \r\n",
+						i_layers, bytes, layers[i_layers].get_output_pixels_base_p());
+
+				if (i_layers < N_LAYERS-1)
+					i_layers += 1;
+				else
+				{
+					i_layers = 0;
+					done = true;
+					PRINT("All Layers done \r\n");
+				}
+			}
+		}
+	}
 }
 
 void restart_output()
@@ -365,9 +415,7 @@ void restart_output()
 				{
 					i_layers = 0;
 					done = true;
-#ifdef DEBUG
 					PRINT("All Layers done \r\n");
-#endif
 				}
 
 				/* Chaining
@@ -384,13 +432,11 @@ void restart_output()
 					layers[i_layers].output_chunk_p = get_chunk();
 					layers[i_layers].NEXT_P->input_chunk_p = layers[i_layers].output_chunk_p;
 				}
-#ifdef DEBUG
 				PRINT("Writing to new layer: chained_chunks (idx:%d -> idx:%d), data_p= %p \r\n",
 						    layers[i_layers].idx, layers[i_layers].NEXT_P->idx,
 							layers[i_layers].output_chunk_p->data_p);
 
 				layers[i_layers].print_output_params();
-#endif
 			}
 			else if (i_itr == 0)
 			{
@@ -407,14 +453,14 @@ void restart_output()
 		}
 	}
 	write_p = unravel_image_abwcu(layers[i_layers].get_output_pixels_base_p(),
-								  i_arr,i_bpa,i_w_flipped,i_cout,0, i_layers);
+								  i_arr,i_bpa,i_w_flipped,i_cout,zero, i_layers);
 }
 
 //// mwr -bin -file D:/cnn-fpga/data/1_weights.bin 0x0A000000 722; mwr -bin -file D:/cnn-fpga/data/1_conv_in_0.bin 0x02000000 55297; mwr -bin -file D:/cnn-fpga/data/1_conv_in_1.bin 0x03000000 55296;
 //   mwr -bin -file D:/cnn-fpga/data/3_weights.bin 0x0A000000 5114; mwr -bin -file D:/cnn-fpga/data/3_conv_in_0.bin 0x02000000 147458;
 //// mwr -bin -file D:/cnn-fpga/data/4_weights.bin 0x0A000000 3386; mwr -bin -file D:/cnn-fpga/data/4_conv_in_0.bin 0x02000000 294913;
 
-//mwr -bin -file D:/cnn-fpga/data/3_weights.bin 0x0A000000 20456; mwr -bin -file D:/cnn-fpga/data/3_conv_in_0.bin 0x02000000 147458;
+// mwr -bin -file D:/cnn-fpga/data/weights_all.bin 0x08000000 10232828; mwr -bin -file D:/cnn-fpga/data/1_conv_in.bin 0x02000000 110594;
 
 int main()
 {
@@ -469,7 +515,6 @@ int main()
 		while (!dma_weights_im_out.mm2s_done) {}
 	}
 
-	int zero = 0;
 	pad_prev(zero,zero,zero,zero,zero,zero);
 
 	PRINT("--- Exiting main() --- \r\n");
