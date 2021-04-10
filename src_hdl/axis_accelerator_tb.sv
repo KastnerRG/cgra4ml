@@ -12,72 +12,10 @@ module axis_accelerator_tb ();
   end
 
   localparam ITERATIONS = 2;
-  localparam VALID_PROB = 10;
-  localparam READY_PROB = 10;
+  localparam VALID_PROB = 100;
+  localparam READY_PROB = 100;
+  localparam string DIR_PATH = "D:/cnn-fpga/data/";
 
-  /*
-    IMAGE & KERNEL PARAMETERS
-  */
-
-  //  // //################ LAYER 1 : 3x3, maxpool ####################
-  
-  //  localparam K          = 3;
-  //  localparam MAX_FACTOR = 2;
-  //  localparam IM_HEIGHT  = 256;
-  //  localparam IM_WIDTH   = 384;
-  //  localparam IM_CIN     = 3;
-  //  string path_im_1      = "D:/cnn-fpga/data/1_conv_in_0.txt";
-  //  string path_im_2      = "D:/cnn-fpga/data/1_conv_in_1.txt";
-  //  string path_weights   = "D:/cnn-fpga/data/1_weights.txt";
-  //  string base_conv_out  = "D:/cnn-fpga/data/1_conv_out_fpga_";
-  //  string base_lrelu_out = "D:/cnn-fpga/data/1_lrelu_out_fpga_";
-  //  string base_max_out   = "D:/cnn-fpga/data/1_maxpool_out_fpga_";
-  //  string base_output    = "D:/cnn-fpga/data/1_output_fpga_";
-
-//  ############ LAYER 3 : 3x3, non-maxpool ####################
-
- localparam K          = 3;
- localparam MAX_FACTOR = 1;
- localparam IM_HEIGHT  = 64;
- localparam IM_WIDTH   = 96;
- localparam IM_CIN     = 64;
- string path_im_1      = "D:/cnn-fpga/data/3_conv_in_0.txt";
- string path_im_2      = "D:/cnn-fpga/data/3_conv_in_1.txt";
- string path_weights   = "D:/cnn-fpga/data/3_weights.txt";
- string base_conv_out  = "D:/cnn-fpga/data/3_conv_out_fpga_";
- string base_lrelu_out = "D:/cnn-fpga/data/3_lrelu_out_fpga_";
- string base_max_out   = "D:/cnn-fpga/data/3_maxpool_out_fpga_";
- string base_output    = "D:/cnn-fpga/data/3_output_fpga_";
-
-//   // #################### LAYER 4 : 1x1 ####################
-
-//   localparam K          = 1;
-//   localparam MAX_FACTOR = 1;
-//   localparam IM_HEIGHT  = 64;
-//   localparam IM_WIDTH   = 96;
-//   localparam IM_CIN     = 128;
-//   string path_im_1      = "D:/cnn-fpga/data/4_conv_in_0.txt";
-//   string path_im_2      = "D:/cnn-fpga/data/4_conv_in_1.txt";
-//   string path_weights   = "D:/cnn-fpga/data/4_weights.txt";
-//   string base_conv_out  = "D:/cnn-fpga/data/4_conv_out_fpga_";
-//   string base_lrelu_out = "D:/cnn-fpga/data/4_lrelu_out_fpga_";
-//   string base_max_out   = "D:/cnn-fpga/data/4_maxpool_out_fpga_";
-//   string base_output    = "D:/cnn-fpga/data/4_output_fpga_";
-
-  // // #################### LAYER 14 : 3x3 ####################
-
-  // localparam K          = 3;
-  // localparam MAX_FACTOR = 1;
-  // localparam IM_HEIGHT  = 8;
-  // localparam IM_WIDTH   = 12;
-  // localparam IM_CIN     = 512;
-  // string path_im_1      = "D:/cnn-fpga/data/14_conv_in_0.txt";
-  // string path_im_2      = "D:/cnn-fpga/data/14_conv_in_1.txt";
-  // string path_weights   = "D:/cnn-fpga/data/14_weights.txt";
-  // string base_conv_out  = "D:/cnn-fpga/data/14_conv_out_fpga_";
-  // string base_lrelu_out = "D:/cnn-fpga/data/14_lrelu_out_fpga_";
-  // string base_max_out   = "D:/cnn-fpga/data/14_maxpool_out_fpga_";
-  // string base_output    = "D:/cnn-fpga/data/14_output_fpga_";
 
   /*
     SYSTEM PARAMS
@@ -152,10 +90,72 @@ module axis_accelerator_tb ();
   localparam UNITS_EDGES        = UNITS + KERNEL_H_MAX-1;
   localparam IM_IN_S_DATA_WORDS = 2**$clog2(UNITS_EDGES);
   localparam TKEEP_WIDTH_IM_IN  = WORD_WIDTH*IM_IN_S_DATA_WORDS/8;
-  localparam IM_BLOCKS          = IM_HEIGHT/UNITS;
-  localparam IM_COLS            = IM_WIDTH;
   localparam REPEATS = 3;
 
+
+  class Layer #(IDX, K, IS_MAX, IM_HEIGHT, IM_WIDTH, IM_CIN);
+
+    string IDX_s, path_im_1, path_im_2, path_weights, base_conv_out, base_lrelu_out, base_max_out, base_output;
+
+    // Calculate beats
+
+    parameter MAX_FACTOR = IS_MAX ? 2 : 1;
+
+    parameter IM_BLOCKS = IM_HEIGHT/UNITS;
+    parameter IM_COLS   = IM_WIDTH;
+
+    parameter BEATS_2 = (IM_BLOCKS/MAX_FACTOR) * IM_COLS * IM_CIN;
+    parameter WORDS_2 = BEATS_2 * UNITS_EDGES;
+    parameter BEATS_1 = BEATS_2 + 1;
+    parameter WORDS_1 = BEATS_1 * UNITS_EDGES;
+    
+    parameter BEATS_CONFIG_1   = K == 1 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
+    parameter W_BEATS          = 1 + BEATS_CONFIG_1+1 + K*IM_CIN;
+    parameter WORDS_W          = (W_BEATS-1) * KERNEL_W_MAX * CORES + S_WEIGHTS_WIDTH /WORD_WIDTH;
+    parameter W_WORDS_PER_BEAT = S_WEIGHTS_WIDTH /WORD_WIDTH;
+
+    parameter BEATS_PER_PACKET = (KERNEL_W_MAX/K)*MEMBERS;
+    parameter PACKETS_PER_ITR  = (IM_BLOCKS/MAX_FACTOR)*IM_COLS;
+    parameter BEATS_PER_ITR    = BEATS_PER_PACKET * PACKETS_PER_ITR;
+
+    parameter WORDS_PER_BEAT_RELU = COPIES*GROUPS*UNITS;
+    parameter WORDS_OUT_LRELU     = BEATS_PER_ITR * WORDS_PER_BEAT_RELU;
+
+    parameter WORDS_PER_BEAT_MAX  = COPIES*GROUPS*UNITS_EDGES;
+    parameter WORDS_OUT_MAX       = BEATS_PER_ITR*WORDS_PER_BEAT_MAX/(MAX_FACTOR**2);
+
+    parameter BEATS_OUT_CONV = BEATS_CONFIG_1+1 + (IM_BLOCKS/MAX_FACTOR)*IM_COLS*(KERNEL_W_MAX/K);
+    parameter WORDS_PER_BEAT_CONV = COPIES*MEMBERS*GROUPS*UNITS;
+    parameter WORDS_OUT_CONV = BEATS_OUT_CONV * WORDS_PER_BEAT_CONV;
+
+    // Out counters
+
+    parameter IM_HEIGHT_OUT = IM_HEIGHT/MAX_FACTOR;
+    parameter IM_WIDTH_OUT  = IM_WIDTH /MAX_FACTOR;
+    parameter IM_BLOCKS_OUT = IM_HEIGHT_OUT/UNITS;
+
+    parameter SUB_CORES     = KERNEL_W_MAX / K;
+    parameter EFF_CORES     = CORES * SUB_CORES / MAX_FACTOR;
+
+    parameter KW_PAD        = K - 2*IS_MAX;
+    
+    function new();
+        IDX_s.itoa(IDX);
+        path_im_1      = {DIR_PATH, IDX_s, "_conv_in_0.txt"    };
+        path_im_2      = {DIR_PATH, IDX_s, "_conv_in_1.txt"    };
+        path_weights   = {DIR_PATH, IDX_s, "_weights.txt"      };
+        base_conv_out  = {DIR_PATH, IDX_s, "_conv_out_fpga_"   };
+        base_lrelu_out = {DIR_PATH, IDX_s, "_lrelu_out_fpga_"  };
+        base_max_out   = {DIR_PATH, IDX_s, "_maxpool_out_fpga_"};
+        base_output    = {DIR_PATH, IDX_s, "_output_fpga_"     };
+    endfunction
+
+  endclass
+
+  Layer #(.IDX (1 ), .K(3), .IS_MAX(1), .IM_HEIGHT(256), .IM_WIDTH(384), .IM_CIN(3  )) layer = new();
+  // Layer #(.IDX (3 ), .K(3), .IS_MAX(0), .IM_HEIGHT(64 ), .IM_WIDTH(96 ), .IM_CIN(64 )) layer = new();
+  // Layer #(.IDX (4 ), .K(1), .IS_MAX(0), .IM_HEIGHT(64 ), .IM_WIDTH(96 ), .IM_CIN(128)) layer = new();
+  // Layer #(.IDX (14), .K(3), .IS_MAX(0), .IM_HEIGHT(8  ), .IM_WIDTH(12 ), .IM_CIN(512)) layer = new();
 
   logic aresetn;
   logic s_axis_pixels_1_tready;
@@ -286,49 +286,26 @@ module axis_accelerator_tb ();
   assign maxpool_keep_cgu            = {>>{maxpool_m_axis_tkeep}};
   assign m_data                      = {>>{m_axis_tdata}};
 
-  localparam BEATS_2 = (IM_BLOCKS/MAX_FACTOR) * IM_COLS * IM_CIN;
-  localparam WORDS_2 = BEATS_2 * UNITS_EDGES;
-  localparam BEATS_1 = BEATS_2 + 1;
-  localparam WORDS_1 = BEATS_1 * UNITS_EDGES;
-  
-  localparam BEATS_CONFIG_1   = K == 1 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
-  localparam W_BEATS          = 1 + BEATS_CONFIG_1+1 + K*IM_CIN;
-  localparam WORDS_W          = (W_BEATS-1) * KERNEL_W_MAX * CORES + S_WEIGHTS_WIDTH /WORD_WIDTH;
-  localparam W_WORDS_PER_BEAT = S_WEIGHTS_WIDTH /WORD_WIDTH;
 
-  localparam BEATS_PER_PACKET = (KERNEL_W_MAX/K)*MEMBERS;
-  localparam PACKETS_PER_ITR = (IM_BLOCKS/MAX_FACTOR)*IM_COLS;
-  localparam BEATS_PER_ITR = BEATS_PER_PACKET * PACKETS_PER_ITR;
-
-  localparam WORDS_PER_BEAT_RELU = COPIES*GROUPS*UNITS;
-  localparam WORDS_OUT_LRELU     = BEATS_PER_ITR * WORDS_PER_BEAT_RELU;
-
-  localparam WORDS_PER_BEAT_MAX  = COPIES*GROUPS*UNITS_EDGES/(MAX_FACTOR**2);
-  localparam WORDS_OUT_MAX       = BEATS_PER_ITR*WORDS_PER_BEAT_MAX;
-
-  localparam BEATS_OUT_CONV = BEATS_CONFIG_1+1 + (IM_BLOCKS/MAX_FACTOR)*IM_COLS*(KERNEL_W_MAX/K);
-  localparam WORDS_PER_BEAT_CONV = COPIES*MEMBERS*GROUPS*UNITS;
-  localparam WORDS_OUT_CONV = BEATS_OUT_CONV * WORDS_PER_BEAT_CONV;
-
-  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(VALID_PROB)) s_pixels_1  = new(.file_path(path_im_1   ), .words_per_packet(WORDS_1), .iterations(1));
-  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(VALID_PROB)) s_pixels_2  = new(.file_path(path_im_2   ), .words_per_packet(WORDS_2), .iterations(1));
-  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(W_WORDS_PER_BEAT  ), .VALID_PROB(VALID_PROB)) s_weights   = new(.file_path(path_weights), .words_per_packet(WORDS_W), .iterations(1));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(VALID_PROB)) s_pixels_1  = new(.file_path(layer.path_im_1   ), .words_per_packet(layer.WORDS_1), .iterations(1));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(VALID_PROB)) s_pixels_2  = new(.file_path(layer.path_im_2   ), .words_per_packet(layer.WORDS_2), .iterations(1));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(layer.W_WORDS_PER_BEAT  ), .VALID_PROB(VALID_PROB)) s_weights   = new(.file_path(layer.path_weights), .words_per_packet(layer.WORDS_W), .iterations(1));
   initial forever s_pixels_1.axis_feed(aclk, s_axis_pixels_1_tready, s_axis_pixels_1_tvalid, s_data_pixels_1, s_axis_pixels_1_tkeep, s_axis_pixels_1_tlast);
   initial forever s_pixels_2.axis_feed(aclk, s_axis_pixels_2_tready, s_axis_pixels_2_tvalid, s_data_pixels_2, s_axis_pixels_2_tkeep, s_axis_pixels_2_tlast);
   initial forever s_weights .axis_feed(aclk, s_axis_weights_tready , s_axis_weights_tvalid , s_data_weights , s_axis_weights_tkeep , s_axis_weights_tlast );
   
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH_ACC), .WORDS_PER_BEAT(WORDS_PER_BEAT_CONV), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_conv    = new(.file_base(base_conv_out )); // sensitive to tlast
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(WORDS_PER_BEAT_RELU), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_lrelu   = new(.file_base(base_lrelu_out), .words_per_packet(WORDS_OUT_LRELU)); // sensitive to words_out
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(WORDS_PER_BEAT_MAX ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_maxpool = new(.file_base(base_max_out  ), .packets_per_file(PACKETS_PER_ITR)); // sensitive to tlast, but multiple tlasts per file
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(M_DATA_WIDTH/8     ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(1)) m_output  = new(.file_base(base_output   ), .packets_per_file(PACKETS_PER_ITR)); // sensitive to tlast, but multiple tlasts per file
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH_ACC), .WORDS_PER_BEAT(layer.WORDS_PER_BEAT_CONV), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_conv    = new(.file_base(layer.base_conv_out )); // sensitive to tlast
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(layer.WORDS_PER_BEAT_RELU), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_lrelu   = new(.file_base(layer.base_lrelu_out), .words_per_packet(layer.WORDS_OUT_LRELU)); // sensitive to words_out
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(layer.WORDS_PER_BEAT_MAX ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_maxpool = new(.file_base(layer.base_max_out  ), .packets_per_file(layer.PACKETS_PER_ITR)); // sensitive to tlast, but multiple tlasts per file
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(M_DATA_WIDTH/8     ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(1)) m_output  = new(.file_base(layer.base_output   ), .packets_per_file(layer.PACKETS_PER_ITR)); // sensitive to tlast, but multiple tlasts per file
   
-  logic [WORDS_PER_BEAT_CONV-1:0] temp_keep_conv  = '1;
-  logic [WORDS_PER_BEAT_RELU-1:0] temp_keep_lrelu = '1;
+  logic [layer.WORDS_PER_BEAT_CONV-1:0] temp_keep_conv  = '1;
+  logic [layer.WORDS_PER_BEAT_RELU-1:0] temp_keep_lrelu = '1;
   logic zero_last = 0;
 
-  logic [WORD_WIDTH_ACC-1:0] conv_m_data_linear    [WORDS_PER_BEAT_CONV-1:0];
-  logic [WORD_WIDTH    -1:0] lrelu_m_data_linear   [WORDS_PER_BEAT_RELU-1:0];
-  logic [WORD_WIDTH    -1:0] maxpool_m_data_linear [WORDS_PER_BEAT_MAX -1:0];
+  logic [WORD_WIDTH_ACC-1:0] conv_m_data_linear    [layer.WORDS_PER_BEAT_CONV-1:0];
+  logic [WORD_WIDTH    -1:0] lrelu_m_data_linear   [layer.WORDS_PER_BEAT_RELU-1:0];
+  logic [WORD_WIDTH    -1:0] maxpool_m_data_linear [layer.WORDS_PER_BEAT_MAX -1:0];
   logic [WORD_WIDTH    -1:0] m_data_linear         [M_DATA_WIDTH/8     -1:0];
 
   assign conv_m_data_linear    = {>>{conv_m_axis_tdata}};
@@ -341,6 +318,46 @@ module axis_accelerator_tb ();
   initial forever m_maxpool .axis_read(aclk, maxpool_m_axis_tready, maxpool_m_axis_tvalid, maxpool_m_data_linear , maxpool_m_axis_tkeep, maxpool_m_axis_tlast);
   initial forever m_output  .axis_read(aclk, m_axis_tready        , m_axis_tvalid        , m_data_linear         , m_axis_tkeep        , m_axis_tlast        );
 
+  /* COUNTING ELEMENTS*/
+
+  int i_w           = 0;
+  int i_w_flipped   = 0;
+  int i_blocks      = 0;
+  int i_cout        = 0;
+  int i_arr, i_bpa;
+
+  assign i_arr = i_blocks % layer.MAX_FACTOR;
+  assign i_bpa = i_blocks / layer.MAX_FACTOR;
+
+  initial forever begin
+    @(posedge aclk);
+    #(CLK_PERIOD*9/10);
+
+    if (maxpool_m_axis_tready && maxpool_m_axis_tvalid) begin
+      if (~maxpool_m_axis_tlast)
+        i_cout        += GROUPS*COPIES/layer.MAX_FACTOR;
+      else begin
+        i_cout        = 0;
+
+        if (i_w < layer.IM_WIDTH_OUT) begin
+          i_w += 1;
+          // flipping
+          if (i_w > layer.IM_WIDTH_OUT+1 - layer.KW_PAD)
+            i_w_flipped = 2 * layer.IM_WIDTH_OUT - (i_w + layer.KW_PAD);
+          else
+            i_w_flipped = i_w;
+        end
+        else begin
+          i_w = 0;
+          if (i_blocks < layer.IM_BLOCKS_OUT)
+            i_blocks += 1;
+          else
+            i_blocks = 0;
+        end
+      end
+    end
+  end
+  
   /*
     Get counters from drivers
   */
@@ -389,7 +406,7 @@ module axis_accelerator_tb ();
     aresetn = 1;
 
     s_pixels_1.enable = 1;
-    if (MAX_FACTOR == 2) s_pixels_2.enable = 1;
+    if (layer.IS_MAX) s_pixels_2.enable = 1;
     s_weights .enable = 1;
     m_conv.enable     = 1;
     m_lrelu.enable    = 1;
@@ -404,7 +421,7 @@ module axis_accelerator_tb ();
     s_pixels_1.i_itr =0;
     s_pixels_1.enable = 1;
     s_pixels_2.i_itr =0;
-    if (MAX_FACTOR == 2) s_pixels_2.enable = 1;
+    if (layer.IS_MAX) s_pixels_2.enable = 1;
 
     s_weights.i_itr  = 0;
     s_weights.enable = 1;
