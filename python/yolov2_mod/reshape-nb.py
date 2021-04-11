@@ -1,13 +1,16 @@
-# To add a new cell, type '# %%'
-# To add a new markdown cell, type '# %% [markdown]'
-# %%
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
 import numpy as np 
 import pickle
 from yolov2_mod_numpy import YOLOv2_Modified_Numpy
 
 layers = pickle.load(open('yolov2_mod_int8_dict.pickle', 'rb'))
 
-i = 1
+i = 2
 
 CONV_UNITS = 4
 MEMBERS    = 4
@@ -33,7 +36,9 @@ assert MEMBERS % 2 == 0
 path = '../../data'
 
 
-# %%
+# In[140]:
+
+
 def fill_invalid_smcg(arr, KW, KW_MAX, CORES, max_factor):
     '''
     Input  shape: (COUT,...)
@@ -64,11 +69,13 @@ def fill_invalid_smcg(arr, KW, KW_MAX, CORES, max_factor):
 
     return arr_filled
 
-# %% [markdown]
+
 # # Reshape Leaky Relu Params
 # ```A: (1,COUT) float16,  B: (KH*KW,COUT) float16, D: (1) float16 -> (ITR, LRELU_BEATS, CORES)```
 
-# %%
+# In[141]:
+
+
 def get_lrelu_config(i, layers, KW_MAX, CORES, prefix_max, prefix_lrelu):
     '''
     LRelu config are accepted in (beats,CGM) format
@@ -185,11 +192,13 @@ def get_lrelu_config(i, layers, KW_MAX, CORES, prefix_max, prefix_lrelu):
 
     return np.array(lrelu_config) # (ITR,LRELU_BEATS,CORES,KW_MAX)
 
-# %% [markdown]
+
 # # Reshape Weights 
 # ```(KH,KW,CIN,COUT) -> (ITR, DMA_BEATS = 4 + (LRELU_BEATS + CIN*KH) * COPIES * MEMBERS * GROUPS * KW_MAX)```
 
-# %%
+# In[142]:
+
+
 weights = layers[f'{prefix_conv}{i}'].weights
 
 KH, KW, CIN, COUT = weights.shape
@@ -264,22 +273,18 @@ print("weights_dma_beats.shape: ", weights_dma_beats.shape)
 np.savetxt(f"{path}/{i}_weights.txt", weights_dma_beats[0].flatten(), fmt='%d')
 
 
-# %%
+# In[143]:
+
+
 KW,KH,CIN,W,BLOCKS_PER_ARR
 
 
-# %%
+# In[144]:
+
+
 weights_dma_beats.flatten()[0:10]
 
 
-# %%
-np.fromfile("D:/cnn-fpga/data/1_weights.bin", np.int8)[0:10]
-
-
-# %%
-i
-
-# %% [markdown]
 # # Reshape Conv Image In
 # 
 # ```
@@ -288,7 +293,9 @@ i
 # im_arrays[ 0]: (1 + BLOCKS//max_factor*W*CIN, CONV_UNITS_EDGES)
 # im_arrays[!0]: (BLOCKS//max_factor, W, CIN, CONV_UNITS_EDGES)```
 
-# %%
+# In[145]:
+
+
 def reshape_conv_in(layers, i):
     image = layers[f'{prefix_conv}{i}'].in_data[0]
     max_factor = 2 if f'{prefix_max}{i}' in layers.keys() else 1
@@ -335,21 +342,13 @@ def reshape_conv_in(layers, i):
     IS_MAX     = max_factor != 1
     IS_NOT_MAX = max_factor == 1
 
-    if IS_MAX:
-        for layer in layers.values():
-            if prefix_conv in layer.name:
-                if prefix_lrelu in layer.prev_layer.name:
-                    '''Conv layer without max before it'''
-                    prev_i = int(layer.prev_layer.name.split('_')[-1])
-                    if prev_i == i:
-                        IS_NOT_MAX = 1
-
     config = np.zeros((CONV_UNITS_EDGES),np.int8)
     config[0] = IS_NOT_MAX
     config[1] = IS_MAX
     config[2] = IS_LRELU
     config[3] = KH-1
     assert CONV_UNITS_EDGES >= 4
+
 
     im_arrays[0] = np.concatenate([config [np.newaxis,:], im_arrays[0].reshape(BLOCKS//max_factor*W*CIN, CONV_UNITS_EDGES)], axis=0)
 
@@ -365,11 +364,9 @@ for m in range(max_factor):
     np.savetxt(f"D:/cnn-fpga/data/{i}_conv_in_{m}.txt", im_arrays[m].flatten(), fmt='%d')
 
 
-# %%
-im_arrays[1].size
+# In[146]:
 
 
-# %%
 # path = 'D:/cnn-fpga/data'
 
 # w_path = f"{path}/{i}_weights.bin"
@@ -391,10 +388,12 @@ im_arrays[1].size
 
 # print(cmd_txt)
 
-# %% [markdown]
+
 # # FPGA Memory Load
 
-# %%
+# In[147]:
+
+
 full_path = 'D:/cnn-fpga/data'
 
 w_path = f"{full_path}/{i}_weights.bin"
@@ -417,7 +416,9 @@ cmd_txt += f"mwr -bin -file {im_path} 0x02000000 {im_file_size//4}; "
 print(cmd_txt)
 
 
-# %%
+# In[95]:
+
+
 '''
 All weights
 '''
@@ -434,22 +435,28 @@ w_all_path = f"{full_path}/weights_all.bin"
 weights_all.tofile(w_all_path)
 
 
-# %%
+# In[32]:
+
+
 make_weights(1,layers).flatten()[0:10]
 
 
-# %%
+# In[12]:
+
+
 cmd_txt = f"mwr -bin -file {w_all_path} 0x08000000 {int(np.ceil(weights_all.size/4))}; "
 print(cmd_txt)
 
-# %% [markdown]
+
 # mwr -bin -file D:/cnn-fpga/data/weights_all.bin 0x08000000 10232828; mwr -bin -file D:/cnn-fpga/data/1_conv_in.bin 0x02000000 110594; 
-# %% [markdown]
+
 # # Reshape Conv Out = LeakyReLu in
 # 
 # ```(1, H, W, CIN) -> (ITR, LRELU_BEATS + BLOCKS_PER_ARR*W*SUB_CORES, COPIES*MEMBERS*GROUPS, CONV_UNITS)```
 
-# %%
+# In[7]:
+
+
 image = layers[f'{prefix_conv}{i}'].np_out_data[0]
 max_factor = 2 if f'{prefix_max}{i}' in layers.keys() else 1
 KW    = layers[f'{prefix_conv}{i}'].weights.shape[0]
@@ -516,22 +523,28 @@ print("image_out.shape: ", image_out.shape)
 np.savetxt(f"{path}/{i}_conv_out.txt", image_out[0].flatten(), fmt='%d')
 
 
-# %%
-# image_out_fpga = np.loadtxt(f"{path}/data/{i}_conv_out_fpga_0.txt",np.int32)
-
-# error = image_out_fpga[0:21] - image_out[0].flatten()[0:21]
-# np.sum(error)
+# In[14]:
 
 
-# %%
+image_out_fpga = np.loadtxt(f"{path}/{i}_conv_out_fpga_0.txt",np.int32)
+
+error = image_out_fpga[0:21] - image_out[0].flatten()[0:21]
+np.sum(error)
+
+
+# In[48]:
+
+
 image_out[0].flatten()[0:64]
 
-# %% [markdown]
+
 # # Leaky Relu Out / Max In
 # 
 # ```(1, H, W, CIN) -> (ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS)```
 
-# %%
+# In[42]:
+
+
 image = layers[f'{prefix_lrelu}{i}'].np_out_data[0]
 max_factor = 2 if f'{prefix_max}{i}' in layers.keys() else 1
 KW    = layers[f'{prefix_conv}{i}'].weights.shape[0]
@@ -540,33 +553,57 @@ lrelu_out = reshape_image_out(image=image,order='mcg',KW=KW,max_factor=max_facto
 ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS = lrelu_out.shape
 
 
-# %%
-# image_out_fpga = np.loadtxt(f"D:/cnn-fpga/data/{i}_lrelu_out_fpga_0.txt",np.int8)
-# fpga = image_out_fpga.reshape((BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS))
-
-# '''
-# Invalid cores output 0+d=d. Remove d to compare.
-# '''
-
-# for s in range(SUB_CORES):
-#     for c in range(CORES):
-#         if np.all(fpga[:,:,s,c,:]==layers[f'{prefix_lrelu}{i}'].requantize_params['D']):
-#             fpga[:,:,s,c,:] = 0
-
-# error = lrelu_out[0] - fpga
-# sum_abs_error = np.sum(np.abs(error))
-
-# np.savetxt("where_err.txt",np.argwhere(error > 1),fmt='%d')
-
-# print(np.sum(abs(error)>1))
-# print(sum_abs_error/image_out_fpga.size)
+# In[35]:
 
 
-# %%
+lrelu_out.shape, fpga.shape
+
+
+# In[39]:
+
+
+image_out_fpga.size/(2*32* 192* 1* 16* 4)
+
+
+# In[43]:
+
+
+W
+
+
+# In[48]:
+
+
+image_out_fpga = np.loadtxt(f"D:/cnn-fpga/data/{i}_lrelu_out_fpga_0.txt",np.int8)
+fpga = image_out_fpga.reshape((BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS))
+
+'''
+Invalid cores output 0+d=d. Remove d to compare.
+'''
+
+for s in range(SUB_CORES):
+    for c in range(CORES):
+        if np.all(fpga[:,:,s,c,:]==layers[f'{prefix_lrelu}{i}'].requantize_params['D']):
+            fpga[:,:,s,c,:] = 0
+
+error = lrelu_out[0] - fpga
+sum_abs_error = np.sum(np.abs(error))
+
+np.savetxt("where_err.txt",np.argwhere(error > 1),fmt='%d')
+
+print(np.sum(abs(error)>1))
+print(sum_abs_error/image_out_fpga.size)
+
+
+# In[21]:
+
+
 layers[f'{prefix_lrelu}{i}'].requantize_params['B'][0,1,1,0:4]
 
 
-# %%
+# In[22]:
+
+
 # DIMS_BWSMCGU = (BLOCKS_PER_ARR,W,SUB_CORES,MEMBERS,COPIES,GROUPS,CONV_UNITS)
 # DIMS_BWSCMGU = (BLOCKS_PER_ARR,W,SUB_CORES,COPIES,MEMBERS,GROUPS,CONV_UNITS)
 
@@ -580,11 +617,15 @@ layers[f'{prefix_lrelu}{i}'].requantize_params['B'][0,1,1,0:4]
 # print(image_conv[error > 1])
 
 
-# %%
+# In[24]:
+
+
 np.unravel_index(8,(MEMBERS,COPIES,GROUPS))
 
 
-# %%
+# In[58]:
+
+
 b = layers[f'{prefix_lrelu}{i}'].requantize_params['B'][0,1,1,8].astype(np.float16)
 a = layers[f'{prefix_lrelu}{i}'].requantize_params['A'][0,0,0,8].astype(np.float16)
 d = layers[f'{prefix_lrelu}{i}'].requantize_params['D'].astype(np.float16)
@@ -592,14 +633,18 @@ d = layers[f'{prefix_lrelu}{i}'].requantize_params['D'].astype(np.float16)
 b, a, d
 
 
-# %%
+# In[59]:
+
+
 (0.003149 * 37710 + -118.75)-85.0
 
-# %% [markdown]
+
 # # System Out (SIM)
 # ```(1, H, W, CIN) -> (ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS_EDGES)```
 
-# %%
+# In[45]:
+
+
 is_max = False
 copy_factor = 1
 flip_cols = True
@@ -623,7 +668,9 @@ ITR,BLOCKS_PER_ARR,W,SUB_CORES,_,CONV_UNITS = image.shape
 image_padded = np.pad(image,((0,0),(0,0),(0,0),(0,0),(0,0),(KH_MAX//2,KH_MAX//2)),mode='constant')
 
 
-# %%
+# In[10]:
+
+
 image_out_sim = np.loadtxt(f"D:/cnn-fpga/data/{i}_output_fpga_0.txt",np.int8)
 sim = image_out_sim.reshape((BLOCKS_PER_ARR,W,SUB_CORES,CORES//copy_factor,UNITS_EDGES))
 
@@ -643,21 +690,67 @@ print(np.sum(error > 1))
 print(sum_abs_error/image_out_sim.size)
 
 
-# %%
+# In[19]:
+
+
+np.ceil((image_padded.size+6)/4)
+
+
+# In[38]:
+
+
+fpga_flat = np.fromfile('D:/cnn-fpga/data/1_fpga_out_flat.bin', np.int8)[6:image_padded.size+6].reshape(image_padded.shape)
+
+error = image_padded - fpga_flat
+
+
+# In[39]:
+
+
+np.argwhere(abs(error)>1)
+
+
+# In[40]:
+
+
+error.shape
+
+
+# In[41]:
+
+
+fpga_flat[abs(error)>1]
+
+
+# In[42]:
+
+
+image_padded[abs(error)>1]
+
+
+# In[40]:
+
+
 image_out_sim != layers[f'{prefix_lrelu}{i}'].requantize_params['D']
 
 
-# %%
+# In[41]:
+
+
 # np.savetxt("where_err.txt",np.argwhere(error > 1),fmt='%d')
 
-# %% [markdown]
+
 # # Image Out FPGA
 
-# %%
-i=5
+# In[160]:
 
 
-# %%
+i=3
+
+
+# In[161]:
+
+
 if i == 21:
     np_out = layers[f'conv_{i}'].quant_out_data[0]
 
@@ -670,28 +763,15 @@ if i == 21:
     im_arrays_out = np.concatenate([np.zeros((1,UNITS_EDGES),np_out.dtype), np_out_zeros.reshape(BLOCKS*W*COUT,UNITS_EDGES)],axis=0)
     im_arrays_out = im_arrays_out[np.newaxis,:]
     out_shape = im_arrays_out.shape
+    print("Last Layer")
 else:
     im_arrays_out, out_shape = reshape_conv_in(layers, i+1)
     
 next_max_factor = len(im_arrays_out)
 
 
-# %%
-data_dir = "D:/cnn-fpga/data"
+# In[162]:
 
-cmd = ""
-out_paths = []
-addr = f'0x04000000'
-
-arr_size = (im_arrays_out[0][1:].size)*next_max_factor + UNITS_EDGES
-
-out_path = f"{data_dir}/{i}_fpga_out.bin"
-cmd = f"mrd -bin -file {out_path} {addr} {int(np.ceil(arr_size/4))}; "
-print(cmd)
-
-
-# %%
-im_arr_fpga_out = np.fromfile(out_path,np.int8)[0:arr_size]
 
 if i == 21:
     _, next_h, next_w, next_cin = layers[f'conv_{i}'].quant_out_data.shape
@@ -711,31 +791,131 @@ for m, arr in enumerate(im_arrays_out):
 im_out = np.concatenate(eq_arrays).reshape(next_shape)
 print("config bits: ",im_arr_fpga_out[:UNITS_EDGES]==im_arrays_out[0][0])
 
+
+# In[163]:
+
+
+data_dir = "D:/cnn-fpga/data"
+addr = f'0x04000000'
+
+arr_size = (im_arrays_out[0][1:].size)*next_max_factor + UNITS_EDGES
+
+out_path = f"{data_dir}/{i}_fpga_out.bin"
+cmd = f"mrd -bin -file {out_path} {addr} {int(np.ceil(arr_size/4))}; "
+print(cmd)
+
+
+# In[170]:
+
+
+im_arr_fpga_out = np.fromfile(out_path,np.int8)[0:arr_size]
+
 fpga_out = im_arr_fpga_out[UNITS_EDGES:].reshape(next_shape)
 
 error = im_out - fpga_out
 
-np.savetxt("where_err.txt",np.argwhere(np.abs(error) > 3),fmt='%d')
+np.savetxt("where_err.txt",np.argwhere(np.abs(error) > 0),fmt='%d')
 
 print(error.shape)
 
 
-# %%
-error[abs(error)>5]
+# In[153]:
 
 
-# %%
+im_arr_fpga_out_flat = np.fromfile("D:/cnn-fpga/data/2_fpga_out_flat.bin",np.int8)[0:arr_size]
+fpga_out_flat = im_arr_fpga_out_flat[UNITS_EDGES:]
+
+
+# In[179]:
+
+
+fpga_out[0,0,14,3,4], im_out[0,0,14,3,3]
+
+
+# In[154]:
+
+
+fpga_out_flat[-12:]
+
+
+# In[159]:
+
+
+im_out[-1,-1,-1,-1,:]
+
+
+# In[30]:
+
+
+im_arr_fpga_out[:UNITS_EDGES], im_arrays_out[0][0]
+
+
+# In[15]:
+
+
+error[np.abs(error)>1]
+
+
+# In[18]:
+
+
+im_out[np.abs(error)>1]
+
+
+# In[19]:
+
+
+fpga_out[np.abs(error)>1]
+
+
+# In[25]:
+
+
+im_out[np.abs(error)>1], fpga_out[np.abs(error)>1]
+
+
+# In[35]:
+
+
+layers[f'conv_{i+1}'].in_data[0,-6:,-1,-1]
+
+
+# In[168]:
+
+
+layers['leaky_relu_1'].requantize_params['D']
+
+
+# In[51]:
+
+
 k = 0
-im_out[0,0,0,k,:], fpga_out[0,0,0,k,:]
+im_out[0,1,0,k,:], fpga_out[0,1,0,k,:]
 
 
-# %%
-error[abs(error)>1]
+# In[52]:
 
-# %% [markdown]
+
+fpga_out[0,0,0,k,:]
+
+
+# In[169]:
+
+
+im_out[abs(error)>0]
+
+
+# In[167]:
+
+
+fpga_out[abs(error)>1]
+
+
 # # Input LUT
 
-# %%
+# In[51]:
+
+
 import cv2
 from matplotlib import pyplot as plt
 
@@ -748,7 +928,9 @@ image_in.tofile('../../data/image_rgb.bin')
 plt.imshow(image_in)
 
 
-# %%
+# In[52]:
+
+
 path_dir = 'D:/cnn-fpga/data/'
 path_input_lut = path_dir + 'input_lut.bin'
 path_input = path_dir + 'image_rgb.bin'
@@ -761,7 +943,9 @@ image_in.tofile(path_input)
 f"mwr -bin -file {path_input_lut} 0x00001000 {input_lut.size//4}; mwr -bin -file {path_input} 0x01000000 {image_in.size//4};"
 
 
-# %%
+# In[53]:
+
+
 UNITS        =8
 MEMBERS      =8
 COPIES       =2
@@ -780,7 +964,9 @@ p_image_input = image_in.reshape(blocks,UNITS,width,cin)
 p_image_in = np.zeros((2,blocks_per_arr,width, cin, UNITS_EDGES),dtype=np.int8)
 
 
-# %%
+# In[54]:
+
+
 for b in range(blocks):
     for u in range(UNITS):
         for w in range(width):
@@ -788,40 +974,56 @@ for b in range(blocks):
                 p_image_in[b%max_factor][b//max_factor][w][c][u+KERNEL_H_MAX//2] = p_input_lut[p_image_input[b][u][w][c]];
 
 
-# %%
+# In[ ]:
 
 
 
-# %%
+
+
+# In[131]:
+
+
 im_arrays_0_fpga = np.fromfile(path_dir+"1_conv_in_0_fpga.bin",dtype=np.int8)
 np.argwhere(im_arrays_0_fpga[10:]-im_arrays[0].flatten()[10:] != 0)
 
 
-# %%
+# In[134]:
+
+
 im_arrays_1_fpga = np.fromfile(path_dir+"1_conv_in_1_fpga.bin",dtype=np.int8)
 np.argwhere(im_arrays_1_fpga-im_arrays[1].flatten() != 0)
 
 
-# %%
+# In[13]:
+
+
 im_0_fpga = im_arrays_0_fpga.reshape(im_arrays[0].shape)
 error = im_0_fpga-im_arrays[0]
 error_bwcu = error[1:,:].reshape(16,384,3,10)
 np.savetxt('where_err.txt', np.argwhere(error_bwcu!=0), fmt='%d')
 
 
-# %%
+# In[15]:
+
+
 im_0_fpga[1,:]
 
 
-# %%
+# In[16]:
+
+
 im_arrays[0].flatten()[10:][3399:]
 
 
-# %%
+# In[40]:
 
 
 
-# %%
+
+
+# In[45]:
+
+
 a = np.arange(48).reshape(6,2,2,2)
 b = np.zeros((2,3,2,2,4), np.int8)
 
@@ -835,15 +1037,21 @@ for blocks in range(6):
                 b[(blocks+1)%2][(blocks+1)//2][w][c][0] = a[blocks,0,w,c]
 
 
-# %%
+# In[46]:
+
+
 b[0,0,0,0,:]
 
 
-# %%
+# In[47]:
+
+
 a[:,0,0,0]
 
 
-# %%
+# In[91]:
+
+
 im_in = layers['conv_1'].in_data[0]
 H,W,CIN = im_in.shape
 
@@ -855,7 +1063,9 @@ im_in_buwc = im_in.reshape(BLOCKS,UNITS,W,CIN)
 im_mbwcu = np.ones((MAX_FACTOR, BLOCKS//MAX_FACTOR, W, CIN,UNITS+KERNEL_H_MAX-1),np.int8)*133
 
 
-# %%
+# In[96]:
+
+
 
 t = 0
 
@@ -912,17 +1122,23 @@ def f():
 f()
 
 
-# %%
+# In[100]:
+
+
 error = im_mbwcu[0] - im_arrays[0][1:,:].reshape((BLOCKS//MAX_FACTOR, W, CIN,UNITS+KERNEL_H_MAX-1))
 np.sum(error!=0)
 
 
-# %%
+# In[101]:
+
+
 error = im_mbwcu[1] - im_arrays[1].reshape((BLOCKS//MAX_FACTOR, W, CIN,UNITS+KERNEL_H_MAX-1))
 np.sum(error!=0)
 
 
-# %%
+# In[127]:
+
+
 im_in_fpga = np.fromfile('D:/cnn-fpga/data/1_im_in_fpga.bin',np.uint8)
 error = im_in_fpga-image_in.flatten()
 np.sum(error!=0)
@@ -930,9 +1146,10 @@ np.sum(error!=0)
 np.argwhere(error !=0)
 
 
-# %%
+# In[115]:
+
+
 lut_fpga = np.fromfile('D:/cnn-fpga/data/1_lut_fpga.bin',np.int8)
 error = input_lut-lut_fpga
 np.sum(error!=0)
-
 
