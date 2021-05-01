@@ -1,4 +1,4 @@
-`include "params.v";
+`include "params.v"
 
 module axis_lrelu_engine_tb();
   
@@ -12,16 +12,16 @@ module axis_lrelu_engine_tb();
   end
 
   localparam IS_1X1  = 0;
-  localparam IS_MAX  = 1;
+  localparam IS_MAX  = 0;
   localparam IS_RELU = 1;
 
   localparam COLS    = 3;
   localparam BLOCKS  = 3;
 
-  localparam UNITS   = 4;
-  localparam GROUPS  = 2;
-  localparam COPIES  = 2;
-  localparam MEMBERS = 4;
+  localparam UNITS   = `UNITS  ;
+  localparam GROUPS  = `GROUPS ;
+  localparam COPIES  = `COPIES ;
+  localparam MEMBERS = `MEMBERS;
 
   localparam WORD_WIDTH_IN     = 32;
   localparam WORD_WIDTH_OUT    = 8 ;
@@ -51,6 +51,7 @@ module axis_lrelu_engine_tb();
   localparam TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN    ;
   localparam TUSER_WIDTH_LRELU_FMA_1_IN = `TUSER_WIDTH_LRELU_FMA_1_IN;
   localparam TUSER_WIDTH_LRELU_IN       = `TUSER_WIDTH_LRELU_IN      ;
+  localparam DEBUG_CONFIG_WIDTH_LRELU   = `DEBUG_CONFIG_WIDTH_LRELU  ;
 
   logic aresetn      ;
   logic s_axis_tvalid;
@@ -65,6 +66,8 @@ module axis_lrelu_engine_tb();
 
   logic [WORD_WIDTH_IN  -1:0] s_data_int_cmgu [COPIES-1:0][MEMBERS-1:0][GROUPS-1:0][UNITS-1:0];
   logic [WORD_WIDTH_OUT -1:0] m_data_cgu      [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+
+  logic [DEBUG_CONFIG_WIDTH_LRELU-1:0] debug_config;
   
 
   assign {>>{s_axis_tdata}} = s_data_int_cmgu;
@@ -110,9 +113,9 @@ module axis_lrelu_engine_tb();
   ) dut (.*);
 
   int status, file_data_in, file_data_out;
-  string data_in_path = "D:/cnn-fpga/python/fpga_support/lrelu_input.txt";
-  string data_out_path_1 = "D:/cnn-fpga/python/fpga_support/lrelu_output_1.txt";
-  string data_out_path_2 = "D:/cnn-fpga/python/fpga_support/lrelu_output_2.txt";
+  string data_in_path = "D:/cnn-fpga/data/lrelu_input.txt";
+  string data_out_path_1 = "D:/cnn-fpga/data/lrelu_output_1.txt";
+  string data_out_path_2 = "D:/cnn-fpga/data/lrelu_output_2.txt";
 
   int config_beats = 0;
   int data_beats = 0;
@@ -158,7 +161,7 @@ module axis_lrelu_engine_tb();
   class Random_Bit;
   rand bit rand_bit;
   constraint c {
-    rand_bit dist { 0 := 99, 1 := 1};
+    rand_bit dist { 0 := 0, 1 := 1};
     }
   endclass
 
