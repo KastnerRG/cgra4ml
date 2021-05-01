@@ -441,7 +441,13 @@ module lrelu_engine (
         /*
           BRAM A
         */
-        assign a_val_f32_cg [c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(a_val_cg [c][g]);
+        // assign a_val_f32_cg [c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(a_val_cg [c][g]);
+
+        mod_float_upsize upsizer_a (
+          .s_axis_a_tvalid      (1),           
+          .s_axis_a_tdata       (a_val_cg     [c][g]),
+          .m_axis_result_tdata  (a_val_f32_cg [c][g])
+        );
 
         always_valid_cyclic_bram #(
           .W_DEPTH (BRAM_W_DEPTH_1X1), 
@@ -526,11 +532,27 @@ module lrelu_engine (
           - Hence, convert to f32 and keep them seperately
         */
 
-        always_comb begin
-          b_mid_f32_cg[c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(b_cg_clr_mtb_f16[c][g][fma1_index_clr][0]);
-          b_top_f32_cg[c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(b_cg_clr_mtb_f16[c][g][fma1_index_clr][1]);
-          b_bot_f32_cg[c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(b_cg_clr_mtb_f16[c][g][fma1_index_clr][2]);
-        end
+        // always_comb begin
+        //   b_mid_f32_cg[c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(b_cg_clr_mtb_f16[c][g][fma1_index_clr][0]);
+        //   b_top_f32_cg[c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(b_cg_clr_mtb_f16[c][g][fma1_index_clr][1]);
+        //   b_bot_f32_cg[c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(b_cg_clr_mtb_f16[c][g][fma1_index_clr][2]);
+        // end
+
+        mod_float_upsize upsizer_mid (
+          .s_axis_a_tvalid      (1),           
+          .s_axis_a_tdata       (b_cg_clr_mtb_f16[c][g][fma1_index_clr][0]),
+          .m_axis_result_tdata  (b_mid_f32_cg    [c][g]  )
+        );
+        mod_float_upsize upsizer_top (
+          .s_axis_a_tvalid      (1),           
+          .s_axis_a_tdata       (b_cg_clr_mtb_f16[c][g][fma1_index_clr][1]),
+          .m_axis_result_tdata  (b_top_f32_cg    [c][g]  )
+        );
+        mod_float_upsize upsizer_bot (
+          .s_axis_a_tvalid      (1),           
+          .s_axis_a_tdata       (b_cg_clr_mtb_f16[c][g][fma1_index_clr][2]),
+          .m_axis_result_tdata  (b_bot_f32_cg    [c][g]  )
+        );
 
         /*
           DELAY CONFIG FOR REGISTER
@@ -596,7 +618,13 @@ module lrelu_engine (
             end
           end
 
-          assign m_data_fma_1_cgu_f16[c][g][u] = float_downsize #(BITS_EXP_FMA_1,BITS_FRA_FMA_1,BITS_EXP_FMA_2,BITS_FRA_FMA_2) :: downsize(m_data_fma_1_cgu[c][g][u]);
+          // assign m_data_fma_1_cgu_f16[c][g][u] = float_downsize #(BITS_EXP_FMA_1,BITS_FRA_FMA_1,BITS_EXP_FMA_2,BITS_FRA_FMA_2) :: downsize(m_data_fma_1_cgu[c][g][u]);
+
+          mod_float_downsize downsize_fma1 (
+            .s_axis_a_tvalid      (1 ),            
+            .s_axis_a_tdata       (m_data_fma_1_cgu    [c][g][u]  ),              
+            .m_axis_result_tdata  (m_data_fma_1_cgu_f16[c][g][u]  )   
+          );
 
           /*
             LRELU
