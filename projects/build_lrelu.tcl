@@ -2,9 +2,9 @@ set PROJ_NAME lrelu
 set PROJ_FOLDER lrelu
 set SOURCE_FOLDER ../src_hdl
 
-set UNITS   4
-set GROUPS  2
-set COPIES  2
+set UNITS   2
+set GROUPS  1
+set COPIES  1
 set MEMBERS 4
 
 set WORD_WIDTH       8
@@ -27,6 +27,8 @@ set LATENCY_FMA_1         16
 set LATENCY_FMA_2         15
 set LATENCY_FIXED_2_FLOAT  6
 set LATENCY_BRAM           2
+set LATENCY_FLOAT_UPSIZE   2
+set LATENCY_FLOAT_DOWNSIZE 3
 
 set BITS_EXP_CONFIG 5
 set BITS_FRA_CONFIG 10
@@ -325,9 +327,9 @@ set BITS_FRA_IN [expr $BITS_FRA_FMA_1 + 1]
 set BITS_EXP_IN $BITS_EXP_FMA_1
 set BITS_FRA_OUT [expr $BITS_FRA_FMA_2 + 1]
 set BITS_EXP_OUT $BITS_EXP_FMA_2
-set LATENCY 0
+set LATENCY $LATENCY_FLOAT_DOWNSIZE
 create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME
-set_property -dict [list CONFIG.Operation_Type {Float_to_float} CONFIG.A_Precision_Type {Custom} CONFIG.Result_Precision_Type {Custom} CONFIG.C_Result_Exponent_Width $BITS_EXP_OUT CONFIG.C_Result_Fraction_Width $BITS_FRA_OUT CONFIG.Flow_Control {NonBlocking} CONFIG.Maximum_Latency {false} CONFIG.C_Latency $LATENCY CONFIG.C_A_Exponent_Width $BITS_EXP_IN CONFIG.C_A_Fraction_Width $BITS_FRA_IN CONFIG.C_Mult_Usage {No_Usage} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Rate {1}] [get_ips $IP_NAME]
+set_property -dict [list CONFIG.Operation_Type {Float_to_float} CONFIG.A_Precision_Type {Custom} CONFIG.Result_Precision_Type {Custom} CONFIG.C_Result_Exponent_Width $BITS_EXP_OUT CONFIG.C_Result_Fraction_Width $BITS_FRA_OUT CONFIG.Flow_Control {NonBlocking} CONFIG.Maximum_Latency {false} CONFIG.C_Latency $LATENCY CONFIG.C_A_Exponent_Width $BITS_EXP_IN CONFIG.C_A_Fraction_Width $BITS_FRA_IN CONFIG.C_Mult_Usage {No_Usage} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Rate {1} CONFIG.Has_ACLKEN {true}] [get_ips $IP_NAME]
 
 set IP_NAME "mod_float_upsize"
 lappend IP_NAMES $IP_NAME
@@ -335,9 +337,9 @@ set BITS_FRA_IN [expr $BITS_FRA_FMA_2 + 1]
 set BITS_EXP_IN $BITS_EXP_FMA_2
 set BITS_FRA_OUT [expr $BITS_FRA_FMA_1 + 1]
 set BITS_EXP_OUT $BITS_EXP_FMA_1
-set LATENCY 0
+set LATENCY $LATENCY_FLOAT_UPSIZE
 create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME
-set_property -dict [list CONFIG.Operation_Type {Float_to_float} CONFIG.A_Precision_Type {Custom} CONFIG.Result_Precision_Type {Custom} CONFIG.C_Result_Exponent_Width $BITS_EXP_OUT CONFIG.C_Result_Fraction_Width $BITS_FRA_OUT CONFIG.Flow_Control {NonBlocking} CONFIG.Maximum_Latency {false} CONFIG.C_Latency $LATENCY CONFIG.C_A_Exponent_Width $BITS_EXP_IN CONFIG.C_A_Fraction_Width $BITS_FRA_IN CONFIG.C_Mult_Usage {No_Usage} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Rate {1}] [get_ips $IP_NAME]
+set_property -dict [list CONFIG.Operation_Type {Float_to_float} CONFIG.A_Precision_Type {Custom} CONFIG.Result_Precision_Type {Custom} CONFIG.C_Result_Exponent_Width $BITS_EXP_OUT CONFIG.C_Result_Fraction_Width $BITS_FRA_OUT CONFIG.Flow_Control {NonBlocking} CONFIG.Maximum_Latency {false} CONFIG.C_Latency $LATENCY CONFIG.C_A_Exponent_Width $BITS_EXP_IN CONFIG.C_A_Fraction_Width $BITS_FRA_IN CONFIG.C_Mult_Usage {No_Usage} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Rate {1} CONFIG.Has_ACLKEN {true}] [get_ips $IP_NAME]
 
 # Generate IP output products
 

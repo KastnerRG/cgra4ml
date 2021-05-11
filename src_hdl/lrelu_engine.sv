@@ -270,7 +270,7 @@ module lrelu_engine (
   */
 
   n_delay #(
-    .N          (LATENCY_FIXED_2_FLOAT),
+    .N          (LATENCY_FIXED_2_FLOAT - 2),
     .WORD_WIDTH (4)
   ) W_SEL_BRAM_1 (
     .clk      (clk),
@@ -281,7 +281,7 @@ module lrelu_engine (
   );
   logic w_sel_bram_2;
   n_delay #(
-    .N          (LATENCY_FMA_1),
+    .N          (LATENCY_FMA_1 + 3 + 2),
     .WORD_WIDTH (1)
   ) W_SEL_BRAM_2 (
     .clk      (clk),
@@ -291,9 +291,34 @@ module lrelu_engine (
     .data_out (w_sel_bram_2   )
   );
 
+  logic valid_1;
+  n_delay #(
+    .N          (LATENCY_FIXED_2_FLOAT - 2),
+    .WORD_WIDTH (1)
+  ) VALID_1 (
+    .clk      (clk),
+    .resetn   (resetn),
+    .clken    (clken),
+    .data_in  (s_valid),
+    .data_out (valid_1)
+  );
+
+  logic [TUSER_WIDTH_LRELU_IN-1:0] user_1;
+  n_delay #(
+    .N          (LATENCY_FIXED_2_FLOAT - 2),
+    .WORD_WIDTH (TUSER_WIDTH_LRELU_IN)
+  ) USER_1 (
+    .clk      (clk),
+    .resetn   (resetn),
+    .clken    (clken),
+    .data_in  (s_user),
+    .data_out (user_1)
+  );
+
+
   logic valid_config_1;
   n_delay #(
-    .N          (LATENCY_FIXED_2_FLOAT),
+    .N          (LATENCY_FIXED_2_FLOAT - 2),
     .WORD_WIDTH (1)
   ) CONFIG_VALID_1 (
     .clk      (clk),
@@ -304,7 +329,7 @@ module lrelu_engine (
   );
   logic valid_config_2;
   n_delay #(
-    .N          (LATENCY_FMA_1),
+    .N          (LATENCY_FMA_1 + 3 + 2),
     .WORD_WIDTH (1)
   ) CONFIG_VALID_2 (
     .clk      (clk),
@@ -316,7 +341,7 @@ module lrelu_engine (
 
   logic resetn_config_1;
   n_delay #(
-    .N          (LATENCY_FIXED_2_FLOAT),
+    .N          (LATENCY_FIXED_2_FLOAT - 2),
     .WORD_WIDTH (1)
   ) CONFIG_RESETN_1 (
     .clk      (clk),
@@ -327,7 +352,7 @@ module lrelu_engine (
   );
   logic resetn_config_2;
   n_delay #(
-    .N          (LATENCY_FMA_1),
+    .N          (LATENCY_FMA_1 + 3 + 2),
     .WORD_WIDTH (1)
   ) CONFIG_RESETN_2 (
     .clk      (clk),
@@ -339,7 +364,7 @@ module lrelu_engine (
 
   logic is_1x1_config_1;
   n_delay #(
-    .N          (LATENCY_FIXED_2_FLOAT),
+    .N          (LATENCY_FIXED_2_FLOAT - 2),
     .WORD_WIDTH (1)
   ) CONFIG_1x1_1 (
     .clk      (clk),
@@ -353,13 +378,13 @@ module lrelu_engine (
     INTERMEDIATE ACTIVE WIRES
   */
 
-  logic m_valid_float32, m_valid_fma_1, m_valid_fma_2;
+  logic m_valid_float32, m_valid_fma_1, downsize_fma1_tvalid, m_valid_fma_2;
   logic [TUSER_WIDTH_LRELU_IN      -1:0] m_user_float32;
-  logic [TUSER_WIDTH_LRELU_FMA_1_IN-1:0] s_user_fma_1, m_user_fma_1;
+  logic [TUSER_WIDTH_LRELU_FMA_1_IN-1:0] s_user_fma_1, m_user_fma_1, user_2;
   logic [TUSER_WIDTH_MAXPOOL_IN    -1:0] s_user_fma_2, m_user_fma_2;
 
   assign s_user_fma_1 = TUSER_WIDTH_LRELU_FMA_1_IN'(m_user_float32);
-  assign s_user_fma_2 = TUSER_WIDTH_MAXPOOL_IN'(m_user_fma_1);
+  assign s_user_fma_2 = TUSER_WIDTH_MAXPOOL_IN'(user_2);
   
   logic [BITS_BRAM_R_DEPTH_1X1-1:0] b_r_addr_max  ; 
   logic [BITS_BRAM_W_DEPTH_1X1-1:0] b_w_addr_max  ;
@@ -412,13 +437,13 @@ module lrelu_engine (
   logic [1:0] fma1_index_clr;
   logic ready_mtb [2:0];
   always_comb begin
-    if (m_user_float32[I_IS_1X1]) begin
+    if (user_1[I_IS_1X1]) begin
       fma1_index_clr = 2'd0;
     end
     else begin
-      if      (m_user_float32[I_IS_LEFT_COL   ])  fma1_index_clr = 2'd1;
-      else if (m_user_float32[I_IS_RIGHT_COL  ])  fma1_index_clr = 2'd2;
-      else                                        fma1_index_clr = 2'd0;
+      if      (user_1[I_IS_LEFT_COL   ])  fma1_index_clr = 2'd1;
+      else if (user_1[I_IS_RIGHT_COL  ])  fma1_index_clr = 2'd2;
+      else                                fma1_index_clr = 2'd0;
     end
   end
 
@@ -428,7 +453,7 @@ module lrelu_engine (
       for(genvar g=0; g<GROUPS; g=g+1) begin: g_gen
 
         n_delay #(
-          .N          (LATENCY_FIXED_2_FLOAT),
+          .N          (LATENCY_FIXED_2_FLOAT - 2),
           .WORD_WIDTH (WORD_WIDTH_CONFIG * MEMBERS)
         ) CONFIG_DATA_FLAT_1 (
           .clk      (clk),
@@ -441,13 +466,6 @@ module lrelu_engine (
         /*
           BRAM A
         */
-        // assign a_val_f32_cg [c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(a_val_cg [c][g]);
-
-        mod_float_upsize upsizer_a (
-          .s_axis_a_tvalid      (1),           
-          .s_axis_a_tdata       (a_val_cg     [c][g]),
-          .m_axis_result_tdata  (a_val_f32_cg [c][g])
-        );
 
         always_valid_cyclic_bram #(
           .W_DEPTH (BRAM_W_DEPTH_1X1), 
@@ -462,10 +480,19 @@ module lrelu_engine (
           .s_valid_ready(valid_config_1 && (w_sel_bram_1 == 2)),
           .s_data       (config_flat_1_cg [c][g]),
           .m_data       (a_val_cg [c][g]),
-          .m_ready      (m_valid_float32),
+          .m_ready      (valid_1),
           .r_addr_min   (BITS_BRAM_R_DEPTH_1X1'('b0)),
           .r_addr_max   (b_r_addr_max  ),
           .w_addr_max   (b_w_addr_max  )
+        );
+
+        // assign a_val_f32_cg [c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(a_val_cg [c][g]);
+        mod_float_upsize upsizer_a (
+          .aclk                 (clk),
+          .aclken               (clken),
+          .s_axis_a_tvalid      (1),           
+          .s_axis_a_tdata       (a_val_cg     [c][g]),
+          .m_axis_result_tdata  (a_val_f32_cg [c][g])
         );
 
         /*
@@ -474,12 +501,12 @@ module lrelu_engine (
         */
         for (genvar mtb=0; mtb < 3; mtb ++) begin: mtb_gen
 
-          assign ready_mtb[mtb] = (mtb==0) || ~m_user_float32[I_IS_1X1] && (   (mtb==1 && m_user_float32[I_IS_TOP_BLOCK]) 
-                                                                           || (mtb==2 && m_user_float32[I_IS_BOTTOM_BLOCK]));
+          assign ready_mtb[mtb] = (mtb==0) || ~user_1[I_IS_1X1] && (   (mtb==1 && user_1[I_IS_TOP_BLOCK]) 
+                                                                    || (mtb==2 && user_1[I_IS_BOTTOM_BLOCK]));
 
           for (genvar clr=0; clr < 3; clr ++) begin: clr_gen
             
-            assign b_ready_cg_clr_mtb[c][g][clr][mtb] = m_valid_float32 && (fma1_index_clr == clr) && ready_mtb[mtb];
+            assign b_ready_cg_clr_mtb[c][g][clr][mtb] = valid_1 && (fma1_index_clr == clr) && ready_mtb[mtb];
 
             if (mtb==0 && clr ==0) begin // Center BRAM
 
@@ -539,16 +566,22 @@ module lrelu_engine (
         // end
 
         mod_float_upsize upsizer_mid (
+          .aclk                 (clk),
+          .aclken               (clken),
           .s_axis_a_tvalid      (1),           
           .s_axis_a_tdata       (b_cg_clr_mtb_f16[c][g][fma1_index_clr][0]),
           .m_axis_result_tdata  (b_mid_f32_cg    [c][g]  )
         );
         mod_float_upsize upsizer_top (
+          .aclk                 (clk),
+          .aclken               (clken),
           .s_axis_a_tvalid      (1),           
           .s_axis_a_tdata       (b_cg_clr_mtb_f16[c][g][fma1_index_clr][1]),
           .m_axis_result_tdata  (b_top_f32_cg    [c][g]  )
         );
         mod_float_upsize upsizer_bot (
+          .aclk                 (clk),
+          .aclken               (clken),
           .s_axis_a_tvalid      (1),           
           .s_axis_a_tdata       (b_cg_clr_mtb_f16[c][g][fma1_index_clr][2]),
           .m_axis_result_tdata  (b_bot_f32_cg    [c][g]  )
@@ -558,7 +591,7 @@ module lrelu_engine (
           DELAY CONFIG FOR REGISTER
         */
         n_delay #(
-          .N          (LATENCY_FMA_1),
+          .N          (LATENCY_FMA_1 + 3 + 2),
           .WORD_WIDTH (BRAM_R_WIDTH)
         ) CONFIG_DATA_FLAT_2 (
           .clk      (clk),
@@ -618,19 +651,12 @@ module lrelu_engine (
             end
           end
 
-          // assign m_data_fma_1_cgu_f16[c][g][u] = float_downsize #(BITS_EXP_FMA_1,BITS_FRA_FMA_1,BITS_EXP_FMA_2,BITS_FRA_FMA_2) :: downsize(m_data_fma_1_cgu[c][g][u]);
-
-          mod_float_downsize downsize_fma1 (
-            .s_axis_a_tvalid      (1 ),            
-            .s_axis_a_tdata       (m_data_fma_1_cgu    [c][g][u]  ),              
-            .m_axis_result_tdata  (m_data_fma_1_cgu_f16[c][g][u]  )   
-          );
 
           /*
             LRELU
           */
 
-          assign is_lrelu_cgu[c][g][u] = m_user_fma_1[I_IS_LRELU      ] && m_data_fma_1_cgu[c][g][u][BITS_FMA_1-1];
+          assign is_lrelu_cgu[c][g][u] = user_2[I_IS_LRELU      ] && m_data_fma_1_cgu_f16[c][g][u][BITS_FMA_2-1];
           assign c_val_cgu   [c][g][u] = is_lrelu_cgu[c][g][u] ? LRELU_ALPHA : 16'd15360 ; // 0.1 or 1
 
           if (c==0 && g==0 && u==0) begin
@@ -667,6 +693,28 @@ module lrelu_engine (
               .m_axis_result_tdata  (m_data_fma_1_cgu[c][g][u]),    
               .m_axis_result_tuser  (m_user_fma_1)    
             );
+
+            n_delay #(
+              .N          (3),
+              .WORD_WIDTH (TUSER_WIDTH_LRELU_FMA_1_IN)
+            ) USER_2 (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  (m_user_fma_1),
+              .data_out (user_2)
+            );
+
+            // assign m_data_fma_1_cgu_f16[c][g][u] = float_downsize #(BITS_EXP_FMA_1,BITS_FRA_FMA_1,BITS_EXP_FMA_2,BITS_FRA_FMA_2) :: downsize(m_data_fma_1_cgu[c][g][u]);
+            mod_float_downsize downsize_fma1 (
+              .aclk                 (clk),
+              .aclken               (clken),
+              .s_axis_a_tvalid      (m_valid_fma_1                  ),            
+              .s_axis_a_tdata       (m_data_fma_1_cgu    [c][g][u]  ),              
+              .m_axis_result_tdata  (m_data_fma_1_cgu_f16[c][g][u]  ),
+              .m_axis_result_tvalid (downsize_fma1_tvalid           )
+            );
+
             /*
              FMA Operation:  fma_out = fma_a * fma_b + fma_c
 
@@ -678,7 +726,7 @@ module lrelu_engine (
               .aclk                 (clk),                                  
               .aclken               (clken),                              
               // .aresetn              (resetn),                            
-              .s_axis_a_tvalid      (m_valid_fma_1),            
+              .s_axis_a_tvalid      (downsize_fma1_tvalid),            
               .s_axis_a_tdata       (m_data_fma_1_cgu_f16 [c][g][u]),              
               .s_axis_a_tuser       (s_user_fma_2),              
               .s_axis_b_tvalid      (1'b1),            
@@ -729,6 +777,14 @@ module lrelu_engine (
               .s_axis_c_tdata       (b_val_f32_cgu [c][g][u]),              
               .m_axis_result_tdata  (m_data_fma_1_cgu [c][g][u])
             );
+            // assign m_data_fma_1_cgu_f16[c][g][u] = float_downsize #(BITS_EXP_FMA_1,BITS_FRA_FMA_1,BITS_EXP_FMA_2,BITS_FRA_FMA_2) :: downsize(m_data_fma_1_cgu[c][g][u]);
+            mod_float_downsize downsize_fma1 (
+              .aclk                 (clk),
+              .aclken               (clken),
+              .s_axis_a_tvalid      (m_valid_fma_1                  ),            
+              .s_axis_a_tdata       (m_data_fma_1_cgu    [c][g][u]  ),              
+              .m_axis_result_tdata  (m_data_fma_1_cgu_f16[c][g][u]  )
+            );
             /*
              FMA Operation:  fma_out = fma_a * fma_b + fma_c
 
@@ -740,7 +796,7 @@ module lrelu_engine (
               .aclk                 (clk),                                  
               .aclken               (clken),                              
               // .aresetn              (resetn),                            
-              .s_axis_a_tvalid      (m_valid_fma_1),            
+              .s_axis_a_tvalid      (downsize_fma1_tvalid),            
               .s_axis_a_tdata       (m_data_fma_1_cgu_f16[c][g][u]),              
               .s_axis_b_tvalid      (1'b1),            
               .s_axis_b_tdata       (c_val_cgu [c][g][u]),              
@@ -775,30 +831,30 @@ module lrelu_engine (
   shortreal d_val_cg_sr              [COPIES-1:0][GROUPS-1:0];
   shortreal config_flat_2_cg_sr      [COPIES-1:0][GROUPS-1:0];
 
-// generate
-//   for(genvar c=0; c<COPIES; c=c+1) begin: cs
-//     for(genvar g=0; g<GROUPS; g=g+1) begin: gs
-//       for(genvar u=0; u<UNITS; u=u+1) begin: us
-//         assign m_data_fma_1_cgu_sr [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(m_data_fma_1_cgu_f16[c][g][u]));
-//         assign m_data_fma_2_cgu_sr [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(m_data_fma_2_cgu    [c][g][u]));
-//         assign c_val_cgu_sr        [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(c_val_cgu           [c][g][u]));
-//       end
+generate
+  for(genvar c=0; c<COPIES; c=c+1) begin: cs
+    for(genvar g=0; g<GROUPS; g=g+1) begin: gs
+      for(genvar u=0; u<UNITS; u=u+1) begin: us
+        assign m_data_fma_1_cgu_sr [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(m_data_fma_1_cgu_f16[c][g][u]));
+        assign m_data_fma_2_cgu_sr [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(m_data_fma_2_cgu    [c][g][u]));
+        assign c_val_cgu_sr        [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(c_val_cgu           [c][g][u]));
+      end
 
-//       assign config_s_data_f16_cgv [c][g] = {>>{s_data_config_flat_cg [c][g]}};
-//       assign config_fma1_f16_cgv   [c][g] = {>>{config_flat_1_cg [c][g]}};
+      assign config_s_data_f16_cgv [c][g] = {>>{s_data_config_flat_cg [c][g]}};
+      assign config_fma1_f16_cgv   [c][g] = {>>{config_flat_1_cg [c][g]}};
 
-//       for(genvar v=0; v<VALS_CONFIG; v=v+1) begin: vs
-//         assign config_s_data_cgv_sr[c][g][v] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_s_data_f16_cgv[c][g][v]));
-//         assign config_fma1_cgv_sr  [c][g][v] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_fma1_f16_cgv  [c][g][v]));
-//       end
-//       assign config_flat_2_cg_sr   [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_flat_2_cg  [c][g]));
-//       assign a_val_cg_sr           [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(a_val_cg          [c][g]));
-//       assign d_val_cg_sr           [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(d_val_cg          [c][g]));
+      for(genvar v=0; v<VALS_CONFIG; v=v+1) begin: vs
+        assign config_s_data_cgv_sr[c][g][v] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_s_data_f16_cgv[c][g][v]));
+        assign config_fma1_cgv_sr  [c][g][v] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_fma1_f16_cgv  [c][g][v]));
+      end
+      assign config_flat_2_cg_sr   [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_flat_2_cg  [c][g]));
+      assign a_val_cg_sr           [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(a_val_cg          [c][g]));
+      assign d_val_cg_sr           [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(d_val_cg          [c][g]));
 
-//       for (genvar clr=0; clr<3; clr++)
-//         for (genvar mtb=0; mtb<3; mtb++)
-//           assign b_cg_clr_mtb_sr   [c][g][clr][mtb] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(b_cg_clr_mtb_f16 [c][g][clr][mtb]));
-//     end
-//   end
-// endgenerate
+      for (genvar clr=0; clr<3; clr++)
+        for (genvar mtb=0; mtb<3; mtb++)
+          assign b_cg_clr_mtb_sr   [c][g][clr][mtb] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(b_cg_clr_mtb_f16 [c][g][clr][mtb]));
+    end
+  end
+endgenerate
 endmodule
