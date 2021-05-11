@@ -1,57 +1,5 @@
 `include "params.v"
 
-virtual class float_downsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);
-  static function logic [EXP_OUT+FRA_OUT:0] downsize (input logic [EXP_IN+FRA_IN:0] float_in);
-    /*
-      Downsize
-      * eg: Float32 -> Float16
-          - EXP_IN  : 8
-          - FRA_IN  : 23
-          - EXP_OUT : 5
-          - FRA_OUT : 10
-      * Mantissa is rounded to avoid error
-    */
-    logic sign;
-    logic [EXP_IN -1:0] exp_in;
-    logic [FRA_IN -1:0] fra_in;
-    logic [EXP_OUT-1:0] exp_out;
-    logic [FRA_OUT  :0] fra_out_extra, fra_out_round;
-    logic [FRA_OUT-1:0] fra_out;
-    
-    {sign, exp_in, fra_in} = float_in;
-    exp_out = exp_in - (2**(EXP_IN-1)-2**(EXP_OUT-1));
-    fra_out_extra = fra_in >> (FRA_IN-FRA_OUT-1);
-    // fra_out_round = sign ? fra_out_extra - fra_in[FRA_IN-FRA_OUT]: fra_out_extra + fra_in[FRA_IN-FRA_OUT];
-    // fra_out = fra_out_round >> 1;
-    fra_out = fra_in >> (FRA_IN-FRA_OUT);
-    return {sign, exp_out, fra_out};
-  endfunction
-endclass
-
-virtual class float_upsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);  
-  static function logic [EXP_OUT+FRA_OUT:0] upsize (input logic [EXP_IN+FRA_IN:0] float_in);
-    /*
-      Upsize
-      * eg: Float32 -> Float16
-          - EXP_IN  : 5
-          - FRA_IN  : 10
-          - EXP_OUT : 8
-          - FRA_OUT : 23
-      * No need to round
-    */
-    logic sign;
-    logic [EXP_IN -1:0] exp_in;
-    logic [FRA_IN -1:0] fra_in;
-    logic [EXP_OUT-1:0] exp_out;
-    logic [FRA_OUT-1:0] fra_out;
-    
-    {sign, exp_in, fra_in} = float_in;
-    exp_out = exp_in + (2**(EXP_OUT-1)-2**(EXP_IN-1));
-    fra_out = fra_in << (FRA_OUT-FRA_IN);
-    return {sign, exp_out, fra_out};
-  endfunction
-endclass
-
 module lrelu_engine (
   clk     ,
   clken   ,
@@ -268,111 +216,15 @@ module lrelu_engine (
   /*
     CONTROL DELAYS
   */
-
-  n_delay #(
-    .N          (LATENCY_FIXED_2_FLOAT - 2),
-    .WORD_WIDTH (4)
-  ) W_SEL_BRAM_1 (
-    .clk      (clk),
-    .resetn   (resetn),
-    .clken    (clken),
-    .data_in  (w_sel_bram),
-    .data_out (w_sel_bram_1)
-  );
   logic w_sel_bram_2;
-  n_delay #(
-    .N          (LATENCY_FMA_1 + 3 + 2),
-    .WORD_WIDTH (1)
-  ) W_SEL_BRAM_2 (
-    .clk      (clk),
-    .resetn   (resetn),
-    .clken    (clken),
-    .data_in  (w_sel_bram_1==1),
-    .data_out (w_sel_bram_2   )
-  );
-
   logic valid_1;
-  n_delay #(
-    .N          (LATENCY_FIXED_2_FLOAT - 2),
-    .WORD_WIDTH (1)
-  ) VALID_1 (
-    .clk      (clk),
-    .resetn   (resetn),
-    .clken    (clken),
-    .data_in  (s_valid),
-    .data_out (valid_1)
-  );
-
   logic [TUSER_WIDTH_LRELU_IN-1:0] user_1;
-  n_delay #(
-    .N          (LATENCY_FIXED_2_FLOAT - 2),
-    .WORD_WIDTH (TUSER_WIDTH_LRELU_IN)
-  ) USER_1 (
-    .clk      (clk),
-    .resetn   (resetn),
-    .clken    (clken),
-    .data_in  (s_user),
-    .data_out (user_1)
-  );
-
-
   logic valid_config_1;
-  n_delay #(
-    .N          (LATENCY_FIXED_2_FLOAT - 2),
-    .WORD_WIDTH (1)
-  ) CONFIG_VALID_1 (
-    .clk      (clk),
-    .resetn   (resetn),
-    .clken    (clken),
-    .data_in  (s_valid_config),
-    .data_out (valid_config_1)
-  );
   logic valid_config_2;
-  n_delay #(
-    .N          (LATENCY_FMA_1 + 3 + 2),
-    .WORD_WIDTH (1)
-  ) CONFIG_VALID_2 (
-    .clk      (clk),
-    .resetn   (resetn),
-    .clken    (clken),
-    .data_in  (valid_config_1),
-    .data_out (valid_config_2)
-  );
-
   logic resetn_config_1;
-  n_delay #(
-    .N          (LATENCY_FIXED_2_FLOAT - 2),
-    .WORD_WIDTH (1)
-  ) CONFIG_RESETN_1 (
-    .clk      (clk),
-    .resetn   (resetn),
-    .clken    (clken),
-    .data_in  (resetn_config),
-    .data_out (resetn_config_1)
-  );
   logic resetn_config_2;
-  n_delay #(
-    .N          (LATENCY_FMA_1 + 3 + 2),
-    .WORD_WIDTH (1)
-  ) CONFIG_RESETN_2 (
-    .clk      (clk),
-    .resetn   (resetn),
-    .clken    (clken),
-    .data_in  (resetn_config_1),
-    .data_out (resetn_config_2)
-  );
-
   logic is_1x1_config_1;
-  n_delay #(
-    .N          (LATENCY_FIXED_2_FLOAT - 2),
-    .WORD_WIDTH (1)
-  ) CONFIG_1x1_1 (
-    .clk      (clk),
-    .resetn   (resetn),
-    .clken    (clken),
-    .data_in  (is_1x1_config),
-    .data_out (is_1x1_config_1)
-  );
+
 
   /*
     INTERMEDIATE ACTIVE WIRES
@@ -390,6 +242,9 @@ module lrelu_engine (
   logic [BITS_BRAM_W_DEPTH_1X1-1:0] b_w_addr_max  ;
   assign b_w_addr_max   = is_1x1_config_1          ? BRAM_W_DEPTH_1X1-1 : BRAM_W_DEPTH_3X3-1;
   assign b_r_addr_max   = m_user_float32[I_IS_1X1] ? BRAM_R_DEPTH_1X1-1 : BRAM_R_DEPTH_3X3-1;
+  
+  logic [1:0] fma1_index_clr;
+  logic ready_mtb [2:0];
 
   /*
     Declare multidimensional wires
@@ -428,199 +283,248 @@ module lrelu_engine (
   output logic [DEBUG_CONFIG_WIDTH_LRELU-3-1:0] debug_config;
   assign debug_config = {w_sel_bram + d_val_cg[0][0]};
 
-  /*
-    CLR mux for B-BRAM
-
-    - Only one of C,L,R can be true at a time
-  */
-
-  logic [1:0] fma1_index_clr;
-  logic ready_mtb [2:0];
-  always_comb begin
-    if (user_1[I_IS_1X1]) begin
-      fma1_index_clr = 2'd0;
-    end
-    else begin
-      if      (user_1[I_IS_LEFT_COL   ])  fma1_index_clr = 2'd1;
-      else if (user_1[I_IS_RIGHT_COL  ])  fma1_index_clr = 2'd2;
-      else                                fma1_index_clr = 2'd0;
-    end
-  end
-
-
   generate
     for(genvar c=0; c<COPIES; c=c+1) begin: c_gen
       for(genvar g=0; g<GROUPS; g=g+1) begin: g_gen
-
-        n_delay #(
-          .N          (LATENCY_FIXED_2_FLOAT - 2),
-          .WORD_WIDTH (WORD_WIDTH_CONFIG * MEMBERS)
-        ) CONFIG_DATA_FLAT_1 (
-          .clk      (clk),
-          .resetn   (resetn),
-          .clken    (clken),
-          .data_in  (s_data_config_flat_cg [c][g]),
-          .data_out (config_flat_1_cg [c][g])
-        );
-
-        /*
-          BRAM A
-        */
-
-        always_valid_cyclic_bram #(
-          .W_DEPTH (BRAM_W_DEPTH_1X1), 
-          .W_WIDTH (BRAM_W_WIDTH),
-          .R_WIDTH (BRAM_R_WIDTH),
-          .LATENCY (LATENCY_BRAM),
-          .IP_TYPE (0)
-        ) BRAM_A (
-          .clk          (clk),
-          .clken        (clken),
-          .resetn       (resetn_config_1),
-          .s_valid_ready(valid_config_1 && (w_sel_bram_1 == 2)),
-          .s_data       (config_flat_1_cg [c][g]),
-          .m_data       (a_val_cg [c][g]),
-          .m_ready      (valid_1),
-          .r_addr_min   (BITS_BRAM_R_DEPTH_1X1'('b0)),
-          .r_addr_max   (b_r_addr_max  ),
-          .w_addr_max   (b_w_addr_max  )
-        );
-
-        // assign a_val_f32_cg [c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(a_val_cg [c][g]);
-        mod_float_upsize upsizer_a (
-          .aclk                 (clk),
-          .aclken               (clken),
-          .s_axis_a_tvalid      (1),           
-          .s_axis_a_tdata       (a_val_cg     [c][g]),
-          .m_axis_result_tdata  (a_val_f32_cg [c][g])
-        );
-
-        /*
-          BRAM B
-          - Only the nessasary BRAMs are ready (using ready)
-        */
-        for (genvar mtb=0; mtb < 3; mtb ++) begin: mtb_gen
-
-          assign ready_mtb[mtb] = (mtb==0) || ~user_1[I_IS_1X1] && (   (mtb==1 && user_1[I_IS_TOP_BLOCK]) 
-                                                                    || (mtb==2 && user_1[I_IS_BOTTOM_BLOCK]));
-
-          for (genvar clr=0; clr < 3; clr ++) begin: clr_gen
-            
-            assign b_ready_cg_clr_mtb[c][g][clr][mtb] = valid_1 && (fma1_index_clr == clr) && ready_mtb[mtb];
-
-            if (mtb==0 && clr ==0) begin // Center BRAM
-
-              always_valid_cyclic_bram #(
-                .W_DEPTH (BRAM_W_DEPTH_1X1), 
-                .W_WIDTH (BRAM_W_WIDTH),
-                .R_WIDTH (BRAM_R_WIDTH),
-                .LATENCY (LATENCY_BRAM),
-                .IP_TYPE (0)
-              ) BRAM_B (
-                .clk          (clk),
-                .clken        (clken),
-                .resetn       (resetn_config_1),
-                .s_valid_ready(valid_config_1 && (w_sel_bram_1 == 3)),
-                .s_data       (config_flat_1_cg [c][g]),
-                .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
-                .m_ready      (b_ready_cg_clr_mtb[c][g][clr][mtb]),
-                .r_addr_min   (BITS_BRAM_R_DEPTH_1X1'('b0)),
-                .r_addr_max   (b_r_addr_max  ),
-                .w_addr_max   (b_w_addr_max  )
-              );
-            end
-            else begin // Edge BRAM
-              always_valid_cyclic_bram #(
-                .W_DEPTH (BRAM_W_DEPTH_3X3), 
-                .W_WIDTH (BRAM_W_WIDTH),
-                .R_WIDTH (BRAM_R_WIDTH),
-                .LATENCY (LATENCY_BRAM),
-                .IP_TYPE (1)
-              ) BRAM_B (
-                .clk          (clk),
-                .clken        (clken),
-                .resetn       (resetn_config_1),
-                .s_valid_ready(valid_config_1 && (w_sel_bram_1 == 3 + clr*3 + mtb)),
-                .s_data       (config_flat_1_cg [c][g]),
-                .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
-                .m_ready      (b_ready_cg_clr_mtb[c][g][clr][mtb]),
-                .r_addr_min   (BITS_BRAM_R_DEPTH_3X3'('b0)),
-                .r_addr_max   (BITS_BRAM_R_DEPTH_3X3'(BRAM_R_DEPTH_3X3-1)),
-                .w_addr_max   (BITS_BRAM_W_DEPTH_3X3'(BRAM_W_DEPTH_3X3-1))
-              );
-            end
-          end
-        end
-
-        /*
-          MTB : Middle, Top and Bottom
-
-          - All three can be needed at once (if there is only one block)
-          - Hence, convert to f32 and keep them seperately
-        */
-
-        // always_comb begin
-        //   b_mid_f32_cg[c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(b_cg_clr_mtb_f16[c][g][fma1_index_clr][0]);
-        //   b_top_f32_cg[c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(b_cg_clr_mtb_f16[c][g][fma1_index_clr][1]);
-        //   b_bot_f32_cg[c][g] = float_upsize #(BITS_EXP_CONFIG, BITS_FRA_CONFIG, BITS_EXP_FMA_1, BITS_FRA_FMA_1) :: upsize(b_cg_clr_mtb_f16[c][g][fma1_index_clr][2]);
-        // end
-
-        mod_float_upsize upsizer_mid (
-          .aclk                 (clk),
-          .aclken               (clken),
-          .s_axis_a_tvalid      (1),           
-          .s_axis_a_tdata       (b_cg_clr_mtb_f16[c][g][fma1_index_clr][0]),
-          .m_axis_result_tdata  (b_mid_f32_cg    [c][g]  )
-        );
-        mod_float_upsize upsizer_top (
-          .aclk                 (clk),
-          .aclken               (clken),
-          .s_axis_a_tvalid      (1),           
-          .s_axis_a_tdata       (b_cg_clr_mtb_f16[c][g][fma1_index_clr][1]),
-          .m_axis_result_tdata  (b_top_f32_cg    [c][g]  )
-        );
-        mod_float_upsize upsizer_bot (
-          .aclk                 (clk),
-          .aclken               (clken),
-          .s_axis_a_tvalid      (1),           
-          .s_axis_a_tdata       (b_cg_clr_mtb_f16[c][g][fma1_index_clr][2]),
-          .m_axis_result_tdata  (b_bot_f32_cg    [c][g]  )
-        );
-
-        /*
-          DELAY CONFIG FOR REGISTER
-        */
-        n_delay #(
-          .N          (LATENCY_FMA_1 + 3 + 2),
-          .WORD_WIDTH (BRAM_R_WIDTH)
-        ) CONFIG_DATA_FLAT_2 (
-          .clk      (clk),
-          .resetn   (resetn),
-          .clken    (clken),
-          .data_in  (16'(config_flat_1_cg [c][g])),
-          .data_out (config_flat_2_cg [c][g])
-        );
-        /*
-          D Register
-        */
-        register #(
-          .WORD_WIDTH   (BRAM_R_WIDTH), 
-          .RESET_VALUE  (0)
-        ) REG_D (
-          .clock        (clk),
-          .clock_enable (clken && valid_config_2 && (w_sel_bram_2==1)),
-          .resetn       (resetn_config_2),
-          .data_in      (config_flat_2_cg [c][g]),
-          .data_out     (d_val_cg [c][g])
-        );
-
-        /*
-          UNITS
-        */
-
         for (genvar u=0; u < UNITS; u++) begin:u_gen
 
-          assign s_data_fix2float_cgu[c][g][u] = WIDTH_FIXED_2_FLOAT_S_DATA'(signed'(s_data_cgu[c][g][u]));
+        assign s_data_fix2float_cgu[c][g][u] = WIDTH_FIXED_2_FLOAT_S_DATA'(signed'(s_data_cgu[c][g][u]));
+
+          if (c==0 && g==0 && u==0)
+            fixed_to_float_active FIX2FLOAT (
+              .aclk                 (clk  ),                                  
+              .aclken               (clken),                              
+              // .aresetn              (resetn ),                           
+              .s_axis_a_tvalid      (s_valid),            
+              .s_axis_a_tdata       (s_data_fix2float_cgu[c][g][u]),              
+              .s_axis_a_tuser       (s_user ),              
+              .m_axis_result_tvalid (m_valid_float32),  
+              .m_axis_result_tdata  (m_data_float32_cgu[c][g][u]),    
+              .m_axis_result_tuser  (m_user_float32)    
+            );
+          else
+            fixed_to_float        FIX2FLOAT (
+              .aclk                 (clk),                                  
+              .aclken               (clken),                              
+              // .aresetn              (resetn),                           
+              .s_axis_a_tvalid      (s_valid),            
+              .s_axis_a_tdata       (s_data_fix2float_cgu[c][g][u]), 
+              .m_axis_result_tdata  (m_data_float32_cgu[c][g][u])  
+            );
+
+          if (c==0 && g==0 && u==0) begin
+            n_delay #(
+              .N          (LATENCY_FIXED_2_FLOAT - 2),
+              .WORD_WIDTH (1)
+            ) VALID_1 (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  (s_valid),
+              .data_out (valid_1)
+            );
+            n_delay #(
+              .N          (LATENCY_FIXED_2_FLOAT - 2),
+              .WORD_WIDTH (TUSER_WIDTH_LRELU_IN)
+            ) USER_1 (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  (s_user),
+              .data_out (user_1)
+            );
+          end
+          /*
+            Delayed config
+          */
+          if (c==0 && g==0 && u==0) begin
+            n_delay #(
+              .N          (LATENCY_FIXED_2_FLOAT - 2),
+              .WORD_WIDTH (WORD_WIDTH_CONFIG * MEMBERS)
+            ) CONFIG_DATA_FLAT_1 (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  (s_data_config_flat_cg [c][g]),
+              .data_out (config_flat_1_cg [c][g])
+            );
+            n_delay #(
+              .N          (LATENCY_FIXED_2_FLOAT - 2),
+              .WORD_WIDTH (4)
+            ) W_SEL_BRAM_1 (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  (w_sel_bram),
+              .data_out (w_sel_bram_1)
+            );
+            n_delay #(
+              .N          (LATENCY_FIXED_2_FLOAT - 2),
+              .WORD_WIDTH (1)
+            ) CONFIG_VALID_1 (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  (s_valid_config),
+              .data_out (valid_config_1)
+            );
+            n_delay #(
+              .N          (LATENCY_FIXED_2_FLOAT - 2),
+              .WORD_WIDTH (1)
+            ) CONFIG_RESETN_1 (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  (resetn_config),
+              .data_out (resetn_config_1)
+            );
+            n_delay #(
+              .N          (LATENCY_FIXED_2_FLOAT - 2),
+              .WORD_WIDTH (1)
+            ) CONFIG_1x1_1 (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  (is_1x1_config),
+              .data_out (is_1x1_config_1)
+            );
+          end
+
+          /*
+            BRAM A
+          */
+          if (u == 0)
+            always_valid_cyclic_bram #(
+              .W_DEPTH (BRAM_W_DEPTH_1X1), 
+              .W_WIDTH (BRAM_W_WIDTH),
+              .R_WIDTH (BRAM_R_WIDTH),
+              .LATENCY (LATENCY_BRAM),
+              .IP_TYPE (0)
+            ) BRAM_A (
+              .clk          (clk),
+              .clken        (clken),
+              .resetn       (resetn_config_1),
+              .s_valid_ready(valid_config_1 && (w_sel_bram_1 == 2)),
+              .s_data       (config_flat_1_cg [c][g]),
+              .m_data       (a_val_cg [c][g]),
+              .m_ready      (valid_1),
+              .r_addr_min   (BITS_BRAM_R_DEPTH_1X1'('b0)),
+              .r_addr_max   (b_r_addr_max  ),
+              .w_addr_max   (b_w_addr_max  )
+            );
+          if (u == 0)
+            mod_float_upsize upsizer_a (
+              .aclk                 (clk),
+              .aclken               (clken),
+              .s_axis_a_tvalid      (1),           
+              .s_axis_a_tdata       (a_val_cg     [c][g]),
+              .m_axis_result_tdata  (a_val_f32_cg [c][g])
+            );
+
+          /*
+            CLR mux for B-BRAM
+            - Only one of C,L,R can be true at a time
+          */
+          
+          if (c==0 && g==0 && u==0)
+            always_comb begin
+              if (user_1[I_IS_1X1]) begin
+                fma1_index_clr = 2'd0;
+              end
+              else begin
+                if      (user_1[I_IS_LEFT_COL   ])  fma1_index_clr = 2'd1;
+                else if (user_1[I_IS_RIGHT_COL  ])  fma1_index_clr = 2'd2;
+                else                                fma1_index_clr = 2'd0;
+              end
+            end
+
+          /*
+            BRAM B
+            - Only the nessasary BRAMs are ready (using ready)
+          */
+          if (u == 0)
+            for (genvar mtb=0; mtb < 3; mtb ++) begin: mtb_gen
+
+              assign ready_mtb[mtb] = (mtb==0) || ~user_1[I_IS_1X1] && (   (mtb==1 && user_1[I_IS_TOP_BLOCK]) 
+                                                                        || (mtb==2 && user_1[I_IS_BOTTOM_BLOCK]));
+
+              for (genvar clr=0; clr < 3; clr ++) begin: clr_gen
+                
+                assign b_ready_cg_clr_mtb[c][g][clr][mtb] = valid_1 && (fma1_index_clr == clr) && ready_mtb[mtb];
+
+                if (mtb==0 && clr ==0) begin // Center BRAM
+
+                  always_valid_cyclic_bram #(
+                    .W_DEPTH (BRAM_W_DEPTH_1X1), 
+                    .W_WIDTH (BRAM_W_WIDTH),
+                    .R_WIDTH (BRAM_R_WIDTH),
+                    .LATENCY (LATENCY_BRAM),
+                    .IP_TYPE (0)
+                  ) BRAM_B (
+                    .clk          (clk),
+                    .clken        (clken),
+                    .resetn       (resetn_config_1),
+                    .s_valid_ready(valid_config_1 && (w_sel_bram_1 == 3)),
+                    .s_data       (config_flat_1_cg [c][g]),
+                    .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
+                    .m_ready      (b_ready_cg_clr_mtb[c][g][clr][mtb]),
+                    .r_addr_min   (BITS_BRAM_R_DEPTH_1X1'('b0)),
+                    .r_addr_max   (b_r_addr_max  ),
+                    .w_addr_max   (b_w_addr_max  )
+                  );
+                end
+                else begin // Edge BRAM
+                  always_valid_cyclic_bram #(
+                    .W_DEPTH (BRAM_W_DEPTH_3X3), 
+                    .W_WIDTH (BRAM_W_WIDTH),
+                    .R_WIDTH (BRAM_R_WIDTH),
+                    .LATENCY (LATENCY_BRAM),
+                    .IP_TYPE (1)
+                  ) BRAM_B (
+                    .clk          (clk),
+                    .clken        (clken),
+                    .resetn       (resetn_config_1),
+                    .s_valid_ready(valid_config_1 && (w_sel_bram_1 == 3 + clr*3 + mtb)),
+                    .s_data       (config_flat_1_cg [c][g]),
+                    .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
+                    .m_ready      (b_ready_cg_clr_mtb[c][g][clr][mtb]),
+                    .r_addr_min   (BITS_BRAM_R_DEPTH_3X3'('b0)),
+                    .r_addr_max   (BITS_BRAM_R_DEPTH_3X3'(BRAM_R_DEPTH_3X3-1)),
+                    .w_addr_max   (BITS_BRAM_W_DEPTH_3X3'(BRAM_W_DEPTH_3X3-1))
+                  );
+                end
+              end
+            end
+
+            /*
+              MTB : Middle, Top and Bottom
+
+              - All three can be needed at once (if there is only one block)
+              - Hence, convert to f32 and keep them seperately
+            */
+          if (u == 0) begin
+            mod_float_upsize upsizer_mid (
+              .aclk                 (clk),
+              .aclken               (clken),
+              .s_axis_a_tvalid      (1),           
+              .s_axis_a_tdata       (b_cg_clr_mtb_f16[c][g][fma1_index_clr][0]),
+              .m_axis_result_tdata  (b_mid_f32_cg    [c][g]  )
+            );
+            mod_float_upsize upsizer_top (
+              .aclk                 (clk),
+              .aclken               (clken),
+              .s_axis_a_tvalid      (1),           
+              .s_axis_a_tdata       (b_cg_clr_mtb_f16[c][g][fma1_index_clr][1]),
+              .m_axis_result_tdata  (b_top_f32_cg    [c][g]  )
+            );
+            mod_float_upsize upsizer_bot (
+              .aclk                 (clk),
+              .aclken               (clken),
+              .s_axis_a_tvalid      (1),           
+              .s_axis_a_tdata       (b_cg_clr_mtb_f16[c][g][fma1_index_clr][2]),
+              .m_axis_result_tdata  (b_bot_f32_cg    [c][g]  )
+            );
+          end
 
           /*
             Assign MTB BRAMs to each unit
@@ -651,33 +555,14 @@ module lrelu_engine (
             end
           end
 
-
           /*
-            LRELU
+            FMA Operation:  fma_out = fma_a * fma_b + fma_c
+
+            fma_a = data
+            fma_b = a
+            fma_c = b
           */
-
-          assign is_lrelu_cgu[c][g][u] = user_2[I_IS_LRELU      ] && m_data_fma_1_cgu_f16[c][g][u][BITS_FMA_2-1];
-          assign c_val_cgu   [c][g][u] = is_lrelu_cgu[c][g][u] ? LRELU_ALPHA : 16'd15360 ; // 0.1 or 1
-
-          if (c==0 && g==0 && u==0) begin
-            fixed_to_float_active FIX2FLOAT (
-              .aclk                 (clk  ),                                  
-              .aclken               (clken),                              
-              // .aresetn              (resetn ),                           
-              .s_axis_a_tvalid      (s_valid),            
-              .s_axis_a_tdata       (s_data_fix2float_cgu[c][g][u]),              
-              .s_axis_a_tuser       (s_user ),              
-              .m_axis_result_tvalid (m_valid_float32),  
-              .m_axis_result_tdata  (m_data_float32_cgu[c][g][u]),    
-              .m_axis_result_tuser  (m_user_float32)    
-            );
-            /*
-             FMA Operation:  fma_out = fma_a * fma_b + fma_c
-
-             fma_a = data
-             fma_b = a
-             fma_c = b
-            */
+          if (c==0 && g==0 && u==0)
             fma_1_active FMA_1 (
               .aclk                 (clk),                                  
               .aclken               (clken),                              
@@ -693,7 +578,21 @@ module lrelu_engine (
               .m_axis_result_tdata  (m_data_fma_1_cgu[c][g][u]),    
               .m_axis_result_tuser  (m_user_fma_1)    
             );
+          else
+            fma_1 FMA_1 (
+              .aclk                 (clk),                                  
+              .aclken               (clken),                              
+              // .aresetn              (resetn),                            
+              .s_axis_a_tvalid      (m_valid_float32),            
+              .s_axis_a_tdata       (m_data_float32_cgu [c][g][u]),              
+              .s_axis_b_tvalid      (1'b1),            
+              .s_axis_b_tdata       (a_val_f32_cg  [c][g]),              
+              .s_axis_c_tvalid      (1'b1),           
+              .s_axis_c_tdata       (b_val_f32_cgu [c][g][u]),              
+              .m_axis_result_tdata  (m_data_fma_1_cgu [c][g][u])
+            );
 
+          if (c==0 && g==0 && u==0)
             n_delay #(
               .N          (3),
               .WORD_WIDTH (TUSER_WIDTH_LRELU_FMA_1_IN)
@@ -705,7 +604,76 @@ module lrelu_engine (
               .data_out (user_2)
             );
 
-            // assign m_data_fma_1_cgu_f16[c][g][u] = float_downsize #(BITS_EXP_FMA_1,BITS_FRA_FMA_1,BITS_EXP_FMA_2,BITS_FRA_FMA_2) :: downsize(m_data_fma_1_cgu[c][g][u]);
+          /*
+            DELAY CONFIG FOR REGISTER
+          */
+          if (u == 0)
+            n_delay #(
+              .N          (LATENCY_FMA_1 + 3 + 2),
+              .WORD_WIDTH (BRAM_R_WIDTH)
+            ) CONFIG_DATA_FLAT_2 (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  (16'(config_flat_1_cg [c][g])),
+              .data_out (config_flat_2_cg [c][g])
+            );
+
+          if (c==0 && g==0 && u==0) begin
+            n_delay #(
+              .N          (LATENCY_FMA_1 + 3 + 2),
+              .WORD_WIDTH (1)
+            ) W_SEL_BRAM_2 (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  (w_sel_bram_1==1),
+              .data_out (w_sel_bram_2   )
+            );
+            n_delay #(
+              .N          (LATENCY_FMA_1 + 3 + 2),
+              .WORD_WIDTH (1)
+            ) CONFIG_VALID_2 (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  (valid_config_1),
+              .data_out (valid_config_2)
+            );
+            n_delay #(
+              .N          (LATENCY_FMA_1 + 3 + 2),
+              .WORD_WIDTH (1)
+            ) CONFIG_RESETN_2 (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  (resetn_config_1),
+              .data_out (resetn_config_2)
+            );
+          end
+
+          /*
+            D Register
+          */
+          if (u == 0)
+            register #(
+              .WORD_WIDTH   (BRAM_R_WIDTH), 
+              .RESET_VALUE  (0)
+            ) REG_D (
+              .clock        (clk),
+              .clock_enable (clken && valid_config_2 && (w_sel_bram_2==1)),
+              .resetn       (resetn_config_2),
+              .data_in      (config_flat_2_cg [c][g]),
+              .data_out     (d_val_cg [c][g])
+            );
+
+          /*
+            LRELU
+          */
+          assign is_lrelu_cgu[c][g][u] = user_2[I_IS_LRELU      ] && m_data_fma_1_cgu_f16[c][g][u][BITS_FMA_2-1];
+          assign c_val_cgu   [c][g][u] = is_lrelu_cgu[c][g][u] ? LRELU_ALPHA : 16'd15360 ; // 0.1 or 1
+
+          if (c==0 && g==0 && u==0)
             mod_float_downsize downsize_fma1 (
               .aclk                 (clk),
               .aclken               (clken),
@@ -714,14 +682,23 @@ module lrelu_engine (
               .m_axis_result_tdata  (m_data_fma_1_cgu_f16[c][g][u]  ),
               .m_axis_result_tvalid (downsize_fma1_tvalid           )
             );
+          else
+            mod_float_downsize downsize_fma1 (
+              .aclk                 (clk),
+              .aclken               (clken),
+              .s_axis_a_tvalid      (m_valid_fma_1                  ),            
+              .s_axis_a_tdata       (m_data_fma_1_cgu    [c][g][u]  ),              
+              .m_axis_result_tdata  (m_data_fma_1_cgu_f16[c][g][u]  )
+            );
 
-            /*
-             FMA Operation:  fma_out = fma_a * fma_b + fma_c
+          /*
+            FMA Operation:  fma_out = fma_a * fma_b + fma_c
 
-             fma_a = data
-             fma_b = c
-             fma_c = d
-            */
+            fma_a = data
+            fma_b = c
+            fma_c = d
+          */
+          if (c==0 && g==0 && u==0)
             fma_2_active FMA_2 (
               .aclk                 (clk),                                  
               .aclken               (clken),                              
@@ -737,61 +714,7 @@ module lrelu_engine (
               .m_axis_result_tdata  (m_data_fma_2_cgu [c][g][u]),    
               .m_axis_result_tuser  (m_user_fma_2)    
             );
-            float_to_fixed_active FLOAT2FIX (
-              .aclk                 (clk),                                  
-              .aclken               (clken),                              
-              // .aresetn              (resetn),                            
-              .s_axis_a_tvalid      (m_valid_fma_2),            
-              .s_axis_a_tdata       (m_data_fma_2_cgu [c][g][u]),              
-              .s_axis_a_tuser       (m_user_fma_2),
-              .m_axis_result_tvalid (m_valid), 
-              .m_axis_result_tdata  (m_data_cgu[c][g][u]),    
-              .m_axis_result_tuser  (m_user)    
-            );
-          end
-          else begin
-            fixed_to_float        FIX2FLOAT (
-              .aclk                 (clk),                                  
-              .aclken               (clken),                              
-              // .aresetn              (resetn),                           
-              .s_axis_a_tvalid      (s_valid),            
-              .s_axis_a_tdata       (s_data_fix2float_cgu[c][g][u]), 
-              .m_axis_result_tdata  (m_data_float32_cgu[c][g][u])  
-            );
-            /*
-             FMA Operation:  fma_out = fma_a * fma_b + fma_c
-
-             fma_a = data
-             fma_b = a
-             fma_c = b
-            */
-            fma_1 FMA_1 (
-              .aclk                 (clk),                                  
-              .aclken               (clken),                              
-              // .aresetn              (resetn),                            
-              .s_axis_a_tvalid      (m_valid_float32),            
-              .s_axis_a_tdata       (m_data_float32_cgu [c][g][u]),              
-              .s_axis_b_tvalid      (1'b1),            
-              .s_axis_b_tdata       (a_val_f32_cg  [c][g]),              
-              .s_axis_c_tvalid      (1'b1),           
-              .s_axis_c_tdata       (b_val_f32_cgu [c][g][u]),              
-              .m_axis_result_tdata  (m_data_fma_1_cgu [c][g][u])
-            );
-            // assign m_data_fma_1_cgu_f16[c][g][u] = float_downsize #(BITS_EXP_FMA_1,BITS_FRA_FMA_1,BITS_EXP_FMA_2,BITS_FRA_FMA_2) :: downsize(m_data_fma_1_cgu[c][g][u]);
-            mod_float_downsize downsize_fma1 (
-              .aclk                 (clk),
-              .aclken               (clken),
-              .s_axis_a_tvalid      (m_valid_fma_1                  ),            
-              .s_axis_a_tdata       (m_data_fma_1_cgu    [c][g][u]  ),              
-              .m_axis_result_tdata  (m_data_fma_1_cgu_f16[c][g][u]  )
-            );
-            /*
-             FMA Operation:  fma_out = fma_a * fma_b + fma_c
-
-             fma_a = data
-             fma_b = c
-             fma_c = d
-            */
+          else
             fma_2 FMA_2 (
               .aclk                 (clk),                                  
               .aclken               (clken),                              
@@ -804,6 +727,20 @@ module lrelu_engine (
               .s_axis_c_tdata       (d_val_cg  [c][g]),              
               .m_axis_result_tdata  (m_data_fma_2_cgu [c][g][u])
             );
+
+          if (c==0 && g==0 && u==0)
+            float_to_fixed_active FLOAT2FIX (
+              .aclk                 (clk),                                  
+              .aclken               (clken),                              
+              // .aresetn              (resetn),                            
+              .s_axis_a_tvalid      (m_valid_fma_2),            
+              .s_axis_a_tdata       (m_data_fma_2_cgu [c][g][u]),              
+              .s_axis_a_tuser       (m_user_fma_2),
+              .m_axis_result_tvalid (m_valid), 
+              .m_axis_result_tdata  (m_data_cgu[c][g][u]),    
+              .m_axis_result_tuser  (m_user)    
+            );
+          else
             float_to_fixed FLOAT2FIX (
               .aclk                 (clk),                                  
               .aclken               (clken),                              
@@ -812,14 +749,66 @@ module lrelu_engine (
               .s_axis_a_tdata       (m_data_fma_2_cgu [c][g][u]),              
               .m_axis_result_tdata  (m_data_cgu       [c][g][u])
             );
-          end
         end
       end
     end 
   endgenerate
+
   /*
     Convert float16 wires to shortreal for simulation
   */
+
+  virtual class float_downsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);
+    static function logic [EXP_OUT+FRA_OUT:0] downsize (input logic [EXP_IN+FRA_IN:0] float_in);
+      /*
+        Downsize
+        * eg: Float32 -> Float16
+            - EXP_IN  : 8
+            - FRA_IN  : 23
+            - EXP_OUT : 5
+            - FRA_OUT : 10
+        * Mantissa is rounded to avoid error
+      */
+      logic sign;
+      logic [EXP_IN -1:0] exp_in;
+      logic [FRA_IN -1:0] fra_in;
+      logic [EXP_OUT-1:0] exp_out;
+      logic [FRA_OUT  :0] fra_out_extra, fra_out_round;
+      logic [FRA_OUT-1:0] fra_out;
+      
+      {sign, exp_in, fra_in} = float_in;
+      exp_out = exp_in - (2**(EXP_IN-1)-2**(EXP_OUT-1));
+      fra_out_extra = fra_in >> (FRA_IN-FRA_OUT-1);
+      // fra_out_round = sign ? fra_out_extra - fra_in[FRA_IN-FRA_OUT]: fra_out_extra + fra_in[FRA_IN-FRA_OUT];
+      // fra_out = fra_out_round >> 1;
+      fra_out = fra_in >> (FRA_IN-FRA_OUT);
+      return {sign, exp_out, fra_out};
+    endfunction
+  endclass
+
+  virtual class float_upsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);  
+    static function logic [EXP_OUT+FRA_OUT:0] upsize (input logic [EXP_IN+FRA_IN:0] float_in);
+      /*
+        Upsize
+        * eg: Float32 -> Float16
+            - EXP_IN  : 5
+            - FRA_IN  : 10
+            - EXP_OUT : 8
+            - FRA_OUT : 23
+        * No need to round
+      */
+      logic sign;
+      logic [EXP_IN -1:0] exp_in;
+      logic [FRA_IN -1:0] fra_in;
+      logic [EXP_OUT-1:0] exp_out;
+      logic [FRA_OUT-1:0] fra_out;
+      
+      {sign, exp_in, fra_in} = float_in;
+      exp_out = exp_in + (2**(EXP_OUT-1)-2**(EXP_IN-1));
+      fra_out = fra_in << (FRA_OUT-FRA_IN);
+      return {sign, exp_out, fra_out};
+    endfunction
+  endclass
 
   shortreal m_data_fma_1_cgu_sr      [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
   shortreal m_data_fma_2_cgu_sr      [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
