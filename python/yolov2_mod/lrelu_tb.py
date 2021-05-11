@@ -8,10 +8,10 @@ from yolov2_mod_numpy import YOLOv2_Modified_Numpy
 from fpga_debug_utils import *
 
 c = SysConfig(
-    CONV_UNITS = 4,
+    CONV_UNITS = 2,
     MEMBERS    = 4,
-    COPIES     = 2,
-    GROUPS     = 2,
+    COPIES     = 1,
+    GROUPS     = 1,
     WORD_WIDTH_CONFIG = 8,
     DATA_DIR   = '../../data/',
 
