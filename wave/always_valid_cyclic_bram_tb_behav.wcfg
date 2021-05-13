@@ -12,14 +12,14 @@
    </db_ref_list>
    <zoom_setting>
       <ZoomStartTime time="0fs"></ZoomStartTime>
-      <ZoomEndTime time="382083335fs"></ZoomEndTime>
-      <Cursor1Time time="15000000fs"></Cursor1Time>
+      <ZoomEndTime time="274801fs"></ZoomEndTime>
+      <Cursor1Time time="100000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="151"></NameColumnWidth>
-      <ValueColumnWidth column_width="77"></ValueColumnWidth>
+      <ValueColumnWidth column_width="73"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="25" />
+   <WVObjectSize size="32" />
    <wvobject fp_name="/always_valid_cyclic_bram_tb/clk" type="logic">
       <obj_property name="ElementShortName">clk</obj_property>
       <obj_property name="ObjectShortName">clk</obj_property>
@@ -31,10 +31,6 @@
    <wvobject fp_name="/always_valid_cyclic_bram_tb/resetn" type="logic">
       <obj_property name="ElementShortName">resetn</obj_property>
       <obj_property name="ObjectShortName">resetn</obj_property>
-   </wvobject>
-   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/state" type="array">
-      <obj_property name="ElementShortName">state[1:0]</obj_property>
-      <obj_property name="ObjectShortName">state[1:0]</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider37">
       <obj_property name="label">Slave</obj_property>
@@ -52,65 +48,93 @@
       <obj_property name="CustomSignalColor">#FFD700</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/r_en_delayed" type="logic">
+      <obj_property name="ElementShortName">r_en_delayed</obj_property>
+      <obj_property name="ObjectShortName">r_en_delayed</obj_property>
+   </wvobject>
    <wvobject type="divider" fp_name="divider77">
       <obj_property name="label">BRAM</obj_property>
       <obj_property name="DisplayName">label</obj_property>
    </wvobject>
-   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/addr_r_next" type="array">
-      <obj_property name="ElementShortName">addr_r_next[3:0]</obj_property>
-      <obj_property name="ObjectShortName">addr_r_next[3:0]</obj_property>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/\genblk1.BRAM /ena" type="logic">
+      <obj_property name="ElementShortName">ena</obj_property>
+      <obj_property name="ObjectShortName">ena</obj_property>
    </wvobject>
-   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/addr_r" type="array">
-      <obj_property name="ElementShortName">addr_r[3:0]</obj_property>
-      <obj_property name="ObjectShortName">addr_r[3:0]</obj_property>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/\genblk1.BRAM /wea" type="array">
+      <obj_property name="ElementShortName">wea[0:0]</obj_property>
+      <obj_property name="ObjectShortName">wea[0:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/bram_valid_out" type="logic">
-      <obj_property name="ElementShortName">bram_valid_out</obj_property>
-      <obj_property name="ObjectShortName">bram_valid_out</obj_property>
-      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/\genblk1.BRAM /addra" type="array">
+      <obj_property name="ElementShortName">addra[1:0]</obj_property>
+      <obj_property name="ObjectShortName">addra[1:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/bram_r_data" type="array">
-      <obj_property name="ElementShortName">bram_r_data[15:0]</obj_property>
-      <obj_property name="ObjectShortName">bram_r_data[15:0]</obj_property>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/\genblk1.BRAM /dina" type="array">
+      <obj_property name="ElementShortName">dina[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dina[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/\genblk1.BRAM /douta" type="array">
+      <obj_property name="ElementShortName">douta[15:0]</obj_property>
+      <obj_property name="ObjectShortName">douta[15:0]</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider78">
-      <obj_property name="label">Buffer in</obj_property>
+      <obj_property name="label">counters</obj_property>
       <obj_property name="DisplayName">label</obj_property>
    </wvobject>
-   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/w_ptr_next" type="array">
-      <obj_property name="ElementShortName">w_ptr_next[1:0]</obj_property>
-      <obj_property name="ObjectShortName">w_ptr_next[1:0]</obj_property>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/r_addr_max" type="array">
+      <obj_property name="ElementShortName">r_addr_max[1:0]</obj_property>
+      <obj_property name="ObjectShortName">r_addr_max[1:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/w_ptr" type="array">
-      <obj_property name="ElementShortName">w_ptr[1:0]</obj_property>
-      <obj_property name="ObjectShortName">w_ptr[1:0]</obj_property>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/addr_w_next" type="array">
+      <obj_property name="ElementShortName">addr_w_next[1:0]</obj_property>
+      <obj_property name="ObjectShortName">addr_w_next[1:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/buffer_data" type="array">
-      <obj_property name="ElementShortName">buffer_data[0:2][15:0]</obj_property>
-      <obj_property name="ObjectShortName">buffer_data[0:2][15:0]</obj_property>
-      <obj_property name="isExpanded"></obj_property>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/addr_w" type="array">
+      <obj_property name="ElementShortName">addr_w[1:0]</obj_property>
+      <obj_property name="ObjectShortName">addr_w[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/addr_r" type="array">
+      <obj_property name="ElementShortName">addr_r[1:0]</obj_property>
+      <obj_property name="ObjectShortName">addr_r[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/addr_r_next" type="array">
+      <obj_property name="ElementShortName">addr_r_next[1:0]</obj_property>
+      <obj_property name="ObjectShortName">addr_r_next[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/addr" type="array">
+      <obj_property name="ElementShortName">addr[1:0]</obj_property>
+      <obj_property name="ObjectShortName">addr[1:0]</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider75">
-      <obj_property name="label">Buffer Out</obj_property>
+      <obj_property name="label">Fifo</obj_property>
       <obj_property name="DisplayName">label</obj_property>
    </wvobject>
-   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/m_valid_ready" type="logic">
-      <obj_property name="ElementShortName">m_valid_ready</obj_property>
-      <obj_property name="ObjectShortName">m_valid_ready</obj_property>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/\genblk2.fifo /srst" type="logic">
+      <obj_property name="ElementShortName">srst</obj_property>
+      <obj_property name="ObjectShortName">srst</obj_property>
    </wvobject>
-   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/r_ptr" type="array">
-      <obj_property name="ElementShortName">r_ptr[1:0]</obj_property>
-      <obj_property name="ObjectShortName">r_ptr[1:0]</obj_property>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/\genblk2.fifo /din" type="array">
+      <obj_property name="ElementShortName">din[15:0]</obj_property>
+      <obj_property name="ObjectShortName">din[15:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/r_ptr_next" type="array">
-      <obj_property name="ElementShortName">r_ptr_next[1:0]</obj_property>
-      <obj_property name="ObjectShortName">r_ptr_next[1:0]</obj_property>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/\genblk2.fifo /wr_en" type="logic">
+      <obj_property name="ElementShortName">wr_en</obj_property>
+      <obj_property name="ObjectShortName">wr_en</obj_property>
    </wvobject>
-   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/buffer_data" type="array">
-      <obj_property name="ElementShortName">buffer_data[0:2][15:0]</obj_property>
-      <obj_property name="ObjectShortName">buffer_data[0:2][15:0]</obj_property>
-      <obj_property name="isExpanded"></obj_property>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/\genblk2.fifo /rd_en" type="logic">
+      <obj_property name="ElementShortName">rd_en</obj_property>
+      <obj_property name="ObjectShortName">rd_en</obj_property>
+   </wvobject>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/\genblk2.fifo /dout" type="array">
+      <obj_property name="ElementShortName">dout[15:0]</obj_property>
+      <obj_property name="ObjectShortName">dout[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/\genblk2.fifo /full" type="logic">
+      <obj_property name="ElementShortName">full</obj_property>
+      <obj_property name="ObjectShortName">full</obj_property>
+   </wvobject>
+   <wvobject fp_name="/always_valid_cyclic_bram_tb/dut/\genblk2.fifo /empty" type="logic">
+      <obj_property name="ElementShortName">empty</obj_property>
+      <obj_property name="ObjectShortName">empty</obj_property>
    </wvobject>
    <wvobject type="divider" fp_name="divider38">
       <obj_property name="label">Master</obj_property>
@@ -133,5 +157,6 @@
       <obj_property name="ObjectShortName">m_data[15:0]</obj_property>
       <obj_property name="CustomSignalColor">#FF00FF</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
 </wave_config>
