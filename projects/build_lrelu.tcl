@@ -26,7 +26,7 @@ set LATENCY_ACCUMULATOR   2
 set LATENCY_FMA_1         16
 set LATENCY_FMA_2         15
 set LATENCY_FIXED_2_FLOAT  6
-set LATENCY_BRAM           2
+set LATENCY_BRAM           3
 set LATENCY_FLOAT_UPSIZE   2
 set LATENCY_FLOAT_DOWNSIZE 3
 
@@ -168,6 +168,8 @@ Parameters of the system. Written from build.tcl
 `define LATENCY_FMA_2         $LATENCY_FMA_2        
 `define LATENCY_FIXED_2_FLOAT $LATENCY_FIXED_2_FLOAT
 `define LATENCY_BRAM          $LATENCY_BRAM         
+`define LATENCY_FLOAT_UPSIZE   $LATENCY_FLOAT_UPSIZE   
+`define LATENCY_FLOAT_DOWNSIZE $LATENCY_FLOAT_DOWNSIZE 
 `define LATENCY_ACCUMULATOR   $LATENCY_ACCUMULATOR    
 `define LATENCY_MULTIPLIER    $LATENCY_MULTIPLIER     
 /*
@@ -359,7 +361,9 @@ add_files -norecurse {
   ../src_hdl/axis_lrelu_engine.v 
   ../src_hdl/register.v 
   ../src_hdl/n_delay.sv 
-  ../src_hdl/params.v}
+  ../src_hdl/params.v
+  ../src_hdl/cyclic_bram.sv
+  }
 
 set_property SOURCE_SET sources_1 [get_filesets sim_1]
 add_files -fileset sim_1 -norecurse ../wave/axis_lrelu_engine_tb_behav.wcfg

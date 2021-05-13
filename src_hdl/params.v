@@ -57,7 +57,9 @@ Parameters of the system. Written from build.tcl
 `define LATENCY_FMA_1         16        
 `define LATENCY_FMA_2         15        
 `define LATENCY_FIXED_2_FLOAT 6
-`define LATENCY_BRAM          2         
+`define LATENCY_BRAM          3         
+`define LATENCY_FLOAT_UPSIZE   2   
+`define LATENCY_FLOAT_DOWNSIZE 3 
 `define LATENCY_ACCUMULATOR   2    
 `define LATENCY_MULTIPLIER    3     
 /*

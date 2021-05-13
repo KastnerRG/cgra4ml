@@ -48,6 +48,8 @@ module axis_lrelu_engine
     LATENCY_FMA_2              = `LATENCY_FMA_2             ,
     LATENCY_FIXED_2_FLOAT      = `LATENCY_FIXED_2_FLOAT     ,
     LATENCY_BRAM               = `LATENCY_BRAM              ,
+    LATENCY_FLOAT_UPSIZE       = `LATENCY_FLOAT_UPSIZE      ,
+    LATENCY_FLOAT_DOWNSIZE     = `LATENCY_FLOAT_DOWNSIZE    ,
     I_IS_NOT_MAX               = `I_IS_NOT_MAX              ,
     I_IS_MAX                   = `I_IS_MAX                  ,
     I_IS_1X1                   = `I_IS_1X1                  ,
@@ -371,6 +373,9 @@ module axis_lrelu_engine
       .BITS_FRA_FMA_2        (BITS_FRA_FMA_2       ),
       .LATENCY_FMA_1         (LATENCY_FMA_1        ),
       .LATENCY_FMA_2         (LATENCY_FMA_2        ),
+      .LATENCY_BRAM          (LATENCY_BRAM         ),
+      .LATENCY_FLOAT_UPSIZE  (LATENCY_FLOAT_UPSIZE ),
+      .LATENCY_FLOAT_DOWNSIZE(LATENCY_FLOAT_DOWNSIZE),
 
       .I_IS_MAX             (I_IS_MAX            ),
       .I_IS_NOT_MAX         (I_IS_NOT_MAX        ),
