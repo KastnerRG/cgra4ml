@@ -40,6 +40,8 @@ module axis_lrelu_engine_tb();
   localparam LATENCY_FMA_2              = `LATENCY_FMA_2             ;
   localparam LATENCY_FIXED_2_FLOAT      = `LATENCY_FIXED_2_FLOAT     ;
   localparam LATENCY_BRAM               = `LATENCY_BRAM              ;
+  localparam LATENCY_FLOAT_UPSIZE       = `LATENCY_FLOAT_UPSIZE      ;
+  localparam LATENCY_FLOAT_DOWNSIZE     = `LATENCY_FLOAT_DOWNSIZE    ;
   localparam I_IS_NOT_MAX               = `I_IS_NOT_MAX              ;
   localparam I_IS_MAX                   = `I_IS_MAX                  ;
   localparam I_IS_1X1                   = `I_IS_1X1                  ;
@@ -161,7 +163,7 @@ module axis_lrelu_engine_tb();
   class Random_Bit;
   rand bit rand_bit;
   constraint c {
-    rand_bit dist { 0 := 0, 1 := 1};
+    rand_bit dist { 0 := 7, 1 := 3};
     }
   endclass
 

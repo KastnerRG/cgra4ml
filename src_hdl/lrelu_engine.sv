@@ -36,7 +36,9 @@ module lrelu_engine (
   parameter LATENCY_FMA_1         = 16;
   parameter LATENCY_FMA_2         = 16;
   parameter LATENCY_FIXED_2_FLOAT =  6;
-  parameter LATENCY_BRAM          =  2;
+  parameter LATENCY_BRAM          =  3;
+  parameter LATENCY_FLOAT_UPSIZE  =  2;
+  parameter LATENCY_FLOAT_DOWNSIZE=  3;
 
   parameter I_IS_NOT_MAX      = 0;
   parameter I_IS_MAX          = I_IS_NOT_MAX      + 1;
@@ -315,8 +317,11 @@ module lrelu_engine (
             );
 
           if (c==0 && g==0 && u==0) begin
+
+            localparam LATENCY_1 = LATENCY_FIXED_2_FLOAT-LATENCY_BRAM-LATENCY_FLOAT_UPSIZE-1;
+
             n_delay #(
-              .N          (LATENCY_FIXED_2_FLOAT - 2 -3 -1),
+              .N          (LATENCY_1),
               .WORD_WIDTH (1)
             ) VALID_1 (
               .clk      (clk),
@@ -326,7 +331,7 @@ module lrelu_engine (
               .data_out (valid_1)
             );
             n_delay #(
-              .N          (LATENCY_FIXED_2_FLOAT - 2 -3 -1),
+              .N          (LATENCY_1),
               .WORD_WIDTH (TUSER_WIDTH_LRELU_IN)
             ) USER_1 (
               .clk      (clk),
@@ -335,13 +340,11 @@ module lrelu_engine (
               .data_in  (s_user),
               .data_out (user_1)
             );
-          end
-          /*
-            Delayed config
-          */
-          if (c==0 && g==0 && u==0) begin
+            /*
+              Delayed config
+            */
             n_delay #(
-              .N          (LATENCY_FIXED_2_FLOAT - 2 -3 -1),
+              .N          (LATENCY_1),
               .WORD_WIDTH (WORD_WIDTH_CONFIG * MEMBERS)
             ) CONFIG_DATA_FLAT_1 (
               .clk      (clk),
@@ -351,7 +354,7 @@ module lrelu_engine (
               .data_out (config_flat_1_cg [c][g])
             );
             n_delay #(
-              .N          (LATENCY_FIXED_2_FLOAT - 2 -3 -1),
+              .N          (LATENCY_1),
               .WORD_WIDTH (4)
             ) W_SEL_BRAM_1 (
               .clk      (clk),
@@ -361,7 +364,7 @@ module lrelu_engine (
               .data_out (w_sel_bram_1)
             );
             n_delay #(
-              .N          (LATENCY_FIXED_2_FLOAT - 2 -3 -1),
+              .N          (LATENCY_1),
               .WORD_WIDTH (1)
             ) CONFIG_VALID_1 (
               .clk      (clk),
@@ -371,7 +374,7 @@ module lrelu_engine (
               .data_out (valid_config_1)
             );
             n_delay #(
-              .N          (LATENCY_FIXED_2_FLOAT - 2 -3 -1),
+              .N          (LATENCY_1),
               .WORD_WIDTH (1)
             ) CONFIG_RESETN_1 (
               .clk      (clk),
@@ -381,7 +384,7 @@ module lrelu_engine (
               .data_out (resetn_config_1)
             );
             n_delay #(
-              .N          (LATENCY_FIXED_2_FLOAT - 2 -3 -1),
+              .N          (LATENCY_1),
               .WORD_WIDTH (1)
             ) CONFIG_1x1_1 (
               .clk      (clk),
@@ -511,7 +514,7 @@ module lrelu_engine (
 
           if (c==0 && g==0 && u==0)
             n_delay #(
-              .N          (3),
+              .N          (LATENCY_BRAM),
               .WORD_WIDTH (2)
             ) CLR_INDEX (
               .clk      (clk),
@@ -667,9 +670,12 @@ module lrelu_engine (
           /*
             DELAY CONFIG FOR REGISTER
           */
-          if (u == 0)
+          if (u == 0) begin
+
+            localparam LATENCY_2 = LATENCY_BRAM + LATENCY_FLOAT_UPSIZE + 1 + LATENCY_FMA_1 + LATENCY_FLOAT_DOWNSIZE;
+
             n_delay #(
-              .N          (LATENCY_FMA_1 + 3 + 2 +3),
+              .N          (LATENCY_2),
               .WORD_WIDTH (BRAM_R_WIDTH)
             ) CONFIG_DATA_FLAT_2 (
               .clk      (clk),
@@ -679,37 +685,38 @@ module lrelu_engine (
               .data_out (config_flat_2_cg [c][g])
             );
 
-          if (c==0 && g==0 && u==0) begin
-            n_delay #(
-              .N          (LATENCY_FMA_1 + 3 + 2 +3),
-              .WORD_WIDTH (1)
-            ) W_SEL_BRAM_2 (
-              .clk      (clk),
-              .resetn   (resetn),
-              .clken    (clken),
-              .data_in  (w_sel_bram_1==1),
-              .data_out (w_sel_bram_2   )
-            );
-            n_delay #(
-              .N          (LATENCY_FMA_1 + 3 + 2 +3),
-              .WORD_WIDTH (1)
-            ) CONFIG_VALID_2 (
-              .clk      (clk),
-              .resetn   (resetn),
-              .clken    (clken),
-              .data_in  (valid_config_1),
-              .data_out (valid_config_2)
-            );
-            n_delay #(
-              .N          (LATENCY_FMA_1 + 3 + 2 +3),
-              .WORD_WIDTH (1)
-            ) CONFIG_RESETN_2 (
-              .clk      (clk),
-              .resetn   (resetn),
-              .clken    (clken),
-              .data_in  (resetn_config_1),
-              .data_out (resetn_config_2)
-            );
+            if (c==0 && g==0) begin
+              n_delay #(
+                .N          (LATENCY_2),
+                .WORD_WIDTH (1)
+              ) W_SEL_BRAM_2 (
+                .clk      (clk),
+                .resetn   (resetn),
+                .clken    (clken),
+                .data_in  (w_sel_bram_1==1),
+                .data_out (w_sel_bram_2   )
+              );
+              n_delay #(
+                .N          (LATENCY_2),
+                .WORD_WIDTH (1)
+              ) CONFIG_VALID_2 (
+                .clk      (clk),
+                .resetn   (resetn),
+                .clken    (clken),
+                .data_in  (valid_config_1),
+                .data_out (valid_config_2)
+              );
+              n_delay #(
+                .N          (LATENCY_2),
+                .WORD_WIDTH (1)
+              ) CONFIG_RESETN_2 (
+                .clk      (clk),
+                .resetn   (resetn),
+                .clken    (clken),
+                .data_in  (resetn_config_1),
+                .data_out (resetn_config_2)
+              );
+            end
           end
 
           /*
