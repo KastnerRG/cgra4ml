@@ -238,8 +238,7 @@ module lrelu_engine (
   assign s_user_fma_1 = TUSER_WIDTH_LRELU_FMA_1_IN'(m_user_float32);
   assign s_user_fma_2 = TUSER_WIDTH_MAXPOOL_IN'(user_2);
   
-  logic [BITS_BRAM_R_DEPTH_1X1-1:0] b_r_addr_max  ; 
-  logic [BITS_BRAM_W_DEPTH_1X1-1:0] b_w_addr_max  ;
+  logic [BITS_BRAM_R_DEPTH_1X1-1:0] b_r_addr_max  ;
 
   
   logic [1:0] clr_index_in, clr_index_out;
@@ -388,9 +387,14 @@ module lrelu_engine (
               .data_out (is_1x1_config_1)
             );
 
-            assign b_w_addr_max   = is_1x1_config_1  ? BRAM_W_DEPTH_1X1-1 : BRAM_W_DEPTH_3X3-1;
-            assign b_r_addr_max   = user_1[I_IS_1X1] ? BRAM_R_DEPTH_1X1-1 : BRAM_R_DEPTH_3X3-1;
-
+            always_comb begin
+              if (w_sel_bram_1 == 0)
+                if (user_1[I_IS_1X1]) b_r_addr_max = BRAM_R_DEPTH_1X1-1;
+                else                  b_r_addr_max = BRAM_R_DEPTH_3X3-1;
+              else
+                if (is_1x1_config_1 ) b_r_addr_max = BRAM_R_DEPTH_1X1-1;
+                else                  b_r_addr_max = BRAM_R_DEPTH_3X3-1;
+            end
           end
 
             // valid_1, w_sel_bram_1, resetn_config_1, valid_config_1
@@ -408,12 +412,11 @@ module lrelu_engine (
               .clk          (clk),
               .clken        (clken),
               .resetn       (resetn_config_1),
-              .s_valid_ready(valid_config_1 && (w_sel_bram_1 == 2)),
+              .w_en         (valid_config_1 && (w_sel_bram_1 == 2)),
               .s_data       (config_flat_1_cg [c][g]),
               .m_data       (a_val_cg [c][g]),
-              .m_ready      (valid_1),
-              .r_addr_max   (b_r_addr_max  ),
-              .w_addr_max   (b_w_addr_max  )
+              .r_en         (valid_1),
+              .r_addr_max      (b_r_addr_max  )
             );
           if (u == 0)
             mod_float_upsize upsizer_a (
@@ -464,12 +467,11 @@ module lrelu_engine (
                     .clk          (clk),
                     .clken        (clken),
                     .resetn       (resetn_config_1),
-                    .s_valid_ready(valid_config_1 && (w_sel_bram_1 == 3)),
+                    .w_en         (valid_config_1 && (w_sel_bram_1 == 3)),
                     .s_data       (config_flat_1_cg [c][g]),
                     .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
-                    .m_ready      (b_ready_cg_clr_mtb[c][g][clr][mtb]),
-                    .r_addr_max   (b_r_addr_max  ),
-                    .w_addr_max   (b_w_addr_max  )
+                    .r_en         (b_ready_cg_clr_mtb[c][g][clr][mtb]),
+                    .r_addr_max      (b_r_addr_max  )
                   );
                 end
                 else begin // Edge BRAM
@@ -482,12 +484,11 @@ module lrelu_engine (
                     .clk          (clk),
                     .clken        (clken),
                     .resetn       (resetn_config_1),
-                    .s_valid_ready(valid_config_1 && (w_sel_bram_1 == 3 + clr*3 + mtb)),
+                    .w_en         (valid_config_1 && (w_sel_bram_1 == 3 + clr*3 + mtb)),
                     .s_data       (config_flat_1_cg [c][g]),
                     .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
-                    .m_ready      (b_ready_cg_clr_mtb[c][g][clr][mtb]),
-                    .r_addr_max   (BITS_BRAM_R_DEPTH_3X3'(BRAM_R_DEPTH_3X3-1)),
-                    .w_addr_max   (BITS_BRAM_W_DEPTH_3X3'(BRAM_W_DEPTH_3X3-1))
+                    .r_en         (b_ready_cg_clr_mtb[c][g][clr][mtb]),
+                    .r_addr_max      (BITS_BRAM_R_DEPTH_3X3'(BRAM_R_DEPTH_3X3-1))
                   );
                 end
               end
@@ -496,7 +497,7 @@ module lrelu_engine (
           if (c==0 && g==0 && u==0)
             n_delay #(
               .N          (2),
-              .WORD_WIDTH (TUSER_WIDTH_LRELU_IN)
+              .WORD_WIDTH (2)
             ) CLR_INDEX (
               .clk      (clk),
               .resetn   (resetn),
