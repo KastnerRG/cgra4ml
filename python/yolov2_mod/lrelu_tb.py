@@ -66,6 +66,14 @@ lrelu_config_padded[...,0] = lrelu_config[...,0]
 
 
 # %%
+layer_lrelu.requantize_params['B'][0,1,0,0:4]
+
+
+# %%
+layer_lrelu.requantize_params['A'][0,0,0,3]
+
+
+# %%
 def transform_data(data): #(H,W,C)
     data = data[0:HEIGHT, 0:WIDTH, 0:SUB_CORES*c.GROUPS*c.COPIES*c.MEMBERS]
     data = data.reshape((BLOCKS, c.CONV_UNITS, WIDTH, SUB_CORES, c.MEMBERS, c.COPIES, c.GROUPS))
@@ -183,5 +191,3 @@ with open("where_err.txt", 'w') as f:
 
 # %%
 error[abs(error)>0]
-
-
