@@ -422,7 +422,8 @@ module lrelu_engine (
               .s_data       (config_flat_1_cg [c][g]),
               .m_data       (a_val_cg [c][g]),
               .r_en         (valid_1),
-              .r_addr_max   (b_r_addr_max  )
+              .r_addr_max   (b_r_addr_max  ),
+              .r_addr_min   (0)
             );
           if (u == 0) begin
             mod_float_upsize upsizer_a (
@@ -489,7 +490,8 @@ module lrelu_engine (
                     .s_data       (config_flat_1_cg [c][g]),
                     .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
                     .r_en         (b_ready_cg_clr_mtb[c][g][clr][mtb]),
-                    .r_addr_max      (b_r_addr_max  )
+                    .r_addr_max   (b_r_addr_max  ),
+                    .r_addr_min   (0)
                   );
                 end
                 else begin // Edge BRAM
@@ -506,7 +508,8 @@ module lrelu_engine (
                     .s_data       (config_flat_1_cg [c][g]),
                     .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
                     .r_en         (b_ready_cg_clr_mtb[c][g][clr][mtb]),
-                    .r_addr_max      (BITS_BRAM_R_DEPTH_3X3'(BRAM_R_DEPTH_3X3-1))
+                    .r_addr_max   (BITS_BRAM_R_DEPTH_3X3'(BRAM_R_DEPTH_3X3-1)),
+                    .r_addr_min   (0)
                   );
                 end
               end
