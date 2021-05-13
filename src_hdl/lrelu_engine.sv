@@ -255,9 +255,13 @@ module lrelu_engine (
 
   logic [WORD_WIDTH_CONFIG * MEMBERS-1:0] config_flat_1_cg [COPIES-1:0][GROUPS-1:0];
   logic [BRAM_R_WIDTH-1:0] a_val_cg     [COPIES-1:0][GROUPS-1:0];
-  logic [BITS_FMA_1-1:0]             a_val_f32_cg [COPIES-1:0][GROUPS-1:0];
+  logic [BITS_FMA_1-1:0]   a_val_f32_cg_in  [COPIES-1:0][GROUPS-1:0];
+  logic [BITS_FMA_1-1:0]   a_val_f32_cg_out [COPIES-1:0][GROUPS-1:0];
   logic                    b_ready_cg_clr_mtb[COPIES-1:0][GROUPS-1:0][2:0][2:0];
   logic [BRAM_R_WIDTH-1:0] b_cg_clr_mtb_f16  [COPIES-1:0][GROUPS-1:0][2:0][2:0];
+  logic [BRAM_R_WIDTH-1:0] b_mid_f16_cg  [COPIES-1:0][GROUPS-1:0];
+  logic [BRAM_R_WIDTH-1:0] b_top_f16_cg  [COPIES-1:0][GROUPS-1:0]; 
+  logic [BRAM_R_WIDTH-1:0] b_bot_f16_cg  [COPIES-1:0][GROUPS-1:0];
   logic [BITS_FMA_1-1:0] b_mid_f32_cg [COPIES-1:0][GROUPS-1:0];
   logic [BITS_FMA_1-1:0] b_top_f32_cg [COPIES-1:0][GROUPS-1:0]; 
   logic [BITS_FMA_1-1:0] b_bot_f32_cg [COPIES-1:0][GROUPS-1:0];
@@ -312,7 +316,7 @@ module lrelu_engine (
 
           if (c==0 && g==0 && u==0) begin
             n_delay #(
-              .N          (LATENCY_FIXED_2_FLOAT - 2 -2),
+              .N          (LATENCY_FIXED_2_FLOAT - 2 -3 -1),
               .WORD_WIDTH (1)
             ) VALID_1 (
               .clk      (clk),
@@ -322,7 +326,7 @@ module lrelu_engine (
               .data_out (valid_1)
             );
             n_delay #(
-              .N          (LATENCY_FIXED_2_FLOAT - 2 -2),
+              .N          (LATENCY_FIXED_2_FLOAT - 2 -3 -1),
               .WORD_WIDTH (TUSER_WIDTH_LRELU_IN)
             ) USER_1 (
               .clk      (clk),
@@ -337,7 +341,7 @@ module lrelu_engine (
           */
           if (c==0 && g==0 && u==0) begin
             n_delay #(
-              .N          (LATENCY_FIXED_2_FLOAT - 2 -2),
+              .N          (LATENCY_FIXED_2_FLOAT - 2 -3 -1),
               .WORD_WIDTH (WORD_WIDTH_CONFIG * MEMBERS)
             ) CONFIG_DATA_FLAT_1 (
               .clk      (clk),
@@ -347,7 +351,7 @@ module lrelu_engine (
               .data_out (config_flat_1_cg [c][g])
             );
             n_delay #(
-              .N          (LATENCY_FIXED_2_FLOAT - 2 -2),
+              .N          (LATENCY_FIXED_2_FLOAT - 2 -3 -1),
               .WORD_WIDTH (4)
             ) W_SEL_BRAM_1 (
               .clk      (clk),
@@ -357,7 +361,7 @@ module lrelu_engine (
               .data_out (w_sel_bram_1)
             );
             n_delay #(
-              .N          (LATENCY_FIXED_2_FLOAT - 2 -2),
+              .N          (LATENCY_FIXED_2_FLOAT - 2 -3 -1),
               .WORD_WIDTH (1)
             ) CONFIG_VALID_1 (
               .clk      (clk),
@@ -367,7 +371,7 @@ module lrelu_engine (
               .data_out (valid_config_1)
             );
             n_delay #(
-              .N          (LATENCY_FIXED_2_FLOAT - 2 -2),
+              .N          (LATENCY_FIXED_2_FLOAT - 2 -3 -1),
               .WORD_WIDTH (1)
             ) CONFIG_RESETN_1 (
               .clk      (clk),
@@ -377,7 +381,7 @@ module lrelu_engine (
               .data_out (resetn_config_1)
             );
             n_delay #(
-              .N          (LATENCY_FIXED_2_FLOAT - 2 -2),
+              .N          (LATENCY_FIXED_2_FLOAT - 2 -3 -1),
               .WORD_WIDTH (1)
             ) CONFIG_1x1_1 (
               .clk      (clk),
@@ -397,7 +401,6 @@ module lrelu_engine (
             end
           end
 
-            // valid_1, w_sel_bram_1, resetn_config_1, valid_config_1
 
           /*
             BRAM A
@@ -416,16 +419,28 @@ module lrelu_engine (
               .s_data       (config_flat_1_cg [c][g]),
               .m_data       (a_val_cg [c][g]),
               .r_en         (valid_1),
-              .r_addr_max      (b_r_addr_max  )
+              .r_addr_max   (b_r_addr_max  )
             );
-          if (u == 0)
+          if (u == 0) begin
             mod_float_upsize upsizer_a (
               .aclk                 (clk),
               .aclken               (clken),
               .s_axis_a_tvalid      (1'b1),           
-              .s_axis_a_tdata       (a_val_cg     [c][g]),
-              .m_axis_result_tdata  (a_val_f32_cg [c][g])
+              .s_axis_a_tdata       (a_val_cg        [c][g]),
+              .m_axis_result_tdata  (a_val_f32_cg_in [c][g])
             );
+
+            n_delay #(
+              .N          (1),
+              .WORD_WIDTH (BITS_FMA_1)
+            ) A_VAL (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  (a_val_f32_cg_in  [c][g]),
+              .data_out (a_val_f32_cg_out [c][g])
+            );
+          end
 
           /*
             CLR mux for B-BRAM input
@@ -496,7 +511,7 @@ module lrelu_engine (
 
           if (c==0 && g==0 && u==0)
             n_delay #(
-              .N          (2),
+              .N          (3),
               .WORD_WIDTH (2)
             ) CLR_INDEX (
               .clk      (clk),
@@ -505,7 +520,42 @@ module lrelu_engine (
               .data_in  (clr_index_in),
               .data_out (clr_index_out)
             );
-            
+          /*
+            CLR Mux, with one latency
+          */
+          if (u == 0) begin
+            register #(
+              .WORD_WIDTH   (BRAM_R_WIDTH), 
+              .RESET_VALUE  (0)
+            ) B_MID_MID (
+              .clock        (clk),
+              .clock_enable (clken),
+              .resetn       (0),
+              .data_in      (b_cg_clr_mtb_f16[c][g][clr_index_out][0]),
+              .data_out     (b_mid_f16_cg [c][g])
+            );
+            register #(
+              .WORD_WIDTH   (BRAM_R_WIDTH), 
+              .RESET_VALUE  (0)
+            ) B_MID_TOP (
+              .clock        (clk),
+              .clock_enable (clken),
+              .resetn       (0),
+              .data_in      (b_cg_clr_mtb_f16[c][g][clr_index_out][1]),
+              .data_out     (b_top_f16_cg [c][g])
+            );
+            register #(
+              .WORD_WIDTH   (BRAM_R_WIDTH), 
+              .RESET_VALUE  (0)
+            ) B_MID_BOT (
+              .clock        (clk),
+              .clock_enable (clken),
+              .resetn       (0),
+              .data_in      (b_cg_clr_mtb_f16[c][g][clr_index_out][2]),
+              .data_out     (b_bot_f16_cg [c][g])
+            );
+          end
+
             /*
               MTB : Middle, Top and Bottom
 
@@ -517,27 +567,27 @@ module lrelu_engine (
               .aclk                 (clk),
               .aclken               (clken),
               .s_axis_a_tvalid      (1'b1),           
-              .s_axis_a_tdata       (b_cg_clr_mtb_f16[c][g][clr_index_out][0]),
-              .m_axis_result_tdata  (b_mid_f32_cg    [c][g]  )
+              .s_axis_a_tdata       (b_mid_f16_cg  [c][g]),
+              .m_axis_result_tdata  (b_mid_f32_cg [c][g])
             );
             mod_float_upsize upsizer_top (
               .aclk                 (clk),
               .aclken               (clken),
               .s_axis_a_tvalid      (1'b1),           
-              .s_axis_a_tdata       (b_cg_clr_mtb_f16[c][g][clr_index_out][1]),
-              .m_axis_result_tdata  (b_top_f32_cg    [c][g]  )
+              .s_axis_a_tdata       (b_top_f16_cg  [c][g]),
+              .m_axis_result_tdata  (b_top_f32_cg [c][g])
             );
             mod_float_upsize upsizer_bot (
               .aclk                 (clk),
               .aclken               (clken),
               .s_axis_a_tvalid      (1'b1),           
-              .s_axis_a_tdata       (b_cg_clr_mtb_f16[c][g][clr_index_out][2]),
-              .m_axis_result_tdata  (b_bot_f32_cg    [c][g]  )
+              .s_axis_a_tdata       (b_bot_f16_cg  [c][g]),
+              .m_axis_result_tdata  (b_bot_f32_cg [c][g])
             );
           end
 
           /*
-            Assign MTB BRAMs to each unit
+            MTB Mux with one latency
 
             * Top if:
               - top unit (u=0) 
@@ -549,8 +599,8 @@ module lrelu_engine (
               - else  : both copies 
           */
           
-          assign is_top_cgu[c][g][u] = (u == 0      ) & (m_user_float32[I_IS_MAX] ? (c==0) : 1) & m_user_float32[I_IS_TOP_BLOCK];
-          assign is_bot_cgu[c][g][u] = (u == UNITS-1) & (m_user_float32[I_IS_MAX] ? (c==1) : 1) & m_user_float32[I_IS_BOTTOM_BLOCK];
+          assign is_top_cgu[c][g][u] = (u == 0      ) & (m_user_float32 [I_IS_MAX] ? (c==0) : 1) & m_user_float32 [I_IS_TOP_BLOCK];
+          assign is_bot_cgu[c][g][u] = (u == UNITS-1) & (m_user_float32 [I_IS_MAX] ? (c==1) : 1) & m_user_float32 [I_IS_BOTTOM_BLOCK];
 
           always_comb begin
             if (m_user_float32[I_IS_1X1]) begin
@@ -581,11 +631,11 @@ module lrelu_engine (
               .s_axis_a_tdata       (m_data_float32_cgu[c][g][u]),              
               .s_axis_a_tuser       (s_user_fma_1),              
               .s_axis_b_tvalid      (1'b1),            
-              .s_axis_b_tdata       (a_val_f32_cg [c][g]),              
+              .s_axis_b_tdata       (a_val_f32_cg_out  [c][g]),              
               .s_axis_c_tvalid      (1'b1),           
               .s_axis_c_tdata       (b_val_f32_cgu[c][g][u]),              
               .m_axis_result_tvalid (m_valid_fma_1),  
-              .m_axis_result_tdata  (m_data_fma_1_cgu[c][g][u]),    
+              .m_axis_result_tdata  (m_data_fma_1_cgu  [c][g][u]),    
               .m_axis_result_tuser  (m_user_fma_1)    
             );
           else
@@ -596,10 +646,10 @@ module lrelu_engine (
               .s_axis_a_tvalid      (m_valid_float32),            
               .s_axis_a_tdata       (m_data_float32_cgu [c][g][u]),              
               .s_axis_b_tvalid      (1'b1),            
-              .s_axis_b_tdata       (a_val_f32_cg  [c][g]),              
+              .s_axis_b_tdata       (a_val_f32_cg_out   [c][g]),              
               .s_axis_c_tvalid      (1'b1),           
-              .s_axis_c_tdata       (b_val_f32_cgu [c][g][u]),              
-              .m_axis_result_tdata  (m_data_fma_1_cgu [c][g][u])
+              .s_axis_c_tdata       (b_val_f32_cgu[c][g][u]),              
+              .m_axis_result_tdata  (m_data_fma_1_cgu   [c][g][u])
             );
 
           if (c==0 && g==0 && u==0)
@@ -619,7 +669,7 @@ module lrelu_engine (
           */
           if (u == 0)
             n_delay #(
-              .N          (LATENCY_FMA_1 + 3 + 2 +2),
+              .N          (LATENCY_FMA_1 + 3 + 2 +3),
               .WORD_WIDTH (BRAM_R_WIDTH)
             ) CONFIG_DATA_FLAT_2 (
               .clk      (clk),
@@ -631,7 +681,7 @@ module lrelu_engine (
 
           if (c==0 && g==0 && u==0) begin
             n_delay #(
-              .N          (LATENCY_FMA_1 + 3 + 2 +2),
+              .N          (LATENCY_FMA_1 + 3 + 2 +3),
               .WORD_WIDTH (1)
             ) W_SEL_BRAM_2 (
               .clk      (clk),
@@ -641,7 +691,7 @@ module lrelu_engine (
               .data_out (w_sel_bram_2   )
             );
             n_delay #(
-              .N          (LATENCY_FMA_1 + 3 + 2 +2),
+              .N          (LATENCY_FMA_1 + 3 + 2 +3),
               .WORD_WIDTH (1)
             ) CONFIG_VALID_2 (
               .clk      (clk),
@@ -651,7 +701,7 @@ module lrelu_engine (
               .data_out (valid_config_2)
             );
             n_delay #(
-              .N          (LATENCY_FMA_1 + 3 + 2 +2),
+              .N          (LATENCY_FMA_1 + 3 + 2 +3),
               .WORD_WIDTH (1)
             ) CONFIG_RESETN_2 (
               .clk      (clk),
