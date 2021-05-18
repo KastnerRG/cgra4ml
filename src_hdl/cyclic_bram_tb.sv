@@ -3,34 +3,35 @@ module cyclic_bram_tb();
   timeunit 1ns;
   timeprecision 1ps;
   localparam CLK_PERIOD = 10;
+  logic clk = 0;
   initial begin
-    clk = 0;
     forever #(CLK_PERIOD/2) clk <= ~clk;
   end
 
   localparam W_DEPTH   = 2 ;
   localparam W_WIDTH   = 32;
   localparam R_WIDTH   = 16 ;
-  localparam LATENCY   = 3 ;
+  localparam LATENCY   = 2 ;
 
   localparam R_DEPTH = W_DEPTH * W_WIDTH / R_WIDTH;
   localparam R_ADDR_WIDTH = $clog2(R_DEPTH);
   localparam W_ADDR_WIDTH = $clog2(W_DEPTH);
 
-  logic clk, clken, resetn;
+  logic clken, resetn;
   logic s_valid_ready, m_ready;
   logic m_valid;
   logic [W_WIDTH-1:0] s_data;
   logic [R_WIDTH-1:0] m_data;
   logic [R_ADDR_WIDTH-1:0] r_addr_max;
+  logic [W_ADDR_WIDTH-1:0] w_addr_max;
   logic [R_ADDR_WIDTH-1:0] r_addr_min;
 
   cyclic_bram #(
-    .W_DEPTH (W_DEPTH),
-    .W_WIDTH (W_WIDTH),
-    .R_WIDTH (R_WIDTH),
-    .IP_TYPE (1),  // 0: depth=3m, 1: depth=m (edge)
-    .ABSORB_LATENCY (LATENCY)
+    .R_DEPTH      (R_DEPTH),
+    .R_DATA_WIDTH (R_WIDTH),
+    .W_DATA_WIDTH (W_WIDTH),
+    .LATENCY      (LATENCY),
+    .ABSORB       (1)
   ) dut (
     .clk        (clk   ),
     .clken      (clken ),
@@ -41,15 +42,25 @@ module cyclic_bram_tb();
     .m_data     (m_data),
     .m_valid    (m_valid),
     .r_addr_max (r_addr_max),
-    .r_addr_min (1)
+    .w_addr_max (w_addr_max),
+    .r_addr_min (r_addr_min)
   );
 
 
   initial begin
-    @(posedge clk);
     clken  <= 1;
-    resetn <= 1;
+    resetn <= 0;
+    s_valid_ready <= 0;
+    m_ready <= 0;
+    s_data  <= 0;
     r_addr_max  <= R_DEPTH-1;
+    w_addr_max  <= W_DEPTH-1;
+    r_addr_min  <= R_ADDR_WIDTH'(1);
+
+    @(posedge clk);
+    @(posedge clk);
+    @(posedge clk);
+    resetn <= 1;
 
     s_valid_ready <= 0;
     s_data        <= 0;
@@ -58,6 +69,9 @@ module cyclic_bram_tb();
     @(posedge clk);
     s_valid_ready <= 1;
     s_data        <= {16'd11, 16'd10};
+    // clken         <= 0;
+    // @(posedge clk);
+    // clken         <= 1;
     @(posedge clk);
     s_valid_ready <= 1;
     s_data        <= {16'd13, 16'd12};
@@ -70,6 +84,13 @@ module cyclic_bram_tb();
 
     @(posedge clk);
     m_ready       <= 1;
+
+    // @(posedge clk);
+    // clken         <= 0;
+    // @(posedge clk);
+    // clken         <= 0;
+    // @(posedge clk);
+    // clken         <= 1;
 
     repeat(5) begin
       @(posedge clk);

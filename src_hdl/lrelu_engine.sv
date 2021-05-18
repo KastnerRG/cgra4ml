@@ -107,7 +107,7 @@ module lrelu_engine (
   localparam BRAM_R_DEPTH_3X3 = MEMBERS;
   localparam BRAM_W_DEPTH_3X3 = BRAM_R_DEPTH_3X3 * BRAM_R_WIDTH / BRAM_W_WIDTH;
 
-  localparam BRAM_R_DEPTH_1X1 = MEMBERS * 3; ;
+  localparam BRAM_R_DEPTH_1X1 = MEMBERS * 3;
   localparam BRAM_W_DEPTH_1X1 = BRAM_R_DEPTH_1X1 * BRAM_R_WIDTH / BRAM_W_WIDTH;
 
   localparam BITS_BRAM_R_DEPTH_1X1 = $clog2(BRAM_R_DEPTH_1X1);
@@ -241,6 +241,7 @@ module lrelu_engine (
   assign s_user_fma_2 = TUSER_WIDTH_MAXPOOL_IN'(user_2);
   
   logic [BITS_BRAM_R_DEPTH_1X1-1:0] b_r_addr_max  ;
+  logic [BITS_BRAM_W_DEPTH_1X1-1:0] b_w_addr_max  ;
 
   
   logic [1:0] clr_index_in, clr_index_out;
@@ -316,33 +317,12 @@ module lrelu_engine (
               .m_axis_result_tdata  (m_data_float32_cgu[c][g][u])  
             );
 
-          if (c==0 && g==0 && u==0) begin
-
+          /*
+            Delayed config
+          */
+          if (u ==0) begin
             localparam LATENCY_1 = LATENCY_FIXED_2_FLOAT-LATENCY_BRAM-LATENCY_FLOAT_UPSIZE-1;
 
-            n_delay #(
-              .N          (LATENCY_1),
-              .WORD_WIDTH (1)
-            ) VALID_1 (
-              .clk      (clk),
-              .resetn   (resetn),
-              .clken    (clken),
-              .data_in  (s_valid),
-              .data_out (valid_1)
-            );
-            n_delay #(
-              .N          (LATENCY_1),
-              .WORD_WIDTH (TUSER_WIDTH_LRELU_IN)
-            ) USER_1 (
-              .clk      (clk),
-              .resetn   (resetn),
-              .clken    (clken),
-              .data_in  (s_user),
-              .data_out (user_1)
-            );
-            /*
-              Delayed config
-            */
             n_delay #(
               .N          (LATENCY_1),
               .WORD_WIDTH (WORD_WIDTH_CONFIG * MEMBERS)
@@ -353,54 +333,89 @@ module lrelu_engine (
               .data_in  (s_data_config_flat_cg [c][g]),
               .data_out (config_flat_1_cg [c][g])
             );
-            n_delay #(
-              .N          (LATENCY_1),
-              .WORD_WIDTH (4)
-            ) W_SEL_BRAM_1 (
-              .clk      (clk),
-              .resetn   (resetn),
-              .clken    (clken),
-              .data_in  (w_sel_bram),
-              .data_out (w_sel_bram_1)
-            );
-            n_delay #(
-              .N          (LATENCY_1),
-              .WORD_WIDTH (1)
-            ) CONFIG_VALID_1 (
-              .clk      (clk),
-              .resetn   (resetn),
-              .clken    (clken),
-              .data_in  (s_valid_config),
-              .data_out (valid_config_1)
-            );
-            n_delay #(
-              .N          (LATENCY_1),
-              .WORD_WIDTH (1)
-            ) CONFIG_RESETN_1 (
-              .clk      (clk),
-              .resetn   (resetn),
-              .clken    (clken),
-              .data_in  (resetn_config),
-              .data_out (resetn_config_1)
-            );
-            n_delay #(
-              .N          (LATENCY_1),
-              .WORD_WIDTH (1)
-            ) CONFIG_1x1_1 (
-              .clk      (clk),
-              .resetn   (resetn),
-              .clken    (clken),
-              .data_in  (is_1x1_config),
-              .data_out (is_1x1_config_1)
-            );
 
-            always_comb begin
-              if (w_sel_bram_1 == 0)
-                if (user_1[I_IS_1X1]) b_r_addr_max = BRAM_R_DEPTH_1X1-1;
-                else                  b_r_addr_max = BRAM_R_DEPTH_3X3-1;
-              else
-                if (is_1x1_config_1 ) b_r_addr_max = BRAM_R_DEPTH_1X1-1;
-                else                  b_r_addr_max = BRAM_R_DEPTH_3X3-1;
+            if (g==0 && c==0) begin
+              n_delay #(
+                .N          (LATENCY_1),
+                .WORD_WIDTH (1)
+              ) VALID_1 (
+                .clk      (clk),
+                .resetn   (resetn),
+                .clken    (clken),
+                .data_in  (s_valid),
+                .data_out (valid_1)
+              );
+              n_delay #(
+                .N          (LATENCY_1),
+                .WORD_WIDTH (TUSER_WIDTH_LRELU_IN)
+              ) USER_1 (
+                .clk      (clk),
+                .resetn   (resetn),
+                .clken    (clken),
+                .data_in  (s_user),
+                .data_out (user_1)
+              );
+              n_delay #(
+                .N          (LATENCY_1),
+                .WORD_WIDTH (4)
+              ) W_SEL_BRAM_1 (
+                .clk      (clk),
+                .resetn   (resetn),
+                .clken    (clken),
+                .data_in  (w_sel_bram),
+                .data_out (w_sel_bram_1)
+              );
+              n_delay #(
+                .N          (LATENCY_1),
+                .WORD_WIDTH (1)
+              ) CONFIG_VALID_1 (
+                .clk      (clk),
+                .resetn   (resetn),
+                .clken    (clken),
+                .data_in  (s_valid_config),
+                .data_out (valid_config_1)
+              );
+              n_delay #(
+                .N          (LATENCY_1),
+                .WORD_WIDTH (1)
+              ) CONFIG_RESETN_1 (
+                .clk      (clk),
+                .resetn   (resetn),
+                .clken    (clken),
+                .data_in  (resetn_config),
+                .data_out (resetn_config_1)
+              );
+              n_delay #(
+                .N          (LATENCY_1),
+                .WORD_WIDTH (1)
+              ) CONFIG_1x1_1 (
+                .clk      (clk),
+                .resetn   (resetn),
+                .clken    (clken),
+                .data_in  (is_1x1_config),
+                .data_out (is_1x1_config_1)
+              );
+
+              always_comb begin
+                if (w_sel_bram_1 == 0)
+                  if (user_1[I_IS_1X1]) begin
+                    b_r_addr_max = BRAM_R_DEPTH_1X1-1;
+                    b_w_addr_max = BRAM_W_DEPTH_1X1-1;
+                  end
+                  else begin
+                    b_r_addr_max = BRAM_R_DEPTH_3X3-1;
+                    b_w_addr_max = BRAM_W_DEPTH_3X3-1;
+                  end
+                else
+                  if (is_1x1_config_1 ) begin
+                    b_r_addr_max = BRAM_R_DEPTH_1X1-1;
+                    b_w_addr_max = BRAM_W_DEPTH_1X1-1;
+                  end
+                  else begin
+                    b_r_addr_max = BRAM_R_DEPTH_3X3-1;
+                    b_w_addr_max = BRAM_W_DEPTH_3X3-1;
+                  end
+              end
             end
           end
 
@@ -410,10 +425,11 @@ module lrelu_engine (
           */
           if (u == 0)
             cyclic_bram #(
-              .W_DEPTH (BRAM_W_DEPTH_1X1), 
-              .W_WIDTH (BRAM_W_WIDTH),
-              .R_WIDTH (BRAM_R_WIDTH),
-              .IP_TYPE (0)
+              .R_DEPTH      (BRAM_R_DEPTH_1X1), 
+              .R_DATA_WIDTH (BRAM_R_WIDTH),
+              .W_DATA_WIDTH (BRAM_W_WIDTH),
+              .LATENCY      (LATENCY_BRAM),
+              .ABSORB       (0)
             ) BRAM_A (
               .clk          (clk),
               .clken        (clken),
@@ -423,8 +439,10 @@ module lrelu_engine (
               .m_data       (a_val_cg [c][g]),
               .r_en         (valid_1),
               .r_addr_max   (b_r_addr_max  ),
-              .r_addr_min   (0)
+              .w_addr_max   (b_w_addr_max  ),
+              .r_addr_min   (BITS_BRAM_R_DEPTH_1X1'(0))
             );
+
           if (u == 0) begin
             mod_float_upsize upsizer_a (
               .aclk                 (clk),
@@ -478,10 +496,11 @@ module lrelu_engine (
 
                 if (mtb==0 && clr ==0) begin // Center BRAM
                   cyclic_bram #(
-                    .W_DEPTH (BRAM_W_DEPTH_1X1), 
-                    .W_WIDTH (BRAM_W_WIDTH),
-                    .R_WIDTH (BRAM_R_WIDTH),
-                    .IP_TYPE (0)
+                    .R_DEPTH      (BRAM_R_DEPTH_1X1), 
+                    .R_DATA_WIDTH (BRAM_R_WIDTH),
+                    .W_DATA_WIDTH (BRAM_W_WIDTH),
+                    .LATENCY      (LATENCY_BRAM),
+                    .ABSORB       (0)
                   ) BRAM_B (
                     .clk          (clk),
                     .clken        (clken),
@@ -491,15 +510,17 @@ module lrelu_engine (
                     .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
                     .r_en         (b_ready_cg_clr_mtb[c][g][clr][mtb]),
                     .r_addr_max   (b_r_addr_max  ),
-                    .r_addr_min   (0)
+                    .w_addr_max   (b_w_addr_max  ),
+                    .r_addr_min   (BITS_BRAM_R_DEPTH_1X1'(0))
                   );
                 end
                 else begin // Edge BRAM
                   cyclic_bram #(
-                    .W_DEPTH (BRAM_W_DEPTH_3X3), 
-                    .W_WIDTH (BRAM_W_WIDTH),
-                    .R_WIDTH (BRAM_R_WIDTH),
-                    .IP_TYPE (1)
+                    .R_DEPTH      (BRAM_R_DEPTH_3X3), 
+                    .R_DATA_WIDTH (BRAM_R_WIDTH),
+                    .W_DATA_WIDTH (BRAM_W_WIDTH),
+                    .LATENCY      (LATENCY_BRAM),
+                    .ABSORB       (0)
                   ) BRAM_B (
                     .clk          (clk),
                     .clken        (clken),
@@ -509,7 +530,8 @@ module lrelu_engine (
                     .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
                     .r_en         (b_ready_cg_clr_mtb[c][g][clr][mtb]),
                     .r_addr_max   (BITS_BRAM_R_DEPTH_3X3'(BRAM_R_DEPTH_3X3-1)),
-                    .r_addr_min   (0)
+                    .w_addr_max   (BITS_BRAM_W_DEPTH_3X3'(BRAM_W_DEPTH_3X3-1)),
+                    .r_addr_min   (BITS_BRAM_R_DEPTH_3X3'(0))
                   );
                 end
               end
