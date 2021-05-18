@@ -17,7 +17,8 @@ module cyclic_bram #(
   R_DATA_WIDTH = 8,
   W_DATA_WIDTH = 8,
   LATENCY      = 3,
-  ABSORB       = 0
+  ABSORB       = 0,
+  IP_TYPE      = 0 // 0 - lrelu, 1 - lrelu_edge, 2 - weights
 )(
   clk  ,
   clken,
@@ -82,23 +83,34 @@ module cyclic_bram #(
 
   logic [R_DATA_WIDTH-1 :0] bram_m_data;
 
-  xpm_memory_sdpram_wrapper #(
-    .R_DEPTH      (R_DEPTH     ),
-    .R_DATA_WIDTH (R_DATA_WIDTH),
-    .W_DATA_WIDTH (W_DATA_WIDTH),
-    .LATENCY      (LATENCY     )
-  ) BRAM (
-    .clken  (clken ),
-    .resetn (resetn),
-    .r_clk  (clk   ),
-    .r_en   (clken && r_en  ),
-    .r_addr (r_addr),
-    .r_data (bram_m_data),
-    .w_clk  (clk   ),
-    .w_en   (clken && w_en  ),
-    .w_addr (w_addr),
-    .w_data (s_data)
-  );
+  generate
+    if (IP_TYPE == 0)
+      bram_lrelu bram (
+        .clka   (clk),    
+        .ena    (clken),     
+        .wea    (w_en),     
+        .addra  (w_addr),  
+        .dina   (s_data),   
+        .clkb   (clk),   
+        .enb    (clken),     
+        .addrb  (r_addr),  
+        .doutb  (bram_m_data)  
+      );
+
+    else if (IP_TYPE == 1)
+      bram_lrelu_edge bram (
+        .clka   (clk),    
+        .ena    (clken),     
+        .wea    (w_en),     
+        .addra  (w_addr),  
+        .dina   (s_data),   
+        .clkb   (clk),   
+        .enb    (clken),     
+        .addrb  (r_addr),  
+        .doutb  (bram_m_data)  
+      );
+
+  endgenerate
 
   /*
     FIFO and Delay to make an always valid cyclic BRAM
@@ -119,21 +131,16 @@ module cyclic_bram #(
       .data_out (r_en_delayed)
     );
 
-   xpm_fifo_sync_wrapper #(
-      .READ_DATA_WIDTH  (R_DATA_WIDTH ),
-      .WRITE_DATA_WIDTH (R_DATA_WIDTH ),
-      .DEPTH            (16) //2**$clog2(LATENCY+1)
-    ) fifo (
-      .rst        (~resetn), 
-      .rd_en      (clken && fifo_r_en), 
-      .wr_en      (clken && r_en_delayed), 
-      .wr_clk     (clk), 
-      .empty      (empty), 
-      // .full  (), 
-      .data_valid (m_valid),
-      .din        (bram_m_data), 
-      .dout       (m_data)
-    );
+   lrelu_fifo lrelu_fifo (
+    .clk    (clk),     
+    .srst   (~resetn),   
+    .din    (bram_m_data),    
+    .wr_en  (clken && r_en_delayed),
+    .rd_en  (clken && r_en), 
+    .dout   (m_data),  
+    // .full   (full), 
+    .empty  (empty) 
+  );
 
     assign fifo_r_en = ~empty && r_en;
   end
