@@ -429,7 +429,8 @@ module lrelu_engine (
               .R_DATA_WIDTH (BRAM_R_WIDTH),
               .W_DATA_WIDTH (BRAM_W_WIDTH),
               .LATENCY      (LATENCY_BRAM),
-              .ABSORB       (0)
+              .ABSORB       (0),
+              .IP_TYPE      (0)
             ) BRAM_A (
               .clk          (clk),
               .clken        (clken),
@@ -500,7 +501,8 @@ module lrelu_engine (
                     .R_DATA_WIDTH (BRAM_R_WIDTH),
                     .W_DATA_WIDTH (BRAM_W_WIDTH),
                     .LATENCY      (LATENCY_BRAM),
-                    .ABSORB       (0)
+                    .ABSORB       (0),
+                    .IP_TYPE      (0)
                   ) BRAM_B (
                     .clk          (clk),
                     .clken        (clken),
@@ -520,7 +522,8 @@ module lrelu_engine (
                     .R_DATA_WIDTH (BRAM_R_WIDTH),
                     .W_DATA_WIDTH (BRAM_W_WIDTH),
                     .LATENCY      (LATENCY_BRAM),
-                    .ABSORB       (0)
+                    .ABSORB       (0),
+                    .IP_TYPE      (1)
                   ) BRAM_B (
                     .clk          (clk),
                     .clken        (clken),
