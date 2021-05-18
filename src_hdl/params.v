@@ -2,14 +2,14 @@
 Parameters of the system. Written from build.tcl
 */
 
-`define UNITS    2  
-`define GROUPS   1 
-`define COPIES   1 
+`define UNITS    4  
+`define GROUPS   2 
+`define COPIES   2 
 `define MEMBERS  4
 
-`define CORES              4
-`define UNITS_EDGES        4
-`define IM_IN_S_DATA_WORDS 4
+`define CORES              16
+`define UNITS_EDGES        6
+`define IM_IN_S_DATA_WORDS 8
 
 `define WORD_WIDTH          8         
 `define WORD_WIDTH_ACC      32    
@@ -20,14 +20,14 @@ Parameters of the system. Written from build.tcl
 
 `define BITS_KERNEL_H     2
 `define BITS_KERNEL_W     2
-`define TKEEP_WIDTH_IM_IN 4
+`define TKEEP_WIDTH_IM_IN 8
 `define BITS_CONFIG_COUNT 5
 
-`define DEBUG_CONFIG_WIDTH_W_ROT   89  
+`define DEBUG_CONFIG_WIDTH_W_ROT   86  
 `define DEBUG_CONFIG_WIDTH_IM_PIPE 17
 `define DEBUG_CONFIG_WIDTH_LRELU   23  
 `define DEBUG_CONFIG_WIDTH_MAXPOOL 1
-`define DEBUG_CONFIG_WIDTH         134        
+`define DEBUG_CONFIG_WIDTH         131        
 
 /*
   IMAGE TUSER INDICES
@@ -40,10 +40,10 @@ Parameters of the system. Written from build.tcl
 `define TUSER_WIDTH_IM_SHIFT_OUT  3
 
 `define IM_CIN_MAX       1024      
-`define IM_BLOCKS_MAX    128   
+`define IM_BLOCKS_MAX    64   
 `define IM_COLS_MAX      384     
 `define S_WEIGHTS_WIDTH 32
-`define M_DATA_WIDTH     32
+`define M_DATA_WIDTH     128
 `define LRELU_ALPHA      11878     
 /*
   LATENCIES & float widths

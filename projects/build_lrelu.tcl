@@ -2,9 +2,9 @@ set PROJ_NAME lrelu
 set PROJ_FOLDER lrelu
 set SOURCE_FOLDER ../src_hdl
 
-set UNITS   2
-set GROUPS  1
-set COPIES  1
+set UNITS   4
+set GROUPS  2
+set COPIES  2
 set MEMBERS 4
 
 set WORD_WIDTH       8
@@ -305,24 +305,6 @@ lappend IP_NAMES $IP_NAME
 create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME
 set_property -dict [list  CONFIG.Operation_Type {Float_to_fixed} CONFIG.C_Mult_Usage {No_Usage} CONFIG.Flow_Control {NonBlocking} CONFIG.Has_ACLKEN {true} CONFIG.Has_ARESETn {false} CONFIG.A_Precision_Type {Custom} CONFIG.C_A_Exponent_Width $BITS_EXP_FMA_2 CONFIG.C_A_Fraction_Width [expr $BITS_FRA_FMA_2 + 1] CONFIG.C_Result_Exponent_Width $WORD_WIDTH CONFIG.C_Result_Fraction_Width {0} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Latency {5} CONFIG.C_Rate {1}] [get_ips $IP_NAME]
 
-set IP_NAME "bram_lrelu"
-lappend IP_NAMES $IP_NAME
-set R_WIDTH 16
-set R_DEPTH [expr "$MEMBERS * $KERNEL_W_MAX"]
-set W_WIDTH [expr "$MEMBERS * $WORD_WIDTH   "]
-set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
-create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
-set_property -dict [list CONFIG.Algorithm {Minimum_Area} CONFIG.Write_Width_A $W_WIDTH CONFIG.Write_Depth_A $W_DEPTH CONFIG.Read_Width_A $R_WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $W_WIDTH CONFIG.Read_Width_B $W_WIDTH CONFIG.Register_PortA_Output_of_Memory_Core {true}] [get_ips $IP_NAME]
-
-set IP_NAME "bram_lrelu_edge"
-lappend IP_NAMES $IP_NAME
-set R_WIDTH 16
-set R_DEPTH [expr "$MEMBERS"]
-set W_WIDTH [expr "$MEMBERS * $WORD_WIDTH   "]
-set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
-create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
-set_property -dict [list CONFIG.Algorithm {Minimum_Area} CONFIG.Write_Width_A $W_WIDTH CONFIG.Write_Depth_A $W_DEPTH CONFIG.Read_Width_A $R_WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $W_WIDTH CONFIG.Read_Width_B $W_WIDTH CONFIG.Register_PortA_Output_of_Memory_Core {true}] [get_ips $IP_NAME]
-
 set IP_NAME "mod_float_downsize"
 lappend IP_NAMES $IP_NAME
 set BITS_FRA_IN [expr $BITS_FRA_FMA_1 + 1]
@@ -355,7 +337,6 @@ foreach IP_NAME $IP_NAMES {
 
 add_files -norecurse {
   ../src_hdl/n_delay_stream.sv 
-  ../src_hdl/always_valid_cyclic_bram.sv 
   ../src_hdl/lrelu_engine.sv 
   ../src_hdl/axis_lrelu_engine_tb.sv 
   ../src_hdl/axis_lrelu_engine.v 
@@ -363,6 +344,7 @@ add_files -norecurse {
   ../src_hdl/n_delay.sv 
   ../src_hdl/params.v
   ../src_hdl/cyclic_bram.sv
+  ../src_hdl/xpm_modules.sv
   }
 
 set_property SOURCE_SET sources_1 [get_filesets sim_1]
