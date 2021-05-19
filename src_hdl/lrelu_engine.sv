@@ -561,7 +561,7 @@ module lrelu_engine (
             ) B_MID_MID (
               .clock        (clk),
               .clock_enable (clken),
-              .resetn       (0),
+              .resetn       (resetn),
               .data_in      (b_cg_clr_mtb_f16[c][g][clr_index_out][0]),
               .data_out     (b_mid_f16_cg [c][g])
             );
@@ -571,7 +571,7 @@ module lrelu_engine (
             ) B_MID_TOP (
               .clock        (clk),
               .clock_enable (clken),
-              .resetn       (0),
+              .resetn       (resetn),
               .data_in      (b_cg_clr_mtb_f16[c][g][clr_index_out][1]),
               .data_out     (b_top_f16_cg [c][g])
             );
@@ -581,7 +581,7 @@ module lrelu_engine (
             ) B_MID_BOT (
               .clock        (clk),
               .clock_enable (clken),
-              .resetn       (0),
+              .resetn       (resetn),
               .data_in      (b_cg_clr_mtb_f16[c][g][clr_index_out][2]),
               .data_out     (b_bot_f16_cg [c][g])
             );
@@ -849,96 +849,96 @@ module lrelu_engine (
     end 
   endgenerate
 
-  /*
-    Convert float16 wires to shortreal for simulation
-  */
+//   /*
+//     Convert float16 wires to shortreal for simulation
+//   */
 
-  virtual class float_downsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);
-    static function logic [EXP_OUT+FRA_OUT:0] downsize (input logic [EXP_IN+FRA_IN:0] float_in);
-      /*
-        Downsize
-        * eg: Float32 -> Float16
-            - EXP_IN  : 8
-            - FRA_IN  : 23
-            - EXP_OUT : 5
-            - FRA_OUT : 10
-        * Mantissa is rounded to avoid error
-      */
-      logic sign;
-      logic [EXP_IN -1:0] exp_in;
-      logic [FRA_IN -1:0] fra_in;
-      logic [EXP_OUT-1:0] exp_out;
-      logic [FRA_OUT  :0] fra_out_extra, fra_out_round;
-      logic [FRA_OUT-1:0] fra_out;
+//   virtual class float_downsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);
+//     static function logic [EXP_OUT+FRA_OUT:0] downsize (input logic [EXP_IN+FRA_IN:0] float_in);
+//       /*
+//         Downsize
+//         * eg: Float32 -> Float16
+//             - EXP_IN  : 8
+//             - FRA_IN  : 23
+//             - EXP_OUT : 5
+//             - FRA_OUT : 10
+//         * Mantissa is rounded to avoid error
+//       */
+//       logic sign;
+//       logic [EXP_IN -1:0] exp_in;
+//       logic [FRA_IN -1:0] fra_in;
+//       logic [EXP_OUT-1:0] exp_out;
+//       logic [FRA_OUT  :0] fra_out_extra, fra_out_round;
+//       logic [FRA_OUT-1:0] fra_out;
       
-      {sign, exp_in, fra_in} = float_in;
-      exp_out = exp_in - (2**(EXP_IN-1)-2**(EXP_OUT-1));
-      fra_out_extra = fra_in >> (FRA_IN-FRA_OUT-1);
-      // fra_out_round = sign ? fra_out_extra - fra_in[FRA_IN-FRA_OUT]: fra_out_extra + fra_in[FRA_IN-FRA_OUT];
-      // fra_out = fra_out_round >> 1;
-      fra_out = fra_in >> (FRA_IN-FRA_OUT);
-      return {sign, exp_out, fra_out};
-    endfunction
-  endclass
+//       {sign, exp_in, fra_in} = float_in;
+//       exp_out = exp_in - (2**(EXP_IN-1)-2**(EXP_OUT-1));
+//       fra_out_extra = fra_in >> (FRA_IN-FRA_OUT-1);
+//       // fra_out_round = sign ? fra_out_extra - fra_in[FRA_IN-FRA_OUT]: fra_out_extra + fra_in[FRA_IN-FRA_OUT];
+//       // fra_out = fra_out_round >> 1;
+//       fra_out = fra_in >> (FRA_IN-FRA_OUT);
+//       return {sign, exp_out, fra_out};
+//     endfunction
+//   endclass
 
-  virtual class float_upsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);  
-    static function logic [EXP_OUT+FRA_OUT:0] upsize (input logic [EXP_IN+FRA_IN:0] float_in);
-      /*
-        Upsize
-        * eg: Float32 -> Float16
-            - EXP_IN  : 5
-            - FRA_IN  : 10
-            - EXP_OUT : 8
-            - FRA_OUT : 23
-        * No need to round
-      */
-      logic sign;
-      logic [EXP_IN -1:0] exp_in;
-      logic [FRA_IN -1:0] fra_in;
-      logic [EXP_OUT-1:0] exp_out;
-      logic [FRA_OUT-1:0] fra_out;
+//   virtual class float_upsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);  
+//     static function logic [EXP_OUT+FRA_OUT:0] upsize (input logic [EXP_IN+FRA_IN:0] float_in);
+//       /*
+//         Upsize
+//         * eg: Float32 -> Float16
+//             - EXP_IN  : 5
+//             - FRA_IN  : 10
+//             - EXP_OUT : 8
+//             - FRA_OUT : 23
+//         * No need to round
+//       */
+//       logic sign;
+//       logic [EXP_IN -1:0] exp_in;
+//       logic [FRA_IN -1:0] fra_in;
+//       logic [EXP_OUT-1:0] exp_out;
+//       logic [FRA_OUT-1:0] fra_out;
       
-      {sign, exp_in, fra_in} = float_in;
-      exp_out = exp_in + (2**(EXP_OUT-1)-2**(EXP_IN-1));
-      fra_out = fra_in << (FRA_OUT-FRA_IN);
-      return {sign, exp_out, fra_out};
-    endfunction
-  endclass
+//       {sign, exp_in, fra_in} = float_in;
+//       exp_out = exp_in + (2**(EXP_OUT-1)-2**(EXP_IN-1));
+//       fra_out = fra_in << (FRA_OUT-FRA_IN);
+//       return {sign, exp_out, fra_out};
+//     endfunction
+//   endclass
 
-  shortreal m_data_fma_1_cgu_sr      [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
-  shortreal m_data_fma_2_cgu_sr      [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
-  shortreal c_val_cgu_sr             [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
-  shortreal config_s_data_cgv_sr     [COPIES-1:0][GROUPS-1:0][VALS_CONFIG-1:0];
-  shortreal config_fma1_cgv_sr       [COPIES-1:0][GROUPS-1:0][VALS_CONFIG-1:0];
-  shortreal a_val_cg_sr              [COPIES-1:0][GROUPS-1:0];
-  shortreal b_cg_clr_mtb_sr          [COPIES-1:0][GROUPS-1:0][2:0][2:0];
-  shortreal d_val_cg_sr              [COPIES-1:0][GROUPS-1:0];
-  shortreal config_flat_2_cg_sr      [COPIES-1:0][GROUPS-1:0];
+//   shortreal m_data_fma_1_cgu_sr      [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+//   shortreal m_data_fma_2_cgu_sr      [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+//   shortreal c_val_cgu_sr             [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+//   shortreal config_s_data_cgv_sr     [COPIES-1:0][GROUPS-1:0][VALS_CONFIG-1:0];
+//   shortreal config_fma1_cgv_sr       [COPIES-1:0][GROUPS-1:0][VALS_CONFIG-1:0];
+//   shortreal a_val_cg_sr              [COPIES-1:0][GROUPS-1:0];
+//   shortreal b_cg_clr_mtb_sr          [COPIES-1:0][GROUPS-1:0][2:0][2:0];
+//   shortreal d_val_cg_sr              [COPIES-1:0][GROUPS-1:0];
+//   shortreal config_flat_2_cg_sr      [COPIES-1:0][GROUPS-1:0];
 
-generate
-  for(genvar c=0; c<COPIES; c=c+1) begin: cs
-    for(genvar g=0; g<GROUPS; g=g+1) begin: gs
-      for(genvar u=0; u<UNITS; u=u+1) begin: us
-        assign m_data_fma_1_cgu_sr [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(m_data_fma_1_cgu_f16[c][g][u]));
-        assign m_data_fma_2_cgu_sr [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(m_data_fma_2_cgu    [c][g][u]));
-        assign c_val_cgu_sr        [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(c_val_cgu           [c][g][u]));
-      end
+// generate
+//   for(genvar c=0; c<COPIES; c=c+1) begin: cs
+//     for(genvar g=0; g<GROUPS; g=g+1) begin: gs
+//       for(genvar u=0; u<UNITS; u=u+1) begin: us
+//         assign m_data_fma_1_cgu_sr [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(m_data_fma_1_cgu_f16[c][g][u]));
+//         assign m_data_fma_2_cgu_sr [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(m_data_fma_2_cgu    [c][g][u]));
+//         assign c_val_cgu_sr        [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(c_val_cgu           [c][g][u]));
+//       end
 
-      assign config_s_data_f16_cgv [c][g] = {>>{s_data_config_flat_cg [c][g]}};
-      assign config_fma1_f16_cgv   [c][g] = {>>{config_flat_1_cg [c][g]}};
+//       assign config_s_data_f16_cgv [c][g] = {>>{s_data_config_flat_cg [c][g]}};
+//       assign config_fma1_f16_cgv   [c][g] = {>>{config_flat_1_cg [c][g]}};
 
-      for(genvar v=0; v<VALS_CONFIG; v=v+1) begin: vs
-        assign config_s_data_cgv_sr[c][g][v] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_s_data_f16_cgv[c][g][v]));
-        assign config_fma1_cgv_sr  [c][g][v] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_fma1_f16_cgv  [c][g][v]));
-      end
-      assign config_flat_2_cg_sr   [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_flat_2_cg  [c][g]));
-      assign a_val_cg_sr           [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(a_val_cg          [c][g]));
-      assign d_val_cg_sr           [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(d_val_cg          [c][g]));
+//       for(genvar v=0; v<VALS_CONFIG; v=v+1) begin: vs
+//         assign config_s_data_cgv_sr[c][g][v] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_s_data_f16_cgv[c][g][v]));
+//         assign config_fma1_cgv_sr  [c][g][v] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_fma1_f16_cgv  [c][g][v]));
+//       end
+//       assign config_flat_2_cg_sr   [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_flat_2_cg  [c][g]));
+//       assign a_val_cg_sr           [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(a_val_cg          [c][g]));
+//       assign d_val_cg_sr           [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(d_val_cg          [c][g]));
 
-      for (genvar clr=0; clr<3; clr++)
-        for (genvar mtb=0; mtb<3; mtb++)
-          assign b_cg_clr_mtb_sr   [c][g][clr][mtb] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(b_cg_clr_mtb_f16 [c][g][clr][mtb]));
-    end
-  end
-endgenerate
+//       for (genvar clr=0; clr<3; clr++)
+//         for (genvar mtb=0; mtb<3; mtb++)
+//           assign b_cg_clr_mtb_sr   [c][g][clr][mtb] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(b_cg_clr_mtb_f16 [c][g][clr][mtb]));
+//     end
+//   end
+// endgenerate
 endmodule

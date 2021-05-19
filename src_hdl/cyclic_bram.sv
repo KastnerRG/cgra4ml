@@ -49,10 +49,10 @@ module cyclic_bram #(
     BRAM_WRITE_ADDRESS
   */
 
-  logic [R_ADDR_WIDTH-1:0] w_addr_next, w_addr;
+  logic [W_ADDR_WIDTH-1:0] w_addr_next, w_addr;
   assign w_addr_next = (w_addr < w_addr_max) ? w_addr + 1 : 0;
   register #(
-    .WORD_WIDTH   (R_ADDR_WIDTH), 
+    .WORD_WIDTH   (W_ADDR_WIDTH), 
     .RESET_VALUE  (0),
     .LOCAL        (1)
   ) ADDR_W (
@@ -109,6 +109,18 @@ module cyclic_bram #(
         .addrb  (r_addr),  
         .doutb  (bram_m_data)  
       );
+    else if (IP_TYPE == 2)
+      bram_weights bram (
+        .clka   (clk),    
+        .ena    (clken),     
+        .wea    (w_en),     
+        .addra  (w_addr),  
+        .dina   (s_data),   
+        .clkb   (clk),   
+        .enb    (clken),     
+        .addrb  (r_addr),  
+        .doutb  (bram_m_data)  
+      );
 
   endgenerate
 
@@ -131,16 +143,18 @@ module cyclic_bram #(
       .data_out (r_en_delayed)
     );
 
-   lrelu_fifo lrelu_fifo (
-    .clk    (clk),     
-    .srst   (~resetn),   
-    .din    (bram_m_data),    
-    .wr_en  (clken && r_en_delayed),
-    .rd_en  (clken && r_en), 
-    .dout   (m_data),  
-    // .full   (full), 
-    .empty  (empty) 
-  );
+    if (IP_TYPE == 2)
+      fifo_weights fifo (
+        .clk    (clk),     
+        .srst   (~resetn),   
+        .din    (bram_m_data),    
+        .wr_en  (clken && r_en_delayed),
+        .rd_en  (clken && r_en), 
+        .dout   (m_data),  
+        // .full   (full), 
+        .empty  (empty),
+        .valid  (m_valid)
+      );
 
     assign fifo_r_en = ~empty && r_en;
   end
