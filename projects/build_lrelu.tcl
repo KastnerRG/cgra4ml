@@ -362,7 +362,6 @@ add_files -norecurse {
   ../src_hdl/n_delay.sv 
   ../src_hdl/params.v
   ../src_hdl/cyclic_bram.sv
-  ../src_hdl/xpm_modules.sv
   }
 
 set_property SOURCE_SET sources_1 [get_filesets sim_1]

@@ -299,9 +299,6 @@ module axis_accelerator
     .m_axis_tlast         (conv_m_axis_tlast          ),
     .m_axis_tuser         (conv_m_axis_tuser          )
     );
-    /*
-        Convert conv_out (cmgu) into lrelu_in (mcgu)
-    */
 
   axis_lrelu_engine #(
     .WORD_WIDTH_IN              (WORD_WIDTH_ACC            ),

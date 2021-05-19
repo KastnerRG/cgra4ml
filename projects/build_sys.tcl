@@ -26,7 +26,9 @@ set LATENCY_ACCUMULATOR   2
 set LATENCY_FMA_1         16
 set LATENCY_FMA_2         15
 set LATENCY_FIXED_2_FLOAT  6
-set LATENCY_BRAM           2
+set LATENCY_BRAM           3
+set LATENCY_FLOAT_UPSIZE   2
+set LATENCY_FLOAT_DOWNSIZE 3
 
 set BITS_EXP_CONFIG 5
 set BITS_FRA_CONFIG 10
@@ -166,6 +168,8 @@ Parameters of the system. Written from build.tcl
 `define LATENCY_FMA_2         $LATENCY_FMA_2        
 `define LATENCY_FIXED_2_FLOAT $LATENCY_FIXED_2_FLOAT
 `define LATENCY_BRAM          $LATENCY_BRAM         
+`define LATENCY_FLOAT_UPSIZE   $LATENCY_FLOAT_UPSIZE   
+`define LATENCY_FLOAT_DOWNSIZE $LATENCY_FLOAT_DOWNSIZE   
 `define LATENCY_ACCUMULATOR   $LATENCY_ACCUMULATOR    
 `define LATENCY_MULTIPLIER    $LATENCY_MULTIPLIER     
 /*
@@ -234,7 +238,6 @@ set TID_WIDTH 0
 create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $TUSER_WIDTH CONFIG.TID_WIDTH $TID_WIDTH CONFIG.HAS_TKEEP $T_KEEP CONFIG.HAS_TLAST $T_LAST] [get_ips $IP_NAME]
 
-
 set IP_NAME "bram_weights"
 lappend IP_NAMES $IP_NAME
 set R_WIDTH [expr "$WORD_WIDTH    * $CORES * $KERNEL_W_MAX"]
@@ -242,7 +245,12 @@ set R_DEPTH [expr "$KERNEL_H_MAX * $IM_CIN_MAX + $BEATS_CONFIG_3X3_1"]
 set W_WIDTH [expr "$R_WIDTH"]
 set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
-set_property -dict [list  CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A $W_WIDTH CONFIG.Write_Depth_A $W_DEPTH CONFIG.Read_Width_A $W_WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $R_WIDTH CONFIG.Read_Width_B $R_WIDTH CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100}] [get_ips $IP_NAME]
+set_property -dict [list  CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A $W_WIDTH CONFIG.Write_Depth_A $W_DEPTH CONFIG.Read_Width_A $W_WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $R_WIDTH CONFIG.Read_Width_B $R_WIDTH CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100} CONFIG.Register_PortB_Output_of_Memory_Core {true} ] [get_ips $IP_NAME]
+
+set IP_NAME "fifo_weights"
+lappend IP_NAMES $IP_NAME
+create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.2 -module_name $IP_NAME
+set_property -dict [list CONFIG.Reset_Type {Synchronous_Reset} CONFIG.Performance_Options {First_Word_Fall_Through} CONFIG.Input_Data_Width $R_WIDTH CONFIG.Input_Depth {16} CONFIG.Output_Data_Width $R_WIDTH CONFIG.Output_Depth {16} CONFIG.Use_Extra_Logic {true} CONFIG.Valid_Flag {true} ] [get_ips $IP_NAME]
 
 set IP_NAME "axis_dw_weights_input"
 lappend IP_NAMES $IP_NAME
@@ -375,6 +383,26 @@ lappend IP_NAMES $IP_NAME
 create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME
 set_property -dict [list  CONFIG.Operation_Type {Float_to_fixed} CONFIG.C_Mult_Usage {No_Usage} CONFIG.Flow_Control {NonBlocking} CONFIG.Has_ACLKEN {true} CONFIG.Has_ARESETn {false} CONFIG.A_Precision_Type {Custom} CONFIG.C_A_Exponent_Width $BITS_EXP_FMA_2 CONFIG.C_A_Fraction_Width [expr $BITS_FRA_FMA_2 + 1] CONFIG.C_Result_Exponent_Width $WORD_WIDTH CONFIG.C_Result_Fraction_Width {0} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Latency {5} CONFIG.C_Rate {1}] [get_ips $IP_NAME]
 
+set IP_NAME "mod_float_downsize"
+lappend IP_NAMES $IP_NAME
+set BITS_FRA_IN [expr $BITS_FRA_FMA_1 + 1]
+set BITS_EXP_IN $BITS_EXP_FMA_1
+set BITS_FRA_OUT [expr $BITS_FRA_FMA_2 + 1]
+set BITS_EXP_OUT $BITS_EXP_FMA_2
+set LATENCY $LATENCY_FLOAT_DOWNSIZE
+create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME
+set_property -dict [list CONFIG.Operation_Type {Float_to_float} CONFIG.A_Precision_Type {Custom} CONFIG.Result_Precision_Type {Custom} CONFIG.C_Result_Exponent_Width $BITS_EXP_OUT CONFIG.C_Result_Fraction_Width $BITS_FRA_OUT CONFIG.Flow_Control {NonBlocking} CONFIG.Maximum_Latency {false} CONFIG.C_Latency $LATENCY CONFIG.C_A_Exponent_Width $BITS_EXP_IN CONFIG.C_A_Fraction_Width $BITS_FRA_IN CONFIG.C_Mult_Usage {No_Usage} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Rate {1} CONFIG.Has_ACLKEN {true}] [get_ips $IP_NAME]
+
+set IP_NAME "mod_float_upsize"
+lappend IP_NAMES $IP_NAME
+set BITS_FRA_IN [expr $BITS_FRA_FMA_2 + 1]
+set BITS_EXP_IN $BITS_EXP_FMA_2
+set BITS_FRA_OUT [expr $BITS_FRA_FMA_1 + 1]
+set BITS_EXP_OUT $BITS_EXP_FMA_1
+set LATENCY $LATENCY_FLOAT_UPSIZE
+create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME
+set_property -dict [list CONFIG.Operation_Type {Float_to_float} CONFIG.A_Precision_Type {Custom} CONFIG.Result_Precision_Type {Custom} CONFIG.C_Result_Exponent_Width $BITS_EXP_OUT CONFIG.C_Result_Fraction_Width $BITS_FRA_OUT CONFIG.Flow_Control {NonBlocking} CONFIG.Maximum_Latency {false} CONFIG.C_Latency $LATENCY CONFIG.C_A_Exponent_Width $BITS_EXP_IN CONFIG.C_A_Fraction_Width $BITS_FRA_IN CONFIG.C_Mult_Usage {No_Usage} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Rate {1} CONFIG.Has_ACLKEN {true}] [get_ips $IP_NAME]
+
 set IP_NAME "bram_lrelu"
 lappend IP_NAMES $IP_NAME
 set R_WIDTH 16
@@ -382,7 +410,7 @@ set R_DEPTH [expr "$MEMBERS * $KERNEL_W_MAX"]
 set W_WIDTH [expr "$MEMBERS * $WORD_WIDTH   "]
 set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
-set_property -dict [list  CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A $W_WIDTH CONFIG.Write_Depth_A $W_DEPTH CONFIG.Read_Width_A $W_WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $R_WIDTH CONFIG.Read_Width_B $R_WIDTH CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100}] [get_ips $IP_NAME]
+set_property -dict [list  CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A $W_WIDTH CONFIG.Write_Depth_A $W_DEPTH CONFIG.Read_Width_A $W_WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $R_WIDTH CONFIG.Read_Width_B $R_WIDTH CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100} CONFIG.Register_PortB_Output_of_Memory_Core {true} ] [get_ips $IP_NAME]
 
 set IP_NAME "bram_lrelu_edge"
 lappend IP_NAMES $IP_NAME
@@ -391,7 +419,7 @@ set R_DEPTH [expr "$MEMBERS"]
 set W_WIDTH [expr "$MEMBERS * $WORD_WIDTH   "]
 set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
-set_property -dict [list  CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A $W_WIDTH CONFIG.Write_Depth_A $W_DEPTH CONFIG.Read_Width_A $W_WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $R_WIDTH CONFIG.Read_Width_B $R_WIDTH CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100}] [get_ips $IP_NAME]
+set_property -dict [list  CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A $W_WIDTH CONFIG.Write_Depth_A $W_DEPTH CONFIG.Read_Width_A $W_WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $R_WIDTH CONFIG.Read_Width_B $R_WIDTH CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100} CONFIG.Register_PortB_Output_of_Memory_Core {true} ] [get_ips $IP_NAME]
 
 #*********** MAXPOOL **********#
 

@@ -12,8 +12,8 @@ module axis_accelerator_tb ();
   end
 
   localparam ITERATIONS = 2;
-  localparam VALID_PROB = 100;
-  localparam READY_PROB = 100;
+  localparam VALID_PROB = 30;
+  localparam READY_PROB = 30;
   localparam string DIR_PATH = "D:/cnn-fpga/data/";
 
 
@@ -115,7 +115,7 @@ module axis_accelerator_tb ();
     parameter W_WORDS_PER_BEAT = S_WEIGHTS_WIDTH /WORD_WIDTH;
 
     parameter BEATS_PER_PACKET = (KERNEL_W_MAX/K)*MEMBERS;
-    parameter PACKETS_PER_ITR  = (IM_BLOCKS/MAX_FACTOR)*IM_COLS;
+    parameter PACKETS_PER_ITR  = (IM_BLOCKS/MAX_FACTOR)*IM_COLS/MAX_FACTOR;
     parameter BEATS_PER_ITR    = BEATS_PER_PACKET * PACKETS_PER_ITR;
 
     parameter WORDS_PER_BEAT_RELU = COPIES*GROUPS*UNITS;
@@ -144,15 +144,16 @@ module axis_accelerator_tb ();
         path_im_1      = {DIR_PATH, IDX_s, "_conv_in_0.txt"    };
         path_im_2      = {DIR_PATH, IDX_s, "_conv_in_1.txt"    };
         path_weights   = {DIR_PATH, IDX_s, "_weights.txt"      };
-        base_conv_out  = {DIR_PATH, IDX_s, "_conv_out_fpga_"   };
-        base_lrelu_out = {DIR_PATH, IDX_s, "_lrelu_out_fpga_"  };
-        base_max_out   = {DIR_PATH, IDX_s, "_maxpool_out_fpga_"};
-        base_output    = {DIR_PATH, IDX_s, "_output_fpga_"     };
+        base_conv_out  = {DIR_PATH, IDX_s, "_conv_out_sim_"   };
+        base_lrelu_out = {DIR_PATH, IDX_s, "_lrelu_out_sim_"  };
+        base_max_out   = {DIR_PATH, IDX_s, "_maxpool_out_sim_"};
+        base_output    = {DIR_PATH, IDX_s, "_output_sim_"     };
     endfunction
 
   endclass
 
   Layer #(.IDX (1 ), .K(3), .IS_MAX(1), .IM_HEIGHT(256), .IM_WIDTH(384), .IM_CIN(3  )) layer = new();
+  // Layer #(.IDX (2 ), .K(3), .IS_MAX(1), .IM_HEIGHT(128), .IM_WIDTH(196), .IM_CIN(32  )) layer = new();
   // Layer #(.IDX (3 ), .K(3), .IS_MAX(0), .IM_HEIGHT(64 ), .IM_WIDTH(96 ), .IM_CIN(64 )) layer = new();
   // Layer #(.IDX (4 ), .K(1), .IS_MAX(0), .IM_HEIGHT(64 ), .IM_WIDTH(96 ), .IM_CIN(128)) layer = new();
   // Layer #(.IDX (14), .K(3), .IS_MAX(0), .IM_HEIGHT(8  ), .IM_WIDTH(12 ), .IM_CIN(512)) layer = new();
