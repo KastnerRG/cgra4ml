@@ -17,6 +17,8 @@ extern void PRINT(const char *format, ...);
 #include "D:/cnn-fpga/src_c/zynq-oop-drivers/dma/my_dma.h"
 #include "cnn.h"
 
+#include "xil_cache.h"
+
 #ifdef DEBUG
 	#define PRINT(...)  xil_printf (__VA_ARGS__)
 #else
@@ -27,7 +29,6 @@ int status;
 bool done = false;
 
 const int i_layers_start = 1-1;
-const int zero = 0;
 
 std::array<Layer, N_LAYERS> layers = build_yolo_mod();
 
@@ -62,6 +63,14 @@ void restart_im_2()
 		read_p2 = read_p1 + words_1;
 		words_2 = layers[i_layers].WORDS_PIXELS_PER_ARR;
 
+		// Xil_DCacheFlushRange((UINTPTR)read_p2, words_2);
+
+//		PRINT("Image_2 in: [");
+//		for (int i=0; i<UNITS_EDGES; i++){
+//			PRINT(" %d,", read_p2[words_2-UNITS_EDGES+i]);
+//		}
+//		PRINT("] \r\n");
+
 		status = dma_im_in_2.mm2s_start((UINTPTR)(read_p2), words_2);
 	}
 
@@ -88,7 +97,7 @@ void restart_weights()
 
 #if defined DEBUG
 
-	if (i_itr==0) layers[i_layers].print_weights_params();
+//	if (i_itr==0) layers[i_layers].print_weights_params();
 
 	PRINT("---------weights restarted. Reading from (i_layers,i_itr,:):\t (%d/%d, %d/%d, %d);\t ptr:%p; status:%d \r\n",
 			i_layers,N_LAYERS,
@@ -128,23 +137,28 @@ void restart_pixels()
 	read_p1 = (s8*)(layers[i_layers].input_chunk_p->data_p);
 	words_1 = UNITS_EDGES+layers[i_layers].WORDS_PIXELS_PER_ARR;
 
+	// Xil_DCacheFlushRange((UINTPTR)read_p1, words_1);
+
+//	PRINT("Image_1 in: [");
+//	for (int i=0; i<UNITS_EDGES; i++){
+//		PRINT(" %d,", read_p1[words_1-UNITS_EDGES+i]);
+//	}
+//	PRINT("] \r\n");
+
 	status = dma_im_in_1.mm2s_start((UINTPTR)read_p1, words_1);
 	restart_im_2();
 
-#if defined DEBUG
-	PRINT("----------pixels restarted. Reading from (i_layers,i_itr,:):\t (%d/%d, %d/%d, [%d]);\t ptr: [%p] \r\n",
-			i_layers,N_LAYERS,
-			i_itr	,layers[i_layers].ITR,
-			words_1,// words_2,
-			read_p1 //,read_p2
-			);
-#endif
+//	PRINT("----------pixels restarted. Reading from (i_layers,i_itr,:):\t (%d/%d, %d/%d, [%d]);\t ptr: [%p] \r\n",
+//			i_layers,N_LAYERS,
+//			i_itr	,layers[i_layers].ITR,
+//			words_1,
+//			read_p1);
 
 	if (i_itr == 0)
 	{
-#ifdef DEBUG
-		layers[i_layers].print_input_params();
-#endif
+//#ifdef DEBUG
+//		layers[i_layers].print_input_params();
+//#endif
 		// Invalidate the read layer.
 
 		chunk_s * prev_input_chunk_p = (i_layers == 0) ? layers[N_LAYERS-1].input_chunk_p : layers[i_layers-1].input_chunk_p;
@@ -152,7 +166,7 @@ void restart_pixels()
 		if (prev_input_chunk_p)
 		{
 			prev_input_chunk_p-> valid = false;
-			PRINT("Prev input chunk freed. Addr = %p \r\n", prev_input_chunk_p->data_p);
+//			PRINT("Prev input chunk freed. Addr = %p \r\n", prev_input_chunk_p->data_p);
 		}
 	}
 
@@ -169,7 +183,7 @@ void restart_pixels()
 	}
 }
 
-volatile s8* unravel_index_5(volatile s8* base_p,
+volatile s8* unravel_index_5(volatile s8* const base_p,
 		const int i_0, const int i_1, const int i_2, const int i_3, const int i_4,
 		const int D_0, const int D_1, const int D_2, const int D_3, const int D_4)
 {
@@ -177,7 +191,7 @@ volatile s8* unravel_index_5(volatile s8* base_p,
 	 return base_p + idx;
 }
 
-volatile s8* unravel_image_abwcu(volatile s8* pixels_base_p, const int i_arr, const int i_bpa, const int i_w, const int i_cout, const int i_ue, const int i_layers)
+volatile s8* unravel_image_abwcu(volatile s8* const pixels_base_p, const int i_arr, const int i_bpa, const int i_w, const int i_cout, const int i_ue, const int i_layers)
 {
 	return unravel_index_5( pixels_base_p,
 
@@ -190,27 +204,27 @@ volatile s8* unravel_image_abwcu(volatile s8* pixels_base_p, const int i_arr, co
 							UNITS_EDGES);
 }
 
-void read_gpios()
-{
-	UINTPTR gpio_bases[5] = {
-			XPAR_AXI_GPIO_0_BASEADDR,
-			XPAR_AXI_GPIO_1_BASEADDR,
-			XPAR_AXI_GPIO_2_BASEADDR,
-			XPAR_AXI_GPIO_3_BASEADDR,
-			XPAR_AXI_GPIO_4_BASEADDR
-	};
-
-	u32 * extracted_ptr = (u32*)0x00002000;
-
-	for (int i=0; i<5; i++){
-		extracted_ptr[i] = Xil_In32(gpio_bases[i]);
-		Xil_DCacheFlushRange((UINTPTR)(gpio_bases[i]), 4);
-
-		std::bitset<32> bits(extracted_ptr[i]);
-		PRINT("bits at %d : %s \r\n", i, bits.to_string().c_str());
-	}
-
-}
+//void read_gpios()
+//{
+//	UINTPTR gpio_bases[5] = {
+//			XPAR_AXI_GPIO_0_BASEADDR,
+//			XPAR_AXI_GPIO_1_BASEADDR,
+//			XPAR_AXI_GPIO_2_BASEADDR,
+//			XPAR_AXI_GPIO_3_BASEADDR,
+//			XPAR_AXI_GPIO_4_BASEADDR
+//	};
+//
+//	u32 * extracted_ptr = (u32*)0x00002000;
+//
+//	for (int i=0; i<5; i++){
+//		extracted_ptr[i] = Xil_In32(gpio_bases[i]);
+//		Xil_DCacheFlushRange((UINTPTR)(gpio_bases[i]), 4);
+//
+//		std::bitset<32> bits(extracted_ptr[i]);
+//		PRINT("bits at %d : %s \r\n", i, bits.to_string().c_str());
+//	}
+//
+//}
 
 //#define DEBUG_PAD
 void pad_prev(	const int i_w_next,
@@ -307,14 +321,14 @@ void restart_output_flat()
 	else
 	{
 		i_w = 0;
-		PRINT(" i_blocks: %d, write_p: %p \r\n", i_blocks, write_p);
+//		PRINT(" i_blocks: %d, write_p: %p \r\n", i_blocks, write_p);
 
 		if (i_blocks < layers[i_layers].OUT_BLOCKS-1)
 			i_blocks  += 1;
 		else
 		{
 			i_blocks   = 0;
-			PRINT(" i_itr: %d \r\n", i_itr);
+//			PRINT(" i_itr: %d \r\n", i_itr);
 
 			if (i_itr < layers[i_layers].ITR-1)
 				i_itr  += 1;
@@ -324,8 +338,8 @@ void restart_output_flat()
 
 				long bytes = layers[i_layers].WORDS_OUT_PER_TRANSFER * layers[i_layers].TRANSFERS_OUT_PER_ITR * layers[i_layers].ITR + UNITS_EDGES;
 
-				PRINT("Layer %d done. out_bytes: %d, addr: %d \r\n",
-						i_layers, bytes, layers[i_layers].get_output_pixels_base_p());
+//				PRINT("Layer %d done. out_bytes: %d, addr: %d \r\n",
+//						i_layers, bytes, layers[i_layers].get_output_pixels_base_p());
 
 				if (i_layers < N_LAYERS-1)
 					i_layers += 1;
@@ -346,16 +360,31 @@ void restart_output()
 	static volatile s8 * write_p = layers[i_layers].get_output_pixels_base_p();
 	static bool is_new_layer=true;
 
+	// static volatile s8 * write_p_old = 0;
+	// Xil_DCacheFlushRange((UINTPTR)write_p_old, UNITS_EDGES);
+//
+//	if ((i_itr == 0 && i_blocks == 15) || (i_itr == 1 && i_blocks == 0)){
+//		for (int i=0; i<UNITS_EDGES; i++){
+//			PRINT(" %d,", write_p_old[i]);
+//		}
+//		PRINT("] \r\n");
+//		PRINT("(%d,%d,%d,%d-%d,:) -- %p [", i_arr, i_bpa, i_w_flipped,i_itr,i_cout, write_p);
+//	}
+	// write_p_old = write_p;
 
-	if (i_w==0 && i_blocks==0)
-		PRINT("i_itr= %d, i_cout= %d, ptr= %p \r\n",i_itr, i_cout, write_p);
+
+//	if (i_w==0 && i_blocks==0)
+//		PRINT("i_itr= %d, i_cout= %d, ptr= %p \r\n",i_itr, i_cout, write_p);
 
 	// start transfer
 	dma_weights_im_out.s2mm_start(	(UINTPTR)write_p,
 									layers[i_layers].WORDS_OUT_PER_TRANSFER);
 
-
 	pad_prev(i_w_flipped,i_blocks,i_bpa,i_arr,i_cout,i_layers);
+
+	// if (i_itr == 1 && i_blocks == 0 && i_w == 20){
+	// 	PRINT("BREAK");
+	// }
 
 	// set config
 	if (is_new_layer && i_layers != N_LAYERS-1)
@@ -368,6 +397,8 @@ void restart_output()
 	// PREPARE NEXT INDICES
 	// TODO - handle skip connection
 
+	// blocks = 31 (a=1,bpa=15), w_f = 191 (w = 190), itr = 0
+
 	if (i_w < layers[i_layers].OUT_W_IN-1)
 	{
 		i_w += 1;
@@ -377,7 +408,7 @@ void restart_output()
 		if (i_w > layers[i_layers].OUT_W_IN - layers[i_layers].KW_PAD)
 		{
 			i_w_flipped = 2 * layers[i_layers].OUT_W_IN - (i_w + layers[i_layers].KW_PAD);
-			PRINT("%d -> %d \r\n", i_w, i_w_flipped);
+//			PRINT("%d -> %d \r\n", i_w, i_w_flipped);
 		}
 		else
 			i_w_flipped = i_w;
@@ -387,7 +418,7 @@ void restart_output()
 		i_w = 0;
 		i_w_flipped = 0;
 
-		PRINT(" i_blocks: %d, write_p: %p \r\n", i_blocks, write_p);
+		// PRINT(" i_blocks: %d, write_p: %p \r\n", i_blocks, write_p);
 
 		if (i_blocks < layers[i_layers].OUT_BLOCKS-1)
 		{
@@ -401,7 +432,7 @@ void restart_output()
 			i_arr      = 0;
 			i_bpa      = 0;
 
-			PRINT(" i_itr: %d \r\n", i_itr);
+			// PRINT(" i_itr: %d \r\n", i_itr);
 
 			if (i_itr >= layers[i_layers].ITR-1)
 			{
@@ -432,11 +463,11 @@ void restart_output()
 					layers[i_layers].output_chunk_p = get_chunk();
 					layers[i_layers].NEXT_P->input_chunk_p = layers[i_layers].output_chunk_p;
 				}
-				PRINT("Writing to new layer: chained_chunks (idx:%d -> idx:%d), data_p= %p \r\n",
-						    layers[i_layers].idx, layers[i_layers].NEXT_P->idx,
-							layers[i_layers].output_chunk_p->data_p);
+//				PRINT("Writing to new layer: chained_chunks (idx:%d -> idx:%d), data_p= %p \r\n",
+//						    layers[i_layers].idx, layers[i_layers].NEXT_P->idx,
+//							layers[i_layers].output_chunk_p->data_p);
 
-				layers[i_layers].print_output_params();
+//				layers[i_layers].print_output_params();
 			}
 			else if (i_itr == 0)
 			{
@@ -452,8 +483,9 @@ void restart_output()
 			}
 		}
 	}
+	// blocks = 31 (a=1,bpa=15), w_f = 191, itr = 0
 	write_p = unravel_image_abwcu(layers[i_layers].get_output_pixels_base_p(),
-								  i_arr,i_bpa,i_w_flipped,i_cout,zero, i_layers);
+								  i_arr,i_bpa,i_w_flipped,i_cout,0, i_layers);
 }
 
 //// mwr -bin -file D:/cnn-fpga/data/1_weights.bin 0x0A000000 722; mwr -bin -file D:/cnn-fpga/data/1_conv_in_0.bin 0x02000000 55297; mwr -bin -file D:/cnn-fpga/data/1_conv_in_1.bin 0x03000000 55296;
@@ -492,8 +524,8 @@ int main()
 			   layer_start.NEXT_P->input_chunk_p->data_p, layer_start.NEXT_P->idx);
 
 	// Layer Details
-	layer_start.print_input_params();
-	layer_start.print_output_params();
+//	layer_start.print_input_params();
+//	layer_start.print_output_params();
 
 	// Start transfer
 	dma_im_in_2.mm2s_done = true;
@@ -515,7 +547,7 @@ int main()
 		while (!dma_weights_im_out.mm2s_done) {}
 	}
 
-	pad_prev(zero,zero,zero,zero,zero,zero);
+	pad_prev(0,0,0,0,0,0);
 
 	PRINT("--- Exiting main() --- \r\n");
 	getchar();

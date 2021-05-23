@@ -77,7 +77,7 @@ def fill_invalid_smcg(arr, KW, max_factor, c, copy_factor=1):
     return arr_filled
 
 
-def get_lrelu_config(i_layers, c):
+def get_lrelu_config(i_layers, c, get_params=False):
     '''
     LRelu config are accepted in (beats,CGM) format
     * Say M = 4, S = 3
@@ -194,10 +194,17 @@ def get_lrelu_config(i_layers, c):
     lrelu_config = np.array(lrelu_config) # (ITR,LRELU_BEATS,CORES,KW_MAX)
     print(f'lrelu_config: shape = (ITR,LRELU_BEATS,CORES,KW_MAX) = {lrelu_config.shape}')
 
-    return lrelu_config
+    if get_params:
+        return lrelu_config, {
+            'd': d,
+            'b_ismcg_clr_mtb': b_ismcg_clr_mtb,
+            'a_ismcg': a_ismcg
+        }
+    else:
+        return lrelu_config
 
 
-def get_weights(i_layers, c):
+def get_weights(i_layers, i_itr, c):
 
     weights = c.LAYERS[f'{c.PREFIX_CONV}{i_layers}'].weights
 
@@ -272,7 +279,7 @@ def get_weights(i_layers, c):
     assert weights_dma_beats.shape == (ITR, 4 + (LRELU_BEATS + CIN*KH)*c.CORES*c.KW_MAX)
     print(f"get_weights - weights_dma_beats.shape: (ITR, 4 + (LRELU_BEATS + CIN*KH)*CORES*KW_MAX) = {weights_dma_beats.shape}")
 
-    np.savetxt(f"{c.DATA_DIR}{i_layers}_weights.txt", weights_dma_beats[0].flatten(), fmt='%d')
+    np.savetxt(f"{c.DATA_DIR}{i_layers}_weights.txt", weights_dma_beats[i_itr].flatten(), fmt='%d')
 
     return weights_dma_beats
 
@@ -347,7 +354,7 @@ def fpga_mwr_weights(i_layers,c):
     '''
     Get weights, flatten, write to bin, generate cmd
     '''
-    weights = get_weights(i_layers,c).flatten()  
+    weights = get_weights(i_layers,i_itr=None, c=c).flatten()  
     w_path = f"{c.DATA_DIR}{i_layers}_weights.bin"
     weights.tofile(w_path)
 
@@ -381,7 +388,7 @@ def fpga_mwr_weights_all(c):
     num_conv_layers = len([layer for key,layer in c.LAYERS.items() if 'conv' in key])
 
     for k in range(1, num_conv_layers+1):
-        weights_all += [get_weights(k,c).flatten()]
+        weights_all += [get_weights(k,i_itr=None,c=c).flatten()]
 
     weights_all = np.concatenate(weights_all)
 
@@ -434,7 +441,7 @@ def reshape_image_out(image,order,KW,max_factor,c,copy_factor=1,flip_cols=True):
         image = image.transpose(0,5,6,1, 3,7,2,4, 8) #(ITR,BLOCKS_PER_ARR,W,SUB_CORES, eff_c,max_factor,MEMBERS,GROUPS, CONV_UNITS)
     return image.reshape(ITR,BLOCKS_PER_ARR,W,SUB_CORES, c.CORES//copy_factor, c.CONV_UNITS)
 
-def make_conv_out(i_layers,c):
+def make_conv_out(i_layers,i_itr,c):
 
     max_factor = 2 if f'{c.PREFIX_MAX}{i_layers}' in c.LAYERS.keys() else 1
 
@@ -462,7 +469,7 @@ def make_conv_out(i_layers,c):
 
     print(f"image_out.shape: (ITR, {21 if KW==3 else 13} + BLOCKS_PER_ARR*W*SUB_CORES, COPIES*MEMBERS*GROUPS,CONV_UNITS) = {image_out.shape}")
 
-    np.savetxt(f"{c.DATA_DIR}/{i_layers}_conv_out.txt", image_out[0].flatten(), fmt='%d')
+    np.savetxt(f"{c.DATA_DIR}/{i_layers}_conv_out.txt", image_out[i_itr].flatten(), fmt='%d')
 
     return image_out
 
