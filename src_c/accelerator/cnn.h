@@ -212,8 +212,7 @@ public:
 		xil_printf("\n--------------- OUTPUT INFO, idx: %d ------------ \r\n\n",idx);
 
 		xil_printf(" - WORDS_OUT_PER_TRANSFER  : %d \r\n", WORDS_OUT_PER_TRANSFER);
-		xil_printf(" - OUT_WIN                 : %d \r\n", TRANSFERS_OUT_PER_ITR);
-		xil_printf(" - OUT_WIN                 : %d \r\n", OUT_W_IN);
+		xil_printf(" - TRANSFERS_OUT_PER_ITR   : %d \r\n", TRANSFERS_OUT_PER_ITR);
 		xil_printf(" - OUT_WIN                 : %d \r\n", OUT_W_IN);
 		xil_printf(" - OUT_MAX_FACTOR          : %d \r\n", OUT_MAX_FACTOR);
 		xil_printf(" - OUT_BLOCKS              : %d \r\n", OUT_BLOCKS);
