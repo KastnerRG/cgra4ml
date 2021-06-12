@@ -44,7 +44,115 @@ fpga_mwr_weights(i_layers=i_layers, c=CONFIG)
 
 
 # %%
+
+
+
+# %%
+weights_in = get_weights(i_layers=i_layers,i_itr=0,c=CONFIG)
+old_weights = weights_in
+
+c = CONFIG
+LRELU_BEATS = 21
+CIN,KH,max_factor = 3,3,2; c.COPIES//max_factor,c.MEMBERS,c.GROUPS,c.KW_MAX
+BLOCKS = 256//c.CONV_UNITS
+COLS = 384
+
+weights_in = weights_in[0,4:]
+weights_in = weights_in.reshape((LRELU_BEATS+CIN*KH),max_factor,c.COPIES//max_factor,c.MEMBERS,c.GROUPS,c.KW_MAX)
+lrelu_beats = weights_in[:LRELU_BEATS,...]
+weights_in = weights_in[LRELU_BEATS:,...]
+weights_in = weights_in.reshape(CIN,KH,max_factor,c.COPIES//max_factor,c.MEMBERS,c.GROUPS,c.KW_MAX)
+weights_in = weights_in[None,None,...]
+weights_in = weights_in.repeat(repeats=COLS,axis=1).repeat(repeats=BLOCKS//max_factor,axis=0)
+
+
+# %%
+old_weights[0].size-4
+
+
+# %%
+# lrelu_beats
+
+
+# %%
+(weights_in.size + lrelu_beats.size)#//4
+
+
+# %%
+# weights_in.flatten()[:1000]
+
+
+# %%
+# weights_in.flatten()[:100]
+
+
+# %%
+lrelu_beats.flatten()[-10:]
+
+
+# %%
+weights_in.shape
+
+
+# %%
+'''
+WEIGHTS IN HARDWARE ERROR
+'''
+
+THRES = 0
+
+hardware_out_flat = np.fromfile(f'{CONFIG.DATA_DIR}{i_layers}_fpga_weights_out_flat.bin',np.int8)
+hardware_out = hardware_out_flat[lrelu_beats.size:].reshape(weights_in.shape)
+
+header = 'B W C H I C'
+
+error = hardware_out - weights_in
+
+with open("where_err.txt", 'w') as f:
+    f.writelines([header + '\n\n'])
+    np.savetxt(f,np.argwhere(np.abs(error) > THRES),fmt='%d')
+
+print(np.sum(np.abs(error) > THRES))
+
+
+# %%
+hardware_im_out = np.fromfile(f'{CONFIG.DATA_DIR}{i_layers}_fpga_wimu_out_flat.bin',np.int8)
+
+
+# %%
+hardware_im_out[-10:]
+
+
+# %%
+old_weights[0].flatten()[-10:]
+
+
+# %%
 arr,shape = reshape_conv_in(i_layers=i_layers,c=CONFIG)
+
+
+# %%
+arr[0][-1,:]
+
+
+# %%
+arr[1].shape
+
+
+# %%
+(arr[1].size*2*3 + 2*4*21)/4
+
+
+# %%
+(32*384*3*3 + 21)*2*4
+
+
+# %%
+884904//4
+
+
+# %%
+arr[1][-1,-1,-1,:]
 
 # %% [markdown]
 # mwr -bin -file D:/cnn-fpga/data/weights_all.bin 0x08000000 10232828; mwr -bin -file D:/cnn-fpga/data/1_conv_in.bin 0x02000000 110594; 
@@ -55,8 +163,78 @@ arr,shape = reshape_conv_in(i_layers=i_layers,c=CONFIG)
 conv_out     = make_conv_out(i_layers=i_layers,i_itr=i_itr, c=CONFIG)
 conv_out_sim = np.loadtxt(f"{CONFIG.DATA_DIR}{i_layers}_conv_out_sim_0.txt",np.int32)
 
-error = conv_out_sim - conv_out[i_itr].flatten()[:conv_out_sim.size]
-np.sum(error)
+conv_out_sim = conv_out_sim.reshape(conv_out[i_itr].shape)
+
+error = conv_out_sim - conv_out[i_itr]
+np.sum(error != 0)
+
+
+# %%
+np.argwhere(error != 0)
+
+
+# %%
+conv_out[i_itr][error != 0]
+
+
+# %%
+conv_out_sim[error != 0]
+
+
+# %%
+conv_out_sim.shape
+
+
+# %%
+2582869-787776
+
+
+# %%
+error.size
+
+
+# %%
+'''
+OUTPUT
+mrd -bin -file D:/cnn-fpga/data/1_fpga_wimu_out_flat.bin 0x04000000 1603889;
+
+INPUT
+mwr -bin -file D:/cnn-fpga/data/1_fpga_wimu_out_flat.bin 0x08000000 1603889;
+6415554
+'''
+
+
+# %%
+'''
+CONV OUT HARDWARE ERROR
+'''
+
+THRES = 2
+
+hardware_out_flat = np.fromfile(f'{CONFIG.DATA_DIR}{i_layers}_fpga_out_flat.bin',np.int32)
+hardware_out = hardware_out_flat.reshape(conv_out[0].shape)
+
+header = 'A B W C U'
+
+error = hardware_out - conv_out[0]
+
+with open("where_err.txt", 'w') as f:
+    f.writelines([header + '\n\n'])
+    np.savetxt(f,np.argwhere(np.abs(error) > THRES),fmt='%d')
+
+print(np.sum(np.abs(error) > THRES))
+
+
+# %%
+conv_out[0].size
+
+
+# %%
+hardware_out.shape
+
+
+# %%
+hardware_out_flat.shape
 
 # %% [markdown]
 # # Test Leaky Relu Out / Max In
@@ -264,6 +442,31 @@ with open("where_err.txt", 'w') as f:
 print(np.sum(error > THRES))
 print(sum_abs_error/accl_out_sim.size)
 
+
+# %%
+'''
+TEST FLAT FPGA
+'''
+
+fpga_out_flat = np.fromfile(f"{CONFIG.DATA_DIR}{i_layers}_fpga_out_flat.bin",np.int8)
+fpga_out_flat = fpga_out_flat.reshape(accl_out[0].shape)
+
+error = accl_out[0] - fpga_out_flat
+
+sum_abs_error = np.sum(np.abs(error))
+
+header = 'B W S E U'
+with open("where_err.txt", 'w') as f:
+    f.writelines([header + '\n\n'])
+    np.savetxt(f,np.argwhere(np.abs(error) > THRES),fmt='%d')
+
+print(np.sum(error > THRES))
+print(sum_abs_error/accl_out_sim.size)
+
+
+# %%
+accl_out.shape
+
 # %% [markdown]
 # # Test FPGA Out
 
@@ -307,6 +510,10 @@ with open("where_err.txt", 'w') as f:
     np.savetxt(f,np.argwhere(np.abs(error) > THRES),fmt='%d')
 
 print(np.sum(np.abs(error) > THRES))
+
+
+# %%
+
 
 
 # %%

@@ -360,17 +360,24 @@ void restart_output()
 	static volatile s8 * write_p = layers[i_layers].get_output_pixels_base_p();
 	static bool is_new_layer=true;
 
-	// static volatile s8 * write_p_old = 0;
-	// Xil_DCacheFlushRange((UINTPTR)write_p_old, UNITS_EDGES);
-//
-//	if ((i_itr == 0 && i_blocks == 15) || (i_itr == 1 && i_blocks == 0)){
+    static volatile s8 * write_p_old = 0;
+	Xil_DCacheFlushRange((UINTPTR)write_p_old, UNITS_EDGES);
+
+	if ((i_itr == 0 && i_blocks == 31) || (i_itr == 1 && i_blocks == 0)){
+		for (int i=0; i<UNITS_EDGES; i++){
+			PRINT(" %d,", write_p_old[i]);
+		}
+		PRINT("] \r\n");
+		PRINT("(%d,%d,%d,%d-%d,:) -- %p [", i_arr, i_bpa, i_w_flipped,i_itr,i_cout, write_p);
+
+
+//		PRINT("0x40D7F46 [");
 //		for (int i=0; i<UNITS_EDGES; i++){
-//			PRINT(" %d,", write_p_old[i]);
+//			PRINT(" %d,", ((volatile s8 *)0x40D7F46)[i]);
 //		}
 //		PRINT("] \r\n");
-//		PRINT("(%d,%d,%d,%d-%d,:) -- %p [", i_arr, i_bpa, i_w_flipped,i_itr,i_cout, write_p);
-//	}
-	// write_p_old = write_p;
+	}
+	write_p_old = write_p;
 
 
 //	if (i_w==0 && i_blocks==0)
