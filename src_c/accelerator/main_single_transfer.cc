@@ -30,10 +30,11 @@ My_DMA dma_weights_im_out("weights_im_out", XPAR_DMA_WEIGHTS_IM_OUT_DEVICE_ID);
 #define NUM_TRANSFERS 1
 //#define IM_OUT_BYTES  6*2*2*4/2 // output
 //#define IM_OUT_BYTES  787776*4 // conv
+#define IM_OUT_BYTES  787136*4 // conv_mod
 //#define IM_OUT_BYTES  5309424 // weights 1327356
 //#define IM_OUT_BYTES  884904 // im 221226
 //#define IM_OUT_BYTES  5309424+884904 // im+weights 1548582
-#define IM_OUT_BYTES  5309424 + 884904 + 2*(32*384*3*3 + 21) // im+weights+user 1991034
+//#define IM_OUT_BYTES  5309424 + 884904 + 2*(32*384*3*3 + 21) // im+weights+user 1991034
 
 //parameter WORDS_PER_BEAT_CONV = COPIES*MEMBERS*GROUPS*UNITS;
 //parameter BEATS_OUT_CONV = BEATS_CONFIG_1+1 + (IM_BLOCKS/MAX_FACTOR)*IM_COLS*(KERNEL_W_MAX/K);
@@ -43,7 +44,7 @@ My_DMA dma_weights_im_out("weights_im_out", XPAR_DMA_WEIGHTS_IM_OUT_DEVICE_ID);
 //#define NUM_TRANSFERS 1
 
 
-// mrd -bin -file D:/cnn-fpga/data/1_fpga_out_flat.bin 0x04000000 73728;
+// mrd -bin -file D:/cnn-fpga/data/1_fpga_out_flat.bin 0x04000000 787136;
 
 ////// Layer 3:
 //// mwr -bin -file D:/cnn-fpga/data/3_weights.bin 0x08000000 5114; mwr -bin -file D:/cnn-fpga/data/3_conv_in_0.bin 0x02000000 147458;
