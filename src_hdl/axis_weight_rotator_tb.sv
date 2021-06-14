@@ -1,3 +1,5 @@
+`include "params.v"
+
 module axis_weight_rotator_tb ();
   timeunit 1ns;
   timeprecision 1ps;
@@ -8,12 +10,12 @@ module axis_weight_rotator_tb ();
     forever #(CLK_PERIOD/2) aclk <= ~aclk;
   end
   
-  localparam K_1      = 1-1;
-  localparam CIN_1    = 4-1;
+  localparam K_1      = 3-1;
+  localparam CIN_1    = 3-1;
   localparam COLS_1   = 20-1;
   localparam BLOCKS_1 = 1-1; 
 
-  localparam CORES             = 4;
+  localparam CORES              = `CORES;
 
   localparam WORD_WIDTH         = `WORD_WIDTH        ; 
   localparam KERNEL_H_MAX       = `KERNEL_H_MAX      ;   // odd number
@@ -40,6 +42,7 @@ module axis_weight_rotator_tb ();
 
   localparam BITS_CONFIG_COUNT    = $clog2(BEATS_CONFIG_3X3_1+1);
   localparam M_WIDTH              = WORD_WIDTH*CORES*KERNEL_W_MAX;
+  localparam DEBUG_CONFIG_WIDTH_W_ROT   = `DEBUG_CONFIG_WIDTH_W_ROT;
 
   localparam BRAM_W_WIDTH = S_WEIGHTS_WIDTH ;
   localparam BRAM_R_WIDTH = M_WIDTH;
@@ -53,6 +56,7 @@ module axis_weight_rotator_tb ();
   localparam BITS_IM_COLS      = $clog2(IM_COLS_MAX);
 
   logic aresetn;
+  logic [DEBUG_CONFIG_WIDTH_W_ROT-1:0] debug_config;
   logic s_axis_tready;
   logic s_axis_tvalid;
   logic s_axis_tlast ;
@@ -66,6 +70,7 @@ module axis_weight_rotator_tb ();
   logic m_axis_tlast;
 
   axis_weight_rotator #(
+    .DEBUG_CONFIG_WIDTH_W_ROT(DEBUG_CONFIG_WIDTH_W_ROT),
     .CORES               (CORES              ),
     .WORD_WIDTH          (WORD_WIDTH         ),
     .KERNEL_H_MAX        (KERNEL_H_MAX       ),
@@ -95,7 +100,7 @@ module axis_weight_rotator_tb ();
 
   int status, file_weights;
 
-  string path_weights = "D:/cnn-fpga/mem_yolo/txt/weights_rot_in.txt";
+  string path_weights = "D:/cnn-fpga/data/weights_rot_in.txt";
   
   localparam BEATS_CONFIG_1 = K_1 == 0 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
   localparam W_BEATS = 1 + BEATS_CONFIG_1+1 + (K_1+1)*(CIN_1+1);
@@ -162,7 +167,7 @@ module axis_weight_rotator_tb ();
 
     @(posedge aclk);
 
-    repeat(5) begin
+    repeat(2) begin
       @(posedge aclk);
       file_weights   = $fopen(path_weights   ,"r");
       start_w = 1;
