@@ -134,27 +134,16 @@ module conv_engine
   logic mask_partial [KERNEL_W_MAX-1: 1];
   logic mask_full    [KERNEL_W_MAX-1: 0];
 
-  logic shift_sel    [KERNEL_W_MAX-2: 0];
-
-  logic shift_in_valid  [KERNEL_W_MAX-1: 0];
-  logic shift_in_last   [KERNEL_W_MAX-1: 0];
-  logic shift_out_valid [KERNEL_W_MAX-1: 0];
-  logic shift_out_last  [KERNEL_W_MAX-1: 0];
-
   logic [TUSER_WIDTH_CONV_IN -1: 0] mul_m_user    [KERNEL_W_MAX-1: 0];
   logic [TUSER_WIDTH_CONV_IN -1: 0] acc_s_user    [KERNEL_W_MAX-1: 0];
   logic [TUSER_WIDTH_CONV_IN -1: 0] mux_s2_user   [KERNEL_W_MAX-1: 1];
   logic [TUSER_WIDTH_CONV_IN -1: 0] acc_m_user    [KERNEL_W_MAX-1: 0];
-  logic [TUSER_WIDTH_CONV_OUT-1: 0] shift_in_user [KERNEL_W_MAX-1: 0];
-  logic [TUSER_WIDTH_CONV_OUT-1: 0] shift_out_user[KERNEL_W_MAX-1: 0];
   logic pad_is_left_col [KERNEL_W_MAX-1: 0]; 
   logic pad_is_right_col[KERNEL_W_MAX-1: 0];
 
   logic [WORD_WIDTH_IN*2-1:0] mul_m_data      [1:0][CORES/2-1:0][UNITS-1:0][KERNEL_W_MAX-1: 0];
   logic [WORD_WIDTH_OUT -1:0] acc_s_data      [1:0][CORES/2-1:0][UNITS-1:0][KERNEL_W_MAX-1: 0];
   logic [WORD_WIDTH_OUT -1:0] acc_m_data      [1:0][CORES/2-1:0][UNITS-1:0][KERNEL_W_MAX-1: 0];
-  logic [WORD_WIDTH_OUT -1:0] shift_in_data   [1:0][CORES/2-1:0][UNITS-1:0][KERNEL_W_MAX-1: 0];
-  logic [WORD_WIDTH_OUT -1:0] shift_out_data  [1:0][CORES/2-1:0][UNITS-1:0][KERNEL_W_MAX-1: 0];
 
   /*
     CONTROL PATHS
@@ -387,43 +376,6 @@ module conv_engine
           - But then back-to-back kernel change is not possible
       */
 
-      if (w != KERNEL_W_MAX-1) begin
-        assign shift_sel      [w] = shift_out_valid  [w+1];
-
-        assign shift_in_valid [w] = shift_sel  [w] ? shift_out_valid [w+1] : acc_m_valid_masked [w];
-        assign shift_in_last  [w] = shift_sel  [w] ? shift_out_last  [w+1] : acc_m_last_masked  [w];
-
-        assign shift_in_user  [w][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX] = shift_sel  [w] ? shift_out_user  [w+1][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX] : acc_m_user [w][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX];
-        assign shift_in_user  [w][I_IS_LEFT_COL ]        = shift_sel  [w] ? shift_out_user  [w+1][I_IS_LEFT_COL ]        : pad_is_left_col [w];
-        assign shift_in_user  [w][I_IS_RIGHT_COL]        = shift_sel  [w] ? shift_out_user  [w+1][I_IS_RIGHT_COL]        : pad_is_right_col[w];
-      end
-      else begin
-        assign shift_in_valid [w] = acc_m_valid_masked [w];
-        assign shift_in_last  [w] = acc_m_last_masked  [w];
-
-        assign shift_in_user  [w][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX] = acc_m_user [w][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX];
-        assign shift_in_user  [w][I_IS_LEFT_COL        ] = pad_is_left_col  [w];
-        assign shift_in_user  [w][I_IS_RIGHT_COL       ] = pad_is_right_col [w];
-      end
-
-
-      n_delay_stream #(
-          .N           (1                 ),
-          .WORD_WIDTH  (WORD_WIDTH_OUT    ),
-          .TUSER_WIDTH (TUSER_WIDTH_CONV_OUT)
-      ) SHIFT_CONTROL (
-          .aclk       (clk    ),
-          .aclken     (clken  ), // = m_ready of outside
-          .aresetn    (resetn ),
-
-          .valid_in   (shift_in_valid  [w]),
-          .last_in    (shift_in_last   [w]),
-          .user_in    (shift_in_user   [w]),
-
-          .valid_out  (shift_out_valid [w]), 
-          .last_out   (shift_out_last  [w]),
-          .user_out   (shift_out_user  [w])
-      );
     end
   endgenerate
 
@@ -453,9 +405,6 @@ module conv_engine
     .is_right_col    (pad_is_right_col  )
   );
 
-  assign m_valid = shift_out_valid [0];
-  assign m_last  = shift_out_last  [0];
-  assign m_user  = shift_out_user  [0];
 
   /*
     CONVOLUTION CORES
@@ -464,6 +413,33 @@ module conv_engine
     - Pixels step buffer is kept  common to all cores
     - Weights step buffer is placed inside each core, for weights of that output channel  
   */
+
+  localparam BYTES_PER_WORD = WORD_WIDTH_OUT/8;
+
+  logic dw_s_valid, dw_s_ready, dw_m_valid;
+  logic [WORD_WIDTH_OUT-1:0] dw_s_data [1:0][CORES/2-1:0][UNITS-1:0][KERNEL_W_MAX-1:0];
+  logic [KERNEL_W_MAX-1:0][WORD_WIDTH_OUT-1:0] dw_s_data_flat [1:0][CORES/2-1:0][UNITS-1:0];
+
+  assign {>>{dw_s_data_flat}} = dw_s_data;
+
+  logic [KERNEL_W_MAX-1:0][BYTES_PER_WORD-1:0] dw_s_keep;
+  logic                   [BYTES_PER_WORD-1:0] dw_m_keep;
+  logic [KERNEL_W_MAX-1:0][BYTES_PER_WORD-1:0][TUSER_WIDTH_CONV_OUT+1 -1:0] dw_s_user;
+  logic                   [BYTES_PER_WORD-1:0][TUSER_WIDTH_CONV_OUT+1 -1:0] dw_m_user;
+
+  generate
+    for (genvar w=0; w<KERNEL_W_MAX; w++) begin: w_gen_dw
+      assign dw_s_keep [w] = {BYTES_PER_WORD{acc_m_valid_masked [w]}};
+      assign dw_s_user [w][0][TUSER_WIDTH_CONV_OUT-1:0] = acc_m_user        [w][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX];
+      assign dw_s_user [w][0][TUSER_WIDTH_CONV_OUT    ] = acc_m_last_masked [w];
+    end
+  endgenerate
+
+  assign dw_s_valid = |dw_s_keep;
+
+  assign m_valid = dw_m_valid && dw_m_keep;
+  assign m_user  = dw_m_user[0][TUSER_WIDTH_CONV_OUT-1:0];
+  assign m_last  = dw_m_user[0][TUSER_WIDTH_CONV_OUT    ];
 
   generate
     /* PER-COPY*/
@@ -540,23 +516,36 @@ module conv_engine
               .Q      (acc_m_data  [c][r][u][w])  
             );
 
-            n_delay_stream #(
-                .N           (1             ),
-                .WORD_WIDTH  (WORD_WIDTH_OUT),
-                .TUSER_WIDTH (TUSER_WIDTH_CONV_IN)
-            ) SHIFT (
-                .aclk       (clk     ),
-                .aclken     (clken   ), // = m_ready of outside
-                .aresetn    (resetn ),
-                .data_in    (shift_in_data  [c][r][u][w]),
-                .data_out   (shift_out_data [c][r][u][w])
-            );
-            
-            if (w == KERNEL_W_MAX-1) assign shift_in_data [c][r][u][w] = acc_m_data [c][r][u][w];
-            else                     assign shift_in_data [c][r][u][w] = shift_sel  [w] ? shift_out_data [c][r][u][w+1] : acc_m_data [c][r][u][w];
-
-            assign m_data [c][r][u] = shift_out_data  [c][r][u][0];
+            assign dw_s_data [c][r][u][w] = acc_m_data [c][r][u][w];
           end
+          if (c==0 && r==0 && u==0)
+            dw_conv_shift dw_shift (
+              .aclk           (clk          ),                    
+              .aresetn        (resetn       ),              
+              .aclken         (clken        ),               
+              .s_axis_tvalid  (dw_s_valid   ), 
+              .s_axis_tready  (dw_s_ready   ),
+              .s_axis_tdata   (dw_s_data_flat [c][r][u]),  
+              .s_axis_tkeep   (dw_s_keep    ),   
+              .s_axis_tuser   (dw_s_user    ),
+              .m_axis_tvalid  (dw_m_valid   ), 
+              .m_axis_tready  (1'b1), 
+              .m_axis_tdata   (m_data         [c][r][u]),  
+              .m_axis_tkeep   (dw_m_keep    ),   
+              .m_axis_tuser   (dw_m_user    )
+            );
+          else
+            dw_conv_shift dw_shift (
+              .aclk           (clk          ),                    
+              .aresetn        (resetn       ),              
+              .aclken         (clken        ),               
+              .s_axis_tvalid  (dw_s_valid   ), 
+              .s_axis_tdata   (dw_s_data_flat [c][r][u]),  
+              .s_axis_tkeep   (dw_s_keep    ),   
+              .s_axis_tuser   (dw_s_user    ),
+              .m_axis_tready  (1'b1), 
+              .m_axis_tdata   (m_data         [c][r][u])
+            );
         end
       end
     end
