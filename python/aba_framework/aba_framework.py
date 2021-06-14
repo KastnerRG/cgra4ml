@@ -712,7 +712,7 @@ class MyInput(MyLayer):
 
         self.quantized_out_data = (self.input_image-h_x0)*g_x0
 
-        self.quantized_out_data = np.rint(self.quantized_out_data)
+        self.quantized_out_data = np.print(self.quantized_out_data)
         return self.quantized_out_data
 
 
@@ -783,23 +783,28 @@ class MyLeakyRelu(MyLayer):
         B = np.float16(B)
         in_data = np.float32(in_data)
 
-        y = A * in_data + B
-        y_custom = float_convert(A,16,32) * in_data + float_convert(B,16,32)
+        y = (A.astype(np.float32) * in_data) + B.astype(np.float32)
+        y_custom = (float_convert(A,16,32) * in_data) + float_convert(B,16,32)
 
         D = a_0
         D = np.float16(D)
 
-        alpha_arr = (y > 0) + (y < 0) * alpha
+        y_f16 = y.astype(np.float16)
+        alpha_arr = (y_f16 > 0) + (y_f16 < 0) * np.array(alpha, np.float16)
 
-        a_q_f16 = alpha_arr.astype(np.float16) * y.astype(np.float16) + D
-        a_q_f16_custom = alpha_arr.astype(np.float16) * float_convert(y_custom,32,16) + D
+        a_q_f16 = (alpha_arr.astype(np.float16) * y_f16) + D
+        a_q_f16_custom = (alpha_arr.astype(np.float16) * float_convert(y_custom,32,16)) + D
 
-        a_q = np.around(a_q_f16).astype(np_dtype)
-        a_q_custom = np.around(a_q_f16_custom).astype(np_dtype)
+        if np_dtype == np.int8:
+            a_min, a_max = -128,127
+
+        a_q = a_q_f16.clip(a_min,a_max).round().astype(np_dtype)
+        a_q_custom = a_q_f16_custom.clip(a_min,a_max).round().astype(np_dtype)
 
         return {'A': A,
                 'B': B,
                 'y': y,
+                'y_f16': y_f16,
                 'y_custom': y_custom,
                 'D': D,
                 'a_q_f16': a_q_f16,
