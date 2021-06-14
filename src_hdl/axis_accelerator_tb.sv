@@ -2,9 +2,9 @@
 `include "axis_tb.sv"
 
 module axis_accelerator_tb ();
-  timeunit 1ns;
-  timeprecision 1ps;
-  localparam CLK_PERIOD = 100;
+  timeunit 10ns;
+  timeprecision 1ns;
+  localparam CLK_PERIOD = 10;
   logic aclk;
   initial begin
     aclk = 0;
@@ -92,13 +92,10 @@ module axis_accelerator_tb ();
   localparam TKEEP_WIDTH_IM_IN  = WORD_WIDTH*IM_IN_S_DATA_WORDS/8;
   localparam REPEATS = 3;
 
-  localparam WEIGHTS_OUT_WORDS_PER_BEAT = WORD_WIDTH*CORES*KERNEL_W_MAX;
-  localparam IMAGE_0_WORDS_PER_BEAT     = WORD_WIDTH*UNITS;
-  localparam IMAGE_1_WORDS_PER_BEAT     = WORD_WIDTH*UNITS;
 
   class Layer #(IDX, K, IS_MAX, IM_HEIGHT, IM_WIDTH, IM_CIN);
 
-    string IDX_s, path_im_1, path_im_2, path_weights, base_conv_out, base_lrelu_out, base_max_out, base_output, base_weights_out, base_image_0_out, base_image_1_out;
+    string IDX_s, path_im_1, path_im_2, path_weights, base_conv_out, base_lrelu_out, base_max_out, base_output;
 
     // Calculate beats
 
@@ -117,20 +114,19 @@ module axis_accelerator_tb ();
     parameter WORDS_W          = (W_BEATS-1) * KERNEL_W_MAX * CORES + S_WEIGHTS_WIDTH /WORD_WIDTH;
     parameter W_WORDS_PER_BEAT = S_WEIGHTS_WIDTH /WORD_WIDTH;
 
-    parameter CONV_WORDS_PER_BEAT  = COPIES*MEMBERS*GROUPS*UNITS;
-    parameter CONV_BEATS_OUT       = BEATS_CONFIG_1+1 + (IM_BLOCKS/MAX_FACTOR)*IM_COLS*(KERNEL_W_MAX/K);
-    parameter CONV_WORDS_OUT       = CONV_BEATS_OUT * CONV_WORDS_PER_BEAT;
+    parameter BEATS_PER_PACKET = (KERNEL_W_MAX/K)*MEMBERS;
+    parameter PACKETS_PER_ITR  = (IM_BLOCKS/MAX_FACTOR)*IM_COLS/MAX_FACTOR;
+    parameter BEATS_PER_ITR    = BEATS_PER_PACKET * PACKETS_PER_ITR;
 
-    parameter LRELU_WORDS_PER_BEAT = COPIES*GROUPS*UNITS;
-    parameter LRELU_BEATS_PER_ITR  = (IM_BLOCKS/MAX_FACTOR)*IM_COLS*MEMBERS*(KERNEL_W_MAX/K);
-    parameter LRELU_WORDS_OUT      = LRELU_BEATS_PER_ITR*LRELU_WORDS_PER_BEAT;
+    parameter WORDS_PER_BEAT_RELU = COPIES*GROUPS*UNITS;
+    parameter WORDS_OUT_LRELU     = BEATS_PER_ITR * WORDS_PER_BEAT_RELU;
 
-    parameter MAX_WORDS_PER_BEAT         = COPIES*GROUPS*UNITS_EDGES;
-    parameter MAX_WORDS_PER_BEAT_VALID   = MAX_WORDS_PER_BEAT/MAX_FACTOR;
-    parameter MAX_BEATS_PER_PACKET       = (KERNEL_W_MAX/K)*MEMBERS;
-    parameter MAX_PACKETS_PER_ITR        = (IM_BLOCKS/MAX_FACTOR)*IM_COLS;
-    parameter MAX_BEATS_PER_ITR          = MAX_BEATS_PER_PACKET * MAX_PACKETS_PER_ITR;
-    parameter MAX_WORDS_OUT              = MAX_BEATS_PER_ITR * MAX_WORDS_PER_BEAT_VALID;
+    parameter WORDS_PER_BEAT_MAX  = COPIES*GROUPS*UNITS_EDGES;
+    parameter WORDS_OUT_MAX       = BEATS_PER_ITR*WORDS_PER_BEAT_MAX/(MAX_FACTOR**2);
+
+    parameter BEATS_OUT_CONV = BEATS_CONFIG_1+1 + (IM_BLOCKS/MAX_FACTOR)*IM_COLS*(KERNEL_W_MAX/K);
+    parameter WORDS_PER_BEAT_CONV = COPIES*MEMBERS*GROUPS*UNITS;
+    parameter WORDS_OUT_CONV = BEATS_OUT_CONV * WORDS_PER_BEAT_CONV;
 
     // Out counters
 
@@ -145,16 +141,13 @@ module axis_accelerator_tb ();
     
     function new();
         IDX_s.itoa(IDX);
-        path_im_1         = {DIR_PATH, IDX_s, "_conv_in_0.txt"    };
-        path_im_2         = {DIR_PATH, IDX_s, "_conv_in_1.txt"    };
-        path_weights      = {DIR_PATH, IDX_s, "_weights.txt"      };
-        base_weights_out  = {DIR_PATH, IDX_s, "_weights_out_sim_" };
-        base_image_0_out  = {DIR_PATH, IDX_s, "_image_0_out_sim_" };
-        base_image_1_out  = {DIR_PATH, IDX_s, "_image_1_out_sim_" };
-        base_conv_out     = {DIR_PATH, IDX_s, "_conv_out_sim_"    };
-        base_lrelu_out    = {DIR_PATH, IDX_s, "_lrelu_out_sim_"   };
-        base_max_out      = {DIR_PATH, IDX_s, "_maxpool_out_sim_" };
-        base_output       = {DIR_PATH, IDX_s, "_output_sim_"      };
+        path_im_1      = {DIR_PATH, IDX_s, "_conv_in_0.txt"    };
+        path_im_2      = {DIR_PATH, IDX_s, "_conv_in_1.txt"    };
+        path_weights   = {DIR_PATH, IDX_s, "_weights.txt"      };
+        base_conv_out  = {DIR_PATH, IDX_s, "_conv_out_sim_"   };
+        base_lrelu_out = {DIR_PATH, IDX_s, "_lrelu_out_sim_"  };
+        base_max_out   = {DIR_PATH, IDX_s, "_maxpool_out_sim_"};
+        base_output    = {DIR_PATH, IDX_s, "_output_sim_"     };
     endfunction
 
   endclass
@@ -209,7 +202,7 @@ module axis_accelerator_tb ();
   logic maxpool_m_axis_tready;
   logic maxpool_m_axis_tlast;
   logic [COPIES*GROUPS*UNITS_EDGES*WORD_WIDTH -1:0] maxpool_m_axis_tdata;
-  logic [COPIES*GROUPS*UNITS_EDGES            -1:0] maxpool_m_axis_tkeep;
+  logic [COPIES*GROUPS*UNITS_EDGES -1:0]            maxpool_m_axis_tkeep;
   logic [WORD_WIDTH-1:0] maxpool_m_data   [COPIES-1:0][GROUPS-1:0][UNITS_EDGES-1:0];
   logic                  maxpool_keep_cgu [COPIES-1:0][GROUPS-1:0][UNITS_EDGES-1:0];
   
@@ -303,51 +296,36 @@ module axis_accelerator_tb ();
   assign m_data                      = {>>{m_axis_tdata}};
 
 
-  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS     ), .VALID_PROB(VALID_PROB)) s_pixels_1  = new(.file_path(layer.path_im_1   ), .words_per_packet(layer.WORDS_1), .iterations(1));
-  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS     ), .VALID_PROB(VALID_PROB)) s_pixels_2  = new(.file_path(layer.path_im_2   ), .words_per_packet(layer.WORDS_2), .iterations(1));
-  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(layer.W_WORDS_PER_BEAT ), .VALID_PROB(VALID_PROB)) s_weights   = new(.file_path(layer.path_weights), .words_per_packet(layer.WORDS_W), .iterations(1));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(VALID_PROB)) s_pixels_1  = new(.file_path(layer.path_im_1   ), .words_per_packet(layer.WORDS_1), .iterations(1));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(VALID_PROB)) s_pixels_2  = new(.file_path(layer.path_im_2   ), .words_per_packet(layer.WORDS_2), .iterations(1));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(layer.W_WORDS_PER_BEAT  ), .VALID_PROB(VALID_PROB)) s_weights   = new(.file_path(layer.path_weights), .words_per_packet(layer.WORDS_W), .iterations(1));
   initial forever s_pixels_1.axis_feed(aclk, s_axis_pixels_1_tready, s_axis_pixels_1_tvalid, s_data_pixels_1, s_axis_pixels_1_tkeep, s_axis_pixels_1_tlast);
   initial forever s_pixels_2.axis_feed(aclk, s_axis_pixels_2_tready, s_axis_pixels_2_tvalid, s_data_pixels_2, s_axis_pixels_2_tkeep, s_axis_pixels_2_tlast);
   initial forever s_weights .axis_feed(aclk, s_axis_weights_tready , s_axis_weights_tvalid , s_data_weights , s_axis_weights_tkeep , s_axis_weights_tlast );
   
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(WEIGHTS_OUT_WORDS_PER_BEAT), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_weights_out = new(.file_base(layer.base_weights_out )); // sensitive to tlast
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(IMAGE_0_WORDS_PER_BEAT    ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_image_0_out = new(.file_base(layer.base_image_0_out )); // sensitive to tlast
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(IMAGE_1_WORDS_PER_BEAT    ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_image_1_out = new(.file_base(layer.base_image_1_out )); // sensitive to tlast
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH_ACC), .WORDS_PER_BEAT(layer.CONV_WORDS_PER_BEAT ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(1)) m_conv        = new(.file_base(layer.base_conv_out    )); // sensitive to tlast
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(layer.LRELU_WORDS_PER_BEAT), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_lrelu       = new(.file_base(layer.base_lrelu_out   ), .words_per_packet(layer.LRELU_WORDS_OUT    )); // sensitive to words_out
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(layer.MAX_WORDS_PER_BEAT  ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_maxpool     = new(.file_base(layer.base_max_out     ), .packets_per_file(layer.MAX_PACKETS_PER_ITR)); // sensitive to tlast, but multiple tlasts per file
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(M_DATA_WIDTH/8            ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_output      = new(.file_base(layer.base_output      ), .packets_per_file(layer.MAX_PACKETS_PER_ITR)); // sensitive to tlast, but multiple tlasts per file
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH_ACC), .WORDS_PER_BEAT(layer.WORDS_PER_BEAT_CONV), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_conv    = new(.file_base(layer.base_conv_out )); // sensitive to tlast
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(layer.WORDS_PER_BEAT_RELU), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_lrelu   = new(.file_base(layer.base_lrelu_out), .words_per_packet(layer.WORDS_OUT_LRELU)); // sensitive to words_out
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(layer.WORDS_PER_BEAT_MAX ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_maxpool = new(.file_base(layer.base_max_out  ), .packets_per_file(layer.PACKETS_PER_ITR)); // sensitive to tlast, but multiple tlasts per file
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(M_DATA_WIDTH/8     ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(1)) m_output  = new(.file_base(layer.base_output   ), .packets_per_file(layer.PACKETS_PER_ITR)); // sensitive to tlast, but multiple tlasts per file
   
-  logic [WEIGHTS_OUT_WORDS_PER_BEAT-1:0] temp_keep_input_weights  = '1;
-  logic [IMAGE_0_WORDS_PER_BEAT    -1:0] temp_keep_input_image_1  = '1;
-  logic [IMAGE_1_WORDS_PER_BEAT    -1:0] temp_keep_input_image_2  = '1;
-  logic [layer.CONV_WORDS_PER_BEAT -1:0] temp_keep_conv           = '1;
-  logic [layer.LRELU_WORDS_PER_BEAT-1:0] temp_keep_lrelu          = '1;
+  logic [layer.WORDS_PER_BEAT_CONV-1:0] temp_keep_conv  = '1;
+  logic [layer.WORDS_PER_BEAT_RELU-1:0] temp_keep_lrelu = '1;
   logic zero_last = 0;
 
-  logic [WORD_WIDTH    -1:0] input_weights_m_data_linear [WEIGHTS_OUT_WORDS_PER_BEAT-1:0];
-  logic [WORD_WIDTH    -1:0] input_image_1_m_data_linear [IMAGE_0_WORDS_PER_BEAT    -1:0];
-  logic [WORD_WIDTH    -1:0] input_image_2_m_data_linear [IMAGE_1_WORDS_PER_BEAT    -1:0];
-  logic [WORD_WIDTH_ACC-1:0] conv_m_data_linear          [layer.CONV_WORDS_PER_BEAT -1:0];
-  logic [WORD_WIDTH    -1:0] lrelu_m_data_linear         [layer.LRELU_WORDS_PER_BEAT-1:0];
-  logic [WORD_WIDTH    -1:0] maxpool_m_data_linear       [layer.MAX_WORDS_PER_BEAT  -1:0];
-  logic [WORD_WIDTH    -1:0] m_data_linear               [M_DATA_WIDTH/8            -1:0];
+  logic [WORD_WIDTH_ACC-1:0] conv_m_data_linear    [layer.WORDS_PER_BEAT_CONV-1:0];
+  logic [WORD_WIDTH    -1:0] lrelu_m_data_linear   [layer.WORDS_PER_BEAT_RELU-1:0];
+  logic [WORD_WIDTH    -1:0] maxpool_m_data_linear [layer.WORDS_PER_BEAT_MAX -1:0];
+  logic [WORD_WIDTH    -1:0] m_data_linear         [M_DATA_WIDTH/8     -1:0];
 
-  assign input_weights_m_data_linear = {>>{input_m_axis_weights_tdata }};
-  assign input_image_1_m_data_linear = {>>{input_m_axis_pixels_1_tdata}};
-  assign input_image_2_m_data_linear = {>>{input_m_axis_pixels_2_tdata}};
-  assign conv_m_data_linear          = {>>{conv_m_axis_tdata          }};
-  assign lrelu_m_data_linear         = {>>{lrelu_m_axis_tdata         }};
-  assign maxpool_m_data_linear       = {>>{maxpool_m_axis_tdata       }};
-  assign m_data_linear               = {>>{m_axis_tdata               }};
+  assign conv_m_data_linear    = {>>{conv_m_axis_tdata}};
+  assign lrelu_m_data_linear   = {>>{lrelu_m_axis_tdata}};
+  assign maxpool_m_data_linear = {>>{maxpool_m_axis_tdata}};
+  assign m_data_linear         = {>>{m_axis_tdata}};
   
-  initial forever m_weights_out.axis_read(aclk, input_m_axis_tready  , input_m_axis_tvalid  , input_weights_m_data_linear, temp_keep_input_weights, input_m_axis_tlast  );
-  initial forever m_image_0_out.axis_read(aclk, input_m_axis_tready  , input_m_axis_tvalid  , input_image_1_m_data_linear, temp_keep_input_image_1, input_m_axis_tlast  );
-  initial forever m_image_1_out.axis_read(aclk, input_m_axis_tready  , input_m_axis_tvalid  , input_image_2_m_data_linear, temp_keep_input_image_2, input_m_axis_tlast  );
-  initial forever m_conv       .axis_read(aclk, conv_m_axis_tready   , conv_m_axis_tvalid   , conv_m_data_linear         , temp_keep_conv         , conv_m_axis_tlast   );
-  initial forever m_lrelu      .axis_read(aclk, lrelu_m_axis_tready  , lrelu_m_axis_tvalid  , lrelu_m_data_linear        , temp_keep_lrelu        , zero_last           );
-  initial forever m_maxpool    .axis_read(aclk, maxpool_m_axis_tready, maxpool_m_axis_tvalid, maxpool_m_data_linear      , maxpool_m_axis_tkeep   , maxpool_m_axis_tlast);
-  initial forever m_output     .axis_read(aclk, m_axis_tready        , m_axis_tvalid        , m_data_linear              , m_axis_tkeep           , m_axis_tlast        );
+  initial forever m_conv    .axis_read(aclk, conv_m_axis_tready   , conv_m_axis_tvalid   , conv_m_data_linear    , temp_keep_conv      , conv_m_axis_tlast   );
+  initial forever m_lrelu   .axis_read(aclk, lrelu_m_axis_tready  , lrelu_m_axis_tvalid  , lrelu_m_data_linear   , temp_keep_lrelu     , zero_last           );
+  initial forever m_maxpool .axis_read(aclk, maxpool_m_axis_tready, maxpool_m_axis_tvalid, maxpool_m_data_linear , maxpool_m_axis_tkeep, maxpool_m_axis_tlast);
+  initial forever m_output  .axis_read(aclk, m_axis_tready        , m_axis_tvalid        , m_data_linear         , m_axis_tkeep        , m_axis_tlast        );
 
   /* COUNTING ELEMENTS*/
 
