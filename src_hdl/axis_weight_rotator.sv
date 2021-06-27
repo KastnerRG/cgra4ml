@@ -28,6 +28,7 @@ Additional Comments:
 module axis_weight_rotator 
   #(
     CORES              ,
+    MEMBERS            ,
     WORD_WIDTH         , 
     DEBUG_CONFIG_WIDTH_W_ROT,
     KERNEL_H_MAX       ,   // odd number
@@ -66,7 +67,7 @@ module axis_weight_rotator
   localparam BITS_KERNEL_W        = $clog2(KERNEL_W_MAX);
   localparam BITS_KERNEL_H        = $clog2(KERNEL_H_MAX);
   localparam BITS_CONFIG_COUNT    = $clog2(BEATS_CONFIG_3X3_1+1);
-  localparam M_WIDTH              = WORD_WIDTH*CORES*KERNEL_W_MAX;
+  localparam M_WIDTH              = WORD_WIDTH*CORES*MEMBERS;
 
   localparam BRAM_WIDTH = M_WIDTH;
   localparam BRAM_DEPTH = KERNEL_H_MAX * IM_CIN_MAX + BEATS_CONFIG_3X3_1;
@@ -98,8 +99,8 @@ module axis_weight_rotator
   logic [M_WIDTH -1:0] dw_m_data_flat;
 
   logic [WORD_WIDTH-1:0] s_data    [S_WEIGHTS_WIDTH /WORD_WIDTH-1:0];
-  logic [WORD_WIDTH-1:0] m_data    [CORES-1:0][KERNEL_W_MAX-1:0];
-  logic [WORD_WIDTH-1:0] dw_m_data [CORES-1:0][KERNEL_W_MAX-1:0];
+  logic [WORD_WIDTH-1:0] m_data    [CORES-1:0][MEMBERS-1:0];
+  logic [WORD_WIDTH-1:0] dw_m_data [CORES-1:0][MEMBERS-1:0];
 
   assign s_data    = {>>{s_axis_tdata}};
   assign dw_m_data = {>>{dw_m_data_flat}};
@@ -138,6 +139,9 @@ module axis_weight_rotator
                         ref_1_kh[0], ref_1_cin[0], ref_1_cols[0], ref_1_blocks[0], 
                         ref_1_kh[1], ref_1_cin[1], ref_1_cols[1], ref_1_blocks[1], 
                         count_kh, count_cin, count_cols, count_blocks};
+  
+  localparam DW_BLOCK_S = 0;
+  localparam DW_PASS_S  = 1;
 
   axis_dw_weights_input DW (
     .aclk           (aclk),
@@ -275,9 +279,6 @@ module axis_weight_rotator
     - slave side is smaller (32 bits)
     - get config bits from slave side
   */
-
-  localparam DW_BLOCK_S = 0;
-  localparam DW_PASS_S  = 1;
  
   assign s_handshake      = s_axis_tready && s_axis_tvalid;
   assign s_last_handshake = s_handshake   && s_axis_tlast;

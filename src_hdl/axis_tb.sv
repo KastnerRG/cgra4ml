@@ -14,7 +14,7 @@ class AXIS_Slave #(WORD_WIDTH, WORDS_PER_BEAT, VALID_PROB);
     this.file_path = file_path;
     this.words_per_packet = words_per_packet;
     this.iterations = iterations;
-
+    this.file = $fopen(this.file_path, "r");
   endfunction
 
   function void fill_beat(
@@ -180,7 +180,7 @@ class AXIS_Master #(WORD_WIDTH, WORDS_PER_BEAT, READY_PROB, CLK_PERIOD, IS_ACTIV
 
   task axis_read(
     ref logic aclk,
-    ref logic m_ready,
+    ref bit   m_ready,
     ref logic m_valid,
     ref logic [WORD_WIDTH    -1:0] m_data [WORDS_PER_BEAT-1:0], 
     ref logic [WORDS_PER_BEAT-1:0] m_keep,

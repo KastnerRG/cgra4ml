@@ -71,7 +71,7 @@ module axis_image_pipe
 
   localparam UNITS_EDGES       = UNITS + KERNEL_H_MAX-1;
   localparam IM_IN_S_DATA_WORDS= 2**$clog2(UNITS_EDGES);
-  localparam BITS_CONFIG_COUNT = $clog2(BEATS_CONFIG_3X3_1);
+  localparam BITS_CONFIG_COUNT = $clog2(BEATS_CONFIG_3X3_1+1);
   localparam BITS_KERNEL_H     = $clog2(KERNEL_H_MAX);
   localparam TKEEP_WIDTH_IM_IN = (WORD_WIDTH*IM_IN_S_DATA_WORDS)/8;
 

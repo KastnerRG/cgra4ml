@@ -4,6 +4,7 @@ module axis_input_pipe
   #(
     UNITS                     = `UNITS                    ,
     CORES                     = `CORES                    ,
+    MEMBERS                   = `MEMBERS                  ,
     WORD_WIDTH                = `WORD_WIDTH               , 
     KERNEL_H_MAX              = `KERNEL_H_MAX             ,   // odd number
     KERNEL_W_MAX              = `KERNEL_W_MAX             ,
@@ -122,7 +123,7 @@ module axis_input_pipe
   output wire m_axis_tlast ;
   output wire [WORD_WIDTH*UNITS             -1:0] m_axis_pixels_1_tdata;
   output wire [WORD_WIDTH*UNITS             -1:0] m_axis_pixels_2_tdata;
-  output wire [WORD_WIDTH*CORES*KERNEL_W_MAX-1:0] m_axis_weights_tdata;
+  output wire [WORD_WIDTH*CORES*MEMBERS     -1:0] m_axis_weights_tdata;
   output wire [TUSER_WIDTH_CONV_IN-1:0] m_axis_tuser;
 
   wire [DEBUG_CONFIG_WIDTH_IM_PIPE-1:0] image_pipe_debug_config;
@@ -205,6 +206,7 @@ module axis_input_pipe
 
   axis_weight_rotator #(
     .CORES               (CORES              ),
+    .MEMBERS             (MEMBERS            ),
     .WORD_WIDTH          (WORD_WIDTH         ),
     .DEBUG_CONFIG_WIDTH_W_ROT (DEBUG_CONFIG_WIDTH_W_ROT),
     .KERNEL_H_MAX        (KERNEL_H_MAX       ),

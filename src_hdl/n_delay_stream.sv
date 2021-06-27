@@ -1,7 +1,8 @@
 module n_delay_stream #(
     parameter N,
     parameter WORD_WIDTH,
-    parameter TUSER_WIDTH
+    parameter TUSER_WIDTH,
+    parameter LOCAL = 0
 )(
     aclk,
     aclken,
@@ -40,7 +41,8 @@ module n_delay_stream #(
 
     n_delay #(
         .N(N),
-        .WORD_WIDTH(WORD_WIDTH)
+        .WORD_WIDTH(WORD_WIDTH),
+        .LOCAL(LOCAL)
     )
     delay_data
     (
@@ -54,7 +56,8 @@ module n_delay_stream #(
 
     n_delay #(
         .N(N),
-        .WORD_WIDTH(1)
+        .WORD_WIDTH(1),
+        .LOCAL(LOCAL)
     )
     delay_valid
     (
@@ -68,7 +71,8 @@ module n_delay_stream #(
 
     n_delay #(
         .N(N),
-        .WORD_WIDTH(1)
+        .WORD_WIDTH(1),
+        .LOCAL(LOCAL)
     )
     delay_last
     (
@@ -82,7 +86,8 @@ module n_delay_stream #(
 
     n_delay #(
         .N(N),
-        .WORD_WIDTH(TKEEP_WIDTH)
+        .WORD_WIDTH(TKEEP_WIDTH),
+        .LOCAL(LOCAL)
     )
     delay_keep
     (
@@ -96,7 +101,8 @@ module n_delay_stream #(
 
     n_delay #(
         .N(N),
-        .WORD_WIDTH(TUSER_WIDTH)
+        .WORD_WIDTH(TUSER_WIDTH),
+        .LOCAL(LOCAL)
     )
     delay_user
     (
