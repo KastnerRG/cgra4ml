@@ -41,7 +41,7 @@ module axis_weight_rotator_tb ();
   localparam TUSER_WIDTH_WEIGHTS_OUT   = `TUSER_WIDTH_WEIGHTS_OUT;
 
   localparam BITS_CONFIG_COUNT    = $clog2(BEATS_CONFIG_3X3_1+1);
-  localparam M_WIDTH              = WORD_WIDTH*CORES*KERNEL_W_MAX;
+  localparam M_WIDTH              = WORD_WIDTH*CORES*MEMBERS;
   localparam DEBUG_CONFIG_WIDTH_W_ROT   = `DEBUG_CONFIG_WIDTH_W_ROT;
 
   localparam BRAM_W_WIDTH = S_WEIGHTS_WIDTH ;
@@ -104,7 +104,7 @@ module axis_weight_rotator_tb ();
   
   localparam BEATS_CONFIG_1 = K_1 == 0 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
   localparam W_BEATS = 1 + BEATS_CONFIG_1+1 + (K_1+1)*(CIN_1+1);
-  localparam W_WORDS = (W_BEATS-1) * KERNEL_W_MAX * CORES + S_WEIGHTS_WIDTH /WORD_WIDTH;
+  localparam W_WORDS = (W_BEATS-1) * MEMBERS * CORES + S_WEIGHTS_WIDTH /WORD_WIDTH;
   localparam W_WORDS_PER_BEAT = S_WEIGHTS_WIDTH /WORD_WIDTH;
 
   int s_words_w = 0; 

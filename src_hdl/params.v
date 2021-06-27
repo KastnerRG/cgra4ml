@@ -5,9 +5,10 @@ Parameters of the system. Written from build.tcl
 `define UNITS    4  
 `define GROUPS   2 
 `define COPIES   2 
-`define MEMBERS  4
+`define MEMBERS  12
+`define DW_FACTOR_1 3
 
-`define CORES              16
+`define CORES              4
 `define UNITS_EDGES        6
 `define IM_IN_S_DATA_WORDS 8
 
@@ -15,19 +16,19 @@ Parameters of the system. Written from build.tcl
 `define WORD_WIDTH_ACC      32    
 `define KERNEL_H_MAX        3      
 `define KERNEL_W_MAX        3      
-`define BEATS_CONFIG_3X3_1  20
-`define BEATS_CONFIG_1X1_1  12
+`define BEATS_CONFIG_3X3_1  8
+`define BEATS_CONFIG_1X1_1  4
 
 `define BITS_KERNEL_H     2
 `define BITS_KERNEL_W     2
 `define TKEEP_WIDTH_IM_IN 8
-`define BITS_CONFIG_COUNT 5
+`define BITS_CONFIG_COUNT 4
 
 `define DEBUG_CONFIG_WIDTH_W_ROT   86  
-`define DEBUG_CONFIG_WIDTH_IM_PIPE 17
+`define DEBUG_CONFIG_WIDTH_IM_PIPE 15
 `define DEBUG_CONFIG_WIDTH_LRELU   23  
 `define DEBUG_CONFIG_WIDTH_MAXPOOL 1
-`define DEBUG_CONFIG_WIDTH         131        
+`define DEBUG_CONFIG_WIDTH         129        
 
 /*
   IMAGE TUSER INDICES
@@ -96,4 +97,5 @@ Parameters of the system. Written from build.tcl
 `define TUSER_WIDTH_MAXPOOL_IN     3    
 `define TUSER_WIDTH_LRELU_FMA_1_IN 4
 `define TUSER_WIDTH_LRELU_IN       8      
+`define IS_CONV_DW_SLICE           0
 

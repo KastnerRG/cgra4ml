@@ -32,28 +32,31 @@ class SysConfig:
     UNITS_EDGES :int = 0
     CORES       :int = 0
 
+    LRELU_BEATS_1x1 :int = 5
+    LRELU_BEATS_3x3 :int = 9
+
     def __post_init__(self):
         super().__setattr__('BLOCKS_MAX', self.COLS_MAX//self.CONV_UNITS)
         super().__setattr__('UNITS_EDGES', self.CONV_UNITS + self.KH_MAX-1)
-        super().__setattr__('CORES', self.MEMBERS*self.COPIES*self.GROUPS)
+        super().__setattr__('CORES', self.COPIES*self.GROUPS)
 
         assert self.KH_MAX  % 2 == 1
-        assert self.MEMBERS % 2 == 0
+        assert self.KW_MAX  % 2 == 1
 
 
-def fill_invalid_smcg(arr, KW, max_factor, c, copy_factor=1):
+def fill_invalid_scg(arr, KW, max_factor, c, copy_factor=1):
     '''
     Input  shape: (COUT,...)
     Output shape: (ITR,EFF_CORES,...)
 
-    System out is in SMCG form. Hence by default we fill invalid in that form
+    System out is in SCG form. Hence by default we fill invalid in that form
     '''
     input_shape = arr.shape
 
     CORES = c.CORES//copy_factor
 
     COUT = input_shape[0]
-    SUB_CORES = c.KW_MAX//KW
+    SUB_CORES = c.MEMBERS//KW
     EFF_CORES = CORES * SUB_CORES //max_factor
     ITR = int(np.ceil(COUT/EFF_CORES))
     COUT_FPGA = EFF_CORES * ITR
@@ -70,9 +73,9 @@ def fill_invalid_smcg(arr, KW, max_factor, c, copy_factor=1):
     arr_filled[EFF_CORES:  ,...] = arr[COUT_VALID: ,...]
 
 
-    arr_filled = arr_filled.reshape([ITR,EFF_CORES]+shape_fpga[1:]) # EFF_CORES = (CMGS)
+    arr_filled = arr_filled.reshape([ITR,EFF_CORES]+shape_fpga[1:])
 
-    print(f'Filling invalid smcg - in_shape: {input_shape}, out_shape{arr_filled.shape}')
+    print(f'Filling invalid scg - in_shape: {input_shape}, out_shape{arr_filled.shape}')
 
     return arr_filled
 
@@ -80,13 +83,54 @@ def fill_invalid_smcg(arr, KW, max_factor, c, copy_factor=1):
 def get_lrelu_config(i_layers, c, get_params=False):
     '''
     LRelu config are accepted in (beats,CGM) format
-    * Say M = 4, S = 3
-    * Each CG needs 
-        - SM   =12 words of float16
-        - SM*2 =24 words of int8
-    * But are written horizontally into memory
-    * SM*2 (=24) words are flattened, broken into M (=4) per beat in parallel, as B (=6) beats
-    * M dimension contains M/2 (=2) float16 words broken as M (=4) int8 words
+
+    conv_out.shape          = [beats][C,G,M]:int32
+    lrelu_config_flat.shape = [beats][C,G,M]:int8
+    
+    **********************
+    Say M = 12, KW_max = 3
+    **********************
+    
+    For kw = 1:
+    ----------
+
+    - d        : 2B
+    - bram_A   : depth = 12, width = 2B, size = 24B
+    - bram_B_00: depth = 12, width = 2B, size = 24B
+
+    conv_out.shape          = [5][C,G,12]:int32
+    lrelu_config_flat.shape = [5][C,G,12]:int8
+
+    beats (5):
+        0: d
+        1: A   [0: 5]
+        2: A   [5:11]
+        3: B_00[0: 5]
+        4: B_00[5:11]
+
+
+    For kw = 3:
+    ----------
+
+    - d        : 2B
+    - bram_A   : depth = 4, width = 2B, size = 8B
+    - bram_B_00: depth = 4, width = 2B, size = 8B
+    - bram_B_ij: depth = 4, width = 2B, size = 8B
+
+    conv_out.shape          = [5][C,G,12]:int32
+    lrelu_config_flat.shape = [5][C,G,12]:int8
+
+    beats (9):
+        0: d
+        1: A   [0:3]
+        2: B_00[0:3]
+        3: ---------, B_01[0:1], B_02[0:1]
+        4: ---------, B_01[0:1], B_02[0:1]
+        5: B_11[0:1], B_11[0:1], B_12[0:1]
+        6: B_11[0:1], B_11[0:1], B_12[0:1]
+        7: B_21[0:1], B_21[0:1], B_22[0:1]
+        8: B_21[0:1], B_21[0:1], B_22[0:1]
+
     '''
 
     if f'{c.PREFIX_LRELU}{i_layers}' in c.LAYERS:
@@ -102,7 +146,7 @@ def get_lrelu_config(i_layers, c, get_params=False):
     '''
     max_factor = 2 if f'{c.PREFIX_MAX}{i_layers}' in c.LAYERS.keys() else 1
     KH,KW,_,_ = conv_layer.weights.shape
-    SUB_CORES = c.KW_MAX//KW
+    SUB_CORES = c.MEMBERS//KW
 
     '''
     A, B, D parameters
@@ -128,77 +172,89 @@ def get_lrelu_config(i_layers, c, get_params=False):
     a_cout = params['A'][0,0,0,:]
     d = params['D']
     
-    a_filled = fill_invalid_smcg(a_cout,KW=KW,max_factor=max_factor, c=c)
-    b_filled = fill_invalid_smcg(b_cout_clr_mtb,KW=KW,max_factor=max_factor, c=c)
+    a_filled = fill_invalid_scg(a_cout,KW=KW,max_factor=max_factor, c=c)
+    b_filled = fill_invalid_scg(b_cout_clr_mtb,KW=KW,max_factor=max_factor, c=c)
     ITR, EFF_CORES = a_filled.shape[0:2]
 
     '''
-    * Filling happens in SMCG order (natural disk order)
+    * Filling happens in SCG order (natural disk order)
     * Repeat for maxpool
-    * LRelu config are sent in S,CMG order
+    * LRelu config are sent in [beats,CGM] order
     '''
-
-    a_ismcg = a_filled.reshape(ITR, SUB_CORES, c.MEMBERS,1, c.COPIES//max_factor,c.GROUPS)
-    a_ismcg = np.repeat(a_ismcg,repeats=max_factor,axis=3)
-    a_ismcg = a_ismcg.reshape(ITR, SUB_CORES,c.MEMBERS,c.COPIES,c.GROUPS)
-
-    b_ismcg_clr_mtb = b_filled.reshape(ITR, SUB_CORES,c.MEMBERS,1,c.COPIES//max_factor,c.GROUPS, KW,KH)
-    b_ismcg_clr_mtb = np.repeat(b_ismcg_clr_mtb,repeats=max_factor,axis=3)
-    b_ismcg_clr_mtb = b_ismcg_clr_mtb.reshape(ITR, SUB_CORES,c.MEMBERS,c.COPIES,c.GROUPS,KW,KH)
-
-    def append_lrelu_config(arr,config_mcg,is_one_beat=False):
-        BEATS = 16 // c.WORD_WIDTH_CONFIG;
-        VALS_CONFIG = c.MEMBERS // BEATS;
-
-        assert config_mcg.shape == (c.MEMBERS,c.COPIES,c.GROUPS)
-        config_cgm = config_mcg.transpose((1,2,0))
-        config_cgbv = config_cgm.reshape((c.COPIES, c.GROUPS, BEATS, VALS_CONFIG))
-        config_bcgv = config_cgbv.transpose(2,0,1,3)
-        
-        BEATS_TO_SEND = BEATS
-        if is_one_beat:
-            config_bcgv = config_bcgv[0][np.newaxis,...]
-            BEATS_TO_SEND = 1
-
-        config_8_bcgm = np.frombuffer(config_bcgv.tobytes(), np.int8).reshape((BEATS_TO_SEND,c.COPIES,c.GROUPS,c.MEMBERS))
-        config_pad_bcgmk = np.zeros((BEATS_TO_SEND,c.COPIES,c.GROUPS,c.MEMBERS,c.KW_MAX), config_8_bcgm.dtype)
-        config_pad_bcgmk[...,0] = config_8_bcgm.astype(np.int8)
-        arr += [list(config_pad_bcgmk.reshape(BEATS_TO_SEND,c.CORES,c.KW_MAX))]
     
+    '''
+    D beats = 1
+    '''
+    d_icgm = np.zeros((ITR,c.COPIES,c.GROUPS,c.MEMBERS//2), d.dtype)
+    d_icgm[:,:,:,0] = d
+    d_icgv = d_icgm.reshape(ITR,c.COPIES,c.GROUPS,c.MEMBERS//2)
+    d_icgv_8 = np.frombuffer(d_icgv.tobytes(),np.int8).reshape(ITR,c.COPIES,c.GROUPS,c.MEMBERS)
+    d_ibcgv_8 = d_icgv_8.reshape(ITR,1,c.COPIES,c.GROUPS,c.MEMBERS)
 
     '''
-    Append D, A, B
+    A beats 
+        3x3: 1 
+        1x1: 2
     '''
-    lrelu_config = []
+    BEATS_00 = 1 if KW == 3 else 2
+    a_iscg = a_filled.reshape(ITR, SUB_CORES,1, c.COPIES//max_factor,c.GROUPS)
+    a_iscg = np.repeat(a_iscg,repeats=max_factor,axis=2)
+    a_iscg = a_iscg.reshape(ITR, SUB_CORES,c.COPIES,c.GROUPS)
+    a_icgs = a_iscg.transpose(0,2,3,1)
+    a_icgm = np.zeros((ITR,c.COPIES,c.GROUPS,BEATS_00*c.MEMBERS//2), a_icgs.dtype)
+    a_icgm[:,:,:,0:SUB_CORES] = a_icgs
+    a_icgbv = a_icgm.reshape(ITR,c.COPIES,c.GROUPS,BEATS_00,c.MEMBERS//2)
+    a_icgbv_8 = np.frombuffer(a_icgbv.tobytes(),np.int8).reshape(ITR,c.COPIES,c.GROUPS,BEATS_00,c.MEMBERS)
+    a_ibcgv_8 = a_icgbv_8.transpose(0,3,1,2,4)
 
-    for itr in range(ITR):
-        lrelu_config_itr = []
+    '''
+    B_00 beats 
+        3x3: 1 
+        1x1: 2
+    '''
+    b_iscg_clr_mtb = b_filled.reshape(ITR, SUB_CORES,1,c.COPIES//max_factor,c.GROUPS, KW,KH)
+    b_iscg_clr_mtb = np.repeat(b_iscg_clr_mtb,repeats=max_factor,axis=2)
+    b_iscg_clr_mtb = b_iscg_clr_mtb.reshape(ITR, SUB_CORES,c.COPIES,c.GROUPS,KW,KH)
 
-        ''' d '''
-        append_lrelu_config(lrelu_config_itr,d*np.ones((c.MEMBERS,c.COPIES,c.GROUPS),np.float16), is_one_beat=True)
+    b_iscg_00 = b_iscg_clr_mtb[:,:,:,:,0,0]
+    b_icgs_00 = b_iscg_00.transpose(0,2,3,1)
+    b_icgm_00 = np.zeros((ITR,c.COPIES,c.GROUPS, BEATS_00*c.MEMBERS//2), b_icgs_00.dtype)
+    b_icgm_00[:,:,:,0:SUB_CORES] = b_icgs_00
+    b_icgbv_00= b_icgm_00.reshape(ITR,c.COPIES,c.GROUPS,BEATS_00,c.MEMBERS//2)
+    b_icgbv_00_8 = np.frombuffer(b_icgbv_00.tobytes(),np.int8).reshape(ITR,c.COPIES,c.GROUPS,BEATS_00,c.MEMBERS)
+    b_ibcgv_00_8 = b_icgbv_00_8.transpose(0,3,1,2,4)
 
-        ''' a '''
-        for s in range(SUB_CORES):
-            append_lrelu_config(lrelu_config_itr,a_ismcg[itr,s])
+    lrelu_config_list = [d_ibcgv_8, a_ibcgv_8, b_ibcgv_00_8]
 
-        ''' b '''
-        for s in range(SUB_CORES):
-            for clr in range(KW):
-                for mtb in range(KH):
-                    append_lrelu_config(lrelu_config_itr, b_ismcg_clr_mtb[itr,s,:,:,:,clr,mtb])
-
-        lrelu_config_itr = np.concatenate(lrelu_config_itr,axis=0) #(BEATS,CORES,KW_MAX)
+    '''
+    B_ij beats 
+        3x3: 6 = 2 x clr 
+    '''
+    if KW != 1:
+        b_i_clr_cg_mtb_s = b_iscg_clr_mtb.transpose(0,4,2,3,5,1)
+        b_i_clr_cgm = np.zeros((ITR,KW, c.COPIES,c.GROUPS,c.MEMBERS), b_i_clr_cg_mtb_s.dtype)
+        b_i_clr_cgm[:,:,:,:,0:KH*SUB_CORES] = b_i_clr_cg_mtb_s.reshape(ITR,KW, c.COPIES,c.GROUPS,KH*SUB_CORES)
+        b_i_clr_cgbv = b_i_clr_cgm.reshape(ITR,KW, c.COPIES,c.GROUPS,2,c.MEMBERS//2)
+        b_i_clr_cgbv_8 = np.frombuffer(b_i_clr_cgbv.tobytes(),np.int8).reshape(ITR,KW, c.COPIES,c.GROUPS,2,c.MEMBERS)
+        b_icg_clr_bv_8 = b_i_clr_cgbv_8.transpose(0,2,3,1,4,5)
+        b_icgbv_8 = b_icg_clr_bv_8.reshape(ITR,c.COPIES,c.GROUPS,2*KW,c.MEMBERS)
+        b_ibcgv_8 = b_icgbv_8.transpose(0,3,1,2,4)
         
-        lrelu_config += [lrelu_config_itr] #(ITR)
+        lrelu_config_list += [b_ibcgv_8]
 
-    lrelu_config = np.array(lrelu_config) # (ITR,LRELU_BEATS,CORES,KW_MAX)
-    print(f'lrelu_config: shape = (ITR,LRELU_BEATS,CORES,KW_MAX) = {lrelu_config.shape}')
+    lrelu_config = np.concatenate(lrelu_config_list,axis=1)
+
+    BEATS = c.LRELU_BEATS_3x3 if KW == 3 else c.LRELU_BEATS_1x1
+
+    assert lrelu_config.shape == (ITR,BEATS,c.COPIES,c.GROUPS,c.MEMBERS)
+
+    print(f'lrelu_config: shape = (ITR,BEATS,c.COPIES,c.GROUPS,c.MEMBERS) = {lrelu_config.shape}')
 
     if get_params:
         return lrelu_config, {
             'd': d,
-            'b_ismcg_clr_mtb': b_ismcg_clr_mtb,
-            'a_ismcg': a_ismcg
+            'b_iscg_clr_mtb': b_iscg_clr_mtb,
+            'a_iscg': a_iscg
         }
     else:
         return lrelu_config
@@ -218,28 +274,31 @@ def get_weights(i_layers, i_itr, c):
     '''
 
     weights = weights.transpose(3,0,1,2) #(COUT,KH,KW,CIN)
-    weights = fill_invalid_smcg(weights,KW=KW,max_factor=max_factor,c=c) #(ITR,EFF_CORES,KH,KW,CIN)
+    weights = fill_invalid_scg(weights,KW=KW,max_factor=max_factor,c=c) #(ITR,EFF_CORES,KH,KW,CIN)
     ITR,EFF_CORES = weights.shape[0:2]
     weights = weights.transpose(0,4,2,1,3) #(ITR,CIN,KH,EFF_CORES,KW)
 
     '''
-    * Data comes out of maxpool in the order: SM,CGU
-    * Data comes out of conv in the order   : S,CMGU and is transposed into S,MCGUby hardware
-    * Conv in takes weights in order        : CMGS
+    * Data comes out of maxpool in the order: S,CGU
+    * Data comes out of conv in the order   : CGMU and is transposed into S,CGUby hardware
+    * Conv in takes weights in order        : CGM
 
-    * Since system_out is SMCG, first invalid should be filled that way, so that output data is continous and cin matches cout
-    * After filling, we transpose it to CMGS
+    * Since system_out is SCG, first invalid should be filled that way, so that output data is continous and cin matches cout
+    * After filling, we transpose it to CGM
     '''
 
-    SUB_CORES = c.KW_MAX//KW
-    weights = weights.reshape((ITR,CIN,KH, SUB_CORES,c.MEMBERS,c.COPIES//max_factor,c.GROUPS ,KW)) # EFF_CORES = (SMCG)
-    weights = weights.transpose(0,1,2, 5,4,6, 3,7) # CMGS
-    weights = weights.reshape((ITR,CIN,KH,1,c.COPIES//max_factor,c.MEMBERS,c.GROUPS,c.KW_MAX)) # (CMGS)
+    SUB_CORES = c.MEMBERS//KW
+    weights = weights.reshape((ITR,CIN,KH, SUB_CORES,c.COPIES//max_factor,c.GROUPS ,KW)) # EFF_CORES = (SCG)
+    weights = weights.transpose(0,1,2, 4,5, 3,6) # CGS
+    weights = weights.reshape((ITR,CIN,KH,1,c.COPIES//max_factor,c.GROUPS,SUB_CORES,KW)) # (CGS)
     weights = np.repeat(weights,repeats=max_factor,axis=3)
-    weights = weights.reshape((ITR,CIN,KH,c.CORES,c.KW_MAX))
+    weights = weights.reshape((ITR,CIN,KH,c.COPIES,c.GROUPS,SUB_CORES*KW))
+    zeros = np.zeros((ITR,CIN,KH,c.COPIES,c.GROUPS,c.MEMBERS), dtype=weights.dtype)
+    zeros[:,:,:,:,:,0:SUB_CORES*KW] = weights
+    weights = zeros
 
     KERNEL_BEATS = CIN*KH
-    weights = weights.reshape(ITR,KERNEL_BEATS,c.CORES,c.KW_MAX)
+    weights = weights.reshape(ITR,KERNEL_BEATS,c.COPIES,c.GROUPS,c.MEMBERS)
 
     '''
     Add LRELU Beats
@@ -247,7 +306,7 @@ def get_weights(i_layers, i_itr, c):
     lrelu = get_lrelu_config(i_layers=i_layers,c=c) 
         
     LRELU_BEATS = lrelu.shape[1]
-    weights_beats = np.concatenate([lrelu,weights], axis=1) # (ITR, LRELU_BEATS + KERNEL_BEATS, CORES, KW_MAX)
+    weights_beats = np.concatenate([lrelu,weights], axis=1) # (ITR, LRELU_BEATS + KERNEL_BEATS, COPIES, GROUPS, MEMBERS)
 
     '''
     c
@@ -276,8 +335,8 @@ def get_weights(i_layers, i_itr, c):
     '''
     weights_dma_beats = np.concatenate([weights_config,weights_beats.reshape(ITR,-1)], axis=1)
 
-    assert weights_dma_beats.shape == (ITR, 4 + (LRELU_BEATS + CIN*KH)*c.CORES*c.KW_MAX)
-    print(f"get_weights - weights_dma_beats.shape: (ITR, 4 + (LRELU_BEATS + CIN*KH)*CORES*KW_MAX) = {weights_dma_beats.shape}")
+    assert weights_dma_beats.shape == (ITR, 4 + (LRELU_BEATS + CIN*KH)*c.COPIES*c.GROUPS*c.MEMBERS)
+    print(f"get_weights - weights_dma_beats.shape: (ITR, 4 + (LRELU_BEATS + CIN*KH)*COPIES*GROUPS*MEMBERS) = {weights_dma_beats.shape}")
 
     np.savetxt(f"{c.DATA_DIR}{i_layers}_weights.txt", weights_dma_beats[i_itr].flatten(), fmt='%d')
 
@@ -403,7 +462,7 @@ def fpga_mwr_weights_all(c):
 
 
 def reshape_image_out(image,order,KW,max_factor,c,copy_factor=1,flip_cols=True):
-    assert order == 'cmg' or order == 'mcg'
+    assert order == 'scg' or order == 'cgs'
 
     H,W,COUT = image.shape
     BLOCKS = H//c.CONV_UNITS
@@ -416,14 +475,14 @@ def reshape_image_out(image,order,KW,max_factor,c,copy_factor=1,flip_cols=True):
 
     image = image.reshape((BLOCKS//max_factor,max_factor,c.CONV_UNITS,W,COUT))
     image = image.transpose(4,0,3,1,2) #(COUT,BLOCKS_PER_ARR,W,max_factor,CONV_UNITS)
-    image = fill_invalid_smcg(image,KW=KW,max_factor=max_factor,copy_factor=copy_factor,c=c)
+    image = fill_invalid_scg(image,KW=KW,max_factor=max_factor,copy_factor=copy_factor,c=c)
     ITR, EFF_CORES,BLOCKS_PER_ARR, W, max_factor, CONV_UNITS = image.shape
 
     '''
     MCG vs CMG
 
-    * There are CORES cores. EFF_CORES channels are calculated in parallel
-    * Data comes out from conv in SCMG configuration
+    * There are CG cores. EFF_CORES channels are calculated in parallel
+    * Data comes out from conv in SCG configuration
     * If max, in C place, two blocks of the image come out. Else, two channels
 
     * To generalize: eff_c = 2//max_factor
@@ -432,14 +491,17 @@ def reshape_image_out(image,order,KW,max_factor,c,copy_factor=1,flip_cols=True):
         - if not max: eff_c = 2, max_factor = 1, that dim has 2 channels
     '''
     eff_c  = 2//max_factor//copy_factor
-    SUB_CORES = c.KW_MAX//KW
-    image = image.reshape(ITR, SUB_CORES,c.MEMBERS,eff_c,c.GROUPS, BLOCKS_PER_ARR,W,max_factor,c.CONV_UNITS) # (EFF_CORES -> SMCG)
+    SUB_CORES = c.MEMBERS//KW
+    image = image.reshape(ITR, SUB_CORES,eff_c,c.GROUPS, BLOCKS_PER_ARR,W,max_factor,c.CONV_UNITS) # (EFF_CORES -> SMCG)
 
-    if order == 'mcg':
-        image = image.transpose(0,5,6,1, 2,3,7,4, 8) #(ITR,BLOCKS_PER_ARR,W,SUB_CORES, MEMBERS,eff_c,max_factor,GROUPS, CONV_UNITS)
-    if order == 'cmg':
-        image = image.transpose(0,5,6,1, 3,7,2,4, 8) #(ITR,BLOCKS_PER_ARR,W,SUB_CORES, eff_c,max_factor,MEMBERS,GROUPS, CONV_UNITS)
-    return image.reshape(ITR,BLOCKS_PER_ARR,W,SUB_CORES, c.CORES//copy_factor, c.CONV_UNITS)
+    if order == 'scg':
+        image = image.transpose(0,4,5,1, 2,6,3, 7) #(ITR,BLOCKS_PER_ARR,W,SUB_CORES, eff_c,max_factor,GROUPS, CONV_UNITS)
+        return image.reshape(ITR,BLOCKS_PER_ARR,W,SUB_CORES, c.CORES//copy_factor, c.CONV_UNITS)
+    elif order == 'cgs':
+        image = image.transpose(0,4,5, 2,6,3,1, 7) #(ITR,BLOCKS_PER_ARR,W, eff_c,max_factor,MEMBERS,GROUPS,SUB_CORES, CONV_UNITS)
+        return image.reshape(ITR,BLOCKS_PER_ARR,W, c.CORES//copy_factor,SUB_CORES, c.CONV_UNITS)
+    else:
+        print("ERROR: only scg or cgs")
 
 def make_conv_out(i_layers,i_itr,c):
 
@@ -448,38 +510,42 @@ def make_conv_out(i_layers,i_itr,c):
     image = c.LAYERS[f'{c.PREFIX_CONV}{i_layers}'].np_out_data[0]
     KW    = c.LAYERS[f'{c.PREFIX_CONV}{i_layers}'].weights.shape[0]
 
-    conv_image = reshape_image_out(image=image,order='cmg',KW=KW,max_factor=max_factor,c=c)
+    conv_image = reshape_image_out(image=image,order='scg',KW=KW,max_factor=max_factor,c=c)
     ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS = conv_image.shape
-    DATA_BEATS = BLOCKS_PER_ARR*W*SUB_CORES
-    image = conv_image.reshape(ITR,DATA_BEATS,c.CORES,c.CONV_UNITS)
+    DATA_BEATS = BLOCKS_PER_ARR*W
+    image = conv_image.reshape(ITR,DATA_BEATS,SUB_CORES,c.COPIES,c.GROUPS,c.CONV_UNITS)
+    # zeros = np.zeros((ITR,DATA_BEATS,c.COPIES,c.GROUPS,c.MEMBERS,c.CONV_UNITS),dtype=image.dtype)
+    # zeros[:,:,:,:,0:SUB_CORES,:] = image
+    # image = zeros
 
     '''
     Concat Lrelu config
     '''
     lrelu_config = get_lrelu_config(i_layers,c)
-    #(ITR,LRELU_BEATS,CORES)
+    #(ITR,BEATS,c.COPIES,c.GROUPS,c.MEMBERS)
 
-    ITR,LRELU_BEATS,CORES,KW_MAX = lrelu_config.shape
-    lrelu_config_padded = np.zeros((ITR,LRELU_BEATS,c.CORES,c.CONV_UNITS),lrelu_config.dtype)
-    lrelu_config_padded[...,0] = lrelu_config[...,0]
+    ITR,LRELU_BEATS,COPIES,GROUPS,MEMBERS = lrelu_config.shape
+    lrelu_config_padded = np.zeros((ITR,LRELU_BEATS,COPIES,GROUPS,MEMBERS,c.CONV_UNITS),lrelu_config.dtype)
+    lrelu_config_padded[...,0] = lrelu_config[...]
 
-    image_out = np.concatenate([lrelu_config_padded,image],axis=1)
+    assert lrelu_config_padded.shape == (ITR,LRELU_BEATS,COPIES,GROUPS,MEMBERS,c.CONV_UNITS)
+    print(f"lrelu_config.shape: (ITR,LRELU_BEATS,COPIES,GROUPS,MEMBERS,CONV_UNITS) = {lrelu_config_padded.shape}")
 
-    assert image_out.shape == (ITR, (21 if KW==3 else 13) + BLOCKS_PER_ARR*W*SUB_CORES, c.COPIES*c.MEMBERS*c.GROUPS,c.CONV_UNITS)
+    assert image.shape == (ITR,DATA_BEATS,SUB_CORES,c.COPIES,c.GROUPS,c.CONV_UNITS)
+    print(f"image.shape: (ITR,DATA_BEATS,SUB_CORES,COPIES,GROUPS,CONV_UNITS) = {image.shape}")
 
-    print(f"image_out.shape: (ITR, {21 if KW==3 else 13} + BLOCKS_PER_ARR*W*SUB_CORES, COPIES*MEMBERS*GROUPS,CONV_UNITS) = {image_out.shape}")
+    conv_out_i = np.concatenate([lrelu_config_padded[i_itr].flatten(), image[i_itr].flatten()])
+    np.savetxt(f"{c.DATA_DIR}/{i_layers}_conv_out.txt", conv_out_i, fmt='%d')
 
-    np.savetxt(f"{c.DATA_DIR}/{i_layers}_conv_out.txt", image_out[i_itr].flatten(), fmt='%d')
-
-    return image_out
+    return lrelu_config_padded, image, conv_out_i
 
 def make_lrelu_out(i_layers,c):
     image = c.LAYERS[f'{c.PREFIX_LRELU}{i_layers}'].np_out_data[0]
     max_factor = 2 if f'{c.PREFIX_MAX}{i_layers}' in c.LAYERS else 1
     KW    = c.LAYERS[f'{c.PREFIX_CONV}{i_layers}'].weights.shape[0]
 
-    lrelu_out = reshape_image_out(image=image,order='mcg',KW=KW,max_factor=max_factor,c=c)
-    print(f"Leaky relu out: (ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS) = {lrelu_out.shape}")
+    lrelu_out = reshape_image_out(image=image,order='scg',KW=KW,max_factor=max_factor,c=c)
+    print(f"Leaky relu out: (ITR,BLOCKS_PER_ARR,W,SUB_CORES,COPIES,GROUPS,CONV_UNITS) = {lrelu_out.shape}")
 
     return lrelu_out
 
@@ -500,7 +566,7 @@ def make_accl_out(i_layers,c):
     KW    = c.LAYERS[f'{c.PREFIX_CONV}{i_layers}'].weights.shape[0]
 
     '''Force max_factor=1, since output is always one set of blocks'''
-    accl_out = reshape_image_out(image=image,order='mcg',KW=KW,max_factor=1,copy_factor=copy_factor,flip_cols= flip_cols,c=c)
+    accl_out = reshape_image_out(image=image,order='scg',KW=KW,max_factor=1,copy_factor=copy_factor,flip_cols= flip_cols,c=c)
 
     ITR,BLOCKS_PER_ARR,W,SUB_CORES,_,CONV_UNITS = accl_out.shape
     accl_out_padded = np.pad(accl_out,((0,0),(0,0),(0,0),(0,0),(0,0),(c.KH_MAX//2,c.KH_MAX//2)),mode='constant')

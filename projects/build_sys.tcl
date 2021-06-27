@@ -5,14 +5,15 @@ set SOURCE_FOLDER ../src_hdl
 set UNITS   4
 set GROUPS  2
 set COPIES  2
-set MEMBERS 4
+set MEMBERS 12
+set DW_FACTOR_1 3 
 
 set WORD_WIDTH       8
 set WORD_WIDTH_ACC   32
 set S_WEIGHTS_WIDTH  32
 
-set BEATS_CONFIG_3X3 21
-set BEATS_CONFIG_1X1 13
+set BEATS_CONFIG_1X1 5 
+set BEATS_CONFIG_3X3 9 
 
 set KERNEL_W_MAX  3
 set KERNEL_H_MAX  3
@@ -37,9 +38,11 @@ set BITS_FRA_FMA_1  23
 set BITS_EXP_FMA_2  5 
 set BITS_FRA_FMA_2  10
 
+set IS_CONV_DW_SLICE 0
+
 set IM_BLOCKS_MAX      [expr int($IM_ROWS_MAX / $UNITS)]
 set UNITS_EDGES        [expr $UNITS + $KERNEL_H_MAX-1]
-set CORES              [expr $MEMBERS * $GROUPS * $COPIES]
+set CORES              [expr $GROUPS * $COPIES]
 set BITS_KERNEL_W      [expr int(ceil(log($KERNEL_W_MAX)/log(2)))]
 set BITS_KERNEL_H      [expr int(ceil(log($KERNEL_H_MAX)/log(2)))]
 set BITS_IM_COLS       [expr int(ceil(log($IM_COLS_MAX)/log(2)))]
@@ -116,6 +119,7 @@ Parameters of the system. Written from build.tcl
 `define GROUPS   $GROUPS 
 `define COPIES   $COPIES 
 `define MEMBERS  $MEMBERS
+`define DW_FACTOR_1 $DW_FACTOR_1
 
 `define CORES              $CORES
 `define UNITS_EDGES        $UNITS_EDGES
@@ -206,6 +210,7 @@ Parameters of the system. Written from build.tcl
 `define TUSER_WIDTH_MAXPOOL_IN     $TUSER_WIDTH_MAXPOOL_IN    
 `define TUSER_WIDTH_LRELU_FMA_1_IN $TUSER_WIDTH_LRELU_FMA_1_IN
 `define TUSER_WIDTH_LRELU_IN       $TUSER_WIDTH_LRELU_IN      
+`define IS_CONV_DW_SLICE           $IS_CONV_DW_SLICE
 "
 close $file_param
 
@@ -240,7 +245,7 @@ set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $
 
 set IP_NAME "bram_weights"
 lappend IP_NAMES $IP_NAME
-set R_WIDTH [expr "$WORD_WIDTH    * $CORES * $KERNEL_W_MAX"]
+set R_WIDTH [expr "$WORD_WIDTH   * $CORES * $MEMBERS"]
 set R_DEPTH [expr "$KERNEL_H_MAX * $IM_CIN_MAX + $BEATS_CONFIG_3X3_1"]
 set W_WIDTH [expr "$R_WIDTH"]
 set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
@@ -279,48 +284,105 @@ set_property -dict [list CONFIG.Implementation {DSP48} CONFIG.Input_Width $WIDTH
 
 set IP_NAME "slice_conv"
 lappend IP_NAMES $IP_NAME
-set DATA_BYTES [expr "$WORD_WIDTH_ACC * $CORES * $UNITS /16"]
+set DATA_BYTES [expr "$WORD_WIDTH_ACC * $UNITS /8"]
 set T_LAST 0
 set T_KEEP 0
 set TUSER_WIDTH 0
 create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $TUSER_WIDTH CONFIG.HAS_TKEEP $T_KEEP CONFIG.HAS_TLAST $T_LAST] [get_ips $IP_NAME]
 
+set IP_NAME "slice_conv_semi_active"
+lappend IP_NAMES $IP_NAME
+set DATA_BYTES [expr "$WORD_WIDTH_ACC * $UNITS /8"]
+set T_LAST 0
+set T_KEEP 1
+set TUSER_WIDTH [expr "$TUSER_WIDTH_LRELU_IN"]
+create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $TUSER_WIDTH CONFIG.HAS_TKEEP $T_KEEP CONFIG.HAS_TLAST $T_LAST] [get_ips $IP_NAME]
+
 set IP_NAME "slice_conv_active"
 lappend IP_NAMES $IP_NAME
-set DATA_BYTES [expr "$WORD_WIDTH_ACC * $CORES * $UNITS /16"]
+set DATA_BYTES [expr "$WORD_WIDTH_ACC * $UNITS /8"]
 set T_LAST 1
-set T_KEEP 0
-set TUSER_WIDTH $TUSER_WIDTH_LRELU_IN
+set T_KEEP 1
+set TUSER_WIDTH [expr "$TUSER_WIDTH_LRELU_IN"]
 create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $TUSER_WIDTH CONFIG.HAS_TKEEP $T_KEEP CONFIG.HAS_TLAST $T_LAST] [get_ips $IP_NAME]
 
 #*********** LRELU **********#
 
-set IP_NAME "axis_dw_lrelu_active"
+if ([expr $DW_FACTOR_1 != 1]) {
+  set IP_NAME "axis_dw_lrelu_1_active"
+  lappend IP_NAMES $IP_NAME
+  set S_BYTES [expr "$DW_FACTOR_1 * $UNITS * $WORD_WIDTH_ACC / 8"]
+  set M_BYTES [expr "$UNITS * $WORD_WIDTH_ACC / 8"]
+  set TUSER_WIDTH $TUSER_WIDTH_LRELU_IN
+  set T_LAST 1
+  set T_KEEP 1
+  create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+  set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.TUSER_BITS_PER_BYTE $TUSER_WIDTH CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
+  
+  set IP_NAME "axis_dw_lrelu_1"
+  lappend IP_NAMES $IP_NAME
+  set TUSER_WIDTH 0
+  set T_LAST 0
+  set T_KEEP 1
+  create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+  set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.TUSER_BITS_PER_BYTE $TUSER_WIDTH CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
+  
+  set IP_NAME "axis_dw_lrelu_2_active"
+  lappend IP_NAMES $IP_NAME
+  set S_BYTES [expr "($MEMBERS/$DW_FACTOR_1) * $UNITS * $WORD_WIDTH_ACC / 8"]
+  set M_BYTES [expr "$UNITS * $WORD_WIDTH_ACC / 8"]
+  set TUSER_WIDTH $TUSER_WIDTH_LRELU_IN
+  set T_LAST 1
+  set T_KEEP 1
+  create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+  set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.TUSER_BITS_PER_BYTE $TUSER_WIDTH CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
+
+  set IP_NAME "axis_dw_lrelu_2"
+  lappend IP_NAMES $IP_NAME
+  set TUSER_WIDTH 0
+  set T_LAST 0
+  set T_KEEP 1
+  create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+  set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.TUSER_BITS_PER_BYTE $TUSER_WIDTH CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
+
+} else {
+
+  set IP_NAME "axis_dw_lrelu_2_active"
+  lappend IP_NAMES $IP_NAME
+  set S_BYTES [expr "$MEMBERS * $UNITS * $WORD_WIDTH_ACC / 8"]
+  set M_BYTES [expr "$UNITS * $WORD_WIDTH_ACC / 8"]
+  set TUSER_WIDTH $TUSER_WIDTH_LRELU_IN
+  set T_LAST 1
+  set T_KEEP 1
+  create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+  set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.TUSER_BITS_PER_BYTE $TUSER_WIDTH CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
+
+  set IP_NAME "axis_dw_lrelu_2"
+  lappend IP_NAMES $IP_NAME
+  set TUSER_WIDTH 0
+  set T_LAST 0
+  set T_KEEP 1
+  create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+  set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.TUSER_BITS_PER_BYTE $TUSER_WIDTH CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
+}
+
+set IP_NAME "axis_reg_slice_lrelu_dw_active"
 lappend IP_NAMES $IP_NAME
-set S_BYTES [expr "$MEMBERS * $GROUPS * $UNITS * $WORD_WIDTH_ACC / 8"]
-set M_BYTES [expr "$GROUPS * $UNITS * $WORD_WIDTH_ACC / 8"]
+set DATA_BYTES [expr "$UNITS * $WORD_WIDTH_ACC / 8"]
 set TID_WIDTH $TUSER_WIDTH_LRELU_IN
 set T_LAST 1
 set T_KEEP 0
-create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
-set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.TID_WIDTH $TID_WIDTH CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
-
-set IP_NAME "axis_dw_lrelu"
-lappend IP_NAMES $IP_NAME
-set S_BYTES [expr "$MEMBERS * $GROUPS * $UNITS * $WORD_WIDTH_ACC / 8"]
-set M_BYTES [expr "$GROUPS * $UNITS * $WORD_WIDTH_ACC / 8"]
-set T_LAST 0
-set T_KEEP 0
-create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
-set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
+create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TID_WIDTH $TID_WIDTH CONFIG.HAS_TKEEP $T_KEEP CONFIG.HAS_TLAST $T_LAST CONFIG.REG_CONFIG {16}] [get_ips $IP_NAME]
 
 set IP_NAME "axis_reg_slice_lrelu_dw"
 lappend IP_NAMES $IP_NAME
-set DATA_BYTES [expr "$COPIES * $GROUPS * $UNITS * $WORD_WIDTH_ACC / 8"]
-set TUSER_WIDTH $TUSER_WIDTH_LRELU_IN
-set T_LAST 1
+set DATA_BYTES [expr "$UNITS * $WORD_WIDTH_ACC / 8"]
+set TUSER_WIDTH 0
+set T_LAST 0
 set T_KEEP 0
 create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $TUSER_WIDTH CONFIG.HAS_TKEEP $T_KEEP CONFIG.HAS_TLAST $T_LAST CONFIG.REG_CONFIG {16}] [get_ips $IP_NAME]
@@ -406,7 +468,7 @@ set_property -dict [list CONFIG.Operation_Type {Float_to_float} CONFIG.A_Precisi
 set IP_NAME "bram_lrelu"
 lappend IP_NAMES $IP_NAME
 set R_WIDTH 16
-set R_DEPTH [expr "$MEMBERS * $KERNEL_W_MAX"]
+set R_DEPTH [expr "$MEMBERS"]
 set W_WIDTH [expr "$MEMBERS * $WORD_WIDTH   "]
 set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
@@ -415,8 +477,8 @@ set_property -dict [list  CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assum
 set IP_NAME "bram_lrelu_edge"
 lappend IP_NAMES $IP_NAME
 set R_WIDTH 16
-set R_DEPTH [expr "$MEMBERS"]
-set W_WIDTH [expr "$MEMBERS * $WORD_WIDTH   "]
+set R_DEPTH [expr "$MEMBERS / $KERNEL_W_MAX"]
+set W_WIDTH [expr "$MEMBERS * $WORD_WIDTH  / $KERNEL_H_MAX"]
 set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
 set_property -dict [list  CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A $W_WIDTH CONFIG.Write_Depth_A $W_DEPTH CONFIG.Read_Width_A $W_WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $R_WIDTH CONFIG.Read_Width_B $R_WIDTH CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100} CONFIG.Register_PortB_Output_of_Memory_Core {true} ] [get_ips $IP_NAME]

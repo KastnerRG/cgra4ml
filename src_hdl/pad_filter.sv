@@ -34,6 +34,7 @@ Additional Comments:
 module pad_filter 
 # (
     KERNEL_W_MAX  ,
+    MEMBERS       ,
     TUSER_WIDTH   ,
     I_IS_1X1      ,
     I_IS_COLS_1_K2,
@@ -52,21 +53,16 @@ module pad_filter
     is_left_col,
     is_right_col
 );
-    localparam KW2_MAX           = KERNEL_W_MAX/2; //R, 3->1, 5->2, 7->3
+    localparam KW2_MAX          = KERNEL_W_MAX/2; //R, 3->1, 5->2, 7->3
     localparam BITS_KERNEL_W    = $clog2(KERNEL_W_MAX);
 
     input  logic                      aclk;
-    input  logic [KERNEL_W_MAX-1 : 0] aclken;               
     input  logic                      aresetn;
-
-    input  logic [TUSER_WIDTH - 1: 0] user_in      [KERNEL_W_MAX - 1 : 0];
-    input  logic                      valid_in     [KERNEL_W_MAX - 1 : 0];
-
-    output logic                      mask_partial [KERNEL_W_MAX - 1 : 1];
-    output logic                      mask_full    [KERNEL_W_MAX - 1 : 0];
-    
-    output logic is_left_col  [KERNEL_W_MAX - 1 : 0];
-    output logic is_right_col [KERNEL_W_MAX - 1 : 0];
+    input  logic [MEMBERS - 1 : 0]    aclken, valid_in;               
+    output logic [MEMBERS - 1 : 1]    mask_partial;
+    output logic [MEMBERS - 1 : 0]    mask_full;
+    output logic [MEMBERS - 1 : 0]    is_left_col, is_right_col;
+    input  logic [TUSER_WIDTH - 1: 0] user_in      [MEMBERS - 1 : 0];
 
     /*
     KW2_1
@@ -79,8 +75,8 @@ module pad_filter
     * Acts as mux_sel for lookup logic
     */
     
-    logic   [BITS_KERNEL_W-1 : 0]  kw_wire [KERNEL_W_MAX-1 : 0];
-    logic   [BITS_KERNEL_W-2 : 0] kw2_wire [KERNEL_W_MAX-1 : 0];
+    logic   [BITS_KERNEL_W-1 : 0]  kw_wire [MEMBERS-1 : 0];
+    logic   [BITS_KERNEL_W-2 : 0] kw2_wire [MEMBERS-1 : 0];
     
     /*
     COL_START, COL_END Registers
@@ -106,60 +102,62 @@ module pad_filter
     * FIRST_COL (LEFT ) : delay(start[kw2_wire])
     */
 
-    logic                            reg_clken           [KERNEL_W_MAX - 1 : 0];
-    logic   [KW2_MAX          : 1]   col_end_in          [KERNEL_W_MAX - 1 : 0];
-    logic   [KW2_MAX          : 1]   col_end             [KERNEL_W_MAX - 1 : 0];
-    logic   [KW2_MAX          : 1]   col_start_in        [KERNEL_W_MAX - 1 : 0];
-    logic   [KW2_MAX          : 1]   col_start           [KERNEL_W_MAX - 1 : 0];
-    logic   col_left_in [KERNEL_W_MAX-1 : 0];
+    logic   reg_clken                  [MEMBERS-1 : 0];
+    logic   col_left_in                [MEMBERS-1 : 0];
+    logic   [KW2_MAX : 1] col_end_in   [MEMBERS-1 : 0];
+    logic   [KW2_MAX : 0] col_end      [MEMBERS-1 : 0];
+    logic   [KW2_MAX : 1] col_start_in [MEMBERS-1 : 0];
+    logic   [KW2_MAX : 1] col_start    [MEMBERS-1 : 0];
     generate
-        for (genvar w=0; w < KERNEL_W_MAX; w++) begin: col_end_gen_w
+        for (genvar m=0; m < MEMBERS; m++) begin: col_end_gen_m
         
-            assign kw_wire [w] = user_in[w][BITS_KERNEL_W + I_KERNEL_W_1-1: I_KERNEL_W_1];
-            assign kw2_wire[w] = kw_wire[w] / 2; // kw = 7 : kw2_wire = 3,   kw = 5 : kw2_wire = 2,   kw = 3 : kw2_wire = 1
+            assign kw_wire  [m] = user_in [m][BITS_KERNEL_W + I_KERNEL_W_1-1: I_KERNEL_W_1];
+            assign kw2_wire [m] = kw_wire [m] / 2; // kw = 7 : kw2_wire = 3,   kw = 5 : kw2_wire = 2,   kw = 3 : kw2_wire = 1
 
 
-            assign reg_clken[w] = user_in [w][I_IS_CIN_LAST] && aclken[w] && valid_in[w];
+            assign reg_clken[m] = user_in [m][I_IS_CIN_LAST] && aclken[m] && valid_in[m];
 
-            assign col_end_in         [w][1]  = user_in[w][I_IS_COLS_1_K2];
-            assign col_start_in       [w][1]  = col_end[w][kw2_wire[w]]; // This is a mux
+            assign col_end_in         [m][1]  = user_in[m][I_IS_COLS_1_K2];
+            assign col_start_in       [m][1]  = col_end[m][kw2_wire[m]]; // This is a mux
 
             for (genvar k=2; k < KW2_MAX+1; k++) begin: col_end_gen_k
-                assign col_end_in     [w][k]  = col_end  [w][k-1];
-                assign col_start_in   [w][k]  = col_start[w][k-1];
+                assign col_end_in     [m][k]  = col_end  [m][k-1];
+                assign col_start_in   [m][k]  = col_start[m][k-1];
             end
+
 
             register
             #(
                 .WORD_WIDTH     (KW2_MAX),
-                .RESET_VALUE    (0      )         
+                .RESET_VALUE    (0 )         
             )
             COL_END_REG
             (
                 .clock          (aclk              ),
-                .clock_enable   (reg_clken      [w]),
+                .clock_enable   (reg_clken      [m]),
                 .resetn         (aresetn           ),
-                .data_in        (col_end_in     [w]),
-                .data_out       (col_end        [w])
+                .data_in        (col_end_in     [m]),
+                .data_out       (col_end        [m][KW2_MAX : 1])
             );
+            assign col_end [m][0] = 0; // to solve issue with end_partial
 
             register
             #(
                 .WORD_WIDTH     (KW2_MAX),
-                .RESET_VALUE    (1      )         
+                .RESET_VALUE    (1 )         
             )
             COL_START_REG
             (
                 .clock          (aclk                ),
-                .clock_enable   (reg_clken        [w]),
+                .clock_enable   (reg_clken        [m]),
                 .resetn         (aresetn             ),
-                .data_in        (col_start_in     [w]),
-                .data_out       (col_start        [w])
+                .data_in        (col_start_in     [m]),
+                .data_out       (col_start        [m])
             );
 
-            assign is_right_col [w]  = (w==kw2_wire[w]) & col_end[w][kw2_wire[w]];
+            assign is_right_col [m]  = (m==kw2_wire[m]) & col_end[m][kw2_wire[m]];
 
-            assign col_left_in  [w]  = col_start [w][kw2_wire[w]];
+            assign col_left_in  [m]  = col_start [m][kw2_wire[m]];
             register
             #(
                 .WORD_WIDTH     (1),
@@ -168,10 +166,10 @@ module pad_filter
             COL_LEFT_REG
             (
                 .clock          (aclk           ),
-                .clock_enable   (reg_clken   [w]),
+                .clock_enable   (reg_clken   [m]),
                 .resetn         (aresetn        ),
-                .data_in        (col_left_in [w]),
-                .data_out       (is_left_col [w])
+                .data_in        (col_left_in [m]),
+                .data_out       (is_left_col [m])
             );
         end
     endgenerate
@@ -192,46 +190,48 @@ module pad_filter
 
     */
     
-    logic lut_allow_full     [KERNEL_W_MAX - 1 : 0] [KW2_MAX : 1];
-    logic lut_stop_partial   [KERNEL_W_MAX - 1 : 1] [KW2_MAX : 1]; 
+    logic lut_allow_full     [MEMBERS - 1 : 0] [KW2_MAX : 0];
+    logic lut_stop_partial   [MEMBERS - 1 : 1] [KW2_MAX : 0]; 
 
     generate
-        for (genvar w=0; w < KERNEL_W_MAX; w++)   begin: lookup_full_datapath_gen
-            for (genvar kw2=1;  kw2 < KW2_MAX+1; kw2++)   begin: lookup_full_kw_gen
+        for (genvar m=0; m < MEMBERS; m++)   begin: lookup_full_datapath_gen
+            for (genvar kw2=1;  kw2 <= KW2_MAX; kw2++)   begin: lookup_full_kw_gen
+                localparam kw = kw2*2 + 1;
 
                 logic full_datapath, unused_datapaths, start_cols, last_col, last_malformed, at_start_and_middle, at_last_col;
             
-                assign full_datapath             =     w == 2*kw2            ; // w == kw-1 = (2k2+1)-1 = (2(kw2)+1)-1 = 2kw2
-                assign unused_datapaths          =     w >  2*kw2            ; // Anything above that is unused
-                assign start_cols                =     |col_start[w][kw2:1]  ; // 1,2,...k2 : first k/2 colums are to be ignored
-                assign last_col                  =      col_end  [w][kw2  ]  ; // if the last column:
-                assign last_malformed            =     w <  kw2              ; // All (w<k2) datapaths contain malformed data, rest contain padded data
+                assign full_datapath             =     (m % kw) == kw-1      ; // M=24, kw=5: m=0,4,9,14,19
+                assign unused_datapaths          =     m >= (MEMBERS/kw)*kw  ; // m >= 20
+                assign start_cols                =     |col_start[m][kw2:1]  ; // 1,2,...k2 : first k/2 colums are to be ignored
+                assign last_col                  =      col_end  [m][kw2  ]  ; // if the last column:
+                assign last_malformed            =     (m % kw) <  kw2       ; // M=24, kw=5: m=0,1,5,6; All (m<k2) datapaths contain malformed data, rest contain padded data
                 assign at_start_and_middle       =     full_datapath & !start_cols; // During start_cols, block all datapaths. During middle_cols, allow only full_datapth.
                 assign at_last_col               =     last_col & !last_malformed & !unused_datapaths; // At the last_col, only allow datapaths that have partially formed padding
 
-                assign lut_allow_full   [w][kw2] =     at_start_and_middle | at_last_col;
+                assign lut_allow_full   [m][kw2] =     at_start_and_middle | at_last_col;
             end
+            assign     lut_allow_full   [m][ 0 ] =     1;
 
-            assign    mask_full[w]  =  (lut_allow_full [w][kw2_wire[w]] & kw2_wire[w] !=0) | (user_in[w][I_IS_CONFIG] & (w==0)) | (user_in[w][I_IS_1X1] && ~user_in[w][I_IS_CONFIG]);
+            assign    mask_full[m]  =  lut_allow_full [m][kw2_wire[m]] | user_in[m][I_IS_CONFIG]; // || (user_in[m][I_IS_1X1] && ~user_in[m][I_IS_CONFIG])
         end
 
-        for (genvar w=1; w < KERNEL_W_MAX; w = w+1)   begin: lookup_partial_datapath_gen
-            for (genvar kw2=1;  kw2 <  KW2_MAX+1 ; kw2 = kw2+1) begin: lut_partial_kw_gen
-                
+        for (genvar m=1; m < MEMBERS; m++)   begin: lookup_partial_datapath_gen
+            for (genvar kw2=0;  kw2 <=  KW2_MAX ; kw2++) begin: lut_partial_kw_gen
+                localparam kw = kw2*2 + 1;
+
                 logic unused_datapaths, end_partial;
+                assign unused_datapaths  =  m >= (MEMBERS/kw)*kw;  // Anything above m == kw2 should be blocked
 
-                assign unused_datapaths  =  w >  2*kw2 ;          // Anything above w == kw2 should be blocked
-
-                if (w > kw2)
-                    assign end_partial = col_end[w][kw2];       // Block w>kw2 datapaths, only for last col. For others, we need those partial sums for first few columns
+                if ((m % kw) > kw2)
+                    assign end_partial =  col_end[m][kw2];       // Block m>kw2 datapaths, only for last col. For others, we need those partial sums for first few columns
                 else
-                    assign end_partial = |col_end[w][kw2:w];    // or(w, w+1, w+2, ... k2), horizontal rows of the blocking triangle
+                    assign end_partial = |col_end[m][kw2:(m%kw)];    // or(w, w+1, w+2, ... k2), horizontal rows of the blocking triangle
 
-               assign lut_stop_partial [w][kw2] =  end_partial | unused_datapaths;
-                
+               assign lut_stop_partial [m][kw2] =  end_partial | unused_datapaths;
             end
+            assign    lut_stop_partial [m][ 0 ] =  1; 
 
-            assign    mask_partial[w]         = !lut_stop_partial [w][kw2_wire[w]];
+            assign    mask_partial[m]         = !lut_stop_partial [m][kw2_wire[m]];
         end
     endgenerate
 endmodule
