@@ -292,6 +292,21 @@ def get_weights(i_layers, i_itr, c):
     weights = weights.transpose(0,1,2, 4,5, 3,6) # CGS
     weights = weights.reshape((ITR,CIN,KH,1,c.COPIES//max_factor,c.GROUPS,SUB_CORES,KW)) # (CGS)
     weights = np.repeat(weights,repeats=max_factor,axis=3)
+    weights = weights.reshape((ITR,CIN,KH,c.COPIES,c.GROUPS,SUB_CORES,KW))
+
+    '''
+    Temp, to solve the DW bank issue (M=12):
+       RATIO =  KW_MAX/K
+       SUB_CORES -> (RATIO,SUB_CORES/RATIO) -> (SUB_CORES/RATIO,RATIO)
+    3: 4         -> (1,4)                    -> (4,1)
+    1: 12        -> (3,4)                    -> (4,3)
+    '''
+    RATIO = c.KW_MAX//KW
+    weights = weights.reshape((ITR,CIN,KH,c.COPIES,c.GROUPS,RATIO,SUB_CORES//RATIO,KW))
+    weights = weights.transpose(0,1,2,3,4,6,5,7)
+    weights = weights.reshape((ITR,CIN,KH,c.COPIES,c.GROUPS,SUB_CORES//RATIO,RATIO,KW))
+    weights = weights.reshape((ITR,CIN,KH,c.COPIES,c.GROUPS,SUB_CORES,KW))
+
     weights = weights.reshape((ITR,CIN,KH,c.COPIES,c.GROUPS,SUB_CORES*KW))
     zeros = np.zeros((ITR,CIN,KH,c.COPIES,c.GROUPS,c.MEMBERS), dtype=weights.dtype)
     zeros[:,:,:,:,:,0:SUB_CORES*KW] = weights
@@ -479,7 +494,7 @@ def reshape_image_out(image,order,KW,max_factor,c,copy_factor=1,flip_cols=True):
     ITR, EFF_CORES,BLOCKS_PER_ARR, W, max_factor, CONV_UNITS = image.shape
 
     '''
-    MCG vs CMG
+    SCG vs CGS
 
     * There are CG cores. EFF_CORES channels are calculated in parallel
     * Data comes out from conv in SCG configuration

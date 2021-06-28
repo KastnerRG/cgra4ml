@@ -449,14 +449,6 @@ module conv_engine (
       assign acc_m_last_masked  [m] = clken_acc[m] & acc_m_last [m] & (m == last_m_kw2_lut[acc_m_kw_1[m]/2]);
       assign acc_m_valid_masked [m] = clken_acc[m] & acc_m_valid[m] & mask_full[m];
 
-      /*
-      SHIFTING
-
-      * A datawidth converter bank of ratio (MEMBERS:1 = 24:1) is placed after slice
-      * Values are shifted towards zeroth index
-
-      */
-
     end
   endgenerate
 

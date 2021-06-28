@@ -12,7 +12,7 @@ i_itr = 0
 
 CONFIG = SysConfig(
     CONV_UNITS = 4,
-    MEMBERS    = 4,
+    MEMBERS    = 12,
     COPIES     = 2,
     GROUPS     = 2,
     WORD_WIDTH_CONFIG = 8,
@@ -37,6 +37,18 @@ CONFIG = SysConfig(
     ADDR_OUT    = '0x04000000',
     ADDR_IN_LUT = '0x00001000'
 )
+
+
+# %%
+im_arrays, _ = reshape_conv_in(i_layers=i_layers,c=CONFIG)
+
+
+# %%
+weights_dma_beats_0 = get_weights(i_layers=i_layers,i_itr=0,c=CONFIG)
+
+
+# %%
+weights_dma_beats_0.shape
 
 
 # %%
@@ -160,37 +172,14 @@ arr[1][-1,-1,-1,:]
 # # Test Conv Out = Leaky Relu In
 
 # %%
-conv_out     = make_conv_out(i_layers=i_layers,i_itr=i_itr, c=CONFIG)
-conv_out_sim = np.loadtxt(f"{CONFIG.DATA_DIR}{i_layers}_conv_out_sim_0.txt",np.int32)
+lrelu_config, image_out, conv_out_i = make_conv_out(i_layers=i_layers,i_itr=i_itr, c=CONFIG)
+conv_out_sim = np.loadtxt(f"{CONFIG.DATA_DIR}{i_layers}_conv_out_dw_sim_0.txt",np.int32)
 
-conv_out_sim = conv_out_sim.reshape(conv_out[i_itr].shape)
+lrelu_config_sim = conv_out_sim[:lrelu_config[0].size]
+im_out_sim = conv_out_sim[lrelu_config[0].size:].reshape(image_out[0].shape)
 
-error = conv_out_sim - conv_out[i_itr]
-np.sum(error != 0)
-
-
-# %%
-np.argwhere(error != 0)
-
-
-# %%
-conv_out[i_itr][error != 0]
-
-
-# %%
-conv_out_sim[error != 0]
-
-
-# %%
-conv_out_sim.shape
-
-
-# %%
-2582869-787776
-
-
-# %%
-error.size
+error = image_out[0] - im_out_sim
+np.sum(np.abs(error != 0))
 
 
 # %%
@@ -223,6 +212,24 @@ with open("where_err.txt", 'w') as f:
     np.savetxt(f,np.argwhere(np.abs(error) > THRES),fmt='%d')
 
 print(np.sum(np.abs(error) > THRES))
+
+
+# %%
+hw_out = np.fromfile(f'{CONFIG.DATA_DIR}{i_layers}_fpga_out_flat.bin',np.int32)
+sim_out = np.loadtxt(f"{CONFIG.DATA_DIR}{i_layers}_conv_out_sim_0.txt",np.int32)
+
+
+# %%
+sim1 = np.loadtxt(f"{CONFIG.DATA_DIR}{i_layers}_conv_out_sim_0_part.txt",np.int32)
+sim2 = np.loadtxt(f"{CONFIG.DATA_DIR}{i_layers}_conv_out_old_part.txt",np.int32)
+
+
+# %%
+np.sum(hw_out - sim_out)
+
+
+# %%
+np.sum(sim1-sim2)
 
 
 # %%
