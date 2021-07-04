@@ -25,50 +25,15 @@ Additional Comments:
 //////////////////////////////////////////////////////////////////////////////////*/
 
 
-module axis_lrelu_engine 
-  #(
-    WORD_WIDTH_IN              = `WORD_WIDTH_ACC            ,
-    WORD_WIDTH_OUT             = `WORD_WIDTH                ,
-    WORD_WIDTH_CONFIG          = `WORD_WIDTH                ,
-    DEBUG_CONFIG_WIDTH_LRELU   = `DEBUG_CONFIG_WIDTH_LRELU  ,
-    UNITS                      = `UNITS                     ,
-    GROUPS                     = `GROUPS                    ,
-    COPIES                     = `COPIES                    ,
-    MEMBERS                    = `MEMBERS                   ,
-    LRELU_ALPHA                = `LRELU_ALPHA               ,
-    BEATS_CONFIG_3X3_2         = `BEATS_CONFIG_3X3_1-1      , // D(1) + A(2) + B(9*2) -2 = 21-2 = 19
-    BEATS_CONFIG_1X1_2         = `BEATS_CONFIG_1X1_1-1      , // D(1) + A(2*3) + B(2*3) -2 = 13 -2 = 11
-    BITS_EXP_CONFIG            = `BITS_EXP_CONFIG           ,
-    BITS_FRA_CONFIG            = `BITS_FRA_CONFIG           ,
-    BITS_EXP_FMA_1             = `BITS_EXP_FMA_1            ,
-    BITS_FRA_FMA_1             = `BITS_FRA_FMA_1            ,
-    BITS_EXP_FMA_2             = `BITS_EXP_FMA_2            ,
-    BITS_FRA_FMA_2             = `BITS_FRA_FMA_2            ,
-    LATENCY_FMA_1              = `LATENCY_FMA_1             ,
-    LATENCY_FMA_2              = `LATENCY_FMA_2             ,
-    LATENCY_FIXED_2_FLOAT      = `LATENCY_FIXED_2_FLOAT     ,
-    LATENCY_BRAM               = `LATENCY_BRAM              ,
-    LATENCY_FLOAT_UPSIZE       = `LATENCY_FLOAT_UPSIZE      ,
-    LATENCY_FLOAT_DOWNSIZE     = `LATENCY_FLOAT_DOWNSIZE    ,
-    I_IS_NOT_MAX               = `I_IS_NOT_MAX              ,
-    I_IS_MAX                   = `I_IS_MAX                  ,
-    I_IS_1X1                   = `I_IS_1X1                  ,
-    I_IS_LRELU                 = `I_IS_LRELU                ,
-    I_IS_TOP_BLOCK             = `I_IS_TOP_BLOCK            ,
-    I_IS_BOTTOM_BLOCK          = `I_IS_BOTTOM_BLOCK         ,
-    I_IS_LEFT_COL              = `I_IS_LEFT_COL             ,
-    I_IS_RIGHT_COL             = `I_IS_RIGHT_COL            ,
-    TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN    ,
-    TUSER_WIDTH_LRELU_FMA_1_IN = `TUSER_WIDTH_LRELU_FMA_1_IN,
-    TUSER_WIDTH_LRELU_IN       = `TUSER_WIDTH_LRELU_IN      
-  )(
+module axis_lrelu_engine (
     aclk         ,
     aresetn      ,
     debug_config ,
     s_axis_tvalid,
     s_axis_tready,
-    s_axis_tdata , // cmgu
+    s_axis_tdata , // cgmu
     s_axis_tuser ,
+    s_axis_tkeep ,
     s_axis_tlast ,
     m_axis_tvalid,
     m_axis_tready,
@@ -76,22 +41,60 @@ module axis_lrelu_engine
     m_axis_tuser 
   );
 
+    localparam WORD_WIDTH_IN              = `WORD_WIDTH_ACC            ;
+    localparam WORD_WIDTH_OUT             = `WORD_WIDTH                ;
+    localparam WORD_WIDTH_CONFIG          = `WORD_WIDTH                ;
+    localparam DEBUG_CONFIG_WIDTH_LRELU   = `DEBUG_CONFIG_WIDTH_LRELU  ;
+    localparam UNITS                      = `UNITS                     ;
+    localparam GROUPS                     = `GROUPS                    ;
+    localparam COPIES                     = `COPIES                    ;
+    localparam MEMBERS                    = `MEMBERS                   ;
+    localparam KERNEL_W_MAX               = `KERNEL_W_MAX              ;
+    localparam LRELU_ALPHA                = `LRELU_ALPHA               ;
+    localparam BEATS_CONFIG_3X3_2         = `BEATS_CONFIG_3X3_1-1      ; // D(1) + A(2) + B(2*3)= 9
+    localparam BEATS_CONFIG_1X1_2         = `BEATS_CONFIG_1X1_1-1      ; // D(1) + A(2) + B(2*1)= 5
+    localparam BITS_EXP_CONFIG            = `BITS_EXP_CONFIG           ;
+    localparam BITS_FRA_CONFIG            = `BITS_FRA_CONFIG           ;
+    localparam BITS_EXP_FMA_1             = `BITS_EXP_FMA_1            ;
+    localparam BITS_FRA_FMA_1             = `BITS_FRA_FMA_1            ;
+    localparam BITS_EXP_FMA_2             = `BITS_EXP_FMA_2            ;
+    localparam BITS_FRA_FMA_2             = `BITS_FRA_FMA_2            ;
+    localparam LATENCY_FMA_1              = `LATENCY_FMA_1             ;
+    localparam LATENCY_FMA_2              = `LATENCY_FMA_2             ;
+    localparam LATENCY_FIXED_2_FLOAT      = `LATENCY_FIXED_2_FLOAT     ;
+    localparam LATENCY_BRAM               = `LATENCY_BRAM              ;
+    localparam LATENCY_FLOAT_UPSIZE       = `LATENCY_FLOAT_UPSIZE      ;
+    localparam LATENCY_FLOAT_DOWNSIZE     = `LATENCY_FLOAT_DOWNSIZE    ;
+    localparam I_IS_NOT_MAX               = `I_IS_NOT_MAX              ;
+    localparam I_IS_MAX                   = `I_IS_MAX                  ;
+    localparam I_IS_1X1                   = `I_IS_1X1                  ;
+    localparam I_IS_LRELU                 = `I_IS_LRELU                ;
+    localparam I_IS_TOP_BLOCK             = `I_IS_TOP_BLOCK            ;
+    localparam I_IS_BOTTOM_BLOCK          = `I_IS_BOTTOM_BLOCK         ;
+    localparam I_IS_LEFT_COL              = `I_IS_LEFT_COL             ;
+    localparam I_IS_RIGHT_COL             = `I_IS_RIGHT_COL            ;
+    localparam TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN    ;
+    localparam TUSER_WIDTH_LRELU_FMA_1_IN = `TUSER_WIDTH_LRELU_FMA_1_IN;
+    localparam TUSER_WIDTH_LRELU_IN       = `TUSER_WIDTH_LRELU_IN      ;
+    
+    localparam WORD_BYTES_IN = WORD_WIDTH_IN/8;
+
     input  wire aclk, aresetn;
     input  wire s_axis_tvalid, s_axis_tlast, m_axis_tready;
     output wire m_axis_tvalid;
     output reg  s_axis_tready;
-    input  wire [TUSER_WIDTH_LRELU_IN  -1:0] s_axis_tuser;
+    input  wire [MEMBERS*TUSER_WIDTH_LRELU_IN  -1:0] s_axis_tuser;
     output wire [TUSER_WIDTH_MAXPOOL_IN-1:0] m_axis_tuser;
     output wire [DEBUG_CONFIG_WIDTH_LRELU-1:0] debug_config;
 
-    input  wire [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_axis_tdata;
+    input  wire [COPIES * GROUPS * MEMBERS * UNITS * WORD_WIDTH_IN -1:0] s_axis_tdata;
+    input  wire [COPIES * GROUPS * MEMBERS * UNITS * WORD_BYTES_IN -1:0] s_axis_tkeep;
     output wire [          COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_axis_tdata;
 
-    wire [COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_data_e, s_dw_slice_data;
+    wire [COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_data_e;
     wire [COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_data_e;
     wire s_valid_e, s_last_e, m_valid_e;
-    wire s_dw_slice_valid, s_dw_slice_last, s_dw_slice_ready;
-    wire [TUSER_WIDTH_LRELU_IN  -1:0] s_user_e, s_dw_slice_user;
+    wire [TUSER_WIDTH_LRELU_IN  -1:0] s_user_e;
     wire [TUSER_WIDTH_MAXPOOL_IN-1:0] m_user_e;
     wire s_ready_slice;
 
@@ -286,70 +289,23 @@ module axis_lrelu_engine
 
     /*
       DATAWIDTH CONVERTER BANKS
-
-      * Size: MGU(W) -> GU(W) : 2*8*8*(26) -> 2*8*(26) : 3328 -> 416 : 416B -> 52B
-      * Number: 2 (one per copy)
     */
-    generate
-      for(genvar c=0; c<COPIES; c=c+1) begin: c_gen
 
-        wire [MEMBERS * GROUPS * UNITS * WORD_WIDTH_IN-1:0] dw_s_data_mgu;
-        wire [          GROUPS * UNITS * WORD_WIDTH_IN-1:0] dw_m_data_gu ;
-        
-        assign dw_s_data_mgu = s_axis_tdata[(c+1)*MEMBERS*GROUPS*UNITS*WORD_WIDTH_IN-1:(c)*MEMBERS*GROUPS*UNITS*WORD_WIDTH_IN];
-        assign s_dw_slice_data[(c+1)*GROUPS*UNITS*WORD_WIDTH_IN-1:(c)*GROUPS*UNITS*WORD_WIDTH_IN] = dw_m_data_gu;
-
-        if (c==0) begin
-          axis_dw_lrelu_active dw (
-            .aclk           (aclk),          
-            .aresetn        (aresetn),             
-            .s_axis_tvalid  (dw_s_valid),  
-            .s_axis_tready  (dw_s_ready),  
-            .s_axis_tdata   (dw_s_data_mgu),
-            .s_axis_tlast   (s_axis_tlast),    
-            .s_axis_tid     (s_axis_tuser),   
-
-            .m_axis_tvalid  (s_dw_slice_valid),  
-            .m_axis_tready  (s_dw_slice_ready), 
-            .m_axis_tdata   (dw_m_data_gu),
-            .m_axis_tlast   (s_dw_slice_last),  
-            .m_axis_tid     (s_dw_slice_user)   
-          );
-        end
-        else begin
-          axis_dw_lrelu dw (
-            .aclk           (aclk),          
-            .aresetn        (aresetn),             
-            .s_axis_tvalid  (dw_s_valid),  
-            .s_axis_tdata   (dw_s_data_mgu),
-
-            .m_axis_tready  (s_dw_slice_ready), 
-            .m_axis_tdata   (dw_m_data_gu)
-          );
-        end
-      end
-    endgenerate
-
-    axis_reg_slice_lrelu_dw dw_slice (
-      .aclk           (aclk),                     
-      .aresetn        (aresetn),              
-      .s_axis_tvalid  (s_dw_slice_valid ),   
-      .s_axis_tready  (s_dw_slice_ready ),   
-      .s_axis_tdata   (s_dw_slice_data  ),    
-      .s_axis_tlast   (s_dw_slice_last  ),    
-      .s_axis_tuser   (s_dw_slice_user  ),   
-      .m_axis_tvalid  (s_valid_e        ),  
-      .m_axis_tready  (s_ready_slice    ),   
-      .m_axis_tdata   (s_data_e         ),    
-      .m_axis_tlast   (s_last_e         ),    
-      .m_axis_tuser   (s_user_e         )     
+    axis_conv_dw_bank DW_BANK (
+      .aclk             (aclk         ),
+      .aresetn          (aresetn      ),
+      .s_axis_tdata     (s_axis_tdata ),
+      .s_axis_tvalid    (dw_s_valid   ),
+      .s_axis_tready    (dw_s_ready   ),
+      .s_axis_tlast     (s_axis_tlast ),
+      .s_axis_tuser     (s_axis_tuser ),
+      .s_axis_tkeep     (s_axis_tkeep ),
+      .m_axis_tvalid    (s_valid_e    ),
+      .m_axis_tready    (s_ready_slice),
+      .m_axis_tdata     (s_data_e     ),
+      .m_axis_tlast     (s_last_e     ),
+      .m_axis_tuser     (s_user_e     )
     );
-
-// assign s_valid_e        = s_dw_slice_valid ;
-// assign s_dw_slice_ready = s_ready_slice;
-// assign s_data_e         = s_dw_slice_data  ;
-// assign s_last_e         = s_dw_slice_last  ;
-// assign s_user_e         = s_dw_slice_user  ;
 
     lrelu_engine #(
       .WORD_WIDTH_IN  (WORD_WIDTH_IN ),

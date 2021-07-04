@@ -8,13 +8,16 @@
 !.gitattributes
 !*.py
 !*.md
-!**/build*.tcl
+!*.sv
+!*.v
+!*.cpp
 
 **/.ipynb_checkpoints/**
 
 # in subfolders also
 # allow all stuff inside any subfolder named "src"
 
-!**/src_hdl/**
-!**/src_c/**
-!**/wave/**
+!src_hdl/
+!src_c/
+!wave/
+!projects/build*
