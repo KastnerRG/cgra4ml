@@ -201,9 +201,13 @@ def get_lrelu_config(i_layers, c, get_params=False):
     a_iscg = np.repeat(a_iscg,repeats=max_factor,axis=2)
     a_iscg = a_iscg.reshape(ITR, SUB_CORES,c.COPIES,c.GROUPS)
     a_icgs = a_iscg.transpose(0,2,3,1)
+    # 1x1: 2*12/2 = 12 ; 3x3: 1*12/2 = 6
     a_icgm = np.zeros((ITR,c.COPIES,c.GROUPS,BEATS_00*c.MEMBERS//2), a_icgs.dtype)
+    # 1x1: 12 of 12 ; 3x3: 4 of 6
     a_icgm[:,:,:,0:SUB_CORES] = a_icgs
+    # 1x1: (2,6) ; 3x3: (1,6)
     a_icgbv = a_icgm.reshape(ITR,c.COPIES,c.GROUPS,BEATS_00,c.MEMBERS//2)
+    # 1x1: (2,12) ; 3x3: (1,12)
     a_icgbv_8 = np.frombuffer(a_icgbv.tobytes(),np.int8).reshape(ITR,c.COPIES,c.GROUPS,BEATS_00,c.MEMBERS)
     a_ibcgv_8 = a_icgbv_8.transpose(0,3,1,2,4)
 

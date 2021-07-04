@@ -298,72 +298,41 @@ module axis_accelerator
     .m_axis_tuser         (conv_m_axis_tuser          )
     );
 
-  // --synthesis translate_off
+  // // --synthesis translate_off
 
-  axis_conv_dw_bank DW_TEST (
-    .aclk             (aclk                  ),
-    .aresetn          (aresetn               ),
-    .s_axis_tvalid    (conv_m_axis_tvalid    ),
-    .s_axis_tready    (conv_m_axis_tready    ),
-    .s_axis_tdata     (conv_m_axis_tdata     ),
-    .s_axis_tkeep     (conv_m_axis_tkeep     ),
-    .s_axis_tlast     (conv_m_axis_tlast     ),
-    .s_axis_tuser     (conv_m_axis_tuser     ),
-    .m_axis_tvalid    (conv_dw_m_axis_tvalid ),
-    .m_axis_tready    (conv_dw_m_axis_tready ),
-    .m_axis_tdata     (conv_dw_m_axis_tdata  ),
-    .m_axis_tlast     (conv_dw_m_axis_tlast  ),
-    .m_axis_tuser     (conv_dw_m_axis_tuser  )
-  );
-
-  // --synthesis translate_on
-
-  // axis_lrelu_engine #(
-  //   .WORD_WIDTH_IN              (WORD_WIDTH_ACC            ),
-  //   .WORD_WIDTH_OUT             (WORD_WIDTH                ),
-  //   .DEBUG_CONFIG_WIDTH_LRELU   (DEBUG_CONFIG_WIDTH_LRELU  ),
-  //   .UNITS                      (UNITS                     ),
-  //   .GROUPS                     (GROUPS                    ),
-  //   .COPIES                     (COPIES                    ),
-  //   .MEMBERS                    (MEMBERS                   ),
-  //   .LRELU_ALPHA                (LRELU_ALPHA               ),
-  //   .BEATS_CONFIG_3X3_2         (BEATS_CONFIG_3X3_1    -1  ),
-  //   .BEATS_CONFIG_1X1_2         (BEATS_CONFIG_1X1_1    -1  ),    
-  //   .BITS_EXP_CONFIG            (BITS_EXP_CONFIG           ),
-  //   .BITS_FRA_CONFIG            (BITS_FRA_CONFIG           ),
-  //   .BITS_EXP_FMA_1             (BITS_EXP_FMA_1            ),
-  //   .BITS_FRA_FMA_1             (BITS_FRA_FMA_1            ),
-  //   .BITS_EXP_FMA_2             (BITS_EXP_FMA_2            ),
-  //   .BITS_FRA_FMA_2             (BITS_FRA_FMA_2            ),
-  //   .LATENCY_FMA_1              (LATENCY_FMA_1             ),
-  //   .LATENCY_FMA_2              (LATENCY_FMA_2             ),
-  //   .LATENCY_FIXED_2_FLOAT      (LATENCY_FIXED_2_FLOAT     ),
-  //   .LATENCY_BRAM               (LATENCY_BRAM              ),
-  //   .I_IS_MAX                   (I_IS_MAX                  ),
-  //   .I_IS_NOT_MAX               (I_IS_NOT_MAX              ),
-  //   .I_IS_1X1                   (I_IS_1X1                  ),
-  //   .I_IS_LRELU                 (I_IS_LRELU                ),
-  //   .I_IS_TOP_BLOCK             (I_IS_TOP_BLOCK            ),
-  //   .I_IS_BOTTOM_BLOCK          (I_IS_BOTTOM_BLOCK         ),
-  //   .I_IS_LEFT_COL              (I_IS_LEFT_COL             ),
-  //   .I_IS_RIGHT_COL             (I_IS_RIGHT_COL            ),
-  //   .TUSER_WIDTH_LRELU_IN       (TUSER_WIDTH_LRELU_IN      ),
-  //   .TUSER_WIDTH_LRELU_FMA_1_IN (TUSER_WIDTH_LRELU_FMA_1_IN),
-  //   .TUSER_WIDTH_MAXPOOL_IN     (TUSER_WIDTH_MAXPOOL_IN    )
-  // ) LRELU_ENGINE (
-  //   .aclk          (aclk                 ),
-  //   .aresetn       (aresetn              ),
-  //   .debug_config  (debug_config_lrelu   ),
-  //   .s_axis_tvalid (conv_m_axis_tvalid   ),
-  //   .s_axis_tready (conv_m_axis_tready   ),
-  //   .s_axis_tdata  (conv_m_axis_tdata    ), // cmgu
-  //   .s_axis_tlast  (conv_m_axis_tlast    ),
-  //   .s_axis_tuser  (conv_m_axis_tuser    ),
-  //   .m_axis_tvalid (lrelu_m_axis_tvalid  ),
-  //   .m_axis_tready (lrelu_m_axis_tready  ),
-  //   .m_axis_tdata  (lrelu_m_axis_tdata   ), // cgu
-  //   .m_axis_tuser  (lrelu_m_axis_tuser   )
+  // axis_conv_dw_bank DW_TEST (
+  //   .aclk             (aclk                  ),
+  //   .aresetn          (aresetn               ),
+  //   .s_axis_tvalid    (conv_m_axis_tvalid    ),
+  //   .s_axis_tready    (conv_m_axis_tready    ),
+  //   .s_axis_tdata     (conv_m_axis_tdata     ),
+  //   .s_axis_tkeep     (conv_m_axis_tkeep     ),
+  //   .s_axis_tlast     (conv_m_axis_tlast     ),
+  //   .s_axis_tuser     (conv_m_axis_tuser     ),
+  //   .m_axis_tvalid    (conv_dw_m_axis_tvalid ),
+  //   .m_axis_tready    (conv_dw_m_axis_tready ),
+  //   .m_axis_tdata     (conv_dw_m_axis_tdata  ),
+  //   .m_axis_tlast     (conv_dw_m_axis_tlast  ),
+  //   .m_axis_tuser     (conv_dw_m_axis_tuser  )
   // );
+
+  // // --synthesis translate_on
+
+  axis_lrelu_engine LRELU_ENGINE (
+    .aclk          (aclk                 ),
+    .aresetn       (aresetn              ),
+    .debug_config  (debug_config_lrelu   ),
+    .s_axis_tvalid (conv_m_axis_tvalid   ),
+    .s_axis_tready (conv_m_axis_tready   ),
+    .s_axis_tdata  (conv_m_axis_tdata    ), // cgmu
+    .s_axis_tkeep  (conv_m_axis_tkeep    ), // cgmu
+    .s_axis_tlast  (conv_m_axis_tlast    ),
+    .s_axis_tuser  (conv_m_axis_tuser    ),
+    .m_axis_tvalid (lrelu_m_axis_tvalid  ),
+    .m_axis_tready (lrelu_m_axis_tready  ),
+    .m_axis_tdata  (lrelu_m_axis_tdata   ), // cgu
+    .m_axis_tuser  (lrelu_m_axis_tuser   )
+  );
 
   // axis_maxpool_engine #(
   //   .UNITS        (UNITS       ),

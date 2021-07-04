@@ -70,26 +70,19 @@ module lrelu_engine (
 
     s_axis_tdata
     s_data_conv_out - cgmu
-    s_data_config_cgm
-    s_data_config_flat_cg
-      config_s_data_cgv_sr
+    s_config_cgm
   */
   input  logic resetn_config, s_valid_config, is_1x1_config;
-  input  logic [MEMBERS * COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_data_conv_out;
+  input  logic [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0][WORD_WIDTH_IN-1:0] s_data_conv_out;
 
-  logic [WORD_WIDTH_IN    -1:0] s_data_conv_out_cgmu [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0];
-  logic [WORD_WIDTH_CONFIG-1:0] s_data_config_cgm    [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0];
-  logic [MEMBERS * WORD_WIDTH_CONFIG-1:0] s_data_config_flat_cg [COPIES-1:0][GROUPS-1:0];
+  logic [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][WORD_WIDTH_CONFIG-1:0] s_config_cgm;
 
-  assign s_data_conv_out_cgmu = {>>{s_data_conv_out}};
   generate
     for (genvar c = 0; c < COPIES; c++)
-      for (genvar g = 0; g < GROUPS; g++) begin
+      for (genvar g = 0; g < GROUPS; g++)
         for (genvar m = 0; m < MEMBERS; m++)
-            assign s_data_config_cgm[c][g][m] = WORD_WIDTH_CONFIG'(s_data_conv_out_cgmu[c][g][m][0]);
-
-        assign {>>{s_data_config_flat_cg [c][g]}} = s_data_config_cgm[c][g];
-      end
+          for (genvar u = 0; u < UNITS; u++)
+            assign s_config_cgm[c][g][m] = WORD_WIDTH_CONFIG'(s_data_conv_out[c][g][m][0]);
   endgenerate
 
   /*
@@ -102,13 +95,14 @@ module lrelu_engine (
   assign {>>{m_data_flat_cgu}} = m_data_cgu;
 
   localparam BRAM_R_WIDTH = 16;
-  localparam BRAM_W_WIDTH = MEMBERS * WORD_WIDTH_CONFIG;
 
-  localparam BRAM_R_DEPTH_3X3 = MEMBERS;
-  localparam BRAM_W_DEPTH_3X3 = BRAM_R_DEPTH_3X3 * BRAM_R_WIDTH / BRAM_W_WIDTH;
+  localparam BRAM_R_DEPTH_3X3 = MEMBERS/3;
+  localparam BRAM_W_WIDTH_3X3 = (MEMBERS/3) * WORD_WIDTH_CONFIG;
+  localparam BRAM_W_DEPTH_3X3 = BRAM_R_DEPTH_3X3 * BRAM_R_WIDTH / BRAM_W_WIDTH_3X3;
 
-  localparam BRAM_R_DEPTH_1X1 = MEMBERS * 3;
-  localparam BRAM_W_DEPTH_1X1 = BRAM_R_DEPTH_1X1 * BRAM_R_WIDTH / BRAM_W_WIDTH;
+  localparam BRAM_R_DEPTH_1X1 = MEMBERS;
+  localparam BRAM_W_WIDTH_1X1 = MEMBERS * WORD_WIDTH_CONFIG;
+  localparam BRAM_W_DEPTH_1X1 = BRAM_R_DEPTH_1X1 * BRAM_R_WIDTH / BRAM_W_WIDTH_1X1;
 
   localparam BITS_BRAM_R_DEPTH_1X1 = $clog2(BRAM_R_DEPTH_1X1);
   localparam BITS_BRAM_W_DEPTH_1X1 = $clog2(BRAM_W_DEPTH_1X1);
@@ -176,12 +170,12 @@ module lrelu_engine (
                   bram_addr_next  = 0;
                   w_sel_bram_next = 1;
                 end
-      1       : begin // D Register
+      1       : begin // D Register - 1 clock
                   bram_addr_next  = 0;
                   w_sel_bram_next = 2;
                 end
-      2       : begin // A RAM
-                  if (bram_addr == bram_w_depth_1) begin
+      2       : begin // A RAM - 2/1 clocks for 1/3
+                  if (bram_addr == (is_1x1_config ? 2-1:1-1)) begin
                     bram_addr_next  = 0;
                     w_sel_bram_next = 3;
                   end
@@ -190,8 +184,8 @@ module lrelu_engine (
                     w_sel_bram_next = w_sel_bram;
                   end
                 end
-      3       : begin // B RAM center (0,0)
-                  if (bram_addr == bram_w_depth_1) begin
+      3       : begin // B RAM center (0,0) - 2/1 clocks for 1/3
+                  if (bram_addr == (is_1x1_config ? 2-1:1-1)) begin
                     bram_addr_next  = 0;
                     if (is_1x1_config) w_sel_bram_next = 1;
                     else               w_sel_bram_next = 4;
@@ -201,10 +195,10 @@ module lrelu_engine (
                     w_sel_bram_next = w_sel_bram;
                   end
                 end
-      default : begin // Other 8 of B ram
-                  if (bram_addr == bram_w_depth_1) begin
+      default : begin // Other 8 of B ram - 2 clocks each for 3
+                  if (bram_addr == 2-1) begin
                     bram_addr_next  = 0;
-                    if (w_sel_bram == 11) w_sel_bram_next = 1;
+                    if (w_sel_bram == 6 ) w_sel_bram_next = 1;
                     else                  w_sel_bram_next = w_sel_bram + 1;
                   end
                   else begin
@@ -256,7 +250,10 @@ module lrelu_engine (
   logic [BITS_FMA_2-1:0] config_fma1_f16_cgv  [COPIES-1:0][GROUPS-1:0][VALS_CONFIG-1:0];
   logic [BITS_FMA_2-1:0] config_fma2_f16_cg   [COPIES-1:0][GROUPS-1:0];
 
-  logic [WORD_WIDTH_CONFIG * MEMBERS-1:0] config_flat_1_cg [COPIES-1:0][GROUPS-1:0];
+  logic [COPIES-1:0][GROUPS-1:0][MEMBERS         -1:0][WORD_WIDTH_CONFIG-1:0] config_1_cgm;
+  logic [COPIES-1:0][GROUPS-1:0][3-1:0][MEMBERS/3-1:0][WORD_WIDTH_CONFIG-1:0] config_1_cg_mtb;
+  assign config_1_cg_mtb = config_1_cgm;
+
   logic [BRAM_R_WIDTH-1:0] a_val_cg     [COPIES-1:0][GROUPS-1:0];
   logic [BITS_FMA_1-1:0]   a_val_f32_cg_in  [COPIES-1:0][GROUPS-1:0];
   logic [BITS_FMA_1-1:0]   a_val_f32_cg_out [COPIES-1:0][GROUPS-1:0];
@@ -269,7 +266,7 @@ module lrelu_engine (
   logic [BITS_FMA_1-1:0] b_top_f32_cg [COPIES-1:0][GROUPS-1:0]; 
   logic [BITS_FMA_1-1:0] b_bot_f32_cg [COPIES-1:0][GROUPS-1:0];
   logic [BITS_FMA_2-1:0] d_val_cg     [COPIES-1:0][GROUPS-1:0];
-  logic [BRAM_R_WIDTH -1:0] config_flat_2_cg [COPIES-1:0][GROUPS-1:0];
+  logic [BRAM_R_WIDTH -1:0] config_2_cg [COPIES-1:0][GROUPS-1:0];
 
 
   localparam WIDTH_FIXED_2_FLOAT_S_DATA = (WORD_WIDTH_IN/8 + ((WORD_WIDTH_IN % 8) !=0))*8; // ceil(WORD_WIDTH_IN/8.0)*8
@@ -289,9 +286,9 @@ module lrelu_engine (
   assign debug_config = {w_sel_bram + d_val_cg[0][0]};
 
   generate
-    for(genvar c=0; c<COPIES; c=c+1) begin: c_gen
-      for(genvar g=0; g<GROUPS; g=g+1) begin: g_gen
-        for (genvar u=0; u < UNITS; u++) begin:u_gen
+    for(genvar c=0; c<COPIES; c=c+1) begin: C
+      for(genvar g=0; g<GROUPS; g=g+1) begin: G
+        for (genvar u=0; u < UNITS; u++) begin: U
 
         assign s_data_fix2float_cgu[c][g][u] = WIDTH_FIXED_2_FLOAT_S_DATA'(signed'(s_data_cgu[c][g][u]));
 
@@ -330,8 +327,8 @@ module lrelu_engine (
               .clk      (clk),
               .resetn   (resetn),
               .clken    (clken),
-              .data_in  (s_data_config_flat_cg [c][g]),
-              .data_out (config_flat_1_cg [c][g])
+              .data_in  (s_config_cgm  [c][g]),
+              .data_out (config_1_cgm  [c][g])
             );
 
             if (g==0 && c==0) begin
@@ -424,24 +421,21 @@ module lrelu_engine (
             BRAM A
           */
           if (u == 0)
-            cyclic_bram #(
+            cyclic_shift_reg #(
               .R_DEPTH      (BRAM_R_DEPTH_1X1), 
               .R_DATA_WIDTH (BRAM_R_WIDTH),
-              .W_DATA_WIDTH (BRAM_W_WIDTH),
-              .LATENCY      (LATENCY_BRAM),
-              .ABSORB       (0),
-              .IP_TYPE      (0)
+              .W_DATA_WIDTH (BRAM_W_WIDTH_1X1),
+              .LATENCY      (LATENCY_BRAM)
             ) BRAM_A (
               .clk          (clk),
               .clken        (clken),
               .resetn       (resetn_config_1),
               .w_en         (valid_config_1 && (w_sel_bram_1 == 2)),
-              .s_data       (config_flat_1_cg [c][g]),
+              .s_data       (config_1_cgm [c][g]),
               .m_data       (a_val_cg [c][g]),
               .r_en         (valid_1),
               .r_addr_max   (b_r_addr_max  ),
-              .w_addr_max   (b_w_addr_max  ),
-              .r_addr_min   (BITS_BRAM_R_DEPTH_1X1'(0))
+              .w_addr_max   (b_w_addr_max  )
             );
 
           if (u == 0) begin
@@ -485,60 +479,57 @@ module lrelu_engine (
             BRAM B
             - Only the nessasary BRAMs are ready (using ready)
           */
-          if (u == 0)
-            for (genvar mtb=0; mtb < 3; mtb ++) begin: mtb_gen
+
+          if (u == 0) begin
+
+            for (genvar mtb=0; mtb < 3; mtb ++) begin: MTB
 
               assign ready_mtb[mtb] = (mtb==0) || ~user_1[I_IS_1X1] && (   (mtb==1 && user_1[I_IS_TOP_BLOCK]) 
                                                                         || (mtb==2 && user_1[I_IS_BOTTOM_BLOCK]));
 
-              for (genvar clr=0; clr < 3; clr ++) begin: clr_gen
+              for (genvar clr=0; clr < 3; clr ++) begin: CLR
                 
                 assign b_ready_cg_clr_mtb[c][g][clr][mtb] = valid_1 && (clr_index_in == clr) && ready_mtb[mtb];
 
                 if (mtb==0 && clr ==0) begin // Center BRAM
-                  cyclic_bram #(
+                  cyclic_shift_reg #(
                     .R_DEPTH      (BRAM_R_DEPTH_1X1), 
                     .R_DATA_WIDTH (BRAM_R_WIDTH),
-                    .W_DATA_WIDTH (BRAM_W_WIDTH),
-                    .LATENCY      (LATENCY_BRAM),
-                    .ABSORB       (0),
-                    .IP_TYPE      (0)
+                    .W_DATA_WIDTH (BRAM_W_WIDTH_1X1),
+                    .LATENCY      (LATENCY_BRAM)
                   ) BRAM_B (
                     .clk          (clk),
                     .clken        (clken),
                     .resetn       (resetn_config_1),
                     .w_en         (valid_config_1 && (w_sel_bram_1 == 3)),
-                    .s_data       (config_flat_1_cg [c][g]),
+                    .s_data       (config_1_cgm [c][g]),
                     .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
                     .r_en         (b_ready_cg_clr_mtb[c][g][clr][mtb]),
                     .r_addr_max   (b_r_addr_max  ),
-                    .w_addr_max   (b_w_addr_max  ),
-                    .r_addr_min   (BITS_BRAM_R_DEPTH_1X1'(0))
+                    .w_addr_max   (b_w_addr_max  )
                   );
                 end
                 else begin // Edge BRAM
-                  cyclic_bram #(
+                  cyclic_shift_reg #(
                     .R_DEPTH      (BRAM_R_DEPTH_3X3), 
                     .R_DATA_WIDTH (BRAM_R_WIDTH),
-                    .W_DATA_WIDTH (BRAM_W_WIDTH),
-                    .LATENCY      (LATENCY_BRAM),
-                    .ABSORB       (0),
-                    .IP_TYPE      (1)
+                    .W_DATA_WIDTH (BRAM_W_WIDTH_3X3),
+                    .LATENCY      (LATENCY_BRAM)
                   ) BRAM_B (
                     .clk          (clk),
                     .clken        (clken),
                     .resetn       (resetn_config_1),
-                    .w_en         (valid_config_1 && (w_sel_bram_1 == 3 + clr*3 + mtb)),
-                    .s_data       (config_flat_1_cg [c][g]),
+                    .w_en         (valid_config_1 && (w_sel_bram_1 == 4 + clr)),
+                    .s_data       (config_1_cg_mtb [c][g][mtb]),
                     .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
                     .r_en         (b_ready_cg_clr_mtb[c][g][clr][mtb]),
                     .r_addr_max   (BITS_BRAM_R_DEPTH_3X3'(BRAM_R_DEPTH_3X3-1)),
-                    .w_addr_max   (BITS_BRAM_W_DEPTH_3X3'(BRAM_W_DEPTH_3X3-1)),
-                    .r_addr_min   (BITS_BRAM_R_DEPTH_3X3'(0))
+                    .w_addr_max   (BITS_BRAM_W_DEPTH_3X3'(BRAM_W_DEPTH_3X3-1))
                   );
                 end
               end
             end
+          end
 
           if (c==0 && g==0 && u==0)
             n_delay #(
@@ -709,8 +700,8 @@ module lrelu_engine (
               .clk      (clk),
               .resetn   (resetn),
               .clken    (clken),
-              .data_in  (16'(config_flat_1_cg [c][g])),
-              .data_out (config_flat_2_cg [c][g])
+              .data_in  (16'(config_1_cgm [c][g])),
+              .data_out (config_2_cg      [c][g])
             );
 
             if (c==0 && g==0) begin
@@ -758,7 +749,7 @@ module lrelu_engine (
               .clock        (clk),
               .clock_enable (clken && valid_config_2 && (w_sel_bram_2==1)),
               .resetn       (resetn_config_2),
-              .data_in      (config_flat_2_cg [c][g]),
+              .data_in      (config_2_cg [c][g]),
               .data_out     (d_val_cg [c][g])
             );
 
@@ -849,96 +840,100 @@ module lrelu_engine (
     end 
   endgenerate
 
-//   /*
-//     Convert float16 wires to shortreal for simulation
-//   */
+  /*
+    Convert float16 wires to shortreal for simulation
+  */
+  // synthesis translate_off
 
-//   virtual class float_downsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);
-//     static function logic [EXP_OUT+FRA_OUT:0] downsize (input logic [EXP_IN+FRA_IN:0] float_in);
-//       /*
-//         Downsize
-//         * eg: Float32 -> Float16
-//             - EXP_IN  : 8
-//             - FRA_IN  : 23
-//             - EXP_OUT : 5
-//             - FRA_OUT : 10
-//         * Mantissa is rounded to avoid error
-//       */
-//       logic sign;
-//       logic [EXP_IN -1:0] exp_in;
-//       logic [FRA_IN -1:0] fra_in;
-//       logic [EXP_OUT-1:0] exp_out;
-//       logic [FRA_OUT  :0] fra_out_extra, fra_out_round;
-//       logic [FRA_OUT-1:0] fra_out;
+  virtual class float_downsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);
+    static function logic [EXP_OUT+FRA_OUT:0] downsize (input logic [EXP_IN+FRA_IN:0] float_in);
+      /*
+        Downsize
+        * eg: Float32 -> Float16
+            - EXP_IN  : 8
+            - FRA_IN  : 23
+            - EXP_OUT : 5
+            - FRA_OUT : 10
+        * Mantissa is rounded to avoid error
+      */
+      logic sign;
+      logic [EXP_IN -1:0] exp_in;
+      logic [FRA_IN -1:0] fra_in;
+      logic [EXP_OUT-1:0] exp_out;
+      logic [FRA_OUT  :0] fra_out_extra, fra_out_round;
+      logic [FRA_OUT-1:0] fra_out;
       
-//       {sign, exp_in, fra_in} = float_in;
-//       exp_out = exp_in - (2**(EXP_IN-1)-2**(EXP_OUT-1));
-//       fra_out_extra = fra_in >> (FRA_IN-FRA_OUT-1);
-//       // fra_out_round = sign ? fra_out_extra - fra_in[FRA_IN-FRA_OUT]: fra_out_extra + fra_in[FRA_IN-FRA_OUT];
-//       // fra_out = fra_out_round >> 1;
-//       fra_out = fra_in >> (FRA_IN-FRA_OUT);
-//       return {sign, exp_out, fra_out};
-//     endfunction
-//   endclass
+      {sign, exp_in, fra_in} = float_in;
+      exp_out = exp_in - (2**(EXP_IN-1)-2**(EXP_OUT-1));
+      fra_out_extra = fra_in >> (FRA_IN-FRA_OUT-1);
+      // fra_out_round = sign ? fra_out_extra - fra_in[FRA_IN-FRA_OUT]: fra_out_extra + fra_in[FRA_IN-FRA_OUT];
+      // fra_out = fra_out_round >> 1;
+      fra_out = fra_in >> (FRA_IN-FRA_OUT);
+      return {sign, exp_out, fra_out};
+    endfunction
+  endclass
 
-//   virtual class float_upsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);  
-//     static function logic [EXP_OUT+FRA_OUT:0] upsize (input logic [EXP_IN+FRA_IN:0] float_in);
-//       /*
-//         Upsize
-//         * eg: Float32 -> Float16
-//             - EXP_IN  : 5
-//             - FRA_IN  : 10
-//             - EXP_OUT : 8
-//             - FRA_OUT : 23
-//         * No need to round
-//       */
-//       logic sign;
-//       logic [EXP_IN -1:0] exp_in;
-//       logic [FRA_IN -1:0] fra_in;
-//       logic [EXP_OUT-1:0] exp_out;
-//       logic [FRA_OUT-1:0] fra_out;
+  virtual class float_upsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);  
+    static function logic [EXP_OUT+FRA_OUT:0] upsize (input logic [EXP_IN+FRA_IN:0] float_in);
+      /*
+        Upsize
+        * eg: Float32 -> Float16
+            - EXP_IN  : 5
+            - FRA_IN  : 10
+            - EXP_OUT : 8
+            - FRA_OUT : 23
+        * No need to round
+      */
+      logic sign;
+      logic [EXP_IN -1:0] exp_in;
+      logic [FRA_IN -1:0] fra_in;
+      logic [EXP_OUT-1:0] exp_out;
+      logic [FRA_OUT-1:0] fra_out;
       
-//       {sign, exp_in, fra_in} = float_in;
-//       exp_out = exp_in + (2**(EXP_OUT-1)-2**(EXP_IN-1));
-//       fra_out = fra_in << (FRA_OUT-FRA_IN);
-//       return {sign, exp_out, fra_out};
-//     endfunction
-//   endclass
+      {sign, exp_in, fra_in} = float_in;
+      exp_out = exp_in + (2**(EXP_OUT-1)-2**(EXP_IN-1));
+      fra_out = fra_in << (FRA_OUT-FRA_IN);
+      return {sign, exp_out, fra_out};
+    endfunction
+  endclass
 
-//   shortreal m_data_fma_1_cgu_sr      [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
-//   shortreal m_data_fma_2_cgu_sr      [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
-//   shortreal c_val_cgu_sr             [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
-//   shortreal config_s_data_cgv_sr     [COPIES-1:0][GROUPS-1:0][VALS_CONFIG-1:0];
-//   shortreal config_fma1_cgv_sr       [COPIES-1:0][GROUPS-1:0][VALS_CONFIG-1:0];
-//   shortreal a_val_cg_sr              [COPIES-1:0][GROUPS-1:0];
-//   shortreal b_cg_clr_mtb_sr          [COPIES-1:0][GROUPS-1:0][2:0][2:0];
-//   shortreal d_val_cg_sr              [COPIES-1:0][GROUPS-1:0];
-//   shortreal config_flat_2_cg_sr      [COPIES-1:0][GROUPS-1:0];
+  shortreal m_data_fma_1_cgu_sr      [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+  shortreal m_data_fma_2_cgu_sr      [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+  shortreal c_val_cgu_sr             [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+  shortreal config_s_data_cgv_sr     [COPIES-1:0][GROUPS-1:0][VALS_CONFIG-1:0];
+  shortreal config_fma1_cgv_sr       [COPIES-1:0][GROUPS-1:0][VALS_CONFIG-1:0];
+  shortreal a_val_cg_sr              [COPIES-1:0][GROUPS-1:0];
+  shortreal b_cg_clr_mtb_sr          [COPIES-1:0][GROUPS-1:0][2:0][2:0];
+  shortreal d_val_cg_sr              [COPIES-1:0][GROUPS-1:0];
+  shortreal config_2_cg_sr      [COPIES-1:0][GROUPS-1:0];
 
-// generate
-//   for(genvar c=0; c<COPIES; c=c+1) begin: cs
-//     for(genvar g=0; g<GROUPS; g=g+1) begin: gs
-//       for(genvar u=0; u<UNITS; u=u+1) begin: us
-//         assign m_data_fma_1_cgu_sr [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(m_data_fma_1_cgu_f16[c][g][u]));
-//         assign m_data_fma_2_cgu_sr [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(m_data_fma_2_cgu    [c][g][u]));
-//         assign c_val_cgu_sr        [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(c_val_cgu           [c][g][u]));
-//       end
+generate
+  for(genvar c=0; c<COPIES; c=c+1) begin: cs
+    for(genvar g=0; g<GROUPS; g=g+1) begin: gs
+      for(genvar u=0; u<UNITS; u=u+1) begin: us
+        assign m_data_fma_1_cgu_sr [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(m_data_fma_1_cgu_f16[c][g][u]));
+        assign m_data_fma_2_cgu_sr [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(m_data_fma_2_cgu    [c][g][u]));
+        assign c_val_cgu_sr        [c][g][u] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(c_val_cgu           [c][g][u]));
+      end
 
-//       assign config_s_data_f16_cgv [c][g] = {>>{s_data_config_flat_cg [c][g]}};
-//       assign config_fma1_f16_cgv   [c][g] = {>>{config_flat_1_cg [c][g]}};
+      assign config_s_data_f16_cgv [c][g] = {>>{s_config_cgm [c][g]}};
+      assign config_fma1_f16_cgv   [c][g] = {>>{config_1_cgm [c][g]}};
 
-//       for(genvar v=0; v<VALS_CONFIG; v=v+1) begin: vs
-//         assign config_s_data_cgv_sr[c][g][v] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_s_data_f16_cgv[c][g][v]));
-//         assign config_fma1_cgv_sr  [c][g][v] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_fma1_f16_cgv  [c][g][v]));
-//       end
-//       assign config_flat_2_cg_sr   [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_flat_2_cg  [c][g]));
-//       assign a_val_cg_sr           [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(a_val_cg          [c][g]));
-//       assign d_val_cg_sr           [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(d_val_cg          [c][g]));
+      for(genvar v=0; v<VALS_CONFIG; v=v+1) begin: vs
+        assign config_s_data_cgv_sr[c][g][v] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_s_data_f16_cgv[c][g][v]));
+        assign config_fma1_cgv_sr  [c][g][v] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_fma1_f16_cgv  [c][g][v]));
+      end
+      assign config_2_cg_sr   [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_2_cg  [c][g]));
+      assign a_val_cg_sr           [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(a_val_cg          [c][g]));
+      assign d_val_cg_sr           [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(d_val_cg          [c][g]));
 
-//       for (genvar clr=0; clr<3; clr++)
-//         for (genvar mtb=0; mtb<3; mtb++)
-//           assign b_cg_clr_mtb_sr   [c][g][clr][mtb] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(b_cg_clr_mtb_f16 [c][g][clr][mtb]));
-//     end
-//   end
-// endgenerate
+      for (genvar clr=0; clr<3; clr++)
+        for (genvar mtb=0; mtb<3; mtb++)
+          assign b_cg_clr_mtb_sr   [c][g][clr][mtb] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(b_cg_clr_mtb_f16 [c][g][clr][mtb]));
+    end
+  end
+endgenerate
+
+// synthesis translate_on
+
 endmodule
