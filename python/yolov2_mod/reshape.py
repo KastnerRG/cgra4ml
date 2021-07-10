@@ -83,30 +83,6 @@ old_weights[0].size-4
 
 
 # %%
-# lrelu_beats
-
-
-# %%
-(weights_in.size + lrelu_beats.size)#//4
-
-
-# %%
-# weights_in.flatten()[:1000]
-
-
-# %%
-# weights_in.flatten()[:100]
-
-
-# %%
-lrelu_beats.flatten()[-10:]
-
-
-# %%
-weights_in.shape
-
-
-# %%
 '''
 WEIGHTS IN HARDWARE ERROR
 '''
@@ -181,6 +157,17 @@ im_out_sim = conv_out_sim[lrelu_config[0].size:].reshape(image_out[0].shape)
 error = image_out[0] - im_out_sim
 np.sum(np.abs(error != 0))
 
+THRES = 0
+header = 'B W S C G U'
+with open("where_err.txt", 'w') as f:
+    f.writelines([header + '\n\n'])
+    np.savetxt(f,np.argwhere(np.abs(error) > THRES),fmt='%d')
+
+
+# %%
+t = image_out[0].reshape(1536, 4,3, 2, 2, 4).transpose(0,2,1,3,4,5).reshape(1536, 12, 2, 2, 4)
+np.sum(np.abs(t-im_out_sim != 0))
+
 
 # %%
 '''
@@ -248,10 +235,10 @@ hardware_out_flat.shape
 
 # %%
 # i_layers = 1
-THRES = 0
+THRES = 1
 
 lrelu_out = make_lrelu_out(i_layers,CONFIG)
-lrelu_out_sim_flat = np.loadtxt(f"{CONFIG.DATA_DIR}{i_layers}_lrelu_out_sim_1.txt",np.int8)
+lrelu_out_sim_flat = np.loadtxt(f"{CONFIG.DATA_DIR}{i_layers}_lrelu_out_sim_0.txt",np.int8)
 lrelu_out_sim = lrelu_out_sim_flat.reshape(lrelu_out[i_itr].shape)
 
 '''
@@ -259,165 +246,21 @@ Invalid cores output 0+d=d. Remove d to compare.
 '''
 
 for i_subcore in range(lrelu_out.shape[3]): #each subcore
-    for i_core in range(CONFIG.CORES):
-        if np.all(lrelu_out_sim[:,:,i_subcore,i_core,:]==CONFIG.LAYERS[f'{CONFIG.PREFIX_LRELU}{i_layers}'].requantize_params['D']):
-            lrelu_out_sim[:,:,s,c,:] = 0
+    for i_copies in range(CONFIG.COPIES):
+        for i_groups in range(CONFIG.GROUPS):
+            if np.all(lrelu_out_sim[:,:,i_subcore,i_copies,i_groups,:]==CONFIG.LAYERS[f'{CONFIG.PREFIX_LRELU}{i_layers}'].requantize_params['D']):
+                lrelu_out_sim[:,:,i_subcore,i_copies,i_groups,:] = 0
 
 error = lrelu_out[i_itr] - lrelu_out_sim
 sum_abs_error = np.sum(np.abs(error))
 
-np.savetxt("where_err.txt",np.argwhere(error > THRES),fmt='%d')
+header = 'B W   S C G U'
+with open("where_err.txt", 'w') as f:
+    f.writelines([header + '\n\n'])
+    np.savetxt(f,np.argwhere(np.abs(error) > THRES),fmt='%d')
 
 print(np.sum(abs(error)>THRES))
 print(sum_abs_error/lrelu_out_sim.size)
-
-
-# %%
-d,v = np.modf(CONFIG.LAYERS['leaky_relu_1'].requantize_params['a_q_f16'])
-np.sum(np.abs(d)==0.5)
-
-
-# %%
-r1 = np.round(CONFIG.LAYERS['leaky_relu_1'].requantize_params['a_q_f16'])
-r2 = proper_round(CONFIG.LAYERS['leaky_relu_1'].requantize_params['a_q_f16'])
-
-np.sum(r1 != r2)
-
-
-# %%
-CONFIG.LAYERS['leaky_relu_1'].requantize_params['a_q_f16'][r1 != r2]
-
-
-# %%
-CONFIG.LAYERS['leaky_relu_1'].requantize_params['a_q_f16'][0,0:4,7,0]
-
-
-# %%
-d,v = np.modf(CONFIG.LAYERS['leaky_relu_1'].requantize_params['a_q_f16'][0,0:4,7,0])
-d
-
-
-# %%
-np.abs(error).shape
-
-
-# %%
-lrelu_out[0][0, 7, 0, 0, 0], lrelu_out_sim[0, 7, 0, 0, 0]
-
-
-# %%
-lrelu_out_sim[0, 7, 0, 0, :]
-
-
-# %%
-CONFIG.LAYERS['leaky_relu_1'].requantize_params['a_q_f16'][0,0:4,7,0]
-
-
-# %%
-CONFIG.LAYERS['conv_1'].np_out_data[0,0:4,7,0]
-
-
-# %%
-CONFIG.LAYERS['leaky_relu_1'].requantize_params['B'][0,0:4,7,0]
-
-
-# %%
-CONFIG.LAYERS['leaky_relu_1'].requantize_params['A'][0,0,0,0]
-
-
-# %%
-CONFIG.LAYERS['leaky_relu_1'].requantize_params['y'][0,0:4,7,0]
-
-
-# %%
-CONFIG.LAYERS['leaky_relu_1'].requantize_params['y_f16'][0,0:4,7,0]
-
-
-# %%
-np.frombuffer(np.array([54800],np.uint16).tobytes(),np.float16)
-
-
-# %%
-CONFIG.LAYERS['leaky_relu_1'].requantize_params['D']
-
-
-# %%
-np.frombuffer(np.array([0.1],np.float16).tobytes(),np.int16)
-np.frombuffer(np.array([11878],np.uint16).tobytes(),np.float16)
-
-
-# %%
-CONFIG.LAYERS['leaky_relu_1'].requantize_params['a_q_f16'][0,0:4,7,0]
-
-
-# %%
-np.frombuffer(np.array([54985],np.uint16).tobytes(),np.float16)
-
-
-# %%
-CONFIG.LAYERS['leaky_relu_1'].requantize_params['a_q'][0,0:4,7,0]
-
-
-# %%
-np.round(CONFIG.LAYERS['leaky_relu_1'].requantize_params['a_q_f16'][0,0,7,0])
-
-
-# %%
-np.rint(-108.5)
-
-
-# %%
-def proper_round(x):
-    '''
-    np.round() rounds towards nearest even number. But xilinx seems to round towards
-    '''
-    d,v = np.modf(x)
-    x += (d == 0.5)*1e-1 - (d == -0.5)*1e-1
-    return np.round(x)
-
-
-# %%
-r = proper_round(CONFIG.LAYERS['leaky_relu_1'].requantize_params['a_q_f16'])
-
-
-# %%
-r[0,0:4,7,0]
-
-
-# %%
-np.modf(-108.5)
-
-
-# %%
-lrelu_out[0][0, 112, 0, 2, 2], lrelu_out_sim[0, 112, 0, 2, 2]
-
-
-# %%
-np.all(lrelu_out_sim[abs(error)>0]+97.0<0)
-
-
-# %%
-CONFIG.LAYERS['leaky_relu_1'].requantize_params['D']
-
-
-# %%
-# layers[f'{prefix_lrelu}{i}'].requantize_params['B'][0,1,1,0:4]
-
-
-# %%
-# np.unravel_index(8,(MEMBERS,COPIES,GROUPS))
-
-
-# %%
-# b = layers[f'{prefix_lrelu}{i}'].requantize_params['B'][0,1,1,8].astype(np.float16)
-# a = layers[f'{prefix_lrelu}{i}'].requantize_params['A'][0,0,0,8].astype(np.float16)
-# d = layers[f'{prefix_lrelu}{i}'].requantize_params['D'].astype(np.float16)
-
-# b, a, d
-
-
-# %%
-# (0.003149 * 37710 + -118.75)-85.0
 
 # %% [markdown]
 # # Test Accl Out 

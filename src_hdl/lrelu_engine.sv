@@ -1,4 +1,6 @@
 `include "params.v"
+`include "float_ops.sv"
+import float_ops::*;
 
 module lrelu_engine (
   clk     ,
@@ -36,7 +38,7 @@ module lrelu_engine (
   parameter LATENCY_FMA_1         = 16;
   parameter LATENCY_FMA_2         = 16;
   parameter LATENCY_FIXED_2_FLOAT =  6;
-  parameter LATENCY_BRAM          =  3;
+  parameter LATENCY_CYCLIC_REG    =  0;
   parameter LATENCY_FLOAT_UPSIZE  =  2;
   parameter LATENCY_FLOAT_DOWNSIZE=  3;
 
@@ -318,7 +320,7 @@ module lrelu_engine (
             Delayed config
           */
           if (u ==0) begin
-            localparam LATENCY_1 = LATENCY_FIXED_2_FLOAT-LATENCY_BRAM-LATENCY_FLOAT_UPSIZE-1;
+            localparam LATENCY_1 = LATENCY_FIXED_2_FLOAT-LATENCY_CYCLIC_REG-LATENCY_FLOAT_UPSIZE-1;
 
             n_delay #(
               .N          (LATENCY_1),
@@ -424,8 +426,7 @@ module lrelu_engine (
             cyclic_shift_reg #(
               .R_DEPTH      (BRAM_R_DEPTH_1X1), 
               .R_DATA_WIDTH (BRAM_R_WIDTH),
-              .W_DATA_WIDTH (BRAM_W_WIDTH_1X1),
-              .LATENCY      (LATENCY_BRAM)
+              .W_DATA_WIDTH (BRAM_W_WIDTH_1X1)
             ) BRAM_A (
               .clk          (clk),
               .clken        (clken),
@@ -495,8 +496,7 @@ module lrelu_engine (
                   cyclic_shift_reg #(
                     .R_DEPTH      (BRAM_R_DEPTH_1X1), 
                     .R_DATA_WIDTH (BRAM_R_WIDTH),
-                    .W_DATA_WIDTH (BRAM_W_WIDTH_1X1),
-                    .LATENCY      (LATENCY_BRAM)
+                    .W_DATA_WIDTH (BRAM_W_WIDTH_1X1)
                   ) BRAM_B (
                     .clk          (clk),
                     .clken        (clken),
@@ -513,8 +513,7 @@ module lrelu_engine (
                   cyclic_shift_reg #(
                     .R_DEPTH      (BRAM_R_DEPTH_3X3), 
                     .R_DATA_WIDTH (BRAM_R_WIDTH),
-                    .W_DATA_WIDTH (BRAM_W_WIDTH_3X3),
-                    .LATENCY      (LATENCY_BRAM)
+                    .W_DATA_WIDTH (BRAM_W_WIDTH_3X3)
                   ) BRAM_B (
                     .clk          (clk),
                     .clken        (clken),
@@ -533,7 +532,7 @@ module lrelu_engine (
 
           if (c==0 && g==0 && u==0)
             n_delay #(
-              .N          (LATENCY_BRAM),
+              .N          (LATENCY_CYCLIC_REG),
               .WORD_WIDTH (2)
             ) CLR_INDEX (
               .clk      (clk),
@@ -691,7 +690,7 @@ module lrelu_engine (
           */
           if (u == 0) begin
 
-            localparam LATENCY_2 = LATENCY_BRAM + LATENCY_FLOAT_UPSIZE + 1 + LATENCY_FMA_1 + LATENCY_FLOAT_DOWNSIZE;
+            localparam LATENCY_2 = LATENCY_CYCLIC_REG + LATENCY_FLOAT_UPSIZE + 1 + LATENCY_FMA_1 + LATENCY_FLOAT_DOWNSIZE;
 
             n_delay #(
               .N          (LATENCY_2),

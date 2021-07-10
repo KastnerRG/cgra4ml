@@ -178,14 +178,14 @@ module axis_accelerator
   output wire [COPIES*MEMBERS*GROUPS*UNITS*WORD_WIDTH_ACC/8 -1:0] conv_m_axis_tkeep;
   output wire [COPIES*MEMBERS*GROUPS*UNITS*WORD_WIDTH_ACC   -1:0] conv_m_axis_tdata; // cgmu
 
-  input  wire conv_dw_m_axis_tready;
+  output wire conv_dw_m_axis_tready;
   output wire conv_dw_m_axis_tvalid;
   output wire conv_dw_m_axis_tlast ;
   output wire [TUSER_WIDTH_LRELU_IN -1:0]                 conv_dw_m_axis_tuser;
   output wire [COPIES*GROUPS*UNITS*WORD_WIDTH_ACC   -1:0] conv_dw_m_axis_tdata;
 
   output wire lrelu_m_axis_tvalid;
-  output wire lrelu_m_axis_tready;
+  input  wire lrelu_m_axis_tready;
   output wire [COPIES*GROUPS*UNITS*WORD_WIDTH -1:0] lrelu_m_axis_tdata;
   output wire [TUSER_WIDTH_MAXPOOL_IN-1:0] lrelu_m_axis_tuser;
 

@@ -1,6 +1,8 @@
 import numpy as np 
 from dataclasses import dataclass, field
 
+from numpy.core.fromnumeric import transpose
+
 @dataclass(frozen=True)
 class SysConfig:
     CONV_UNITS        : int
@@ -235,9 +237,16 @@ def get_lrelu_config(i_layers, c, get_params=False):
         3x3: 6 = 2 x clr 
     '''
     if KW != 1:
-        b_i_clr_cg_mtb_s = b_iscg_clr_mtb.transpose(0,4,2,3,5,1)
-        b_i_clr_cgm = np.zeros((ITR,KW, c.COPIES,c.GROUPS,c.MEMBERS), b_i_clr_cg_mtb_s.dtype)
-        b_i_clr_cgm[:,:,:,:,0:KH*SUB_CORES] = b_i_clr_cg_mtb_s.reshape(ITR,KW, c.COPIES,c.GROUPS,KH*SUB_CORES)
+        '''
+        m = 12, s = 4 (m/kh)
+        float_words = 6 (m/2), parallel brams = 3 (kh), per bram: 2 (m/2kh)
+        m -> (2)_mtb(3=kh)_b(2=m/2kh)
+        '''
+        b_i_clr_cg_s_mtb = b_iscg_clr_mtb.transpose(0,4,2,3,1,5)
+        b_i_clr_cg_2_s2_mtb = b_i_clr_cg_s_mtb.reshape(ITR,KW, c.COPIES,c.GROUPS,2,SUB_CORES//2,KH)
+        b_i_clr_cg_2_mtb_s2 = b_i_clr_cg_2_s2_mtb.transpose(0,1,2,3,4,6,5)
+        b_i_clr_cgm = np.zeros((ITR,KW, c.COPIES,c.GROUPS,c.MEMBERS), b_i_clr_cg_2_mtb_s2.dtype)
+        b_i_clr_cgm[:,:,:,:,0:KH*SUB_CORES] = b_i_clr_cg_2_mtb_s2.reshape(ITR,KW, c.COPIES,c.GROUPS,SUB_CORES*KH)
         b_i_clr_cgbv = b_i_clr_cgm.reshape(ITR,KW, c.COPIES,c.GROUPS,2,c.MEMBERS//2)
         b_i_clr_cgbv_8 = np.frombuffer(b_i_clr_cgbv.tobytes(),np.int8).reshape(ITR,KW, c.COPIES,c.GROUPS,2,c.MEMBERS)
         b_icg_clr_bv_8 = b_i_clr_cgbv_8.transpose(0,2,3,1,4,5)
@@ -564,6 +573,8 @@ def make_lrelu_out(i_layers,c):
     KW    = c.LAYERS[f'{c.PREFIX_CONV}{i_layers}'].weights.shape[0]
 
     lrelu_out = reshape_image_out(image=image,order='scg',KW=KW,max_factor=max_factor,c=c)
+    ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS = lrelu_out.shape
+    lrelu_out = lrelu_out.reshape(ITR,BLOCKS_PER_ARR,W,SUB_CORES,c.COPIES,c.GROUPS,CONV_UNITS)
     print(f"Leaky relu out: (ITR,BLOCKS_PER_ARR,W,SUB_CORES,COPIES,GROUPS,CONV_UNITS) = {lrelu_out.shape}")
 
     return lrelu_out

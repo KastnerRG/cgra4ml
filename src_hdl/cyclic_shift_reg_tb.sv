@@ -11,7 +11,6 @@ module cyclic_shift_reg_tb();
   localparam R_DEPTH   = 24;
   localparam R_WIDTH   = 16;
   localparam W_WIDTH   = 16*3;
-  localparam LATENCY   = 2 ;
 
   localparam SIZE = R_DEPTH * R_WIDTH; //24*16
   localparam W_DEPTH =  SIZE / W_WIDTH; // 8
@@ -28,8 +27,7 @@ module cyclic_shift_reg_tb();
   cyclic_shift_reg #(
     .R_DEPTH      (R_DEPTH),
     .R_DATA_WIDTH (R_WIDTH),
-    .W_DATA_WIDTH (W_WIDTH),
-    .LATENCY      (LATENCY)
+    .W_DATA_WIDTH (W_WIDTH)
   ) dut (
     .clk        (clk   ),
     .clken      (clken ),

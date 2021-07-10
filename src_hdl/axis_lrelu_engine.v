@@ -62,7 +62,7 @@ module axis_lrelu_engine (
     localparam LATENCY_FMA_1              = `LATENCY_FMA_1             ;
     localparam LATENCY_FMA_2              = `LATENCY_FMA_2             ;
     localparam LATENCY_FIXED_2_FLOAT      = `LATENCY_FIXED_2_FLOAT     ;
-    localparam LATENCY_BRAM               = `LATENCY_BRAM              ;
+    localparam LATENCY_CYCLIC_REG         = `LATENCY_CYCLIC_REG        ;
     localparam LATENCY_FLOAT_UPSIZE       = `LATENCY_FLOAT_UPSIZE      ;
     localparam LATENCY_FLOAT_DOWNSIZE     = `LATENCY_FLOAT_DOWNSIZE    ;
     localparam I_IS_NOT_MAX               = `I_IS_NOT_MAX              ;
@@ -177,7 +177,7 @@ module axis_lrelu_engine (
       .data_in      (count_config_next),
       .data_out     (count_config)
     );
-    localparam FILL_DELAY = 2*LATENCY_BRAM-1;
+    localparam FILL_DELAY = 1;
 
     localparam FILL_BITS = $clog2(FILL_DELAY);
     wire [FILL_BITS-1:0] count_fill;
@@ -329,7 +329,7 @@ module axis_lrelu_engine (
       .BITS_FRA_FMA_2        (BITS_FRA_FMA_2       ),
       .LATENCY_FMA_1         (LATENCY_FMA_1        ),
       .LATENCY_FMA_2         (LATENCY_FMA_2        ),
-      .LATENCY_BRAM          (LATENCY_BRAM         ),
+      .LATENCY_CYCLIC_REG    (LATENCY_CYCLIC_REG   ),
       .LATENCY_FLOAT_UPSIZE  (LATENCY_FLOAT_UPSIZE ),
       .LATENCY_FLOAT_DOWNSIZE(LATENCY_FLOAT_DOWNSIZE),
 

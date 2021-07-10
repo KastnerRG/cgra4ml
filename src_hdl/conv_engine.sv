@@ -566,7 +566,10 @@ module conv_engine (
     end
 
     for (genvar m=0; m<MEMBERS; m++) begin
-      assign m_user [m] = acc_m_user         [m][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX];
+      assign m_user [m][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX] = acc_m_user [m][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX];
+      assign m_user [m][I_IS_LEFT_COL ] = pad_is_left_col  [m];
+      assign m_user [m][I_IS_RIGHT_COL] = pad_is_right_col [m];
+
       assign m_last = |acc_m_last_masked;
 
       for (genvar c=0; c<COPIES; c++)

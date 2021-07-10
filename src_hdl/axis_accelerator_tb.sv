@@ -115,7 +115,7 @@ module axis_accelerator_tb ();
     parameter WORDS_W            = W_S_WORDS_PER_BEAT + W_M_BEATS*COPIES*GROUPS*MEMBERS;
 
     parameter BEATS_PER_PACKET = MEMBERS/K;
-    parameter PACKETS_PER_ITR  = (IM_BLOCKS/MAX_FACTOR)*IM_COLS/MAX_FACTOR;
+    parameter PACKETS_PER_ITR  = (IM_BLOCKS/MAX_FACTOR)*IM_COLS;
     parameter BEATS_PER_ITR    = BEATS_PER_PACKET * PACKETS_PER_ITR;
 
     parameter WORDS_PER_BEAT_RELU = COPIES*GROUPS*UNITS;
