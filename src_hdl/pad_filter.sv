@@ -108,6 +108,9 @@ module pad_filter
     logic   [KW2_MAX : 0] col_end      [MEMBERS-1 : 0];
     logic   [KW2_MAX : 1] col_start_in [MEMBERS-1 : 0];
     logic   [KW2_MAX : 1] col_start    [MEMBERS-1 : 0];
+
+    logic   [KW2_MAX : 0] right_out_lut[MEMBERS-1 : 0];
+
     generate
         for (genvar m=0; m < MEMBERS; m++) begin: col_end_gen_m
         
@@ -155,7 +158,12 @@ module pad_filter
                 .data_out       (col_start        [m])
             );
 
-            assign is_right_col [m]  = (m==kw2_wire[m]) & col_end[m][kw2_wire[m]];
+            for (genvar kw2=0; kw2 <= KW2_MAX; kw2++) begin
+                localparam kw = (kw2*2+1);
+                assign right_out_lut[m][kw2] = (m % kw) == kw-2; // 3->1, 5->3, 7->5
+            end
+
+            assign is_right_col [m]  = right_out_lut[m][kw2_wire[m]] & col_end[m][kw2_wire[m]];
 
             assign col_left_in  [m]  = col_start [m][kw2_wire[m]];
             register

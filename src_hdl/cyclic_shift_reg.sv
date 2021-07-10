@@ -1,8 +1,11 @@
+`include "float_ops.sv"
+
+import float_ops::*;
+
 module cyclic_shift_reg #(
   R_DEPTH        = 24     ,
   R_DATA_WIDTH   = 16     ,
-  W_DATA_WIDTH   = 24*8   ,
-  LATENCY        = 2      
+  W_DATA_WIDTH   = 24*8   
 )(
   clk        ,
   clken      ,
@@ -30,11 +33,9 @@ module cyclic_shift_reg #(
   logic [R_DATA_WIDTH-1:0] w_data_in  [RATIO  -1:0];
   assign w_data_in = {>>{s_data}};
 
-  logic [R_DATA_WIDTH-1:0] data_in    [R_DEPTH-1:0];
-  logic [R_DATA_WIDTH-1:0] r_data_in  [R_DEPTH-1:0];
-  logic [R_DATA_WIDTH-1:0] r_data_out [R_DEPTH-1:0];
-
-  logic [R_DATA_WIDTH-1:0] r_data_latency    [LATENCY:0];
+  logic [R_DEPTH-1:0][R_DATA_WIDTH-1:0] data_in   ;
+  logic [R_DEPTH-1:0][R_DATA_WIDTH-1:0] r_data_in ;
+  logic [R_DEPTH-1:0][R_DATA_WIDTH-1:0] r_data_out;
 
   // Write Address
 
@@ -77,22 +78,25 @@ module cyclic_shift_reg #(
       );
     end
 
-    assign r_data_latency[0] = r_data_out [0];
+    assign m_data = r_data_out [0];
 
-    for (genvar l=0; l<LATENCY; l++) begin
-      register #(
-        .WORD_WIDTH   (R_DATA_WIDTH), 
-        .RESET_VALUE  (0)
-      ) OUT_REG (
-        .clock        (clk                  ),
-        .clock_enable (clken && r_en        ),
-        .resetn       (resetn               ),
-        .data_in      (r_data_latency [l  ] ),
-        .data_out     (r_data_latency [l+1] )
-      );
+    // synthesis translate_off
+    shortreal sr_w_data_in  [RATIO  -1:0];
+    shortreal sr_data_in    [R_DEPTH-1:0];
+    shortreal sr_r_data_in  [R_DEPTH-1:0];
+    shortreal sr_r_data_out [R_DEPTH-1:0];
+
+    if (R_DATA_WIDTH == 16) begin
+      for (genvar i=0; i<RATIO; i++)
+        assign sr_w_data_in[i] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(w_data_in[i]));
+
+      for (genvar i=0; i<R_DEPTH; i++) begin
+        assign sr_data_in   [i] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(data_in   ));
+        assign sr_r_data_in [i] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(r_data_in ));
+        assign sr_r_data_out[i] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(r_data_out));
+      end
     end
-
-    assign m_data = r_data_latency[LATENCY];
+    // synthesis translate_on
 
   endgenerate
   
