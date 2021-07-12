@@ -50,6 +50,7 @@ module axis_lrelu_engine (
     localparam COPIES                     = `COPIES                    ;
     localparam MEMBERS                    = `MEMBERS                   ;
     localparam KERNEL_W_MAX               = `KERNEL_W_MAX              ;
+    localparam KERNEL_H_MAX               = `KERNEL_H_MAX              ;
     localparam LRELU_ALPHA                = `LRELU_ALPHA               ;
     localparam BEATS_CONFIG_3X3_2         = `BEATS_CONFIG_3X3_1-1      ; // D(1) + A(2) + B(2*3)= 9
     localparam BEATS_CONFIG_1X1_2         = `BEATS_CONFIG_1X1_1-1      ; // D(1) + A(2) + B(2*1)= 5
@@ -307,46 +308,7 @@ module axis_lrelu_engine (
       .m_axis_tuser     (s_user_e     )
     );
 
-    lrelu_engine #(
-      .WORD_WIDTH_IN  (WORD_WIDTH_IN ),
-      .WORD_WIDTH_OUT (WORD_WIDTH_OUT),
-      .WORD_WIDTH_CONFIG(WORD_WIDTH_CONFIG ),
-      .DEBUG_CONFIG_WIDTH_LRELU(DEBUG_CONFIG_WIDTH_LRELU),
-
-      .UNITS   (UNITS  ),
-      .GROUPS  (GROUPS ),
-      .COPIES  (COPIES ),
-      .MEMBERS (MEMBERS),
-
-      .LRELU_ALPHA   (LRELU_ALPHA),
-
-      .LATENCY_FIXED_2_FLOAT (LATENCY_FIXED_2_FLOAT),
-      .BITS_EXP_CONFIG       (BITS_EXP_CONFIG      ),
-      .BITS_FRA_CONFIG       (BITS_FRA_CONFIG      ),
-      .BITS_EXP_FMA_1        (BITS_EXP_FMA_1       ),
-      .BITS_FRA_FMA_1        (BITS_FRA_FMA_1       ),
-      .BITS_EXP_FMA_2        (BITS_EXP_FMA_2       ),
-      .BITS_FRA_FMA_2        (BITS_FRA_FMA_2       ),
-      .LATENCY_FMA_1         (LATENCY_FMA_1        ),
-      .LATENCY_FMA_2         (LATENCY_FMA_2        ),
-      .LATENCY_CYCLIC_REG    (LATENCY_CYCLIC_REG   ),
-      .LATENCY_FLOAT_UPSIZE  (LATENCY_FLOAT_UPSIZE ),
-      .LATENCY_FLOAT_DOWNSIZE(LATENCY_FLOAT_DOWNSIZE),
-
-      .I_IS_MAX             (I_IS_MAX            ),
-      .I_IS_NOT_MAX         (I_IS_NOT_MAX        ),
-      .I_IS_LRELU           (I_IS_LRELU          ),
-      .I_IS_TOP_BLOCK       (I_IS_TOP_BLOCK      ),
-      .I_IS_BOTTOM_BLOCK    (I_IS_BOTTOM_BLOCK   ),
-      .I_IS_LEFT_COL        (I_IS_LEFT_COL       ),
-      .I_IS_RIGHT_COL       (I_IS_RIGHT_COL      ),
-      .I_IS_1X1             (I_IS_1X1            ),
-
-      .TUSER_WIDTH_LRELU_IN       (TUSER_WIDTH_LRELU_IN      ),
-      .TUSER_WIDTH_LRELU_FMA_1_IN (TUSER_WIDTH_LRELU_FMA_1_IN),
-      .TUSER_WIDTH_MAXPOOL_IN     (TUSER_WIDTH_MAXPOOL_IN    )
-    )
-    engine
+    lrelu_engine engine
     (
       .clk              (aclk    ),
       .clken            (s_ready_slice),

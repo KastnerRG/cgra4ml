@@ -262,6 +262,14 @@ with open("where_err.txt", 'w') as f:
 print(np.sum(abs(error)>THRES))
 print(sum_abs_error/lrelu_out_sim.size)
 
+
+# %%
+CONFIG.LAYERS['leaky_relu_1'].np_out_data[0,0:4,0,4]
+
+
+# %%
+CONFIG.LAYERS['leaky_relu_1'].requantize_params['B'][0,1,0,:]
+
 # %% [markdown]
 # # Test Accl Out 
 
