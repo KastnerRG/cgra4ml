@@ -20,42 +20,42 @@ module lrelu_engine (
   s_data_conv_out
 );
 
-  parameter WORD_WIDTH_IN     = 32;
-  parameter WORD_WIDTH_OUT    = 8 ;
-  parameter WORD_WIDTH_CONFIG = 8 ;
-  parameter UNITS   = 8;
-  parameter GROUPS  = 2;
-  parameter COPIES  = 2;
-  parameter MEMBERS = 2;
-  parameter LRELU_ALPHA = 16'd11878;
-
-  parameter BITS_EXP_CONFIG       = 5;
-  parameter BITS_FRA_CONFIG       = 10;
-  parameter BITS_EXP_FMA_1        = 8;
-  parameter BITS_FRA_FMA_1        = 23;
-  parameter BITS_EXP_FMA_2        = 5;
-  parameter BITS_FRA_FMA_2        = 10;
-  parameter LATENCY_FMA_1         = 16;
-  parameter LATENCY_FMA_2         = 16;
-  parameter LATENCY_FIXED_2_FLOAT =  6;
-  parameter LATENCY_CYCLIC_REG    =  0;
-  parameter LATENCY_FLOAT_UPSIZE  =  2;
-  parameter LATENCY_FLOAT_DOWNSIZE=  3;
-
-  parameter I_IS_NOT_MAX      = 0;
-  parameter I_IS_MAX          = I_IS_NOT_MAX      + 1;
-  parameter I_IS_LRELU        = I_IS_MAX          + 1;
-  parameter I_IS_TOP_BLOCK    = I_IS_LRELU        + 1;
-  parameter I_IS_BOTTOM_BLOCK = I_IS_TOP_BLOCK    + 1;
-  parameter I_IS_1X1          = I_IS_BOTTOM_BLOCK + 1;
-  parameter I_IS_LEFT_COL     = I_IS_1X1          + 1;
-  parameter I_IS_RIGHT_COL    = I_IS_LEFT_COL     + 1;
-
-  parameter TUSER_WIDTH_MAXPOOL_IN     = 1 + I_IS_MAX  ;
-  parameter TUSER_WIDTH_LRELU_FMA_1_IN = 1 + I_IS_LRELU;
-  parameter TUSER_WIDTH_LRELU_IN       = 1 + I_IS_RIGHT_COL;
-
-  parameter DEBUG_CONFIG_WIDTH_LRELU   = `DEBUG_CONFIG_WIDTH_LRELU;
+  localparam WORD_WIDTH_IN              = `WORD_WIDTH_ACC            ;
+  localparam WORD_WIDTH_OUT             = `WORD_WIDTH                ;
+  localparam WORD_WIDTH_CONFIG          = `WORD_WIDTH                ;
+  localparam DEBUG_CONFIG_WIDTH_LRELU   = `DEBUG_CONFIG_WIDTH_LRELU  ;
+  localparam UNITS                      = `UNITS                     ;
+  localparam GROUPS                     = `GROUPS                    ;
+  localparam COPIES                     = `COPIES                    ;
+  localparam MEMBERS                    = `MEMBERS                   ;
+  localparam KERNEL_W_MAX               = `KERNEL_W_MAX              ;
+  localparam KERNEL_H_MAX               = `KERNEL_H_MAX              ;
+  localparam LRELU_ALPHA                = `LRELU_ALPHA               ;
+  localparam BEATS_CONFIG_3X3_2         = `BEATS_CONFIG_3X3_1-1      ; // D(1) + A(2) + B(2*3)= 9
+  localparam BEATS_CONFIG_1X1_2         = `BEATS_CONFIG_1X1_1-1      ; // D(1) + A(2) + B(2*1)= 5
+  localparam BITS_EXP_CONFIG            = `BITS_EXP_CONFIG           ;
+  localparam BITS_FRA_CONFIG            = `BITS_FRA_CONFIG           ;
+  localparam BITS_EXP_FMA_1             = `BITS_EXP_FMA_1            ;
+  localparam BITS_FRA_FMA_1             = `BITS_FRA_FMA_1            ;
+  localparam BITS_EXP_FMA_2             = `BITS_EXP_FMA_2            ;
+  localparam BITS_FRA_FMA_2             = `BITS_FRA_FMA_2            ;
+  localparam LATENCY_FMA_1              = `LATENCY_FMA_1             ;
+  localparam LATENCY_FMA_2              = `LATENCY_FMA_2             ;
+  localparam LATENCY_FIXED_2_FLOAT      = `LATENCY_FIXED_2_FLOAT     ;
+  localparam LATENCY_CYCLIC_REG         = `LATENCY_CYCLIC_REG        ;
+  localparam LATENCY_FLOAT_UPSIZE       = `LATENCY_FLOAT_UPSIZE      ;
+  localparam LATENCY_FLOAT_DOWNSIZE     = `LATENCY_FLOAT_DOWNSIZE    ;
+  localparam I_IS_NOT_MAX               = `I_IS_NOT_MAX              ;
+  localparam I_IS_MAX                   = `I_IS_MAX                  ;
+  localparam I_IS_1X1                   = `I_IS_1X1                  ;
+  localparam I_IS_LRELU                 = `I_IS_LRELU                ;
+  localparam I_IS_TOP_BLOCK             = `I_IS_TOP_BLOCK            ;
+  localparam I_IS_BOTTOM_BLOCK          = `I_IS_BOTTOM_BLOCK         ;
+  localparam I_IS_LEFT_COL              = `I_IS_LEFT_COL             ;
+  localparam I_IS_RIGHT_COL             = `I_IS_RIGHT_COL            ;
+  localparam TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN    ;
+  localparam TUSER_WIDTH_LRELU_FMA_1_IN = `TUSER_WIDTH_LRELU_FMA_1_IN;
+  localparam TUSER_WIDTH_LRELU_IN       = `TUSER_WIDTH_LRELU_IN      ;
 
   input  logic clk     ;
   input  logic clken   ;
@@ -216,7 +216,7 @@ module lrelu_engine (
   */
   logic w_sel_bram_2;
   logic valid_1;
-  logic [TUSER_WIDTH_LRELU_IN-1:0] user_1;
+  logic [TUSER_WIDTH_LRELU_IN-1:0] user_1, user_mux_in;
   logic valid_config_1;
   logic valid_config_2;
   logic resetn_config_1;
@@ -253,12 +253,12 @@ module lrelu_engine (
   logic [BITS_FMA_2-1:0] config_fma2_f16_cg   [COPIES-1:0][GROUPS-1:0];
 
   logic [COPIES-1:0][GROUPS-1:0][MEMBERS         -1:0][WORD_WIDTH_CONFIG-1:0] config_1_cgm;
-  logic [COPIES-1:0][GROUPS-1:0][3-1:0][MEMBERS/3-1:0][WORD_WIDTH_CONFIG-1:0] config_1_cg_mtb;
-  assign config_1_cg_mtb = config_1_cgm;
+  logic [COPIES-1:0][GROUPS-1:0][3-1:0][MEMBERS/3-1:0][WORD_WIDTH_CONFIG-1:0] config_1_cg_clr;
+  assign config_1_cg_clr = config_1_cgm;
 
-  logic [BRAM_R_WIDTH-1:0] a_val_cg     [COPIES-1:0][GROUPS-1:0];
-  logic [BITS_FMA_1-1:0]   a_val_f32_cg_in  [COPIES-1:0][GROUPS-1:0];
-  logic [BITS_FMA_1-1:0]   a_val_f32_cg_out [COPIES-1:0][GROUPS-1:0];
+  logic [BRAM_R_WIDTH-1:0] a_cg_16_delay_out [COPIES-1:0][GROUPS-1:0];
+  logic [BRAM_R_WIDTH-1:0] a_cg_16_delay_in  [COPIES-1:0][GROUPS-1:0];
+  logic [BITS_FMA_1-1:0]   a_cg_f32          [COPIES-1:0][GROUPS-1:0];
   logic                    b_ready_cg_clr_mtb[COPIES-1:0][GROUPS-1:0][2:0][2:0];
   logic [BRAM_R_WIDTH-1:0] b_cg_clr_mtb_f16  [COPIES-1:0][GROUPS-1:0][2:0][2:0];
   logic [BRAM_R_WIDTH-1:0] b_mid_f16_cg  [COPIES-1:0][GROUPS-1:0];
@@ -279,10 +279,17 @@ module lrelu_engine (
   logic [BITS_FMA_2-1:0] m_data_fma_1_cgu_f16 [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
   logic [BITS_FMA_2-1:0] m_data_fma_2_cgu     [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
   logic [BITS_FMA_2-1:0] c_val_cgu            [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
-  logic [BITS_FMA_1-1:0] b_val_f32_cgu        [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
-  logic is_top_cgu                  [COPIES-1:0][GROUPS-1:0][UNITS-1:0]; 
-  logic is_bot_cgu                  [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
-  logic is_lrelu_cgu                [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+  logic [BITS_FMA_1-1:0] b_val_f32_cgu_mtb_in [COPIES-1:0][GROUPS-1:0][KERNEL_H_MAX-1:0];
+  logic [BITS_FMA_1-1:0] b_val_f32_cgu_mtb_out[COPIES-1:0][GROUPS-1:0][KERNEL_H_MAX-1:0];
+  logic [BITS_FMA_1-1:0] b_val_f32_cgu_fma_in [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+  // logic [KERNEL_H_MAX-1:0] is_tb_cg_mtb       [COPIES-1:0][GROUPS-1:0]; 
+  logic is_lrelu_cgu                          [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
+
+  logic sel_is_top_c_in   [COPIES-1:0]; //[KERNEL_H_MAX/2-1:0];                   // u=8, k=5: [5/2-1,      0] = [1,0]
+  logic sel_is_bot_c_in   [COPIES-1:0]; //[UNITS-1:(UNITS-1)-(KERNEL_H_MAX/2-1)]; // u=8, k=5: [7,7-(5/2-1)P] = [7,6]
+  logic sel_is_top_c_out  [COPIES-1:0]; //[KERNEL_H_MAX/2-1:0];                   // u=8, k=5: [5/2-1,      0] = [1,0]
+  logic sel_is_bot_c_out  [COPIES-1:0]; //[UNITS-1:(UNITS-1)-(KERNEL_H_MAX/2-1)]; // u=8, k=5: [7,7-(5/2-1)P] = [7,6]
+  logic is_1x1_fma_1_in;
 
   output logic [DEBUG_CONFIG_WIDTH_LRELU-3-1:0] debug_config;
   assign debug_config = {w_sel_bram + d_val_cg[0][0]};
@@ -320,7 +327,7 @@ module lrelu_engine (
             Delayed config
           */
           if (u ==0) begin
-            localparam LATENCY_1 = LATENCY_FIXED_2_FLOAT-LATENCY_CYCLIC_REG-LATENCY_FLOAT_UPSIZE-1;
+            localparam LATENCY_1 = LATENCY_FIXED_2_FLOAT-LATENCY_CYCLIC_REG-LATENCY_FLOAT_UPSIZE-1-1;
 
             n_delay #(
               .N          (LATENCY_1),
@@ -343,16 +350,6 @@ module lrelu_engine (
                 .clken    (clken),
                 .data_in  (s_valid),
                 .data_out (valid_1)
-              );
-              n_delay #(
-                .N          (LATENCY_1),
-                .WORD_WIDTH (TUSER_WIDTH_LRELU_IN)
-              ) USER_1 (
-                .clk      (clk),
-                .resetn   (resetn),
-                .clken    (clken),
-                .data_in  (s_user),
-                .data_out (user_1)
               );
               n_delay #(
                 .N          (LATENCY_1),
@@ -395,6 +392,27 @@ module lrelu_engine (
                 .data_out (is_1x1_config_1)
               );
 
+              n_delay #(
+                .N          (LATENCY_1-1),
+                .WORD_WIDTH (TUSER_WIDTH_LRELU_IN)
+              ) USER_MUX_IN (
+                .clk      (clk),
+                .resetn   (resetn),
+                .clken    (clken),
+                .data_in  (s_user),
+                .data_out (user_mux_in)
+              );
+              n_delay #(
+                .N          (1),
+                .WORD_WIDTH (TUSER_WIDTH_LRELU_IN)
+              ) USER_1 (
+                .clk      (clk),
+                .resetn   (resetn),
+                .clken    (clken),
+                .data_in  (user_mux_in),
+                .data_out (user_1)
+              );
+
               always_comb begin
                 if (w_sel_bram_1 == 0)
                   if (user_1[I_IS_1X1]) begin
@@ -415,6 +433,7 @@ module lrelu_engine (
                     b_w_addr_max = BRAM_W_DEPTH_3X3-1;
                   end
               end
+
             end
           end
 
@@ -432,31 +451,30 @@ module lrelu_engine (
               .clken        (clken),
               .resetn       (resetn_config_1),
               .w_en         (valid_config_1 && (w_sel_bram_1 == 2)),
-              .s_data       (config_1_cgm [c][g]),
-              .m_data       (a_val_cg [c][g]),
+              .s_data       (config_1_cgm     [c][g]),
+              .m_data       (a_cg_16_delay_in [c][g]),
               .r_en         (valid_1),
               .r_addr_max   (b_r_addr_max  ),
               .w_addr_max   (b_w_addr_max  )
             );
 
           if (u == 0) begin
+            n_delay #(
+              .N          (2),
+              .WORD_WIDTH (BRAM_R_WIDTH)
+            ) A_DELAY (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  (a_cg_16_delay_in   [c][g]),
+              .data_out (a_cg_16_delay_out  [c][g])
+            );
             mod_float_upsize upsizer_a (
               .aclk                 (clk),
               .aclken               (clken),
               .s_axis_a_tvalid      (1'b1),           
-              .s_axis_a_tdata       (a_val_cg        [c][g]),
-              .m_axis_result_tdata  (a_val_f32_cg_in [c][g])
-            );
-
-            n_delay #(
-              .N          (1),
-              .WORD_WIDTH (BITS_FMA_1)
-            ) A_VAL (
-              .clk      (clk),
-              .resetn   (resetn),
-              .clken    (clken),
-              .data_in  (a_val_f32_cg_in  [c][g]),
-              .data_out (a_val_f32_cg_out [c][g])
+              .s_axis_a_tdata       (a_cg_16_delay_out  [c][g]),
+              .m_axis_result_tdata  (a_cg_f32           [c][g])
             );
           end
 
@@ -466,13 +484,13 @@ module lrelu_engine (
           */
           if (c==0 && g==0 && u==0)
             always_comb begin
-              if (user_1[I_IS_1X1]) begin
+              if (user_mux_in[I_IS_1X1]) begin
                 clr_index_in = 2'd0;
               end
               else begin
-                if      (user_1[I_IS_LEFT_COL   ])  clr_index_in = 2'd1;
-                else if (user_1[I_IS_RIGHT_COL  ])  clr_index_in = 2'd2;
-                else                                clr_index_in = 2'd0;
+                if      (user_mux_in[I_IS_LEFT_COL   ])  clr_index_in = 2'd1;
+                else if (user_mux_in[I_IS_RIGHT_COL  ])  clr_index_in = 2'd2;
+                else                                     clr_index_in = 2'd0;
               end
             end
 
@@ -490,7 +508,7 @@ module lrelu_engine (
 
               for (genvar clr=0; clr < 3; clr ++) begin: CLR
                 
-                assign b_ready_cg_clr_mtb[c][g][clr][mtb] = valid_1 && (clr_index_in == clr) && ready_mtb[mtb];
+                assign b_ready_cg_clr_mtb[c][g][clr][mtb] = valid_1 && (clr_index_out == clr) && ready_mtb[mtb]; //clr_index_out only for BRAM_LATENCY=0
 
                 if (mtb==0 && clr ==0) begin // Center BRAM
                   cyclic_shift_reg #(
@@ -503,7 +521,7 @@ module lrelu_engine (
                     .resetn       (resetn_config_1),
                     .w_en         (valid_config_1 && (w_sel_bram_1 == 3)),
                     .s_data       (config_1_cgm [c][g]),
-                    .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
+                    .m_data       (b_cg_clr_mtb_f16  [c][g][clr][mtb]),
                     .r_en         (b_ready_cg_clr_mtb[c][g][clr][mtb]),
                     .r_addr_max   (b_r_addr_max  ),
                     .w_addr_max   (b_w_addr_max  )
@@ -518,8 +536,8 @@ module lrelu_engine (
                     .clk          (clk),
                     .clken        (clken),
                     .resetn       (resetn_config_1),
-                    .w_en         (valid_config_1 && (w_sel_bram_1 == 4 + clr)),
-                    .s_data       (config_1_cg_mtb [c][g][mtb]),
+                    .w_en         (valid_config_1 && (w_sel_bram_1 == 4 + mtb)),
+                    .s_data       (config_1_cg_clr [c][g][clr]),
                     .m_data       (b_cg_clr_mtb_f16[c][g][clr][mtb]),
                     .r_en         (b_ready_cg_clr_mtb[c][g][clr][mtb]),
                     .r_addr_max   (BITS_BRAM_R_DEPTH_3X3'(BRAM_R_DEPTH_3X3-1)),
@@ -532,7 +550,7 @@ module lrelu_engine (
 
           if (c==0 && g==0 && u==0)
             n_delay #(
-              .N          (LATENCY_CYCLIC_REG),
+              .N          (1),
               .WORD_WIDTH (2)
             ) CLR_INDEX (
               .clk      (clk),
@@ -541,6 +559,36 @@ module lrelu_engine (
               .data_in  (clr_index_in),
               .data_out (clr_index_out)
             );
+
+            /*
+              MTB Mux with one latency
+
+              * Top if:
+                - top unit (u=0) 
+                - if max: first copy  (c=0)
+                - else  : both copies
+              * Bottom if:
+                - bottom unit (u=-1) 
+                - if max: second copy  (c=1)
+                - else  : both copies 
+            */
+
+          if (g==0 && u==0) begin
+
+            assign sel_is_top_c_in[c] = (user_mux_in [I_IS_MAX] ? (c==0) : 1) & user_mux_in [I_IS_TOP_BLOCK   ];
+            assign sel_is_bot_c_in[c] = (user_mux_in [I_IS_MAX] ? (c==1) : 1) & user_mux_in [I_IS_BOTTOM_BLOCK];
+            
+            n_delay #(
+              .N          (1+LATENCY_CYCLIC_REG+LATENCY_FLOAT_UPSIZE+1),
+              .WORD_WIDTH (2)
+            ) SEL_TOP_BOT (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  ({sel_is_top_c_in [c],sel_is_bot_c_in [c]}),
+              .data_out ({sel_is_top_c_out[c],sel_is_bot_c_out[c]})
+            );
+          end
           /*
             CLR Mux, with one latency
           */
@@ -548,32 +596,32 @@ module lrelu_engine (
             register #(
               .WORD_WIDTH   (BRAM_R_WIDTH), 
               .RESET_VALUE  (0)
-            ) B_MID_MID (
+            ) B_MID_16 (
               .clock        (clk),
               .clock_enable (clken),
               .resetn       (resetn),
               .data_in      (b_cg_clr_mtb_f16[c][g][clr_index_out][0]),
-              .data_out     (b_mid_f16_cg [c][g])
+              .data_out     (b_mid_f16_cg    [c][g])
             );
             register #(
               .WORD_WIDTH   (BRAM_R_WIDTH), 
               .RESET_VALUE  (0)
-            ) B_MID_TOP (
+            ) B_TOP_16 (
               .clock        (clk),
               .clock_enable (clken),
               .resetn       (resetn),
               .data_in      (b_cg_clr_mtb_f16[c][g][clr_index_out][1]),
-              .data_out     (b_top_f16_cg [c][g])
+              .data_out     (b_top_f16_cg    [c][g])
             );
             register #(
               .WORD_WIDTH   (BRAM_R_WIDTH), 
               .RESET_VALUE  (0)
-            ) B_MID_BOT (
+            ) B_BOT_16 (
               .clock        (clk),
               .clock_enable (clken),
               .resetn       (resetn),
               .data_in      (b_cg_clr_mtb_f16[c][g][clr_index_out][2]),
-              .data_out     (b_bot_f16_cg [c][g])
+              .data_out     (b_bot_f16_cg    [c][g])
             );
           end
 
@@ -607,34 +655,50 @@ module lrelu_engine (
             );
           end
 
-          /*
-            MTB Mux with one latency
+          if (u==0) begin
+            assign b_val_f32_cgu_mtb_in [c][g][0] = b_mid_f32_cg[c][g];
+            n_delay #(
+              .N          (1),
+              .WORD_WIDTH (BITS_FMA_1)
+            ) B_MID_32 (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  (b_val_f32_cgu_mtb_in  [c][g][0]),
+              .data_out (b_val_f32_cgu_mtb_out [c][g][0])
+            );
 
-            * Top if:
-              - top unit (u=0) 
-              - if max: first copy  (c=0)
-              - else  : both copies
-            * Bottom if:
-              - bottom unit (u=-1) 
-              - if max: second copy  (c=1)
-              - else  : both copies 
-          */
-          
-          assign is_top_cgu[c][g][u] = (u == 0      ) & (m_user_float32 [I_IS_MAX] ? (c==0) : 1) & m_user_float32 [I_IS_TOP_BLOCK];
-          assign is_bot_cgu[c][g][u] = (u == UNITS-1) & (m_user_float32 [I_IS_MAX] ? (c==1) : 1) & m_user_float32 [I_IS_BOTTOM_BLOCK];
-
-          always_comb begin
-            if (m_user_float32[I_IS_1X1]) begin
-              b_val_f32_cgu[c][g][u] = b_mid_f32_cg[c][g];
-            end
-            else begin
-              unique case ({is_top_cgu[c][g][u], is_bot_cgu[c][g][u]})
-                2'b00 : b_val_f32_cgu[c][g][u] = b_mid_f32_cg[c][g];
-                2'b10 : b_val_f32_cgu[c][g][u] = b_top_f32_cg[c][g];
-                2'b01 : b_val_f32_cgu[c][g][u] = b_bot_f32_cg[c][g];
-              endcase
-            end
+            assign b_val_f32_cgu_mtb_in [c][g][1] = sel_is_top_c_out[c] ? b_top_f32_cg[c][g] : b_mid_f32_cg[c][g];
+            n_delay #(
+              .N          (1),
+              .WORD_WIDTH (BITS_FMA_1)
+            ) B_TOP_32 (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  (b_val_f32_cgu_mtb_in  [c][g][1]),
+              .data_out (b_val_f32_cgu_mtb_out [c][g][1])
+            );
+            
+            assign b_val_f32_cgu_mtb_in [c][g][2] = sel_is_bot_c_out[c] ? b_bot_f32_cg[c][g] : b_mid_f32_cg[c][g];
+            n_delay #(
+              .N          (1),
+              .WORD_WIDTH (BITS_FMA_1)
+            ) B_BOT_32 (
+              .clk      (clk),
+              .resetn   (resetn),
+              .clken    (clken),
+              .data_in  (b_val_f32_cgu_mtb_in  [c][g][2]),
+              .data_out (b_val_f32_cgu_mtb_out [c][g][2])
+            );
           end
+
+          if (u==0)
+            assign b_val_f32_cgu_fma_in[c][g][u] = b_val_f32_cgu_mtb_out[c][g][1];
+          else if (u==UNITS-1)
+            assign b_val_f32_cgu_fma_in[c][g][u] = b_val_f32_cgu_mtb_out[c][g][2];
+          else
+            assign b_val_f32_cgu_fma_in[c][g][u] = b_val_f32_cgu_mtb_out[c][g][0];
 
           /*
             FMA Operation:  fma_out = fma_a * fma_b + fma_c
@@ -652,11 +716,11 @@ module lrelu_engine (
               .s_axis_a_tdata       (m_data_float32_cgu[c][g][u]),              
               .s_axis_a_tuser       (s_user_fma_1),              
               .s_axis_b_tvalid      (1'b1),            
-              .s_axis_b_tdata       (a_val_f32_cg_out  [c][g]),              
+              .s_axis_b_tdata       (a_cg_f32     [c][g]),              
               .s_axis_c_tvalid      (1'b1),           
-              .s_axis_c_tdata       (b_val_f32_cgu[c][g][u]),              
+              .s_axis_c_tdata       (b_val_f32_cgu_fma_in[c][g][u]),              
               .m_axis_result_tvalid (m_valid_fma_1),  
-              .m_axis_result_tdata  (m_data_fma_1_cgu  [c][g][u]),    
+              .m_axis_result_tdata  (m_data_fma_1_cgu    [c][g][u]),    
               .m_axis_result_tuser  (m_user_fma_1)    
             );
           else
@@ -667,10 +731,10 @@ module lrelu_engine (
               .s_axis_a_tvalid      (m_valid_float32),            
               .s_axis_a_tdata       (m_data_float32_cgu [c][g][u]),              
               .s_axis_b_tvalid      (1'b1),            
-              .s_axis_b_tdata       (a_val_f32_cg_out   [c][g]),              
+              .s_axis_b_tdata       (a_cg_f32   [c][g]),              
               .s_axis_c_tvalid      (1'b1),           
-              .s_axis_c_tdata       (b_val_f32_cgu[c][g][u]),              
-              .m_axis_result_tdata  (m_data_fma_1_cgu   [c][g][u])
+              .s_axis_c_tdata       (b_val_f32_cgu_fma_in[c][g][u]),              
+              .m_axis_result_tdata  (m_data_fma_1_cgu    [c][g][u])
             );
 
           if (c==0 && g==0 && u==0)
@@ -690,7 +754,7 @@ module lrelu_engine (
           */
           if (u == 0) begin
 
-            localparam LATENCY_2 = LATENCY_CYCLIC_REG + LATENCY_FLOAT_UPSIZE + 1 + LATENCY_FMA_1 + LATENCY_FLOAT_DOWNSIZE;
+            localparam LATENCY_2 = LATENCY_FIXED_2_FLOAT + LATENCY_FMA_1 + LATENCY_FLOAT_DOWNSIZE -1;
 
             n_delay #(
               .N          (LATENCY_2),
@@ -923,7 +987,7 @@ generate
         assign config_fma1_cgv_sr  [c][g][v] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_fma1_f16_cgv  [c][g][v]));
       end
       assign config_2_cg_sr   [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(config_2_cg  [c][g]));
-      assign a_val_cg_sr           [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(a_val_cg          [c][g]));
+      assign a_val_cg_sr           [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(a_cg_16_delay_out          [c][g]));
       assign d_val_cg_sr           [c][g] = $bitstoshortreal(float_upsize #(5,10,8,23)::upsize(d_val_cg          [c][g]));
 
       for (genvar clr=0; clr<3; clr++)
