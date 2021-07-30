@@ -56,12 +56,10 @@ module axis_input_pipe_tb ();
   localparam LATENCY_BRAM          = `LATENCY_BRAM         ;
   localparam LATENCY_ACCUMULATOR   = `LATENCY_ACCUMULATOR  ;
   localparam LATENCY_MULTIPLIER    = `LATENCY_MULTIPLIER   ;
-  localparam BEATS_CONFIG_3X3_1    = `BEATS_CONFIG_3X3_1   ;
-  localparam BEATS_CONFIG_1X1_1    = `BEATS_CONFIG_1X1_1   ;
   localparam I_IMAGE_IS_NOT_MAX         = `I_IMAGE_IS_NOT_MAX;
   localparam I_IMAGE_IS_MAX             = `I_IMAGE_IS_MAX    ;
   localparam I_IMAGE_IS_LRELU           = `I_IMAGE_IS_LRELU  ;
-  localparam I_IMAGE_KERNEL_H_1         = `I_IMAGE_KERNEL_H_1; 
+  localparam I_KERNEL_H_1               = `I_KERNEL_H_1      ; 
   localparam TUSER_WIDTH_IM_SHIFT_IN    = `TUSER_WIDTH_IM_SHIFT_IN ;
   localparam TUSER_WIDTH_IM_SHIFT_OUT   = `TUSER_WIDTH_IM_SHIFT_OUT;
   localparam I_WEIGHTS_IS_TOP_BLOCK     = `I_WEIGHTS_IS_TOP_BLOCK   ;
@@ -84,11 +82,11 @@ module axis_input_pipe_tb ();
   localparam I_KERNEL_W_1               = `I_KERNEL_W_1     ; 
   localparam TUSER_WIDTH_CONV_IN        = `TUSER_WIDTH_CONV_IN;
 
-  localparam UNITS_EDGES        = UNITS + KERNEL_H_MAX-1;
-  localparam IM_IN_S_DATA_WORDS = 2**$clog2(UNITS_EDGES);
-  localparam TKEEP_WIDTH_IM_IN  = WORD_WIDTH*IM_IN_S_DATA_WORDS/8;
-  localparam IM_BLOCKS          = IM_HEIGHT/UNITS;
-  localparam IM_COLS            = IM_WIDTH;
+  localparam UNITS_EDGES        = `UNITS_EDGES        ;
+  localparam IM_IN_S_DATA_WORDS = `IM_IN_S_DATA_WORDS ;
+  localparam TKEEP_WIDTH_IM_IN  = `TKEEP_WIDTH_IM_IN  ;
+  localparam IM_BLOCKS          = IM_HEIGHT/UNITS     ;
+  localparam IM_COLS            = IM_WIDTH            ;
 
   string path_im_1     = "D:/cnn-fpga/data/im_pipe_in.txt";
   string path_im_2     = "D:/cnn-fpga/data/im_pipe_in_2.txt";
@@ -102,7 +100,7 @@ module axis_input_pipe_tb ();
   localparam BEATS_1 = BEATS_2 + 1;
   localparam WORDS_1 = BEATS_1 * UNITS_EDGES;
   
-  localparam BEATS_CONFIG_1   = K == 1 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
+  localparam BEATS_CONFIG_1   = `BEATS_CONFIG(K,K)-1;
   localparam W_BEATS          = 1 + BEATS_CONFIG_1+1 + K*IM_CIN;
   localparam WORDS_W          = (W_BEATS-1) * KERNEL_W_MAX * CORES + S_WEIGHTS_WIDTH /WORD_WIDTH;
   localparam W_WORDS_PER_BEAT = S_WEIGHTS_WIDTH /WORD_WIDTH;
@@ -137,45 +135,7 @@ module axis_input_pipe_tb ();
   localparam DEBUG_CONFIG_WIDTH = 2*BITS_KERNEL_H + `DEBUG_CONFIG_WIDTH_IM_PIPE + `DEBUG_CONFIG_WIDTH_W_ROT;
   logic [DEBUG_CONFIG_WIDTH-1:0] debug_config;
 
-  axis_input_pipe #(
-    .UNITS              (UNITS             ),
-    .CORES              (CORES             ),
-    .WORD_WIDTH         (WORD_WIDTH        ),
-    .KERNEL_H_MAX       (KERNEL_H_MAX      ),
-    .BEATS_CONFIG_3X3_1 (BEATS_CONFIG_3X3_1),
-    .BEATS_CONFIG_1X1_1 (BEATS_CONFIG_1X1_1),
-    .I_IMAGE_IS_NOT_MAX        (I_IMAGE_IS_NOT_MAX       ),
-    .I_IMAGE_IS_MAX            (I_IMAGE_IS_MAX           ),
-    .I_IMAGE_IS_LRELU          (I_IMAGE_IS_LRELU         ),
-    .I_IMAGE_KERNEL_H_1        (I_IMAGE_KERNEL_H_1       ),
-    .TUSER_WIDTH_IM_SHIFT_IN   (TUSER_WIDTH_IM_SHIFT_IN  ),
-    .TUSER_WIDTH_IM_SHIFT_OUT  (TUSER_WIDTH_IM_SHIFT_OUT ),
-
-    .IM_CIN_MAX                (IM_CIN_MAX      ),
-    .IM_BLOCKS_MAX             (IM_BLOCKS_MAX   ),
-    .IM_COLS_MAX               (IM_COLS_MAX     ),
-    .S_WEIGHTS_WIDTH           (S_WEIGHTS_WIDTH ),
-    .LATENCY_BRAM              (LATENCY_BRAM    ),
-    .I_WEIGHTS_IS_TOP_BLOCK    (I_WEIGHTS_IS_TOP_BLOCK   ),
-    .I_WEIGHTS_IS_BOTTOM_BLOCK (I_WEIGHTS_IS_BOTTOM_BLOCK),
-    .I_WEIGHTS_IS_1X1          (I_WEIGHTS_IS_1X1         ),
-    .I_WEIGHTS_IS_COLS_1_K2    (I_WEIGHTS_IS_COLS_1_K2   ),
-    .I_WEIGHTS_IS_CONFIG       (I_WEIGHTS_IS_CONFIG      ),
-    .I_WEIGHTS_KERNEL_W_1      (I_WEIGHTS_KERNEL_W_1     ),
-    .TUSER_WIDTH_WEIGHTS_OUT   (TUSER_WIDTH_WEIGHTS_OUT  ),
-
-    .I_IS_NOT_MAX              (I_IS_NOT_MAX             ),
-    .I_IS_MAX                  (I_IS_MAX                 ),
-    .I_IS_1X1                  (I_IS_1X1                 ),
-    .I_IS_LRELU                (I_IS_LRELU               ),
-    .I_IS_TOP_BLOCK            (I_IS_TOP_BLOCK           ),
-    .I_IS_BOTTOM_BLOCK         (I_IS_BOTTOM_BLOCK        ),
-    .I_IS_COLS_1_K2            (I_IS_COLS_1_K2           ),
-    .I_IS_CONFIG               (I_IS_CONFIG              ),
-    .I_IS_CIN_LAST             (I_IS_CIN_LAST            ),
-    .I_KERNEL_W_1              (I_KERNEL_W_1             ),
-    .TUSER_WIDTH_CONV_IN       (TUSER_WIDTH_CONV_IN      )
-  ) pipe (.*);
+  axis_input_pipe pipe (.*);
 
   logic [WORD_WIDTH-1:0] s_data_pixels_1 [IM_IN_S_DATA_WORDS-1:0];
   logic [WORD_WIDTH-1:0] s_data_pixels_2 [IM_IN_S_DATA_WORDS-1:0];

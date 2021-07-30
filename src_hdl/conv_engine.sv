@@ -54,22 +54,22 @@ module conv_engine (
   localparam I_IS_MAX            = `I_IS_MAX            ;
   localparam I_IS_1X1            = `I_IS_1X1            ;
   localparam I_IS_LRELU          = `I_IS_LRELU          ;
+  localparam I_KERNEL_H_1        = `I_KERNEL_H_1        ;
   localparam I_IS_TOP_BLOCK      = `I_IS_TOP_BLOCK      ;
   localparam I_IS_BOTTOM_BLOCK   = `I_IS_BOTTOM_BLOCK   ;
   localparam I_IS_COLS_1_K2      = `I_IS_COLS_1_K2      ;
   localparam I_IS_CONFIG         = `I_IS_CONFIG         ;
   localparam I_IS_CIN_LAST       = `I_IS_CIN_LAST       ;
   localparam I_KERNEL_W_1        = `I_KERNEL_W_1        ;
-  localparam I_IS_LEFT_COL       = `I_IS_LEFT_COL       ;
-  localparam I_IS_RIGHT_COL      = `I_IS_RIGHT_COL      ;
+  localparam I_CLR               = `I_CLR               ;
   localparam TUSER_WIDTH_CONV_IN = `TUSER_WIDTH_CONV_IN ;
   localparam TUSER_WIDTH_CONV_OUT= `TUSER_WIDTH_LRELU_IN;  
 
-  localparam BITS_IM_CIN        = $clog2(IM_CIN_MAX);
-  localparam BITS_IM_COLS       = $clog2(IM_COLS_MAX);
-  localparam BITS_MEMBERS       = $clog2(MEMBERS + 1);
-  localparam BITS_KERNEL_W      = $clog2(KERNEL_W_MAX + 1);
-  localparam BITS_KW2           = $clog2(KERNEL_W_MAX/2 + 1);
+  localparam BITS_IM_CIN        = `BITS_IM_CIN  ;
+  localparam BITS_IM_COLS       = `BITS_IM_COLS ;
+  localparam BITS_KERNEL_W      = `BITS_KERNEL_W;
+  localparam BITS_MEMBERS       = `BITS_MEMBERS ;
+  localparam BITS_KW2           = `BITS_KW2     ;
 
   input  logic clk;
   input  logic clken;
@@ -124,7 +124,8 @@ module conv_engine (
   logic [TUSER_WIDTH_CONV_IN -1: 0] acc_m_user    [MEMBERS-1: 0];
 
   logic [MEMBERS-1: 1] mask_partial;
-  logic [MEMBERS-1: 0] pad_is_left_col, pad_is_right_col, mask_full;
+  logic [MEMBERS-1: 0] mask_full;
+  logic [BITS_KERNEL_W  -1:0] pad_clr    [MEMBERS-1: 0];
 
   logic [WORD_WIDTH_IN*2-1:0] mul_m_data [COPIES-1:0][GROUPS-1:0][UNITS-1:0][MEMBERS-1:0];
   logic [WORD_WIDTH_OUT -1:0] acc_s_data [COPIES-1:0][GROUPS-1:0][UNITS-1:0][MEMBERS-1:0];
@@ -475,8 +476,7 @@ module conv_engine (
     .valid_in        (acc_m_valid       ),
     .mask_partial    (mask_partial      ),
     .mask_full       (mask_full         ),
-    .is_left_col     (pad_is_left_col   ),
-    .is_right_col    (pad_is_right_col  )
+    .clr             (pad_clr           )
   );
 
 
@@ -567,8 +567,7 @@ module conv_engine (
 
     for (genvar m=0; m<MEMBERS; m++) begin
       assign m_user [m][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX] = acc_m_user [m][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX];
-      assign m_user [m][I_IS_LEFT_COL ] = pad_is_left_col  [m];
-      assign m_user [m][I_IS_RIGHT_COL] = pad_is_right_col [m];
+      assign m_user [m][I_CLR+BITS_KERNEL_W-1 :  I_CLR] = pad_clr    [m];
 
       assign m_last = |acc_m_last_masked;
 

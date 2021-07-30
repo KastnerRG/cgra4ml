@@ -32,64 +32,17 @@ module axis_accelerator_tb ();
   localparam DEBUG_CONFIG_WIDTH_LRELU   = `DEBUG_CONFIG_WIDTH_LRELU  ;
   localparam DEBUG_CONFIG_WIDTH_MAXPOOL = `DEBUG_CONFIG_WIDTH_MAXPOOL;
   localparam DEBUG_CONFIG_WIDTH         = `DEBUG_CONFIG_WIDTH        ;
-  localparam KERNEL_H_MAX          = `KERNEL_H_MAX         ;   // odd number
-  localparam KERNEL_W_MAX          = `KERNEL_W_MAX         ;
-  localparam BITS_KERNEL_W         = `BITS_KERNEL_W        ;
   localparam BITS_KERNEL_H         = `BITS_KERNEL_H        ;
-  localparam IM_CIN_MAX            = `IM_CIN_MAX           ;
-  localparam IM_BLOCKS_MAX         = `IM_BLOCKS_MAX        ;
-  localparam IM_COLS_MAX           = `IM_COLS_MAX          ;
   localparam S_WEIGHTS_WIDTH       = `S_WEIGHTS_WIDTH      ;
   localparam M_DATA_WIDTH          = `M_DATA_WIDTH         ;
-  localparam LRELU_ALPHA           = `LRELU_ALPHA          ;
-  localparam BITS_EXP_CONFIG       = `BITS_EXP_CONFIG      ;
-  localparam BITS_FRA_CONFIG       = `BITS_FRA_CONFIG      ;
-  localparam BITS_EXP_FMA_1        = `BITS_EXP_FMA_1       ;
-  localparam BITS_FRA_FMA_1        = `BITS_FRA_FMA_1       ;
-  localparam BITS_EXP_FMA_2        = `BITS_EXP_FMA_2       ;
-  localparam BITS_FRA_FMA_2        = `BITS_FRA_FMA_2       ;
-  localparam LATENCY_FMA_1         = `LATENCY_FMA_1        ;
-  localparam LATENCY_FMA_2         = `LATENCY_FMA_2        ;
-  localparam LATENCY_FIXED_2_FLOAT = `LATENCY_FIXED_2_FLOAT;
-  localparam LATENCY_BRAM          = `LATENCY_BRAM         ;
-  localparam LATENCY_ACCUMULATOR   = `LATENCY_ACCUMULATOR  ;
-  localparam LATENCY_MULTIPLIER    = `LATENCY_MULTIPLIER   ;
-  localparam BEATS_CONFIG_3X3_1    = `BEATS_CONFIG_3X3_1   ;
-  localparam BEATS_CONFIG_1X1_1    = `BEATS_CONFIG_1X1_1   ;
-  localparam I_IMAGE_IS_NOT_MAX         = `I_IMAGE_IS_NOT_MAX;
-  localparam I_IMAGE_IS_MAX             = `I_IMAGE_IS_MAX    ;
-  localparam I_IMAGE_IS_LRELU           = `I_IMAGE_IS_LRELU  ;
-  localparam I_IMAGE_KERNEL_H_1         = `I_IMAGE_KERNEL_H_1; 
-  localparam TUSER_WIDTH_IM_SHIFT_IN    = `TUSER_WIDTH_IM_SHIFT_IN ;
-  localparam TUSER_WIDTH_IM_SHIFT_OUT   = `TUSER_WIDTH_IM_SHIFT_OUT;
-  localparam I_WEIGHTS_IS_TOP_BLOCK     = `I_WEIGHTS_IS_TOP_BLOCK   ;
-  localparam I_WEIGHTS_IS_BOTTOM_BLOCK  = `I_WEIGHTS_IS_BOTTOM_BLOCK;
-  localparam I_WEIGHTS_IS_1X1           = `I_WEIGHTS_IS_1X1         ;
-  localparam I_WEIGHTS_IS_COLS_1_K2     = `I_WEIGHTS_IS_COLS_1_K2   ;
-  localparam I_WEIGHTS_IS_CONFIG        = `I_WEIGHTS_IS_CONFIG      ;
-  localparam I_WEIGHTS_IS_CIN_LAST      = `I_WEIGHTS_IS_CIN_LAST    ;
-  localparam I_WEIGHTS_KERNEL_W_1       = `I_WEIGHTS_KERNEL_W_1     ; 
-  localparam TUSER_WIDTH_WEIGHTS_OUT    = `TUSER_WIDTH_WEIGHTS_OUT;
-  localparam I_IS_NOT_MAX               = `I_IS_NOT_MAX     ;
-  localparam I_IS_MAX                   = `I_IS_MAX         ;
-  localparam I_IS_1X1                   = `I_IS_1X1         ;
-  localparam I_IS_LRELU                 = `I_IS_LRELU       ;
-  localparam I_IS_TOP_BLOCK             = `I_IS_TOP_BLOCK   ;
-  localparam I_IS_BOTTOM_BLOCK          = `I_IS_BOTTOM_BLOCK;
-  localparam I_IS_COLS_1_K2             = `I_IS_COLS_1_K2   ;
-  localparam I_IS_CONFIG                = `I_IS_CONFIG      ;
-  localparam I_IS_CIN_LAST              = `I_IS_CIN_LAST    ;
-  localparam I_KERNEL_W_1               = `I_KERNEL_W_1     ; 
   localparam TUSER_WIDTH_CONV_IN        = `TUSER_WIDTH_CONV_IN;
-  localparam I_IS_LEFT_COL              = `I_IS_LEFT_COL ;
-  localparam I_IS_RIGHT_COL             = `I_IS_RIGHT_COL;
   localparam TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN    ;
   localparam TUSER_WIDTH_LRELU_FMA_1_IN = `TUSER_WIDTH_LRELU_FMA_1_IN;
   localparam TUSER_WIDTH_LRELU_IN       = `TUSER_WIDTH_LRELU_IN      ;
 
-  localparam UNITS_EDGES        = UNITS + KERNEL_H_MAX-1;
-  localparam IM_IN_S_DATA_WORDS = 2**$clog2(UNITS_EDGES);
-  localparam TKEEP_WIDTH_IM_IN  = WORD_WIDTH*IM_IN_S_DATA_WORDS/8;
+  localparam UNITS_EDGES        = `UNITS_EDGES;
+  localparam IM_IN_S_DATA_WORDS = `IM_IN_S_DATA_WORDS;
+  localparam TKEEP_WIDTH_IM_IN  = `TKEEP_WIDTH_IM_IN;
   localparam REPEATS = 3;
 
 
@@ -109,7 +62,7 @@ module axis_accelerator_tb ();
     parameter BEATS_1 = BEATS_2 + 1;
     parameter WORDS_1 = BEATS_1 * UNITS_EDGES;
     
-    parameter BEATS_CONFIG_1     = K == 1 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
+    parameter BEATS_CONFIG_1     = `BEATS_CONFIG(K,K)-1;
     parameter W_M_BEATS          = BEATS_CONFIG_1+1 + K*IM_CIN;
     parameter W_S_WORDS_PER_BEAT = S_WEIGHTS_WIDTH /WORD_WIDTH;
     parameter WORDS_W            = W_S_WORDS_PER_BEAT + W_M_BEATS*COPIES*GROUPS*MEMBERS;
@@ -210,6 +163,7 @@ module axis_accelerator_tb ();
 
   logic lrelu_m_axis_tvalid;
   bit   lrelu_m_axis_tready;
+  logic lrelu_m_axis_tlast;
   logic [COPIES*GROUPS*UNITS*WORD_WIDTH -1:0] lrelu_m_axis_tdata;
   logic [WORD_WIDTH-1:0] lrelu_m_data [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
   logic [TUSER_WIDTH_MAXPOOL_IN-1:0] lrelu_m_axis_tuser;
@@ -240,63 +194,7 @@ module axis_accelerator_tb ();
 
   splitter sp (.input_0(debug_config));
 
-  axis_accelerator #(
-    .UNITS                     (UNITS                     ),
-    .GROUPS                    (GROUPS                    ),
-    .COPIES                    (COPIES                    ),
-    .MEMBERS                   (MEMBERS                   ),
-    .WORD_WIDTH                (WORD_WIDTH                ),
-    .KERNEL_H_MAX              (KERNEL_H_MAX              ),
-    .BEATS_CONFIG_3X3_1        (BEATS_CONFIG_3X3_1        ),
-    .BEATS_CONFIG_1X1_1        (BEATS_CONFIG_1X1_1        ),
-    .I_IMAGE_IS_NOT_MAX        (I_IMAGE_IS_NOT_MAX        ),
-    .I_IMAGE_IS_MAX            (I_IMAGE_IS_MAX            ),
-    .I_IMAGE_IS_LRELU          (I_IMAGE_IS_LRELU          ),
-    .I_IMAGE_KERNEL_H_1        (I_IMAGE_KERNEL_H_1        ),
-    .TUSER_WIDTH_IM_SHIFT_IN   (TUSER_WIDTH_IM_SHIFT_IN   ),
-    .TUSER_WIDTH_IM_SHIFT_OUT  (TUSER_WIDTH_IM_SHIFT_OUT  ),
-    .WORD_WIDTH_ACC            (WORD_WIDTH_ACC            ),
-    .IM_CIN_MAX                (IM_CIN_MAX                ),
-    .IM_BLOCKS_MAX             (IM_BLOCKS_MAX             ),
-    .IM_COLS_MAX               (IM_COLS_MAX               ),
-    .S_WEIGHTS_WIDTH           (S_WEIGHTS_WIDTH           ),
-    .M_DATA_WIDTH              (M_DATA_WIDTH              ),
-    .LRELU_ALPHA               (LRELU_ALPHA               ),
-    .BITS_EXP_CONFIG           (BITS_EXP_CONFIG           ),
-    .BITS_FRA_CONFIG           (BITS_FRA_CONFIG           ),
-    .BITS_EXP_FMA_1            (BITS_EXP_FMA_1            ),
-    .BITS_FRA_FMA_1            (BITS_FRA_FMA_1            ),
-    .BITS_EXP_FMA_2            (BITS_EXP_FMA_2            ),
-    .BITS_FRA_FMA_2            (BITS_FRA_FMA_2            ),
-    .LATENCY_FMA_1             (LATENCY_FMA_1             ),
-    .LATENCY_FMA_2             (LATENCY_FMA_2             ),
-    .LATENCY_FIXED_2_FLOAT     (LATENCY_FIXED_2_FLOAT     ),
-    .LATENCY_BRAM              (LATENCY_BRAM              ),
-    .LATENCY_ACCUMULATOR       (LATENCY_ACCUMULATOR       ),
-    .LATENCY_MULTIPLIER        (LATENCY_MULTIPLIER        ),
-    .I_WEIGHTS_IS_TOP_BLOCK    (I_WEIGHTS_IS_TOP_BLOCK    ),
-    .I_WEIGHTS_IS_BOTTOM_BLOCK (I_WEIGHTS_IS_BOTTOM_BLOCK ),
-    .I_WEIGHTS_IS_1X1          (I_WEIGHTS_IS_1X1          ),
-    .I_WEIGHTS_IS_COLS_1_K2    (I_WEIGHTS_IS_COLS_1_K2    ),
-    .I_WEIGHTS_IS_CONFIG       (I_WEIGHTS_IS_CONFIG       ),
-    .I_WEIGHTS_KERNEL_W_1      (I_WEIGHTS_KERNEL_W_1      ),
-    .TUSER_WIDTH_WEIGHTS_OUT   (TUSER_WIDTH_WEIGHTS_OUT   ),
-    .I_IS_NOT_MAX              (I_IS_NOT_MAX              ),
-    .I_IS_MAX                  (I_IS_MAX                  ),
-    .I_IS_1X1                  (I_IS_1X1                  ),
-    .I_IS_LRELU                (I_IS_LRELU                ),
-    .I_IS_TOP_BLOCK            (I_IS_TOP_BLOCK            ),
-    .I_IS_BOTTOM_BLOCK         (I_IS_BOTTOM_BLOCK         ),
-    .I_IS_COLS_1_K2            (I_IS_COLS_1_K2            ),
-    .I_IS_CONFIG               (I_IS_CONFIG               ),
-    .I_KERNEL_W_1              (I_KERNEL_W_1              ),
-    .TUSER_WIDTH_CONV_IN       (TUSER_WIDTH_CONV_IN       ),
-    .I_IS_LEFT_COL             (I_IS_LEFT_COL             ),
-    .I_IS_RIGHT_COL            (I_IS_RIGHT_COL            ),
-    .TUSER_WIDTH_LRELU_FMA_1_IN(TUSER_WIDTH_LRELU_FMA_1_IN),
-    .TUSER_WIDTH_LRELU_IN      (TUSER_WIDTH_LRELU_IN      ),
-    .TUSER_WIDTH_MAXPOOL_IN    (TUSER_WIDTH_MAXPOOL_IN    )    
-  ) pipe (.*);
+  axis_accelerator pipe (.*);
 
   logic [WORD_WIDTH-1:0] s_data_pixels_1 [IM_IN_S_DATA_WORDS-1:0];
   logic [WORD_WIDTH-1:0] s_data_pixels_2 [IM_IN_S_DATA_WORDS-1:0];
@@ -329,7 +227,6 @@ module axis_accelerator_tb ();
   
   logic [layer.WORDS_PER_BEAT_CONV_DW-1:0] temp_keep_conv_dw  = '1;
   logic [layer.WORDS_PER_BEAT_RELU-1:0] temp_keep_lrelu = '1;
-  logic zero_last = 0;
 
   generate
     for (genvar c=0; c<COPIES; c++)
@@ -355,7 +252,7 @@ module axis_accelerator_tb ();
   
   // initial forever m_conv    .axis_read(aclk, conv_m_axis_tready   , conv_m_axis_tvalid   , conv_m_data_linear    , conv_m_keep_linear  , conv_m_axis_tlast   );
   initial forever m_conv_dw .axis_read(aclk, conv_dw_m_axis_tready, conv_dw_m_axis_tvalid, conv_dw_m_data_linear , temp_keep_conv_dw   , conv_dw_m_axis_tlast);
-  initial forever m_lrelu   .axis_read(aclk, lrelu_m_axis_tready  , lrelu_m_axis_tvalid  , lrelu_m_data_linear   , temp_keep_lrelu     , zero_last           );
+  initial forever m_lrelu   .axis_read(aclk, lrelu_m_axis_tready  , lrelu_m_axis_tvalid  , lrelu_m_data_linear   , temp_keep_lrelu     , lrelu_m_axis_tlast  );
   initial forever m_maxpool .axis_read(aclk, maxpool_m_axis_tready, maxpool_m_axis_tvalid, maxpool_m_data_linear , maxpool_m_axis_tkeep, maxpool_m_axis_tlast);
   initial forever m_output  .axis_read(aclk, m_axis_tready        , m_axis_tvalid        , m_data_linear         , m_axis_tkeep        , m_axis_tlast        );
 

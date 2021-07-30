@@ -30,6 +30,7 @@ Additional Comments:
 
 //////////////////////////////////////////////////////////////////////////////////*/
 
+`include "params.v"
 
 module pad_filter 
 # (
@@ -50,18 +51,18 @@ module pad_filter
     
     mask_partial,
     mask_full,
-    is_left_col,
-    is_right_col
+    clr
 );
     localparam KW2_MAX          = KERNEL_W_MAX/2; //R, 3->1, 5->2, 7->3
-    localparam BITS_KERNEL_W    = $clog2(KERNEL_W_MAX);
+    localparam BITS_KERNEL_W    = `BITS_KERNEL_W;
+    localparam BITS_KW2         = `BITS_KERNEL_W;
 
     input  logic                      aclk;
     input  logic                      aresetn;
     input  logic [MEMBERS - 1 : 0]    aclken, valid_in;               
     output logic [MEMBERS - 1 : 1]    mask_partial;
     output logic [MEMBERS - 1 : 0]    mask_full;
-    output logic [MEMBERS - 1 : 0]    is_left_col, is_right_col;
+    output logic [BITS_KERNEL_W-1: 0] clr          [MEMBERS - 1 : 0]; // 0-center, 1-center-left, 2-center-right, 3-left, 4-right
     input  logic [TUSER_WIDTH - 1: 0] user_in      [MEMBERS - 1 : 0];
 
     /*
@@ -109,7 +110,13 @@ module pad_filter
     logic   [KW2_MAX : 1] col_start_in [MEMBERS-1 : 0];
     logic   [KW2_MAX : 1] col_start    [MEMBERS-1 : 0];
 
-    logic   [KW2_MAX : 0] right_out_lut[MEMBERS-1 : 0];
+    logic [BITS_KERNEL_W-1:0] clr_left_lut  [2**KW2_MAX-1:0][BITS_KERNEL_W-2:0];
+    logic [BITS_KERNEL_W-1:0] clr_right_lut [2**KW2_MAX-1:0];
+
+    logic [BITS_KERNEL_W-1: 0] clr_left_in   [MEMBERS - 1 : 0];
+    logic [BITS_KERNEL_W-1: 0] clr_left_out  [MEMBERS - 1 : 0];
+    logic [BITS_KERNEL_W-1: 0] clr_right_in  [MEMBERS - 1 : 0];
+    logic [BITS_KERNEL_W-1: 0] clr_right_out [MEMBERS - 1 : 0];
 
     generate
         for (genvar m=0; m < MEMBERS; m++) begin: col_end_gen_m
@@ -158,27 +165,74 @@ module pad_filter
                 .data_out       (col_start        [m])
             );
 
-            for (genvar kw2=0; kw2 <= KW2_MAX; kw2++) begin
-                localparam kw = (kw2*2+1);
-                assign right_out_lut[m][kw2] = (m % kw) == kw-2; // 3->1, 5->3, 7->5
+            /*
+                CLR (Center-Left-Right)
+
+                kw=1: 000000000
+                kw=3: 100000002
+                kw=5: 130000042
+                kw=7: 137000642
+
+                CENTER (0):
+                    if all col_start & col_end are zeros
+                
+                LEFT (1,3,5,7...):
+                    - for kw_max=7, kw=5:
+                        - e2->3, e1->1, e0->0, 
+
+                        - col_end{e2,e1,e0}                     = [0,1,2,4]
+                        - reverse(col_end)                      = [0,4,2,1]
+                        - log(rev(col_end))                     =   [2,1,0]
+                        - 1 + 2*log(rev(col_end))               =   [5,3,1]
+                        - 1 + 2*log(rev(col_end)) - (kw_max-kw) =   [3,1,-]
+
+                    - left = 1 + 2*log(rev(col_end)) + kw - kw_max
+
+                RIGHT (2,4,6,8...):
+                    - s0->2, s1->4,
+                    - col_start {s2,s1,s0}  = [0,1,2,4,8]
+                    - log(col_start)        =   [0,1,2,3]
+                    - 2*log(col_start)      =   [0,2,4,6]
+                    - 2*log(col_start)+2    =   [2,4,6,8]
+
+                    - right = 2*log(col_start) + 2
+
+
+            */
+
+            if (m==0) begin
+                for (genvar kw2=0; kw2 <= KW2_MAX; kw2++) begin
+                    
+                    localparam kw = kw2*2+1;
+                    assign clr_left_lut [0][kw2] = 0;
+
+                    for (genvar log_col=0; log_col<=KW2_MAX; log_col++)
+                        assign clr_left_lut [2**log_col][kw2] = 1 + 2*log_col + kw-KERNEL_W_MAX;
+                end
             end
 
-            assign is_right_col [m]  = right_out_lut[m][kw2_wire[m]] & col_end[m][kw2_wire[m]];
+            assign clr_left_in [m] = clr_left_lut[col_start[m]][kw2_wire[m]];
 
-            assign col_left_in  [m]  = col_start [m][kw2_wire[m]];
-            register
-            #(
-                .WORD_WIDTH     (1),
+            register #(
+                .WORD_WIDTH     (BITS_KERNEL_W),
                 .RESET_VALUE    (1)         
             )
-            COL_LEFT_REG
+            REG_CLR_LEFT
             (
                 .clock          (aclk           ),
                 .clock_enable   (reg_clken   [m]),
                 .resetn         (aresetn        ),
-                .data_in        (col_left_in [m]),
-                .data_out       (is_left_col [m])
+                .data_in        (clr_left_in [m]),
+                .data_out       (clr_left_out[m])
             );
+
+            if (m==0) begin
+                assign clr_right_lut [0] = 0;
+                for (genvar log_col=0; log_col<=KW2_MAX; log_col++)
+                    assign clr_right_lut [2**log_col] = 2*log_col + 2;
+            end
+
+            assign clr[m] = clr_left_out[m] | clr_right_lut[col_end[m]];
         end
     endgenerate
 

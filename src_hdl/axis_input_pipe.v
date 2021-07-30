@@ -8,8 +8,6 @@ module axis_input_pipe
     WORD_WIDTH                = `WORD_WIDTH               , 
     KERNEL_H_MAX              = `KERNEL_H_MAX             ,   // odd number
     KERNEL_W_MAX              = `KERNEL_W_MAX             ,
-    BEATS_CONFIG_3X3_1        = `BEATS_CONFIG_3X3_1       ,
-    BEATS_CONFIG_1X1_1        = `BEATS_CONFIG_1X1_1       ,
     // DEBUG WIDTHS
     DEBUG_CONFIG_WIDTH_W_ROT  = `DEBUG_CONFIG_WIDTH_W_ROT  ,
     DEBUG_CONFIG_WIDTH_IM_PIPE= `DEBUG_CONFIG_WIDTH_IM_PIPE,
@@ -17,7 +15,7 @@ module axis_input_pipe
     I_IMAGE_IS_NOT_MAX        = `I_IMAGE_IS_NOT_MAX       ,
     I_IMAGE_IS_MAX            = `I_IMAGE_IS_MAX           ,
     I_IMAGE_IS_LRELU          = `I_IMAGE_IS_LRELU         ,
-    I_IMAGE_KERNEL_H_1        = `I_IMAGE_KERNEL_H_1       , 
+    I_KERNEL_H_1              = `I_KERNEL_H_1             , 
     TUSER_WIDTH_IM_SHIFT_IN   = `TUSER_WIDTH_IM_SHIFT_IN  ,
     TUSER_WIDTH_IM_SHIFT_OUT  = `TUSER_WIDTH_IM_SHIFT_OUT ,
     IM_CIN_MAX                = `IM_CIN_MAX               ,
@@ -75,12 +73,12 @@ module axis_input_pipe
   ); 
 
 
-  localparam UNITS_EDGES       = UNITS + KERNEL_H_MAX-1;
-  localparam IM_IN_S_DATA_WORDS= 2**$clog2(UNITS_EDGES);
-  localparam BITS_CONFIG_COUNT = $clog2(BEATS_CONFIG_3X3_1);
-  localparam BITS_KERNEL_H     = $clog2(KERNEL_H_MAX);
-  localparam BITS_KERNEL_W     = $clog2(KERNEL_W_MAX);
-  localparam TKEEP_WIDTH_IM_IN = (WORD_WIDTH*IM_IN_S_DATA_WORDS)/8;
+  localparam UNITS_EDGES       = `UNITS_EDGES;
+  localparam IM_IN_S_DATA_WORDS= `IM_IN_S_DATA_WORDS;
+  localparam BITS_CONFIG_COUNT = `BITS_CONFIG_COUNT;
+  localparam BITS_KERNEL_H     = `BITS_KERNEL_H    ;
+  localparam BITS_KERNEL_W     = `BITS_KERNEL_W    ;
+  localparam TKEEP_WIDTH_IM_IN = `TKEEP_WIDTH_IM_IN;
 
   input wire aclk;
   input wire aresetn;
@@ -134,19 +132,7 @@ module axis_input_pipe
   output wire [DEBUG_CONFIG_WIDTH-1:0] debug_config;
   assign debug_config = {im_shift_2_debug_config, im_shift_1_debug_config, image_pipe_debug_config, w_rot_debug_config};
 
-  axis_image_pipe #(
-    .UNITS              (UNITS             ),
-    .WORD_WIDTH         (WORD_WIDTH        ),
-    .DEBUG_CONFIG_WIDTH_IM_PIPE(DEBUG_CONFIG_WIDTH_IM_PIPE),
-    .KERNEL_H_MAX       (KERNEL_H_MAX      ),
-    .BEATS_CONFIG_3X3_1 (BEATS_CONFIG_3X3_1),
-    .BEATS_CONFIG_1X1_1 (BEATS_CONFIG_1X1_1),
-    .I_IMAGE_IS_NOT_MAX       (I_IMAGE_IS_NOT_MAX      ),
-    .I_IMAGE_IS_MAX           (I_IMAGE_IS_MAX          ),
-    .I_IMAGE_IS_LRELU         (I_IMAGE_IS_LRELU        ),
-    .I_IMAGE_KERNEL_H_1       (I_IMAGE_KERNEL_H_1      ),
-    .TUSER_WIDTH_IM_SHIFT_IN  (TUSER_WIDTH_IM_SHIFT_IN )
-  ) IM_MUX (
+  axis_image_pipe IM_MUX (
     .aclk            (aclk   ),
     .aresetn         (aresetn),
     .debug_config    (image_pipe_debug_config),
@@ -167,13 +153,7 @@ module axis_input_pipe
     .m_axis_tuser    (im_mux_m_user  )
   );
 
-  axis_image_shift_buffer #(
-    .UNITS                    (UNITS                   ),
-    .WORD_WIDTH               (WORD_WIDTH              ),
-    .I_IMAGE_KERNEL_H_1       (I_IMAGE_KERNEL_H_1      ), 
-    .TUSER_WIDTH_IM_SHIFT_IN  (TUSER_WIDTH_IM_SHIFT_IN ),
-    .TUSER_WIDTH_IM_SHIFT_OUT (TUSER_WIDTH_IM_SHIFT_OUT)
-  ) IM_SHIFT_1 (
+  axis_image_shift_buffer IM_SHIFT_1 (
     .aclk          (aclk           ),
     .aresetn       (aresetn        ),
     .debug_config  (im_shift_1_debug_config),
@@ -187,13 +167,7 @@ module axis_input_pipe
     .m_axis_tdata  (m_axis_pixels_1_tdata)
   );
 
-  axis_image_shift_buffer #(
-    .UNITS                    (UNITS                   ),
-    .WORD_WIDTH               (WORD_WIDTH              ),
-    .I_IMAGE_KERNEL_H_1       (I_IMAGE_KERNEL_H_1      ), 
-    .TUSER_WIDTH_IM_SHIFT_IN  (TUSER_WIDTH_IM_SHIFT_IN ),
-    .TUSER_WIDTH_IM_SHIFT_OUT (TUSER_WIDTH_IM_SHIFT_OUT)
-  ) IM_SHIFT_2 (
+  axis_image_shift_buffer IM_SHIFT_2 (
     .aclk          (aclk           ),
     .aresetn       (aresetn        ),
     .debug_config  (im_shift_2_debug_config),
@@ -204,29 +178,7 @@ module axis_input_pipe
     .m_axis_tdata  (m_axis_pixels_2_tdata)
   );
 
-  axis_weight_rotator #(
-    .CORES               (CORES              ),
-    .MEMBERS             (MEMBERS            ),
-    .WORD_WIDTH          (WORD_WIDTH         ),
-    .DEBUG_CONFIG_WIDTH_W_ROT (DEBUG_CONFIG_WIDTH_W_ROT),
-    .KERNEL_H_MAX        (KERNEL_H_MAX       ),
-    .KERNEL_W_MAX        (KERNEL_W_MAX       ),
-    .IM_CIN_MAX          (IM_CIN_MAX         ),
-    .IM_BLOCKS_MAX       (IM_BLOCKS_MAX      ),
-    .IM_COLS_MAX         (IM_COLS_MAX        ),
-    .S_WEIGHTS_WIDTH     (S_WEIGHTS_WIDTH    ),
-    .BEATS_CONFIG_3X3_1  (BEATS_CONFIG_3X3_1 ),
-    .BEATS_CONFIG_1X1_1  (BEATS_CONFIG_1X1_1 ),
-    .LATENCY_BRAM        (LATENCY_BRAM       ),   
-    .I_WEIGHTS_IS_TOP_BLOCK      (I_WEIGHTS_IS_TOP_BLOCK     ),
-    .I_WEIGHTS_IS_BOTTOM_BLOCK   (I_WEIGHTS_IS_BOTTOM_BLOCK  ),
-    .I_WEIGHTS_IS_1X1            (I_WEIGHTS_IS_1X1           ),
-    .I_WEIGHTS_IS_COLS_1_K2      (I_WEIGHTS_IS_COLS_1_K2     ),
-    .I_WEIGHTS_IS_CONFIG         (I_WEIGHTS_IS_CONFIG        ),
-    .I_WEIGHTS_IS_CIN_LAST       (I_WEIGHTS_IS_CIN_LAST      ),
-    .I_WEIGHTS_KERNEL_W_1        (I_WEIGHTS_KERNEL_W_1       ),
-    .TUSER_WIDTH_WEIGHTS_OUT(TUSER_WIDTH_WEIGHTS_OUT)
-  ) WEIGHTS_ROTATOR (
+  axis_weight_rotator WEIGHTS_ROTATOR (
     .aclk          (aclk                 ),
     .aresetn       (aresetn              ),
     .debug_config  (w_rot_debug_config   ),
@@ -259,6 +211,7 @@ module axis_input_pipe
   assign m_axis_tuser [I_IS_NOT_MAX     ] = pixels_m_user  [I_IMAGE_IS_NOT_MAX];
   assign m_axis_tuser [I_IS_MAX         ] = pixels_m_user  [I_IMAGE_IS_MAX    ];
   assign m_axis_tuser [I_IS_LRELU       ] = pixels_m_user  [I_IMAGE_IS_LRELU  ];
+  assign m_axis_tuser [I_KERNEL_H_1 + BITS_KERNEL_H-1: I_KERNEL_H_1] = pixels_m_user [I_KERNEL_H_1 + BITS_KERNEL_H-1: I_KERNEL_H_1];
 
   assign m_axis_tuser [I_IS_1X1         ] = weights_m_user [I_WEIGHTS_IS_1X1         ];
   assign m_axis_tuser [I_IS_TOP_BLOCK   ] = weights_m_user [I_WEIGHTS_IS_TOP_BLOCK   ] && m_axis_tvalid;

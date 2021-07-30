@@ -34,19 +34,10 @@ Additional Comments:
 
 //////////////////////////////////////////////////////////////////////////////////*/
 
+`include "params.v"
+
 module axis_image_pipe 
   #(
-    UNITS                    ,
-    WORD_WIDTH               , 
-    DEBUG_CONFIG_WIDTH_IM_PIPE,
-    KERNEL_H_MAX             ,   // odd number
-    BEATS_CONFIG_3X3_1       ,
-    BEATS_CONFIG_1X1_1       ,
-    I_IMAGE_IS_NOT_MAX       ,
-    I_IMAGE_IS_MAX           ,
-    I_IMAGE_IS_LRELU         ,
-    I_IMAGE_KERNEL_H_1       , 
-    TUSER_WIDTH_IM_SHIFT_IN  
   )
   (
     aclk           ,
@@ -69,11 +60,23 @@ module axis_image_pipe
     m_axis_tuser
   );
 
-  localparam UNITS_EDGES       = UNITS + KERNEL_H_MAX-1;
-  localparam IM_IN_S_DATA_WORDS= 2**$clog2(UNITS_EDGES);
-  localparam BITS_CONFIG_COUNT = $clog2(BEATS_CONFIG_3X3_1+1);
-  localparam BITS_KERNEL_H     = $clog2(KERNEL_H_MAX);
-  localparam TKEEP_WIDTH_IM_IN = (WORD_WIDTH*IM_IN_S_DATA_WORDS)/8;
+  localparam UNITS                      = `UNITS                      ;
+  localparam WORD_WIDTH                 = `WORD_WIDTH                 ; 
+  localparam DEBUG_CONFIG_WIDTH_IM_PIPE = `DEBUG_CONFIG_WIDTH_IM_PIPE ;
+  localparam KERNEL_H_MAX               = `KERNEL_H_MAX               ;
+  localparam KERNEL_W_MAX               = `KERNEL_W_MAX               ;
+  localparam I_IMAGE_IS_NOT_MAX         = `I_IMAGE_IS_NOT_MAX         ;
+  localparam I_IMAGE_IS_MAX             = `I_IMAGE_IS_MAX             ;
+  localparam I_IMAGE_IS_LRELU           = `I_IMAGE_IS_LRELU           ;
+  localparam I_KERNEL_H_1               = `I_KERNEL_H_1               ; 
+  localparam TUSER_WIDTH_IM_SHIFT_IN    = `TUSER_WIDTH_IM_SHIFT_IN    ;
+
+  localparam UNITS_EDGES       = `UNITS_EDGES       ;
+  localparam IM_IN_S_DATA_WORDS= `IM_IN_S_DATA_WORDS;
+  localparam BITS_CONFIG_COUNT = `BITS_CONFIG_COUNT ;
+  localparam BITS_KERNEL_H     = `BITS_KERNEL_H     ;
+  localparam BITS_KERNEL_W     = `BITS_KERNEL_W     ;
+  localparam TKEEP_WIDTH_IM_IN = `TKEEP_WIDTH_IM_IN ;
 
   input logic aclk;
   input logic aresetn;
@@ -139,7 +142,7 @@ module axis_image_pipe
   logic [1:0] state, state_next;
   logic is_max_in, is_max_out, is_not_max_in, is_not_max_out, is_lrelu_in, is_lrelu_out;
   logic [BITS_KERNEL_H-1:0] kernel_h_1_in, kernel_h_1_out, m_user_kernel_h_1_out;
-  logic [BITS_CONFIG_COUNT-1:0] beats_config, ones_count_next, ones_count;
+  logic [BITS_CONFIG_COUNT-1:0] beats_config_1, ones_count_next, ones_count;
   logic en_ones_count, en_config;
   logic dw_1_handshake_last, dw_1_handshake;
   logic [WORD_WIDTH-1:0] dw_1_m_data [UNITS_EDGES-1:0];
@@ -149,7 +152,7 @@ module axis_image_pipe
 
   output logic [DEBUG_CONFIG_WIDTH_IM_PIPE-1:0] debug_config;
 
-  assign debug_config = {is_max_out, is_not_max_out, is_lrelu_out, state, kernel_h_1_out, beats_config, ones_count};
+  assign debug_config = {is_max_out, is_not_max_out, is_lrelu_out, state, kernel_h_1_out, beats_config_1, ones_count};
 
   assign dw_1_handshake      = dw_1_m_ready && dw_1_m_valid;
   assign dw_1_handshake_last = dw_1_m_last  && dw_1_m_ready && dw_1_m_valid;
@@ -180,7 +183,7 @@ module axis_image_pipe
     state_next = state;
     unique case (state)
       SET_S   : if (dw_1_handshake)                               state_next = ONES_S;
-      ONES_S  : if (ones_count == beats_config && m_axis_tready)  state_next = PASS_S;
+      ONES_S  : if (ones_count == beats_config_1 && m_axis_tready)  state_next = PASS_S;
       default : if (dw_1_handshake_last)                          state_next = SET_S ;
     endcase
   end
@@ -236,7 +239,14 @@ module axis_image_pipe
     .data_out       (state)
   );
 
-  assign beats_config    = (kernel_h_1_out == 0       ) ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
+  logic [BITS_CONFIG_COUNT-1:0] beats_config_1_lut [KERNEL_H_MAX/2:0][KERNEL_W_MAX/2:0];
+  generate
+    for(genvar kh2=0; kh2<=KERNEL_H_MAX/2; kh2++)
+      for(genvar kw2=0; kw2<=KERNEL_W_MAX/2; kw2++)
+        assign beats_config_1_lut[kh2][kw2] = `BEATS_CONFIG(kh2*2+1,kw2*2+1);
+  endgenerate
+
+  assign beats_config_1    = beats_config_1_lut[kernel_h_1_out/2][kernel_h_1_out/2];
 
   register #(
     .WORD_WIDTH     (BITS_CONFIG_COUNT),
@@ -262,7 +272,7 @@ module axis_image_pipe
   assign is_not_max_in = dw_1_m_data [I_IMAGE_IS_NOT_MAX];
   assign is_max_in     = dw_1_m_data [I_IMAGE_IS_MAX    ];
   assign is_lrelu_in   = dw_1_m_data [I_IMAGE_IS_LRELU  ];
-  assign kernel_h_1_in = dw_1_m_data [I_IMAGE_KERNEL_H_1];
+  assign kernel_h_1_in = dw_1_m_data [I_KERNEL_H_1      ];
 
   register #(
     .WORD_WIDTH     (1),
@@ -312,7 +322,7 @@ module axis_image_pipe
   assign m_axis_tuser [I_IMAGE_IS_NOT_MAX] = is_not_max_out;
   assign m_axis_tuser [I_IMAGE_IS_MAX    ] = is_max_out    ;
   assign m_axis_tuser [I_IMAGE_IS_LRELU  ] = is_lrelu_out  ;
-  assign m_axis_tuser [BITS_KERNEL_H+I_IMAGE_KERNEL_H_1-1:I_IMAGE_KERNEL_H_1] = m_user_kernel_h_1_out;
+  assign m_axis_tuser [BITS_KERNEL_H+I_KERNEL_H_1      -1:I_KERNEL_H_1      ] = m_user_kernel_h_1_out;
 
   /*
     MUX the output data
@@ -354,16 +364,15 @@ module axis_image_shift_buffer (
     m_axis_tuser
   );
 
-  parameter UNITS              = 2;
-  parameter WORD_WIDTH         = 8; 
-  parameter KERNEL_H_MAX       = 3;   // odd number
+  localparam UNITS           = `UNITS        ;
+  localparam WORD_WIDTH      = `WORD_WIDTH   ; 
+  localparam KERNEL_H_MAX    = `KERNEL_H_MAX ;   // odd number
+  localparam UNITS_EDGES     = `UNITS_EDGES  ;
+  localparam BITS_KERNEL_H   = `BITS_KERNEL_H;
   
-  localparam UNITS_EDGES       = UNITS + KERNEL_H_MAX-1;
-  localparam BITS_KERNEL_H     = $clog2(KERNEL_H_MAX);
-  
-  parameter I_IMAGE_KERNEL_H_1       = 3; 
-  parameter TUSER_WIDTH_IM_SHIFT_IN  = I_IMAGE_KERNEL_H_1 + BITS_KERNEL_H;
-  parameter TUSER_WIDTH_IM_SHIFT_OUT = I_IMAGE_KERNEL_H_1;
+  localparam I_KERNEL_H_1             = `I_KERNEL_H_1; 
+  localparam TUSER_WIDTH_IM_SHIFT_IN  = `TUSER_WIDTH_IM_SHIFT_IN ;
+  localparam TUSER_WIDTH_IM_SHIFT_OUT = `TUSER_WIDTH_IM_SHIFT_OUT;
 
   input logic aclk;
   input logic aresetn;
@@ -403,7 +412,7 @@ module axis_image_shift_buffer (
   assign s_data = {>>{s_axis_tdata}};
   assign {>>{slice_s_data}} = buf_data_out [UNITS-1:0];
 
-  assign s_user_kernel_h_1 = s_axis_tuser[I_IMAGE_KERNEL_H_1+BITS_KERNEL_H-1: I_IMAGE_KERNEL_H_1];
+  assign s_user_kernel_h_1 = s_axis_tuser[I_KERNEL_H_1      +BITS_KERNEL_H-1: I_KERNEL_H_1      ];
 
   register #(
     .WORD_WIDTH     (BITS_KERNEL_H),
@@ -420,7 +429,7 @@ module axis_image_shift_buffer (
     unique case (count)
       0       : begin
                   buf_valid_in  = s_axis_tvalid;
-                  buf_user_in   = s_axis_tuser [I_IMAGE_KERNEL_H_1-1:0];
+                  buf_user_in   = s_axis_tuser ;
                   s_axis_tready = slice_s_ready;
                   count_next    = s_user_kernel_h_1;
                 end

@@ -37,6 +37,7 @@ module axis_lrelu_engine (
     s_axis_tlast ,
     m_axis_tvalid,
     m_axis_tready,
+    m_axis_tlast ,
     m_axis_tdata , // cgu
     m_axis_tuser 
   );
@@ -49,40 +50,21 @@ module axis_lrelu_engine (
     localparam GROUPS                     = `GROUPS                    ;
     localparam COPIES                     = `COPIES                    ;
     localparam MEMBERS                    = `MEMBERS                   ;
-    localparam KERNEL_W_MAX               = `KERNEL_W_MAX              ;
-    localparam KERNEL_H_MAX               = `KERNEL_H_MAX              ;
-    localparam LRELU_ALPHA                = `LRELU_ALPHA               ;
-    localparam BEATS_CONFIG_3X3_2         = `BEATS_CONFIG_3X3_1-1      ; // D(1) + A(2) + B(2*3)= 9
-    localparam BEATS_CONFIG_1X1_2         = `BEATS_CONFIG_1X1_1-1      ; // D(1) + A(2) + B(2*1)= 5
-    localparam BITS_EXP_CONFIG            = `BITS_EXP_CONFIG           ;
-    localparam BITS_FRA_CONFIG            = `BITS_FRA_CONFIG           ;
-    localparam BITS_EXP_FMA_1             = `BITS_EXP_FMA_1            ;
-    localparam BITS_FRA_FMA_1             = `BITS_FRA_FMA_1            ;
-    localparam BITS_EXP_FMA_2             = `BITS_EXP_FMA_2            ;
-    localparam BITS_FRA_FMA_2             = `BITS_FRA_FMA_2            ;
-    localparam LATENCY_FMA_1              = `LATENCY_FMA_1             ;
-    localparam LATENCY_FMA_2              = `LATENCY_FMA_2             ;
-    localparam LATENCY_FIXED_2_FLOAT      = `LATENCY_FIXED_2_FLOAT     ;
-    localparam LATENCY_CYCLIC_REG         = `LATENCY_CYCLIC_REG        ;
-    localparam LATENCY_FLOAT_UPSIZE       = `LATENCY_FLOAT_UPSIZE      ;
-    localparam LATENCY_FLOAT_DOWNSIZE     = `LATENCY_FLOAT_DOWNSIZE    ;
-    localparam I_IS_NOT_MAX               = `I_IS_NOT_MAX              ;
-    localparam I_IS_MAX                   = `I_IS_MAX                  ;
     localparam I_IS_1X1                   = `I_IS_1X1                  ;
-    localparam I_IS_LRELU                 = `I_IS_LRELU                ;
-    localparam I_IS_TOP_BLOCK             = `I_IS_TOP_BLOCK            ;
-    localparam I_IS_BOTTOM_BLOCK          = `I_IS_BOTTOM_BLOCK         ;
-    localparam I_IS_LEFT_COL              = `I_IS_LEFT_COL             ;
-    localparam I_IS_RIGHT_COL             = `I_IS_RIGHT_COL            ;
+    localparam I_KERNEL_H_1               = `I_KERNEL_H_1              ;
     localparam TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN    ;
-    localparam TUSER_WIDTH_LRELU_FMA_1_IN = `TUSER_WIDTH_LRELU_FMA_1_IN;
     localparam TUSER_WIDTH_LRELU_IN       = `TUSER_WIDTH_LRELU_IN      ;
-    
+    localparam BITS_CONFIG_COUNT          = `BITS_CONFIG_COUNT         ;
+    localparam KERNEL_H_MAX               = `KERNEL_H_MAX              ;
+    localparam KERNEL_W_MAX               = `KERNEL_W_MAX              ;
+    localparam BITS_KERNEL_W              = `BITS_KERNEL_W             ;
+    localparam BITS_KERNEL_H              = `BITS_KERNEL_H             ;
+
     localparam WORD_BYTES_IN = WORD_WIDTH_IN/8;
 
     input  wire aclk, aresetn;
     input  wire s_axis_tvalid, s_axis_tlast, m_axis_tready;
-    output wire m_axis_tvalid;
+    output wire m_axis_tvalid, m_axis_tlast;
     output reg  s_axis_tready;
     input  wire [MEMBERS*TUSER_WIDTH_LRELU_IN  -1:0] s_axis_tuser;
     output wire [TUSER_WIDTH_MAXPOOL_IN-1:0] m_axis_tuser;
@@ -94,13 +76,25 @@ module axis_lrelu_engine (
 
     wire [COPIES * GROUPS * UNITS * WORD_WIDTH_IN -1:0] s_data_e;
     wire [COPIES * GROUPS * UNITS * WORD_WIDTH_OUT-1:0] m_data_e;
-    wire s_valid_e, s_last_e, m_valid_e;
+    wire s_valid_e, s_last_e, m_valid_e, m_last_e;
     wire [TUSER_WIDTH_LRELU_IN  -1:0] s_user_e;
     wire [TUSER_WIDTH_MAXPOOL_IN-1:0] m_user_e;
     wire s_ready_slice;
 
 
     localparam BYTES_IN = WORD_WIDTH_IN/8;
+
+    wire [BITS_CONFIG_COUNT-1:0] beats_config_1_lut [KERNEL_H_MAX-1:0][KERNEL_W_MAX-1:0];
+    generate
+      for(genvar kh2=0; kh2<=KERNEL_H_MAX/2; kh2=kh2+1) begin
+        for(genvar kw2=0; kw2<=KERNEL_W_MAX/2; kw2=kw2+1) begin
+          assign beats_config_1_lut[kh2][kw2] = `BEATS_CONFIG(kh2*2+1,kw2*2+1)-1;
+        end
+      end
+    endgenerate
+
+    wire [BITS_KERNEL_H-1:0] s_axis_tuser_kh_1;
+    assign s_axis_tuser_kh_1 = s_axis_tuser[I_KERNEL_H_1+BITS_KERNEL_H-1 : I_KERNEL_H_1];
 
     /*
       STATE MACHINE
@@ -165,19 +159,6 @@ module axis_lrelu_engine (
     wire [DEBUG_CONFIG_WIDTH_LRELU-3-1:0] debug_config_lrelu_engine;
     assign debug_config = {state,debug_config_lrelu_engine};
 
-    localparam BEATS_CONFIG_BITS = $clog2(BEATS_CONFIG_3X3_2 + 1);
-    wire [BEATS_CONFIG_BITS-1:0] count_config;
-    reg  [BEATS_CONFIG_BITS-1:0] count_config_next;
-    register #(
-      .WORD_WIDTH   (BEATS_CONFIG_BITS), 
-      .RESET_VALUE  (0)
-    ) COUNT_CONFIG (
-      .clock        (aclk   ),
-      .resetn       (aresetn),
-      .clock_enable (handshake ),
-      .data_in      (count_config_next),
-      .data_out     (count_config)
-    );
     localparam FILL_DELAY = 1;
 
     localparam FILL_BITS = $clog2(FILL_DELAY);
@@ -199,6 +180,9 @@ module axis_lrelu_engine (
         - L clocks for first value to come out (and written)
         - L clocks for the rest of the buffer (L+1) to fill 
     */
+    wire dw_s_ready, count_config_full;
+    reg  config_s_valid, dw_s_valid, resetn_config, config_s_ready;
+
     always @ (*) begin
       state_next = state;
       case (state)
@@ -206,16 +190,13 @@ module axis_lrelu_engine (
         BLOCK_S   : if (s_vr_last_dw_out  ) state_next = RESET_S;
         RESET_S   : if (s_ready_slice)      state_next = WRITE_1_S;
         WRITE_1_S : if (handshake)   state_next = WRITE_2_S;
-        WRITE_2_S : if ((count_config == 0) && handshake) 
+        WRITE_2_S : if (count_config_full) 
                       if (s_axis_tuser[I_IS_1X1]) state_next = FILL_S;
                       else                        state_next = PASS_S;
         FILL_S    : if (count_fill == FILL_DELAY && s_ready_slice )   state_next = PASS_S;
         default   : state_next = state;
       endcase
     end
-
-    wire dw_s_ready;
-    reg  config_s_valid, dw_s_valid, resetn_config, config_s_ready;
 
     always @ (*) begin
       case (state)
@@ -225,7 +206,6 @@ module axis_lrelu_engine (
                     s_axis_tready     = dw_s_ready;
                     
                     resetn_config     = 1;
-                    count_config_next = 0;
                     count_fill_next   = 0;
                   end
         BLOCK_S : begin
@@ -234,7 +214,6 @@ module axis_lrelu_engine (
                     s_axis_tready     = 0;
 
                     resetn_config     = 1;
-                    count_config_next = 0;
                     count_fill_next   = 0;
                   end
         RESET_S : begin
@@ -243,7 +222,6 @@ module axis_lrelu_engine (
                     s_axis_tready     = 0;
 
                     resetn_config     = 0;
-                    count_config_next = 0;
                     count_fill_next   = 0;
                   end
         WRITE_1_S:begin
@@ -252,7 +230,6 @@ module axis_lrelu_engine (
                     s_axis_tready     = s_ready_slice;
 
                     resetn_config     = 1;
-                    count_config_next = s_axis_tuser[I_IS_1X1] ? BEATS_CONFIG_1X1_2 : BEATS_CONFIG_3X3_2;
                     count_fill_next   = 0;
                   end
         WRITE_2_S:begin
@@ -261,7 +238,6 @@ module axis_lrelu_engine (
                     s_axis_tready     = s_ready_slice;
 
                     resetn_config     = 1;
-                    count_config_next = count_config - 1;
                     count_fill_next   = 0;
                   end
         FILL_S:   begin
@@ -270,7 +246,6 @@ module axis_lrelu_engine (
                     s_axis_tready     = 0;
 
                     resetn_config     = 1;
-                    count_config_next = 0;
                     count_fill_next   = count_fill + 1;
                   end
         default  :begin
@@ -279,14 +254,10 @@ module axis_lrelu_engine (
                     s_axis_tready     = dw_s_ready;
 
                     resetn_config     = 1;
-                    count_config_next = 0;
                     count_fill_next   = 0;
                   end
       endcase
     end
-    
-    wire is_1x1_config;
-    assign is_1x1_config = s_axis_tuser[I_IS_1X1];
 
     /*
       DATAWIDTH CONVERTER BANKS
@@ -315,28 +286,33 @@ module axis_lrelu_engine (
       .resetn           (aresetn  ),
       .debug_config     (debug_config_lrelu_engine ),
       .s_valid          (s_valid_e),
+      .s_last           (s_last_e ),
       .s_user           (s_user_e ),
       .m_valid          (m_valid_e),
+      .m_last           (m_last_e ),
       .m_user           (m_user_e ),
       .s_data_flat_cgu  (s_data_e ),
       .m_data_flat_cgu  (m_data_e ),
 
       .resetn_config     (resetn_config ),
       .s_valid_config    (config_s_valid),
-      .is_1x1_config     (is_1x1_config ),
-      .s_data_conv_out   (s_axis_tdata  )
+      .config_kh_1       (s_axis_tuser_kh_1 ),
+      .s_data_conv_out   (s_axis_tdata     ),
+      .count_config_full (count_config_full)
     );
 
     axis_reg_slice_lrelu slice (
       .aclk           (aclk           ),
       .aresetn        (aresetn        ),
       .s_axis_tvalid  (m_valid_e      ),
+      .s_axis_tlast   (m_last_e       ),
       .s_axis_tready  (s_ready_slice  ),
       .s_axis_tdata   (m_data_e       ),
       .s_axis_tuser   (m_user_e       ),  
 
       .m_axis_tvalid  (m_axis_tvalid  ),
       .m_axis_tready  (m_axis_tready  ),
+      .m_axis_tlast   (m_axis_tlast   ),
       .m_axis_tdata   (m_axis_tdata   ),
       .m_axis_tuser   (m_axis_tuser   ) 
     );
