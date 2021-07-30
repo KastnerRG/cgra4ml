@@ -5,7 +5,8 @@ import float_ops::*;
 module cyclic_shift_reg #(
   R_DEPTH        = 24     ,
   R_DATA_WIDTH   = 16     ,
-  W_DATA_WIDTH   = 24*8   
+  W_DATA_WIDTH   = 24*8   ,
+  OVERRIDE_W_ADDR= 0
 )(
   clk        ,
   clken      ,
@@ -15,7 +16,8 @@ module cyclic_shift_reg #(
   s_data     ,
   m_data     ,
   r_addr_max ,
-  w_addr_max 
+  w_addr_max ,
+  w_addr_in
 );
   localparam SIZE = R_DEPTH * R_DATA_WIDTH;
   localparam W_DEPTH =  SIZE / W_DATA_WIDTH;
@@ -29,6 +31,7 @@ module cyclic_shift_reg #(
   output logic [R_DATA_WIDTH-1:0] m_data;
   input  logic [R_ADDR_WIDTH-1:0] r_addr_max;
   input  logic [W_ADDR_WIDTH-1:0] w_addr_max;
+  input  logic [W_ADDR_WIDTH-1:0] w_addr_in;
 
   logic [R_DATA_WIDTH-1:0] w_data_in  [RATIO  -1:0];
   assign w_data_in = {>>{s_data}};
@@ -40,18 +43,27 @@ module cyclic_shift_reg #(
   // Write Address
 
   logic [W_ADDR_WIDTH-1:0] w_addr, w_addr_next;
-  assign w_addr_next = (w_addr == w_addr_max) ? 0 : w_addr + 1;
+  generate
+    if (OVERRIDE_W_ADDR)
+      assign w_addr = w_addr_in;
 
-  register #(
-    .WORD_WIDTH   (W_ADDR_WIDTH), 
-    .RESET_VALUE  (0)
-  ) W_ADDR (
-    .clock        (clk           ),
-    .clock_enable (clken && w_en ),
-    .resetn       (resetn        ),
-    .data_in      (w_addr_next   ),
-    .data_out     (w_addr        )
-  );
+    else begin
+      
+      assign w_addr_next = (w_addr == w_addr_max) ? 0 : w_addr + 1;
+
+      register #(
+        .WORD_WIDTH   (W_ADDR_WIDTH), 
+        .RESET_VALUE  (0)
+      ) W_ADDR (
+        .clock        (clk           ),
+        .clock_enable (clken && w_en ),
+        .resetn       (resetn        ),
+        .data_in      (w_addr_next   ),
+        .data_out     (w_addr    )
+      );
+    end
+  endgenerate
+
   logic [R_DEPTH-1:0] w_sel;
 
   generate

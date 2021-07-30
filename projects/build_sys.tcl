@@ -41,6 +41,7 @@ set BITS_FRA_FMA_2  10
 
 set IS_CONV_DW_SLICE 0
 
+set BEATS_CONFIG_MAX   [expr int(1 + 2*$KERNEL_H_MAX)]
 set IM_BLOCKS_MAX      [expr int($IM_ROWS_MAX / $UNITS)]
 set UNITS_EDGES        [expr $UNITS + $KERNEL_H_MAX-1]
 set CORES              [expr $GROUPS * $COPIES]
@@ -50,7 +51,9 @@ set BITS_IM_COLS       [expr int(ceil(log($IM_COLS_MAX)/log(2)))]
 set BITS_IM_ROWS       [expr int(ceil(log($IM_ROWS_MAX)/log(2)))]
 set BITS_IM_CIN        [expr int(ceil(log($IM_CIN_MAX)/log(2)))]
 set BITS_IM_BLOCKS     [expr int(ceil(log($IM_ROWS_MAX/$UNITS)/log(2)))]
-set BITS_CONFIG_COUNT  [expr int(ceil(log($BEATS_CONFIG_3X3)/log(2)))]
+set BITS_CONFIG_COUNT  [expr int(ceil(log($BEATS_CONFIG_MAX)/log(2)))]
+set BITS_MEMBERS       [expr int(ceil(log($MEMBERS)/log(2)))]
+set BITS_KW2           [expr int(ceil(log($KERNEL_W_MAX/2+1)/log(2)))]
 set M_DATA_WIDTH       [expr $WORD_WIDTH * 2**int(ceil(log($GROUPS * $UNITS_EDGES)/log(2)))]
 
 set IM_IN_S_DATA_WORDS   [expr 2**int(ceil(log($UNITS_EDGES)/log(2)))]
@@ -59,9 +62,6 @@ set WORD_WIDTH_LRELU_2   [expr 1 + $BITS_EXP_FMA_2 + $BITS_FRA_FMA_2]
 set WORD_WIDTH_LRELU_OUT $WORD_WIDTH
 set TKEEP_WIDTH_IM_IN    [expr $WORD_WIDTH * 2**int(ceil(log($UNITS_EDGES)/log(2))) /8]
 
-set BEATS_CONFIG_3X3_1 [expr $BEATS_CONFIG_3X3-1]
-set BEATS_CONFIG_1X1_1 [expr $BEATS_CONFIG_1X1-1]
-
 set BITS_FMA_1 [expr $BITS_FRA_FMA_1 + $BITS_EXP_FMA_1 + 1]
 set BITS_FMA_2 [expr $BITS_FRA_FMA_2 + $BITS_EXP_FMA_2 + 1]
 
@@ -69,9 +69,9 @@ set BITS_FMA_2 [expr $BITS_FRA_FMA_2 + $BITS_EXP_FMA_2 + 1]
 set I_IMAGE_IS_NOT_MAX       0
 set I_IMAGE_IS_MAX           [expr $I_IMAGE_IS_NOT_MAX + 1]
 set I_IMAGE_IS_LRELU         [expr $I_IMAGE_IS_MAX     + 1]
-set I_IMAGE_KERNEL_H_1       [expr $I_IMAGE_IS_LRELU   + 1] 
-set TUSER_WIDTH_IM_SHIFT_IN  [expr $I_IMAGE_KERNEL_H_1 + $BITS_KERNEL_H]
-set TUSER_WIDTH_IM_SHIFT_OUT [expr $I_IMAGE_IS_LRELU   + 1]
+set I_KERNEL_H_1             [expr $I_IMAGE_IS_LRELU   + 1] 
+set TUSER_WIDTH_IM_SHIFT_IN  [expr $I_KERNEL_H_1       + $BITS_KERNEL_H]
+set TUSER_WIDTH_IM_SHIFT_OUT [expr $I_KERNEL_H_1       + $BITS_KERNEL_H]
 
 # WEIGHTS TUSER INDICES
 set I_WEIGHTS_IS_TOP_BLOCK     0
@@ -87,7 +87,8 @@ set TUSER_WIDTH_WEIGHTS_OUT    [expr $I_WEIGHTS_KERNEL_W_1 + $BITS_KERNEL_W]
 set I_IS_NOT_MAX      0
 set I_IS_MAX          [expr $I_IS_NOT_MAX      + 1]
 set I_IS_1X1          [expr $I_IS_MAX          + 1]
-set I_IS_LRELU        [expr $I_IS_1X1          + 1]
+set I_KERNEL_H_1      [expr $I_IS_1X1          + 1]
+set I_IS_LRELU        [expr $I_KERNEL_H_1      + $BITS_KERNEL_H]
 set I_IS_TOP_BLOCK    [expr $I_IS_LRELU        + 1]
 set I_IS_BOTTOM_BLOCK [expr $I_IS_TOP_BLOCK    + 1]
 set I_IS_COLS_1_K2    [expr $I_IS_BOTTOM_BLOCK + 1]
@@ -95,11 +96,10 @@ set I_IS_CONFIG       [expr $I_IS_COLS_1_K2    + 1]
 set I_IS_CIN_LAST     [expr $I_IS_CONFIG       + 1]
 set I_KERNEL_W_1      [expr $I_IS_CIN_LAST     + 1]
 
-set I_IS_LEFT_COL     [expr $I_IS_BOTTOM_BLOCK + 1]
-set I_IS_RIGHT_COL    [expr $I_IS_LEFT_COL     + 1]
+set I_CLR             [expr $I_IS_BOTTOM_BLOCK + 1]
 
 set TUSER_WIDTH_MAXPOOL_IN     [expr 1 + $I_IS_1X1      ]
-set TUSER_WIDTH_LRELU_IN       [expr 1 + $I_IS_RIGHT_COL]
+set TUSER_WIDTH_LRELU_IN       [expr $BITS_KERNEL_W + $I_CLR]
 set TUSER_WIDTH_LRELU_FMA_1_IN [expr 1 + $I_IS_LRELU    ]
 set TUSER_WIDTH_CONV_IN        [expr $BITS_KERNEL_W + $I_KERNEL_W_1]
 
@@ -130,13 +130,17 @@ Parameters of the system. Written from build.tcl
 `define WORD_WIDTH_ACC      $WORD_WIDTH_ACC    
 `define KERNEL_H_MAX        $KERNEL_H_MAX      
 `define KERNEL_W_MAX        $KERNEL_W_MAX      
-`define BEATS_CONFIG_3X3_1  $BEATS_CONFIG_3X3_1
-`define BEATS_CONFIG_1X1_1  $BEATS_CONFIG_1X1_1
 
-`define BITS_KERNEL_H     $BITS_KERNEL_H
-`define BITS_KERNEL_W     $BITS_KERNEL_W
 `define TKEEP_WIDTH_IM_IN $TKEEP_WIDTH_IM_IN
+`define BITS_KERNEL_W     $BITS_KERNEL_W    
+`define BITS_KERNEL_H     $BITS_KERNEL_H    
+`define BITS_IM_COLS      $BITS_IM_COLS     
+`define BITS_IM_ROWS      $BITS_IM_ROWS     
+`define BITS_IM_CIN       $BITS_IM_CIN      
+`define BITS_IM_BLOCKS    $BITS_IM_BLOCKS   
 `define BITS_CONFIG_COUNT $BITS_CONFIG_COUNT
+`define BITS_MEMBERS      $BITS_MEMBERS     
+`define BITS_KW2          $BITS_KW2         
 
 `define DEBUG_CONFIG_WIDTH_W_ROT   $DEBUG_CONFIG_WIDTH_W_ROT  
 `define DEBUG_CONFIG_WIDTH_IM_PIPE $DEBUG_CONFIG_WIDTH_IM_PIPE
@@ -150,16 +154,16 @@ Parameters of the system. Written from build.tcl
 `define I_IMAGE_IS_NOT_MAX        $I_IMAGE_IS_NOT_MAX      
 `define I_IMAGE_IS_MAX            $I_IMAGE_IS_MAX          
 `define I_IMAGE_IS_LRELU          $I_IMAGE_IS_LRELU        
-`define I_IMAGE_KERNEL_H_1        $I_IMAGE_KERNEL_H_1       
 `define TUSER_WIDTH_IM_SHIFT_IN   $TUSER_WIDTH_IM_SHIFT_IN 
 `define TUSER_WIDTH_IM_SHIFT_OUT  $TUSER_WIDTH_IM_SHIFT_OUT
 
 `define IM_CIN_MAX       $IM_CIN_MAX      
 `define IM_BLOCKS_MAX    $IM_BLOCKS_MAX   
 `define IM_COLS_MAX      $IM_COLS_MAX     
-`define S_WEIGHTS_WIDTH $S_WEIGHTS_WIDTH
+`define S_WEIGHTS_WIDTH  $S_WEIGHTS_WIDTH
 `define M_DATA_WIDTH     $M_DATA_WIDTH
 `define LRELU_ALPHA      $LRELU_ALPHA     
+`define BEATS_CONFIG_MAX $BEATS_CONFIG_MAX
 /*
   LATENCIES & float widths
 */
@@ -195,6 +199,7 @@ Parameters of the system. Written from build.tcl
 `define I_IS_NOT_MAX         $I_IS_NOT_MAX       
 `define I_IS_MAX             $I_IS_MAX           
 `define I_IS_1X1             $I_IS_1X1           
+`define I_KERNEL_H_1         $I_KERNEL_H_1      
 `define I_IS_LRELU           $I_IS_LRELU         
 `define I_IS_TOP_BLOCK       $I_IS_TOP_BLOCK     
 `define I_IS_BOTTOM_BLOCK    $I_IS_BOTTOM_BLOCK  
@@ -206,13 +211,18 @@ Parameters of the system. Written from build.tcl
 /*
   LRELU & MAXPOOL TUSER INDICES
 */
-`define I_IS_LEFT_COL        $I_IS_LEFT_COL 
-`define I_IS_RIGHT_COL       $I_IS_RIGHT_COL
+`define I_CLR                $I_CLR
 
 `define TUSER_WIDTH_MAXPOOL_IN     $TUSER_WIDTH_MAXPOOL_IN    
 `define TUSER_WIDTH_LRELU_FMA_1_IN $TUSER_WIDTH_LRELU_FMA_1_IN
 `define TUSER_WIDTH_LRELU_IN       $TUSER_WIDTH_LRELU_IN      
 `define IS_CONV_DW_SLICE           $IS_CONV_DW_SLICE
+
+/*
+  Macro functions
+*/
+`define BEATS_CONFIG(KH,KW) 1+ 2*(2/KW + 2%KW) + 2*KH
+`define CEIL(N,D) N/D + (N%D != 0)
 "
 close $file_param
 
@@ -248,7 +258,7 @@ set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $
 set IP_NAME "bram_weights"
 lappend IP_NAMES $IP_NAME
 set R_WIDTH [expr "$WORD_WIDTH   * $CORES * $MEMBERS"]
-set R_DEPTH [expr "$KERNEL_H_MAX * $IM_CIN_MAX + $BEATS_CONFIG_3X3_1"]
+set R_DEPTH [expr "$KERNEL_H_MAX * $IM_CIN_MAX + ($BEATS_CONFIG_MAX-1)"]
 set W_WIDTH [expr "$R_WIDTH"]
 set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
@@ -392,7 +402,7 @@ set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $
 set IP_NAME "axis_reg_slice_lrelu"
 lappend IP_NAMES $IP_NAME
 set DATA_BYTES [expr "$GROUPS * $COPIES * $UNITS * $WORD_WIDTH    / 8"]
-set T_LAST 0
+set T_LAST 1
 set T_KEEP 0
 set TUSER_WIDTH $TUSER_WIDTH_MAXPOOL_IN
 create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
@@ -402,7 +412,7 @@ set IP_NAME "fixed_to_float_active"
 lappend IP_NAMES $IP_NAME
 set TUSER_WIDTH $TUSER_WIDTH_LRELU_IN
 create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME
-set_property -dict [list CONFIG.Operation_Type {Fixed_to_float} CONFIG.A_Precision_Type {Custom} CONFIG.C_A_Exponent_Width $WORD_WIDTH_ACC CONFIG.Flow_Control {NonBlocking} CONFIG.C_A_Fraction_Width {0} CONFIG.Result_Precision_Type {Custom} CONFIG.C_Result_Exponent_Width $BITS_EXP_FMA_1 CONFIG.C_Result_Fraction_Width [expr $BITS_FRA_FMA_1 + 1] CONFIG.C_Accum_Msb {32} CONFIG.C_Accum_Lsb {-31} CONFIG.C_Accum_Input_Msb {32} CONFIG.C_Mult_Usage {No_Usage} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Latency $LATENCY_FIXED_2_FLOAT CONFIG.C_Rate {1} CONFIG.Has_ACLKEN {true} CONFIG.Has_A_TUSER {true} CONFIG.A_TUSER_Width $TUSER_WIDTH ] [get_ips $IP_NAME]
+set_property -dict [list CONFIG.Operation_Type {Fixed_to_float} CONFIG.A_Precision_Type {Custom} CONFIG.C_A_Exponent_Width $WORD_WIDTH_ACC CONFIG.Flow_Control {NonBlocking} CONFIG.C_A_Fraction_Width {0} CONFIG.Result_Precision_Type {Custom} CONFIG.C_Result_Exponent_Width $BITS_EXP_FMA_1 CONFIG.C_Result_Fraction_Width [expr $BITS_FRA_FMA_1 + 1] CONFIG.C_Accum_Msb {32} CONFIG.C_Accum_Lsb {-31} CONFIG.C_Accum_Input_Msb {32} CONFIG.C_Mult_Usage {No_Usage} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Latency $LATENCY_FIXED_2_FLOAT CONFIG.C_Rate {1} CONFIG.Has_ACLKEN {true} CONFIG.Has_A_TUSER {true} CONFIG.A_TUSER_Width $TUSER_WIDTH CONFIG.Has_A_TLAST {true} CONFIG.RESULT_TLAST_Behv {Pass_A_TLAST}] [get_ips $IP_NAME]
 
 set IP_NAME "fixed_to_float"
 lappend IP_NAMES $IP_NAME
@@ -414,7 +424,7 @@ lappend IP_NAMES $IP_NAME
 set LATENCY $LATENCY_FMA_1
 set TUSER_WIDTH $TUSER_WIDTH_LRELU_FMA_1_IN
 create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME
-set_property -dict [list  CONFIG.Operation_Type {FMA} CONFIG.Add_Sub_Value {Add} CONFIG.C_Mult_Usage {Medium_Usage} CONFIG.Flow_Control {NonBlocking} CONFIG.Has_ACLKEN {true} CONFIG.Has_ARESETn {false} CONFIG.A_Precision_Type {Custom} CONFIG.C_A_Exponent_Width $BITS_EXP_FMA_1 CONFIG.C_A_Fraction_Width [expr $BITS_FRA_FMA_1 + 1] CONFIG.Result_Precision_Type {Custom} CONFIG.C_Result_Exponent_Width $BITS_EXP_FMA_1 CONFIG.C_Result_Fraction_Width [expr $BITS_FRA_FMA_1 + 1] CONFIG.Has_RESULT_TREADY {false} CONFIG.Maximum_Latency {false} CONFIG.C_Latency $LATENCY CONFIG.C_Rate {1} CONFIG.Has_A_TLAST {false} CONFIG.Has_A_TUSER {true} CONFIG.A_TUSER_Width $TUSER_WIDTH ] [get_ips $IP_NAME]
+set_property -dict [list  CONFIG.Operation_Type {FMA} CONFIG.Add_Sub_Value {Add} CONFIG.C_Mult_Usage {Medium_Usage} CONFIG.Flow_Control {NonBlocking} CONFIG.Has_ACLKEN {true} CONFIG.Has_ARESETn {false} CONFIG.A_Precision_Type {Custom} CONFIG.C_A_Exponent_Width $BITS_EXP_FMA_1 CONFIG.C_A_Fraction_Width [expr $BITS_FRA_FMA_1 + 1] CONFIG.Result_Precision_Type {Custom} CONFIG.C_Result_Exponent_Width $BITS_EXP_FMA_1 CONFIG.C_Result_Fraction_Width [expr $BITS_FRA_FMA_1 + 1] CONFIG.Has_RESULT_TREADY {false} CONFIG.Maximum_Latency {false} CONFIG.C_Latency $LATENCY CONFIG.C_Rate {1} CONFIG.Has_A_TLAST {false} CONFIG.Has_A_TUSER {true} CONFIG.A_TUSER_Width $TUSER_WIDTH CONFIG.Has_A_TLAST {true} CONFIG.RESULT_TLAST_Behv {Pass_A_TLAST}] [get_ips $IP_NAME]
 
 set IP_NAME "fma_1"
 lappend IP_NAMES $IP_NAME
@@ -427,7 +437,7 @@ lappend IP_NAMES $IP_NAME
 set LATENCY $LATENCY_FMA_2
 set TUSER_WIDTH $TUSER_WIDTH_MAXPOOL_IN
 create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME
-set_property -dict [list  CONFIG.Operation_Type {FMA} CONFIG.Add_Sub_Value {Add} CONFIG.C_Mult_Usage {Medium_Usage} CONFIG.Flow_Control {NonBlocking} CONFIG.Has_ACLKEN {true} CONFIG.Has_ARESETn {false} CONFIG.A_Precision_Type {Custom} CONFIG.C_A_Exponent_Width $BITS_EXP_FMA_2 CONFIG.C_A_Fraction_Width [expr $BITS_FRA_FMA_2 + 1] CONFIG.Result_Precision_Type {Custom} CONFIG.C_Result_Exponent_Width $BITS_EXP_FMA_2 CONFIG.C_Result_Fraction_Width [expr $BITS_FRA_FMA_2 + 1] CONFIG.Has_RESULT_TREADY {false} CONFIG.Maximum_Latency {false} CONFIG.C_Latency $LATENCY CONFIG.C_Rate {1} CONFIG.Has_A_TUSER {true} CONFIG.A_TUSER_Width $TUSER_WIDTH ] [get_ips $IP_NAME]
+set_property -dict [list  CONFIG.Operation_Type {FMA} CONFIG.Add_Sub_Value {Add} CONFIG.C_Mult_Usage {Medium_Usage} CONFIG.Flow_Control {NonBlocking} CONFIG.Has_ACLKEN {true} CONFIG.Has_ARESETn {false} CONFIG.A_Precision_Type {Custom} CONFIG.C_A_Exponent_Width $BITS_EXP_FMA_2 CONFIG.C_A_Fraction_Width [expr $BITS_FRA_FMA_2 + 1] CONFIG.Result_Precision_Type {Custom} CONFIG.C_Result_Exponent_Width $BITS_EXP_FMA_2 CONFIG.C_Result_Fraction_Width [expr $BITS_FRA_FMA_2 + 1] CONFIG.Has_RESULT_TREADY {false} CONFIG.Maximum_Latency {false} CONFIG.C_Latency $LATENCY CONFIG.C_Rate {1} CONFIG.Has_A_TUSER {true} CONFIG.A_TUSER_Width $TUSER_WIDTH CONFIG.Has_A_TLAST {true} CONFIG.RESULT_TLAST_Behv {Pass_A_TLAST}] [get_ips $IP_NAME]
 
 set IP_NAME "fma_2"
 lappend IP_NAMES $IP_NAME
@@ -440,7 +450,7 @@ set IP_NAME "float_to_fixed_active"
 lappend IP_NAMES $IP_NAME
 set TUSER_WIDTH $TUSER_WIDTH_MAXPOOL_IN
 create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME
-set_property -dict [list  CONFIG.Operation_Type {Float_to_fixed} CONFIG.C_Mult_Usage {No_Usage} CONFIG.Flow_Control {NonBlocking} CONFIG.Has_ACLKEN {true} CONFIG.Has_ARESETn {false} CONFIG.A_Precision_Type {Custom} CONFIG.C_A_Exponent_Width $BITS_EXP_FMA_2 CONFIG.C_A_Fraction_Width [expr $BITS_FRA_FMA_2 + 1] CONFIG.C_Result_Exponent_Width $WORD_WIDTH CONFIG.C_Result_Fraction_Width {0} CONFIG.Result_Precision_Type {Custom} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Latency {5} CONFIG.C_Rate {1} CONFIG.Has_A_TUSER {true} CONFIG.A_TUSER_Width $TUSER_WIDTH ] [get_ips $IP_NAME]
+set_property -dict [list  CONFIG.Operation_Type {Float_to_fixed} CONFIG.C_Mult_Usage {No_Usage} CONFIG.Flow_Control {NonBlocking} CONFIG.Has_ACLKEN {true} CONFIG.Has_ARESETn {false} CONFIG.A_Precision_Type {Custom} CONFIG.C_A_Exponent_Width $BITS_EXP_FMA_2 CONFIG.C_A_Fraction_Width [expr $BITS_FRA_FMA_2 + 1] CONFIG.C_Result_Exponent_Width $WORD_WIDTH CONFIG.C_Result_Fraction_Width {0} CONFIG.Result_Precision_Type {Custom} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Latency {5} CONFIG.C_Rate {1} CONFIG.Has_A_TUSER {true} CONFIG.A_TUSER_Width $TUSER_WIDTH CONFIG.Has_A_TLAST {true} CONFIG.RESULT_TLAST_Behv {Pass_A_TLAST}] [get_ips $IP_NAME]
 
 set IP_NAME "float_to_fixed"
 lappend IP_NAMES $IP_NAME
@@ -466,24 +476,6 @@ set BITS_EXP_OUT $BITS_EXP_FMA_1
 set LATENCY $LATENCY_FLOAT_UPSIZE
 create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.Operation_Type {Float_to_float} CONFIG.A_Precision_Type {Custom} CONFIG.Result_Precision_Type {Custom} CONFIG.C_Result_Exponent_Width $BITS_EXP_OUT CONFIG.C_Result_Fraction_Width $BITS_FRA_OUT CONFIG.Flow_Control {NonBlocking} CONFIG.Maximum_Latency {false} CONFIG.C_Latency $LATENCY CONFIG.C_A_Exponent_Width $BITS_EXP_IN CONFIG.C_A_Fraction_Width $BITS_FRA_IN CONFIG.C_Mult_Usage {No_Usage} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Rate {1} CONFIG.Has_ACLKEN {true}] [get_ips $IP_NAME]
-
-# set IP_NAME "bram_lrelu"
-# lappend IP_NAMES $IP_NAME
-# set R_WIDTH 16
-# set R_DEPTH [expr "$MEMBERS"]
-# set W_WIDTH [expr "$MEMBERS * $WORD_WIDTH   "]
-# set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
-# create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
-# set_property -dict [list  CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A $W_WIDTH CONFIG.Write_Depth_A $W_DEPTH CONFIG.Read_Width_A $W_WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $R_WIDTH CONFIG.Read_Width_B $R_WIDTH CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100} CONFIG.Register_PortB_Output_of_Memory_Core {true} ] [get_ips $IP_NAME]
-
-# set IP_NAME "bram_lrelu_edge"
-# lappend IP_NAMES $IP_NAME
-# set R_WIDTH 16
-# set R_DEPTH [expr "$MEMBERS / $KERNEL_W_MAX"]
-# set W_WIDTH [expr "$MEMBERS * $WORD_WIDTH  / $KERNEL_H_MAX"]
-# set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
-# create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
-# set_property -dict [list  CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A $W_WIDTH CONFIG.Write_Depth_A $W_DEPTH CONFIG.Read_Width_A $W_WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $R_WIDTH CONFIG.Read_Width_B $R_WIDTH CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100} CONFIG.Register_PortB_Output_of_Memory_Core {true} ] [get_ips $IP_NAME]
 
 #*********** MAXPOOL **********#
 

@@ -25,31 +25,8 @@ module axis_conv_engine (
   localparam UNITS               = `UNITS               ;
   localparam WORD_WIDTH_IN       = `WORD_WIDTH          ; 
   localparam WORD_WIDTH_OUT      = `WORD_WIDTH_ACC      ; 
-  localparam LATENCY_ACCUMULATOR = `LATENCY_ACCUMULATOR ;
-  localparam LATENCY_MULTIPLIER  = `LATENCY_MULTIPLIER  ;
-  localparam KERNEL_W_MAX        = `KERNEL_W_MAX        ; 
-  localparam KERNEL_H_MAX        = `KERNEL_H_MAX        ;   // odd number
-  localparam IM_CIN_MAX          = `IM_CIN_MAX          ;
-  localparam IM_COLS_MAX         = `IM_COLS_MAX         ;
-  localparam I_IS_NOT_MAX        = `I_IS_NOT_MAX        ;
-  localparam I_IS_MAX            = `I_IS_MAX            ;
-  localparam I_IS_1X1            = `I_IS_1X1            ;
-  localparam I_IS_LRELU          = `I_IS_LRELU          ;
-  localparam I_IS_TOP_BLOCK      = `I_IS_TOP_BLOCK      ;
-  localparam I_IS_BOTTOM_BLOCK   = `I_IS_BOTTOM_BLOCK   ;
-  localparam I_IS_COLS_1_K2      = `I_IS_COLS_1_K2      ;
-  localparam I_IS_CONFIG         = `I_IS_CONFIG         ;
-  localparam I_IS_CIN_LAST       = `I_IS_CIN_LAST       ;
-  localparam I_KERNEL_W_1        = `I_KERNEL_W_1        ; 
-  localparam I_IS_LEFT_COL       = `I_IS_LEFT_COL       ;
-  localparam I_IS_RIGHT_COL      = `I_IS_RIGHT_COL      ;
   localparam TUSER_WIDTH_CONV_IN = `TUSER_WIDTH_CONV_IN ;
   localparam TUSER_WIDTH_CONV_OUT= `TUSER_WIDTH_LRELU_IN;
-
-  localparam BITS_IM_CIN        = $clog2(IM_CIN_MAX);
-  localparam BITS_IM_COLS       = $clog2(IM_COLS_MAX);
-  localparam BITS_KERNEL_W      = $clog2(KERNEL_W_MAX   + 1);
-  localparam BITS_KERNEL_H      = $clog2(KERNEL_H_MAX   + 1);
 
   input  wire aclk;
   input  wire aresetn;

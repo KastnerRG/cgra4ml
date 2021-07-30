@@ -35,7 +35,7 @@ class SysConfig:
     CORES       :int = 0
 
     LRELU_BEATS_1x1 :int = 5
-    LRELU_BEATS_3x3 :int = 9
+    LRELU_BEATS_3x3 :int = 8
 
     def __post_init__(self):
         super().__setattr__('BLOCKS_MAX', self.COLS_MAX//self.CONV_UNITS)
@@ -92,6 +92,23 @@ def get_lrelu_config(i_layers, c, get_params=False):
     **********************
     Say M = 12, KW_max = 3
     **********************
+
+    BEATS_D   = 1
+    BEATS_A   = ceil(2/KW) = ceil(2*SUB_CORES/MEMBERS) = ceil(2*MEMBERS/KW/MEMBERS)
+    BEATS_Bij:
+        
+        kw2_i       = (i+1)/2
+        kw_i        = kw2_i*2 + 1
+
+        WIDTH_Bij   = M/kw_i
+        WRITE_DEPTH = 2*SUB_CORES = 2*M/kw
+        
+        BEATS_Bij   = ceil(WRITE_DEPTH/WIDTH_Bij)
+
+    LUT:
+        BEATS[i][kw2] = ceil((2*M/(kw2*2+1))/(M/(((i+1)/2)*2 + 1)))
+
+    BEATS_kw = sum(Bij)
     
     For kw = 1:
     ----------
@@ -116,7 +133,6 @@ def get_lrelu_config(i_layers, c, get_params=False):
 
     - d        : 2B
     - bram_A   : depth = 4, width = 2B, size = 8B
-    - bram_B_00: depth = 4, width = 2B, size = 8B
     - bram_B_ij: depth = 4, width = 2B, size = 8B
 
     conv_out.shape          = [5][C,G,12]:int32
@@ -125,9 +141,9 @@ def get_lrelu_config(i_layers, c, get_params=False):
     beats (9):
         0: d
         1: A   [0:3]
-        2: B_00[0:3]
-        3: ---------, B_01[0:1], B_02[0:1]   : clr=0
-        4: ---------, B_01[0:1], B_02[0:1]   : clr=0
+        2: B_00[0:1]                         : clr=0
+        3: B_00[0:1], B_01[0:1], B_02[0:1]   : clr=0
+        4: B_00[0:1], B_01[0:1], B_02[0:1]   : clr=0
         5: B_11[0:1], B_11[0:1], B_12[0:1]   : clr=1
         6: B_11[0:1], B_11[0:1], B_12[0:1]   : clr=1
         7: B_21[0:1], B_21[0:1], B_22[0:1]   : clr=2
@@ -213,47 +229,71 @@ def get_lrelu_config(i_layers, c, get_params=False):
     a_icgbv_8 = np.frombuffer(a_icgbv.tobytes(),np.int8).reshape(ITR,c.COPIES,c.GROUPS,BEATS_00,c.MEMBERS)
     a_ibcgv_8 = a_icgbv_8.transpose(0,3,1,2,4)
 
+    lrelu_config_list = [d_ibcgv_8, a_ibcgv_8]
+
     '''
-    B_00 beats 
-        3x3: 1 
-        1x1: 2
+    B_ij beats
+        1x1: 2 = 2 x kw
+        3x3: 6 = 2 x kw 
     '''
     b_iscg_clr_mtb = b_filled.reshape(ITR, SUB_CORES,1,c.COPIES//max_factor,c.GROUPS, KW,KH)
     b_iscg_clr_mtb = np.repeat(b_iscg_clr_mtb,repeats=max_factor,axis=2)
     b_iscg_clr_mtb = b_iscg_clr_mtb.reshape(ITR, SUB_CORES,c.COPIES,c.GROUPS,KW,KH)
 
-    b_iscg_00 = b_iscg_clr_mtb[:,:,:,:,0,0]
-    b_icgs_00 = b_iscg_00.transpose(0,2,3,1)
-    b_icgm_00 = np.zeros((ITR,c.COPIES,c.GROUPS, BEATS_00*c.MEMBERS//2), b_icgs_00.dtype)
-    b_icgm_00[:,:,:,0:SUB_CORES] = b_icgs_00
-    b_icgbv_00= b_icgm_00.reshape(ITR,c.COPIES,c.GROUPS,BEATS_00,c.MEMBERS//2)
-    b_icgbv_00_8 = np.frombuffer(b_icgbv_00.tobytes(),np.int8).reshape(ITR,c.COPIES,c.GROUPS,BEATS_00,c.MEMBERS)
-    b_ibcgv_00_8 = b_icgbv_00_8.transpose(0,3,1,2,4)
+    b_i_mtb_cg_s_clr = b_iscg_clr_mtb.transpose(0,5,2,3,1,4)
+    b_i_mtb_cg_2_s2_clr = b_i_mtb_cg_s_clr.reshape(ITR,KH, c.COPIES,c.GROUPS,2,SUB_CORES//2,KW)
+    b_i_mtb_cg_2_clr_s2 = b_i_mtb_cg_2_s2_clr.transpose(0,1,2,3,4,6,5)
+    b_i_mtb_cgm = np.zeros((ITR,KW, c.COPIES,c.GROUPS,c.MEMBERS), b_i_mtb_cg_2_clr_s2.dtype)
+    b_i_mtb_cgm[:,:,:,:,0:KH*SUB_CORES] = b_i_mtb_cg_2_clr_s2.reshape(ITR,KH, c.COPIES,c.GROUPS,SUB_CORES*KW)
+    b_i_mtb_cgbv = b_i_mtb_cgm.reshape(ITR,KH, c.COPIES,c.GROUPS,2,c.MEMBERS//2)
+    b_i_mtb_cgbv_8 = np.frombuffer(b_i_mtb_cgbv.tobytes(),np.int8).reshape(ITR,KH, c.COPIES,c.GROUPS,2,c.MEMBERS)
+    b_icg_clr_bv_8 = b_i_mtb_cgbv_8.transpose(0,2,3,1,4,5)
+    b_icgbv_8 = b_icg_clr_bv_8.reshape(ITR,c.COPIES,c.GROUPS,2*KH,c.MEMBERS)
+    b_ibcgv_8 = b_icgbv_8.transpose(0,3,1,2,4)
+    
+    lrelu_config_list += [b_ibcgv_8]
 
-    lrelu_config_list = [d_ibcgv_8, a_ibcgv_8, b_ibcgv_00_8]
+    # '''
+    # B_00 beats 
+    #     3x3: 1 
+    #     1x1: 2
+    # '''
+    # b_iscg_clr_mtb = b_filled.reshape(ITR, SUB_CORES,1,c.COPIES//max_factor,c.GROUPS, KW,KH)
+    # b_iscg_clr_mtb = np.repeat(b_iscg_clr_mtb,repeats=max_factor,axis=2)
+    # b_iscg_clr_mtb = b_iscg_clr_mtb.reshape(ITR, SUB_CORES,c.COPIES,c.GROUPS,KW,KH)
 
-    '''
-    B_ij beats 
-        3x3: 6 = 2 x mtb 
-    '''
-    if KW != 1:
-        '''
-        m = 12, s = 4 (m/kh)
-        float_words = 6 (m/2), parallel brams = 3 (kh), per bram: 2 (m/2kh)
-        m -> (2)_mtb(3=kh)_b(2=m/2kh)
-        '''
-        b_i_mtb_cg_s_clr = b_iscg_clr_mtb.transpose(0,5,2,3,1,4)
-        b_i_mtb_cg_2_s2_clr = b_i_mtb_cg_s_clr.reshape(ITR,KH, c.COPIES,c.GROUPS,2,SUB_CORES//2,KW)
-        b_i_mtb_cg_2_clr_s2 = b_i_mtb_cg_2_s2_clr.transpose(0,1,2,3,4,6,5)
-        b_i_mtb_cgm = np.zeros((ITR,KW, c.COPIES,c.GROUPS,c.MEMBERS), b_i_mtb_cg_2_clr_s2.dtype)
-        b_i_mtb_cgm[:,:,:,:,0:KH*SUB_CORES] = b_i_mtb_cg_2_clr_s2.reshape(ITR,KH, c.COPIES,c.GROUPS,SUB_CORES*KW)
-        b_i_mtb_cgbv = b_i_mtb_cgm.reshape(ITR,KH, c.COPIES,c.GROUPS,2,c.MEMBERS//2)
-        b_i_mtb_cgbv_8 = np.frombuffer(b_i_mtb_cgbv.tobytes(),np.int8).reshape(ITR,KH, c.COPIES,c.GROUPS,2,c.MEMBERS)
-        b_icg_clr_bv_8 = b_i_mtb_cgbv_8.transpose(0,2,3,1,4,5)
-        b_icgbv_8 = b_icg_clr_bv_8.reshape(ITR,c.COPIES,c.GROUPS,2*KH,c.MEMBERS)
-        b_ibcgv_8 = b_icgbv_8.transpose(0,3,1,2,4)
+    # b_iscg_00 = b_iscg_clr_mtb[:,:,:,:,0,0]
+    # b_icgs_00 = b_iscg_00.transpose(0,2,3,1)
+    # b_icgm_00 = np.zeros((ITR,c.COPIES,c.GROUPS, BEATS_00*c.MEMBERS//2), b_icgs_00.dtype)
+    # b_icgm_00[:,:,:,0:SUB_CORES] = b_icgs_00
+    # b_icgbv_00= b_icgm_00.reshape(ITR,c.COPIES,c.GROUPS,BEATS_00,c.MEMBERS//2)
+    # b_icgbv_00_8 = np.frombuffer(b_icgbv_00.tobytes(),np.int8).reshape(ITR,c.COPIES,c.GROUPS,BEATS_00,c.MEMBERS)
+    # b_ibcgv_00_8 = b_icgbv_00_8.transpose(0,3,1,2,4)
+
+    # lrelu_config_list = [d_ibcgv_8, a_ibcgv_8, b_ibcgv_00_8]
+
+    # '''
+    # B_ij beats 
+    #     3x3: 6 = 2 x mtb 
+    # '''
+    # if KW != 1:
+    #     '''
+    #     m = 12, s = 4 (m/kh)
+    #     float_words = 6 (m/2), parallel brams = 3 (kh), per bram: 2 (m/2kh)
+    #     m -> (2)_mtb(3=kh)_b(2=m/2kh)
+    #     '''
+    #     b_i_mtb_cg_s_clr = b_iscg_clr_mtb.transpose(0,5,2,3,1,4)
+    #     b_i_mtb_cg_2_s2_clr = b_i_mtb_cg_s_clr.reshape(ITR,KH, c.COPIES,c.GROUPS,2,SUB_CORES//2,KW)
+    #     b_i_mtb_cg_2_clr_s2 = b_i_mtb_cg_2_s2_clr.transpose(0,1,2,3,4,6,5)
+    #     b_i_mtb_cgm = np.zeros((ITR,KW, c.COPIES,c.GROUPS,c.MEMBERS), b_i_mtb_cg_2_clr_s2.dtype)
+    #     b_i_mtb_cgm[:,:,:,:,0:KH*SUB_CORES] = b_i_mtb_cg_2_clr_s2.reshape(ITR,KH, c.COPIES,c.GROUPS,SUB_CORES*KW)
+    #     b_i_mtb_cgbv = b_i_mtb_cgm.reshape(ITR,KH, c.COPIES,c.GROUPS,2,c.MEMBERS//2)
+    #     b_i_mtb_cgbv_8 = np.frombuffer(b_i_mtb_cgbv.tobytes(),np.int8).reshape(ITR,KH, c.COPIES,c.GROUPS,2,c.MEMBERS)
+    #     b_icg_clr_bv_8 = b_i_mtb_cgbv_8.transpose(0,2,3,1,4,5)
+    #     b_icgbv_8 = b_icg_clr_bv_8.reshape(ITR,c.COPIES,c.GROUPS,2*KH,c.MEMBERS)
+    #     b_ibcgv_8 = b_icgbv_8.transpose(0,3,1,2,4)
         
-        lrelu_config_list += [b_ibcgv_8]
+    #     lrelu_config_list += [b_ibcgv_8]
 
     lrelu_config = np.concatenate(lrelu_config_list,axis=1)
 

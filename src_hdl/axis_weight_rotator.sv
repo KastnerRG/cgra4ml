@@ -25,30 +25,9 @@ Additional Comments:
 
 //////////////////////////////////////////////////////////////////////////////////*/
 
-module axis_weight_rotator 
-  #(
-    CORES              ,
-    MEMBERS            ,
-    WORD_WIDTH         , 
-    DEBUG_CONFIG_WIDTH_W_ROT,
-    KERNEL_H_MAX       ,   // odd number
-    KERNEL_W_MAX       ,   // odd number
-    IM_CIN_MAX         ,
-    IM_BLOCKS_MAX      ,
-    IM_COLS_MAX        ,
-    S_WEIGHTS_WIDTH    ,
-    BEATS_CONFIG_3X3_1 ,
-    BEATS_CONFIG_1X1_1 ,
-    LATENCY_BRAM       ,
-    I_WEIGHTS_IS_TOP_BLOCK    ,
-    I_WEIGHTS_IS_BOTTOM_BLOCK ,
-    I_WEIGHTS_IS_1X1          ,
-    I_WEIGHTS_IS_COLS_1_K2    ,
-    I_WEIGHTS_IS_CONFIG       ,
-    I_WEIGHTS_IS_CIN_LAST     ,
-    I_WEIGHTS_KERNEL_W_1      , 
-    TUSER_WIDTH_WEIGHTS_OUT   
-  )(
+`include "params.v"
+
+module axis_weight_rotator (
     aclk         ,
     aresetn      ,
     debug_config ,
@@ -64,18 +43,38 @@ module axis_weight_rotator
     m_axis_tuser  
   );
 
-  localparam BITS_KERNEL_W        = $clog2(KERNEL_W_MAX);
-  localparam BITS_KERNEL_H        = $clog2(KERNEL_H_MAX);
-  localparam BITS_CONFIG_COUNT    = $clog2(BEATS_CONFIG_3X3_1+1);
-  localparam M_WIDTH              = WORD_WIDTH*CORES*MEMBERS;
+  localparam CORES                     = `CORES                    ;
+  localparam MEMBERS                   = `MEMBERS                  ;
+  localparam WORD_WIDTH                = `WORD_WIDTH               ; 
+  localparam DEBUG_CONFIG_WIDTH_W_ROT  = `DEBUG_CONFIG_WIDTH_W_ROT ;
+  localparam KERNEL_H_MAX              = `KERNEL_H_MAX             ;   // odd number
+  localparam KERNEL_W_MAX              = `KERNEL_W_MAX             ;   // odd number
+  localparam IM_CIN_MAX                = `IM_CIN_MAX               ;
+  localparam IM_BLOCKS_MAX             = `IM_BLOCKS_MAX            ;
+  localparam IM_COLS_MAX               = `IM_COLS_MAX              ;
+  localparam S_WEIGHTS_WIDTH           = `S_WEIGHTS_WIDTH          ;
+  localparam LATENCY_BRAM              = `LATENCY_BRAM             ;
+  localparam I_WEIGHTS_IS_TOP_BLOCK    = `I_WEIGHTS_IS_TOP_BLOCK   ;
+  localparam I_WEIGHTS_IS_BOTTOM_BLOCK = `I_WEIGHTS_IS_BOTTOM_BLOCK;
+  localparam I_WEIGHTS_IS_1X1          = `I_WEIGHTS_IS_1X1         ;
+  localparam I_WEIGHTS_IS_COLS_1_K2    = `I_WEIGHTS_IS_COLS_1_K2   ;
+  localparam I_WEIGHTS_IS_CONFIG       = `I_WEIGHTS_IS_CONFIG      ;
+  localparam I_WEIGHTS_IS_CIN_LAST     = `I_WEIGHTS_IS_CIN_LAST    ;
+  localparam I_WEIGHTS_KERNEL_W_1      = `I_WEIGHTS_KERNEL_W_1     ; 
+  localparam TUSER_WIDTH_WEIGHTS_OUT   = `TUSER_WIDTH_WEIGHTS_OUT  ;
+  localparam BITS_KERNEL_W             = `BITS_KERNEL_W            ;
+  localparam BITS_KERNEL_H             = `BITS_KERNEL_H            ;
+  localparam BITS_CONFIG_COUNT         = `BITS_CONFIG_COUNT        ;
+  localparam BITS_IM_CIN               = `BITS_IM_CIN   ;
+  localparam BITS_IM_BLOCKS            = `BITS_IM_BLOCKS;
+  localparam BITS_IM_COLS              = `BITS_IM_COLS  ;
 
+
+  localparam M_WIDTH    = WORD_WIDTH*CORES*MEMBERS;
   localparam BRAM_WIDTH = M_WIDTH;
-  localparam BRAM_DEPTH = KERNEL_H_MAX * IM_CIN_MAX + BEATS_CONFIG_3X3_1;
-
-  localparam BITS_ADDR       = $clog2(BRAM_DEPTH);
-  localparam BITS_IM_CIN     = $clog2(IM_CIN_MAX);
-  localparam BITS_IM_BLOCKS  = $clog2(IM_BLOCKS_MAX);
-  localparam BITS_IM_COLS    = $clog2(IM_COLS_MAX);
+  localparam BEATS_CONFIG_MAX_1 = `BEATS_CONFIG_MAX-1;
+  localparam BRAM_DEPTH = KERNEL_H_MAX * IM_CIN_MAX + BEATS_CONFIG_MAX_1;
+  localparam BITS_ADDR  = $clog2(BRAM_DEPTH);
 
   input logic aclk;
   input logic aresetn;
@@ -140,6 +139,17 @@ module axis_weight_rotator
                         ref_1_kh[1], ref_1_cin[1], ref_1_cols[1], ref_1_blocks[1], 
                         count_kh, count_cin, count_cols, count_blocks};
   
+
+  // Total lut
+  localparam BEATS_TOTAL_MAX = lrelu_beats::calc_beats_total_max (.KERNEL_W_MAX(KERNEL_W_MAX), .MEMBERS(MEMBERS));
+  localparam BITS_BEATS_TOTAL = $clog2(BEATS_TOTAL_MAX+1);
+  logic [BITS_BEATS_TOTAL-1:0] lut_lrelu_beats_1 [KERNEL_W_MAX/2:0];
+  generate
+    for (genvar KW2=0; KW2 <= KERNEL_W_MAX/2; KW2++)
+      assign lut_lrelu_beats_1[KW2] = lrelu_beats::calc_beats_total (.kw2(KW2), .MEMBERS(MEMBERS)) -1;
+  endgenerate
+
+
   localparam DW_BLOCK_S = 0;
   localparam DW_PASS_S  = 1;
 
@@ -210,7 +220,7 @@ module axis_weight_rotator
   always_comb begin
 
     en_count_config   = 0;
-    count_next_config = (ref_1_kh[i_read] == 0) ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
+    count_next_config = lut_lrelu_beats_1[ref_1_kh[i_read]/2];
     m_axis_tvalid     = 0;
 
     unique case (state_read)
@@ -323,7 +333,7 @@ module axis_weight_rotator
   
   // s_addr_max = (s_kh_1+1)*(s_cin_1+1) = (s_kh_1 * s_cin_1) + s_kh_1 + s_cin_1 +1
   assign s_addr_max = (s_kh_1 * s_cin_1) + s_kh_1 + s_cin_1 + s_addr_min;
-  assign s_addr_min = (s_kh_1==0 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1) + 1;
+  assign s_addr_min = lut_lrelu_beats_1[s_kh_1/2] + 1;
 
 
   generate

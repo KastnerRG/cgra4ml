@@ -1,77 +1,6 @@
 `include "params.v"
 
-module axis_accelerator 
-  #(
-    UNITS                      = `UNITS                     ,
-    GROUPS                     = `GROUPS                    ,
-    COPIES                     = `COPIES                    ,
-    MEMBERS                    = `MEMBERS                   ,
-    WORD_WIDTH                 = `WORD_WIDTH                , 
-    WORD_WIDTH_ACC             = `WORD_WIDTH_ACC            ,
-    KERNEL_H_MAX               = `KERNEL_H_MAX              ,   // odd number
-    KERNEL_W_MAX               = `KERNEL_W_MAX              ,
-    BEATS_CONFIG_3X3_1         = `BEATS_CONFIG_3X3_1        ,
-    BEATS_CONFIG_1X1_1         = `BEATS_CONFIG_1X1_1        ,
-    // IMAGE TUSER INDICES 
-    I_IMAGE_IS_NOT_MAX         = `I_IMAGE_IS_NOT_MAX        ,
-    I_IMAGE_IS_MAX             = `I_IMAGE_IS_MAX            ,
-    I_IMAGE_IS_LRELU           = `I_IMAGE_IS_LRELU          ,
-    I_IMAGE_KERNEL_H_1         = `I_IMAGE_KERNEL_H_1        , 
-    TUSER_WIDTH_IM_SHIFT_IN    = `TUSER_WIDTH_IM_SHIFT_IN   ,
-    TUSER_WIDTH_IM_SHIFT_OUT   = `TUSER_WIDTH_IM_SHIFT_OUT  ,
-    IM_CIN_MAX                 = `IM_CIN_MAX                ,
-    IM_BLOCKS_MAX              = `IM_BLOCKS_MAX             ,
-    IM_COLS_MAX                = `IM_COLS_MAX               ,
-    S_WEIGHTS_WIDTH            = `S_WEIGHTS_WIDTH           ,
-    M_DATA_WIDTH               = `M_DATA_WIDTH              ,
-    LRELU_ALPHA                = `LRELU_ALPHA               ,
-    // DEBUG WIDTHS
-    DEBUG_CONFIG_WIDTH_W_ROT   = `DEBUG_CONFIG_WIDTH_W_ROT  ,
-    DEBUG_CONFIG_WIDTH_IM_PIPE = `DEBUG_CONFIG_WIDTH_IM_PIPE,
-    DEBUG_CONFIG_WIDTH_LRELU   = `DEBUG_CONFIG_WIDTH_LRELU  ,
-    DEBUG_CONFIG_WIDTH_MAXPOOL = `DEBUG_CONFIG_WIDTH_MAXPOOL,
-    DEBUG_CONFIG_WIDTH         = `DEBUG_CONFIG_WIDTH        ,
-    // LATENCIES & float widths 
-    BITS_EXP_CONFIG            = `BITS_EXP_CONFIG           ,
-    BITS_FRA_CONFIG            = `BITS_FRA_CONFIG           ,
-    BITS_EXP_FMA_1             = `BITS_EXP_FMA_1            ,
-    BITS_FRA_FMA_1             = `BITS_FRA_FMA_1            ,
-    BITS_EXP_FMA_2             = `BITS_EXP_FMA_2            ,
-    BITS_FRA_FMA_2             = `BITS_FRA_FMA_2            ,
-    LATENCY_FMA_1              = `LATENCY_FMA_1             ,
-    LATENCY_FMA_2              = `LATENCY_FMA_2             ,
-    LATENCY_FIXED_2_FLOAT      = `LATENCY_FIXED_2_FLOAT     ,
-    LATENCY_BRAM               = `LATENCY_BRAM              ,
-    LATENCY_ACCUMULATOR        = `LATENCY_ACCUMULATOR       ,
-    LATENCY_MULTIPLIER         = `LATENCY_MULTIPLIER        ,
-    // WEIGHTS TUSER INDICES
-    I_WEIGHTS_IS_TOP_BLOCK     = `I_WEIGHTS_IS_TOP_BLOCK    ,
-    I_WEIGHTS_IS_BOTTOM_BLOCK  = `I_WEIGHTS_IS_BOTTOM_BLOCK ,
-    I_WEIGHTS_IS_1X1           = `I_WEIGHTS_IS_1X1          ,
-    I_WEIGHTS_IS_COLS_1_K2     = `I_WEIGHTS_IS_COLS_1_K2    ,
-    I_WEIGHTS_IS_CONFIG        = `I_WEIGHTS_IS_CONFIG       ,
-    I_WEIGHTS_IS_CIN_LAST      = `I_WEIGHTS_IS_CIN_LAST     ,
-    I_WEIGHTS_KERNEL_W_1       = `I_WEIGHTS_KERNEL_W_1      , 
-    TUSER_WIDTH_WEIGHTS_OUT    = `TUSER_WIDTH_WEIGHTS_OUT   ,
-    // CONV TUSER INDICES
-    I_IS_NOT_MAX               = `I_IS_NOT_MAX              ,
-    I_IS_MAX                   = `I_IS_MAX                  ,
-    I_IS_1X1                   = `I_IS_1X1                  ,
-    I_IS_LRELU                 = `I_IS_LRELU                ,
-    I_IS_TOP_BLOCK             = `I_IS_TOP_BLOCK            ,
-    I_IS_BOTTOM_BLOCK          = `I_IS_BOTTOM_BLOCK         ,
-    I_IS_COLS_1_K2             = `I_IS_COLS_1_K2            ,
-    I_IS_CONFIG                = `I_IS_CONFIG               ,
-    I_IS_CIN_LAST              = `I_IS_CIN_LAST             ,
-    I_KERNEL_W_1               = `I_KERNEL_W_1              , 
-    TUSER_WIDTH_CONV_IN        = `TUSER_WIDTH_CONV_IN       ,
-    // LRELU & MAXPOOL TUSER INDICES
-    I_IS_LEFT_COL              = `I_IS_LEFT_COL             ,
-    I_IS_RIGHT_COL             = `I_IS_RIGHT_COL            ,
-    TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN    ,
-    TUSER_WIDTH_LRELU_FMA_1_IN = `TUSER_WIDTH_LRELU_FMA_1_IN,
-    TUSER_WIDTH_LRELU_IN       = `TUSER_WIDTH_LRELU_IN      
-  )(
+module axis_accelerator (
     aclk                  ,
     aresetn               ,
     debug_config          ,
@@ -113,6 +42,7 @@ module axis_accelerator
     conv_dw_m_axis_tdata  ,
 
     lrelu_m_axis_tvalid   ,
+    lrelu_m_axis_tlast    ,
     lrelu_m_axis_tready   ,
     lrelu_m_axis_tuser    ,
     lrelu_m_axis_tdata    ,
@@ -130,13 +60,31 @@ module axis_accelerator
     m_axis_tlast
   ); 
 
-  parameter CORES             = `CORES               ;
-  parameter UNITS_EDGES       = `UNITS_EDGES         ;
-  parameter IM_IN_S_DATA_WORDS= `IM_IN_S_DATA_WORDS  ;
-  parameter BITS_CONFIG_COUNT = `BITS_CONFIG_COUNT   ;
-  parameter BITS_KERNEL_H     = `BITS_KERNEL_H       ;
-  parameter BITS_KERNEL_W     = `BITS_KERNEL_W       ;
-  parameter TKEEP_WIDTH_IM_IN = `TKEEP_WIDTH_IM_IN   ;
+  localparam CORES             = `CORES               ;
+  localparam UNITS_EDGES       = `UNITS_EDGES         ;
+  localparam IM_IN_S_DATA_WORDS= `IM_IN_S_DATA_WORDS  ;
+  localparam BITS_KERNEL_H     = `BITS_KERNEL_H       ;
+  localparam TKEEP_WIDTH_IM_IN = `TKEEP_WIDTH_IM_IN   ;
+  localparam S_WEIGHTS_WIDTH   = `S_WEIGHTS_WIDTH     ;
+  localparam M_DATA_WIDTH      = `M_DATA_WIDTH        ;
+
+  localparam UNITS                      = `UNITS                ;
+  localparam GROUPS                     = `GROUPS               ;
+  localparam COPIES                     = `COPIES               ;
+  localparam MEMBERS                    = `MEMBERS              ;
+  localparam WORD_WIDTH                 = `WORD_WIDTH           ; 
+  localparam WORD_WIDTH_ACC             = `WORD_WIDTH_ACC       ;
+  // DEBUG WIDTHS
+  localparam DEBUG_CONFIG_WIDTH_W_ROT   = `DEBUG_CONFIG_WIDTH_W_ROT  ;
+  localparam DEBUG_CONFIG_WIDTH_IM_PIPE = `DEBUG_CONFIG_WIDTH_IM_PIPE;
+  localparam DEBUG_CONFIG_WIDTH_LRELU   = `DEBUG_CONFIG_WIDTH_LRELU  ;
+  localparam DEBUG_CONFIG_WIDTH_MAXPOOL = `DEBUG_CONFIG_WIDTH_MAXPOOL;
+  localparam DEBUG_CONFIG_WIDTH         = `DEBUG_CONFIG_WIDTH        ;
+  // LATENCIES & float widths 
+  localparam TUSER_WIDTH_CONV_IN        = `TUSER_WIDTH_CONV_IN       ;
+  localparam TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN    ;
+  localparam TUSER_WIDTH_LRELU_FMA_1_IN = `TUSER_WIDTH_LRELU_FMA_1_IN;
+  localparam TUSER_WIDTH_LRELU_IN       = `TUSER_WIDTH_LRELU_IN      ;
 
   /* WIRES */
 
@@ -185,6 +133,7 @@ module axis_accelerator
   output wire [COPIES*GROUPS*UNITS*WORD_WIDTH_ACC   -1:0] conv_dw_m_axis_tdata;
 
   output wire lrelu_m_axis_tvalid;
+  output wire lrelu_m_axis_tlast;
   input  wire lrelu_m_axis_tready;
   output wire [COPIES*GROUPS*UNITS*WORD_WIDTH -1:0] lrelu_m_axis_tdata;
   output wire [TUSER_WIDTH_MAXPOOL_IN-1:0] lrelu_m_axis_tuser;
@@ -211,48 +160,7 @@ module axis_accelerator
 
   assign debug_config = {debug_config_maxpool, debug_config_lrelu, debug_config_input_pipe};
 
-  axis_input_pipe #(
-    .UNITS                     (UNITS                    ),
-    .CORES                     (CORES                    ),
-    .WORD_WIDTH                (WORD_WIDTH               ),
-
-    .DEBUG_CONFIG_WIDTH_W_ROT  (DEBUG_CONFIG_WIDTH_W_ROT  ),
-    .DEBUG_CONFIG_WIDTH_IM_PIPE(DEBUG_CONFIG_WIDTH_IM_PIPE),
-
-    .KERNEL_H_MAX              (KERNEL_H_MAX             ),
-    .BEATS_CONFIG_3X3_1        (BEATS_CONFIG_3X3_1       ),
-    .BEATS_CONFIG_1X1_1        (BEATS_CONFIG_1X1_1       ),
-    .I_IMAGE_IS_NOT_MAX        (I_IMAGE_IS_NOT_MAX       ),
-    .I_IMAGE_IS_MAX            (I_IMAGE_IS_MAX           ),
-    .I_IMAGE_IS_LRELU          (I_IMAGE_IS_LRELU         ),
-    .I_IMAGE_KERNEL_H_1        (I_IMAGE_KERNEL_H_1       ),
-    .TUSER_WIDTH_IM_SHIFT_IN   (TUSER_WIDTH_IM_SHIFT_IN  ),
-    .TUSER_WIDTH_IM_SHIFT_OUT  (TUSER_WIDTH_IM_SHIFT_OUT ),
-
-    .IM_CIN_MAX                (IM_CIN_MAX               ),
-    .IM_BLOCKS_MAX             (IM_BLOCKS_MAX            ),
-    .IM_COLS_MAX               (IM_COLS_MAX              ),
-    .S_WEIGHTS_WIDTH           (S_WEIGHTS_WIDTH          ),
-    .LATENCY_BRAM              (LATENCY_BRAM             ),
-    .I_WEIGHTS_IS_TOP_BLOCK    (I_WEIGHTS_IS_TOP_BLOCK   ),
-    .I_WEIGHTS_IS_BOTTOM_BLOCK (I_WEIGHTS_IS_BOTTOM_BLOCK),
-    .I_WEIGHTS_IS_1X1          (I_WEIGHTS_IS_1X1         ),
-    .I_WEIGHTS_IS_COLS_1_K2    (I_WEIGHTS_IS_COLS_1_K2   ),
-    .I_WEIGHTS_IS_CONFIG       (I_WEIGHTS_IS_CONFIG      ),
-    .I_WEIGHTS_KERNEL_W_1      (I_WEIGHTS_KERNEL_W_1     ),
-    .TUSER_WIDTH_WEIGHTS_OUT   (TUSER_WIDTH_WEIGHTS_OUT  ),
-
-    .I_IS_NOT_MAX              (I_IS_NOT_MAX             ),
-    .I_IS_MAX                  (I_IS_MAX                 ),
-    .I_IS_1X1                  (I_IS_1X1                 ),
-    .I_IS_LRELU                (I_IS_LRELU               ),
-    .I_IS_TOP_BLOCK            (I_IS_TOP_BLOCK           ),
-    .I_IS_BOTTOM_BLOCK         (I_IS_BOTTOM_BLOCK        ),
-    .I_IS_COLS_1_K2            (I_IS_COLS_1_K2           ),
-    .I_IS_CONFIG               (I_IS_CONFIG              ),
-    .I_KERNEL_W_1              (I_KERNEL_W_1             ),
-    .TUSER_WIDTH_CONV_IN       (TUSER_WIDTH_CONV_IN      )
-  ) input_pipe (
+  axis_input_pipe input_pipe (
     .aclk                      (aclk                      ),
     .aresetn                   (aresetn                   ),
     .debug_config              (debug_config_input_pipe   ),
@@ -330,23 +238,12 @@ module axis_accelerator
     .s_axis_tuser  (conv_m_axis_tuser    ),
     .m_axis_tvalid (lrelu_m_axis_tvalid  ),
     .m_axis_tready (lrelu_m_axis_tready  ),
+    .m_axis_tlast  (lrelu_m_axis_tlast   ),
     .m_axis_tdata  (lrelu_m_axis_tdata   ), // cgu
     .m_axis_tuser  (lrelu_m_axis_tuser   )
   );
 
-  // axis_maxpool_engine #(
-  //   .UNITS        (UNITS       ),
-  //   .GROUPS       (GROUPS      ),
-  //   .MEMBERS      (MEMBERS     ),
-  //   .WORD_WIDTH   (WORD_WIDTH  ),
-  //   .DEBUG_CONFIG_WIDTH_MAXPOOL (DEBUG_CONFIG_WIDTH_MAXPOOL),
-  //   .KERNEL_H_MAX (KERNEL_H_MAX),
-  //   .KERNEL_W_MAX (KERNEL_W_MAX),
-  //   .I_IS_NOT_MAX (I_IS_NOT_MAX),
-  //   .I_IS_MAX     (I_IS_MAX    ),
-  //   .I_IS_1X1     (I_IS_1X1    ),
-  //   .TUSER_WIDTH  (TUSER_WIDTH_MAXPOOL_IN )
-  // ) MAXPOOL_ENGINE (
+  // axis_maxpool_engine MAXPOOL_ENGINE (
   //   .aclk          (aclk                  ),
   //   .aresetn       (aresetn               ),
   //   .debug_config  (debug_config_maxpool  ),

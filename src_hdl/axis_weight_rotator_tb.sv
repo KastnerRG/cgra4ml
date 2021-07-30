@@ -24,8 +24,6 @@ module axis_weight_rotator_tb ();
   localparam IM_BLOCKS_MAX      = `IM_BLOCKS_MAX     ;
   localparam IM_COLS_MAX        = `IM_COLS_MAX       ;
   localparam S_WEIGHTS_WIDTH    = `S_WEIGHTS_WIDTH   ;
-  localparam BEATS_CONFIG_3X3_1 = `BEATS_CONFIG_3X3_1;
-  localparam BEATS_CONFIG_1X1_1 = `BEATS_CONFIG_1X1_1;
 
   localparam LATENCY_BRAM  = `LATENCY_BRAM ;
   localparam BITS_KERNEL_W = `BITS_KERNEL_W;
@@ -38,15 +36,16 @@ module axis_weight_rotator_tb ();
   localparam I_WEIGHTS_IS_CONFIG       = `I_WEIGHTS_IS_CONFIG      ;
   localparam I_WEIGHTS_IS_CIN_LAST     = `I_WEIGHTS_IS_CIN_LAST    ;
   localparam I_WEIGHTS_KERNEL_W_1      = `I_WEIGHTS_KERNEL_W_1     ; 
-  localparam TUSER_WIDTH_WEIGHTS_OUT   = `TUSER_WIDTH_WEIGHTS_OUT;
+  localparam TUSER_WIDTH_WEIGHTS_OUT   = `TUSER_WIDTH_WEIGHTS_OUT  ;
+  localparam BITS_CONFIG_COUNT         = `BITS_CONFIG_COUNT        ;
 
-  localparam BITS_CONFIG_COUNT    = $clog2(BEATS_CONFIG_3X3_1+1);
-  localparam M_WIDTH              = WORD_WIDTH*CORES*MEMBERS;
+  localparam M_WIDTH                    = WORD_WIDTH*CORES*MEMBERS;
   localparam DEBUG_CONFIG_WIDTH_W_ROT   = `DEBUG_CONFIG_WIDTH_W_ROT;
 
   localparam BRAM_W_WIDTH = S_WEIGHTS_WIDTH ;
   localparam BRAM_R_WIDTH = M_WIDTH;
-  localparam BRAM_R_DEPTH = KERNEL_H_MAX * IM_CIN_MAX + BEATS_CONFIG_3X3_1;
+  localparam BEATS_CONFIG_MAX_1 = `BEATS_CONFIG_MAX-1;
+  localparam BRAM_R_DEPTH = KERNEL_H_MAX * IM_CIN_MAX + BEATS_CONFIG_MAX_1;
   localparam BRAM_W_DEPTH = BRAM_R_DEPTH * BRAM_R_WIDTH / BRAM_W_WIDTH;
 
   localparam BITS_R_ADDR       = $clog2(BRAM_R_DEPTH);
@@ -69,28 +68,7 @@ module axis_weight_rotator_tb ();
   logic [TUSER_WIDTH_WEIGHTS_OUT-1:0] m_axis_tuser;
   logic m_axis_tlast;
 
-  axis_weight_rotator #(
-    .DEBUG_CONFIG_WIDTH_W_ROT(DEBUG_CONFIG_WIDTH_W_ROT),
-    .CORES               (CORES              ),
-    .WORD_WIDTH          (WORD_WIDTH         ),
-    .KERNEL_H_MAX        (KERNEL_H_MAX       ),
-    .KERNEL_W_MAX        (KERNEL_W_MAX       ),
-    .IM_CIN_MAX          (IM_CIN_MAX         ),
-    .IM_BLOCKS_MAX       (IM_BLOCKS_MAX      ),
-    .IM_COLS_MAX         (IM_COLS_MAX        ),
-    .S_WEIGHTS_WIDTH     (S_WEIGHTS_WIDTH    ),
-    .BEATS_CONFIG_3X3_1  (BEATS_CONFIG_3X3_1 ),
-    .BEATS_CONFIG_1X1_1  (BEATS_CONFIG_1X1_1 ),
-    .LATENCY_BRAM        (LATENCY_BRAM       ),   
-    .I_WEIGHTS_IS_TOP_BLOCK      (I_WEIGHTS_IS_TOP_BLOCK     ),
-    .I_WEIGHTS_IS_BOTTOM_BLOCK   (I_WEIGHTS_IS_BOTTOM_BLOCK  ),
-    .I_WEIGHTS_IS_1X1            (I_WEIGHTS_IS_1X1           ),
-    .I_WEIGHTS_IS_COLS_1_K2      (I_WEIGHTS_IS_COLS_1_K2     ),
-    .I_WEIGHTS_IS_CONFIG         (I_WEIGHTS_IS_CONFIG        ),
-    .I_WEIGHTS_IS_CIN_LAST       (I_WEIGHTS_IS_CIN_LAST      ),
-    .I_WEIGHTS_KERNEL_W_1        (I_WEIGHTS_KERNEL_W_1       ),
-    .TUSER_WIDTH_WEIGHTS_OUT(TUSER_WIDTH_WEIGHTS_OUT)
-  ) pipe (.*);
+  axis_weight_rotator pipe (.*);
 
   logic [7:0] s_data_weights [S_WEIGHTS_WIDTH /8-1:0];
   logic [WORD_WIDTH-1:0] m_data_weights [CORES-1:0][KERNEL_W_MAX-1:0];
@@ -102,7 +80,7 @@ module axis_weight_rotator_tb ();
 
   string path_weights = "D:/cnn-fpga/data/weights_rot_in.txt";
   
-  localparam BEATS_CONFIG_1 = K_1 == 0 ? BEATS_CONFIG_1X1_1 : BEATS_CONFIG_3X3_1;
+  localparam BEATS_CONFIG_1 = `BEATS_CONFIG(K,K)-1;
   localparam W_BEATS = 1 + BEATS_CONFIG_1+1 + (K_1+1)*(CIN_1+1);
   localparam W_WORDS = (W_BEATS-1) * MEMBERS * CORES + S_WEIGHTS_WIDTH /WORD_WIDTH;
   localparam W_WORDS_PER_BEAT = S_WEIGHTS_WIDTH /WORD_WIDTH;
