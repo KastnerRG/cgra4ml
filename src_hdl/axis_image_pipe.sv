@@ -35,6 +35,7 @@ Additional Comments:
 //////////////////////////////////////////////////////////////////////////////////*/
 
 `include "params.v"
+import lrelu_beats::*;
 
 module axis_image_pipe 
   #(
@@ -43,6 +44,7 @@ module axis_image_pipe
     aclk           ,
     aresetn        ,
     debug_config   ,
+    is_config      ,
     s_axis_1_tready, 
     s_axis_1_tvalid, 
     s_axis_1_tlast , 
@@ -62,6 +64,7 @@ module axis_image_pipe
 
   localparam UNITS                      = `UNITS                      ;
   localparam WORD_WIDTH                 = `WORD_WIDTH                 ; 
+  localparam MEMBERS                    = `MEMBERS                    ;
   localparam DEBUG_CONFIG_WIDTH_IM_PIPE = `DEBUG_CONFIG_WIDTH_IM_PIPE ;
   localparam KERNEL_H_MAX               = `KERNEL_H_MAX               ;
   localparam KERNEL_W_MAX               = `KERNEL_W_MAX               ;
@@ -73,13 +76,15 @@ module axis_image_pipe
 
   localparam UNITS_EDGES       = `UNITS_EDGES       ;
   localparam IM_IN_S_DATA_WORDS= `IM_IN_S_DATA_WORDS;
-  localparam BITS_CONFIG_COUNT = `BITS_CONFIG_COUNT ;
   localparam BITS_KERNEL_H     = `BITS_KERNEL_H     ;
   localparam BITS_KERNEL_W     = `BITS_KERNEL_W     ;
   localparam TKEEP_WIDTH_IM_IN = `TKEEP_WIDTH_IM_IN ;
+  localparam CONFIG_COUNT_MAX  = lrelu_beats::calc_beats_total_max(.KERNEL_W_MAX(KERNEL_W_MAX), .MEMBERS(MEMBERS));
+  localparam BITS_CONFIG_COUNT = $clog2(CONFIG_COUNT_MAX);
 
   input logic aclk;
   input logic aresetn;
+  output logic is_config;
 
   output logic s_axis_1_tready;
   input  logic s_axis_1_tvalid;
@@ -200,7 +205,6 @@ module axis_image_pipe
                   m_axis_tvalid = 0;
                   dw_1_m_ready  = m_axis_tready;
                   dw_2_m_ready  = 0;
-                  m_user_kernel_h_1_out  = kernel_h_1_out;
                 end
       ONES_S  : begin
                   en_config     = 0;
@@ -211,7 +215,6 @@ module axis_image_pipe
                   m_axis_tvalid = 1;
                   dw_1_m_ready  = 0;
                   dw_2_m_ready  = 0;
-                  m_user_kernel_h_1_out  = 0;
                 end
       default : begin // PASS_S
                   en_config     = 0;
@@ -222,7 +225,6 @@ module axis_image_pipe
                   m_axis_tvalid = is_max_out ? (dw_1_m_valid  && dw_2_m_valid) : dw_1_m_valid;
                   dw_1_m_ready  = is_max_out ? (m_axis_tready && dw_2_m_valid) : m_axis_tready;
                   dw_2_m_ready  = is_max_out ? (m_axis_tready && dw_1_m_valid) : 0;
-                  m_user_kernel_h_1_out  = kernel_h_1_out;
                 end
     endcase
   end
@@ -243,7 +245,7 @@ module axis_image_pipe
   generate
     for(genvar kh2=0; kh2<=KERNEL_H_MAX/2; kh2++)
       for(genvar kw2=0; kw2<=KERNEL_W_MAX/2; kw2++)
-        assign beats_config_1_lut[kh2][kw2] = `BEATS_CONFIG(kh2*2+1,kw2*2+1);
+        assign beats_config_1_lut[kh2][kw2] = lrelu_beats::calc_beats_total (.kw2(kw2), .MEMBERS(MEMBERS)) -1;
   endgenerate
 
   assign beats_config_1    = beats_config_1_lut[kernel_h_1_out/2][kernel_h_1_out/2];
@@ -322,7 +324,7 @@ module axis_image_pipe
   assign m_axis_tuser [I_IMAGE_IS_NOT_MAX] = is_not_max_out;
   assign m_axis_tuser [I_IMAGE_IS_MAX    ] = is_max_out    ;
   assign m_axis_tuser [I_IMAGE_IS_LRELU  ] = is_lrelu_out  ;
-  assign m_axis_tuser [BITS_KERNEL_H+I_KERNEL_H_1      -1:I_KERNEL_H_1      ] = m_user_kernel_h_1_out;
+  assign m_axis_tuser [BITS_KERNEL_H+I_KERNEL_H_1-1 : I_KERNEL_H_1] = kernel_h_1_out;
 
   /*
     MUX the output data
@@ -336,14 +338,15 @@ module axis_image_pipe
 
   generate
     for (genvar u=0; u < UNITS_EDGES; u=u+1) begin
-      assign m_data_1 [u] = (state == ONES_S) ? (u==KERNEL_H_MAX/2) : dw_1_m_data[u];
-      assign m_data_2 [u] = (state == ONES_S) ? (u==KERNEL_H_MAX/2) : 
+      assign m_data_1 [u] = (state == ONES_S) ? (u==0) : dw_1_m_data[u];
+      assign m_data_2 [u] = (state == ONES_S) ? (u==0) : 
                             is_max_out        ? dw_2_m_data[u] : dw_1_m_data[u];
     end
   endgenerate
 
   assign {>>{m_axis_1_tdata}} = m_data_1;
   assign {>>{m_axis_2_tdata}} = m_data_2;
+  assign is_config = state == ONES_S;
 
 endmodule
 
@@ -352,6 +355,7 @@ module axis_image_shift_buffer (
     aclk         ,
     aresetn      ,
     debug_config ,
+    is_config    ,
 
     s_axis_tready,  
     s_axis_tvalid,  
@@ -371,11 +375,13 @@ module axis_image_shift_buffer (
   localparam BITS_KERNEL_H   = `BITS_KERNEL_H;
   
   localparam I_KERNEL_H_1             = `I_KERNEL_H_1; 
+  localparam I_IS_CONFIG              = `I_IS_CONFIG; 
   localparam TUSER_WIDTH_IM_SHIFT_IN  = `TUSER_WIDTH_IM_SHIFT_IN ;
   localparam TUSER_WIDTH_IM_SHIFT_OUT = `TUSER_WIDTH_IM_SHIFT_OUT;
 
   input logic aclk;
   input logic aresetn;
+  input logic is_config;
 
   output logic s_axis_tready;
   input  logic s_axis_tvalid;
@@ -431,7 +437,7 @@ module axis_image_shift_buffer (
                   buf_valid_in  = s_axis_tvalid;
                   buf_user_in   = s_axis_tuser ;
                   s_axis_tready = slice_s_ready;
-                  count_next    = s_user_kernel_h_1;
+                  count_next    = is_config ? 0 : s_user_kernel_h_1;
                 end
       default : begin
                   buf_valid_in  = 1;

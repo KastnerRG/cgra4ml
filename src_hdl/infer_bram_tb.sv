@@ -7,12 +7,12 @@ module infer_bram_tb ();
     forever #(CLK_PERIOD/2) clk <= ~clk;
   end
 
-  // localparam R_WIDTH = 16;
-  // localparam R_DEPTH = 12;
-  // localparam W_WIDTH = 12*8;
   localparam R_WIDTH = 16;
-  localparam R_DEPTH = 8;
-  localparam W_WIDTH = 8*8;
+  localparam R_DEPTH = 12;
+  localparam W_WIDTH = 12*8;
+  // localparam R_WIDTH = 16;
+  // localparam R_DEPTH = 8;
+  // localparam W_WIDTH = 8*8;
   
   localparam SIZE    = R_WIDTH*R_DEPTH;
   localparam W_DEPTH = SIZE/W_WIDTH;
@@ -34,20 +34,42 @@ module infer_bram_tb ();
   assign {>>{w_data}} = w_data_arr;
   assign r_data_arr = {>>{r_data}};
 
-  asym_ram_sdp_write_wider #(
-    .WIDTHB      (R_WIDTH),
-    .WIDTHA      (W_WIDTH),
-    .SIZE        (SIZE)
+  // asym_ram_sdp_write_wider #(
+  //   .WIDTHB      (R_WIDTH),
+  //   .WIDTHA      (W_WIDTH),
+  //   .SIZE        (SIZE)
+  // ) dut (
+  //   .clkA  (clk), 
+  //   .clkB  (clk), 
+  //   .weA   (w_en), 
+  //   .enaA  (clken),
+  //   .enaB  (r_en && clken), 
+  //   .addrA (w_addr), 
+  //   .addrB (r_addr), 
+  //   .diA   (w_data),
+  //   .doB   (r_data)
+  // );
+
+  asym_ram_tdp_read_first #(
+    .WIDTHB    (R_WIDTH     ),
+    .SIZEB     (R_DEPTH     ),
+    .ADDRWIDTHB(R_ADDR_WIDTH),
+    .WIDTHA    (W_WIDTH     ),
+    .SIZEA     (W_DEPTH     ),
+    .ADDRWIDTHA(W_ADDR_WIDTH)
   ) dut (
-    .clkA  (clk), 
-    .clkB  (clk), 
-    .weA   (w_en), 
-    .enaA  (clken),
-    .enaB  (r_en && clken), 
-    .addrA (w_addr), 
-    .addrB (r_addr), 
-    .diA   (w_data),
-    .doB   (r_data)
+    .clkA (clk), 
+    .clkB (clk), 
+    .enaA (clken), 
+    .weA  (w_en), 
+    .enaB (clken && r_en), 
+    .weB  (0), 
+    .addrA(w_addr), 
+    .addrB(r_addr), 
+    .diA  (w_data), 
+    .doB  (r_data),
+    .diB  (0)
+    // .doA  (), 
   );
 
   initial begin

@@ -474,6 +474,7 @@ module conv_engine (
     .aresetn         (resetn            ),
     .user_in         (acc_m_user        ),
     .valid_in        (acc_m_valid       ),
+    .valid_masked_in (acc_m_valid_masked),
     .mask_partial    (mask_partial      ),
     .mask_full       (mask_full         ),
     .clr             (pad_clr           )

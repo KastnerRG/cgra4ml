@@ -51,6 +51,7 @@ module pad_filter
     
     mask_partial,
     mask_full,
+    valid_masked_in,
     clr
 );
     localparam KW2_MAX          = KERNEL_W_MAX/2; //R, 3->1, 5->2, 7->3
@@ -59,7 +60,7 @@ module pad_filter
 
     input  logic                      aclk;
     input  logic                      aresetn;
-    input  logic [MEMBERS - 1 : 0]    aclken, valid_in;               
+    input  logic [MEMBERS - 1 : 0]    aclken, valid_in, valid_masked_in;
     output logic [MEMBERS - 1 : 1]    mask_partial;
     output logic [MEMBERS - 1 : 0]    mask_full;
     output logic [BITS_KERNEL_W-1: 0] clr          [MEMBERS - 1 : 0]; // 0-center, 1-center-left, 2-center-right, 3-left, 4-right
@@ -104,19 +105,21 @@ module pad_filter
     */
 
     logic   reg_clken                  [MEMBERS-1 : 0];
+    logic   reg_clken_masked           [MEMBERS-1 : 0];
     logic   col_left_in                [MEMBERS-1 : 0];
     logic   [KW2_MAX : 1] col_end_in   [MEMBERS-1 : 0];
     logic   [KW2_MAX : 0] col_end      [MEMBERS-1 : 0];
+    logic   [KW2_MAX : 0] col_end_masked [MEMBERS-1 : 0];
     logic   [KW2_MAX : 1] col_start_in [MEMBERS-1 : 0];
     logic   [KW2_MAX : 1] col_start    [MEMBERS-1 : 0];
 
-    logic [BITS_KERNEL_W-1:0] clr_left_lut  [2**KW2_MAX-1:0][BITS_KERNEL_W-2:0];
-    logic [BITS_KERNEL_W-1:0] clr_right_lut [2**KW2_MAX-1:0];
+    logic [BITS_KERNEL_W-1:0] clr_left_lut  [2**KW2_MAX:0][KERNEL_W_MAX/2:0];
+    logic [BITS_KERNEL_W-1:0] clr_right_lut [2**KW2_MAX:0];
 
     logic [BITS_KERNEL_W-1: 0] clr_left_in   [MEMBERS - 1 : 0];
     logic [BITS_KERNEL_W-1: 0] clr_left_out  [MEMBERS - 1 : 0];
-    logic [BITS_KERNEL_W-1: 0] clr_right_in  [MEMBERS - 1 : 0];
-    logic [BITS_KERNEL_W-1: 0] clr_right_out [MEMBERS - 1 : 0];
+
+    logic lut_next_full  [MEMBERS - 1 : 0] [KW2_MAX : 0];
 
     generate
         for (genvar m=0; m < MEMBERS; m++) begin: col_end_gen_m
@@ -125,7 +128,7 @@ module pad_filter
             assign kw2_wire [m] = kw_wire [m] / 2; // kw = 7 : kw2_wire = 3,   kw = 5 : kw2_wire = 2,   kw = 3 : kw2_wire = 1
 
 
-            assign reg_clken[m] = user_in [m][I_IS_CIN_LAST] && aclken[m] && valid_in[m];
+            assign reg_clken[m] = aclken[m] && valid_in[m] && user_in [m][I_IS_CIN_LAST];
 
             assign col_end_in         [m][1]  = user_in[m][I_IS_COLS_1_K2];
             assign col_start_in       [m][1]  = col_end[m][kw2_wire[m]]; // This is a mux
@@ -171,33 +174,20 @@ module pad_filter
                 kw=1: 000000000
                 kw=3: 100000002
                 kw=5: 130000042
-                kw=7: 137000642
+                kw=7: 135000642
 
                 CENTER (0):
-                    if all col_start & col_end are zeros
+                    if all col_start & col_end_masked are zeros
                 
                 LEFT (1,3,5,7...):
                     - for kw_max=7, kw=5:
-                        - e2->3, e1->1, e0->0, 
+                        - col_start{s2,s1,s0}                     = [0,1,2,4]
+                        - reverse(col_start)                      = [0,4,2,1]
+                        - log(rev(col_start))                     =   [2,1,0]
+                        - 1 + 2*log(rev(col_start))               =   [5,3,1]
+                        - 1 + 2*log(rev(col_start)) - (kw_max-kw) =   [3,1,-]
 
-                        - col_end{e2,e1,e0}                     = [0,1,2,4]
-                        - reverse(col_end)                      = [0,4,2,1]
-                        - log(rev(col_end))                     =   [2,1,0]
-                        - 1 + 2*log(rev(col_end))               =   [5,3,1]
-                        - 1 + 2*log(rev(col_end)) - (kw_max-kw) =   [3,1,-]
-
-                    - left = 1 + 2*log(rev(col_end)) + kw - kw_max
-
-                RIGHT (2,4,6,8...):
-                    - s0->2, s1->4,
-                    - col_start {s2,s1,s0}  = [0,1,2,4,8]
-                    - log(col_start)        =   [0,1,2,3]
-                    - 2*log(col_start)      =   [0,2,4,6]
-                    - 2*log(col_start)+2    =   [2,4,6,8]
-
-                    - right = 2*log(col_start) + 2
-
-
+                    - left = 1 + 2*log(rev(col_start)) + kw - kw_max
             */
 
             if (m==0) begin
@@ -226,13 +216,49 @@ module pad_filter
                 .data_out       (clr_left_out[m])
             );
 
+
+            /*
+                RIGHT (2,4,6,8...):
+                    - s0->2, s1->4,
+                    - col_end_masked {e2,e1,e0}  =   [0,2,4,8]
+                    - log(col_end_masked)        =   [0,1,2,3]
+                    - 2*log(col_end_masked)      =   [0,2,4,6]
+
+                    - right = 2*log(col_end_masked)
+            */
+
+            assign lut_next_full[m][0] = 1;
+            for (genvar kw2=1;  kw2 <= KW2_MAX; kw2++) begin
+                localparam kw = kw2*2+1;
+                assign lut_next_full[m][kw2] = (m % kw) == kw-2; // before last
+            end
+            assign reg_clken_masked  [m] = aclken[m] && valid_in[m] && lut_next_full[m][kw2_wire[m]] && user_in [m][I_IS_CIN_LAST];
+
+            register
+            #(
+                .WORD_WIDTH     (KW2_MAX),
+                .RESET_VALUE    (0 )         
+            )
+            COL_END_MASKED_REG
+            (
+                .clock          (aclk              ),
+                .clock_enable   (reg_clken_masked[m]),
+                .resetn         (aresetn           ),
+                .data_in        (col_end_in      [m]),
+                .data_out       (col_end_masked  [m][KW2_MAX : 1])
+            );
+            assign col_end_masked [m][0] = 0;
+
+
             if (m==0) begin
                 assign clr_right_lut [0] = 0;
                 for (genvar log_col=0; log_col<=KW2_MAX; log_col++)
-                    assign clr_right_lut [2**log_col] = 2*log_col + 2;
+                    assign clr_right_lut [2**log_col] = 2*log_col;
             end
 
-            assign clr[m] = clr_left_out[m] | clr_right_lut[col_end[m]];
+            /* CLR */
+
+            assign clr[m] = clr_left_out[m] | clr_right_lut[col_end_masked[m]];
         end
     endgenerate
 

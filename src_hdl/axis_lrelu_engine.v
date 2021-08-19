@@ -54,7 +54,6 @@ module axis_lrelu_engine (
     localparam I_KERNEL_H_1               = `I_KERNEL_H_1              ;
     localparam TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN    ;
     localparam TUSER_WIDTH_LRELU_IN       = `TUSER_WIDTH_LRELU_IN      ;
-    localparam BITS_CONFIG_COUNT          = `BITS_CONFIG_COUNT         ;
     localparam KERNEL_H_MAX               = `KERNEL_H_MAX              ;
     localparam KERNEL_W_MAX               = `KERNEL_W_MAX              ;
     localparam BITS_KERNEL_W              = `BITS_KERNEL_W             ;
@@ -83,15 +82,6 @@ module axis_lrelu_engine (
 
 
     localparam BYTES_IN = WORD_WIDTH_IN/8;
-
-    wire [BITS_CONFIG_COUNT-1:0] beats_config_1_lut [KERNEL_H_MAX-1:0][KERNEL_W_MAX-1:0];
-    generate
-      for(genvar kh2=0; kh2<=KERNEL_H_MAX/2; kh2=kh2+1) begin
-        for(genvar kw2=0; kw2<=KERNEL_W_MAX/2; kw2=kw2+1) begin
-          assign beats_config_1_lut[kh2][kw2] = `BEATS_CONFIG(kh2*2+1,kw2*2+1)-1;
-        end
-      end
-    endgenerate
 
     wire [BITS_KERNEL_H-1:0] s_axis_tuser_kh_1;
     assign s_axis_tuser_kh_1 = s_axis_tuser[I_KERNEL_H_1+BITS_KERNEL_H-1 : I_KERNEL_H_1];
@@ -188,8 +178,8 @@ module axis_lrelu_engine (
       case (state)
         PASS_S    : if (s_vr_last_conv_out) state_next = BLOCK_S;
         BLOCK_S   : if (s_vr_last_dw_out  ) state_next = RESET_S;
-        RESET_S   : if (s_ready_slice)      state_next = WRITE_1_S;
-        WRITE_1_S : if (handshake)   state_next = WRITE_2_S;
+        RESET_S   : if (s_ready_slice     ) state_next = WRITE_1_S;
+        WRITE_1_S : if (handshake         ) state_next = WRITE_2_S;
         WRITE_2_S : if (count_config_full) 
                       if (s_axis_tuser[I_IS_1X1]) state_next = FILL_S;
                       else                        state_next = PASS_S;

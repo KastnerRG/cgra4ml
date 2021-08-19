@@ -35,7 +35,7 @@ class SysConfig:
     CORES       :int = 0
 
     LRELU_BEATS_1x1 :int = 5
-    LRELU_BEATS_3x3 :int = 8
+    LRELU_BEATS_3x3 :int = 9
 
     def __post_init__(self):
         super().__setattr__('BLOCKS_MAX', self.COLS_MAX//self.CONV_UNITS)
@@ -142,8 +142,8 @@ def get_lrelu_config(i_layers, c, get_params=False):
         0: d
         1: A   [0:3]
         2: B_00[0:1]                         : clr=0
-        3: B_00[0:1], B_01[0:1], B_02[0:1]   : clr=0
-        4: B_00[0:1], B_01[0:1], B_02[0:1]   : clr=0
+        3:            B_01[0:1], B_02[0:1]   : clr=0
+        4:            B_01[0:1], B_02[0:1]   : clr=0
         5: B_11[0:1], B_11[0:1], B_12[0:1]   : clr=1
         6: B_11[0:1], B_11[0:1], B_12[0:1]   : clr=1
         7: B_21[0:1], B_21[0:1], B_22[0:1]   : clr=2
@@ -233,8 +233,8 @@ def get_lrelu_config(i_layers, c, get_params=False):
 
     '''
     B_ij beats
-        1x1: 2 = 2 x kw
-        3x3: 6 = 2 x kw 
+        1x1: 2 =     2 x kw
+        3x3: 7 = 1 + 2 x kw 
     '''
     b_iscg_clr_mtb = b_filled.reshape(ITR, SUB_CORES,1,c.COPIES//max_factor,c.GROUPS, KW,KH)
     b_iscg_clr_mtb = np.repeat(b_iscg_clr_mtb,repeats=max_factor,axis=2)
@@ -243,6 +243,15 @@ def get_lrelu_config(i_layers, c, get_params=False):
     b_i_mtb_cg_s_clr = b_iscg_clr_mtb.transpose(0,5,2,3,1,4)
     b_i_mtb_cg_2_s2_clr = b_i_mtb_cg_s_clr.reshape(ITR,KH, c.COPIES,c.GROUPS,2,SUB_CORES//2,KW)
     b_i_mtb_cg_2_clr_s2 = b_i_mtb_cg_2_s2_clr.transpose(0,1,2,3,4,6,5)
+
+    ''' MTB = 0, CLR = 0 '''
+    b_i_cg_2_s2 = b_i_mtb_cg_2_clr_s2[:,0,:,:,:,0,:]
+    b_i_cgm = np.zeros((ITR,c.COPIES,c.GROUPS,c.MEMBERS//2), b_i_cg_2_s2.dtype)
+    b_i_cgm[:,:,:,0:SUB_CORES] = b_i_cg_2_s2.reshape(ITR,c.COPIES,c.GROUPS,SUB_CORES)
+    b_ibcgv_8 = np.frombuffer(b_i_cgm.tobytes(),np.int8).reshape(ITR,1,c.COPIES,c.GROUPS,c.MEMBERS)
+    lrelu_config_list += [b_ibcgv_8]
+
+    ''' MTB != 0, CLR != 0 '''
     b_i_mtb_cgm = np.zeros((ITR,KW, c.COPIES,c.GROUPS,c.MEMBERS), b_i_mtb_cg_2_clr_s2.dtype)
     b_i_mtb_cgm[:,:,:,:,0:KH*SUB_CORES] = b_i_mtb_cg_2_clr_s2.reshape(ITR,KH, c.COPIES,c.GROUPS,SUB_CORES*KW)
     b_i_mtb_cgbv = b_i_mtb_cgm.reshape(ITR,KH, c.COPIES,c.GROUPS,2,c.MEMBERS//2)
