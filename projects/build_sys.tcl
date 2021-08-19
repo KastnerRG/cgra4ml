@@ -51,7 +51,6 @@ set BITS_IM_COLS       [expr int(ceil(log($IM_COLS_MAX)/log(2)))]
 set BITS_IM_ROWS       [expr int(ceil(log($IM_ROWS_MAX)/log(2)))]
 set BITS_IM_CIN        [expr int(ceil(log($IM_CIN_MAX)/log(2)))]
 set BITS_IM_BLOCKS     [expr int(ceil(log($IM_ROWS_MAX/$UNITS)/log(2)))]
-set BITS_CONFIG_COUNT  [expr int(ceil(log($BEATS_CONFIG_MAX)/log(2)))]
 set BITS_MEMBERS       [expr int(ceil(log($MEMBERS)/log(2)))]
 set BITS_KW2           [expr int(ceil(log($KERNEL_W_MAX/2+1)/log(2)))]
 set M_DATA_WIDTH       [expr $WORD_WIDTH * 2**int(ceil(log($GROUPS * $UNITS_EDGES)/log(2)))]
@@ -104,7 +103,7 @@ set TUSER_WIDTH_LRELU_FMA_1_IN [expr 1 + $I_IS_LRELU    ]
 set TUSER_WIDTH_CONV_IN        [expr $BITS_KERNEL_W + $I_KERNEL_W_1]
 
 set DEBUG_CONFIG_WIDTH_W_ROT   [expr 1 + 2*$BITS_KERNEL_W + 3*($BITS_KERNEL_H + $BITS_IM_CIN + $BITS_IM_COLS + $BITS_IM_BLOCKS)]
-set DEBUG_CONFIG_WIDTH_IM_PIPE [expr 3 + 2 + $BITS_KERNEL_H + $BITS_CONFIG_COUNT + $BITS_CONFIG_COUNT]
+set DEBUG_CONFIG_WIDTH_IM_PIPE [expr 3 + 2 + $BITS_KERNEL_H + 0]
 set DEBUG_CONFIG_WIDTH_LRELU   [expr 3 + 4 + $BITS_FMA_2]
 set DEBUG_CONFIG_WIDTH_MAXPOOL 1
 set DEBUG_CONFIG_WIDTH         [expr $DEBUG_CONFIG_WIDTH_MAXPOOL + $DEBUG_CONFIG_WIDTH_LRELU + 2*$BITS_KERNEL_H + $DEBUG_CONFIG_WIDTH_IM_PIPE + $DEBUG_CONFIG_WIDTH_W_ROT]
@@ -138,7 +137,6 @@ Parameters of the system. Written from build.tcl
 `define BITS_IM_ROWS      $BITS_IM_ROWS     
 `define BITS_IM_CIN       $BITS_IM_CIN      
 `define BITS_IM_BLOCKS    $BITS_IM_BLOCKS   
-`define BITS_CONFIG_COUNT $BITS_CONFIG_COUNT
 `define BITS_MEMBERS      $BITS_MEMBERS     
 `define BITS_KW2          $BITS_KW2         
 

@@ -75,7 +75,6 @@ module axis_input_pipe
 
   localparam UNITS_EDGES       = `UNITS_EDGES;
   localparam IM_IN_S_DATA_WORDS= `IM_IN_S_DATA_WORDS;
-  localparam BITS_CONFIG_COUNT = `BITS_CONFIG_COUNT;
   localparam BITS_KERNEL_H     = `BITS_KERNEL_H    ;
   localparam BITS_KERNEL_W     = `BITS_KERNEL_W    ;
   localparam TKEEP_WIDTH_IM_IN = `TKEEP_WIDTH_IM_IN;
@@ -101,6 +100,7 @@ module axis_input_pipe
   input  wire [S_WEIGHTS_WIDTH    -1:0] s_axis_weights_tdata;
   input  wire [S_WEIGHTS_WIDTH /8 -1:0] s_axis_weights_tkeep;
 
+  wire image_is_config;
   wire im_mux_m_ready;
   wire im_mux_m_valid;
   wire [TUSER_WIDTH_IM_SHIFT_IN-1:0] im_mux_m_user;
@@ -136,6 +136,7 @@ module axis_input_pipe
     .aclk            (aclk   ),
     .aresetn         (aresetn),
     .debug_config    (image_pipe_debug_config),
+    .is_config       (image_is_config        ),
     .s_axis_1_tready (s_axis_pixels_1_tready), 
     .s_axis_1_tvalid (s_axis_pixels_1_tvalid), 
     .s_axis_1_tlast  (s_axis_pixels_1_tlast ), 
@@ -156,6 +157,7 @@ module axis_input_pipe
   axis_image_shift_buffer IM_SHIFT_1 (
     .aclk          (aclk           ),
     .aresetn       (aresetn        ),
+    .is_config     (image_is_config),
     .debug_config  (im_shift_1_debug_config),
     .s_axis_tready (im_mux_m_ready ),  
     .s_axis_tvalid (im_mux_m_valid ),  
@@ -170,6 +172,7 @@ module axis_input_pipe
   axis_image_shift_buffer IM_SHIFT_2 (
     .aclk          (aclk           ),
     .aresetn       (aresetn        ),
+    .is_config     (image_is_config),
     .debug_config  (im_shift_2_debug_config),
     .s_axis_tvalid (im_mux_m_valid ),  
     .s_axis_tdata  (im_mux_m_data_2),   

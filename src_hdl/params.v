@@ -24,7 +24,6 @@ Parameters of the system. Written from build.tcl
 `define BITS_IM_ROWS      8     
 `define BITS_IM_CIN       10      
 `define BITS_IM_BLOCKS    6   
-`define BITS_CONFIG_COUNT 3
 `define BITS_MEMBERS      4     
 `define BITS_KW2          1         
 
@@ -39,7 +38,7 @@ Parameters of the system. Written from build.tcl
 */
 `define I_IMAGE_IS_NOT_MAX        0      
 `define I_IMAGE_IS_MAX            1          
-`define I_IMAGE_IS_LRELU          2                   
+`define I_IMAGE_IS_LRELU          2        
 `define TUSER_WIDTH_IM_SHIFT_IN   5 
 `define TUSER_WIDTH_IM_SHIFT_OUT  5
 
@@ -105,7 +104,8 @@ Parameters of the system. Written from build.tcl
 `define IS_CONV_DW_SLICE           0
 
 /*
-  Macros
+  Macro functions
 */
 `define BEATS_CONFIG(KH,KW) 1+ 2*(2/KW + 2%KW) + 2*KH
 `define CEIL(N,D) N/D + (N%D != 0)
+

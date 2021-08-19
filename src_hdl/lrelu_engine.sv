@@ -132,7 +132,7 @@ module lrelu_engine (
     .clk   (clk            ),
     .rstn  (resetn_config  ),
     .en    (clken && s_valid_config),
-    .full  (full           ),
+    .full  (count_config_full),
     .kh_1  (config_kh_1    ),
     .kw_1  (config_kh_1    ),
     .w_sel (w_sel_bram     ),
@@ -168,70 +168,13 @@ module lrelu_engine (
         - So, no explicit fill delay, directly start reading
   */
 
-//   logic [3:0] w_sel_bram_next, w_sel_bram, w_sel_bram_1;
-//   register #(
-//     .WORD_WIDTH   (4), 
-//     .RESET_VALUE  (1)
-//   ) W_SEL_BRAM (
-//     .clock        (clk),
-//     .clock_enable (clken && s_valid_config),
-//     .resetn       (resetn_config),
-//     .data_in      (w_sel_bram_next),
-//     .data_out     (w_sel_bram)
-//   );
-// logic [1-1:0] bram_addr_next, bram_addr;
-//   register #(
-//     .WORD_WIDTH   (1), 
-//     .RESET_VALUE  (0)
-//   ) BRAM_W_ADDR (
-//     .clock        (clk),
-//     .clock_enable (clken && s_valid_config),
-//     .resetn       (resetn_config),
-//     .data_in      (bram_addr_next),
-//     .data_out     (bram_addr)
-//   );
-
-  // always_comb begin
-  //   unique case (w_sel_bram)
-  //     0       : begin // None
-  //                 bram_addr_next  = 0;
-  //                 w_sel_bram_next = 1;
-  //               end
-  //     1       : begin // D Register - 1 clock
-  //                 bram_addr_next  = 0;
-  //                 w_sel_bram_next = 2;
-  //               end
-  //     2       : begin // A RAM - 2/1 clocks for 1/3
-  //                 if (bram_addr == (config_kh_1==0 ? 2-1:1-1)) begin // BEATS_A = ceil(2/kh) = (kh==1)? 2: 1
-  //                   bram_addr_next  = 0;
-  //                   w_sel_bram_next = 3;
-  //                 end
-  //                 else begin
-  //                   bram_addr_next  = bram_addr + 1;
-  //                   w_sel_bram_next = w_sel_bram;
-  //                 end
-  //               end
-  //     default : begin // 2 clocks each for 3
-  //                 if (bram_addr == 2-1) begin
-  //                   bram_addr_next  = 0;
-  //                   if (w_sel_bram == 3+config_kh_1) w_sel_bram_next = 1;
-  //                   else                             w_sel_bram_next = w_sel_bram + 1;
-  //                 end
-  //                 else begin
-  //                   bram_addr_next  = bram_addr + 1;
-  //                   w_sel_bram_next = w_sel_bram;
-  //                 end
-  //               end
-  //   endcase
-  // end
-
   /*
     CONTROL DELAYS
   */
   logic w_sel_bram_2;
   logic valid_1;
-  logic [TUSER_WIDTH_LRELU_IN-1:0] user_1, user_mux_in;
-  logic [BITS_KERNEL_H-1:0] user_1_kh_1;
+  logic [TUSER_WIDTH_LRELU_IN-1:0] user_1;
+  logic [BITS_KERNEL_H-1:0] user_1_kh_1, user_2_kh_1;
   logic [BITS_KERNEL_W-1:0] user_1_clr;
   logic valid_config_1;
   logic valid_config_2;
@@ -262,7 +205,7 @@ module lrelu_engine (
   logic [BITS_FMA_2-1:0] config_fma1_f16_cgv  [COPIES-1:0][GROUPS-1:0][VALS_CONFIG-1:0];
   logic [BITS_FMA_2-1:0] config_fma2_f16_cg   [COPIES-1:0][GROUPS-1:0];
 
-  logic [COPIES-1:0][GROUPS-1:0][MEMBERS         -1:0][WORD_WIDTH_CONFIG-1:0] config_1_cgm;
+  logic [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][WORD_WIDTH_CONFIG-1:0] config_1_cgm;
 
   logic [BRAM_R_WIDTH-1:0] a_cg_16_delay_out [COPIES-1:0][GROUPS-1:0];
   logic [BRAM_R_WIDTH-1:0] a_cg_16_delay_in  [COPIES-1:0][GROUPS-1:0];
@@ -420,25 +363,14 @@ module lrelu_engine (
                 .data_in  (resetn_config),
                 .data_out (resetn_config_1)
               );
-
               n_delay #(
-                .N          (LATENCY_1-1),
-                .WORD_WIDTH (TUSER_WIDTH_LRELU_IN)
-              ) USER_MUX_IN (
-                .clk      (clk),
-                .resetn   (resetn),
-                .clken    (clken),
-                .data_in  (s_user),
-                .data_out (user_mux_in)
-              );
-              n_delay #(
-                .N          (1),
+                .N          (LATENCY_1),
                 .WORD_WIDTH (TUSER_WIDTH_LRELU_IN)
               ) USER_1 (
                 .clk      (clk),
                 .resetn   (resetn),
                 .clken    (clken),
-                .data_in  (user_mux_in),
+                .data_in  (s_user),
                 .data_out (user_1)
               );
 
@@ -520,31 +452,36 @@ module lrelu_engine (
                 
                 assign b_ready_cg_clr_mtb[c][g][clr][mtb] = valid_1 && (clr == user_1_clr) && ready_mtb[mtb]; //user_1_clr only for LATENCY=0
 
-                localparam CLR_I     = (clr+1)/2;
+                localparam CLR_I        = (clr+1)/2;
                 localparam BRAM_KW      = CLR_I*2+1;
-                localparam BRAM_W_WIDTH = MEMBERS/BRAM_KW * WORD_WIDTH_CONFIG;
 
-                logic [BRAM_W_WIDTH-1:0] s_data;
-                assign s_data = config_1_cgm[c][g][(clr+1)*BRAM_W_WIDTH-1 : clr*BRAM_W_WIDTH];
+                localparam BRAM_I       = (MTB_I > CLR_I) ? MTB_I : CLR_I;
+                localparam BRAM_K_EFF   = BRAM_I*2 + 1;
+
+                localparam BRAM_W_WORDS = MEMBERS/BRAM_K_EFF;
+                localparam BRAM_W_WIDTH = BRAM_W_WORDS * WORD_WIDTH_CONFIG;
+
+                logic [BRAM_W_WORDS-1:0][WORD_WIDTH_CONFIG-1:0] s_data;
+                assign s_data = config_1_cgm[c][g][(clr+1)*BRAM_W_WORDS-1 : clr*BRAM_W_WORDS];
 
 
-                localparam BRAM_R_DEPTH = MEMBERS/BRAM_KW;
+                localparam BRAM_R_DEPTH = MEMBERS/BRAM_K_EFF;
                 localparam BRAM_W_DEPTH = BRAM_R_DEPTH * BRAM_R_WIDTH / BRAM_W_WIDTH;
 
                 logic [$clog2(BRAM_R_DEPTH)-1:0] r_addr_max;
                 assign r_addr_max = bram_b_r_max_lut[user_1_kh_1/2];
 
-
                 cyclic_shift_reg #(
                   .R_DEPTH      (BRAM_R_DEPTH), 
                   .R_DATA_WIDTH (BRAM_R_WIDTH),
                   .W_DATA_WIDTH (BRAM_W_WIDTH),
+                  .W_WORD_WIDTH (WORD_WIDTH_CONFIG),
                   .OVERRIDE_W_ADDR (1)
                 ) BRAM_B (
                   .clk          (clk),
                   .clken        (clken),
                   .resetn       (resetn_config_1),
-                  .w_en         (w_sel_bram_1 == 3 && w_clr_i_1 == CLR_I && w_mtb_1 == mtb),
+                  .w_en         (w_sel_bram_1 == 3 && w_clr_i_1 == BRAM_I && w_mtb_1 == mtb),
                   .s_data       (s_data),
                   .m_data       (b_cg_clr_mtb_f16  [c][g][clr][mtb]),
                   .r_en         (b_ready_cg_clr_mtb[c][g][clr][mtb]),
@@ -569,11 +506,11 @@ module lrelu_engine (
         */
           if (g==0 && u==0) begin
             for (genvar kh2=0; kh2<KERNEL_H_MAX; kh2++) begin
-              assign sel_is_top_c_in[c] = (user_mux_in [I_IS_MAX] ? (c==0) : 1) & user_mux_in [I_IS_TOP_BLOCK   ];
-              assign sel_is_bot_c_in[c] = (user_mux_in [I_IS_MAX] ? (c==1) : 1) & user_mux_in [I_IS_BOTTOM_BLOCK];
+              assign sel_is_top_c_in[c] = (user_1 [I_IS_MAX] ? (c==0) : 1) & user_1 [I_IS_TOP_BLOCK   ];
+              assign sel_is_bot_c_in[c] = (user_1 [I_IS_MAX] ? (c==1) : 1) & user_1 [I_IS_BOTTOM_BLOCK];
               
               n_delay #(
-                .N          (1+LATENCY_CYCLIC_REG+LATENCY_FLOAT_UPSIZE+1),
+                .N          (LATENCY_CYCLIC_REG + 1 + LATENCY_FLOAT_UPSIZE),
                 .WORD_WIDTH (2)
               ) SEL_TOP_BOT (
                 .clk      (clk),
@@ -582,6 +519,19 @@ module lrelu_engine (
                 .data_in  ({sel_is_top_c_in [c],sel_is_bot_c_in [c]}),
                 .data_out ({sel_is_top_c_out[c],sel_is_bot_c_out[c]})
               );
+
+              if (c==0)
+                n_delay #(
+                  .N          (LATENCY_CYCLIC_REG + 1 + LATENCY_FLOAT_UPSIZE),
+                  .WORD_WIDTH (BITS_KERNEL_H)
+                ) USER_KH_1 (
+                  .clk      (clk),
+                  .resetn   (resetn),
+                  .clken    (clken),
+                  .data_in  (user_1_kh_1),
+                  .data_out (user_2_kh_1)
+                );
+
             end
           end
           /*
@@ -661,7 +611,7 @@ module lrelu_engine (
             */
 
             always_comb
-              if (mtb <= user_1_kh_1 && ((sel_is_top_c_out[c] && mtb%2==1) || (sel_is_bot_c_out[c] && mtb%2==0)))
+              if (mtb <= user_2_kh_1 && ((sel_is_top_c_out[c] && mtb%2==1) || (sel_is_bot_c_out[c] && mtb%2==0)))
                 b_val_f32_cgu_mtb_in [c][g][mtb] = b_cg_mtb_f32[c][g][mtb];
               else
                 b_val_f32_cgu_mtb_in [c][g][mtb] = b_cg_mtb_f32[c][g][0];

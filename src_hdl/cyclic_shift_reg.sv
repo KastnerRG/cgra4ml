@@ -6,6 +6,7 @@ module cyclic_shift_reg #(
   R_DEPTH        = 24     ,
   R_DATA_WIDTH   = 16     ,
   W_DATA_WIDTH   = 24*8   ,
+  W_WORD_WIDTH   = 8      ,
   OVERRIDE_W_ADDR= 0
 )(
   clk        ,
@@ -27,7 +28,7 @@ module cyclic_shift_reg #(
 
   input  logic clk, clken, resetn;
   input  logic w_en, r_en;
-  input  logic [W_DATA_WIDTH-1:0] s_data;
+  input  logic [W_WORD_WIDTH-1:0][W_DATA_WIDTH/W_WORD_WIDTH-1:0] s_data;
   output logic [R_DATA_WIDTH-1:0] m_data;
   input  logic [R_ADDR_WIDTH-1:0] r_addr_max;
   input  logic [W_ADDR_WIDTH-1:0] w_addr_max;

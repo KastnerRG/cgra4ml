@@ -33,13 +33,11 @@ module axis_conv_engine_wrapper
     WORD_WIDTH_ACC             = `WORD_WIDTH_ACC            ,
     KERNEL_H_MAX               = `KERNEL_H_MAX              ,   // odd number
     KERNEL_W_MAX               = `KERNEL_W_MAX              ,
-    BEATS_CONFIG_3X3_1         = `BEATS_CONFIG_3X3_1        ,
-    BEATS_CONFIG_1X1_1         = `BEATS_CONFIG_1X1_1        ,
     // IMAGE TUSER INDICES 
     I_IMAGE_IS_NOT_MAX         = `I_IMAGE_IS_NOT_MAX        ,
     I_IMAGE_IS_MAX             = `I_IMAGE_IS_MAX            ,
     I_IMAGE_IS_LRELU           = `I_IMAGE_IS_LRELU          ,
-    I_IMAGE_KERNEL_H_1         = `I_IMAGE_KERNEL_H_1        , 
+    I_KERNEL_H_1               = `I_KERNEL_H_1              , 
     TUSER_WIDTH_IM_SHIFT_IN    = `TUSER_WIDTH_IM_SHIFT_IN   ,
     TUSER_WIDTH_IM_SHIFT_OUT   = `TUSER_WIDTH_IM_SHIFT_OUT  ,
     IM_CIN_MAX                 = `IM_CIN_MAX                ,
@@ -89,8 +87,6 @@ module axis_conv_engine_wrapper
     I_KERNEL_W_1               = `I_KERNEL_W_1              , 
     TUSER_WIDTH_CONV_IN        = `TUSER_WIDTH_CONV_IN       ,
     // LRELU & MAXPOOL TUSER INDICES
-    I_IS_LEFT_COL              = `I_IS_LEFT_COL             ,
-    I_IS_RIGHT_COL             = `I_IS_RIGHT_COL            ,
     TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN    ,
     TUSER_WIDTH_LRELU_FMA_1_IN = `TUSER_WIDTH_LRELU_FMA_1_IN,
     TUSER_WIDTH_LRELU_IN       = `TUSER_WIDTH_LRELU_IN      
@@ -116,7 +112,6 @@ module axis_conv_engine_wrapper
   parameter CORES             = `CORES               ;
   parameter UNITS_EDGES       = `UNITS_EDGES         ;
   parameter IM_IN_S_DATA_WORDS= `IM_IN_S_DATA_WORDS  ;
-  parameter BITS_CONFIG_COUNT = `BITS_CONFIG_COUNT   ;
   parameter BITS_KERNEL_H     = `BITS_KERNEL_H       ;
   parameter BITS_KERNEL_W     = `BITS_KERNEL_W       ;
   parameter TKEEP_WIDTH_IM_IN = `TKEEP_WIDTH_IM_IN   ;
@@ -140,32 +135,7 @@ module axis_conv_engine_wrapper
   input  [WORD_WIDTH*CORES*KERNEL_W_MAX-1:0] input_m_axis_weights_tdata ;
   input  [TUSER_WIDTH_CONV_IN          -1:0] input_m_axis_tuser         ;
 
-  axis_conv_engine #(
-    .CORES                (CORES               ), 
-    .UNITS                (UNITS               ), 
-    .WORD_WIDTH_IN        (WORD_WIDTH          ),  
-    .WORD_WIDTH_OUT       (WORD_WIDTH_ACC      ),  
-    .LATENCY_ACCUMULATOR  (LATENCY_ACCUMULATOR ), 
-    .LATENCY_MULTIPLIER   (LATENCY_MULTIPLIER  ), 
-    .KERNEL_W_MAX         (KERNEL_W_MAX        ),  
-    .KERNEL_H_MAX         (KERNEL_H_MAX        ), 
-    .IM_CIN_MAX           (IM_CIN_MAX          ), 
-    .IM_COLS_MAX          (IM_COLS_MAX         ), 
-    .I_IS_NOT_MAX         (I_IS_NOT_MAX        ), 
-    .I_IS_MAX             (I_IS_MAX            ), 
-    .I_IS_1X1             (I_IS_1X1            ), 
-    .I_IS_LRELU           (I_IS_LRELU          ), 
-    .I_IS_TOP_BLOCK       (I_IS_TOP_BLOCK      ), 
-    .I_IS_BOTTOM_BLOCK    (I_IS_BOTTOM_BLOCK   ), 
-    .I_IS_COLS_1_K2       (I_IS_COLS_1_K2      ), 
-    .I_IS_CONFIG          (I_IS_CONFIG         ), 
-    .I_IS_CIN_LAST        (I_IS_CIN_LAST       ), 
-    .I_KERNEL_W_1         (I_KERNEL_W_1        ),  
-    .I_IS_LEFT_COL        (I_IS_LEFT_COL       ), 
-    .I_IS_RIGHT_COL       (I_IS_RIGHT_COL      ), 
-    .TUSER_WIDTH_CONV_IN  (TUSER_WIDTH_CONV_IN ), 
-    .TUSER_WIDTH_CONV_OUT (TUSER_WIDTH_LRELU_IN)
-  ) CONV_ENGINE (
+  axis_conv_engine CONV_ENGINE (
     .aclk                 (aclk                       ),
     .aresetn              (aresetn                    ),
     .s_axis_tvalid        (input_m_axis_tvalid        ),
