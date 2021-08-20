@@ -180,10 +180,7 @@ module axis_lrelu_engine (
         BLOCK_S   : if (s_vr_last_dw_out  ) state_next = RESET_S;
         RESET_S   : if (s_ready_slice     ) state_next = WRITE_1_S;
         WRITE_1_S : if (handshake         ) state_next = WRITE_2_S;
-        WRITE_2_S : if (count_config_full) 
-                      if (s_axis_tuser[I_IS_1X1]) state_next = FILL_S;
-                      else                        state_next = PASS_S;
-        FILL_S    : if (count_fill == FILL_DELAY && s_ready_slice )   state_next = PASS_S;
+        WRITE_2_S : if (count_config_full)  state_next = PASS_S;
         default   : state_next = state;
       endcase
     end
