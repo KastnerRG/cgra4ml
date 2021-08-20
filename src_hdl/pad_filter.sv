@@ -128,14 +128,14 @@ module pad_filter
             assign kw2_wire [m] = kw_wire [m] / 2; // kw = 7 : kw2_wire = 3,   kw = 5 : kw2_wire = 2,   kw = 3 : kw2_wire = 1
 
 
-            assign reg_clken[m] = aclken[m] && valid_in[m] && user_in [m][I_IS_CIN_LAST];
+            assign reg_clken[m] = aclken[m] && valid_in[m] && (user_in [m][I_IS_CIN_LAST] || user_in [m][I_IS_CONFIG]);
 
-            assign col_end_in         [m][1]  = user_in[m][I_IS_COLS_1_K2];
-            assign col_start_in       [m][1]  = col_end[m][kw2_wire[m]]; // This is a mux
+            assign col_end_in         [m][1]  = user_in[m][I_IS_COLS_1_K2] && (kw2_wire [m] != 0);
+            assign col_start_in       [m][1]  = user_in[m][I_IS_CONFIG] ? (kw2_wire [m] != 0) : col_end[m][kw2_wire[m]]; // This is a mux
 
             for (genvar k=2; k < KW2_MAX+1; k++) begin: col_end_gen_k
                 assign col_end_in     [m][k]  = col_end  [m][k-1];
-                assign col_start_in   [m][k]  = col_start[m][k-1];
+                assign col_start_in   [m][k]  = user_in  [m][I_IS_CONFIG] ? 0 : col_start[m][k-1];
             end
 
 
@@ -157,7 +157,7 @@ module pad_filter
             register
             #(
                 .WORD_WIDTH     (KW2_MAX),
-                .RESET_VALUE    (1 )         
+                .RESET_VALUE    (0 )         
             )
             COL_START_REG
             (
@@ -300,7 +300,7 @@ module pad_filter
             end
             assign     lut_allow_full   [m][ 0 ] =     1;
 
-            assign    mask_full[m]  =  lut_allow_full [m][kw2_wire[m]] | user_in[m][I_IS_CONFIG]; // || (user_in[m][I_IS_1X1] && ~user_in[m][I_IS_CONFIG])
+            assign    mask_full[m]  =  lut_allow_full [m][kw2_wire[m]] | user_in[m][I_IS_CONFIG];
         end
 
         for (genvar m=1; m < MEMBERS; m++)   begin: lookup_partial_datapath_gen

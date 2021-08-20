@@ -338,8 +338,8 @@ module axis_image_pipe
 
   generate
     for (genvar u=0; u < UNITS_EDGES; u=u+1) begin
-      assign m_data_1 [u] = (state == ONES_S) ? (u==0) : dw_1_m_data[u];
-      assign m_data_2 [u] = (state == ONES_S) ? (u==0) : 
+      assign m_data_1 [u] = (state == ONES_S) ? (u <= KERNEL_H_MAX/2) : dw_1_m_data[u];
+      assign m_data_2 [u] = (state == ONES_S) ? (u <= KERNEL_H_MAX/2) : 
                             is_max_out        ? dw_2_m_data[u] : dw_1_m_data[u];
     end
   endgenerate
