@@ -40,6 +40,7 @@ set BITS_EXP_FMA_2  5
 set BITS_FRA_FMA_2  10
 
 set IS_CONV_DW_SLICE 0
+set IS_CLOCK_CONV    1
 
 set BEATS_CONFIG_MAX   [expr int(1 + 2*$KERNEL_H_MAX)]
 set IM_BLOCKS_MAX      [expr int($IM_ROWS_MAX / $UNITS)]
@@ -120,6 +121,7 @@ Parameters of the system. Written from build.tcl
 `define COPIES   $COPIES 
 `define MEMBERS  $MEMBERS
 `define DW_FACTOR_1 $DW_FACTOR_1
+`define IS_CLOCK_CONV $IS_CLOCK_CONV
 
 `define CORES              $CORES
 `define UNITS_EDGES        $UNITS_EDGES

@@ -13,8 +13,8 @@ module axis_accelerator_tb ();
   end
 
   localparam ITERATIONS = 2;
-  localparam VALID_PROB = 100;
-  localparam READY_PROB = 100;
+  localparam VALID_PROB = 20;
+  localparam READY_PROB = 20;
   localparam string DIR_PATH = "D:/cnn-fpga/data/";
 
 

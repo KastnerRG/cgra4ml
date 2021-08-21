@@ -112,11 +112,7 @@ module axis_lrelu_engine (
       * WRITE_2_S:
         - connect engine's config to slave
         - config_count decremets at every handshake
-        - when config_count = 0 and handshake, switch to PASS_S if 3x3 or to FILL_S if 1x1
-      * FILL_S
-        - For 1x1 case, since B_cm is needed immediately
-        - Block input and wait for (LATENCY_BRAM+1) clocks for BRAMs to get valid
-        - For 3x3, B_rb is filled last and is needed after several clocks, so no need
+        - when config_count = 0 and handshake
       * default:
         - same as PASS_S
     */
@@ -131,7 +127,6 @@ module axis_lrelu_engine (
     localparam RESET_S   = 2;
     localparam WRITE_1_S = 3;
     localparam WRITE_2_S = 4;
-    localparam FILL_S    = 5;
 
     wire [2:0] state;
     reg  [2:0] state_next;
@@ -226,14 +221,6 @@ module axis_lrelu_engine (
 
                     resetn_config     = 1;
                     count_fill_next   = 0;
-                  end
-        FILL_S:   begin
-                    config_s_valid    = 0;
-                    dw_s_valid        = 0;
-                    s_axis_tready     = 0;
-
-                    resetn_config     = 1;
-                    count_fill_next   = count_fill + 1;
                   end
         default  :begin
                     config_s_valid    = 0;
