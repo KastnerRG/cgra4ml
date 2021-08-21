@@ -14,19 +14,19 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="179027000fs"></ZoomStartTime>
-      <ZoomEndTime time="180965001fs"></ZoomEndTime>
-      <Cursor1Time time="179527000fs"></Cursor1Time>
+      <ZoomStartTime time="99999331666fs"></ZoomStartTime>
+      <ZoomEndTime time="100001333667fs"></ZoomEndTime>
+      <Cursor1Time time="100001000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="368"></NameColumnWidth>
-      <ValueColumnWidth column_width="180"></ValueColumnWidth>
+      <ValueColumnWidth column_width="176"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="1" />
    <wave_markers>
       <marker time="847950000" label="" />
-      <marker time="31450100" label="" />
       <marker time="23448000" label="" />
+      <marker time="31450100" label="" />
    </wave_markers>
    <wvobject fp_name="group533" type="group">
       <obj_property name="label">All</obj_property>
@@ -156,7 +156,6 @@
       <wvobject fp_name="group396" type="group">
          <obj_property name="label">Image Pipe</obj_property>
          <obj_property name="DisplayName">label</obj_property>
-         <obj_property name="isExpanded"></obj_property>
          <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/IM_MUX/state" type="array">
             <obj_property name="ElementShortName">state[1:0]</obj_property>
             <obj_property name="ObjectShortName">state[1:0]</obj_property>
@@ -289,6 +288,7 @@
          <wvobject fp_name="group2737" type="group">
             <obj_property name="label">Slave</obj_property>
             <obj_property name="DisplayName">label</obj_property>
+            <obj_property name="isExpanded"></obj_property>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/s_axis_tready" type="logic">
                <obj_property name="ElementShortName">s_axis_tready</obj_property>
                <obj_property name="ObjectShortName">s_axis_tready</obj_property>
@@ -345,6 +345,7 @@
          <wvobject fp_name="group2739" type="group">
             <obj_property name="label">STATE: WRITE</obj_property>
             <obj_property name="DisplayName">label</obj_property>
+            <obj_property name="isExpanded"></obj_property>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/state_dw_next" type="logic">
                <obj_property name="ElementShortName">state_dw_next</obj_property>
                <obj_property name="ObjectShortName">state_dw_next</obj_property>
@@ -433,11 +434,6 @@
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/s_addr_max" type="array">
                <obj_property name="ElementShortName">s_addr_max[11:0]</obj_property>
                <obj_property name="ObjectShortName">s_addr_max[11:0]</obj_property>
-               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-            </wvobject>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/addr_max" type="array">
-               <obj_property name="ElementShortName">addr_max[0:1][11:0]</obj_property>
-               <obj_property name="ObjectShortName">addr_max[0:1][11:0]</obj_property>
                <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/s_addr_min" type="array">
@@ -570,6 +566,9 @@
                <obj_property name="ElementShortName">count_config[3:0]</obj_property>
                <obj_property name="ObjectShortName">count_config[3:0]</obj_property>
                <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+               <obj_property name="CustomSignalColor">#FFD700</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+               <obj_property name="isExpanded"></obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/last_next_config" type="logic">
                <obj_property name="ElementShortName">last_next_config</obj_property>
@@ -592,6 +591,9 @@
                <obj_property name="ElementShortName">count_kh[1:0]</obj_property>
                <obj_property name="ObjectShortName">count_kh[1:0]</obj_property>
                <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+               <obj_property name="CustomSignalColor">#FFD700</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+               <obj_property name="isExpanded"></obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/last_next_kh" type="logic">
                <obj_property name="ElementShortName">last_next_kh</obj_property>
@@ -614,6 +616,9 @@
                <obj_property name="ElementShortName">count_cin[9:0]</obj_property>
                <obj_property name="ObjectShortName">count_cin[9:0]</obj_property>
                <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+               <obj_property name="CustomSignalColor">#FFD700</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+               <obj_property name="isExpanded"></obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/last_next_cin" type="logic">
                <obj_property name="ElementShortName">last_next_cin</obj_property>
@@ -636,6 +641,9 @@
                <obj_property name="ElementShortName">count_cols[8:0]</obj_property>
                <obj_property name="ObjectShortName">count_cols[8:0]</obj_property>
                <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+               <obj_property name="CustomSignalColor">#FFD700</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+               <obj_property name="isExpanded"></obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/last_next_cols" type="logic">
                <obj_property name="ElementShortName">last_next_cols</obj_property>
@@ -658,6 +666,9 @@
                <obj_property name="ElementShortName">count_blocks[5:0]</obj_property>
                <obj_property name="ObjectShortName">count_blocks[5:0]</obj_property>
                <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+               <obj_property name="CustomSignalColor">#FFD700</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+               <obj_property name="isExpanded"></obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/last_next_blocks" type="logic">
                <obj_property name="ElementShortName">last_next_blocks</obj_property>
@@ -671,7 +682,6 @@
          <wvobject fp_name="group2741" type="group">
             <obj_property name="label">BRAM</obj_property>
             <obj_property name="DisplayName">label</obj_property>
-            <obj_property name="isExpanded"></obj_property>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/bram_wen" type="array">
                <obj_property name="ElementShortName">bram_wen[0:1]</obj_property>
                <obj_property name="ObjectShortName">bram_wen[0:1]</obj_property>
@@ -683,10 +693,12 @@
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/bram_m_ready" type="array">
                <obj_property name="ElementShortName">bram_m_ready[0:1]</obj_property>
                <obj_property name="ObjectShortName">bram_m_ready[0:1]</obj_property>
+               <obj_property name="isExpanded"></obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/bram_m_valid" type="array">
                <obj_property name="ElementShortName">bram_m_valid[0:1]</obj_property>
                <obj_property name="ObjectShortName">bram_m_valid[0:1]</obj_property>
+               <obj_property name="isExpanded"></obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/bram_m_data" type="array">
                <obj_property name="ElementShortName">bram_m_data[0:1][383:0]</obj_property>
@@ -697,13 +709,17 @@
             <obj_property name="label">MASTER</obj_property>
             <obj_property name="DisplayName">label</obj_property>
             <obj_property name="isExpanded"></obj_property>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_axis_tready" type="logic">
-               <obj_property name="ElementShortName">m_axis_tready</obj_property>
-               <obj_property name="ObjectShortName">m_axis_tready</obj_property>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/clk" type="logic">
+               <obj_property name="ElementShortName">clk</obj_property>
+               <obj_property name="ObjectShortName">clk</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_axis_tvalid" type="logic">
                <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
                <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_axis_tready" type="logic">
+               <obj_property name="ElementShortName">m_axis_tready</obj_property>
+               <obj_property name="ObjectShortName">m_axis_tready</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_axis_tlast" type="logic">
                <obj_property name="ElementShortName">m_axis_tlast</obj_property>
@@ -713,11 +729,1012 @@
                <obj_property name="ElementShortName">m_axis_tuser[7:0]</obj_property>
                <obj_property name="ObjectShortName">m_axis_tuser[7:0]</obj_property>
             </wvobject>
+            <wvobject fp_name="group1017" type="group">
+               <obj_property name="label">BRAM_0</obj_property>
+               <obj_property name="DisplayName">label</obj_property>
+               <obj_property name="isExpanded"></obj_property>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /clk" type="logic">
+                  <obj_property name="ElementShortName">clk</obj_property>
+                  <obj_property name="ObjectShortName">clk</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /clken" type="logic">
+                  <obj_property name="ElementShortName">clken</obj_property>
+                  <obj_property name="ObjectShortName">clken</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /resetn" type="logic">
+                  <obj_property name="ElementShortName">resetn</obj_property>
+                  <obj_property name="ObjectShortName">resetn</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /w_en" type="logic">
+                  <obj_property name="ElementShortName">w_en</obj_property>
+                  <obj_property name="ObjectShortName">w_en</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /w_addr" type="array">
+                  <obj_property name="ElementShortName">w_addr[11:0]</obj_property>
+                  <obj_property name="ObjectShortName">w_addr[11:0]</obj_property>
+                  <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+                  <obj_property name="UseCustomSignalColor">true</obj_property>
+                  <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data" type="array">
+                  <obj_property name="ElementShortName">dw_m_data[3:0][11:0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">dw_m_data[3:0][11:0][7:0]</obj_property>
+                  <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                  <obj_property name="UseCustomSignalColor">true</obj_property>
+                  <obj_property name="isExpanded"></obj_property>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[3]" type="array">
+                     <obj_property name="ElementShortName">[3][11:0][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[3][11:0][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                     <obj_property name="UseCustomSignalColor">true</obj_property>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[3][11]" type="array">
+                        <obj_property name="ElementShortName">[11][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[11][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[3][10]" type="array">
+                        <obj_property name="ElementShortName">[10][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[10][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[3][9]" type="array">
+                        <obj_property name="ElementShortName">[9][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[9][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[3][8]" type="array">
+                        <obj_property name="ElementShortName">[8][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[8][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[3][7]" type="array">
+                        <obj_property name="ElementShortName">[7][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[7][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[3][6]" type="array">
+                        <obj_property name="ElementShortName">[6][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[6][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[3][5]" type="array">
+                        <obj_property name="ElementShortName">[5][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[5][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[3][4]" type="array">
+                        <obj_property name="ElementShortName">[4][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[4][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[3][3]" type="array">
+                        <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[3][2]" type="array">
+                        <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[3][1]" type="array">
+                        <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[3][0]" type="array">
+                        <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                  </wvobject>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[2]" type="array">
+                     <obj_property name="ElementShortName">[2][11:0][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[2][11:0][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                     <obj_property name="UseCustomSignalColor">true</obj_property>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[2][11]" type="array">
+                        <obj_property name="ElementShortName">[11][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[11][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[2][10]" type="array">
+                        <obj_property name="ElementShortName">[10][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[10][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[2][9]" type="array">
+                        <obj_property name="ElementShortName">[9][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[9][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[2][8]" type="array">
+                        <obj_property name="ElementShortName">[8][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[8][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[2][7]" type="array">
+                        <obj_property name="ElementShortName">[7][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[7][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[2][6]" type="array">
+                        <obj_property name="ElementShortName">[6][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[6][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[2][5]" type="array">
+                        <obj_property name="ElementShortName">[5][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[5][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[2][4]" type="array">
+                        <obj_property name="ElementShortName">[4][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[4][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[2][3]" type="array">
+                        <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[2][2]" type="array">
+                        <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[2][1]" type="array">
+                        <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[2][0]" type="array">
+                        <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                  </wvobject>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[1]" type="array">
+                     <obj_property name="ElementShortName">[1][11:0][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[1][11:0][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                     <obj_property name="UseCustomSignalColor">true</obj_property>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[1][11]" type="array">
+                        <obj_property name="ElementShortName">[11][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[11][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[1][10]" type="array">
+                        <obj_property name="ElementShortName">[10][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[10][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[1][9]" type="array">
+                        <obj_property name="ElementShortName">[9][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[9][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[1][8]" type="array">
+                        <obj_property name="ElementShortName">[8][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[8][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[1][7]" type="array">
+                        <obj_property name="ElementShortName">[7][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[7][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[1][6]" type="array">
+                        <obj_property name="ElementShortName">[6][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[6][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[1][5]" type="array">
+                        <obj_property name="ElementShortName">[5][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[5][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[1][4]" type="array">
+                        <obj_property name="ElementShortName">[4][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[4][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[1][3]" type="array">
+                        <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[1][2]" type="array">
+                        <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[1][1]" type="array">
+                        <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[1][0]" type="array">
+                        <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                  </wvobject>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[0]" type="array">
+                     <obj_property name="ElementShortName">[0][11:0][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[0][11:0][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                     <obj_property name="UseCustomSignalColor">true</obj_property>
+                     <obj_property name="isExpanded"></obj_property>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[0][11]" type="array">
+                        <obj_property name="ElementShortName">[11][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[11][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[0][10]" type="array">
+                        <obj_property name="ElementShortName">[10][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[10][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[0][9]" type="array">
+                        <obj_property name="ElementShortName">[9][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[9][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[0][8]" type="array">
+                        <obj_property name="ElementShortName">[8][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[8][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[0][7]" type="array">
+                        <obj_property name="ElementShortName">[7][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[7][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[0][6]" type="array">
+                        <obj_property name="ElementShortName">[6][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[6][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[0][5]" type="array">
+                        <obj_property name="ElementShortName">[5][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[5][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[0][4]" type="array">
+                        <obj_property name="ElementShortName">[4][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[4][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[0][3]" type="array">
+                        <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[0][2]" type="array">
+                        <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[0][1]" type="array">
+                        <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data[0][0]" type="array">
+                        <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                        <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+                        <obj_property name="UseCustomSignalColor">true</obj_property>
+                     </wvobject>
+                  </wvobject>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /s_data" type="array">
+                  <obj_property name="ElementShortName">s_data[383:0]</obj_property>
+                  <obj_property name="ObjectShortName">s_data[383:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /m_data" type="array">
+                  <obj_property name="ElementShortName">m_data[383:0]</obj_property>
+                  <obj_property name="ObjectShortName">m_data[383:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /r_last_in" type="logic">
+                  <obj_property name="ElementShortName">r_last_in</obj_property>
+                  <obj_property name="ObjectShortName">r_last_in</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /w_last_in" type="logic">
+                  <obj_property name="ElementShortName">w_last_in</obj_property>
+                  <obj_property name="ObjectShortName">w_last_in</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /r_addr_max" type="array">
+                  <obj_property name="ElementShortName">r_addr_max[11:0]</obj_property>
+                  <obj_property name="ObjectShortName">r_addr_max[11:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /r_addr_min" type="array">
+                  <obj_property name="ElementShortName">r_addr_min[11:0]</obj_property>
+                  <obj_property name="ObjectShortName">r_addr_min[11:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /w_addr_max" type="array">
+                  <obj_property name="ElementShortName">w_addr_max[11:0]</obj_property>
+                  <obj_property name="ObjectShortName">w_addr_max[11:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /fifo_empty" type="logic">
+                  <obj_property name="ElementShortName">fifo_empty</obj_property>
+                  <obj_property name="ObjectShortName">fifo_empty</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /w_addr_next" type="array">
+                  <obj_property name="ElementShortName">w_addr_next[11:0]</obj_property>
+                  <obj_property name="ObjectShortName">w_addr_next[11:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /w_last" type="logic">
+                  <obj_property name="ElementShortName">w_last</obj_property>
+                  <obj_property name="ObjectShortName">w_last</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /r_en" type="logic">
+                  <obj_property name="ElementShortName">r_en</obj_property>
+                  <obj_property name="ObjectShortName">r_en</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /r_addr" type="array">
+                  <obj_property name="ElementShortName">r_addr[11:0]</obj_property>
+                  <obj_property name="ObjectShortName">r_addr[11:0]</obj_property>
+                  <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+                  <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+                  <obj_property name="UseCustomSignalColor">true</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /r_addr_next" type="array">
+                  <obj_property name="ElementShortName">r_addr_next[11:0]</obj_property>
+                  <obj_property name="ObjectShortName">r_addr_next[11:0]</obj_property>
+                  <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /r_last" type="logic">
+                  <obj_property name="ElementShortName">r_last</obj_property>
+                  <obj_property name="ObjectShortName">r_last</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /m_valid" type="logic">
+                  <obj_property name="ElementShortName">m_valid</obj_property>
+                  <obj_property name="ObjectShortName">m_valid</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data" type="array">
+                  <obj_property name="ElementShortName">m_data[3:0][11:0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">m_data[3:0][11:0][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                  <obj_property name="isExpanded"></obj_property>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[3]" type="array">
+                     <obj_property name="ElementShortName">[3][11:0][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[3][11:0][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[3][11]" type="array">
+                        <obj_property name="ElementShortName">[11][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[11][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[3][10]" type="array">
+                        <obj_property name="ElementShortName">[10][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[10][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[3][9]" type="array">
+                        <obj_property name="ElementShortName">[9][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[9][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[3][8]" type="array">
+                        <obj_property name="ElementShortName">[8][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[8][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[3][7]" type="array">
+                        <obj_property name="ElementShortName">[7][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[7][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[3][6]" type="array">
+                        <obj_property name="ElementShortName">[6][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[6][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[3][5]" type="array">
+                        <obj_property name="ElementShortName">[5][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[5][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[3][4]" type="array">
+                        <obj_property name="ElementShortName">[4][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[4][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[3][3]" type="array">
+                        <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[3][2]" type="array">
+                        <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[3][1]" type="array">
+                        <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[3][0]" type="array">
+                        <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                  </wvobject>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[2]" type="array">
+                     <obj_property name="ElementShortName">[2][11:0][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[2][11:0][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[2][11]" type="array">
+                        <obj_property name="ElementShortName">[11][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[11][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[2][10]" type="array">
+                        <obj_property name="ElementShortName">[10][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[10][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[2][9]" type="array">
+                        <obj_property name="ElementShortName">[9][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[9][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[2][8]" type="array">
+                        <obj_property name="ElementShortName">[8][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[8][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[2][7]" type="array">
+                        <obj_property name="ElementShortName">[7][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[7][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[2][6]" type="array">
+                        <obj_property name="ElementShortName">[6][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[6][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[2][5]" type="array">
+                        <obj_property name="ElementShortName">[5][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[5][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[2][4]" type="array">
+                        <obj_property name="ElementShortName">[4][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[4][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[2][3]" type="array">
+                        <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[2][2]" type="array">
+                        <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[2][1]" type="array">
+                        <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[2][0]" type="array">
+                        <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                  </wvobject>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[1]" type="array">
+                     <obj_property name="ElementShortName">[1][11:0][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[1][11:0][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[1][11]" type="array">
+                        <obj_property name="ElementShortName">[11][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[11][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[1][10]" type="array">
+                        <obj_property name="ElementShortName">[10][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[10][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[1][9]" type="array">
+                        <obj_property name="ElementShortName">[9][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[9][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[1][8]" type="array">
+                        <obj_property name="ElementShortName">[8][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[8][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[1][7]" type="array">
+                        <obj_property name="ElementShortName">[7][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[7][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[1][6]" type="array">
+                        <obj_property name="ElementShortName">[6][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[6][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[1][5]" type="array">
+                        <obj_property name="ElementShortName">[5][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[5][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[1][4]" type="array">
+                        <obj_property name="ElementShortName">[4][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[4][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[1][3]" type="array">
+                        <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[1][2]" type="array">
+                        <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[1][1]" type="array">
+                        <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[1][0]" type="array">
+                        <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                  </wvobject>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0]" type="array">
+                     <obj_property name="ElementShortName">[0][11:0][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[0][11:0][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     <obj_property name="isExpanded"></obj_property>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][11]" type="array">
+                        <obj_property name="ElementShortName">[11][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[11][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][10]" type="array">
+                        <obj_property name="ElementShortName">[10][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[10][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][9]" type="array">
+                        <obj_property name="ElementShortName">[9][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[9][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][8]" type="array">
+                        <obj_property name="ElementShortName">[8][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[8][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][7]" type="array">
+                        <obj_property name="ElementShortName">[7][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[7][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][6]" type="array">
+                        <obj_property name="ElementShortName">[6][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[6][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][5]" type="array">
+                        <obj_property name="ElementShortName">[5][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[5][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][4]" type="array">
+                        <obj_property name="ElementShortName">[4][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[4][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][3]" type="array">
+                        <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][2]" type="array">
+                        <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][1]" type="array">
+                        <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                     <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][0]" type="array">
+                        <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                        <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                     </wvobject>
+                  </wvobject>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /bram_m_data" type="array">
+                  <obj_property name="ElementShortName">bram_m_data[383:0]</obj_property>
+                  <obj_property name="ObjectShortName">bram_m_data[383:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /\genblk2.fifo_r_en " type="logic">
+                  <obj_property name="ElementShortName">\genblk2.fifo_r_en </obj_property>
+                  <obj_property name="ObjectShortName">\genblk2.fifo_r_en </obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /\genblk2.r_en_delayed " type="logic">
+                  <obj_property name="ElementShortName">\genblk2.r_en_delayed </obj_property>
+                  <obj_property name="ObjectShortName">\genblk2.r_en_delayed </obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /R_DEPTH" type="array">
+                  <obj_property name="ElementShortName">R_DEPTH[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">R_DEPTH[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /R_DATA_WIDTH" type="array">
+                  <obj_property name="ElementShortName">R_DATA_WIDTH[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">R_DATA_WIDTH[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /W_DATA_WIDTH" type="array">
+                  <obj_property name="ElementShortName">W_DATA_WIDTH[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">W_DATA_WIDTH[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /LATENCY" type="array">
+                  <obj_property name="ElementShortName">LATENCY[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">LATENCY[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /ABSORB" type="array">
+                  <obj_property name="ElementShortName">ABSORB[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">ABSORB[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /IP_TYPE" type="array">
+                  <obj_property name="ElementShortName">IP_TYPE[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">IP_TYPE[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /SIZE" type="array">
+                  <obj_property name="ElementShortName">SIZE[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">SIZE[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /W_DEPTH" type="array">
+                  <obj_property name="ElementShortName">W_DEPTH[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">W_DEPTH[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /W_ADDR_WIDTH" type="array">
+                  <obj_property name="ElementShortName">W_ADDR_WIDTH[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">W_ADDR_WIDTH[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /R_ADDR_WIDTH" type="array">
+                  <obj_property name="ElementShortName">R_ADDR_WIDTH[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">R_ADDR_WIDTH[31:0]</obj_property>
+               </wvobject>
+            </wvobject>
+            <wvobject fp_name="group1053" type="group">
+               <obj_property name="label">BRAM_1</obj_property>
+               <obj_property name="DisplayName">label</obj_property>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /clk" type="logic">
+                  <obj_property name="ElementShortName">clk</obj_property>
+                  <obj_property name="ObjectShortName">clk</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /clken" type="logic">
+                  <obj_property name="ElementShortName">clken</obj_property>
+                  <obj_property name="ObjectShortName">clken</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /resetn" type="logic">
+                  <obj_property name="ElementShortName">resetn</obj_property>
+                  <obj_property name="ObjectShortName">resetn</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /w_en" type="logic">
+                  <obj_property name="ElementShortName">w_en</obj_property>
+                  <obj_property name="ObjectShortName">w_en</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /r_en" type="logic">
+                  <obj_property name="ElementShortName">r_en</obj_property>
+                  <obj_property name="ObjectShortName">r_en</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /s_data" type="array">
+                  <obj_property name="ElementShortName">s_data[383:0]</obj_property>
+                  <obj_property name="ObjectShortName">s_data[383:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /m_data" type="array">
+                  <obj_property name="ElementShortName">m_data[383:0]</obj_property>
+                  <obj_property name="ObjectShortName">m_data[383:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /m_valid" type="logic">
+                  <obj_property name="ElementShortName">m_valid</obj_property>
+                  <obj_property name="ObjectShortName">m_valid</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /r_last_in" type="logic">
+                  <obj_property name="ElementShortName">r_last_in</obj_property>
+                  <obj_property name="ObjectShortName">r_last_in</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /w_last_in" type="logic">
+                  <obj_property name="ElementShortName">w_last_in</obj_property>
+                  <obj_property name="ObjectShortName">w_last_in</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /r_addr_max" type="array">
+                  <obj_property name="ElementShortName">r_addr_max[11:0]</obj_property>
+                  <obj_property name="ObjectShortName">r_addr_max[11:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /r_addr_min" type="array">
+                  <obj_property name="ElementShortName">r_addr_min[11:0]</obj_property>
+                  <obj_property name="ObjectShortName">r_addr_min[11:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /w_addr_max" type="array">
+                  <obj_property name="ElementShortName">w_addr_max[11:0]</obj_property>
+                  <obj_property name="ObjectShortName">w_addr_max[11:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /fifo_empty" type="logic">
+                  <obj_property name="ElementShortName">fifo_empty</obj_property>
+                  <obj_property name="ObjectShortName">fifo_empty</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /w_addr_next" type="array">
+                  <obj_property name="ElementShortName">w_addr_next[11:0]</obj_property>
+                  <obj_property name="ObjectShortName">w_addr_next[11:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /w_addr" type="array">
+                  <obj_property name="ElementShortName">w_addr[11:0]</obj_property>
+                  <obj_property name="ObjectShortName">w_addr[11:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /w_last" type="logic">
+                  <obj_property name="ElementShortName">w_last</obj_property>
+                  <obj_property name="ObjectShortName">w_last</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /r_addr" type="array">
+                  <obj_property name="ElementShortName">r_addr[11:0]</obj_property>
+                  <obj_property name="ObjectShortName">r_addr[11:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /r_addr_next" type="array">
+                  <obj_property name="ElementShortName">r_addr_next[11:0]</obj_property>
+                  <obj_property name="ObjectShortName">r_addr_next[11:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /r_last" type="logic">
+                  <obj_property name="ElementShortName">r_last</obj_property>
+                  <obj_property name="ObjectShortName">r_last</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /bram_m_data" type="array">
+                  <obj_property name="ElementShortName">bram_m_data[383:0]</obj_property>
+                  <obj_property name="ObjectShortName">bram_m_data[383:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /\genblk2.fifo_r_en " type="logic">
+                  <obj_property name="ElementShortName">\genblk2.fifo_r_en </obj_property>
+                  <obj_property name="ObjectShortName">\genblk2.fifo_r_en </obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /\genblk2.r_en_delayed " type="logic">
+                  <obj_property name="ElementShortName">\genblk2.r_en_delayed </obj_property>
+                  <obj_property name="ObjectShortName">\genblk2.r_en_delayed </obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /R_DEPTH" type="array">
+                  <obj_property name="ElementShortName">R_DEPTH[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">R_DEPTH[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /R_DATA_WIDTH" type="array">
+                  <obj_property name="ElementShortName">R_DATA_WIDTH[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">R_DATA_WIDTH[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /W_DATA_WIDTH" type="array">
+                  <obj_property name="ElementShortName">W_DATA_WIDTH[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">W_DATA_WIDTH[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /LATENCY" type="array">
+                  <obj_property name="ElementShortName">LATENCY[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">LATENCY[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /ABSORB" type="array">
+                  <obj_property name="ElementShortName">ABSORB[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">ABSORB[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /IP_TYPE" type="array">
+                  <obj_property name="ElementShortName">IP_TYPE[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">IP_TYPE[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /SIZE" type="array">
+                  <obj_property name="ElementShortName">SIZE[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">SIZE[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /W_DEPTH" type="array">
+                  <obj_property name="ElementShortName">W_DEPTH[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">W_DEPTH[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /W_ADDR_WIDTH" type="array">
+                  <obj_property name="ElementShortName">W_ADDR_WIDTH[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">W_ADDR_WIDTH[31:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /R_ADDR_WIDTH" type="array">
+                  <obj_property name="ElementShortName">R_ADDR_WIDTH[31:0]</obj_property>
+                  <obj_property name="ObjectShortName">R_ADDR_WIDTH[31:0]</obj_property>
+               </wvobject>
+            </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data" type="array">
                <obj_property name="ElementShortName">m_data[3:0][11:0][7:0]</obj_property>
                <obj_property name="ObjectShortName">m_data[3:0][11:0][7:0]</obj_property>
                <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                <obj_property name="isExpanded"></obj_property>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[3]" type="array">
+                  <obj_property name="ElementShortName">[3][11:0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[3][11:0][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[2]" type="array">
+                  <obj_property name="ElementShortName">[2][11:0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[2][11:0][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[1]" type="array">
+                  <obj_property name="ElementShortName">[1][11:0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][11:0][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0]" type="array">
+                  <obj_property name="ElementShortName">[0][11:0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][11:0][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                  <obj_property name="isExpanded"></obj_property>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][11]" type="array">
+                     <obj_property name="ElementShortName">[11][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[11][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                  </wvobject>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][10]" type="array">
+                     <obj_property name="ElementShortName">[10][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[10][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                  </wvobject>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][9]" type="array">
+                     <obj_property name="ElementShortName">[9][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[9][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                  </wvobject>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][8]" type="array">
+                     <obj_property name="ElementShortName">[8][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[8][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                  </wvobject>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][7]" type="array">
+                     <obj_property name="ElementShortName">[7][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[7][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                  </wvobject>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][6]" type="array">
+                     <obj_property name="ElementShortName">[6][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[6][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                  </wvobject>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][5]" type="array">
+                     <obj_property name="ElementShortName">[5][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[5][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                  </wvobject>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][4]" type="array">
+                     <obj_property name="ElementShortName">[4][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[4][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                  </wvobject>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][3]" type="array">
+                     <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                  </wvobject>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][2]" type="array">
+                     <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                  </wvobject>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][1]" type="array">
+                     <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                  </wvobject>
+                  <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0][0]" type="array">
+                     <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                     <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+                  </wvobject>
+               </wvobject>
             </wvobject>
          </wvobject>
       </wvobject>
@@ -1158,7 +2175,6 @@
          <wvobject fp_name="group341" type="group">
             <obj_property name="label">Pad Filter</obj_property>
             <obj_property name="DisplayName">label</obj_property>
-            <obj_property name="isExpanded"></obj_property>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/pad_filter_dut/valid_in" type="array">
                <obj_property name="ElementShortName">valid_in[11:0]</obj_property>
                <obj_property name="ObjectShortName">valid_in[11:0]</obj_property>
@@ -1243,7 +2259,6 @@
          <wvobject fp_name="group356" type="group">
             <obj_property name="label">Conv-Master</obj_property>
             <obj_property name="DisplayName">label</obj_property>
-            <obj_property name="isExpanded"></obj_property>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/clk" type="logic">
                <obj_property name="ElementShortName">clk</obj_property>
                <obj_property name="ObjectShortName">clk</obj_property>
@@ -1486,24 +2501,6 @@
             <obj_property name="ElementShortName">s_config_cgm[1:0][1:0][11:0][7:0]</obj_property>
             <obj_property name="ObjectShortName">s_config_cgm[1:0][1:0][11:0][7:0]</obj_property>
             <obj_property name="isExpanded"></obj_property>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/s_config_cgm[1]" type="array">
-               <obj_property name="ElementShortName">[1][1:0][11:0][7:0]</obj_property>
-               <obj_property name="ObjectShortName">[1][1:0][11:0][7:0]</obj_property>
-               <obj_property name="isExpanded"></obj_property>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/s_config_cgm[1][1]" type="array">
-                  <obj_property name="ElementShortName">[1][11:0][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[1][11:0][7:0]</obj_property>
-                  <obj_property name="isExpanded"></obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/s_config_cgm[1][0]" type="array">
-                  <obj_property name="ElementShortName">[0][11:0][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[0][11:0][7:0]</obj_property>
-               </wvobject>
-            </wvobject>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/s_config_cgm[0]" type="array">
-               <obj_property name="ElementShortName">[0][1:0][11:0][7:0]</obj_property>
-               <obj_property name="ObjectShortName">[0][1:0][11:0][7:0]</obj_property>
-            </wvobject>
          </wvobject>
       </wvobject>
       <wvobject fp_name="group1120" type="group">
@@ -3161,122 +4158,6 @@
          <obj_property name="ObjectShortName">m_data_cgu[1:0][1:0][3:0][7:0]</obj_property>
          <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
          <obj_property name="isExpanded"></obj_property>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[1]" type="array">
-            <obj_property name="ElementShortName">[1][1:0][3:0][7:0]</obj_property>
-            <obj_property name="ObjectShortName">[1][1:0][3:0][7:0]</obj_property>
-            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            <obj_property name="isExpanded"></obj_property>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[1][1]" type="array">
-               <obj_property name="ElementShortName">[1][3:0][7:0]</obj_property>
-               <obj_property name="ObjectShortName">[1][3:0][7:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               <obj_property name="isExpanded"></obj_property>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[1][1][3]" type="array">
-                  <obj_property name="ElementShortName">[3][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[3][7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[1][1][2]" type="array">
-                  <obj_property name="ElementShortName">[2][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[2][7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[1][1][1]" type="array">
-                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[1][1][0]" type="array">
-                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-            </wvobject>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[1][0]" type="array">
-               <obj_property name="ElementShortName">[0][3:0][7:0]</obj_property>
-               <obj_property name="ObjectShortName">[0][3:0][7:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               <obj_property name="isExpanded"></obj_property>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[1][0][3]" type="array">
-                  <obj_property name="ElementShortName">[3][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[3][7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[1][0][2]" type="array">
-                  <obj_property name="ElementShortName">[2][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[2][7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[1][0][1]" type="array">
-                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[1][0][0]" type="array">
-                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-            </wvobject>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[0]" type="array">
-            <obj_property name="ElementShortName">[0][1:0][3:0][7:0]</obj_property>
-            <obj_property name="ObjectShortName">[0][1:0][3:0][7:0]</obj_property>
-            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            <obj_property name="isExpanded"></obj_property>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[0][1]" type="array">
-               <obj_property name="ElementShortName">[1][3:0][7:0]</obj_property>
-               <obj_property name="ObjectShortName">[1][3:0][7:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               <obj_property name="isExpanded"></obj_property>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[0][1][3]" type="array">
-                  <obj_property name="ElementShortName">[3][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[3][7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[0][1][2]" type="array">
-                  <obj_property name="ElementShortName">[2][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[2][7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[0][1][1]" type="array">
-                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[0][1][0]" type="array">
-                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-            </wvobject>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[0][0]" type="array">
-               <obj_property name="ElementShortName">[0][3:0][7:0]</obj_property>
-               <obj_property name="ObjectShortName">[0][3:0][7:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               <obj_property name="isExpanded"></obj_property>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[0][0][3]" type="array">
-                  <obj_property name="ElementShortName">[3][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[3][7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[0][0][2]" type="array">
-                  <obj_property name="ElementShortName">[2][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[2][7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[0][0][1]" type="array">
-                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_data_cgu[0][0][0]" type="array">
-                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-            </wvobject>
-         </wvobject>
       </wvobject>
       <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_valid" type="logic">
          <obj_property name="ElementShortName">m_valid</obj_property>
@@ -3303,6 +4184,122 @@
          <obj_property name="ObjectShortName">lrelu_m_data[1:0][1:0][3:0][7:0]</obj_property>
          <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
          <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[1]" type="array">
+            <obj_property name="ElementShortName">[1][1:0][3:0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[1][1:0][3:0][7:0]</obj_property>
+            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+            <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[1][1]" type="array">
+               <obj_property name="ElementShortName">[1][3:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[1][3:0][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               <obj_property name="isExpanded"></obj_property>
+               <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[1][1][3]" type="array">
+                  <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[1][1][2]" type="array">
+                  <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[1][1][1]" type="array">
+                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[1][1][0]" type="array">
+                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[1][0]" type="array">
+               <obj_property name="ElementShortName">[0][3:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[0][3:0][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               <obj_property name="isExpanded"></obj_property>
+               <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[1][0][3]" type="array">
+                  <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[1][0][2]" type="array">
+                  <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[1][0][1]" type="array">
+                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[1][0][0]" type="array">
+                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+            </wvobject>
+         </wvobject>
+         <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[0]" type="array">
+            <obj_property name="ElementShortName">[0][1:0][3:0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][1:0][3:0][7:0]</obj_property>
+            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+            <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[0][1]" type="array">
+               <obj_property name="ElementShortName">[1][3:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[1][3:0][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               <obj_property name="isExpanded"></obj_property>
+               <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[0][1][3]" type="array">
+                  <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[0][1][2]" type="array">
+                  <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[0][1][1]" type="array">
+                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[0][1][0]" type="array">
+                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[0][0]" type="array">
+               <obj_property name="ElementShortName">[0][3:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[0][3:0][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               <obj_property name="isExpanded"></obj_property>
+               <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[0][0][3]" type="array">
+                  <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[0][0][2]" type="array">
+                  <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[0][0][1]" type="array">
+                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/lrelu_m_data[0][0][0]" type="array">
+                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+            </wvobject>
+         </wvobject>
       </wvobject>
       <wvobject fp_name="/axis_accelerator_tb/lrelu_m_axis_tuser" type="array">
          <obj_property name="ElementShortName">lrelu_m_axis_tuser[2:0]</obj_property>

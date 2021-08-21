@@ -18,6 +18,8 @@ module cyclic_bram #(
   W_DATA_WIDTH = 8,
   LATENCY      = 3,
   ABSORB       = 0,
+  USE_R_LAST   = 0,
+  USE_W_LAST   = 0,
   IP_TYPE      = 0 // 0 - lrelu, 1 - lrelu_edge, 2 - weights
 )(
   clk  ,
@@ -28,9 +30,12 @@ module cyclic_bram #(
   s_data,
   m_data,
   m_valid,
+  r_last_in,
+  w_last_in,
   r_addr_max,
   w_addr_max,
-  r_addr_min
+  r_addr_min,
+  fifo_empty
   );
   localparam SIZE = R_DEPTH * R_DATA_WIDTH;
   localparam W_DEPTH =  SIZE / W_DATA_WIDTH;
@@ -42,15 +47,19 @@ module cyclic_bram #(
   input  logic [W_DATA_WIDTH-1:0] s_data;
   output logic [R_DATA_WIDTH-1:0] m_data;
   output logic m_valid;
+  input  logic r_last_in, w_last_in;
   input  logic [R_ADDR_WIDTH-1:0] r_addr_max, r_addr_min;
   input  logic [W_ADDR_WIDTH-1:0] w_addr_max;
+  output logic fifo_empty;
  
   /*
     BRAM_WRITE_ADDRESS
   */
 
   logic [W_ADDR_WIDTH-1:0] w_addr_next, w_addr;
-  assign w_addr_next = (w_addr < w_addr_max) ? w_addr + 1 : 0;
+  logic w_last;
+  assign w_last = USE_W_LAST  ? w_last_in : w_addr == w_addr_max;
+  assign w_addr_next = w_last ? 0         : w_addr + 1;
   register #(
     .WORD_WIDTH   (W_ADDR_WIDTH), 
     .RESET_VALUE  (0),
@@ -68,7 +77,9 @@ module cyclic_bram #(
   */
 
   logic [R_ADDR_WIDTH-1:0] r_addr, r_addr_next;
-  assign r_addr_next = (r_addr < r_addr_max) ?  r_addr + 1 : r_addr_min;
+  logic r_last;
+  assign r_last =  USE_R_LAST ?  r_last_in  : r_addr == r_addr_max;
+  assign r_addr_next = r_last ?  r_addr_min : r_addr + 1;
   register #(
     .WORD_WIDTH   (R_ADDR_WIDTH), 
     .RESET_VALUE  (0),
@@ -130,7 +141,7 @@ module cyclic_bram #(
 
   if (ABSORB) begin
     
-    logic empty, fifo_r_en, r_en_delayed;
+    logic fifo_r_en, r_en_delayed;
 
     n_delay #(
       .N          (LATENCY),
@@ -152,11 +163,11 @@ module cyclic_bram #(
         .rd_en  (clken && r_en), 
         .dout   (m_data),  
         // .full   (full), 
-        .empty  (empty),
+        .empty  (fifo_empty),
         .valid  (m_valid)
       );
 
-    assign fifo_r_en = ~empty && r_en;
+    assign fifo_r_en = ~fifo_empty && r_en;
   end
   else assign m_data = bram_m_data;
 

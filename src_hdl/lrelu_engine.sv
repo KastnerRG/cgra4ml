@@ -142,33 +142,6 @@ module lrelu_engine (
   );
 
   /*
-    CONTROL LOGIC
-  */
-
-  /*
-    STATE MACHINE W_SEL
-
-        0 : None
-        1 : D register
-        2 : A BRAM (depth = 3m or 1m)
-        3 : B's middle BRAM (0,0) (depth = 3m or 1m)
-     4-11 : 8 BRAMs of B's edges  (depth = 1m)
-              == 3 + clr*3 + mtb
-              ct,cb, lm,lt,lb, rm,rt,rb
-
-    * BRAMs write when (sel == their index) & valid
-    * Fill delay
-      - 1x1, 
-        - B_cm is filled last and is needed immediately
-        - Hence, we wait for LATENCY clocks in FILL_S
-      - 3x3,
-        - B_rb is filled last
-        - B_l are needed first and then B_c are needed. 
-        - B_l not needed until the left edge of image
-        - So, no explicit fill delay, directly start reading
-  */
-
-  /*
     CONTROL DELAYS
   */
   logic w_sel_bram_2;
