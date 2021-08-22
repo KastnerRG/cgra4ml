@@ -77,7 +77,7 @@ module maxpool_engine (
   logic                         m_keep_cgu [1:0][GROUPS-1:0][UNITS-1:0];
   
   logic s_handshake;
-  localparam SUB_MEMBERS_BITS = $clog2(MEMBERS*KERNEL_W_MAX);
+  localparam SUB_MEMBERS_BITS = $clog2(MEMBERS);
   logic [SUB_MEMBERS_BITS-1:0] in_count, in_count_next, ref_sub_members_1;
 
   localparam MAX_2_S = 0;
@@ -89,11 +89,11 @@ module maxpool_engine (
   logic max_4_handshake, max_4_handshake_delay;
   logic sel_max_4_in; 
   logic buf_0_en, buf_n_en, buf_delay_en;
-  logic buf_en_m [MEMBERS :0];
+  logic buf_en_m [MEMBERS/KERNEL_W_MAX :0];
 
 
   logic signed [WORD_WIDTH-1:0] delay_data_cgu [1:0][GROUPS-1:0][UNITS-1:0];
-  logic signed [WORD_WIDTH-1:0] buffer_gum          [GROUPS-1:0][UNITS-1:0][MEMBERS + 2];
+  logic signed [WORD_WIDTH-1:0] buffer_gum          [GROUPS-1:0][UNITS-1:0][MEMBERS/KERNEL_W_MAX + 2];
   logic signed [WORD_WIDTH-1:0] max_in_1_gu         [GROUPS-1:0][UNITS-1:0];
   logic signed [WORD_WIDTH-1:0] max_in_2_gu         [GROUPS-1:0][UNITS-1:0]; 
   logic signed [WORD_WIDTH-1:0] max_out_gu          [GROUPS-1:0][UNITS-1:0];
@@ -139,7 +139,7 @@ module maxpool_engine (
   */
   logic is_1x1;
   assign is_1x1 = s_user[I_KERNEL_H_1+BITS_KERNEL_H-1:I_KERNEL_H_1] == 0;
-  assign ref_sub_members_1 = is_1x1 ? KERNEL_W_MAX * MEMBERS-1 : MEMBERS-1;
+  assign ref_sub_members_1 = is_1x1 ? MEMBERS-1 : MEMBERS/KERNEL_W_MAX-1;
 
   assign in_count_next = (in_count == ref_sub_members_1) ? 0 : in_count  + 1;
 
@@ -202,7 +202,7 @@ module maxpool_engine (
   assign buf_delay_en = s_handshake && s_user[I_IS_NOT_MAX];
 
   generate
-    for (genvar m = 0; m < MEMBERS+1; m++) assign buf_en_m[m] = (m==0) ? buf_0_en : buf_n_en;
+    for (genvar m = 0; m < MEMBERS/KERNEL_W_MAX+1; m++) assign buf_en_m[m] = (m==0) ? buf_0_en : buf_n_en;
   endgenerate
 
   /*
@@ -232,7 +232,7 @@ module maxpool_engine (
         */
         assign buffer_gum [g][u][0] = max_out_gu [g][u];
 
-        for (genvar m=0; m < MEMBERS + 1; m++) begin: bufgen
+        for (genvar m=0; m < MEMBERS/KERNEL_W_MAX + 1; m++) begin: bufgen
           register #(
             .WORD_WIDTH   (WORD_WIDTH), 
             .RESET_VALUE  (0)
@@ -250,7 +250,7 @@ module maxpool_engine (
         */
         assign max_out_gu  [g][u] = (max_in_1_gu [g][u] > max_in_2_gu [g][u]) ? max_in_1_gu [g][u] : max_in_2_gu [g][u];
         assign max_in_1_gu [g][u] = sel_max_4_in ? buffer_gum [g][u][1]          : s_data_gup [g][u][0];
-        assign max_in_2_gu [g][u] = sel_max_4_in ? buffer_gum [g][u][MEMBERS +1] : s_data_gup [g][u][1];
+        assign max_in_2_gu [g][u] = sel_max_4_in ? buffer_gum [g][u][MEMBERS/KERNEL_W_MAX +1] : s_data_gup [g][u][1];
 
         /*
           OUTPUT

@@ -13,7 +13,7 @@ module axis_maxpool_engine_tb();
 
   localparam UNITS      = 4;
   localparam GROUPS     = 1;
-  localparam MEMBERS    = 4;
+  localparam MEMBERS    = 12;
   localparam WORD_WIDTH = 8;
 
   localparam K          = 3;
@@ -22,7 +22,7 @@ module axis_maxpool_engine_tb();
   localparam KERNEL_H_MAX = 3; // odd
   localparam KERNEL_W_MAX = 3; // odd
   localparam UNITS_EDGES  = UNITS + KERNEL_H_MAX-1;
-  localparam SUB_MEMBERS = IS_1X1 ? KERNEL_W_MAX*MEMBERS : MEMBERS;
+  localparam SUB_MEMBERS = IS_1X1 ? MEMBERS : MEMBERS/KERNEL_W_MAX;
 
   localparam I_IS_NOT_MAX = `I_IS_NOT_MAX;
   localparam I_IS_MAX     = `I_IS_MAX    ;
@@ -187,7 +187,7 @@ module axis_maxpool_engine_tb();
 
     //********** DONT COMMENT BELOW *********
 
-    S_WORDS   = (im_height/UNITS/max_factor)*im_width*(KERNEL_W_MAX/k)*MEMBERS*2*GROUPS*UNITS;
+    S_WORDS   = (im_height/UNITS/max_factor)*im_width*(MEMBERS/k)*2*GROUPS*UNITS;
     M_WORDS   = (S_WORDS/UNITS)*UNITS_EDGES/(max_factor**2);
     is_max    = max_factor != 1;
     is_1x1    = k == 1;
