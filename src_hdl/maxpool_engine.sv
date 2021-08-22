@@ -32,17 +32,9 @@ Additional Comments:
 
 //////////////////////////////////////////////////////////////////////////////////*/
 
-module maxpool_engine #(
-    UNITS       ,
-    GROUPS      ,
-    MEMBERS     ,
-    WORD_WIDTH  ,
-    DEBUG_CONFIG_WIDTH_MAXPOOL,
-    KERNEL_W_MAX,
-    I_IS_NOT_MAX,
-    I_IS_MAX    ,
-    I_IS_1X1    
-  )(
+`include "params.v"
+
+module maxpool_engine (
     clk,
     clken,
     resetn,
@@ -59,12 +51,22 @@ module maxpool_engine #(
     m_last
   );
 
-  localparam TUSER_WIDTH = I_IS_1X1 + 1;
+  localparam UNITS                      = `UNITS                     ;
+  localparam GROUPS                     = `GROUPS                    ;
+  localparam MEMBERS                    = `MEMBERS                   ;
+  localparam WORD_WIDTH                 = `WORD_WIDTH                ;
+  localparam DEBUG_CONFIG_WIDTH_MAXPOOL = `DEBUG_CONFIG_WIDTH_MAXPOOL;
+  localparam KERNEL_W_MAX               = `KERNEL_W_MAX              ;
+  localparam I_IS_NOT_MAX               = `I_IS_NOT_MAX              ;
+  localparam I_IS_MAX                   = `I_IS_MAX                  ;
+  localparam I_KERNEL_H_1               = `I_KERNEL_H_1              ;
+  localparam BITS_KERNEL_H              = `BITS_KERNEL_H             ;
+  localparam TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN;
 
   input  logic clk, clken, resetn;
   input  logic s_valid;
   output logic m_valid, s_ready, m_last;
-  input  logic [TUSER_WIDTH-1:0] s_user;
+  input  logic [TUSER_WIDTH_MAXPOOL_IN   -1:0] s_user;
 
   input  logic [2*GROUPS*UNITS*WORD_WIDTH-1:0] s_data_flat_cgu;
   output logic [2*GROUPS*UNITS*WORD_WIDTH-1:0] m_data_flat_cgu;
@@ -135,8 +137,9 @@ module maxpool_engine #(
               & first 8 handshakes of maxpool
     * state = MAX_4_S during latter 8 handshakes of maxpool : we select max from 4
   */
-
-  assign ref_sub_members_1 = s_user[I_IS_1X1] ? KERNEL_W_MAX * MEMBERS-1 : MEMBERS-1;
+  logic is_1x1;
+  assign is_1x1 = s_user[I_KERNEL_H_1+BITS_KERNEL_H-1:I_KERNEL_H_1] == 0;
+  assign ref_sub_members_1 = is_1x1 ? KERNEL_W_MAX * MEMBERS-1 : MEMBERS-1;
 
   assign in_count_next = (in_count == ref_sub_members_1) ? 0 : in_count  + 1;
 

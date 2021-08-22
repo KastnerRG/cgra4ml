@@ -25,7 +25,7 @@ module axis_weight_rotator_tb ();
   localparam IM_CIN_MAX         = `IM_CIN_MAX        ;
   localparam IM_BLOCKS_MAX      = `IM_BLOCKS_MAX     ;
   localparam IM_COLS_MAX        = `IM_COLS_MAX       ;
-  localparam S_WEIGHTS_WIDTH    = `S_WEIGHTS_WIDTH   ;
+  localparam S_WEIGHTS_WIDTH_HF = `S_WEIGHTS_WIDTH_HF;
 
   localparam LATENCY_BRAM  = `LATENCY_BRAM ;
   localparam BITS_KERNEL_W = `BITS_KERNEL_W;
@@ -33,7 +33,6 @@ module axis_weight_rotator_tb ();
 
   localparam I_WEIGHTS_IS_TOP_BLOCK    = `I_WEIGHTS_IS_TOP_BLOCK   ;
   localparam I_WEIGHTS_IS_BOTTOM_BLOCK = `I_WEIGHTS_IS_BOTTOM_BLOCK;
-  localparam I_WEIGHTS_IS_1X1          = `I_WEIGHTS_IS_1X1         ;
   localparam I_WEIGHTS_IS_COLS_1_K2    = `I_WEIGHTS_IS_COLS_1_K2   ;
   localparam I_WEIGHTS_IS_CONFIG       = `I_WEIGHTS_IS_CONFIG      ;
   localparam I_WEIGHTS_IS_CIN_LAST     = `I_WEIGHTS_IS_CIN_LAST    ;
@@ -43,7 +42,7 @@ module axis_weight_rotator_tb ();
   localparam M_WIDTH                    = WORD_WIDTH*CORES*MEMBERS;
   localparam DEBUG_CONFIG_WIDTH_W_ROT   = `DEBUG_CONFIG_WIDTH_W_ROT;
 
-  localparam BRAM_W_WIDTH = S_WEIGHTS_WIDTH ;
+  localparam BRAM_W_WIDTH = S_WEIGHTS_WIDTH_HF ;
   localparam BRAM_R_WIDTH = M_WIDTH;
   localparam BEATS_CONFIG_MAX_1 = `BEATS_CONFIG_MAX-1;
   localparam BRAM_R_DEPTH = KERNEL_H_MAX * IM_CIN_MAX + BEATS_CONFIG_MAX_1;
@@ -62,8 +61,8 @@ module axis_weight_rotator_tb ();
   logic s_axis_tready;
   logic s_axis_tvalid;
   logic s_axis_tlast ;
-  logic [S_WEIGHTS_WIDTH    -1:0] s_axis_tdata;
-  logic [S_WEIGHTS_WIDTH /8 -1:0] s_axis_tkeep;
+  logic [S_WEIGHTS_WIDTH_HF    -1:0] s_axis_tdata;
+  logic [S_WEIGHTS_WIDTH_HF /8 -1:0] s_axis_tkeep;
 
   logic m_axis_tready;
   logic m_axis_tvalid;
@@ -73,7 +72,7 @@ module axis_weight_rotator_tb ();
 
   axis_weight_rotator pipe (.*);
 
-  logic [7:0] s_data_weights [S_WEIGHTS_WIDTH /8-1:0];
+  logic [7:0] s_data_weights [S_WEIGHTS_WIDTH_HF /8-1:0];
   logic [WORD_WIDTH-1:0] m_data_weights [CORES-1:0][KERNEL_W_MAX-1:0];
 
   assign {>>{s_axis_tdata}} = s_data_weights;
@@ -85,8 +84,8 @@ module axis_weight_rotator_tb ();
   
   localparam BEATS_CONFIG_1 = lrelu_beats::calc_beats_total (.kw2(K_1/2), .MEMBERS(MEMBERS)) -1;
   localparam W_BEATS = 1 + BEATS_CONFIG_1+1 + (K_1+1)*(CIN_1+1);
-  localparam W_WORDS = (W_BEATS-1) * MEMBERS * CORES + S_WEIGHTS_WIDTH /WORD_WIDTH;
-  localparam W_WORDS_PER_BEAT = S_WEIGHTS_WIDTH /WORD_WIDTH;
+  localparam W_WORDS = (W_BEATS-1) * MEMBERS * CORES + S_WEIGHTS_WIDTH_HF /WORD_WIDTH;
+  localparam W_WORDS_PER_BEAT = S_WEIGHTS_WIDTH_HF /WORD_WIDTH;
 
   int s_words_w = 0; 
 

@@ -1,19 +1,6 @@
 `include "params.v"
 
-module axis_maxpool_engine 
-  #(
-    UNITS        = `UNITS       ,
-    GROUPS       = `GROUPS      ,
-    MEMBERS      = `MEMBERS     ,
-    WORD_WIDTH   = `WORD_WIDTH  ,
-    DEBUG_CONFIG_WIDTH_MAXPOOL = `DEBUG_CONFIG_WIDTH_MAXPOOL,
-    KERNEL_H_MAX = `KERNEL_H_MAX, // odd
-    KERNEL_W_MAX = `KERNEL_W_MAX, // odd
-    I_IS_NOT_MAX = `I_IS_NOT_MAX,
-    I_IS_MAX     = `I_IS_MAX    ,
-    I_IS_1X1     = `I_IS_1X1    ,
-    TUSER_WIDTH  = `TUSER_WIDTH_MAXPOOL_IN
-  )(
+module axis_maxpool_engine (
     aclk         ,
     aresetn      ,
     debug_config ,
@@ -28,12 +15,24 @@ module axis_maxpool_engine
     m_axis_tlast 
   );
 
+  localparam UNITS        = `UNITS       ;
+  localparam GROUPS       = `GROUPS      ;
+  localparam MEMBERS      = `MEMBERS     ;
+  localparam WORD_WIDTH   = `WORD_WIDTH  ;
+  localparam TUSER_WIDTH_MAXPOOL_IN   = `TUSER_WIDTH_MAXPOOL_IN  ;
+
+  localparam DEBUG_CONFIG_WIDTH_MAXPOOL = `DEBUG_CONFIG_WIDTH_MAXPOOL;
+  localparam KERNEL_H_MAX = `KERNEL_H_MAX; // odd
+  localparam KERNEL_W_MAX = `KERNEL_W_MAX; // odd
+  localparam I_IS_NOT_MAX = `I_IS_NOT_MAX;
+  localparam I_KERNEL_H_1 = `I_KERNEL_H_1;
+  localparam BITS_KERNEL_H= `BITS_KERNEL_H;
   localparam UNITS_EDGES  = UNITS + KERNEL_H_MAX-1;
 
   input  wire aclk, aresetn;
   input  wire s_axis_tvalid, m_axis_tready;
   output wire m_axis_tvalid, s_axis_tready, m_axis_tlast;
-  input  wire [TUSER_WIDTH-1:0] s_axis_tuser;
+  input  wire [TUSER_WIDTH_MAXPOOL_IN-1:0] s_axis_tuser;
 
   input wire  [GROUPS*UNITS*2*WORD_WIDTH-1:0]       s_axis_tdata;
   output wire [GROUPS*UNITS_EDGES*2*WORD_WIDTH-1:0] m_axis_tdata;
@@ -61,18 +60,7 @@ module axis_maxpool_engine
   assign engine_clken = slice_ready;
   assign s_axis_tready = engine_ready && slice_ready;
 
-  maxpool_engine #(
-    .UNITS            (UNITS           ),
-    .GROUPS           (GROUPS          ),
-    .MEMBERS          (MEMBERS         ),
-    .DEBUG_CONFIG_WIDTH_MAXPOOL (DEBUG_CONFIG_WIDTH_MAXPOOL),
-    .WORD_WIDTH       (WORD_WIDTH      ),
-    .KERNEL_W_MAX     (KERNEL_W_MAX    ),
-    .I_IS_NOT_MAX     (I_IS_NOT_MAX    ),
-    .I_IS_MAX         (I_IS_MAX        ),
-    .I_IS_1X1         (I_IS_1X1        )
-  )
-  engine
+  maxpool_engine  engine
   (
     .clk         (aclk         ),
     .clken       (engine_clken ),

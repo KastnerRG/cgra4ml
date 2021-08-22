@@ -37,10 +37,7 @@ Additional Comments:
 `include "params.v"
 import lrelu_beats::*;
 
-module axis_image_pipe 
-  #(
-  )
-  (
+module axis_image_pipe   (
     aclk           ,
     aresetn        ,
     debug_config   ,
@@ -68,9 +65,9 @@ module axis_image_pipe
   localparam DEBUG_CONFIG_WIDTH_IM_PIPE = `DEBUG_CONFIG_WIDTH_IM_PIPE ;
   localparam KERNEL_H_MAX               = `KERNEL_H_MAX               ;
   localparam KERNEL_W_MAX               = `KERNEL_W_MAX               ;
-  localparam I_IMAGE_IS_NOT_MAX         = `I_IMAGE_IS_NOT_MAX         ;
-  localparam I_IMAGE_IS_MAX             = `I_IMAGE_IS_MAX             ;
-  localparam I_IMAGE_IS_LRELU           = `I_IMAGE_IS_LRELU           ;
+  localparam I_IS_NOT_MAX         = `I_IS_NOT_MAX         ;
+  localparam I_IS_MAX             = `I_IS_MAX             ;
+  localparam I_IS_LRELU           = `I_IS_LRELU           ;
   localparam I_KERNEL_H_1               = `I_KERNEL_H_1               ; 
   localparam TUSER_WIDTH_IM_SHIFT_IN    = `TUSER_WIDTH_IM_SHIFT_IN    ;
 
@@ -146,7 +143,7 @@ module axis_image_pipe
 
   logic [1:0] state, state_next;
   logic is_max_in, is_max_out, is_not_max_in, is_not_max_out, is_lrelu_in, is_lrelu_out;
-  logic [BITS_KERNEL_H-1:0] kernel_h_1_in, kernel_h_1_out, m_user_kernel_h_1_out;
+  logic [BITS_KERNEL_H-1:0] kernel_h_1_in, kernel_h_1_out;
   logic [BITS_CONFIG_COUNT-1:0] beats_config_1, ones_count_next, ones_count;
   logic en_ones_count, en_config;
   logic dw_1_handshake_last, dw_1_handshake;
@@ -271,10 +268,10 @@ module axis_image_pipe
       3. KERNEL_H_1
   */
 
-  assign is_not_max_in = dw_1_m_data [I_IMAGE_IS_NOT_MAX];
-  assign is_max_in     = dw_1_m_data [I_IMAGE_IS_MAX    ];
-  assign is_lrelu_in   = dw_1_m_data [I_IMAGE_IS_LRELU  ];
-  assign kernel_h_1_in = dw_1_m_data [I_KERNEL_H_1      ];
+  assign is_not_max_in = dw_1_m_data [0];
+  assign is_max_in     = dw_1_m_data [1];
+  assign is_lrelu_in   = dw_1_m_data [2];
+  assign kernel_h_1_in = dw_1_m_data [3];
 
   register #(
     .WORD_WIDTH     (1),
@@ -321,10 +318,10 @@ module axis_image_pipe
     TUSER
   */
 
-  assign m_axis_tuser [I_IMAGE_IS_NOT_MAX] = is_not_max_out;
-  assign m_axis_tuser [I_IMAGE_IS_MAX    ] = is_max_out    ;
-  assign m_axis_tuser [I_IMAGE_IS_LRELU  ] = is_lrelu_out  ;
+  assign m_axis_tuser [I_IS_NOT_MAX] = is_not_max_out;
+  assign m_axis_tuser [I_IS_MAX    ] = is_max_out    ;
   assign m_axis_tuser [BITS_KERNEL_H+I_KERNEL_H_1-1 : I_KERNEL_H_1] = kernel_h_1_out;
+  assign m_axis_tuser [I_IS_LRELU  ] = is_lrelu_out  ;
 
   /*
     MUX the output data

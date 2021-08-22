@@ -52,11 +52,10 @@ module axis_weight_rotator (
   localparam IM_CIN_MAX                = `IM_CIN_MAX               ;
   localparam IM_BLOCKS_MAX             = `IM_BLOCKS_MAX            ;
   localparam IM_COLS_MAX               = `IM_COLS_MAX              ;
-  localparam S_WEIGHTS_WIDTH           = `S_WEIGHTS_WIDTH          ;
+  localparam S_WEIGHTS_WIDTH_HF        = `S_WEIGHTS_WIDTH_HF       ;
   localparam LATENCY_BRAM              = `LATENCY_BRAM             ;
   localparam I_WEIGHTS_IS_TOP_BLOCK    = `I_WEIGHTS_IS_TOP_BLOCK   ;
   localparam I_WEIGHTS_IS_BOTTOM_BLOCK = `I_WEIGHTS_IS_BOTTOM_BLOCK;
-  localparam I_WEIGHTS_IS_1X1          = `I_WEIGHTS_IS_1X1         ;
   localparam I_WEIGHTS_IS_COLS_1_K2    = `I_WEIGHTS_IS_COLS_1_K2   ;
   localparam I_WEIGHTS_IS_CONFIG       = `I_WEIGHTS_IS_CONFIG      ;
   localparam I_WEIGHTS_IS_CIN_LAST     = `I_WEIGHTS_IS_CIN_LAST    ;
@@ -83,8 +82,8 @@ module axis_weight_rotator (
   output logic s_axis_tready;
   input  logic s_axis_tvalid;
   input  logic s_axis_tlast ;
-  input  logic [S_WEIGHTS_WIDTH    -1:0] s_axis_tdata;
-  input  logic [S_WEIGHTS_WIDTH /8 -1:0] s_axis_tkeep;
+  input  logic [S_WEIGHTS_WIDTH_HF    -1:0] s_axis_tdata;
+  input  logic [S_WEIGHTS_WIDTH_HF /8 -1:0] s_axis_tkeep;
 
   input  logic m_axis_tready;
   output logic m_axis_tvalid;
@@ -98,7 +97,7 @@ module axis_weight_rotator (
   logic dw_m_ready, dw_m_valid, dw_m_last, dw_s_valid, dw_s_ready;
   logic [M_WIDTH -1:0] dw_m_data_flat;
 
-  logic [WORD_WIDTH-1:0] s_data    [S_WEIGHTS_WIDTH /WORD_WIDTH-1:0];
+  logic [WORD_WIDTH-1:0] s_data    [S_WEIGHTS_WIDTH_HF /WORD_WIDTH-1:0];
   logic [WORD_WIDTH-1:0] m_data    [CORES-1:0][MEMBERS-1:0];
   logic [WORD_WIDTH-1:0] dw_m_data [CORES-1:0][MEMBERS-1:0];
 
@@ -604,7 +603,6 @@ module axis_weight_rotator (
   assign m_axis_tlast = last_kh && last_cin && last_cols && last_blocks;
   
   assign m_axis_tuser [I_WEIGHTS_IS_CONFIG  ] = state_read  == R_PASS_CONFIG_S;
-  assign m_axis_tuser [I_WEIGHTS_IS_1X1     ] = ref_1_kw[i_read] == 0;
   assign m_axis_tuser [I_WEIGHTS_KERNEL_W_1+BITS_KERNEL_W-1: I_WEIGHTS_KERNEL_W_1] = ref_1_kw [i_read];
 
   assign m_axis_tuser [I_WEIGHTS_IS_CIN_LAST    ] = (last_kh && last_cin);
