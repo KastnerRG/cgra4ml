@@ -141,28 +141,29 @@ class AXIS_Master #(WORD_WIDTH, WORDS_PER_BEAT, READY_PROB, CLK_PERIOD, IS_ACTIV
     this.words_per_packet = words_per_packet;
     this.file_base = file_base;
     this.packets_per_file = packets_per_file;
-    open_file();
-  endfunction
 
-  function void open_file();
     s_itr.itoa(i_itr);
     file_path = {file_base, s_itr, ".txt"};
-    $display(file_path);
-
-    if (file==0) $fclose(file);
     file = $fopen(file_path, "w");
+    $fclose(file);
   endfunction
 
   function void read_beat(
     ref logic [WORD_WIDTH    -1:0] m_data [WORDS_PER_BEAT-1:0], 
     ref logic [WORDS_PER_BEAT-1:0] m_keep,
     ref logic m_last);
-    $display("file_path=%s, file=%d, itr=%d, words=%d, packets=%d \n", file_path, file, i_itr, i_words, i_packets);
+
+    s_itr.itoa(i_itr);
+    file_path = {file_base, s_itr, ".txt"};
+    file = $fopen(file_path, "a");
+
     for (int i=0; i < WORDS_PER_BEAT; i++)
       if (m_keep[i]) begin
         $fdisplay(file, "%d", signed'(m_data[i]));
         i_words  += 1;
       end
+      
+    $fclose(file);
 
     if(words_per_packet == -1 ? m_last : i_words >= words_per_packet) begin
 
@@ -170,7 +171,6 @@ class AXIS_Master #(WORD_WIDTH, WORDS_PER_BEAT, READY_PROB, CLK_PERIOD, IS_ACTIV
       i_packets += 1;
 
       if (i_packets >= packets_per_file) begin
-        $fclose(file);
         i_itr += 1;
         enable = 0;
         i_packets = 0;
@@ -197,7 +197,6 @@ class AXIS_Master #(WORD_WIDTH, WORDS_PER_BEAT, READY_PROB, CLK_PERIOD, IS_ACTIV
     
     if (~enable && m_valid) begin // reset and open new file if only m_valid
       enable = 1;
-      open_file();
     end
     
     if (enable && m_ready && m_valid) 

@@ -52,7 +52,6 @@ module lrelu_engine (
   localparam LATENCY_FLOAT_DOWNSIZE     = `LATENCY_FLOAT_DOWNSIZE    ;
   localparam I_IS_NOT_MAX               = `I_IS_NOT_MAX              ;
   localparam I_IS_MAX                   = `I_IS_MAX                  ;
-  localparam I_IS_1X1                   = `I_IS_1X1                  ;
   localparam I_KERNEL_H_1               = `I_KERNEL_H_1              ;
   localparam I_IS_LRELU                 = `I_IS_LRELU                ;
   localparam I_IS_TOP_BLOCK             = `I_IS_TOP_BLOCK            ;

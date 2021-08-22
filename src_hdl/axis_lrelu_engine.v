@@ -50,7 +50,6 @@ module axis_lrelu_engine (
     localparam GROUPS                     = `GROUPS                    ;
     localparam COPIES                     = `COPIES                    ;
     localparam MEMBERS                    = `MEMBERS                   ;
-    localparam I_IS_1X1                   = `I_IS_1X1                  ;
     localparam I_KERNEL_H_1               = `I_KERNEL_H_1              ;
     localparam TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN    ;
     localparam TUSER_WIDTH_LRELU_IN       = `TUSER_WIDTH_LRELU_IN      ;

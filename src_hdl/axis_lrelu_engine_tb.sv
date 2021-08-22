@@ -42,7 +42,6 @@ module axis_lrelu_engine_tb();
   localparam LATENCY_FLOAT_DOWNSIZE     = `LATENCY_FLOAT_DOWNSIZE    ;
   localparam I_IS_NOT_MAX               = `I_IS_NOT_MAX              ;
   localparam I_IS_MAX                   = `I_IS_MAX                  ;
-  localparam I_IS_1X1                   = `I_IS_1X1                  ;
   localparam I_IS_LRELU                 = `I_IS_LRELU                ;
   localparam I_IS_TOP_BLOCK             = `I_IS_TOP_BLOCK            ;
   localparam I_IS_BOTTOM_BLOCK          = `I_IS_BOTTOM_BLOCK         ;
@@ -150,7 +149,6 @@ module axis_lrelu_engine_tb();
     s_axis_tlast  <= 0;
 
     for (int m=0; m<MEMBERS; m++) begin
-      s_axis_tuser [m][I_IS_1X1    ] <= IS_1X1;
       s_axis_tuser [m][I_IS_MAX    ] <= IS_MAX;
       s_axis_tuser [m][I_IS_NOT_MAX] <= 1;
       s_axis_tuser [m][I_IS_LRELU  ] <= IS_RELU;
@@ -176,7 +174,6 @@ module axis_lrelu_engine_tb();
     s_axis_tlast  <= 0;
     s_axis_tlast  <= 0;
     for (int m=0; m<MEMBERS; m++) begin
-      s_axis_tuser [m][I_IS_1X1  ] <= IS_1X1;
       s_axis_tuser [m][I_IS_LRELU] <= IS_RELU;
     end
     s_data_int_cgmu  <= '{default:0};

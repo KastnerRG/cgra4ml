@@ -12,21 +12,17 @@ module axis_input_pipe
     DEBUG_CONFIG_WIDTH_W_ROT  = `DEBUG_CONFIG_WIDTH_W_ROT  ,
     DEBUG_CONFIG_WIDTH_IM_PIPE= `DEBUG_CONFIG_WIDTH_IM_PIPE,
     //  IMAGE TUSER INDICES 
-    I_IMAGE_IS_NOT_MAX        = `I_IMAGE_IS_NOT_MAX       ,
-    I_IMAGE_IS_MAX            = `I_IMAGE_IS_MAX           ,
-    I_IMAGE_IS_LRELU          = `I_IMAGE_IS_LRELU         ,
     I_KERNEL_H_1              = `I_KERNEL_H_1             , 
     TUSER_WIDTH_IM_SHIFT_IN   = `TUSER_WIDTH_IM_SHIFT_IN  ,
     TUSER_WIDTH_IM_SHIFT_OUT  = `TUSER_WIDTH_IM_SHIFT_OUT ,
     IM_CIN_MAX                = `IM_CIN_MAX               ,
     IM_BLOCKS_MAX             = `IM_BLOCKS_MAX            ,
     IM_COLS_MAX               = `IM_COLS_MAX              ,
-    S_WEIGHTS_WIDTH           = `S_WEIGHTS_WIDTH          ,
+    S_WEIGHTS_WIDTH_HF        = `S_WEIGHTS_WIDTH_HF          ,
     LATENCY_BRAM              = `LATENCY_BRAM             ,
     // WEIGHTS TUSER INDICES 
     I_WEIGHTS_IS_TOP_BLOCK    = `I_WEIGHTS_IS_TOP_BLOCK   ,
     I_WEIGHTS_IS_BOTTOM_BLOCK = `I_WEIGHTS_IS_BOTTOM_BLOCK,
-    I_WEIGHTS_IS_1X1          = `I_WEIGHTS_IS_1X1         ,
     I_WEIGHTS_IS_COLS_1_K2    = `I_WEIGHTS_IS_COLS_1_K2   ,
     I_WEIGHTS_IS_CONFIG       = `I_WEIGHTS_IS_CONFIG      ,
     I_WEIGHTS_IS_CIN_LAST     = `I_WEIGHTS_IS_CIN_LAST    ,
@@ -35,7 +31,6 @@ module axis_input_pipe
     //  CONV TUSER INDICES   
     I_IS_NOT_MAX              = `I_IS_NOT_MAX             ,
     I_IS_MAX                  = `I_IS_MAX                 ,
-    I_IS_1X1                  = `I_IS_1X1                 ,
     I_IS_LRELU                = `I_IS_LRELU               ,
     I_IS_TOP_BLOCK            = `I_IS_TOP_BLOCK           ,
     I_IS_BOTTOM_BLOCK         = `I_IS_BOTTOM_BLOCK        ,
@@ -97,8 +92,8 @@ module axis_input_pipe
   output wire s_axis_weights_tready;
   input  wire s_axis_weights_tvalid;
   input  wire s_axis_weights_tlast ;
-  input  wire [S_WEIGHTS_WIDTH    -1:0] s_axis_weights_tdata;
-  input  wire [S_WEIGHTS_WIDTH /8 -1:0] s_axis_weights_tkeep;
+  input  wire [S_WEIGHTS_WIDTH_HF -1:0] s_axis_weights_tdata;
+  input  wire [S_WEIGHTS_WIDTH_HF /8 -1:0] s_axis_weights_tkeep;
 
   wire image_is_config;
   wire im_mux_m_ready;
@@ -211,12 +206,11 @@ module axis_input_pipe
   
   assign m_axis_tlast    = weights_m_last;
 
-  assign m_axis_tuser [I_IS_NOT_MAX     ] = pixels_m_user  [I_IMAGE_IS_NOT_MAX];
-  assign m_axis_tuser [I_IS_MAX         ] = pixels_m_user  [I_IMAGE_IS_MAX    ];
-  assign m_axis_tuser [I_IS_LRELU       ] = pixels_m_user  [I_IMAGE_IS_LRELU  ];
+  assign m_axis_tuser [I_IS_NOT_MAX     ] = pixels_m_user  [I_IS_NOT_MAX];
+  assign m_axis_tuser [I_IS_MAX         ] = pixels_m_user  [I_IS_MAX    ];
   assign m_axis_tuser [I_KERNEL_H_1 + BITS_KERNEL_H-1: I_KERNEL_H_1] = pixels_m_user [I_KERNEL_H_1 + BITS_KERNEL_H-1: I_KERNEL_H_1];
+  assign m_axis_tuser [I_IS_LRELU       ] = pixels_m_user  [I_IS_LRELU  ];
 
-  assign m_axis_tuser [I_IS_1X1         ] = weights_m_user [I_WEIGHTS_IS_1X1         ];
   assign m_axis_tuser [I_IS_TOP_BLOCK   ] = weights_m_user [I_WEIGHTS_IS_TOP_BLOCK   ] && m_axis_tvalid;
   assign m_axis_tuser [I_IS_BOTTOM_BLOCK] = weights_m_user [I_WEIGHTS_IS_BOTTOM_BLOCK] && m_axis_tvalid;
   assign m_axis_tuser [I_IS_COLS_1_K2   ] = weights_m_user [I_WEIGHTS_IS_COLS_1_K2   ] && m_axis_tvalid;

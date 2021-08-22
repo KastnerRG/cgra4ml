@@ -16,7 +16,8 @@ module axis_maxpool_engine_tb();
   localparam MEMBERS    = 4;
   localparam WORD_WIDTH = 8;
 
-  localparam IS_1X1      = 1;
+  localparam K          = 3;
+  localparam IS_1X1     = K==1;
 
   localparam KERNEL_H_MAX = 3; // odd
   localparam KERNEL_W_MAX = 3; // odd
@@ -25,7 +26,8 @@ module axis_maxpool_engine_tb();
 
   localparam I_IS_NOT_MAX = `I_IS_NOT_MAX;
   localparam I_IS_MAX     = `I_IS_MAX    ;
-  localparam I_IS_1X1     = `I_IS_1X1    ;
+  localparam I_KERNEL_H_1 = `I_KERNEL_H_1;
+  localparam BITS_KERNEL_H= `BITS_KERNEL_H;
   localparam TUSER_WIDTH  = `TUSER_WIDTH_MAXPOOL_IN;
 
   typedef logic signed [WORD_WIDTH-1:0] word_t;
@@ -52,18 +54,7 @@ module axis_maxpool_engine_tb();
   int k, max_factor, im_height, im_width, im_cin;
   logic is_1x1, is_max, is_not_max;
 
-  axis_maxpool_engine #(
-    .UNITS            (UNITS           ),
-    .GROUPS           (GROUPS          ),
-    .MEMBERS          (MEMBERS         ),
-    .WORD_WIDTH       (WORD_WIDTH      ),
-    .KERNEL_H_MAX     (KERNEL_H_MAX    ),
-    .KERNEL_W_MAX     (KERNEL_W_MAX    ),
-    .I_IS_NOT_MAX     (I_IS_NOT_MAX    ),
-    .I_IS_MAX         (I_IS_MAX        ),
-    .I_IS_1X1         (I_IS_1X1        ),
-    .TUSER_WIDTH      (TUSER_WIDTH     )
-  )dut(
+  axis_maxpool_engine dut(
     .aclk         (aclk          ),
     .aresetn      (aresetn       ),
     .s_axis_tvalid(s_axis_tvalid ),
@@ -93,7 +84,7 @@ module axis_maxpool_engine_tb();
               end
           s_axis_tuser[I_IS_MAX    ] <= is_max;
           s_axis_tuser[I_IS_NOT_MAX] <= is_not_max;
-          s_axis_tuser[I_IS_1X1    ] <= is_1x1;
+          s_axis_tuser[I_KERNEL_H_1: I_KERNEL_H_1+BITS_KERNEL_H] <= IS_1X1;
         end
         else begin
           s_axis_tvalid <= 0;

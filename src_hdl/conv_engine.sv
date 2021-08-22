@@ -52,7 +52,6 @@ module conv_engine (
   localparam IM_COLS_MAX         = `IM_COLS_MAX         ;
   localparam I_IS_NOT_MAX        = `I_IS_NOT_MAX        ;
   localparam I_IS_MAX            = `I_IS_MAX            ;
-  localparam I_IS_1X1            = `I_IS_1X1            ;
   localparam I_IS_LRELU          = `I_IS_LRELU          ;
   localparam I_KERNEL_H_1        = `I_KERNEL_H_1        ;
   localparam I_IS_TOP_BLOCK      = `I_IS_TOP_BLOCK      ;
@@ -463,7 +462,6 @@ module conv_engine (
     .TUSER_WIDTH   (TUSER_WIDTH_CONV_IN),
     .I_IS_COLS_1_K2(I_IS_COLS_1_K2     ),
     .I_IS_CONFIG   (I_IS_CONFIG        ),
-    .I_IS_1X1      (I_IS_1X1           ),
     .I_IS_CIN_LAST (I_IS_CIN_LAST      ),
     .I_KERNEL_W_1  (I_KERNEL_W_1       )
   )

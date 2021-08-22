@@ -37,7 +37,6 @@ module pad_filter
     KERNEL_W_MAX  ,
     MEMBERS       ,
     TUSER_WIDTH   ,
-    I_IS_1X1      ,
     I_IS_COLS_1_K2,
     I_IS_CONFIG   ,
     I_IS_CIN_LAST ,
