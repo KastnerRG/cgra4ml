@@ -67,11 +67,10 @@ module axis_weight_rotator (
   localparam BITS_IM_BLOCKS            = `BITS_IM_BLOCKS;
   localparam BITS_IM_COLS              = `BITS_IM_COLS  ;
 
-
+  localparam LRELU_BEATS_MAX = `LRELU_BEATS_MAX;
   localparam M_WIDTH    = WORD_WIDTH*CORES*MEMBERS;
   localparam BRAM_WIDTH = M_WIDTH;
-  localparam BEATS_CONFIG_MAX_1 = `BEATS_CONFIG_MAX-1;
-  localparam BRAM_DEPTH = KERNEL_H_MAX * IM_CIN_MAX + BEATS_CONFIG_MAX_1;
+  localparam BRAM_DEPTH = KERNEL_H_MAX * IM_CIN_MAX + LRELU_BEATS_MAX;
   localparam BITS_ADDR  = $clog2(BRAM_DEPTH);
   localparam CONFIG_COUNT_MAX  = lrelu_beats::calc_beats_total_max(.KERNEL_W_MAX(KERNEL_W_MAX), .MEMBERS(MEMBERS));
   localparam BITS_CONFIG_COUNT = $clog2(CONFIG_COUNT_MAX);

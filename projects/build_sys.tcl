@@ -1,6 +1,6 @@
-set PROJ_NAME sys
+set PROJ_NAME temp
 set PROJ_FOLDER $PROJ_NAME
-set SOURCE_FOLDER ../src_hdl
+set HDL_DIR ../src_hdl
 
 set UNITS   4
 set GROUPS  2
@@ -40,11 +40,11 @@ set BITS_EXP_FMA_2  5
 set BITS_FRA_FMA_2  10
 
 set IS_CONV_DW_SLICE 0
-set FREQ_LITE        50
-set FREQ_HIGH        50
+set FREQ_LITE        20
 set FREQ_LOW         25
+set FREQ_HIGH        50
+set LRELU_BEATS_MAX    9
 
-set BEATS_CONFIG_MAX   [expr int(1 + 2*$KERNEL_H_MAX)]
 set IM_BLOCKS_MAX      [expr int($IM_ROWS_MAX / $UNITS)]
 set UNITS_EDGES        [expr $UNITS + $KERNEL_H_MAX-1]
 set CORES              [expr $GROUPS * $COPIES]
@@ -114,7 +114,7 @@ set DEBUG_CONFIG_WIDTH         [expr $DEBUG_CONFIG_WIDTH_MAXPOOL + $DEBUG_CONFIG
 
 #********** STORE PARAMS *************
 
-set file_param [open $SOURCE_FOLDER/params.v w]
+set file_param [open $HDL_DIR/params.v w]
 puts $file_param "/*
 Parameters of the system. Written from build.tcl
 */
@@ -163,7 +163,7 @@ Parameters of the system. Written from build.tcl
 `define IM_BLOCKS_MAX    $IM_BLOCKS_MAX   
 `define IM_COLS_MAX      $IM_COLS_MAX     
 `define LRELU_ALPHA      $LRELU_ALPHA     
-`define BEATS_CONFIG_MAX $BEATS_CONFIG_MAX
+`define LRELU_BEATS_MAX  $LRELU_BEATS_MAX
 
 `define S_WEIGHTS_WIDTH_HF  $S_WEIGHTS_WIDTH_HF
 `define S_WEIGHTS_WIDTH_LF  $S_WEIGHTS_WIDTH_LF
@@ -293,7 +293,7 @@ set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $
 set IP_NAME "bram_weights"
 lappend IP_NAMES $IP_NAME
 set R_WIDTH [expr "$WORD_WIDTH   * $CORES * $MEMBERS"]
-set R_DEPTH [expr "$KERNEL_H_MAX * $IM_CIN_MAX + ($BEATS_CONFIG_MAX-1)"]
+set R_DEPTH [expr "$KERNEL_H_MAX * $IM_CIN_MAX + ($LRELU_BEATS_MAX-1)"]
 set W_WIDTH [expr "$R_WIDTH"]
 set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
@@ -552,16 +552,50 @@ foreach IP_NAME $IP_NAMES {
 }
 
 # Add files
-add_files -norecurse [glob $SOURCE_FOLDER/*.sv]
-add_files -norecurse [glob $SOURCE_FOLDER/*.v]
+add_files -norecurse $HDL_DIR/params.v
+add_files -norecurse $HDL_DIR/register.v
+add_files -norecurse $HDL_DIR/float_ops.sv
+add_files -norecurse $HDL_DIR/lrelu_beats_counter.sv
+add_files -norecurse $HDL_DIR/axis_conv_dw_bank.sv
+update_compile_order -fileset sources_1
+
+add_files -norecurse $HDL_DIR/pad_filter.sv
+add_files -norecurse $HDL_DIR/n_delay.sv
+update_compile_order -fileset sources_1
+
+add_files -norecurse $HDL_DIR/n_delay_stream.sv
+add_files -norecurse $HDL_DIR/cyclic_shift_reg.sv
+add_files -norecurse $HDL_DIR/cyclic_bram.sv
+update_compile_order -fileset sources_1
+
+add_files -norecurse $HDL_DIR/axis_image_pipe.sv
+add_files -norecurse $HDL_DIR/axis_weight_rotator.sv
+add_files -norecurse $HDL_DIR/conv_engine.sv
+add_files -norecurse $HDL_DIR/lrelu_engine.sv
+add_files -norecurse $HDL_DIR/maxpool_engine.sv
+update_compile_order -fileset sources_1
+
+add_files -norecurse $HDL_DIR/axis_input_pipe.v
+add_files -norecurse $HDL_DIR/axis_conv_engine.sv
+add_files -norecurse $HDL_DIR/axis_lrelu_engine.v
+add_files -norecurse $HDL_DIR/axis_maxpool_engine.v
+update_compile_order -fileset sources_1
+
+add_files -norecurse $HDL_DIR/axis_accelerator.v
+
+
+# ****************************************************************** #
+# **********************                          ****************** #
+# **********************      BLOCK DIAGRAM       ****************** #
+# **********************                          ****************** #
+# ****************************************************************** #
 
 create_bd_design "sys"
 
 # ZYNQ IP
 create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 processing_system7_0
 apply_bd_automation -rule xilinx.com:bd_rule:processing_system7 -config {make_external "FIXED_IO, DDR" apply_board_preset "1" Master "Disable" Slave "Disable" }  [get_bd_cells processing_system7_0]
-set_property -dict [list CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ $FREQ_LOW CONFIG.PCW_FPGA1_PERIPHERAL_FREQMHZ $FREQ_HIGH CONFIG.PCW_EN_CLK2_PORT $FREQ_LITE CONFIG.PCW_USE_S_AXI_ACP {1} CONFIG.PCW_USE_DEFAULT_ACP_USER_VAL {1} CONFIG.PCW_USE_FABRIC_INTERRUPT {1} CONFIG.PCW_EN_CLK1_PORT {1} CONFIG.PCW_IRQ_F2P_INTR {1} CONFIG.PCW_QSPI_PERIPHERAL_ENABLE {0} CONFIG.PCW_SD0_PERIPHERAL_ENABLE {0} CONFIG.PCW_I2C0_PERIPHERAL_ENABLE {0} CONFIG.PCW_GPIO_MIO_GPIO_ENABLE {0}] [get_bd_cells processing_system7_0]
-
+set_property -dict [list CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ $FREQ_LITE CONFIG.PCW_FPGA1_PERIPHERAL_FREQMHZ $FREQ_LOW CONFIG.PCW_FPGA2_PERIPHERAL_FREQMHZ $FREQ_HIGH CONFIG.PCW_EN_CLK2_PORT $FREQ_LITE CONFIG.PCW_USE_S_AXI_ACP {1} CONFIG.PCW_USE_DEFAULT_ACP_USER_VAL {1} CONFIG.PCW_USE_FABRIC_INTERRUPT {1} CONFIG.PCW_EN_CLK1_PORT {1} CONFIG.PCW_EN_CLK2_PORT {1} CONFIG.PCW_IRQ_F2P_INTR {1} CONFIG.PCW_QSPI_PERIPHERAL_ENABLE {0} CONFIG.PCW_SD0_PERIPHERAL_ENABLE {0} CONFIG.PCW_I2C0_PERIPHERAL_ENABLE {0} CONFIG.PCW_GPIO_MIO_GPIO_ENABLE {0}] [get_bd_cells processing_system7_0]
 
 # Accelerator
 create_bd_cell -type module -reference axis_accelerator axis_accelerator_0
@@ -569,7 +603,7 @@ create_bd_cell -type module -reference axis_accelerator axis_accelerator_0
 # Weights & out DMA
 set IP_NAME "dma_weights_im_out"
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 $IP_NAME
-set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_m_axi_mm2s_data_width {32} CONFIG.c_m_axis_mm2s_tdata_width {32} CONFIG.c_mm2s_burst_size {8} CONFIG.c_sg_include_stscntrl_strm {0} CONFIG.c_include_mm2s_dre {1} CONFIG.c_m_axi_s2mm_data_width "$M_DATA_WIDTH_LF" CONFIG.c_s_axis_s2mm_tdata_width "$M_DATA_WIDTH_LF" CONFIG.c_include_s2mm_dre {1} CONFIG.c_s2mm_burst_size {16}] [get_bd_cells $IP_NAME]
+set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_m_axi_mm2s_data_width {32} CONFIG.c_m_axis_mm2s_tdata_width {32} CONFIG.c_mm2s_burst_size {8} CONFIG.c_sg_include_stscntrl_strm {0} CONFIG.c_include_mm2s_dre {1} CONFIG.c_m_axi_mm2s_data_width $S_WEIGHTS_WIDTH_LF CONFIG.c_m_axis_mm2s_tdata_width $S_WEIGHTS_WIDTH_LF CONFIG.c_m_axi_s2mm_data_width $M_DATA_WIDTH_LF CONFIG.c_s_axis_s2mm_tdata_width $M_DATA_WIDTH_LF CONFIG.c_include_s2mm_dre {1} CONFIG.c_s2mm_burst_size {16}] [get_bd_cells $IP_NAME]
 
 # Im_in_1
 set IP_NAME "dma_im_in_1"
@@ -582,42 +616,75 @@ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 $IP_NAME
 set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_m_axi_mm2s_data_width [expr $IM_IN_S_DATA_WORDS*8] CONFIG.c_m_axis_mm2s_tdata_width [expr $IM_IN_S_DATA_WORDS*8] CONFIG.c_include_mm2s_dre {1} CONFIG.c_mm2s_burst_size {64} CONFIG.c_include_s2mm {0}] [get_bd_cells $IP_NAME]
 
 # # Interrupts
-# create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat:2.1 xlconcat_0
-# set_property -dict [list CONFIG.NUM_PORTS {4}] [get_bd_cells xlconcat_0]
-# connect_bd_net [get_bd_pins dma_im_in_1/mm2s_introut] [get_bd_pins xlconcat_0/In0]
-# connect_bd_net [get_bd_pins dma_im_in_2/mm2s_introut] [get_bd_pins xlconcat_0/In1]
-# connect_bd_net [get_bd_pins dma_weights_im_out/mm2s_introut] [get_bd_pins xlconcat_0/In2]
-# connect_bd_net [get_bd_pins dma_weights_im_out/s2mm_introut] [get_bd_pins xlconcat_0/In3]
-# connect_bd_net [get_bd_pins xlconcat_0/dout] [get_bd_pins processing_system7_0/IRQ_F2P]
+create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat:2.1 xlconcat_0
+set_property -dict [list CONFIG.NUM_PORTS {4}] [get_bd_cells xlconcat_0]
+connect_bd_net [get_bd_pins dma_im_in_1/mm2s_introut] [get_bd_pins xlconcat_0/In0]
+connect_bd_net [get_bd_pins dma_im_in_2/mm2s_introut] [get_bd_pins xlconcat_0/In1]
+connect_bd_net [get_bd_pins dma_weights_im_out/mm2s_introut] [get_bd_pins xlconcat_0/In2]
+connect_bd_net [get_bd_pins dma_weights_im_out/s2mm_introut] [get_bd_pins xlconcat_0/In3]
+connect_bd_net [get_bd_pins xlconcat_0/dout] [get_bd_pins processing_system7_0/IRQ_F2P]
 
-# # Connections
-# connect_bd_intf_net [get_bd_intf_pins dma_im_in_1/M_AXIS_MM2S] [get_bd_intf_pins axis_accelerator_0/s_axis_pixels_1]
-# connect_bd_intf_net [get_bd_intf_pins dma_im_in_2/M_AXIS_MM2S] [get_bd_intf_pins axis_accelerator_0/s_axis_pixels_2]
-# connect_bd_intf_net [get_bd_intf_pins dma_weights_im_out/M_AXIS_MM2S] [get_bd_intf_pins axis_accelerator_0/s_axis_weights]
-# connect_bd_intf_net [get_bd_intf_pins dma_weights_im_out/S_AXIS_S2MM] [get_bd_intf_pins axis_accelerator_0/m_axis]
+# Engine connections
+connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK1] [get_bd_pins axis_accelerator_0/aclk]
+connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK2] [get_bd_pins axis_accelerator_0/hf_aclk]
+connect_bd_intf_net [get_bd_intf_pins dma_im_in_1/M_AXIS_MM2S] [get_bd_intf_pins axis_accelerator_0/s_axis_pixels_1]
+connect_bd_intf_net [get_bd_intf_pins dma_im_in_2/M_AXIS_MM2S] [get_bd_intf_pins axis_accelerator_0/s_axis_pixels_2]
+connect_bd_intf_net [get_bd_intf_pins dma_weights_im_out/M_AXIS_MM2S] [get_bd_intf_pins axis_accelerator_0/s_axis_weights]
+connect_bd_intf_net [get_bd_intf_pins dma_weights_im_out/S_AXIS_S2MM] [get_bd_intf_pins axis_accelerator_0/m_axis]
 
-# # Connection automation
-# startgroup
-# apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Clk_slave {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Master {/processing_system7_0/M_AXI_GP0} Slave {/dma_im_in_1/S_AXI_LITE} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}}  [get_bd_intf_pins dma_im_in_1/S_AXI_LITE]
-# apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Clk_slave {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Master {/processing_system7_0/M_AXI_GP0} Slave {/dma_im_in_2/S_AXI_LITE} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}}  [get_bd_intf_pins dma_im_in_2/S_AXI_LITE]
-# apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Clk_slave {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Master {/processing_system7_0/M_AXI_GP0} Slave {/dma_weights_im_out/S_AXI_LITE} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}}  [get_bd_intf_pins dma_weights_im_out/S_AXI_LITE]
-# apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Clk_slave {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Master {/dma_weights_im_out/M_AXI_MM2S} Slave {/processing_system7_0/S_AXI_ACP} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}}  [get_bd_intf_pins processing_system7_0/S_AXI_ACP]
-# endgroup
-# startgroup
-# apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Clk_slave {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Master {/dma_im_in_1/M_AXI_MM2S} Slave {/processing_system7_0/S_AXI_ACP} ddr_seg {Auto} intc_ip {/axi_mem_intercon} master_apm {0}}  [get_bd_intf_pins dma_im_in_1/M_AXI_MM2S]
-# apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Clk_slave {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Master {/dma_im_in_2/M_AXI_MM2S} Slave {/processing_system7_0/S_AXI_ACP} ddr_seg {Auto} intc_ip {/axi_mem_intercon} master_apm {0}}  [get_bd_intf_pins dma_im_in_2/M_AXI_MM2S]
-# apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Clk_slave {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Master {/dma_weights_im_out/M_AXI_S2MM} Slave {/processing_system7_0/S_AXI_ACP} ddr_seg {Auto} intc_ip {/axi_mem_intercon} master_apm {0}}  [get_bd_intf_pins dma_weights_im_out/M_AXI_S2MM]
-# endgroup
+# AXI Lite
+startgroup
+apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Clk_slave {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Master {/processing_system7_0/M_AXI_GP0} Slave {/dma_im_in_1/S_AXI_LITE} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}}  [get_bd_intf_pins dma_im_in_1/S_AXI_LITE]
+apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Clk_slave {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Master {/processing_system7_0/M_AXI_GP0} Slave {/dma_im_in_2/S_AXI_LITE} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}}  [get_bd_intf_pins dma_im_in_2/S_AXI_LITE]
+apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Clk_slave {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK0 ($FREQ_LITE MHz)} Master {/processing_system7_0/M_AXI_GP0} Slave {/dma_weights_im_out/S_AXI_LITE} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}}  [get_bd_intf_pins dma_weights_im_out/S_AXI_LITE]
+endgroup
 
-# connect_bd_net [get_bd_pins axis_accelerator_0/aclk] [get_bd_pins processing_system7_0/FCLK_CLK0]
-# connect_bd_net [get_bd_pins axis_accelerator_0/aresetn] [get_bd_pins rst_ps7_0_71M/peripheral_aresetn]
+# AXI4
+startgroup
+apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Clk_slave {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Master {/dma_weights_im_out/M_AXI_MM2S} Slave {/processing_system7_0/S_AXI_ACP} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}}  [get_bd_intf_pins processing_system7_0/S_AXI_ACP]
+apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Clk_slave {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Master {/dma_im_in_1/M_AXI_MM2S} Slave {/processing_system7_0/S_AXI_ACP} ddr_seg {Auto} intc_ip {/axi_mem_intercon} master_apm {0}}  [get_bd_intf_pins dma_im_in_1/M_AXI_MM2S]
+apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Clk_slave {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Master {/dma_im_in_2/M_AXI_MM2S} Slave {/processing_system7_0/S_AXI_ACP} ddr_seg {Auto} intc_ip {/axi_mem_intercon} master_apm {0}}  [get_bd_intf_pins dma_im_in_2/M_AXI_MM2S]
+apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Clk_slave {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Clk_xbar {/processing_system7_0/FCLK_CLK1 ($FREQ_LOW MHz)} Master {/dma_weights_im_out/M_AXI_S2MM} Slave {/processing_system7_0/S_AXI_ACP} ddr_seg {Auto} intc_ip {/axi_mem_intercon} master_apm {0}}  [get_bd_intf_pins dma_weights_im_out/M_AXI_S2MM]
+endgroup
 
-# validate_bd_design
+# HF Reset
+set IP_NAME "reset_hf"
+create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 $IP_NAME
+connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK2] [get_bd_pins $IP_NAME/slowest_sync_clk]
+connect_bd_net [get_bd_pins processing_system7_0/FCLK_RESET0_N] [get_bd_pins $IP_NAME/ext_reset_in]
+connect_bd_net [get_bd_pins $IP_NAME/peripheral_aresetn] [get_bd_pins axis_accelerator_0/hf_aresetn]
 
-# generate_target all [get_files  $PROJ_FOLDER/$PROJ_NAME.srcs/sources_1/bd/sys/sys.bd]
-# make_wrapper -files [get_files $PROJ_FOLDER/$PROJ_NAME.srcs/sources_1/bd/sys/sys.bd] -top
-# add_files -norecurse $PROJ_FOLDER/$PROJ_NAME.gen/sources_1/bd/sys/hdl/sys_wrapper.v
-# set_property top sys_wrapper [current_fileset]
+# LF Reset
+# NOTE: axi_mem_intercon gets created after axi lite
+connect_bd_net [get_bd_pins axis_accelerator_0/aresetn] [get_bd_pins axi_mem_intercon/ARESETN]
 
-# set_property strategy {Best - with retiming and all} [get_runs synth_1]
-# set_property strategy {Best - with retiming} [get_runs impl_1]
+save_bd_design
+validate_bd_design
+
+generate_target all [get_files  $PROJ_FOLDER/$PROJ_NAME.srcs/sources_1/bd/sys/sys.bd]
+make_wrapper -files [get_files $PROJ_FOLDER/$PROJ_NAME.srcs/sources_1/bd/sys/sys.bd] -top
+add_files -norecurse $PROJ_FOLDER/$PROJ_NAME.gen/sources_1/bd/sys/hdl/sys_wrapper.v
+set_property top sys_wrapper [current_fileset]
+
+set_property strategy {Best - with retiming and all} [get_runs synth_1]
+set_property strategy {Best - with retiming} [get_runs impl_1]
+
+
+# # # Reorder
+# set_property source_mgmt_mode DisplayOnly [current_project]
+# reorder_files -after $HDL_DIR/params.v $HDL_DIR/register.v
+# reorder_files -after $HDL_DIR/params.v $HDL_DIR/register.v
+# reorder_files -after $HDL_DIR/register.v $HDL_DIR/n_delay.sv
+# reorder_files -after $HDL_DIR/n_delay.sv $HDL_DIR/n_delay_stream.sv
+# reorder_files -after $HDL_DIR/n_delay_stream.sv $HDL_DIR/cyclic_shift_reg.sv
+# reorder_files -after $HDL_DIR/cyclic_shift_reg.sv $HDL_DIR/cyclic_bram.sv
+# reorder_files -after $HDL_DIR/cyclic_bram.sv $HDL_DIR/lrelu_beats_counter.sv
+# reorder_files -after $HDL_DIR/lrelu_beats_counter.sv $HDL_DIR/float_ops.sv
+# reorder_files -after $HDL_DIR/float_ops.sv $HDL_DIR/pad_filter.sv
+# reorder_files -after $HDL_DIR/pad_filter.sv $HDL_DIR/conv_engine.sv
+# reorder_files -after $HDL_DIR/conv_engine.sv $HDL_DIR/lrelu_engine.sv
+# reorder_files -after $HDL_DIR/lrelu_engine.sv $HDL_DIR/maxpool_engine.sv
+# reorder_files -after $HDL_DIR/maxpool_engine.sv $HDL_DIR/axis_image_pipe.sv
+# reorder_files -after $HDL_DIR/axis_conv_engine.sv $HDL_DIR/axis_conv_engine.sv
+# reorder_files -after $HDL_DIR/axis_image_pipe.sv $HDL_DIR/axis_conv_dw_bank.sv
+# reorder_files -after $HDL_DIR/conv_engine.sv $HDL_DIR/axis_conv_dw_bank.sv

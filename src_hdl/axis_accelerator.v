@@ -1,10 +1,10 @@
 `include "params.v"
 
 module axis_accelerator (
-    aclk_lf               ,
-    aclk_hf               ,
-    aresetn_hf            ,
-    aresetn_lf            ,
+    aclk                  ,
+    hf_aclk               ,
+    hf_aresetn            ,
+    aresetn            ,
     debug_config          ,
     s_axis_pixels_1_tready, 
     s_axis_pixels_1_tvalid, 
@@ -92,10 +92,10 @@ module axis_accelerator (
 
   /* WIRES */
 
-  input  wire aclk_lf;
-  input  wire aclk_hf;
-  input  wire aresetn_hf;
-  input  wire aresetn_lf;
+  input  wire aclk;
+  input  wire hf_aclk;
+  input  wire hf_aresetn;
+  input  wire aresetn;
 
   output wire [DEBUG_CONFIG_WIDTH-1:0] debug_config;
 
@@ -197,16 +197,16 @@ module axis_accelerator (
 
 
   axis_clk_weights CLK_WEIGHTS (
-    .s_axis_aresetn (aresetn_lf ),  
-    .s_axis_aclk    (aclk_lf    ),    
+    .s_axis_aresetn (aresetn ),  
+    .s_axis_aclk    (aclk    ),    
     .s_axis_tready  (s_axis_weights_tready),
     .s_axis_tvalid  (s_axis_weights_tvalid),
     .s_axis_tlast   (s_axis_weights_tlast ),  
     .s_axis_tdata   (s_axis_weights_tdata ),  
     .s_axis_tkeep   (s_axis_weights_tkeep ),  
 
-    .m_axis_aclk    (aclk_hf    ),    
-    .m_axis_aresetn (aresetn_hf ),  
+    .m_axis_aclk    (hf_aclk    ),    
+    .m_axis_aresetn (hf_aresetn ),  
     .m_axis_tready  (m_axis_weights_clk_tready),
     .m_axis_tvalid  (m_axis_weights_clk_tvalid),
     .m_axis_tlast   (m_axis_weights_clk_tlast ),
@@ -214,16 +214,16 @@ module axis_accelerator (
     .m_axis_tkeep   (m_axis_weights_clk_tkeep )   
   );
   axis_clk_image CLK_IMAGE_1 (
-    .s_axis_aresetn (aresetn_lf ),  
-    .s_axis_aclk    (aclk_lf    ),    
+    .s_axis_aresetn (aresetn ),  
+    .s_axis_aclk    (aclk    ),    
     .s_axis_tready  (s_axis_pixels_1_tready),
     .s_axis_tvalid  (s_axis_pixels_1_tvalid),
     .s_axis_tlast   (s_axis_pixels_1_tlast ),  
     .s_axis_tdata   (s_axis_pixels_1_tdata ),  
     .s_axis_tkeep   (s_axis_pixels_1_tkeep ),  
 
-    .m_axis_aclk    (aclk_hf    ),    
-    .m_axis_aresetn (aresetn_hf ),  
+    .m_axis_aclk    (hf_aclk    ),    
+    .m_axis_aresetn (hf_aresetn ),  
     .m_axis_tready  (m_axis_pixels_1_clk_tready),
     .m_axis_tvalid  (m_axis_pixels_1_clk_tvalid),
     .m_axis_tlast   (m_axis_pixels_1_clk_tlast ),
@@ -231,16 +231,16 @@ module axis_accelerator (
     .m_axis_tkeep   (m_axis_pixels_1_clk_tkeep )   
   );
   axis_clk_image CLK_IMAGE_2 (
-    .s_axis_aresetn (aresetn_lf ),  
-    .s_axis_aclk    (aclk_lf    ),    
+    .s_axis_aresetn (aresetn ),  
+    .s_axis_aclk    (aclk    ),    
     .s_axis_tready  (s_axis_pixels_2_tready),
     .s_axis_tvalid  (s_axis_pixels_2_tvalid),
     .s_axis_tlast   (s_axis_pixels_2_tlast ),  
     .s_axis_tdata   (s_axis_pixels_2_tdata ),  
     .s_axis_tkeep   (s_axis_pixels_2_tkeep ),  
 
-    .m_axis_aclk    (aclk_hf    ),    
-    .m_axis_aresetn (aresetn_hf ),  
+    .m_axis_aclk    (hf_aclk    ),    
+    .m_axis_aresetn (hf_aresetn ),  
     .m_axis_tready  (m_axis_pixels_2_clk_tready),
     .m_axis_tvalid  (m_axis_pixels_2_clk_tvalid),
     .m_axis_tlast   (m_axis_pixels_2_clk_tlast ),
@@ -249,8 +249,8 @@ module axis_accelerator (
   );
 
   axis_dw_weights_clk CLK_DW_WEIGHTS (
-    .aclk           (aclk_hf    ),           
-    .aresetn        (aresetn_hf ),        
+    .aclk           (hf_aclk    ),           
+    .aresetn        (hf_aresetn ),        
     .s_axis_tready  (m_axis_weights_clk_tready ),  
     .s_axis_tvalid  (m_axis_weights_clk_tvalid ),  
     .s_axis_tlast   (m_axis_weights_clk_tlast  ),   
@@ -264,8 +264,8 @@ module axis_accelerator (
   );
 
   axis_input_pipe input_pipe (
-    .aclk                      (aclk_hf                    ),
-    .aresetn                   (aresetn_hf                 ),
+    .aclk                      (hf_aclk                    ),
+    .aresetn                   (hf_aresetn                 ),
     .debug_config              (debug_config_input_pipe    ),
     .s_axis_pixels_1_tready    (m_axis_pixels_1_clk_tready ), 
     .s_axis_pixels_1_tvalid    (m_axis_pixels_1_clk_tvalid ), 
@@ -292,8 +292,8 @@ module axis_accelerator (
   );
 
   axis_conv_engine CONV_ENGINE (
-    .aclk                 (aclk_hf                    ),
-    .aresetn              (aresetn_hf                 ),
+    .aclk                 (hf_aclk                    ),
+    .aresetn              (hf_aresetn                 ),
     .s_axis_tvalid        (input_m_axis_tvalid        ),
     .s_axis_tready        (input_m_axis_tready        ),
     .s_axis_tlast         (input_m_axis_tlast         ),
@@ -312,8 +312,8 @@ module axis_accelerator (
   // // --synthesis translate_off
 
   // axis_conv_dw_bank DW_TEST (
-  //   .aclk             (aclk_hf               ),
-  //   .aresetn          (aresetn_hf            ),
+  //   .aclk             (hf_aclk               ),
+  //   .aresetn          (hf_aresetn            ),
   //   .s_axis_tvalid    (conv_m_axis_tvalid    ),
   //   .s_axis_tready    (conv_m_axis_tready    ),
   //   .s_axis_tdata     (conv_m_axis_tdata     ),
@@ -330,8 +330,8 @@ module axis_accelerator (
   // // --synthesis translate_on
 
   axis_lrelu_engine LRELU_ENGINE (
-    .aclk          (aclk_hf              ),
-    .aresetn       (aresetn_hf           ),
+    .aclk          (hf_aclk              ),
+    .aresetn       (hf_aresetn           ),
     .debug_config  (debug_config_lrelu   ),
     .s_axis_tvalid (conv_m_axis_tvalid   ),
     .s_axis_tready (conv_m_axis_tready   ),
@@ -347,8 +347,8 @@ module axis_accelerator (
   );
 
   axis_maxpool_engine MAXPOOL_ENGINE (
-    .aclk          (aclk_hf               ),
-    .aresetn       (aresetn_hf            ),
+    .aclk          (hf_aclk               ),
+    .aresetn       (hf_aresetn            ),
     .debug_config  (debug_config_maxpool  ),
     .s_axis_tvalid (lrelu_m_axis_tvalid   ),
     .s_axis_tready (lrelu_m_axis_tready   ),
@@ -362,8 +362,8 @@ module axis_accelerator (
   );
 
   axis_dw_max_1 DW_MAX_1 (
-    .aclk           (aclk_hf                ),           
-    .aresetn        (aresetn_hf             ),        
+    .aclk           (hf_aclk                ),           
+    .aresetn        (hf_aresetn             ),        
     .s_axis_tvalid  (maxpool_m_axis_tvalid  ),  
     .s_axis_tready  (maxpool_m_axis_tready  ),  
     .s_axis_tdata   (maxpool_m_axis_tdata   ),   
@@ -377,8 +377,8 @@ module axis_accelerator (
   );
 
   axis_dw_max_2 DW_MAX_2 (
-    .aclk           (aclk_hf                ),           
-    .aresetn        (aresetn_hf             ),        
+    .aclk           (hf_aclk                ),           
+    .aresetn        (hf_aresetn             ),        
     .s_axis_tvalid  (max_dw_1_m_axis_tvalid ),  
     .s_axis_tready  (max_dw_1_m_axis_tready ),  
     .s_axis_tdata   (max_dw_1_m_axis_tdata  ),   
@@ -392,16 +392,16 @@ module axis_accelerator (
   );
 
   axis_clk_maxpool CLK_MAXPOOL (
-    .s_axis_aresetn (aresetn_hf ),  
-    .s_axis_aclk    (aclk_hf    ),    
+    .s_axis_aresetn (hf_aresetn ),  
+    .s_axis_aclk    (hf_aclk    ),    
     .s_axis_tready  (s_axis_out_clk_tready),
     .s_axis_tvalid  (s_axis_out_clk_tvalid),
     .s_axis_tlast   (s_axis_out_clk_tlast ),  
     .s_axis_tdata   (s_axis_out_clk_tdata ),  
     .s_axis_tkeep   (s_axis_out_clk_tkeep ),  
 
-    .m_axis_aclk    (aclk_lf      ),    
-    .m_axis_aresetn (aresetn_lf   ),  
+    .m_axis_aclk    (aclk      ),    
+    .m_axis_aresetn (aresetn   ),  
     .m_axis_tready  (m_axis_tready),
     .m_axis_tvalid  (m_axis_tvalid),
     .m_axis_tlast   (m_axis_tlast ),

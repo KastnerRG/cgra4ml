@@ -18,12 +18,12 @@ module axis_conv_dw_bank (
   m_axis_tuser
 );
 
-  localparam IS_CONV_DW_SLICE     = `IS_CONV_DW_SLICE     ;
+  localparam IS_CONV_DW_SLICE     = 0; //`IS_CONV_DW_SLICE     ;
   localparam UNITS                = `UNITS                ;
   localparam GROUPS               = `GROUPS               ;
   localparam COPIES               = `COPIES               ;
   localparam MEMBERS              = `MEMBERS              ;
-  localparam K                    = `DW_FACTOR_1          ;
+  localparam K                    = 3; //`DW_FACTOR_1          ;
   localparam WORD_WIDTH           = `WORD_WIDTH_ACC       ;
   localparam TUSER_WIDTH_LRELU_IN = `TUSER_WIDTH_LRELU_IN ; 
 

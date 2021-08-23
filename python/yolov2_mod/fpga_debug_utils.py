@@ -233,9 +233,6 @@ def get_lrelu_config(i_layers, c, get_params=False):
     lrelu_config_list = [d_ibcgv_8, a_ibcgv_8]
 
     '''
-    B_ij beats
-        1x1: 2 =     2 x kw
-        3x3: 7 = 1 + 2 x kw 
 
     b_filled.shape = (COUT,KW,KH)
     
