@@ -46,7 +46,7 @@ Parameters of the system. Written from build.tcl
 `define IM_BLOCKS_MAX    64   
 `define IM_COLS_MAX      384     
 `define LRELU_ALPHA      11878     
-`define BEATS_CONFIG_MAX 7
+`define LRELU_BEATS_MAX  9
 
 `define S_WEIGHTS_WIDTH_HF  32
 `define S_WEIGHTS_WIDTH_LF  64

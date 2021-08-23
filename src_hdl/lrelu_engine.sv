@@ -1,5 +1,4 @@
 `include "params.v"
-`include "float_ops.sv"
 import float_ops::*;
 
 module lrelu_engine (
