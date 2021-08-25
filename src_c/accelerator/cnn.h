@@ -56,7 +56,8 @@ public:
 
 	 int OUT_W_IN, OUT_BLOCKS, OUT_MAX_FACTOR, OUT_BLOCKS_PER_ARR, OUT_KH;
 
-	 int DATA_BEATS_PIXELS, BEATS_LRELU;
+	 int DATA_BEATS_PIXELS;
+	 int BEATS_LRELU = 0;
 	 int WORDS_PIXELS_PER_ARR;
 	 int WORDS_WEIGHTS_PER_ITR, WORDS_WEIGHTS;
 
@@ -88,8 +89,8 @@ public:
 
 		 KW_PAD = KW_IN - 2*IS_MAX;
 
-		 SUB_CORES = KW_MAX / KW_IN;
-		 EFF_CORES = CORES * SUB_CORES / MAX_FACTOR;
+		 SUB_CORES = MEMBERS / KW_IN;
+		 EFF_CORES = COPIES * GROUPS * SUB_CORES / MAX_FACTOR;
 		 ITR       = (int)(std::ceil((float)C_OUT / (float)EFF_CORES));
 		 COUT_FPGA = EFF_CORES * ITR;
 
@@ -98,13 +99,26 @@ public:
 
 		 COUT_INVALID = EFF_CORES - COUT_VALID;
 
-		 /* CALCULATE BYTES */
+		 /* LRELU BEATS */
 
-		 BEATS_LRELU = KW_IN == 3 ? BEATS_CONFIG_3X3 : BEATS_CONFIG_1X1;
+		 BEATS_LRELU += 1; //D
+		 BEATS_LRELU += ceil(2.0/KW_IN); // A
+
+		 for (int clr_i=0;  clr_i < KW_IN/2+1; clr_i ++){
+			 int clr = clr_i*2 +1;
+			 for (int mtb=0;  mtb < clr; mtb ++){
+				 int bram_width = MEMBERS/clr;
+				 int bram_size  = 2*SUB_CORES;
+				 int BEATS_ij = ceil((float)bram_size/bram_width);
+
+				 BEATS_LRELU += BEATS_ij;
+			 }
+		 }
+
 		 DATA_BEATS_PIXELS = BLOCKS_PER_ARR * W_IN * C_IN;
 
 		 WORDS_PIXELS_PER_ARR  =      DATA_BEATS_PIXELS  * UNITS_EDGES;
-		 WORDS_WEIGHTS_PER_ITR = (S_WEIGHTS_WIDTH/8) + (BEATS_LRELU + C_IN*KH_IN)*CORES*KW_MAX;
+		 WORDS_WEIGHTS_PER_ITR = (S_WEIGHTS_WIDTH/8) + (BEATS_LRELU + C_IN*KH_IN) * COPIES * GROUPS * MEMBERS;
 		 WORDS_WEIGHTS         = ITR * WORDS_WEIGHTS_PER_ITR;
 
 		 /* CALCULATE WORDS OUT
@@ -113,44 +127,42 @@ public:
 		  * (H_in/MAX, W_in/MAX, COUT)
 		  * (BLOCKS_in/MAX, UNITS_EDGES, W_in/MAX, COUT)
 		  * (BLOCKS_in/MAX, UNITS_EDGES, W_in/MAX, COUT_FPGA)
-		  * (BLOCKS_in/MAX, UNITS_EDGES, W_in/MAX, ITR, EFF_CORES)
-		  * (BLOCKS_in/MAX, UNITS_EDGES, W_in/MAX, ITR, SUB_CORES, CORES/M)
-		  * (BLOCKS_in/MAX, UNITS_EDGES, W_in/MAX, ITR, SUB_CORES, MEMBERS, COPIES*GROUPS/M)
-		  *
-		  *
+		  * (BLOCKS_in/MAX, UNITS_EDGES, W_in/MAX, ITR, SUB_CORES, COPIES/M, GROUPS)
+		  * (BLOCKS_in/MAX, UNITS_EDGES, W_in/MAX, ITR, SUB_CORES, COPIES/M, GROUPS)
+		  * (BLOCKS_in/MAX, UNITS_EDGES, W_in/MAX, ITR, SUB_CORES, COPIES*GROUPS/M)
 		  *
 		  * 	If (MAX & NON_MAX),
 		  * 		Rotates through three modes - 1,2: non_max, 3: max
 		  *
 		  *			WORDS_PER_TRANSFER =
-		  * 			0: SUB_CORES * MEMBERS * COPIES*GROUPS * UNITS_EDGES
+		  * 			0: SUB_CORES * COPIES*GROUPS * UNITS_EDGES
 		  * 			1: COPIES*GROUPS   * UNITS_EDGES
 		  * 			2: COPIES*GROUPS/M * UNITS_EDGES
 		  *
 		  * 		TRANSFERS_OUT_PER_ITR =
 		  * 			0	 : BLOCKS_in/MAX * W_in/MAX
-		  * 			1	 : BLOCKS_in/MAX * W_in/MAX * SUB_CORES * MEMBERS
-		  * 			2	 : BLOCKS_in/MAX * W_in/MAX * SUB_CORES * MEMBERS
-		  * 			Total: BLOCKS_in/MAX * W_in/MAX * (1 + 2 * SUB_CORES * MEMBERS)
+		  * 			1	 : BLOCKS_in/MAX * W_in/MAX * SUB_CORES
+		  * 			2	 : BLOCKS_in/MAX * W_in/MAX * SUB_CORES
+		  * 			Total: BLOCKS_in/MAX * W_in/MAX * (1 + 2 * SUB_CORES)
 		  *
 		  * 	Else:
 		  * 		words_per_beat     = COPIES*GROUPS/M * UNITS_EDGES
-		  * 		words_per_transfer = SUB_CORES * MEMBERS beats (tlast given)
+		  * 		words_per_transfer = SUB_CORES *  beats (tlast given)
 		  * 		transfers_per_itr  = BLOCKS_in/MAX * W_in/MAX
 		  *
 		  */
 
 		 if (IS_NOT_MAX && IS_MAX)
 		 {
-			 WORDS_OUT_PER_TRANSFER_ARR[0] = SUB_CORES * MEMBERS * COPIES * GROUPS * UNITS_EDGES;
-			 WORDS_OUT_PER_TRANSFER_ARR[1] =                       COPIES * GROUPS * UNITS_EDGES;
-			 WORDS_OUT_PER_TRANSFER_ARR[2] =                       COPIES * GROUPS * UNITS_EDGES / MAX_FACTOR;
+			 WORDS_OUT_PER_TRANSFER_ARR[0] = SUB_CORES * COPIES * GROUPS * UNITS_EDGES;
+			 WORDS_OUT_PER_TRANSFER_ARR[1] =             COPIES * GROUPS * UNITS_EDGES;
+			 WORDS_OUT_PER_TRANSFER_ARR[2] =             COPIES * GROUPS * UNITS_EDGES / MAX_FACTOR;
 
-			 TRANSFERS_OUT_PER_ITR = BLOCKS/MAX_FACTOR * W_IN/MAX_FACTOR * (1 + 2 * SUB_CORES * MEMBERS);
+			 TRANSFERS_OUT_PER_ITR = BLOCKS/MAX_FACTOR * W_IN/MAX_FACTOR * (1 + 2 * SUB_CORES);
 		 }
 		 else
 		 {
-			 WORDS_OUT_PER_TRANSFER = SUB_CORES * MEMBERS * COPIES * GROUPS * UNITS_EDGES / MAX_FACTOR;
+			 WORDS_OUT_PER_TRANSFER = SUB_CORES * COPIES * GROUPS * UNITS_EDGES / MAX_FACTOR;
 			 TRANSFERS_OUT_PER_ITR  = BLOCKS/MAX_FACTOR * W_IN/MAX_FACTOR;
 		 }
 	 };

@@ -28,7 +28,7 @@ extern void PRINT(const char *format, ...);
 int status;
 bool done = false;
 
-const int i_layers_start = 1-1;
+const int i_layers_start = 4-1;
 
 std::array<Layer, N_LAYERS> layers = build_yolo_mod();
 
@@ -425,7 +425,7 @@ void restart_output()
 		i_w = 0;
 		i_w_flipped = 0;
 
-		// PRINT(" i_blocks: %d, write_p: %p \r\n", i_blocks, write_p);
+		 PRINT(" i_blocks: %d, write_p: %p \r\n", i_blocks, write_p);
 
 		if (i_blocks < layers[i_layers].OUT_BLOCKS-1)
 		{
@@ -439,7 +439,7 @@ void restart_output()
 			i_arr      = 0;
 			i_bpa      = 0;
 
-			// PRINT(" i_itr: %d \r\n", i_itr);
+			 PRINT(" i_itr: %d \r\n", i_itr);
 
 			if (i_itr >= layers[i_layers].ITR-1)
 			{
@@ -470,11 +470,11 @@ void restart_output()
 					layers[i_layers].output_chunk_p = get_chunk();
 					layers[i_layers].NEXT_P->input_chunk_p = layers[i_layers].output_chunk_p;
 				}
-//				PRINT("Writing to new layer: chained_chunks (idx:%d -> idx:%d), data_p= %p \r\n",
-//						    layers[i_layers].idx, layers[i_layers].NEXT_P->idx,
-//							layers[i_layers].output_chunk_p->data_p);
+				PRINT("Writing to new layer: chained_chunks (idx:%d -> idx:%d), data_p= %p \r\n",
+						    layers[i_layers].idx, layers[i_layers].NEXT_P->idx,
+							layers[i_layers].output_chunk_p->data_p);
 
-//				layers[i_layers].print_output_params();
+				layers[i_layers].print_output_params();
 			}
 			else if (i_itr == 0)
 			{
@@ -531,8 +531,9 @@ int main()
 			   layer_start.NEXT_P->input_chunk_p->data_p, layer_start.NEXT_P->idx);
 
 	// Layer Details
-//	layer_start.print_input_params();
-//	layer_start.print_output_params();
+	layer_start.print_input_params();
+	layer_start.print_output_params();
+	layer_start.print_weights_params();
 
 	// Start transfer
 	dma_im_in_2.mm2s_done = true;
