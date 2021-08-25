@@ -34,7 +34,7 @@ Additional Comments:
 
 `include "params.v"
 
-module maxpool_engine (
+module maxpool_engine #(ZERO) (
     clk,
     clken,
     resetn,

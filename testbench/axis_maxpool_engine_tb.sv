@@ -54,7 +54,7 @@ module axis_maxpool_engine_tb();
   int k, max_factor, im_height, im_width, im_cin;
   logic is_1x1, is_max, is_not_max;
 
-  axis_maxpool_engine dut(
+  axis_maxpool_engine  #(.ZERO(0)) dut(
     .aclk         (aclk          ),
     .aresetn      (aresetn       ),
     .s_axis_tvalid(s_axis_tvalid ),

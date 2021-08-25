@@ -23,20 +23,20 @@ My_DMA dma_weights_im_out("weights_im_out", XPAR_DMA_WEIGHTS_IM_OUT_DEVICE_ID);
 
 // Layer 1:
 // mwr -bin -file D:/cnn-fpga/data/1_weights.bin 0x08000000 722; mwr -bin -file D:/cnn-fpga/data/1_conv_in.bin 0x02000000 110594;
-#define WEIGHTS_BYTES 1444
-#define IM_IN_BYTES   221184
-#define IS_MAX_ 1
-//#define NUM_TRANSFERS 32*192  // output
-#define NUM_TRANSFERS 1
-//#define IM_OUT_BYTES  6*2*2*4/2 // output
+int WEIGHTS_BYTES = 3472;
+int IM_IN_BYTES = 221190-6;
+int IS_MAX_= 1;
+int IM_OUT_BYTES = 6*(2/2)*2*(12/3); // output
+int NUM_TRANSFERS = 294912/IM_OUT_BYTES;  // output
+//#define NUM_TRANSFERS 1
 //#define IM_OUT_BYTES  787776*4 // conv
-#define IM_OUT_BYTES  787136*4 // conv_mod
+//#define IM_OUT_BYTES  787136*4 // conv_mod
 //#define IM_OUT_BYTES  5309424 // weights 1327356
 //#define IM_OUT_BYTES  884904 // im 221226
 //#define IM_OUT_BYTES  5309424+884904 // im+weights 1548582
 //#define IM_OUT_BYTES  5309424 + 884904 + 2*(32*384*3*3 + 21) // im+weights+user 1991034
 
-//parameter WORDS_PER_BEAT_CONV = COPIES*MEMBERS*GROUPS*UNITS;
+//parameter WORDS_PER_BEAT_CONV = COPIES*MEMBERS*GROUPS*UNITS/3;
 //parameter BEATS_OUT_CONV = BEATS_CONFIG_1+1 + (IM_BLOCKS/MAX_FACTOR)*IM_COLS*(KERNEL_W_MAX/K);
 //#define WORDS_PER_BEAT 2*4*2*4
 //#define BEATS 21 + (256/4/2)*384*(3/3)*2
@@ -127,7 +127,7 @@ int main()
 
 	volatile s8* write_p = (s8*)(DATA_1_P);
 
-	for (int i_itr=0; i_itr<3; i_itr++)
+	for (int i_itr=0; i_itr<1; i_itr++)
 	{
 		status = dma_weights_im_out.mm2s_start((UINTPTR)WEIGHTS_P, WEIGHTS_BYTES);
 		xil_printf("%d \r\n",status);
@@ -147,7 +147,7 @@ int main()
 		{
 			status = dma_weights_im_out.s2mm_start((UINTPTR)write_p, IM_OUT_BYTES);
 			while(!done){}
-			xil_printf("im_out_done %d \r\n",i_out);
+			xil_printf("im_out_done packet_size: %d, packet_n: %d / %d \r\n", IM_OUT_BYTES, i_out, NUM_TRANSFERS);
 			done=false;
 			Xil_DCacheFlushRange((UINTPTR)write_p, IM_OUT_BYTES);
 

@@ -131,7 +131,7 @@ module axis_input_pipe_tb ();
   localparam DEBUG_CONFIG_WIDTH = 2*BITS_KERNEL_H + `DEBUG_CONFIG_WIDTH_IM_PIPE + `DEBUG_CONFIG_WIDTH_W_ROT;
   logic [DEBUG_CONFIG_WIDTH-1:0] debug_config;
 
-  axis_input_pipe pipe (.*);
+  axis_input_pipe #(.ZERO(0)) pipe (.*);
 
   logic [WORD_WIDTH-1:0] s_data_pixels_1 [IM_IN_S_DATA_WORDS-1:0];
   logic [WORD_WIDTH-1:0] s_data_pixels_2 [IM_IN_S_DATA_WORDS-1:0];

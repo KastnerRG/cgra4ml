@@ -1,7 +1,7 @@
 `include "params.v"
 import float_ops::*;
 
-module lrelu_engine (
+module lrelu_engine #(ZERO) (
   clk     ,
   clken   ,
   resetn  ,

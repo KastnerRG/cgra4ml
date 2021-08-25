@@ -1,10 +1,10 @@
 `include "params.v"
 
-module axis_accelerator (
+module axis_accelerator #(ZERO=0) (
     aclk                  ,
+    aresetn               ,
     hf_aclk               ,
     hf_aresetn            ,
-    aresetn            ,
     debug_config          ,
     s_axis_pixels_1_tready, 
     s_axis_pixels_1_tvalid, 
@@ -93,9 +93,9 @@ module axis_accelerator (
   /* WIRES */
 
   input  wire aclk;
+  input  wire aresetn;
   input  wire hf_aclk;
   input  wire hf_aresetn;
-  input  wire aresetn;
 
   output wire [DEBUG_CONFIG_WIDTH-1:0] debug_config;
 
@@ -263,7 +263,7 @@ module axis_accelerator (
     .m_axis_tkeep   (m_axis_weights_tkeep      )  
   );
 
-  axis_input_pipe input_pipe (
+  axis_input_pipe #(.ZERO(ZERO)) input_pipe (
     .aclk                      (hf_aclk                    ),
     .aresetn                   (hf_aresetn                 ),
     .debug_config              (debug_config_input_pipe    ),
@@ -291,7 +291,7 @@ module axis_accelerator (
     .m_axis_tuser              (input_m_axis_tuser         )
   );
 
-  axis_conv_engine CONV_ENGINE (
+  axis_conv_engine #(.ZERO(ZERO)) CONV_ENGINE (
     .aclk                 (hf_aclk                    ),
     .aresetn              (hf_aresetn                 ),
     .s_axis_tvalid        (input_m_axis_tvalid        ),
@@ -329,7 +329,7 @@ module axis_accelerator (
 
   // // --synthesis translate_on
 
-  axis_lrelu_engine LRELU_ENGINE (
+  axis_lrelu_engine #(.ZERO(ZERO)) LRELU_ENGINE (
     .aclk          (hf_aclk              ),
     .aresetn       (hf_aresetn           ),
     .debug_config  (debug_config_lrelu   ),
@@ -346,7 +346,7 @@ module axis_accelerator (
     .m_axis_tuser  (lrelu_m_axis_tuser   )
   );
 
-  axis_maxpool_engine MAXPOOL_ENGINE (
+  axis_maxpool_engine #(.ZERO(ZERO)) MAXPOOL_ENGINE (
     .aclk          (hf_aclk               ),
     .aresetn       (hf_aresetn            ),
     .debug_config  (debug_config_maxpool  ),

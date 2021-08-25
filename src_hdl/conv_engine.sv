@@ -20,7 +20,7 @@ Additional Comments:
 
 `include "params.v"
 
-module conv_engine (
+module conv_engine #(ZERO) (
     clk            ,
     clken          ,
     resetn         ,

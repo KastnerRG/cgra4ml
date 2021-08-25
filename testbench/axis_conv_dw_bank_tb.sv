@@ -1,4 +1,4 @@
-`include "params.v"
+`include "../src_hdl/params.v"
 
 module axis_conv_dw_bank_tb ();
 
@@ -30,7 +30,7 @@ module axis_conv_dw_bank_tb ();
   logic [TUSER_WIDTH_LRELU_IN  -1:0] m_axis_tuser;
   logic m_axis_tvalid, m_axis_tlast;
 
-  axis_conv_dw_bank DUT (
+  axis_conv_dw_bank #(.ZERO(0)) DUT (
     .aclk          (aclk         ),
     .aresetn       (aresetn      ),
     .s_axis_tdata  (s_axis_tdata ),
