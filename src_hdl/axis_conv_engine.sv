@@ -1,7 +1,7 @@
 
 `include "params.v"
 
-module axis_conv_engine (
+module axis_conv_engine #(ZERO) (
     aclk                 ,
     aresetn              ,
     s_axis_tvalid        ,
@@ -68,7 +68,7 @@ module axis_conv_engine (
   assign slice_s_keep = {>>{slice_s_axis_tkeep}};
 
 
-  conv_engine ENGINE (
+  conv_engine #(.ZERO(ZERO)) ENGINE (
     .clk          (aclk),
     .clken        (slice_s_axis_tready),
     .resetn       (aresetn            ),

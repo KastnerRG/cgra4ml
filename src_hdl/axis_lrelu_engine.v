@@ -25,7 +25,7 @@ Additional Comments:
 //////////////////////////////////////////////////////////////////////////////////*/
 
 
-module axis_lrelu_engine (
+module axis_lrelu_engine #(ZERO=0) (
     aclk         ,
     aresetn      ,
     debug_config ,
@@ -42,7 +42,7 @@ module axis_lrelu_engine (
     m_axis_tuser 
   );
 
-    localparam WORD_WIDTH_IN              = `WORD_WIDTH_ACC            ;
+    localparam WORD_WIDTH_IN              = `WORD_WIDTH_ACC     + ZERO ;
     localparam WORD_WIDTH_OUT             = `WORD_WIDTH                ;
     localparam WORD_WIDTH_CONFIG          = `WORD_WIDTH                ;
     localparam DEBUG_CONFIG_WIDTH_LRELU   = `DEBUG_CONFIG_WIDTH_LRELU  ;
@@ -236,7 +236,7 @@ module axis_lrelu_engine (
       DATAWIDTH CONVERTER BANKS
     */
 
-    axis_conv_dw_bank DW_BANK (
+    axis_conv_dw_bank #(.ZERO(ZERO)) DW_BANK (
       .aclk             (aclk         ),
       .aresetn          (aresetn      ),
       .s_axis_tdata     (s_axis_tdata ),
@@ -252,7 +252,7 @@ module axis_lrelu_engine (
       .m_axis_tuser     (s_user_e     )
     );
 
-    lrelu_engine engine
+    lrelu_engine #(.ZERO(ZERO)) engine
     (
       .clk              (aclk    ),
       .clken            (s_ready_slice),

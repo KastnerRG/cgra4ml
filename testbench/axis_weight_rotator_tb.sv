@@ -70,7 +70,7 @@ module axis_weight_rotator_tb ();
   logic [TUSER_WIDTH_WEIGHTS_OUT-1:0] m_axis_tuser;
   logic m_axis_tlast;
 
-  axis_weight_rotator pipe (.*);
+  axis_weight_rotator  #(.ZERO(0)) pipe (.*);
 
   logic [7:0] s_data_weights [S_WEIGHTS_WIDTH_HF /8-1:0];
   logic [WORD_WIDTH-1:0] m_data_weights [CORES-1:0][KERNEL_W_MAX-1:0];

@@ -1,6 +1,6 @@
 `include "params.v"
 
-module axis_maxpool_engine (
+module axis_maxpool_engine #(ZERO=0) (
     aclk         ,
     aresetn      ,
     debug_config ,
@@ -60,7 +60,7 @@ module axis_maxpool_engine (
   assign engine_clken = slice_ready;
   assign s_axis_tready = engine_ready && slice_ready;
 
-  maxpool_engine  engine
+  maxpool_engine #(.ZERO(ZERO)) engine
   (
     .clk         (aclk         ),
     .clken       (engine_clken ),

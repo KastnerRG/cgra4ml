@@ -27,7 +27,7 @@ Additional Comments:
 
 `include "params.v"
 
-module axis_weight_rotator (
+module axis_weight_rotator #(ZERO) (
     aclk         ,
     aresetn      ,
     debug_config ,

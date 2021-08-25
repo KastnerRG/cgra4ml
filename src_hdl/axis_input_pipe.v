@@ -2,6 +2,8 @@
 
 module axis_input_pipe 
   #(
+    ZERO=0,
+    
     UNITS                     = `UNITS                    ,
     CORES                     = `CORES                    ,
     MEMBERS                   = `MEMBERS                  ,
@@ -68,7 +70,7 @@ module axis_input_pipe
   ); 
 
 
-  localparam UNITS_EDGES       = `UNITS_EDGES;
+  localparam UNITS_EDGES       = `UNITS_EDGES      ;
   localparam IM_IN_S_DATA_WORDS= `IM_IN_S_DATA_WORDS;
   localparam BITS_KERNEL_H     = `BITS_KERNEL_H    ;
   localparam BITS_KERNEL_W     = `BITS_KERNEL_W    ;
@@ -127,7 +129,7 @@ module axis_input_pipe
   output wire [DEBUG_CONFIG_WIDTH-1:0] debug_config;
   assign debug_config = {im_shift_2_debug_config, im_shift_1_debug_config, image_pipe_debug_config, w_rot_debug_config};
 
-  axis_image_pipe IM_MUX (
+  axis_image_pipe #(.ZERO(ZERO)) IM_MUX (
     .aclk            (aclk   ),
     .aresetn         (aresetn),
     .debug_config    (image_pipe_debug_config),
@@ -149,7 +151,7 @@ module axis_input_pipe
     .m_axis_tuser    (im_mux_m_user  )
   );
 
-  axis_image_shift_buffer IM_SHIFT_1 (
+  axis_image_shift_buffer #(.ZERO(ZERO)) IM_SHIFT_1 (
     .aclk          (aclk           ),
     .aresetn       (aresetn        ),
     .is_config     (image_is_config),
@@ -164,7 +166,7 @@ module axis_input_pipe
     .m_axis_tdata  (m_axis_pixels_1_tdata)
   );
 
-  axis_image_shift_buffer IM_SHIFT_2 (
+  axis_image_shift_buffer #(.ZERO(ZERO)) IM_SHIFT_2 (
     .aclk          (aclk           ),
     .aresetn       (aresetn        ),
     .is_config     (image_is_config),
@@ -176,7 +178,7 @@ module axis_input_pipe
     .m_axis_tdata  (m_axis_pixels_2_tdata)
   );
 
-  axis_weight_rotator WEIGHTS_ROTATOR (
+  axis_weight_rotator #(.ZERO(ZERO)) WEIGHTS_ROTATOR (
     .aclk          (aclk                 ),
     .aresetn       (aresetn              ),
     .debug_config  (w_rot_debug_config   ),

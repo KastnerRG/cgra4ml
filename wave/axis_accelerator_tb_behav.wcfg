@@ -14,13 +14,13 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="0fs"></ZoomStartTime>
-      <ZoomEndTime time="2680001fs"></ZoomEndTime>
-      <Cursor1Time time="1000000fs"></Cursor1Time>
+      <ZoomStartTime time="63918fs"></ZoomStartTime>
+      <ZoomEndTime time="106363919fs"></ZoomEndTime>
+      <Cursor1Time time="31763918fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="328"></NameColumnWidth>
-      <ValueColumnWidth column_width="160"></ValueColumnWidth>
+      <NameColumnWidth column_width="291"></NameColumnWidth>
+      <ValueColumnWidth column_width="244"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="1" />
    <wave_markers>
@@ -1812,6 +1812,7 @@
          <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/DW_BANK/m_axis_tdata" type="array">
             <obj_property name="ElementShortName">m_axis_tdata[1:0][1:0][3:0][31:0]</obj_property>
             <obj_property name="ObjectShortName">m_axis_tdata[1:0][1:0][3:0][31:0]</obj_property>
+            <obj_property name="isExpanded"></obj_property>
          </wvobject>
          <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/DW_BANK/m_axis_tuser" type="array">
             <obj_property name="ElementShortName">m_axis_tuser[8:0]</obj_property>
@@ -3183,7 +3184,6 @@
       <wvobject fp_name="group1204" type="group">
          <obj_property name="label">FMA1</obj_property>
          <obj_property name="DisplayName">label</obj_property>
-         <obj_property name="isExpanded"></obj_property>
          <wvobject fp_name="/axis_accelerator_tb/pipe/LRELU_ENGINE/engine/m_valid_float32" type="logic">
             <obj_property name="ElementShortName">m_valid_float32</obj_property>
             <obj_property name="ObjectShortName">m_valid_float32</obj_property>
@@ -3528,6 +3528,22 @@
                   <obj_property name="ObjectShortName">[0][7:0]</obj_property>
                   <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[1][1][3]" type="array">
+                  <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[1][1][2]" type="array">
+                  <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[1][1][1]" type="array">
+                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[1][1][0]" type="array">
+                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+               </wvobject>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[1][0]" type="array">
                <obj_property name="ElementShortName">[0][3:0][7:0]</obj_property>
@@ -3554,6 +3570,30 @@
                   <obj_property name="ObjectShortName">[0][7:0]</obj_property>
                   <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[1][0][3]" type="array">
+                  <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[1][0][2]" type="array">
+                  <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[1][0][1]" type="array">
+                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[1][0][0]" type="array">
+                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+               </wvobject>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[1][1]" type="array">
+               <obj_property name="ElementShortName">[1][3:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[1][3:0][7:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[1][0]" type="array">
+               <obj_property name="ElementShortName">[0][3:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[0][3:0][7:0]</obj_property>
             </wvobject>
          </wvobject>
          <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[0]" type="array">
@@ -3586,6 +3626,22 @@
                   <obj_property name="ObjectShortName">[0][7:0]</obj_property>
                   <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[0][1][3]" type="array">
+                  <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[0][1][2]" type="array">
+                  <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[0][1][1]" type="array">
+                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[0][1][0]" type="array">
+                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+               </wvobject>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[0][0]" type="array">
                <obj_property name="ElementShortName">[0][3:0][7:0]</obj_property>
@@ -3612,7 +3668,39 @@
                   <obj_property name="ObjectShortName">[0][7:0]</obj_property>
                   <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[0][0][3]" type="array">
+                  <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[0][0][2]" type="array">
+                  <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[0][0][1]" type="array">
+                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[0][0][0]" type="array">
+                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+               </wvobject>
             </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[0][1]" type="array">
+               <obj_property name="ElementShortName">[1][3:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[1][3:0][7:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[0][0]" type="array">
+               <obj_property name="ElementShortName">[0][3:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[0][3:0][7:0]</obj_property>
+            </wvobject>
+         </wvobject>
+         <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[1]" type="array">
+            <obj_property name="ElementShortName">[1][1:0][3:0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[1][1:0][3:0][7:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/engine/s_data_cgu[0]" type="array">
+            <obj_property name="ElementShortName">[0][1:0][3:0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][1:0][3:0][7:0]</obj_property>
          </wvobject>
       </wvobject>
       <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/s_axis_tuser" type="array">
@@ -3735,6 +3823,30 @@
                   <obj_property name="ObjectShortName">[0][7:0]</obj_property>
                   <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[1][1][5]" type="array">
+                  <obj_property name="ElementShortName">[5][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[5][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[1][1][4]" type="array">
+                  <obj_property name="ElementShortName">[4][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[4][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[1][1][3]" type="array">
+                  <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[1][1][2]" type="array">
+                  <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[1][1][1]" type="array">
+                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[1][1][0]" type="array">
+                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+               </wvobject>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[1][0]" type="array">
                <obj_property name="ElementShortName">[0][5:0][7:0]</obj_property>
@@ -3771,6 +3883,38 @@
                   <obj_property name="ObjectShortName">[0][7:0]</obj_property>
                   <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[1][0][5]" type="array">
+                  <obj_property name="ElementShortName">[5][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[5][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[1][0][4]" type="array">
+                  <obj_property name="ElementShortName">[4][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[4][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[1][0][3]" type="array">
+                  <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[1][0][2]" type="array">
+                  <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[1][0][1]" type="array">
+                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[1][0][0]" type="array">
+                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+               </wvobject>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[1][1]" type="array">
+               <obj_property name="ElementShortName">[1][5:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[1][5:0][7:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[1][0]" type="array">
+               <obj_property name="ElementShortName">[0][5:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[0][5:0][7:0]</obj_property>
             </wvobject>
          </wvobject>
          <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[0]" type="array">
@@ -3812,6 +3956,30 @@
                   <obj_property name="ObjectShortName">[0][7:0]</obj_property>
                   <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[0][1][5]" type="array">
+                  <obj_property name="ElementShortName">[5][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[5][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[0][1][4]" type="array">
+                  <obj_property name="ElementShortName">[4][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[4][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[0][1][3]" type="array">
+                  <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[0][1][2]" type="array">
+                  <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[0][1][1]" type="array">
+                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[0][1][0]" type="array">
+                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+               </wvobject>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[0][0]" type="array">
                <obj_property name="ElementShortName">[0][5:0][7:0]</obj_property>
@@ -3848,7 +4016,47 @@
                   <obj_property name="ObjectShortName">[0][7:0]</obj_property>
                   <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[0][0][5]" type="array">
+                  <obj_property name="ElementShortName">[5][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[5][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[0][0][4]" type="array">
+                  <obj_property name="ElementShortName">[4][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[4][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[0][0][3]" type="array">
+                  <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[0][0][2]" type="array">
+                  <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[0][0][1]" type="array">
+                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[0][0][0]" type="array">
+                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+               </wvobject>
             </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[0][1]" type="array">
+               <obj_property name="ElementShortName">[1][5:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[1][5:0][7:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[0][0]" type="array">
+               <obj_property name="ElementShortName">[0][5:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[0][5:0][7:0]</obj_property>
+            </wvobject>
+         </wvobject>
+         <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[1]" type="array">
+            <obj_property name="ElementShortName">[1][1:0][5:0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[1][1:0][5:0][7:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_data_cgu[0]" type="array">
+            <obj_property name="ElementShortName">[0][1:0][5:0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">[0][1:0][5:0][7:0]</obj_property>
          </wvobject>
       </wvobject>
       <wvobject fp_name="/axis_accelerator_tb/pipe/MAXPOOL_ENGINE/axis_m_keep_cgu" type="array">
@@ -4034,7 +4242,6 @@
             <obj_property name="ElementShortName">m_data[31:0][7:0]</obj_property>
             <obj_property name="ObjectShortName">m_data[31:0][7:0]</obj_property>
             <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            <obj_property name="isExpanded"></obj_property>
          </wvobject>
          <wvobject fp_name="/axis_accelerator_tb/m_axis_tready" type="logic">
             <obj_property name="ElementShortName">m_axis_tready</obj_property>
