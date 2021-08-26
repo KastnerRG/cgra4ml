@@ -28,8 +28,7 @@ module conv_engine #(ZERO) (
     s_ready        ,
     s_last         ,
     s_user         ,
-    s_data_pixels_1_flat,
-    s_data_pixels_2_flat,
+    s_data_pixels_flat  ,
     s_data_weights_flat ,
     m_valid        ,
     m_data_flat    ,
@@ -79,8 +78,7 @@ module conv_engine #(ZERO) (
   output logic m_valid;
   output logic m_last ;
   input  logic [TUSER_WIDTH_CONV_IN                          -1:0] s_user;
-  input  logic [WORD_WIDTH_IN *UNITS                         -1:0] s_data_pixels_1_flat;
-  input  logic [WORD_WIDTH_IN *UNITS                         -1:0] s_data_pixels_2_flat;
+  input  logic [COPIES*WORD_WIDTH_IN *UNITS                  -1:0] s_data_pixels_flat;
   input  logic [WORD_WIDTH_IN *COPIES*GROUPS*MEMBERS         -1:0] s_data_weights_flat;                                                                        
   output logic [WORD_WIDTH_OUT*COPIES*GROUPS*MEMBERS*UNITS   -1:0] m_data_flat;
   output logic [WORD_WIDTH_OUT*COPIES*GROUPS*MEMBERS*UNITS/8 -1:0] m_keep_flat;
@@ -92,8 +90,7 @@ module conv_engine #(ZERO) (
   logic [WORD_WIDTH_OUT/8      -1:0] m_keep           [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0];
   logic [TUSER_WIDTH_CONV_OUT  -1:0] m_user           [MEMBERS-1:0];
 
-  assign s_data_pixels    [0] = {>>{s_data_pixels_1_flat}};
-  assign s_data_pixels    [1] = {>>{s_data_pixels_2_flat}};
+  assign s_data_pixels        = {>>{s_data_pixels_flat}};
   assign s_data_weights       = {>>{s_data_weights_flat }};
   assign {>>{m_data_flat}}    = m_data;
   assign {>>{m_keep_flat}}    = m_keep;

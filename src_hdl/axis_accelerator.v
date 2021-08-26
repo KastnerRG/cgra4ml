@@ -25,8 +25,7 @@ module axis_accelerator #(ZERO=0) (
     input_m_axis_tready        ,
     input_m_axis_tvalid        ,
     input_m_axis_tlast         ,
-    input_m_axis_pixels_1_tdata,
-    input_m_axis_pixels_2_tdata,
+    input_m_axis_pixels_tdata  ,
     input_m_axis_weights_tdata ,
     input_m_axis_tuser         ,
 
@@ -120,8 +119,7 @@ module axis_accelerator #(ZERO=0) (
   output wire input_m_axis_tready;
   output wire input_m_axis_tvalid;
   output wire input_m_axis_tlast ;
-  output wire [WORD_WIDTH*UNITS             -1:0] input_m_axis_pixels_1_tdata;
-  output wire [WORD_WIDTH*UNITS             -1:0] input_m_axis_pixels_2_tdata;
+  output wire [COPIES*WORD_WIDTH*UNITS      -1:0] input_m_axis_pixels_tdata;
   output wire [WORD_WIDTH*CORES*MEMBERS     -1:0] input_m_axis_weights_tdata ;
   output wire [TUSER_WIDTH_CONV_IN          -1:0] input_m_axis_tuser         ;
 
@@ -230,23 +228,27 @@ module axis_accelerator #(ZERO=0) (
     .m_axis_tdata   (m_axis_pixels_1_clk_tdata ),
     .m_axis_tkeep   (m_axis_pixels_1_clk_tkeep )   
   );
-  axis_clk_image CLK_IMAGE_2 (
-    .s_axis_aresetn (aresetn ),  
-    .s_axis_aclk    (aclk    ),    
-    .s_axis_tready  (s_axis_pixels_2_tready),
-    .s_axis_tvalid  (s_axis_pixels_2_tvalid),
-    .s_axis_tlast   (s_axis_pixels_2_tlast ),  
-    .s_axis_tdata   (s_axis_pixels_2_tdata ),  
-    .s_axis_tkeep   (s_axis_pixels_2_tkeep ),  
 
-    .m_axis_aclk    (hf_aclk    ),    
-    .m_axis_aresetn (hf_aresetn ),  
-    .m_axis_tready  (m_axis_pixels_2_clk_tready),
-    .m_axis_tvalid  (m_axis_pixels_2_clk_tvalid),
-    .m_axis_tlast   (m_axis_pixels_2_clk_tlast ),
-    .m_axis_tdata   (m_axis_pixels_2_clk_tdata ),
-    .m_axis_tkeep   (m_axis_pixels_2_clk_tkeep )   
-  );
+  generate
+    if (COPIES == 2)
+      axis_clk_image CLK_IMAGE_2 (
+        .s_axis_aresetn (aresetn ),  
+        .s_axis_aclk    (aclk    ),    
+        .s_axis_tready  (s_axis_pixels_2_tready),
+        .s_axis_tvalid  (s_axis_pixels_2_tvalid),
+        .s_axis_tlast   (s_axis_pixels_2_tlast ),  
+        .s_axis_tdata   (s_axis_pixels_2_tdata ),  
+        .s_axis_tkeep   (s_axis_pixels_2_tkeep ),  
+
+        .m_axis_aclk    (hf_aclk    ),    
+        .m_axis_aresetn (hf_aresetn ),  
+        .m_axis_tready  (m_axis_pixels_2_clk_tready),
+        .m_axis_tvalid  (m_axis_pixels_2_clk_tvalid),
+        .m_axis_tlast   (m_axis_pixels_2_clk_tlast ),
+        .m_axis_tdata   (m_axis_pixels_2_clk_tdata ),
+        .m_axis_tkeep   (m_axis_pixels_2_clk_tkeep )   
+      );
+  endgenerate
 
   axis_dw_weights_clk CLK_DW_WEIGHTS (
     .aclk           (hf_aclk    ),           
@@ -285,8 +287,7 @@ module axis_accelerator #(ZERO=0) (
     .m_axis_tready             (input_m_axis_tready        ),      
     .m_axis_tvalid             (input_m_axis_tvalid        ),     
     .m_axis_tlast              (input_m_axis_tlast         ),     
-    .m_axis_pixels_1_tdata     (input_m_axis_pixels_1_tdata),
-    .m_axis_pixels_2_tdata     (input_m_axis_pixels_2_tdata),
+    .m_axis_pixels_tdata       (input_m_axis_pixels_tdata  ),
     .m_axis_weights_tdata      (input_m_axis_weights_tdata ), // CMG_flat
     .m_axis_tuser              (input_m_axis_tuser         )
   );
@@ -298,8 +299,7 @@ module axis_accelerator #(ZERO=0) (
     .s_axis_tready        (input_m_axis_tready        ),
     .s_axis_tlast         (input_m_axis_tlast         ),
     .s_axis_tuser         (input_m_axis_tuser         ),
-    .s_axis_tdata_pixels_1(input_m_axis_pixels_1_tdata), // cu
-    .s_axis_tdata_pixels_2(input_m_axis_pixels_2_tdata), // cu
+    .s_axis_tdata_pixels  (input_m_axis_pixels_tdata  ), // cu
     .s_axis_tdata_weights (input_m_axis_weights_tdata ), // cr = cmg
     .m_axis_tvalid        (conv_m_axis_tvalid         ),
     .m_axis_tready        (conv_m_axis_tready         ),

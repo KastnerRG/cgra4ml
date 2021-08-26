@@ -6,6 +6,7 @@ module axis_input_pipe
     
     UNITS                     = `UNITS                    ,
     CORES                     = `CORES                    ,
+    COPIES                    = `COPIES                   ,
     MEMBERS                   = `MEMBERS                  ,
     WORD_WIDTH                = `WORD_WIDTH               , 
     KERNEL_H_MAX              = `KERNEL_H_MAX             ,   // odd number
@@ -64,8 +65,7 @@ module axis_input_pipe
     m_axis_tvalid         ,     
     m_axis_tlast          ,     
     m_axis_tuser          ,
-    m_axis_pixels_1_tdata ,
-    m_axis_pixels_2_tdata ,
+    m_axis_pixels_tdata   ,
     m_axis_weights_tdata  
   ); 
 
@@ -116,8 +116,7 @@ module axis_input_pipe
   input  wire m_axis_tready;
   output wire m_axis_tvalid;
   output wire m_axis_tlast ;
-  output wire [WORD_WIDTH*UNITS             -1:0] m_axis_pixels_1_tdata;
-  output wire [WORD_WIDTH*UNITS             -1:0] m_axis_pixels_2_tdata;
+  output wire [COPIES*WORD_WIDTH*UNITS      -1:0] m_axis_pixels_tdata;
   output wire [WORD_WIDTH*CORES*MEMBERS     -1:0] m_axis_weights_tdata;
   output wire [TUSER_WIDTH_CONV_IN-1:0] m_axis_tuser;
 
@@ -163,20 +162,22 @@ module axis_input_pipe
     .m_axis_tvalid (pixels_m_valid ),     
     .m_axis_tready (pixels_m_ready ),      
     .m_axis_tuser  (pixels_m_user  ),
-    .m_axis_tdata  (m_axis_pixels_1_tdata)
+    .m_axis_tdata  (m_axis_pixels_tdata [1*WORD_WIDTH*UNITS-1 : 0*WORD_WIDTH*UNITS])
   );
-
-  axis_image_shift_buffer #(.ZERO(ZERO)) IM_SHIFT_2 (
-    .aclk          (aclk           ),
-    .aresetn       (aresetn        ),
-    .is_config     (image_is_config),
-    .debug_config  (im_shift_2_debug_config),
-    .s_axis_tvalid (im_mux_m_valid ),  
-    .s_axis_tdata  (im_mux_m_data_2),   
-    .s_axis_tuser  (im_mux_m_user  ),   
-    .m_axis_tready (pixels_m_ready ),      
-    .m_axis_tdata  (m_axis_pixels_2_tdata)
-  );
+generate
+  if (COPIES==2)
+    axis_image_shift_buffer #(.ZERO(ZERO)) IM_SHIFT_2 (
+      .aclk          (aclk           ),
+      .aresetn       (aresetn        ),
+      .is_config     (image_is_config),
+      .debug_config  (im_shift_2_debug_config),
+      .s_axis_tvalid (im_mux_m_valid ),  
+      .s_axis_tdata  (im_mux_m_data_2),   
+      .s_axis_tuser  (im_mux_m_user  ),   
+      .m_axis_tready (pixels_m_ready ),      
+      .m_axis_tdata  (m_axis_pixels_tdata [2*WORD_WIDTH*UNITS-1 : 1*WORD_WIDTH*UNITS])
+    );
+endgenerate
 
   axis_weight_rotator #(.ZERO(ZERO)) WEIGHTS_ROTATOR (
     .aclk          (aclk                 ),

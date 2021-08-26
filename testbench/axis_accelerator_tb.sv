@@ -159,8 +159,7 @@ module axis_accelerator_tb ();
   bit   input_m_axis_tready;
   logic input_m_axis_tvalid;
   logic input_m_axis_tlast ;
-  logic [WORD_WIDTH*UNITS             -1:0] input_m_axis_pixels_1_tdata;
-  logic [WORD_WIDTH*UNITS             -1:0] input_m_axis_pixels_2_tdata;
+  logic [COPIES*WORD_WIDTH*UNITS      -1:0] input_m_axis_pixels_tdata  ;
   logic [WORD_WIDTH*CORES*MEMBERS     -1:0] input_m_axis_weights_tdata ;
   logic [TUSER_WIDTH_CONV_IN          -1:0] input_m_axis_tuser         ;
 

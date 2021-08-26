@@ -60,6 +60,7 @@ module axis_image_pipe #(ZERO)  (
   );
 
   localparam UNITS                      = `UNITS                      ;
+  localparam COPIES                     = `COPIES                     ;
   localparam WORD_WIDTH                 = `WORD_WIDTH                 ; 
   localparam MEMBERS                    = `MEMBERS                    ;
   localparam DEBUG_CONFIG_WIDTH_IM_PIPE = `DEBUG_CONFIG_WIDTH_IM_PIPE ;
@@ -127,18 +128,20 @@ module axis_image_pipe #(ZERO)  (
     .m_axis_tdata  (dw_1_m_data_flat),
     .m_axis_tlast  (dw_1_m_last     )    
   );
-  axis_dw_image_input dw_2 (
-    .aclk          (aclk   ),                    
-    .aresetn       (aresetn),              
-    .s_axis_tvalid (s_axis_2_tvalid ),  
-    .s_axis_tready (s_axis_2_tready ),  
-    .s_axis_tdata  (s_axis_2_tdata  ),    
-    .s_axis_tkeep  (s_axis_2_tkeep  ),    
-    .s_axis_tlast  (s_axis_2_tlast  ),    
-    .m_axis_tvalid (dw_2_m_valid    ),  
-    .m_axis_tready (dw_2_m_ready    ),  
-    .m_axis_tdata  (dw_2_m_data_flat)
-  );
+
+  if (COPIES==2)
+    axis_dw_image_input dw_2 (
+      .aclk          (aclk   ),                    
+      .aresetn       (aresetn),              
+      .s_axis_tvalid (s_axis_2_tvalid ),  
+      .s_axis_tready (s_axis_2_tready ),  
+      .s_axis_tdata  (s_axis_2_tdata  ),    
+      .s_axis_tkeep  (s_axis_2_tkeep  ),    
+      .s_axis_tlast  (s_axis_2_tlast  ),    
+      .m_axis_tvalid (dw_2_m_valid    ),  
+      .m_axis_tready (dw_2_m_ready    ),  
+      .m_axis_tdata  (dw_2_m_data_flat)
+    );
 
 
   logic [1:0] state, state_next;

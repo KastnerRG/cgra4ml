@@ -8,8 +8,7 @@ module axis_conv_engine #(ZERO) (
     s_axis_tready        ,
     s_axis_tlast         ,
     s_axis_tuser         ,
-    s_axis_tdata_pixels_1,
-    s_axis_tdata_pixels_2,
+    s_axis_tdata_pixels  ,
     s_axis_tdata_weights ,
     m_axis_tvalid        ,
     m_axis_tready        ,
@@ -35,8 +34,7 @@ module axis_conv_engine #(ZERO) (
   input  wire s_axis_tlast;
   input  wire m_axis_tready;
   input  wire [TUSER_WIDTH_CONV_IN                -1:0] s_axis_tuser;
-  input  wire [WORD_WIDTH_IN*UNITS                -1:0] s_axis_tdata_pixels_1;
-  input  wire [WORD_WIDTH_IN*UNITS                -1:0] s_axis_tdata_pixels_2;
+  input  wire [COPIES*WORD_WIDTH_IN*UNITS         -1:0] s_axis_tdata_pixels;
   input  wire [WORD_WIDTH_IN*COPIES*GROUPS*MEMBERS-1:0] s_axis_tdata_weights;
 
   wire slice_s_axis_tready;
@@ -81,8 +79,7 @@ module axis_conv_engine #(ZERO) (
     .m_last       (slice_s_axis_tlast ),
     .m_user_flat  (slice_s_axis_tuser ),
     .m_keep_flat  (slice_s_axis_tkeep ),
-    .s_data_pixels_1_flat (s_axis_tdata_pixels_1),
-    .s_data_pixels_2_flat (s_axis_tdata_pixels_2),
+    .s_data_pixels_flat   (s_axis_tdata_pixels  ),
     .s_data_weights_flat  (s_axis_tdata_weights )
   );
 
