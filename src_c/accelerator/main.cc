@@ -28,7 +28,7 @@ extern void PRINT(const char *format, ...);
 int status;
 bool done = false;
 
-const int i_layers_start = 4-1;
+const int i_layers_start = 2-1;
 
 std::array<Layer, N_LAYERS> layers = build_yolo_mod();
 
