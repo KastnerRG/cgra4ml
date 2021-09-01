@@ -8,19 +8,19 @@ Parameters of the system. Written from build.tcl
 `define MEMBERS  12
 `define DW_FACTOR_1 3
 
-`define FREQ_HIGH     200
-`define FREQ_LOW      100
+`define FREQ_HIGH     250
+`define FREQ_RATIO    3
 
 `define CORES              4
 `define UNITS_EDGES        6
-`define IM_IN_S_DATA_WORDS 16
+`define IM_IN_S_DATA_WORDS 32
 
 `define WORD_WIDTH          8         
 `define WORD_WIDTH_ACC      32    
 `define KH_MAX              3            
 `define KW_MAX              3            
 
-`define TKEEP_WIDTH_IM_IN 16
+`define TKEEP_WIDTH_IM_IN 32
 `define BITS_KW           2          
 `define BITS_KH           2          
 `define BITS_IM_COLS      9     
@@ -50,9 +50,9 @@ Parameters of the system. Written from build.tcl
 `define LRELU_BEATS_MAX  9
 
 `define S_WEIGHTS_WIDTH_HF  32
-`define S_WEIGHTS_WIDTH_LF  64
-`define M_DATA_WIDTH_HF     128
-`define M_DATA_WIDTH_LF     256
+`define S_WEIGHTS_WIDTH_LF  128
+`define M_DATA_WIDTH_HF     96
+`define M_DATA_WIDTH_LF     512
 /*
   LATENCIES & float widths
 */

@@ -500,12 +500,12 @@ def reshape_conv_in(i_layers, c):
     return im_arrays, (BLOCKS,max_factor,W,CIN, c.UNITS_EDGES)
 
 
-def fpga_mwr_weights(i_layers,c):
+def fpga_mwr_weights(i_layers,c, i_itr=None):
 
     '''
     Get weights, flatten, write to bin, generate cmd
     '''
-    weights = get_weights(i_layers,i_itr=None, c=c).flatten()  
+    weights = get_weights(i_layers,i_itr=i_itr, c=c).flatten()  
     w_path = f"{c.DATA_DIR}{i_layers}_weights.bin"
     weights.tofile(w_path)
 
