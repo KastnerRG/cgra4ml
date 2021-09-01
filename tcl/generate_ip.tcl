@@ -123,8 +123,8 @@ set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $
 if ([expr $DW_FACTOR_1 != 1]) {
   set IP_NAME "axis_dw_lrelu_1_active"
   lappend IP_NAMES $IP_NAME
-  set S_BYTES [expr "$DW_FACTOR_1 * $UNITS * $WORD_WIDTH_ACC / 8"]
-  set M_BYTES [expr "$UNITS * $WORD_WIDTH_ACC / 8"]
+  set S_BYTES [expr "$DW_FACTOR_1 * $WORD_WIDTH_ACC / 8"]
+  set M_BYTES [expr "$WORD_WIDTH_ACC / 8"]
   set TUSER_WIDTH $TUSER_WIDTH_LRELU_IN
   set T_LAST 1
   set T_KEEP 1
@@ -141,8 +141,8 @@ if ([expr $DW_FACTOR_1 != 1]) {
   
   set IP_NAME "axis_dw_lrelu_2_active"
   lappend IP_NAMES $IP_NAME
-  set S_BYTES [expr "($MEMBERS/$DW_FACTOR_1) * $UNITS * $WORD_WIDTH_ACC / 8"]
-  set M_BYTES [expr "$UNITS * $WORD_WIDTH_ACC / 8"]
+  set S_BYTES [expr "($MEMBERS/$DW_FACTOR_1) * $WORD_WIDTH_ACC / 8"]
+  set M_BYTES [expr "$WORD_WIDTH_ACC / 8"]
   set TUSER_WIDTH $TUSER_WIDTH_LRELU_IN
   set T_LAST 1
   set T_KEEP 1
@@ -161,8 +161,8 @@ if ([expr $DW_FACTOR_1 != 1]) {
 
   set IP_NAME "axis_dw_lrelu_2_active"
   lappend IP_NAMES $IP_NAME
-  set S_BYTES [expr "$MEMBERS * $UNITS * $WORD_WIDTH_ACC / 8"]
-  set M_BYTES [expr "$UNITS * $WORD_WIDTH_ACC / 8"]
+  set S_BYTES [expr "$MEMBERS * $WORD_WIDTH_ACC / 8"]
+  set M_BYTES [expr "$WORD_WIDTH_ACC / 8"]
   set TUSER_WIDTH $TUSER_WIDTH_LRELU_IN
   set T_LAST 1
   set T_KEEP 1

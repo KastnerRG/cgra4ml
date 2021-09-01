@@ -17,8 +17,8 @@ Parameters of the system. Written from build.tcl
 
 `define WORD_WIDTH          8         
 `define WORD_WIDTH_ACC      32    
-`define KH_MAX              3      
-`define KW_MAX              3      
+`define KH_MAX              3            
+`define KW_MAX              3            
 
 `define TKEEP_WIDTH_IM_IN 16
 `define BITS_KW           2          
@@ -79,7 +79,7 @@ Parameters of the system. Written from build.tcl
 `define I_WEIGHTS_IS_COLS_1_K2     2   
 `define I_WEIGHTS_IS_CONFIG        3      
 `define I_WEIGHTS_IS_CIN_LAST      4    
-`define I_WEIGHTS_KW2              5      
+`define I_WEIGHTS_KW2              5        
 `define TUSER_WIDTH_WEIGHTS_OUT    6  
 /*
   CONV TUSER INDICES

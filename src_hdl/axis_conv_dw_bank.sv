@@ -49,80 +49,80 @@ module axis_conv_dw_bank #(ZERO) (
   output logic m_axis_tvalid, m_axis_tlast;
 
 
-  logic [COPIES-1:0][GROUPS-1:0][SUB_CORES-1:0][K-1:0][UNITS-1:0][WORD_WIDTH-1:0] dw_s_data;
-  logic [COPIES-1:0][GROUPS-1:0][SUB_CORES-1:0][K-1:0][UNITS-1:0][WORD_BYTES-1:0] dw_s_keep;
-  logic [COPIES-1:0][GROUPS-1:0][SUB_CORES-1:0][UNITS-1:0][WORD_WIDTH-1:0] dw_m_1_data;
-  logic [COPIES-1:0][GROUPS-1:0][SUB_CORES-1:0][UNITS-1:0][WORD_BYTES-1:0] dw_m_1_keep;
-  logic [SUB_CORES-1:0][K-1:0][UNITS-1:0][WORD_BYTES-1:0][TUSER_WIDTH_LRELU_IN  -1:0] dw_s_user;
-  logic [SUB_CORES-1:0]       [UNITS-1:0][WORD_BYTES-1:0][TUSER_WIDTH_LRELU_IN  -1:0] dw_m_1_user;
+  logic [COPIES-1:0][GROUPS-1:0][UNITS-1:0][SUB_CORES-1:0][K-1:0][WORD_WIDTH-1:0] dw_s_data;
+  logic [COPIES-1:0][GROUPS-1:0][UNITS-1:0][SUB_CORES-1:0][K-1:0][WORD_BYTES-1:0] dw_s_keep;
+  logic [COPIES-1:0][GROUPS-1:0][UNITS-1:0][SUB_CORES-1:0][WORD_WIDTH-1:0] dw_m_1_data;
+  logic [COPIES-1:0][GROUPS-1:0][UNITS-1:0][SUB_CORES-1:0][WORD_BYTES-1:0] dw_m_1_keep;
+  logic [UNITS-1:0][SUB_CORES-1:0][K-1:0][WORD_BYTES-1:0][TUSER_WIDTH_LRELU_IN  -1:0] dw_s_user;
+  logic [UNITS-1:0][SUB_CORES-1:0]       [WORD_BYTES-1:0][TUSER_WIDTH_LRELU_IN  -1:0] dw_m_1_user;
   logic dw_m_1_last, dw_m_1_valid, dw_m_1_ready;
 
 
   generate
     for (genvar c=0; c<COPIES; c++) begin: C
       for (genvar g=0; g<GROUPS; g++) begin: G
+        for (genvar u=0; u<UNITS; u++) begin: U
 
-        for (genvar s=0; s<SUB_CORES; s++) begin
-          for (genvar k=0; k<K; k++)
-            for (genvar u=0; u<UNITS; u++) begin
-              
-              assign dw_s_data[c][g][s][k][u] = s_axis_tdata[c][g][s*K + k][u];
+          for (genvar s=0; s<SUB_CORES; s++) begin
+            for (genvar k=0; k<K; k++) begin
+                
+              assign dw_s_data[c][g][u][s][k] = s_axis_tdata[c][g][s*K + k][u];
 
               for (genvar b=0; b<WORD_BYTES; b++) begin
-                assign dw_s_keep[c][g][s][k][u][b] = s_axis_tkeep[c][g][s*K + k][u][b];
+                assign dw_s_keep[c][g][u][s][k][b] = s_axis_tkeep[c][g][s*K + k][u][b];
                 if (c==0 && g==0) 
-                  assign dw_s_user[s][k][u][b] = s_axis_tuser[s*K + k];
+                  assign dw_s_user[u][s][k][b] = s_axis_tuser[s*K + k];
               end
             end
-        end
+          end
 
         if (K != 1) begin
           for (genvar s=0; s<SUB_CORES; s++)
-            if (c==0 && g==0)
+            if (c==0 && g==0 && u==0)
               if (s==0)
                 axis_dw_lrelu_1_active DW_K_1 (
                   .aclk           (aclk),          
                   .aresetn        (aresetn),             
                   .s_axis_tvalid  (s_axis_tvalid   ),  
                   .s_axis_tready  (s_axis_tready   ),  
-                  .s_axis_tdata   (dw_s_data    [c][g][s]),
+                  .s_axis_tdata   (dw_s_data    [c][g][u][s]),
                   .s_axis_tlast   (s_axis_tlast    ),    
-                  .s_axis_tuser   (dw_s_user    [s]),   
-                  .s_axis_tkeep   (dw_s_keep    [c][g][s]),   
+                  .s_axis_tuser   (dw_s_user    [u][s]),   
+                  .s_axis_tkeep   (dw_s_keep    [c][g][u][s]),   
 
                   .m_axis_tvalid  (dw_m_1_valid    ),  
                   .m_axis_tready  (dw_m_1_ready    ), 
-                  .m_axis_tdata   (dw_m_1_data  [c][g][s]),
+                  .m_axis_tdata   (dw_m_1_data  [c][g][u][s]),
                   .m_axis_tlast   (dw_m_1_last     ),  
-                  .m_axis_tuser   (dw_m_1_user  [s]),
-                  .m_axis_tkeep   (dw_m_1_keep  [c][g][s])   
+                  .m_axis_tuser   (dw_m_1_user  [u][s]),
+                  .m_axis_tkeep   (dw_m_1_keep  [c][g][u][s])   
                 );
               else
                 axis_dw_lrelu_1_active DW_K_1 (
                   .aclk           (aclk),          
                   .aresetn        (aresetn),             
                   .s_axis_tvalid  (s_axis_tvalid   ),  
-                  .s_axis_tdata   (dw_s_data    [c][g][s]),
+                  .s_axis_tdata   (dw_s_data    [c][g][u][s]),
                   .s_axis_tlast   (s_axis_tlast    ),    
-                  .s_axis_tuser   (dw_s_user    [s]),   
-                  .s_axis_tkeep   (dw_s_keep    [c][g][s]),   
+                  .s_axis_tuser   (dw_s_user    [u][s]),   
+                  .s_axis_tkeep   (dw_s_keep    [c][g][u][s]),   
 
                   .m_axis_tready  (dw_m_1_ready    ), 
-                  .m_axis_tdata   (dw_m_1_data  [c][g][s]),
-                  .m_axis_tuser   (dw_m_1_user  [s]),
-                  .m_axis_tkeep   (dw_m_1_keep  [c][g][s])   
+                  .m_axis_tdata   (dw_m_1_data  [c][g][u][s]),
+                  .m_axis_tuser   (dw_m_1_user  [u][s]),
+                  .m_axis_tkeep   (dw_m_1_keep  [c][g][u][s])   
                 );
             else
               axis_dw_lrelu_1 DW_K_1 (
                 .aclk           (aclk),          
                 .aresetn        (aresetn),             
                 .s_axis_tvalid  (s_axis_tvalid         ),  
-                .s_axis_tdata   (dw_s_data    [c][g][s]),
-                .s_axis_tkeep   (dw_s_keep    [c][g][s]),   
+                .s_axis_tdata   (dw_s_data    [c][g][u][s]),
+                .s_axis_tkeep   (dw_s_keep    [c][g][u][s]),   
 
                 .m_axis_tready  (dw_m_1_ready          ), 
-                .m_axis_tdata   (dw_m_1_data  [c][g][s]),
-                .m_axis_tkeep   (dw_m_1_keep  [c][g][s])   
+                .m_axis_tdata   (dw_m_1_data  [c][g][u][s]),
+                .m_axis_tkeep   (dw_m_1_keep  [c][g][u][s])   
               );
         end 
         else begin
@@ -134,23 +134,23 @@ module axis_conv_dw_bank #(ZERO) (
           assign s_axis_tready     = dw_m_1_ready;
         end
 
-        if (c==0 && g==0)begin
+        if (c==0 && g==0 && u==0)begin
           axis_dw_lrelu_2_active DW_R_1 (
             .aclk           (aclk),          
             .aresetn        (aresetn),           
-            .s_axis_tvalid  (dw_m_1_valid  ),
-            .s_axis_tready  (dw_m_1_ready  ),
-            .s_axis_tdata   (dw_m_1_data  [c][g]),
-            .s_axis_tlast   (dw_m_1_last   ),
-            .s_axis_tuser   (dw_m_1_user   ),
-            .s_axis_tkeep   (dw_m_1_keep  [c][g]),
+            .s_axis_tvalid  (dw_m_1_valid    ),
+            .s_axis_tready  (dw_m_1_ready    ),
+            .s_axis_tdata   (dw_m_1_data  [c][g][u]),
+            .s_axis_tlast   (dw_m_1_last     ),
+            .s_axis_tuser   (dw_m_1_user  [u]),
+            .s_axis_tkeep   (dw_m_1_keep  [c][g][u]),
 
-            .m_axis_tvalid  (dw_m_valid    ),  
-            .m_axis_tready  (slice_s_ready ), 
-            .m_axis_tdata   (slice_s_data [c][g]),
-            .m_axis_tlast   (slice_s_last  ),  
-            .m_axis_tuser   (dw_m_user     ),
-            .m_axis_tkeep   (dw_m_keep     )   
+            .m_axis_tvalid  (dw_m_valid      ),  
+            .m_axis_tready  (slice_s_ready   ), 
+            .m_axis_tdata   (slice_s_data [c][g][u]),
+            .m_axis_tlast   (slice_s_last    ),  
+            .m_axis_tuser   (dw_m_user    [u]),
+            .m_axis_tkeep   (dw_m_keep    [u])   
           );
           assign slice_s_valid = dw_m_valid && dw_m_keep[0][0];
         end
@@ -159,12 +159,14 @@ module axis_conv_dw_bank #(ZERO) (
             .aclk           (aclk),          
             .aresetn        (aresetn),           
             .s_axis_tvalid  (dw_m_1_valid    ),
-            .s_axis_tdata   (dw_m_1_data  [c][g]),
-            .s_axis_tkeep   (dw_m_1_keep  [c][g]),
+            .s_axis_tdata   (dw_m_1_data  [c][g][u]),
+            .s_axis_tkeep   (dw_m_1_keep  [c][g][u]),
 
             .m_axis_tready  (slice_s_ready      ), 
-            .m_axis_tdata   (slice_s_data [c][g])
+            .m_axis_tdata   (slice_s_data [c][g][u])
           );
+
+        end
 
         if (IS_CONV_DW_SLICE) begin
           if (c==0 && g==0)
