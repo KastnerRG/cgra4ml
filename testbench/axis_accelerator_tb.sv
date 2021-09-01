@@ -7,10 +7,10 @@ module axis_accelerator_tb ();
   timeprecision 1ps;
 
   localparam FREQ_HIGH = `FREQ_HIGH;
-  localparam FREQ_LOW  = `FREQ_LOW ;
+  localparam FREQ_RATIO = `FREQ_RATIO ;
 
-  localparam CLK_PERIOD_LF = 1000/FREQ_LOW;
   localparam CLK_PERIOD_HF = 1000/FREQ_HIGH;
+  localparam CLK_PERIOD_LF = FREQ_RATIO*CLK_PERIOD_HF;
   
   logic aclk;
   initial begin

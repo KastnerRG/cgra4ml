@@ -7,14 +7,17 @@ set UNITS   4
 set GROUPS  2
 set COPIES  2
 set MEMBERS 12
+set FREQ_HIGH   250
+set FREQ_RATIO  3
+
+set FREQ_LITE   50
 set DW_FACTOR_1 3 
+set LRELU_BEATS_MAX  9
+set IS_CONV_DW_SLICE 0
 
 set WORD_WIDTH       8
 set WORD_WIDTH_ACC   32
 set S_WEIGHTS_WIDTH_HF  32
-
-set BEATS_CONFIG_1X1 5 
-set BEATS_CONFIG_3X3 9 
 
 set KW_MAX        3
 set KH_MAX        3
@@ -40,12 +43,8 @@ set BITS_FRA_FMA_1  23
 set BITS_EXP_FMA_2  5 
 set BITS_FRA_FMA_2  10
 
-set IS_CONV_DW_SLICE 0
-set FREQ_LITE        20
-set FREQ_LOW         25
-set FREQ_HIGH        50
-set LRELU_BEATS_MAX    9
 
+set FREQ_LOW           [expr $FREQ_HIGH.0/$FREQ_RATIO.0]
 set IM_BLOCKS_MAX      [expr int($IM_ROWS_MAX / $UNITS)]
 set UNITS_EDGES        [expr $UNITS + $KH_MAX      -1]
 set CORES              [expr $GROUPS * $COPIES]
@@ -59,11 +58,11 @@ set BITS_MEMBERS       [expr int(ceil(log($MEMBERS)/log(2)))]
 set BITS_KW2           [expr int(ceil(log(($KW_MAX      +1)/2)/log(2)))]
 set BITS_KH2           [expr int(ceil(log(($KH_MAX      +1)/2)/log(2)))]
 
-set S_WEIGHTS_WIDTH_LF [expr int($S_WEIGHTS_WIDTH_HF * $FREQ_HIGH / $FREQ_LOW)]
-set M_DATA_WIDTH_HF    [expr $WORD_WIDTH * 2**int(ceil(log($GROUPS * $UNITS_EDGES)/log(2)))]
-set M_DATA_WIDTH_LF    [expr int($M_DATA_WIDTH_HF * $FREQ_HIGH / $FREQ_LOW)]
+set S_WEIGHTS_WIDTH_LF [expr 8 * 2**int(ceil(log($S_WEIGHTS_WIDTH_HF * $FREQ_RATIO / 8)/log(2)))]
+set M_DATA_WIDTH_HF    [expr int($GROUPS * $UNITS_EDGES * $WORD_WIDTH)]
+set M_DATA_WIDTH_LF    [expr 8 * 2**int(ceil(log($M_DATA_WIDTH_HF * $FREQ_RATIO / 8)/log(2)))]
 
-set IM_IN_S_DATA_WORDS   [expr 2**int(ceil(log($UNITS_EDGES)/log(2))) * $FREQ_HIGH / $FREQ_LOW]
+set IM_IN_S_DATA_WORDS   [expr 2**int(ceil(log($UNITS_EDGES * $FREQ_RATIO)/log(2)))]
 set WORD_WIDTH_LRELU_1   [expr 1 + $BITS_EXP_FMA_1 + $BITS_FRA_FMA_1]
 set WORD_WIDTH_LRELU_2   [expr 1 + $BITS_EXP_FMA_2 + $BITS_FRA_FMA_2]
 set WORD_WIDTH_LRELU_OUT $WORD_WIDTH
@@ -131,7 +130,7 @@ Parameters of the system. Written from build.tcl
 `define DW_FACTOR_1 $DW_FACTOR_1
 
 `define FREQ_HIGH     $FREQ_HIGH
-`define FREQ_LOW      $FREQ_LOW
+`define FREQ_RATIO    $FREQ_RATIO
 
 `define CORES              $CORES
 `define UNITS_EDGES        $UNITS_EDGES
