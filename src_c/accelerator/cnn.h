@@ -172,7 +172,7 @@ public:
 		 input_chunk_p->data_p[0] = (s8)(IS_NOT_MAX);
 		 input_chunk_p->data_p[1] = (s8)(IS_MAX);
 		 input_chunk_p->data_p[2] = (s8)(IS_LRELU);
-		 input_chunk_p->data_p[3] = (s8)(KH_IN-1);
+		 input_chunk_p->data_p[3] = (s8)(KH_IN/2);
 
 #ifdef DEBUG
 		 for (int i=4; i<UNITS_EDGES; i++) input_chunk_p->data_p[i] = 0;

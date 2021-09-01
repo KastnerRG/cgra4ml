@@ -17,7 +17,7 @@ module lrelu_engine #(ZERO) (
 
   resetn_config  ,
   s_valid_config ,
-  config_kh_1    ,
+  config_kh2    ,
   s_data_conv_out,
   count_config_full
 );
@@ -30,13 +30,14 @@ module lrelu_engine #(ZERO) (
   localparam GROUPS                     = `GROUPS                    ;
   localparam COPIES                     = `COPIES                    ;
   localparam MEMBERS                    = `MEMBERS                   ;
-  localparam KERNEL_W_MAX               = `KERNEL_W_MAX              ;
-  localparam KERNEL_H_MAX               = `KERNEL_H_MAX              ;
+  localparam KW_MAX                     = `KW_MAX                    ;
+  localparam KH_MAX                     = `KH_MAX                    ;
   localparam LRELU_ALPHA                = `LRELU_ALPHA               ;
-  localparam BITS_KERNEL_H              = `BITS_KERNEL_H             ;
-  localparam BITS_KERNEL_W              = `BITS_KERNEL_W             ;
+  localparam BITS_KH                    = `BITS_KH                   ;
+  localparam BITS_KW                    = `BITS_KW                   ;
   localparam BITS_MEMBERS               = `BITS_MEMBERS              ;
   localparam BITS_KW2                   = `BITS_KW2                  ;
+  localparam BITS_KH2                   = `BITS_KH2                  ;
   localparam BITS_EXP_CONFIG            = `BITS_EXP_CONFIG           ;
   localparam BITS_FRA_CONFIG            = `BITS_FRA_CONFIG           ;
   localparam BITS_EXP_FMA_1             = `BITS_EXP_FMA_1            ;
@@ -51,7 +52,7 @@ module lrelu_engine #(ZERO) (
   localparam LATENCY_FLOAT_DOWNSIZE     = `LATENCY_FLOAT_DOWNSIZE    ;
   localparam I_IS_NOT_MAX               = `I_IS_NOT_MAX              ;
   localparam I_IS_MAX                   = `I_IS_MAX                  ;
-  localparam I_KERNEL_H_1               = `I_KERNEL_H_1              ;
+  localparam I_KH2                      = `I_KH2                     ;
   localparam I_IS_LRELU                 = `I_IS_LRELU                ;
   localparam I_IS_TOP_BLOCK             = `I_IS_TOP_BLOCK            ;
   localparam I_IS_BOTTOM_BLOCK          = `I_IS_BOTTOM_BLOCK         ;
@@ -80,7 +81,7 @@ module lrelu_engine #(ZERO) (
     s_config_cgm
   */
   input  logic resetn_config, s_valid_config;
-  input  logic [BITS_KERNEL_H-1:0] config_kh_1;
+  input  logic [BITS_KH2-1:0] config_kh2;
   input  logic [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0][WORD_WIDTH_IN-1:0] s_data_conv_out;
   output logic count_config_full;
 
@@ -109,30 +110,32 @@ module lrelu_engine #(ZERO) (
 
   /* COUNTER */
 
-  localparam CLR_I_MAX    = KERNEL_W_MAX/2;
+  localparam CLR_I_MAX    = KW_MAX      /2;
   localparam BITS_CLR_I   = $clog2(CLR_I_MAX + 1);
   localparam BITS_W_SEL = 2;
-  localparam W_ADDR_MAX  = lrelu_beats::calc_beats_max(.KERNEL_W_MAX(KERNEL_W_MAX), .MEMBERS(MEMBERS));
+  localparam W_ADDR_MAX  = lrelu_beats::calc_beats_max(.KW_MAX      (KW_MAX      ), .MEMBERS(MEMBERS));
   localparam BITS_W_ADDR = $clog2(W_ADDR_MAX);
 
   logic [BITS_W_SEL    -1: 0] w_sel_bram, w_sel_bram_1;
   logic [BITS_CLR_I    -1: 0] w_clr_i, w_clr_i_1;
-  logic [BITS_KERNEL_H -1: 0] w_mtb, w_mtb_1;
+  logic [BITS_KH       -1: 0] w_mtb, w_mtb_1;
   logic [BITS_W_ADDR   -1: 0] w_addr, w_addr_1;
 
   lrelu_beats_counter #(
     .MEMBERS       (MEMBERS      ),
-    .KERNEL_H_MAX  (KERNEL_H_MAX ),
-    .KERNEL_W_MAX  (KERNEL_W_MAX ),
-    .BITS_KERNEL_W (BITS_KERNEL_W),
-    .BITS_KERNEL_H (BITS_KERNEL_H)
+    .KH_MAX        (KH_MAX       ),
+    .KW_MAX        (KW_MAX       ),
+    .BITS_KW2      (BITS_KW2),
+    .BITS_KH2      (BITS_KH2),
+    .BITS_KW       (BITS_KW ),
+    .BITS_KH       (BITS_KH )
   ) COUNTER (
     .clk   (clk            ),
     .rstn  (resetn_config  ),
     .en    (clken && s_valid_config),
     .full  (count_config_full),
-    .kh_1  (config_kh_1    ),
-    .kw_1  (config_kh_1    ),
+    .kh2  (config_kh2      ),
+    .kw2  (config_kh2      ),
     .w_sel (w_sel_bram     ),
     .clr_i (w_clr_i        ),
     .mtb   (w_mtb          ),
@@ -145,13 +148,12 @@ module lrelu_engine #(ZERO) (
   logic w_sel_bram_2;
   logic valid_1;
   logic [TUSER_WIDTH_LRELU_IN-1:0] user_1;
-  logic [BITS_KERNEL_H-1:0] user_1_kh_1, user_2_kh_1;
-  logic [BITS_KERNEL_W-1:0] user_1_clr;
+  logic [BITS_KH2-1:0] user_1_kh2, user_2_kh2;
+  logic [BITS_KW -1:0] user_1_clr;
   logic valid_config_1;
   logic valid_config_2;
   logic resetn_config_1;
   logic resetn_config_2;
-  logic [BITS_KERNEL_H-1:0] config_kh_1_1;
 
   /*
     INTERMEDIATE ACTIVE WIRES
@@ -165,7 +167,7 @@ module lrelu_engine #(ZERO) (
   assign s_user_fma_1 = TUSER_WIDTH_LRELU_FMA_1_IN'(m_user_float32);
   assign s_user_fma_2 = TUSER_WIDTH_MAXPOOL_IN'(user_2);
   
-  logic ready_mtb [KERNEL_H_MAX-1:0];
+  logic ready_mtb [KH_MAX      -1:0];
 
   /*
     Declare multidimensional wires
@@ -181,10 +183,10 @@ module lrelu_engine #(ZERO) (
   logic [BRAM_R_WIDTH-1:0] a_cg_16_delay_out [COPIES-1:0][GROUPS-1:0];
   logic [BRAM_R_WIDTH-1:0] a_cg_16_delay_in  [COPIES-1:0][GROUPS-1:0];
   logic [BITS_FMA_1-1:0]   a_cg_f32          [COPIES-1:0][GROUPS-1:0];
-  logic                    b_ready_cg_clr_mtb[COPIES-1:0][GROUPS-1:0][KERNEL_W_MAX-1:0][KERNEL_H_MAX-1:0];
-  logic [BRAM_R_WIDTH-1:0] b_cg_clr_mtb_f16  [COPIES-1:0][GROUPS-1:0][KERNEL_W_MAX-1:0][KERNEL_H_MAX-1:0];
-  logic [BRAM_R_WIDTH-1:0] b_cg_mtb_f16  [COPIES-1:0][GROUPS-1:0][KERNEL_H_MAX-1:0];
-  logic [BITS_FMA_1-1:0] b_cg_mtb_f32 [COPIES-1:0][GROUPS-1:0][KERNEL_H_MAX-1:0];
+  logic                    b_ready_cg_clr_mtb[COPIES-1:0][GROUPS-1:0][KW_MAX      -1:0][KH_MAX      -1:0];
+  logic [BRAM_R_WIDTH-1:0] b_cg_clr_mtb_f16  [COPIES-1:0][GROUPS-1:0][KW_MAX      -1:0][KH_MAX      -1:0];
+  logic [BRAM_R_WIDTH-1:0] b_cg_mtb_f16  [COPIES-1:0][GROUPS-1:0][KH_MAX      -1:0];
+  logic [BITS_FMA_1-1:0] b_cg_mtb_f32 [COPIES-1:0][GROUPS-1:0][KH_MAX      -1:0];
   logic [BITS_FMA_2-1:0] d_val_cg     [COPIES-1:0][GROUPS-1:0];
   logic [BRAM_R_WIDTH -1:0] config_2_cg [COPIES-1:0][GROUPS-1:0];
 
@@ -197,16 +199,16 @@ module lrelu_engine #(ZERO) (
   logic [BITS_FMA_2-1:0] m_data_fma_1_cgu_f16 [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
   logic [BITS_FMA_2-1:0] m_data_fma_2_cgu     [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
   logic [BITS_FMA_2-1:0] c_val_cgu            [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
-  logic [BITS_FMA_1-1:0] b_val_f32_cgu_mtb_in [COPIES-1:0][GROUPS-1:0][KERNEL_H_MAX-1:0];
-  logic [BITS_FMA_1-1:0] b_val_f32_cgu_mtb_out[COPIES-1:0][GROUPS-1:0][KERNEL_H_MAX-1:0];
+  logic [BITS_FMA_1-1:0] b_val_f32_cgu_mtb_in [COPIES-1:0][GROUPS-1:0][KH_MAX      -1:0];
+  logic [BITS_FMA_1-1:0] b_val_f32_cgu_mtb_out[COPIES-1:0][GROUPS-1:0][KH_MAX      -1:0];
   logic [BITS_FMA_1-1:0] b_val_f32_cgu_fma_in [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
   logic is_lrelu_cgu                          [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
 
   logic [COPIES-1:0] sel_is_top_c_in, sel_is_top_c_out, sel_is_bot_c_in, sel_is_bot_c_out;
 
-  logic [BITS_MEMBERS-1:0] bram_b_r_max_lut  [KERNEL_H_MAX/2:0];
+  logic [BITS_MEMBERS-1:0] bram_b_r_max_lut  [KH_MAX      /2:0];
   generate
-    for (genvar kw2=0; kw2<=KERNEL_W_MAX/2; kw2++) begin
+    for (genvar kw2=0; kw2<=KW_MAX      /2; kw2++) begin
       localparam kw = kw2*2+1;
       assign bram_b_r_max_lut [kw2] = MEMBERS/kw-1;
     end
@@ -296,7 +298,7 @@ module lrelu_engine #(ZERO) (
               );
               n_delay #(
                 .N          (LATENCY_1),
-                .WORD_WIDTH (BITS_KERNEL_H)
+                .WORD_WIDTH (BITS_KH)
               ) MTB_1 (
                 .clk      (clk),
                 .resetn   (resetn),
@@ -345,8 +347,8 @@ module lrelu_engine #(ZERO) (
                 .data_out (user_1)
               );
 
-              assign user_1_kh_1 = user_1[I_KERNEL_H_1+BITS_KERNEL_H-1:I_KERNEL_H_1];
-              assign user_1_clr  = user_1[I_CLR+BITS_KERNEL_W-1:I_CLR];
+              assign user_1_kh2  = user_1[I_KH2+BITS_KH2-1:I_KH2];
+              assign user_1_clr  = user_1[I_CLR+BITS_KW-1:I_CLR];
 
             end
           end
@@ -361,7 +363,7 @@ module lrelu_engine #(ZERO) (
             localparam BRAM_W_DEPTH = BRAM_R_DEPTH * BRAM_R_WIDTH / BRAM_W_WIDTH;
 
             logic [$clog2(BRAM_R_DEPTH)-1:0] r_addr_max;
-            assign r_addr_max = bram_b_r_max_lut[user_1_kh_1/2];
+            assign r_addr_max = bram_b_r_max_lut[user_1_kh2];
             
             cyclic_shift_reg #(
               .R_DEPTH      (BRAM_R_DEPTH), 
@@ -377,7 +379,7 @@ module lrelu_engine #(ZERO) (
               .m_data       (a_cg_16_delay_in [c][g]),
               .r_en         (valid_1),
               .r_addr_max   (r_addr_max  ),
-              .w_addr_max   (BRAM_W_WIDTH'(0)),
+              .w_addr_max   ('0),
               .w_addr_in    (w_addr_1)
             );
             n_delay #(
@@ -406,7 +408,7 @@ module lrelu_engine #(ZERO) (
 
           if (u == 0) begin
 
-            for (genvar mtb=0; mtb < KERNEL_H_MAX; mtb ++) begin: MTB
+            for (genvar mtb=0; mtb < KH_MAX      ; mtb ++) begin: MTB
               /*
                 READY:
                   - mtb = 0 is always ready
@@ -419,7 +421,7 @@ module lrelu_engine #(ZERO) (
 
               assign ready_mtb[mtb] = (mtb==0) || (mtb%2==1 && user_1[I_IS_TOP_BLOCK]) || (mtb%2==0 && mtb!=0 && user_1[I_IS_BOTTOM_BLOCK]);
 
-              for (genvar clr=0; clr < KERNEL_W_MAX; clr ++) begin: CLR
+              for (genvar clr=0; clr < KW_MAX      ; clr ++) begin: CLR
                 
                 assign b_ready_cg_clr_mtb[c][g][clr][mtb] = valid_1 && (clr == user_1_clr) && ready_mtb[mtb]; //user_1_clr only for LATENCY=0
 
@@ -440,7 +442,7 @@ module lrelu_engine #(ZERO) (
                 localparam BRAM_W_DEPTH = BRAM_R_DEPTH * BRAM_R_WIDTH / BRAM_W_WIDTH;
 
                 logic [$clog2(BRAM_R_DEPTH)-1:0] r_addr_max;
-                assign r_addr_max = bram_b_r_max_lut[user_1_kh_1/2];
+                assign r_addr_max = bram_b_r_max_lut[user_1_kh2];
 
                 cyclic_shift_reg #(
                   .R_DEPTH      (BRAM_R_DEPTH), 
@@ -457,7 +459,7 @@ module lrelu_engine #(ZERO) (
                   .m_data       (b_cg_clr_mtb_f16  [c][g][clr][mtb]),
                   .r_en         (b_ready_cg_clr_mtb[c][g][clr][mtb]),
                   .r_addr_max   (r_addr_max),
-                  .w_addr_max   (BRAM_W_WIDTH'(0)),
+                  .w_addr_max   ('0),
                   .w_addr_in    (w_addr_1)
                 );
                 end
@@ -476,7 +478,7 @@ module lrelu_engine #(ZERO) (
             - else  : both copies 
         */
           if (g==0 && u==0) begin
-            for (genvar kh2=0; kh2<KERNEL_H_MAX; kh2++) begin
+            for (genvar kh2=0; kh2<KH_MAX      ; kh2++) begin
               assign sel_is_top_c_in[c] = (user_1 [I_IS_MAX] ? (c==0) : 1) & user_1 [I_IS_TOP_BLOCK   ];
               assign sel_is_bot_c_in[c] = (user_1 [I_IS_MAX] ? (c==1) : 1) & user_1 [I_IS_BOTTOM_BLOCK];
               
@@ -494,13 +496,13 @@ module lrelu_engine #(ZERO) (
               if (c==0)
                 n_delay #(
                   .N          (LATENCY_CYCLIC_REG + 1 + LATENCY_FLOAT_UPSIZE),
-                  .WORD_WIDTH (BITS_KERNEL_H)
-                ) USER_KH_1 (
+                  .WORD_WIDTH (BITS_KH2)
+                ) USER_KH2 (
                   .clk      (clk),
                   .resetn   (resetn),
                   .clken    (clken),
-                  .data_in  (user_1_kh_1),
-                  .data_out (user_2_kh_1)
+                  .data_in  (user_1_kh2),
+                  .data_out (user_2_kh2)
                 );
 
             end
@@ -514,7 +516,7 @@ module lrelu_engine #(ZERO) (
             kw=7: 137000642
           */
           if (u == 0) begin
-            for (genvar mtb=0; mtb < KERNEL_H_MAX; mtb ++) begin
+            for (genvar mtb=0; mtb < KH_MAX      ; mtb ++) begin
               register #(
                 .WORD_WIDTH   (BRAM_R_WIDTH), 
                 .RESET_VALUE  (0)
@@ -582,7 +584,7 @@ module lrelu_engine #(ZERO) (
             */
 
             always_comb
-              if (mtb <= user_2_kh_1 && ((sel_is_top_c_out[c] && mtb%2==1) || (sel_is_bot_c_out[c] && mtb%2==0)))
+              if (mtb <= user_2_kh2*2 && ((sel_is_top_c_out[c] && mtb%2==1) || (sel_is_bot_c_out[c] && mtb%2==0)))
                 b_val_f32_cgu_mtb_in [c][g][mtb] = b_cg_mtb_f32[c][g][mtb];
               else
                 b_val_f32_cgu_mtb_in [c][g][mtb] = b_cg_mtb_f32[c][g][0];
@@ -611,9 +613,9 @@ module lrelu_engine #(ZERO) (
           6 4
           7 2
           */
-          if      (u <  KERNEL_H_MAX/2)
+          if      (u <  KH_MAX      /2)
             assign b_val_f32_cgu_fma_in[c][g][u] = b_val_f32_cgu_mtb_out[c][g][u*2 +1     ];
-          else if (u >= UNITS-KERNEL_H_MAX/2)
+          else if (u >= UNITS-KH_MAX      /2)
             assign b_val_f32_cgu_fma_in[c][g][u] = b_val_f32_cgu_mtb_out[c][g][(UNITS-u)*2];
           else
             assign b_val_f32_cgu_fma_in[c][g][u] = b_val_f32_cgu_mtb_out[c][g][0];

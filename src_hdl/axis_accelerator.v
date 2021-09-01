@@ -64,7 +64,7 @@ module axis_accelerator #(ZERO=0) (
   localparam CORES             = `CORES               ;
   localparam UNITS_EDGES       = `UNITS_EDGES         ;
   localparam IM_IN_S_DATA_WORDS= `IM_IN_S_DATA_WORDS  ;
-  localparam BITS_KERNEL_H     = `BITS_KERNEL_H       ;
+  localparam BITS_KH2          = `BITS_KH2            ;
   localparam TKEEP_WIDTH_IM_IN = `TKEEP_WIDTH_IM_IN   ;
 
   localparam S_WEIGHTS_WIDTH_LF= `S_WEIGHTS_WIDTH_LF  ;
@@ -187,7 +187,7 @@ module axis_accelerator #(ZERO=0) (
   wire [GROUPS*UNITS_EDGES-1:0] max_dw_1_m_axis_tkeep;
   wire max_dw_1_m_axis_tvalid, max_dw_1_m_axis_tready, max_dw_1_m_axis_tlast;
 
-  wire [2*BITS_KERNEL_H+DEBUG_CONFIG_WIDTH_IM_PIPE+DEBUG_CONFIG_WIDTH_W_ROT-1:0] debug_config_input_pipe;
+  wire [2*BITS_KH2     +DEBUG_CONFIG_WIDTH_IM_PIPE+DEBUG_CONFIG_WIDTH_W_ROT-1:0] debug_config_input_pipe;
   wire [DEBUG_CONFIG_WIDTH_LRELU  -1:0] debug_config_lrelu;
   wire [DEBUG_CONFIG_WIDTH_MAXPOOL-1:0] debug_config_maxpool;
 

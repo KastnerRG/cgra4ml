@@ -34,13 +34,13 @@ Additional Comments:
 
 module pad_filter 
 # (
-    KERNEL_W_MAX  ,
+    KW_MAX        ,
     MEMBERS       ,
     TUSER_WIDTH   ,
     I_IS_COLS_1_K2,
     I_IS_CONFIG   ,
     I_IS_CIN_LAST ,
-    I_KERNEL_W_1 
+    I_KW2 
 )(
     aclk,
     aclken,
@@ -53,16 +53,16 @@ module pad_filter
     valid_masked_in,
     clr
 );
-    localparam KW2_MAX          = KERNEL_W_MAX/2; //R, 3->1, 5->2, 7->3
-    localparam BITS_KERNEL_W    = `BITS_KERNEL_W;
-    localparam BITS_KW2         = `BITS_KERNEL_W;
+    localparam KW2_MAX          = KW_MAX      /2; //R, 3->1, 5->2, 7->3
+    localparam BITS_KW          = `BITS_KW;
+    localparam BITS_KW2         = `BITS_KW2;
 
     input  logic                      aclk;
     input  logic                      aresetn;
     input  logic [MEMBERS - 1 : 0]    aclken, valid_in, valid_masked_in;
     output logic [MEMBERS - 1 : 1]    mask_partial;
     output logic [MEMBERS - 1 : 0]    mask_full;
-    output logic [BITS_KERNEL_W-1: 0] clr          [MEMBERS - 1 : 0]; // 0-center, 1-center-left, 2-center-right, 3-left, 4-right
+    output logic [BITS_KW - 1 : 0]    clr          [MEMBERS - 1 : 0]; // 0-center, 1-center-left, 2-center-right, 3-left, 4-right
     input  logic [TUSER_WIDTH - 1: 0] user_in      [MEMBERS - 1 : 0];
 
     /*
@@ -76,8 +76,7 @@ module pad_filter
     * Acts as mux_sel for lookup logic
     */
     
-    logic   [BITS_KERNEL_W-1 : 0]  kw_wire [MEMBERS-1 : 0];
-    logic   [BITS_KERNEL_W-2 : 0] kw2_wire [MEMBERS-1 : 0];
+    logic   [BITS_KW2-1 : 0] kw2_wire [MEMBERS-1 : 0];
     
     /*
     COL_START, COL_END Registers
@@ -112,20 +111,18 @@ module pad_filter
     logic   [KW2_MAX : 1] col_start_in [MEMBERS-1 : 0];
     logic   [KW2_MAX : 1] col_start    [MEMBERS-1 : 0];
 
-    logic [BITS_KERNEL_W-1:0] clr_left_lut  [2**KW2_MAX:0][KERNEL_W_MAX/2:0];
-    logic [BITS_KERNEL_W-1:0] clr_right_lut [2**KW2_MAX:0];
+    logic [BITS_KW-1:0] clr_left_lut  [2**KW2_MAX:0][KW_MAX      /2:0];
+    logic [BITS_KW-1:0] clr_right_lut [2**KW2_MAX:0];
 
-    logic [BITS_KERNEL_W-1: 0] clr_left_in   [MEMBERS - 1 : 0];
-    logic [BITS_KERNEL_W-1: 0] clr_left_out  [MEMBERS - 1 : 0];
+    logic [BITS_KW-1: 0] clr_left_in   [MEMBERS - 1 : 0];
+    logic [BITS_KW-1: 0] clr_left_out  [MEMBERS - 1 : 0];
 
     logic lut_next_full  [MEMBERS - 1 : 0] [KW2_MAX : 0];
 
     generate
         for (genvar m=0; m < MEMBERS; m++) begin: col_end_gen_m
         
-            assign kw_wire  [m] = user_in [m][BITS_KERNEL_W + I_KERNEL_W_1-1: I_KERNEL_W_1];
-            assign kw2_wire [m] = kw_wire [m] / 2; // kw = 7 : kw2_wire = 3,   kw = 5 : kw2_wire = 2,   kw = 3 : kw2_wire = 1
-
+            assign kw2_wire [m] = user_in [m][BITS_KW2 + I_KW2-1: I_KW2]; // kw = 7 : kw2_wire = 3,   kw = 5 : kw2_wire = 2,   kw = 3 : kw2_wire = 1
 
             assign reg_clken[m] = aclken[m] && valid_in[m] && (user_in [m][I_IS_CIN_LAST] || user_in [m][I_IS_CONFIG]);
 
@@ -196,14 +193,14 @@ module pad_filter
                     assign clr_left_lut [0][kw2] = 0;
 
                     for (genvar log_col=0; log_col<=KW2_MAX; log_col++)
-                        assign clr_left_lut [2**log_col][kw2] = 1 + 2*log_col + kw-KERNEL_W_MAX;
+                        assign clr_left_lut [2**log_col][kw2] = 1 + 2*log_col + kw-KW_MAX      ;
                 end
             end
 
             assign clr_left_in [m] = clr_left_lut[col_start[m]][kw2_wire[m]];
 
             register #(
-                .WORD_WIDTH     (BITS_KERNEL_W),
+                .WORD_WIDTH     (BITS_KW),
                 .RESET_VALUE    (1)         
             )
             REG_CLR_LEFT

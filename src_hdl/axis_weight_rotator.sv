@@ -8,7 +8,7 @@ Tool Versions: Vivado 2018.2
 Description: 
           - Contains two Always Valid Cyclic BRAMs and a DW converter
           - s_data is directly from DMA. 32 bits.
-          - first beat contains ref values: {s_blocks_1, s_cols_1, s_cin_1, s_kh_1, s_kw_1}
+          - first beat contains ref values: {s_blocks_1, s_cols_1, s_cin_1, s_kh2 , s_kw2 }
           - first beat bypasses DWC and loaded to ref registers
           - Following data (lrelu_config: 21/13 m_beats + weights: k_h*cin m_beats) 
               written into one BRAM
@@ -47,8 +47,8 @@ module axis_weight_rotator #(ZERO) (
   localparam MEMBERS                   = `MEMBERS                  ;
   localparam WORD_WIDTH                = `WORD_WIDTH               ; 
   localparam DEBUG_CONFIG_WIDTH_W_ROT  = `DEBUG_CONFIG_WIDTH_W_ROT ;
-  localparam KERNEL_H_MAX              = `KERNEL_H_MAX             ;   // odd number
-  localparam KERNEL_W_MAX              = `KERNEL_W_MAX             ;   // odd number
+  localparam KH_MAX                    = `KH_MAX                   ;   // odd number
+  localparam KW_MAX                    = `KW_MAX                   ;   // odd number
   localparam IM_CIN_MAX                = `IM_CIN_MAX               ;
   localparam IM_BLOCKS_MAX             = `IM_BLOCKS_MAX            ;
   localparam IM_COLS_MAX               = `IM_COLS_MAX              ;
@@ -59,10 +59,11 @@ module axis_weight_rotator #(ZERO) (
   localparam I_WEIGHTS_IS_COLS_1_K2    = `I_WEIGHTS_IS_COLS_1_K2   ;
   localparam I_WEIGHTS_IS_CONFIG       = `I_WEIGHTS_IS_CONFIG      ;
   localparam I_WEIGHTS_IS_CIN_LAST     = `I_WEIGHTS_IS_CIN_LAST    ;
-  localparam I_WEIGHTS_KERNEL_W_1      = `I_WEIGHTS_KERNEL_W_1     ; 
+  localparam I_WEIGHTS_KW2             = `I_WEIGHTS_KW2            ; 
   localparam TUSER_WIDTH_WEIGHTS_OUT   = `TUSER_WIDTH_WEIGHTS_OUT  ;
-  localparam BITS_KERNEL_W             = `BITS_KERNEL_W            ;
-  localparam BITS_KERNEL_H             = `BITS_KERNEL_H            ;
+  localparam BITS_KW2                  = `BITS_KW2                 ;
+  localparam BITS_KH2                  = `BITS_KH2                 ;
+  localparam BITS_KH                   = `BITS_KH                  ;
   localparam BITS_IM_CIN               = `BITS_IM_CIN   ;
   localparam BITS_IM_BLOCKS            = `BITS_IM_BLOCKS;
   localparam BITS_IM_COLS              = `BITS_IM_COLS  ;
@@ -70,9 +71,9 @@ module axis_weight_rotator #(ZERO) (
   localparam LRELU_BEATS_MAX = `LRELU_BEATS_MAX;
   localparam M_WIDTH    = WORD_WIDTH*CORES*MEMBERS;
   localparam BRAM_WIDTH = M_WIDTH;
-  localparam BRAM_DEPTH = KERNEL_H_MAX * IM_CIN_MAX + LRELU_BEATS_MAX;
+  localparam BRAM_DEPTH = KH_MAX       * IM_CIN_MAX + LRELU_BEATS_MAX;
   localparam BITS_ADDR  = $clog2(BRAM_DEPTH);
-  localparam CONFIG_COUNT_MAX  = lrelu_beats::calc_beats_total_max(.KERNEL_W_MAX(KERNEL_W_MAX), .MEMBERS(MEMBERS));
+  localparam CONFIG_COUNT_MAX  = lrelu_beats::calc_beats_total_max(.KW_MAX      (KW_MAX      ), .MEMBERS(MEMBERS));
   localparam BITS_CONFIG_COUNT = $clog2(CONFIG_COUNT_MAX);
 
   input logic aclk;
@@ -121,8 +122,9 @@ module axis_weight_rotator #(ZERO) (
   logic [BITS_ADDR-1:0] addr_max      [2];
   logic [BITS_CONFIG_COUNT-1:0] count_config, count_next_config;
 
-  logic [BITS_KERNEL_W-1:0] s_kw_1, ref_1_kw [2];
-  logic [BITS_KERNEL_H-1:0] s_kh_1    , count_kh    , count_next_kh    , ref_1_kh     [2];
+  logic [BITS_KW2         -1:0] s_kw2 , ref_kw2   [2];
+  logic [BITS_KH2         -1:0] s_kh2 , ref_kh2   [2];
+  logic [BITS_KH          -1:0] count_kh, count_next_kh;
   logic [BITS_IM_CIN      -1:0] s_cin_1   , count_cin   , count_next_cin   , ref_1_cin    [2];
   logic [BITS_IM_COLS     -1:0] s_cols_1  , count_cols  , count_next_cols  , ref_1_cols   [2];
   logic [BITS_IM_BLOCKS   -1:0] s_blocks_1, count_blocks, count_next_blocks, ref_1_blocks [2];
@@ -134,18 +136,18 @@ module axis_weight_rotator #(ZERO) (
 
   output logic [DEBUG_CONFIG_WIDTH_W_ROT-1:0] debug_config;
   
-  assign debug_config = {state_dw, ref_1_kw[0], ref_1_kw[1], 
-                        ref_1_kh[0], ref_1_cin[0], ref_1_cols[0], ref_1_blocks[0], 
-                        ref_1_kh[1], ref_1_cin[1], ref_1_cols[1], ref_1_blocks[1], 
+  assign debug_config = {state_dw, ref_kw2  [0], ref_kw2 [1], 
+                        ref_kh2 [0], ref_1_cin[0], ref_1_cols[0], ref_1_blocks[0], 
+                        ref_kh2 [1], ref_1_cin[1], ref_1_cols[1], ref_1_blocks[1], 
                         count_kh, count_cin, count_cols, count_blocks};
   
 
   // Total lut
-  localparam BEATS_TOTAL_MAX = lrelu_beats::calc_beats_total_max (.KERNEL_W_MAX(KERNEL_W_MAX), .MEMBERS(MEMBERS));
+  localparam BEATS_TOTAL_MAX = lrelu_beats::calc_beats_total_max (.KW_MAX      (KW_MAX      ), .MEMBERS(MEMBERS));
   localparam BITS_BEATS_TOTAL = $clog2(BEATS_TOTAL_MAX+1);
-  logic [BITS_BEATS_TOTAL-1:0] lut_lrelu_beats_1 [KERNEL_W_MAX/2:0];
+  logic [BITS_BEATS_TOTAL-1:0] lut_lrelu_beats_1 [KW_MAX      /2:0];
   generate
-    for (genvar KW2=0; KW2 <= KERNEL_W_MAX/2; KW2++)
+    for (genvar KW2=0; KW2 <= KW_MAX      /2; KW2++)
       assign lut_lrelu_beats_1[KW2] = lrelu_beats::calc_beats_total (.kw2(KW2), .MEMBERS(MEMBERS)) -1;
   endgenerate
 
@@ -223,7 +225,7 @@ module axis_weight_rotator #(ZERO) (
   always_comb begin
 
     en_count_config   = 0;
-    count_next_config = lut_lrelu_beats_1[ref_1_kh[i_read]/2];
+    count_next_config = lut_lrelu_beats_1[ref_kh2 [i_read]];
     m_axis_tvalid     = 0;
 
     unique case (state_read)
@@ -331,12 +333,12 @@ module axis_weight_rotator #(ZERO) (
     Extract s_data into inputs of ref registers
     This will give error if SUM_BITS > S_WEIGHTS_WIDTH 
   */
-  localparam SUM_BITS = BITS_KERNEL_W + BITS_KERNEL_H + BITS_IM_CIN + BITS_IM_COLS + BITS_IM_BLOCKS;
-  assign {s_blocks_1, s_cols_1, s_cin_1, s_kh_1, s_kw_1} = s_axis_tdata[SUM_BITS-1:0];
+  localparam SUM_BITS = BITS_KW2 + BITS_KH2 + BITS_IM_CIN + BITS_IM_COLS + BITS_IM_BLOCKS;
+  assign {s_blocks_1, s_cols_1, s_cin_1, s_kh2 , s_kw2 } = s_axis_tdata[SUM_BITS-1:0];
   
   // s_addr_max = (s_kh_1+1)*(s_cin_1+1) = (s_kh_1 * s_cin_1) + s_kh_1 + s_cin_1 +1
-  assign s_addr_max = (s_kh_1 * s_cin_1) + s_kh_1 + s_cin_1 + s_addr_min;
-  assign s_addr_min = lut_lrelu_beats_1[s_kh_1/2] + 1;
+  assign s_addr_max = (s_kh2 * (s_cin_1+1)) * 2 + s_cin_1 + s_addr_min;
+  assign s_addr_min = lut_lrelu_beats_1[s_kh2] + 1;
 
 
   generate
@@ -487,24 +489,24 @@ module axis_weight_rotator #(ZERO) (
       */
 
       register #(
-        .WORD_WIDTH   (BITS_KERNEL_W), 
+        .WORD_WIDTH   (BITS_KW2), 
         .RESET_VALUE  (0)
-      ) REF_KW_1 (
+      ) REF_KW2 (
         .clock        (aclk),
         .resetn       (aresetn),
-        .data_in      (s_kw_1),
+        .data_in      (s_kw2 ),
         .clock_enable (en_ref    [i]),
-        .data_out     (ref_1_kw  [i])
+        .data_out     (ref_kw2   [i])
       );
       register #(
-        .WORD_WIDTH   (BITS_KERNEL_H), 
+        .WORD_WIDTH   (BITS_KH2), 
         .RESET_VALUE  (0)
-      ) REF_KH_1 (
+      ) REF_KH2 (
         .clock        (aclk),
         .resetn       (aresetn),
-        .data_in      (s_kh_1),
+        .data_in      (s_kh2 ),
         .clock_enable (en_ref    [i]),
-        .data_out     (ref_1_kh  [i])
+        .data_out     (ref_kh2   [i])
       );
       register #(
         .WORD_WIDTH   (BITS_IM_CIN), 
@@ -584,13 +586,13 @@ module axis_weight_rotator #(ZERO) (
   assign en_count_cols      = m_axis_tvalid && m_axis_tready && (last_config || (last_kh && last_cin));
   assign en_count_blocks    = m_axis_tvalid && m_axis_tready && (last_config || (last_kh && last_cin && last_cols));
 
-  assign count_next_kh     = (last_kh       || last_config || ref_1_kh     [i_read] == 0) ? ref_1_kh    [i_read] : count_kh     - 1;
+  assign count_next_kh     = (last_kh       || last_config || ref_kh2      [i_read] == 0) ? 2*ref_kh2   [i_read] : count_kh     - 1;
   assign count_next_cin    = (last_cin      || last_config || ref_1_cin    [i_read] == 0) ? ref_1_cin   [i_read] : count_cin    - 1;
   assign count_next_cols   = (last_cols     || last_config || ref_1_cols   [i_read] == 0) ? ref_1_cols  [i_read] : count_cols   - 1;
   assign count_next_blocks = (last_blocks   || last_config || ref_1_blocks [i_read] == 0) ? ref_1_blocks[i_read] : count_blocks - 1;
 
   assign last_next_config  = count_next_config == 0;
-  assign last_next_kh      = count_next_kh     == 0 || ref_1_kh     [i_read] == 0;
+  assign last_next_kh      = count_next_kh     == 0 || ref_kh2      [i_read] == 0;
   assign last_next_cin     = count_next_cin    == 0 || ref_1_cin    [i_read] == 0;
   assign last_next_cols    = count_next_cols   == 0 || ref_1_cols   [i_read] == 0;
   assign last_next_blocks  = count_next_blocks == 0 || ref_1_blocks [i_read] == 0;
@@ -602,10 +604,10 @@ module axis_weight_rotator #(ZERO) (
   assign m_axis_tlast = last_kh && last_cin && last_cols && last_blocks;
   
   assign m_axis_tuser [I_WEIGHTS_IS_CONFIG  ] = state_read  == R_PASS_CONFIG_S;
-  assign m_axis_tuser [I_WEIGHTS_KERNEL_W_1+BITS_KERNEL_W-1: I_WEIGHTS_KERNEL_W_1] = ref_1_kw [i_read];
+  assign m_axis_tuser [I_WEIGHTS_KW2+BITS_KW2-1: I_WEIGHTS_KW2] = ref_kw2  [i_read];
 
   assign m_axis_tuser [I_WEIGHTS_IS_CIN_LAST    ] = (last_kh && last_cin);
-  assign m_axis_tuser [I_WEIGHTS_IS_COLS_1_K2   ] = count_cols   == ref_1_kw     [i_read]/2; // i = cols-1-k/2 === [cols-1-i] = k/2
+  assign m_axis_tuser [I_WEIGHTS_IS_COLS_1_K2   ] = count_cols   == ref_kw2      [i_read]; // i = cols-1-k/2 === [cols-1-i] = k/2
   assign m_axis_tuser [I_WEIGHTS_IS_TOP_BLOCK   ] = count_blocks == ref_1_blocks [i_read];
   assign m_axis_tuser [I_WEIGHTS_IS_BOTTOM_BLOCK] = last_blocks;
 
@@ -635,7 +637,7 @@ module axis_weight_rotator #(ZERO) (
   );
 
   register #(
-    .WORD_WIDTH   (BITS_KERNEL_H), 
+    .WORD_WIDTH   (BITS_KH), 
     .RESET_VALUE  (0)
   ) COUNT_KH (
     .clock        (aclk),
