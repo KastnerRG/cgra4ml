@@ -18,6 +18,8 @@
 # allow all stuff inside any subfolder named "src"
 
 !src_hdl/
+!testbench/
+!tcl/
 !src_c/
 !wave/
 !projects/build*

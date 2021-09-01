@@ -1,4 +1,5 @@
 `include "params.v";
+`include "../src_hdl/params.v"
 
 module axis_maxpool_engine_tb();
   
@@ -19,15 +20,15 @@ module axis_maxpool_engine_tb();
   localparam K          = 3;
   localparam IS_1X1     = K==1;
 
-  localparam KERNEL_H_MAX = 3; // odd
-  localparam KERNEL_W_MAX = 3; // odd
-  localparam UNITS_EDGES  = UNITS + KERNEL_H_MAX-1;
-  localparam SUB_MEMBERS = IS_1X1 ? MEMBERS : MEMBERS/KERNEL_W_MAX;
+  localparam KH_MAX       = 3; // odd
+  localparam KW_MAX       = 3; // odd
+  localparam UNITS_EDGES  = UNITS + KH_MAX      -1;
+  localparam SUB_MEMBERS = IS_1X1 ? MEMBERS : MEMBERS/KW_MAX      ;
 
   localparam I_IS_NOT_MAX = `I_IS_NOT_MAX;
   localparam I_IS_MAX     = `I_IS_MAX    ;
-  localparam I_KERNEL_H_1 = `I_KERNEL_H_1;
-  localparam BITS_KERNEL_H= `BITS_KERNEL_H;
+  localparam I_KH2        = `I_KH2       ;
+  localparam BITS_KH2     = `BITS_KH2    ;
   localparam TUSER_WIDTH  = `TUSER_WIDTH_MAXPOOL_IN;
 
   typedef logic signed [WORD_WIDTH-1:0] word_t;
@@ -84,7 +85,7 @@ module axis_maxpool_engine_tb();
               end
           s_axis_tuser[I_IS_MAX    ] <= is_max;
           s_axis_tuser[I_IS_NOT_MAX] <= is_not_max;
-          s_axis_tuser[I_KERNEL_H_1: I_KERNEL_H_1+BITS_KERNEL_H] <= IS_1X1;
+          s_axis_tuser[I_KH2: I_KH2+BITS_KH2] <= K/2;
         end
         else begin
           s_axis_tvalid <= 0;

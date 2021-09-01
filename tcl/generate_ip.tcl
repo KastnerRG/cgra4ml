@@ -54,7 +54,7 @@ set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $
 set IP_NAME "bram_weights"
 lappend IP_NAMES $IP_NAME
 set R_WIDTH [expr "$WORD_WIDTH   * $CORES * $MEMBERS"]
-set R_DEPTH [expr "$KERNEL_H_MAX * $IM_CIN_MAX + ($LRELU_BEATS_MAX-1)"]
+set R_DEPTH [expr "$KH_MAX       * $IM_CIN_MAX + ($LRELU_BEATS_MAX-1)"]
 set W_WIDTH [expr "$R_WIDTH"]
 set W_DEPTH [expr "$R_WIDTH * $R_DEPTH / $W_WIDTH"]
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME

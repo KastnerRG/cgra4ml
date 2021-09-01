@@ -9,13 +9,13 @@ module axis_input_pipe
     COPIES                    = `COPIES                   ,
     MEMBERS                   = `MEMBERS                  ,
     WORD_WIDTH                = `WORD_WIDTH               , 
-    KERNEL_H_MAX              = `KERNEL_H_MAX             ,   // odd number
-    KERNEL_W_MAX              = `KERNEL_W_MAX             ,
+    KH_MAX                    = `KH_MAX                   ,   // odd number
+    KW_MAX                    = `KW_MAX                   ,
     // DEBUG WIDTHS
     DEBUG_CONFIG_WIDTH_W_ROT  = `DEBUG_CONFIG_WIDTH_W_ROT  ,
     DEBUG_CONFIG_WIDTH_IM_PIPE= `DEBUG_CONFIG_WIDTH_IM_PIPE,
     //  IMAGE TUSER INDICES 
-    I_KERNEL_H_1              = `I_KERNEL_H_1             , 
+    I_KH2                     = `I_KH2             , 
     TUSER_WIDTH_IM_SHIFT_IN   = `TUSER_WIDTH_IM_SHIFT_IN  ,
     TUSER_WIDTH_IM_SHIFT_OUT  = `TUSER_WIDTH_IM_SHIFT_OUT ,
     IM_CIN_MAX                = `IM_CIN_MAX               ,
@@ -29,7 +29,7 @@ module axis_input_pipe
     I_WEIGHTS_IS_COLS_1_K2    = `I_WEIGHTS_IS_COLS_1_K2   ,
     I_WEIGHTS_IS_CONFIG       = `I_WEIGHTS_IS_CONFIG      ,
     I_WEIGHTS_IS_CIN_LAST     = `I_WEIGHTS_IS_CIN_LAST    ,
-    I_WEIGHTS_KERNEL_W_1      = `I_WEIGHTS_KERNEL_W_1     , 
+    I_WEIGHTS_KW2             = `I_WEIGHTS_KW2            , 
     TUSER_WIDTH_WEIGHTS_OUT   = `TUSER_WIDTH_WEIGHTS_OUT  ,
     //  CONV TUSER INDICES   
     I_IS_NOT_MAX              = `I_IS_NOT_MAX             ,
@@ -40,7 +40,7 @@ module axis_input_pipe
     I_IS_COLS_1_K2            = `I_IS_COLS_1_K2           ,
     I_IS_CONFIG               = `I_IS_CONFIG              ,
     I_IS_CIN_LAST             = `I_IS_CIN_LAST            ,
-    I_KERNEL_W_1              = `I_KERNEL_W_1             , 
+    I_KW2                     = `I_KW2             , 
     TUSER_WIDTH_CONV_IN       = `TUSER_WIDTH_CONV_IN      
   )(
     aclk                  ,
@@ -72,8 +72,8 @@ module axis_input_pipe
 
   localparam UNITS_EDGES       = `UNITS_EDGES      ;
   localparam IM_IN_S_DATA_WORDS= `IM_IN_S_DATA_WORDS;
-  localparam BITS_KERNEL_H     = `BITS_KERNEL_H    ;
-  localparam BITS_KERNEL_W     = `BITS_KERNEL_W    ;
+  localparam BITS_KH2          = `BITS_KH2;
+  localparam BITS_KW2          = `BITS_KW2;
   localparam TKEEP_WIDTH_IM_IN = `TKEEP_WIDTH_IM_IN;
 
   input wire aclk;
@@ -121,10 +121,10 @@ module axis_input_pipe
   output wire [TUSER_WIDTH_CONV_IN-1:0] m_axis_tuser;
 
   wire [DEBUG_CONFIG_WIDTH_IM_PIPE-1:0] image_pipe_debug_config;
-  wire [BITS_KERNEL_H-1:0]              im_shift_1_debug_config, im_shift_2_debug_config;
+  wire [BITS_KH2     -1:0]              im_shift_1_debug_config, im_shift_2_debug_config;
   wire [DEBUG_CONFIG_WIDTH_W_ROT  -1:0] w_rot_debug_config;
 
-  localparam DEBUG_CONFIG_WIDTH = 2*BITS_KERNEL_H + DEBUG_CONFIG_WIDTH_IM_PIPE + DEBUG_CONFIG_WIDTH_W_ROT;
+  localparam DEBUG_CONFIG_WIDTH = 2*BITS_KH2      + DEBUG_CONFIG_WIDTH_IM_PIPE + DEBUG_CONFIG_WIDTH_W_ROT;
   output wire [DEBUG_CONFIG_WIDTH-1:0] debug_config;
   assign debug_config = {im_shift_2_debug_config, im_shift_1_debug_config, image_pipe_debug_config, w_rot_debug_config};
 
@@ -211,7 +211,7 @@ endgenerate
 
   assign m_axis_tuser [I_IS_NOT_MAX     ] = pixels_m_user  [I_IS_NOT_MAX];
   assign m_axis_tuser [I_IS_MAX         ] = pixels_m_user  [I_IS_MAX    ];
-  assign m_axis_tuser [I_KERNEL_H_1 + BITS_KERNEL_H-1: I_KERNEL_H_1] = pixels_m_user [I_KERNEL_H_1 + BITS_KERNEL_H-1: I_KERNEL_H_1];
+  assign m_axis_tuser [I_KH2 + BITS_KH2-1: I_KH2] = pixels_m_user [I_KH2 + BITS_KH2-1: I_KH2];
   assign m_axis_tuser [I_IS_LRELU       ] = pixels_m_user  [I_IS_LRELU  ];
 
   assign m_axis_tuser [I_IS_TOP_BLOCK   ] = weights_m_user [I_WEIGHTS_IS_TOP_BLOCK   ] && m_axis_tvalid;
@@ -219,7 +219,7 @@ endgenerate
   assign m_axis_tuser [I_IS_COLS_1_K2   ] = weights_m_user [I_WEIGHTS_IS_COLS_1_K2   ] && m_axis_tvalid;
   assign m_axis_tuser [I_IS_CONFIG      ] = weights_m_user [I_WEIGHTS_IS_CONFIG      ];
   assign m_axis_tuser [I_IS_CIN_LAST    ] = weights_m_user [I_WEIGHTS_IS_CIN_LAST    ] && m_axis_tvalid;
-  assign m_axis_tuser [I_KERNEL_W_1 + BITS_KERNEL_W-1: I_KERNEL_W_1] = weights_m_user [I_WEIGHTS_KERNEL_W_1 + BITS_KERNEL_W-1: I_WEIGHTS_KERNEL_W_1];
+  assign m_axis_tuser [I_KW2 + BITS_KW2-1: I_KW2] = weights_m_user [I_WEIGHTS_KW2 + BITS_KW2-1: I_WEIGHTS_KW2];
 
   /*
     DATA

@@ -16,8 +16,8 @@ set S_WEIGHTS_WIDTH_HF  32
 set BEATS_CONFIG_1X1 5 
 set BEATS_CONFIG_3X3 9 
 
-set KERNEL_W_MAX  3
-set KERNEL_H_MAX  3
+set KW_MAX        3
+set KH_MAX        3
 set IM_COLS_MAX   384
 set IM_ROWS_MAX   256
 set IM_CIN_MAX    1024
@@ -41,22 +41,23 @@ set BITS_EXP_FMA_2  5
 set BITS_FRA_FMA_2  10
 
 set IS_CONV_DW_SLICE 0
-set FREQ_LITE        20
-set FREQ_LOW         25
-set FREQ_HIGH        50
+set FREQ_LITE        50
+set FREQ_LOW         100
+set FREQ_HIGH        200
 set LRELU_BEATS_MAX    9
 
 set IM_BLOCKS_MAX      [expr int($IM_ROWS_MAX / $UNITS)]
-set UNITS_EDGES        [expr $UNITS + $KERNEL_H_MAX-1]
+set UNITS_EDGES        [expr $UNITS + $KH_MAX      -1]
 set CORES              [expr $GROUPS * $COPIES]
-set BITS_KERNEL_W      [expr int(ceil(log($KERNEL_W_MAX)/log(2)))]
-set BITS_KERNEL_H      [expr int(ceil(log($KERNEL_H_MAX)/log(2)))]
+set BITS_KW            [expr int(ceil(log($KW_MAX      )/log(2)))]
+set BITS_KH            [expr int(ceil(log($KH_MAX      )/log(2)))]
 set BITS_IM_COLS       [expr int(ceil(log($IM_COLS_MAX)/log(2)))]
 set BITS_IM_ROWS       [expr int(ceil(log($IM_ROWS_MAX)/log(2)))]
 set BITS_IM_CIN        [expr int(ceil(log($IM_CIN_MAX)/log(2)))]
 set BITS_IM_BLOCKS     [expr int(ceil(log($IM_ROWS_MAX/$UNITS)/log(2)))]
 set BITS_MEMBERS       [expr int(ceil(log($MEMBERS)/log(2)))]
-set BITS_KW2           [expr int(ceil(log($KERNEL_W_MAX/2+1)/log(2)))]
+set BITS_KW2           [expr int(ceil(log(($KW_MAX      +1)/2)/log(2)))]
+set BITS_KH2           [expr int(ceil(log(($KH_MAX      +1)/2)/log(2)))]
 
 set S_WEIGHTS_WIDTH_LF [expr int($S_WEIGHTS_WIDTH_HF * $FREQ_HIGH / $FREQ_LOW)]
 set M_DATA_WIDTH_HF    [expr $WORD_WIDTH * 2**int(ceil(log($GROUPS * $UNITS_EDGES)/log(2)))]
@@ -75,9 +76,9 @@ set BITS_FMA_2 [expr $BITS_FRA_FMA_2 + $BITS_EXP_FMA_2 + 1]
 set I_IS_NOT_MAX       0
 set I_IS_MAX           [expr $I_IS_NOT_MAX + 1]
 set I_IS_LRELU         [expr $I_IS_MAX     + 1]
-set I_KERNEL_H_1             [expr $I_IS_LRELU   + 1] 
-set TUSER_WIDTH_IM_SHIFT_IN  [expr $I_KERNEL_H_1       + $BITS_KERNEL_H]
-set TUSER_WIDTH_IM_SHIFT_OUT [expr $I_KERNEL_H_1       + $BITS_KERNEL_H]
+set I_KH2              [expr $I_IS_LRELU   + 1]
+set TUSER_WIDTH_IM_SHIFT_IN  [expr $I_KH2  + $BITS_KH2]
+set TUSER_WIDTH_IM_SHIFT_OUT [expr $I_KH2  + $BITS_KH2]
 
 # WEIGHTS TUSER INDICES
 set I_WEIGHTS_IS_TOP_BLOCK     0
@@ -85,33 +86,33 @@ set I_WEIGHTS_IS_BOTTOM_BLOCK  [expr $I_WEIGHTS_IS_TOP_BLOCK    + 1]
 set I_WEIGHTS_IS_COLS_1_K2     [expr $I_WEIGHTS_IS_BOTTOM_BLOCK + 1]
 set I_WEIGHTS_IS_CONFIG        [expr $I_WEIGHTS_IS_COLS_1_K2    + 1]
 set I_WEIGHTS_IS_CIN_LAST      [expr $I_WEIGHTS_IS_CONFIG       + 1] 
-set I_WEIGHTS_KERNEL_W_1       [expr $I_WEIGHTS_IS_CIN_LAST     + 1] 
-set TUSER_WIDTH_WEIGHTS_OUT    [expr $I_WEIGHTS_KERNEL_W_1 + $BITS_KERNEL_W]
+set I_WEIGHTS_KW2              [expr $I_WEIGHTS_IS_CIN_LAST     + 1] 
+set TUSER_WIDTH_WEIGHTS_OUT    [expr $I_WEIGHTS_KW2     + $BITS_KW2]
 
 # PIPE TUSER INDICES
 set I_IS_NOT_MAX      0
 set I_IS_MAX          [expr $I_IS_NOT_MAX      + 1]
-set I_KERNEL_H_1      [expr $I_IS_MAX          + 1]
-set I_IS_LRELU        [expr $I_KERNEL_H_1      + $BITS_KERNEL_H]
+set I_KH2             [expr $I_IS_MAX          + 1]
+set I_IS_LRELU        [expr $I_KH2     + $BITS_KH2]
 set I_IS_TOP_BLOCK    [expr $I_IS_LRELU        + 1]
 set I_IS_BOTTOM_BLOCK [expr $I_IS_TOP_BLOCK    + 1]
 set I_IS_COLS_1_K2    [expr $I_IS_BOTTOM_BLOCK + 1]
 set I_IS_CONFIG       [expr $I_IS_COLS_1_K2    + 1]
 set I_IS_CIN_LAST     [expr $I_IS_CONFIG       + 1]
-set I_KERNEL_W_1      [expr $I_IS_CIN_LAST     + 1]
+set I_KW2             [expr $I_IS_CIN_LAST     + 1]
 
 set I_CLR             [expr $I_IS_BOTTOM_BLOCK + 1]
 
-set TUSER_WIDTH_MAXPOOL_IN     [expr $BITS_KERNEL_H + $I_KERNEL_H_1]
-set TUSER_WIDTH_LRELU_IN       [expr $BITS_KERNEL_W + $I_CLR]
-set TUSER_WIDTH_LRELU_FMA_1_IN [expr 1 + $I_IS_LRELU    ]
-set TUSER_WIDTH_CONV_IN        [expr $BITS_KERNEL_W + $I_KERNEL_W_1]
+set TUSER_WIDTH_MAXPOOL_IN     [expr $BITS_KH2      + $I_KH2]
+set TUSER_WIDTH_LRELU_IN       [expr $BITS_KW       + $I_CLR]
+set TUSER_WIDTH_LRELU_FMA_1_IN [expr 1         + $I_IS_LRELU]
+set TUSER_WIDTH_CONV_IN        [expr $BITS_KW2      + $I_KW2]
 
-set DEBUG_CONFIG_WIDTH_W_ROT   [expr 1 + 2*$BITS_KERNEL_W + 3*($BITS_KERNEL_H + $BITS_IM_CIN + $BITS_IM_COLS + $BITS_IM_BLOCKS)]
-set DEBUG_CONFIG_WIDTH_IM_PIPE [expr 3 + 2 + $BITS_KERNEL_H + 0]
+set DEBUG_CONFIG_WIDTH_W_ROT   [expr 1 + 2*$BITS_KW2 + 3*($BITS_KH2      + $BITS_IM_CIN + $BITS_IM_COLS + $BITS_IM_BLOCKS)]
+set DEBUG_CONFIG_WIDTH_IM_PIPE [expr 3 + 2 + $BITS_KH2      + 0]
 set DEBUG_CONFIG_WIDTH_LRELU   [expr 3 + 4 + $BITS_FMA_2]
 set DEBUG_CONFIG_WIDTH_MAXPOOL 1
-set DEBUG_CONFIG_WIDTH         [expr $DEBUG_CONFIG_WIDTH_MAXPOOL + $DEBUG_CONFIG_WIDTH_LRELU + 2*$BITS_KERNEL_H + $DEBUG_CONFIG_WIDTH_IM_PIPE + $DEBUG_CONFIG_WIDTH_W_ROT]
+set DEBUG_CONFIG_WIDTH         [expr $DEBUG_CONFIG_WIDTH_MAXPOOL + $DEBUG_CONFIG_WIDTH_LRELU + 2*$BITS_KH2      + $DEBUG_CONFIG_WIDTH_IM_PIPE + $DEBUG_CONFIG_WIDTH_W_ROT]
 
 
 
@@ -138,18 +139,19 @@ Parameters of the system. Written from build.tcl
 
 `define WORD_WIDTH          $WORD_WIDTH         
 `define WORD_WIDTH_ACC      $WORD_WIDTH_ACC    
-`define KERNEL_H_MAX        $KERNEL_H_MAX      
-`define KERNEL_W_MAX        $KERNEL_W_MAX      
+`define KH_MAX              $KH_MAX            
+`define KW_MAX              $KW_MAX            
 
 `define TKEEP_WIDTH_IM_IN $TKEEP_WIDTH_IM_IN
-`define BITS_KERNEL_W     $BITS_KERNEL_W    
-`define BITS_KERNEL_H     $BITS_KERNEL_H    
+`define BITS_KW           $BITS_KW          
+`define BITS_KH           $BITS_KH          
 `define BITS_IM_COLS      $BITS_IM_COLS     
 `define BITS_IM_ROWS      $BITS_IM_ROWS     
 `define BITS_IM_CIN       $BITS_IM_CIN      
 `define BITS_IM_BLOCKS    $BITS_IM_BLOCKS   
 `define BITS_MEMBERS      $BITS_MEMBERS     
 `define BITS_KW2          $BITS_KW2         
+`define BITS_KH2          $BITS_KH2         
 
 `define DEBUG_CONFIG_WIDTH_W_ROT   $DEBUG_CONFIG_WIDTH_W_ROT  
 `define DEBUG_CONFIG_WIDTH_IM_PIPE $DEBUG_CONFIG_WIDTH_IM_PIPE
@@ -199,21 +201,21 @@ Parameters of the system. Written from build.tcl
 `define I_WEIGHTS_IS_COLS_1_K2     $I_WEIGHTS_IS_COLS_1_K2   
 `define I_WEIGHTS_IS_CONFIG        $I_WEIGHTS_IS_CONFIG      
 `define I_WEIGHTS_IS_CIN_LAST      $I_WEIGHTS_IS_CIN_LAST    
-`define I_WEIGHTS_KERNEL_W_1       $I_WEIGHTS_KERNEL_W_1      
+`define I_WEIGHTS_KW2              $I_WEIGHTS_KW2        
 `define TUSER_WIDTH_WEIGHTS_OUT    $TUSER_WIDTH_WEIGHTS_OUT  
 /*
   CONV TUSER INDICES
 */
 `define I_IS_NOT_MAX         $I_IS_NOT_MAX       
 `define I_IS_MAX             $I_IS_MAX           
-`define I_KERNEL_H_1         $I_KERNEL_H_1      
+`define I_KH2                $I_KH2      
 `define I_IS_LRELU           $I_IS_LRELU         
 `define I_IS_TOP_BLOCK       $I_IS_TOP_BLOCK     
 `define I_IS_BOTTOM_BLOCK    $I_IS_BOTTOM_BLOCK  
 `define I_IS_COLS_1_K2       $I_IS_COLS_1_K2     
 `define I_IS_CONFIG          $I_IS_CONFIG        
 `define I_IS_CIN_LAST        $I_IS_CIN_LAST      
-`define I_KERNEL_W_1         $I_KERNEL_W_1        
+`define I_KW2                $I_KW2        
 `define TUSER_WIDTH_CONV_IN  $TUSER_WIDTH_CONV_IN
 /*
   LRELU & MAXPOOL TUSER INDICES

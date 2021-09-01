@@ -1,5 +1,6 @@
 `include "params.v"
 `include "axis_tb.sv"
+`include "../src_hdl/params.v"
 
 module axis_input_pipe_tb ();
   timeunit 1ns;
@@ -36,10 +37,10 @@ module axis_input_pipe_tb ();
   localparam WORD_WIDTH            = `WORD_WIDTH    ; 
   localparam MEMBERS               = `MEMBERS       ; 
   localparam WORD_WIDTH_ACC        = `WORD_WIDTH_ACC; 
-  localparam KERNEL_H_MAX          = `KERNEL_H_MAX  ;   // odd number
-  localparam KERNEL_W_MAX          = `KERNEL_W_MAX  ;
-  localparam BITS_KERNEL_W         = `BITS_KERNEL_W;
-  localparam BITS_KERNEL_H         = `BITS_KERNEL_H;
+  localparam KH_MAX                = `KH_MAX        ;   // odd number
+  localparam KW_MAX                = `KW_MAX        ;
+  localparam BITS_KW2              = `BITS_KW2;
+  localparam BITS_KH2              = `BITS_KH2;
   localparam IM_CIN_MAX            = `IM_CIN_MAX    ;
   localparam IM_BLOCKS_MAX         = `IM_BLOCKS_MAX ;
   localparam IM_COLS_MAX           = `IM_COLS_MAX   ;
@@ -57,7 +58,7 @@ module axis_input_pipe_tb ();
   localparam LATENCY_BRAM          = `LATENCY_BRAM         ;
   localparam LATENCY_ACCUMULATOR   = `LATENCY_ACCUMULATOR  ;
   localparam LATENCY_MULTIPLIER    = `LATENCY_MULTIPLIER   ;
-  localparam I_KERNEL_H_1               = `I_KERNEL_H_1      ; 
+  localparam I_KH2                 = `I_KH2                ; 
   localparam TUSER_WIDTH_IM_SHIFT_IN    = `TUSER_WIDTH_IM_SHIFT_IN ;
   localparam TUSER_WIDTH_IM_SHIFT_OUT   = `TUSER_WIDTH_IM_SHIFT_OUT;
   localparam I_WEIGHTS_IS_TOP_BLOCK     = `I_WEIGHTS_IS_TOP_BLOCK   ;
@@ -65,7 +66,7 @@ module axis_input_pipe_tb ();
   localparam I_WEIGHTS_IS_COLS_1_K2     = `I_WEIGHTS_IS_COLS_1_K2   ;
   localparam I_WEIGHTS_IS_CONFIG        = `I_WEIGHTS_IS_CONFIG      ;
   localparam I_WEIGHTS_IS_CIN_LAST      = `I_WEIGHTS_IS_CIN_LAST    ;
-  localparam I_WEIGHTS_KERNEL_W_1       = `I_WEIGHTS_KERNEL_W_1     ; 
+  localparam I_WEIGHTS_KW2              = `I_WEIGHTS_KW2            ; 
   localparam TUSER_WIDTH_WEIGHTS_OUT    = `TUSER_WIDTH_WEIGHTS_OUT;
   localparam I_IS_NOT_MAX               = `I_IS_NOT_MAX     ;
   localparam I_IS_MAX                   = `I_IS_MAX         ;
@@ -75,7 +76,7 @@ module axis_input_pipe_tb ();
   localparam I_IS_COLS_1_K2             = `I_IS_COLS_1_K2   ;
   localparam I_IS_CONFIG                = `I_IS_CONFIG      ;
   localparam I_IS_CIN_LAST              = `I_IS_CIN_LAST    ;
-  localparam I_KERNEL_W_1               = `I_KERNEL_W_1     ; 
+  localparam I_KW2                      = `I_KW2            ; 
   localparam TUSER_WIDTH_CONV_IN        = `TUSER_WIDTH_CONV_IN;
 
   localparam UNITS_EDGES        = `UNITS_EDGES        ;
@@ -98,7 +99,7 @@ module axis_input_pipe_tb ();
   
   localparam BEATS_CONFIG_1   = lrelu_beats::calc_beats_total (.kw2(K/2), .MEMBERS(MEMBERS)) -1;
   localparam W_BEATS          = 1 + BEATS_CONFIG_1+1 + K*IM_CIN;
-  localparam WORDS_W          = (W_BEATS-1) * KERNEL_W_MAX * CORES + S_WEIGHTS_WIDTH_HF /WORD_WIDTH;
+  localparam WORDS_W          = (W_BEATS-1) * KW_MAX       * CORES + S_WEIGHTS_WIDTH_HF /WORD_WIDTH;
   localparam W_WORDS_PER_BEAT = S_WEIGHTS_WIDTH_HF /WORD_WIDTH;
 
   logic aresetn;
@@ -125,10 +126,10 @@ module axis_input_pipe_tb ();
   logic m_axis_tlast;
   logic [WORD_WIDTH*UNITS             -1:0] m_axis_pixels_1_tdata;
   logic [WORD_WIDTH*UNITS             -1:0] m_axis_pixels_2_tdata;
-  logic [WORD_WIDTH*CORES*KERNEL_W_MAX-1:0] m_axis_weights_tdata;
+  logic [WORD_WIDTH*CORES*KW_MAX      -1:0] m_axis_weights_tdata;
   logic [TUSER_WIDTH_CONV_IN-1:0] m_axis_tuser;
 
-  localparam DEBUG_CONFIG_WIDTH = 2*BITS_KERNEL_H + `DEBUG_CONFIG_WIDTH_IM_PIPE + `DEBUG_CONFIG_WIDTH_W_ROT;
+  localparam DEBUG_CONFIG_WIDTH = 2*BITS_KH2 + `DEBUG_CONFIG_WIDTH_IM_PIPE + `DEBUG_CONFIG_WIDTH_W_ROT;
   logic [DEBUG_CONFIG_WIDTH-1:0] debug_config;
 
   axis_input_pipe #(.ZERO(0)) pipe (.*);
@@ -138,10 +139,10 @@ module axis_input_pipe_tb ();
   logic [7:0]            s_data_weights  [S_WEIGHTS_WIDTH_HF /8-1:0];
   logic [WORD_WIDTH-1:0] m_data_pixels_1 [UNITS-1:0];
   logic [WORD_WIDTH-1:0] m_data_pixels_2 [UNITS-1:0];
-  logic [WORD_WIDTH-1:0] m_data_weights  [CORES-1:0][KERNEL_W_MAX-1:0];
-  logic [WORD_WIDTH-1:0] m_data_weights_linear  [CORES*KERNEL_W_MAX-1:0];
+  logic [WORD_WIDTH-1:0] m_data_weights  [CORES-1:0][KW_MAX      -1:0];
+  logic [WORD_WIDTH-1:0] m_data_weights_linear  [CORES*KW_MAX      -1:0];
   logic [UNITS-1:0] m_axis_pixels_tkeep  = '1;
-  logic [CORES*KERNEL_W_MAX-1:0] m_axis_weights_tkeep = '1;
+  logic [CORES*KW_MAX      -1:0] m_axis_weights_tkeep = '1;
 
   assign {>>{s_axis_pixels_1_tdata}} = s_data_pixels_1;
   assign {>>{s_axis_pixels_2_tdata}} = s_data_pixels_2;
@@ -162,7 +163,7 @@ module axis_input_pipe_tb ();
   
   AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(UNITS             ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(1)) m_pixels_1 = new(.file_base(base_im_out_1));
   AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(UNITS             ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_pixels_2 = new(.file_base(base_im_out_2));
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(CORES*KERNEL_W_MAX), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_weights  = new(.file_base(base_w_out   ));
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(CORES*KW_MAX      ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD), .IS_ACTIVE(0)) m_weights  = new(.file_base(base_w_out   ));
 
   initial forever m_pixels_1.axis_read(aclk, m_axis_tready, m_axis_tvalid, m_data_pixels_1      , m_axis_pixels_tkeep , m_axis_tlast);
   initial forever m_pixels_2.axis_read(aclk, m_axis_tready, m_axis_tvalid, m_data_pixels_2      , m_axis_pixels_tkeep , m_axis_tlast);

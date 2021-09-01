@@ -64,20 +64,20 @@ module axis_image_pipe #(ZERO)  (
   localparam WORD_WIDTH                 = `WORD_WIDTH                 ; 
   localparam MEMBERS                    = `MEMBERS                    ;
   localparam DEBUG_CONFIG_WIDTH_IM_PIPE = `DEBUG_CONFIG_WIDTH_IM_PIPE ;
-  localparam KERNEL_H_MAX               = `KERNEL_H_MAX               ;
-  localparam KERNEL_W_MAX               = `KERNEL_W_MAX               ;
+  localparam KH_MAX                     = `KH_MAX                     ;
+  localparam KW_MAX                     = `KW_MAX                     ;
   localparam I_IS_NOT_MAX         = `I_IS_NOT_MAX         ;
   localparam I_IS_MAX             = `I_IS_MAX             ;
   localparam I_IS_LRELU           = `I_IS_LRELU           ;
-  localparam I_KERNEL_H_1               = `I_KERNEL_H_1               ; 
+  localparam I_KH2                = `I_KH2               ; 
   localparam TUSER_WIDTH_IM_SHIFT_IN    = `TUSER_WIDTH_IM_SHIFT_IN    ;
 
   localparam UNITS_EDGES       = `UNITS_EDGES       ;
   localparam IM_IN_S_DATA_WORDS= `IM_IN_S_DATA_WORDS;
-  localparam BITS_KERNEL_H     = `BITS_KERNEL_H     ;
-  localparam BITS_KERNEL_W     = `BITS_KERNEL_W     ;
+  localparam BITS_KH2    = `BITS_KH2    ;
+  localparam BITS_KW2    = `BITS_KW2    ;
   localparam TKEEP_WIDTH_IM_IN = `TKEEP_WIDTH_IM_IN ;
-  localparam CONFIG_COUNT_MAX  = lrelu_beats::calc_beats_total_max(.KERNEL_W_MAX(KERNEL_W_MAX), .MEMBERS(MEMBERS));
+  localparam CONFIG_COUNT_MAX  = lrelu_beats::calc_beats_total_max(.KW_MAX      (KW_MAX      ), .MEMBERS(MEMBERS));
   localparam BITS_CONFIG_COUNT = $clog2(CONFIG_COUNT_MAX);
 
   input logic aclk;
@@ -146,7 +146,7 @@ module axis_image_pipe #(ZERO)  (
 
   logic [1:0] state, state_next;
   logic is_max_in, is_max_out, is_not_max_in, is_not_max_out, is_lrelu_in, is_lrelu_out;
-  logic [BITS_KERNEL_H-1:0] kernel_h_1_in, kernel_h_1_out;
+  logic [BITS_KH2-1:0] kh2_in, kh2_out;
   logic [BITS_CONFIG_COUNT-1:0] beats_config_1, ones_count_next, ones_count;
   logic en_ones_count, en_config;
   logic dw_1_handshake_last, dw_1_handshake;
@@ -157,7 +157,7 @@ module axis_image_pipe #(ZERO)  (
 
   output logic [DEBUG_CONFIG_WIDTH_IM_PIPE-1:0] debug_config;
 
-  assign debug_config = {is_max_out, is_not_max_out, is_lrelu_out, state, kernel_h_1_out, beats_config_1, ones_count};
+  assign debug_config = {is_max_out, is_not_max_out, is_lrelu_out, state, kh2_out, beats_config_1, ones_count};
 
   assign dw_1_handshake      = dw_1_m_ready && dw_1_m_valid;
   assign dw_1_handshake_last = dw_1_m_last  && dw_1_m_ready && dw_1_m_valid;
@@ -174,7 +174,7 @@ module axis_image_pipe #(ZERO)  (
       - Less cumbersome to keep iterations independant from each other and load everything in each iteration
       - We look at ONLY tlast and reload everything
 
-    * SET_S  - loads is_max and kernel_h_1 into regs
+    * SET_S  - loads is_max and kh2 into regs
     * ONES_s - Keeps m_data = 1, for RELU config bits
     * PASS_S - muxes the two halves of m_data from two dw_m_data's based on is_max
   */
@@ -241,14 +241,14 @@ module axis_image_pipe #(ZERO)  (
     .data_out       (state)
   );
 
-  logic [BITS_CONFIG_COUNT-1:0] beats_config_1_lut [KERNEL_H_MAX/2:0][KERNEL_W_MAX/2:0];
+  logic [BITS_CONFIG_COUNT-1:0] beats_config_1_lut [KH_MAX      /2:0][KW_MAX      /2:0];
   generate
-    for(genvar kh2=0; kh2<=KERNEL_H_MAX/2; kh2++)
-      for(genvar kw2=0; kw2<=KERNEL_W_MAX/2; kw2++)
+    for(genvar kh2=0; kh2<=KH_MAX      /2; kh2++)
+      for(genvar kw2=0; kw2<=KW_MAX      /2; kw2++)
         assign beats_config_1_lut[kh2][kw2] = lrelu_beats::calc_beats_total (.kw2(kw2), .MEMBERS(MEMBERS)) -1;
   endgenerate
 
-  assign beats_config_1    = beats_config_1_lut[kernel_h_1_out/2][kernel_h_1_out/2];
+  assign beats_config_1    = beats_config_1_lut[kh2_out][kh2_out];
 
   register #(
     .WORD_WIDTH     (BITS_CONFIG_COUNT),
@@ -268,13 +268,13 @@ module axis_image_pipe #(ZERO)  (
       0. IS_NOT_MAX
       1. IS_MAX
       2. IS_LRELU
-      3. KERNEL_H_1
+      3. kh2
   */
 
   assign is_not_max_in = dw_1_m_data [0];
   assign is_max_in     = dw_1_m_data [1];
   assign is_lrelu_in   = dw_1_m_data [2];
-  assign kernel_h_1_in = dw_1_m_data [3];
+  assign kh2_in        = dw_1_m_data [3];
 
   register #(
     .WORD_WIDTH     (1),
@@ -307,14 +307,14 @@ module axis_image_pipe #(ZERO)  (
     .data_out       (is_lrelu_out)
   );
   register #(
-    .WORD_WIDTH     (BITS_KERNEL_H),
+    .WORD_WIDTH     (BITS_KH2),
     .RESET_VALUE    (0)
-  ) KERNEL_H (
+  ) KH2 (
     .clock          (aclk),
     .resetn         (aresetn),
     .clock_enable   (en_config),
-    .data_in        (BITS_KERNEL_H'(kernel_h_1_in)),
-    .data_out       (kernel_h_1_out)
+    .data_in        (kh2_in ),
+    .data_out       (kh2_out)
   );
 
   /*
@@ -323,13 +323,13 @@ module axis_image_pipe #(ZERO)  (
 
   assign m_axis_tuser [I_IS_NOT_MAX] = is_not_max_out;
   assign m_axis_tuser [I_IS_MAX    ] = is_max_out    ;
-  assign m_axis_tuser [BITS_KERNEL_H+I_KERNEL_H_1-1 : I_KERNEL_H_1] = kernel_h_1_out;
+  assign m_axis_tuser [BITS_KH2+I_KH2-1 : I_KH2] = kh2_out;
   assign m_axis_tuser [I_IS_LRELU  ] = is_lrelu_out  ;
 
   /*
     MUX the output data
 
-    - ONES: send 1 through the 0th unpadded unit: u = KERNEL_H_1/2
+    - ONES: send 1 through the 0th unpadded unit: u = kh2
             send 0 through all other units, to reduce switching power
   */
 
@@ -338,8 +338,8 @@ module axis_image_pipe #(ZERO)  (
 
   generate
     for (genvar u=0; u < UNITS_EDGES; u=u+1) begin
-      assign m_data_1 [u] = (state == ONES_S) ? (u <= KERNEL_H_MAX/2) : dw_1_m_data[u];
-      assign m_data_2 [u] = (state == ONES_S) ? (u <= KERNEL_H_MAX/2) : 
+      assign m_data_1 [u] = (state == ONES_S) ? (u <= KH_MAX      /2) : dw_1_m_data[u];
+      assign m_data_2 [u] = (state == ONES_S) ? (u <= KH_MAX      /2) : 
                             is_max_out        ? dw_2_m_data[u] : dw_1_m_data[u];
     end
   endgenerate
@@ -370,11 +370,12 @@ module axis_image_shift_buffer #(ZERO) (
 
   localparam UNITS           = `UNITS        ;
   localparam WORD_WIDTH      = `WORD_WIDTH   ; 
-  localparam KERNEL_H_MAX    = `KERNEL_H_MAX ;   // odd number
+  localparam KH_MAX          = `KH_MAX       ;   // odd number
   localparam UNITS_EDGES     = `UNITS_EDGES  ;
-  localparam BITS_KERNEL_H   = `BITS_KERNEL_H;
+  localparam BITS_KH         = `BITS_KH;
+  localparam BITS_KH2        = `BITS_KH2;
   
-  localparam I_KERNEL_H_1             = `I_KERNEL_H_1; 
+  localparam I_KH2                    = `I_KH2; 
   localparam I_IS_CONFIG              = `I_IS_CONFIG; 
   localparam TUSER_WIDTH_IM_SHIFT_IN  = `TUSER_WIDTH_IM_SHIFT_IN ;
   localparam TUSER_WIDTH_IM_SHIFT_OUT = `TUSER_WIDTH_IM_SHIFT_OUT;
@@ -393,7 +394,7 @@ module axis_image_shift_buffer #(ZERO) (
   output logic [WORD_WIDTH*UNITS -1:0] m_axis_tdata;
   output logic [TUSER_WIDTH_IM_SHIFT_OUT-1:0] m_axis_tuser;
 
-  logic [BITS_KERNEL_H-1:0] s_user_kernel_h_1;
+  logic [BITS_KH2     -1:0] s_user_kh2;
 
   logic slice_s_ready;
   logic slice_s_valid;
@@ -401,13 +402,13 @@ module axis_image_shift_buffer #(ZERO) (
   logic [TUSER_WIDTH_IM_SHIFT_OUT-1:0] slice_s_user;
 
   logic aclken;
-  logic [BITS_KERNEL_H-1:0] count_next, count;
+  logic [BITS_KH-1:0] count_next, count;
 
-  output logic [BITS_KERNEL_H-1:0] debug_config;
+  output logic [BITS_KH2     -1:0] debug_config;
   assign debug_config = count;
 
   logic [WORD_WIDTH-1:0] s_data            [UNITS_EDGES-1:0];
-  logic [WORD_WIDTH-1:0] s_data_decentered [UNITS_EDGES-1:0][KERNEL_H_MAX/2 +1-1:0];
+  logic [WORD_WIDTH-1:0] s_data_decentered [UNITS_EDGES-1:0][KH_MAX      /2 +1-1:0];
   logic [WORD_WIDTH-1:0] buf_data_in       [UNITS_EDGES-1:0];
   logic [WORD_WIDTH-1:0] buf_data_out      [UNITS_EDGES-1:0];
 
@@ -418,10 +419,10 @@ module axis_image_shift_buffer #(ZERO) (
   assign s_data = {>>{s_axis_tdata}};
   assign {>>{slice_s_data}} = buf_data_out [UNITS-1:0];
 
-  assign s_user_kernel_h_1 = s_axis_tuser[I_KERNEL_H_1      +BITS_KERNEL_H-1: I_KERNEL_H_1      ];
+  assign s_user_kh2 = s_axis_tuser[I_KH2+BITS_KH2-1: I_KH2];
 
   register #(
-    .WORD_WIDTH     (BITS_KERNEL_H),
+    .WORD_WIDTH     (BITS_KH),
     .RESET_VALUE    (0)
   ) COUNT (
     .clock          (aclk),
@@ -437,7 +438,7 @@ module axis_image_shift_buffer #(ZERO) (
                   buf_valid_in  = s_axis_tvalid;
                   buf_user_in   = s_axis_tuser ;
                   s_axis_tready = slice_s_ready;
-                  count_next    = is_config ? 0 : s_user_kernel_h_1;
+                  count_next    = is_config ? 0 : s_user_kh2*2;
                 end
       default : begin
                   buf_valid_in  = 1;
@@ -456,30 +457,30 @@ module axis_image_shift_buffer #(ZERO) (
 
         * s_data is padded symmetrically with edges / zeros
         * But we shift linearly (asymmetrically)
-        * if KERNEL_H_MAX = 5 and  k_h = s_user+1 = 3
+        * if KH_MAX       = 5 and  k_h = s_user+1 = 3
           - s_data[0] = 0 and s_data[-1] = 0 with actual data in between
           - we need to take buf_data_in[u] <= s_data[u+1]
           - then shift buf_data_in[u] <= buf_data_in[u+1]
         * For this, we de-center the data
 
-        KERNEL_H_MAX = 5
+        KH_MAX       = 5
 
-        s_user_kernel_h_1/2 : h2:0 => s_data_decentered[u] = s_data[u + 2] = s_data[u + 2 - 0]
-        s_user_kernel_h_1/2 : h2:1 => s_data_decentered[u] = s_data[u + 1] = s_data[u + 2 - 1]
-        s_user_kernel_h_1/2 : h2:2 => s_data_decentered[u] = s_data[u + 0] = s_data[u + 2 - 2]
+        s_user_kh2*2 : h2:0 => s_data_decentered[u] = s_data[u + 2] = s_data[u + 2 - 0]
+        s_user_kh2*2 : h2:1 => s_data_decentered[u] = s_data[u + 1] = s_data[u + 2 - 1]
+        s_user_kh2*2 : h2:2 => s_data_decentered[u] = s_data[u + 0] = s_data[u + 2 - 2]
 
-        s_data_decentered[u] = s_data[u + KERNEL_H_MAX/2 - h2]
+        s_data_decentered[u] = s_data[u + KH_MAX      /2 - h2]
       */
 
-      for (genvar h2=0; h2 <= KERNEL_H_MAX/2; h2++) begin
+      for (genvar h2=0; h2 <= KH_MAX      /2; h2++) begin
         if (u <= UNITS + h2*2)
-          assign s_data_decentered[u][h2] = s_data[u + KERNEL_H_MAX/2 - h2];
+          assign s_data_decentered[u][h2] = s_data[u + KH_MAX      /2 - h2];
         else 
           assign s_data_decentered[u][h2] = 0;
       end
       
-      if (u == UNITS_EDGES-1) assign buf_data_in[u] = s_data_decentered[u][s_user_kernel_h_1/2];
-      else                    assign buf_data_in[u] = count == 0 ? s_data_decentered[u][s_user_kernel_h_1/2] : buf_data_out[u+1];
+      if (u == UNITS_EDGES-1) assign buf_data_in[u] = s_data_decentered[u][s_user_kh2];
+      else                    assign buf_data_in[u] = count == 0 ? s_data_decentered[u][s_user_kh2] : buf_data_out[u+1];
 
       register #(
         .WORD_WIDTH     (WORD_WIDTH),

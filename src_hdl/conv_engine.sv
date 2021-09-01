@@ -45,27 +45,27 @@ module conv_engine #(ZERO) (
   localparam WORD_WIDTH_OUT      = `WORD_WIDTH_ACC      ;
   localparam LATENCY_ACCUMULATOR = `LATENCY_ACCUMULATOR ;
   localparam LATENCY_MULTIPLIER  = `LATENCY_MULTIPLIER  ;
-  localparam KERNEL_W_MAX        = `KERNEL_W_MAX        ;
-  localparam KERNEL_H_MAX        = `KERNEL_H_MAX        ; // odd number
+  localparam KW_MAX              = `KW_MAX              ;
+  localparam KH_MAX              = `KH_MAX              ; // odd number
   localparam IM_CIN_MAX          = `IM_CIN_MAX          ;
   localparam IM_COLS_MAX         = `IM_COLS_MAX         ;
   localparam I_IS_NOT_MAX        = `I_IS_NOT_MAX        ;
   localparam I_IS_MAX            = `I_IS_MAX            ;
   localparam I_IS_LRELU          = `I_IS_LRELU          ;
-  localparam I_KERNEL_H_1        = `I_KERNEL_H_1        ;
+  localparam I_KH2               = `I_KH2               ;
   localparam I_IS_TOP_BLOCK      = `I_IS_TOP_BLOCK      ;
   localparam I_IS_BOTTOM_BLOCK   = `I_IS_BOTTOM_BLOCK   ;
   localparam I_IS_COLS_1_K2      = `I_IS_COLS_1_K2      ;
   localparam I_IS_CONFIG         = `I_IS_CONFIG         ;
   localparam I_IS_CIN_LAST       = `I_IS_CIN_LAST       ;
-  localparam I_KERNEL_W_1        = `I_KERNEL_W_1        ;
+  localparam I_KW2               = `I_KW2               ;
   localparam I_CLR               = `I_CLR               ;
   localparam TUSER_WIDTH_CONV_IN = `TUSER_WIDTH_CONV_IN ;
   localparam TUSER_WIDTH_CONV_OUT= `TUSER_WIDTH_LRELU_IN;  
 
   localparam BITS_IM_CIN        = `BITS_IM_CIN  ;
   localparam BITS_IM_COLS       = `BITS_IM_COLS ;
-  localparam BITS_KERNEL_W      = `BITS_KERNEL_W;
+  localparam BITS_KW            = `BITS_KW      ;
   localparam BITS_MEMBERS       = `BITS_MEMBERS ;
   localparam BITS_KW2           = `BITS_KW2     ;
 
@@ -96,8 +96,8 @@ module conv_engine #(ZERO) (
   assign {>>{m_keep_flat}}    = m_keep;
   assign {>>{m_user_flat}}    = m_user;
 
-  logic [BITS_KERNEL_W  -1:0] s_user_kernel_w_1;
-  assign s_user_kernel_w_1 = s_user [I_KERNEL_W_1 + BITS_KERNEL_W-1 : I_KERNEL_W_1];
+  logic [BITS_KW2 -1:0] s_user_kw2;
+  assign s_user_kw2 = s_user [I_KW2 + BITS_KW2-1 : I_KW2];
 
 
   logic mux_sel_none ;
@@ -108,8 +108,8 @@ module conv_engine #(ZERO) (
   logic [MEMBERS-1: 0] acc_m_valid_delay_in, acc_s_valid, acc_s_last;
   logic [MEMBERS-1: 0] acc_m_valid, acc_m_valid_masked, acc_m_last, acc_m_last_masked;
 
-  logic [BITS_KERNEL_W-1:0] acc_m_kw_1     [MEMBERS -1:0];
-  logic [BITS_MEMBERS -1:0] last_m_kw2_lut [KERNEL_W_MAX/2:0];
+  logic [BITS_KW2     -1:0] acc_m_kw2      [MEMBERS -1:0];
+  logic [BITS_MEMBERS -1:0] last_m_kw2_lut [KW_MAX      /2:0];
 
   logic [MEMBERS-1: 1] selected_valid, mux_sel_en, mux_sel_next;
   logic [MEMBERS-1: 1] mux_s2_valid, mux_m_valid;
@@ -121,7 +121,7 @@ module conv_engine #(ZERO) (
 
   logic [MEMBERS-1: 1] mask_partial;
   logic [MEMBERS-1: 0] mask_full;
-  logic [BITS_KERNEL_W  -1:0] pad_clr    [MEMBERS-1: 0];
+  logic [BITS_KW-1: 0] pad_clr    [MEMBERS-1: 0];
 
   logic [WORD_WIDTH_IN*2-1:0] mul_m_data [COPIES-1:0][GROUPS-1:0][UNITS-1:0][MEMBERS-1:0];
   logic [WORD_WIDTH_OUT -1:0] acc_s_data [COPIES-1:0][GROUPS-1:0][UNITS-1:0][MEMBERS-1:0];
@@ -132,7 +132,7 @@ module conv_engine #(ZERO) (
   */
   
   logic [MEMBERS-1:0] s_sub_base, s_sub_base_reg, step_sub_base, mul_m_sub_base, mux_s2_sub_base, acc_s_sub_base, acc_m_sub_base;
-  logic sub_base_lut [MEMBERS-1:0][KERNEL_W_MAX/2:0];
+  logic sub_base_lut [MEMBERS-1:0][KW_MAX      /2:0];
 
   assign mux_sel_none = !(|(mux_sel[MEMBERS-1:0] & ~mul_m_sub_base));
   assign clken_mul    = clken &&  mux_sel_none;
@@ -216,10 +216,10 @@ module conv_engine #(ZERO) (
 
   for (genvar m=0; m<MEMBERS; m++) begin
 
-    for (genvar kw2=0; kw2 < KERNEL_W_MAX/2 +1; kw2++)
+    for (genvar kw2=0; kw2 < KW_MAX      /2 +1; kw2++)
       assign sub_base_lut[m][kw2] = (m % (kw2*2 + 1) == 0);
 
-    assign s_sub_base [m] = sub_base_lut[m][s_user_kernel_w_1/2];
+    assign s_sub_base [m] = sub_base_lut[m][s_user_kw2];
   end
 
   register #(
@@ -436,14 +436,14 @@ module conv_engine #(ZERO) (
       */
       
       if (m == 0)
-        for (genvar kw2=0; kw2 <= KERNEL_W_MAX/2; kw2++) begin
+        for (genvar kw2=0; kw2 <= KW_MAX      /2; kw2++) begin
           localparam kw = kw2*2 + 1;
           assign last_m_kw2_lut[kw2] = (MEMBERS/kw)*kw-1; // (12/3)*3-1 = 12-1 = 11
         end
 
-      assign acc_m_kw_1         [m] = acc_m_user[m][BITS_KERNEL_W+I_KERNEL_W_1-1 : I_KERNEL_W_1];
+      assign acc_m_kw2          [m] = acc_m_user[m][BITS_KW2+I_KW2-1 : I_KW2];
 
-      assign acc_m_last_masked  [m] = clken_acc[m] & acc_m_last [m] & (m == last_m_kw2_lut[acc_m_kw_1[m]/2]);
+      assign acc_m_last_masked  [m] = clken_acc[m] & acc_m_last [m] & (m == last_m_kw2_lut[acc_m_kw2[m]]);
       assign acc_m_valid_masked [m] = clken_acc[m] & acc_m_valid[m] & mask_full[m];
 
     end
@@ -455,12 +455,12 @@ module conv_engine #(ZERO) (
 
   pad_filter # (
     .MEMBERS       (MEMBERS            ),
-    .KERNEL_W_MAX  (KERNEL_W_MAX       ),
+    .KW_MAX        (KW_MAX             ),
     .TUSER_WIDTH   (TUSER_WIDTH_CONV_IN),
     .I_IS_COLS_1_K2(I_IS_COLS_1_K2     ),
     .I_IS_CONFIG   (I_IS_CONFIG        ),
     .I_IS_CIN_LAST (I_IS_CIN_LAST      ),
-    .I_KERNEL_W_1  (I_KERNEL_W_1       )
+    .I_KW2         (I_KW2              )
   )
   pad_filter_dut
   (
@@ -563,7 +563,7 @@ module conv_engine #(ZERO) (
 
     for (genvar m=0; m<MEMBERS; m++) begin
       assign m_user [m][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX] = acc_m_user [m][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX];
-      assign m_user [m][I_CLR+BITS_KERNEL_W-1 :  I_CLR] = pad_clr    [m];
+      assign m_user [m][I_CLR+BITS_KW-1 :  I_CLR]       = pad_clr    [m];
 
       assign m_last = |acc_m_last_masked;
 

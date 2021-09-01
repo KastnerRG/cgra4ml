@@ -22,12 +22,12 @@ module axis_maxpool_engine #(ZERO=0) (
   localparam TUSER_WIDTH_MAXPOOL_IN   = `TUSER_WIDTH_MAXPOOL_IN  ;
 
   localparam DEBUG_CONFIG_WIDTH_MAXPOOL = `DEBUG_CONFIG_WIDTH_MAXPOOL;
-  localparam KERNEL_H_MAX = `KERNEL_H_MAX; // odd
-  localparam KERNEL_W_MAX = `KERNEL_W_MAX; // odd
+  localparam KH_MAX       = `KH_MAX      ; // odd
+  localparam KW_MAX       = `KW_MAX      ; // odd
   localparam I_IS_NOT_MAX = `I_IS_NOT_MAX;
-  localparam I_KERNEL_H_1 = `I_KERNEL_H_1;
-  localparam BITS_KERNEL_H= `BITS_KERNEL_H;
-  localparam UNITS_EDGES  = UNITS + KERNEL_H_MAX-1;
+  localparam I_KH2 = `I_KH2;
+  localparam BITS_KH= `BITS_KH;
+  localparam UNITS_EDGES  = UNITS + KH_MAX      -1;
 
   input  wire aclk, aresetn;
   input  wire s_axis_tvalid, m_axis_tready;
@@ -101,9 +101,9 @@ module axis_maxpool_engine #(ZERO=0) (
       for (genvar g=0; g<GROUPS; g=g+1) begin
         
         /*
-          Pad KERNEL_H_MAX/2 units on either side with zeros
+          Pad KH_MAX      /2 units on either side with zeros
         */
-        for (genvar i=0; i<KERNEL_H_MAX/2; i = i+1) begin
+        for (genvar i=0; i<KH_MAX      /2; i = i+1) begin
           assign axis_m_data_cgu [c][g][i] = 0;
           assign axis_m_keep_cgu [c][g][i] = slice_m_keep_cgu [c][g][0];
 
@@ -120,8 +120,8 @@ module axis_maxpool_engine #(ZERO=0) (
             assign slice_m_data_cgu [c][g][u] = slice_m_data_flat [(c*GROUPS*UNITS + g*UNITS + u + 1)*WORD_WIDTH-1 : (c*GROUPS*UNITS + g*UNITS + u)*WORD_WIDTH];
             assign slice_m_keep_cgu [c][g][u] = slice_m_keep_flat [(c*GROUPS*UNITS + g*UNITS + u + 1)-1            : (c*GROUPS*UNITS + g*UNITS + u)];
           
-            assign axis_m_data_cgu [c][g][u + KERNEL_H_MAX/2] = slice_m_data_cgu [c][g][u];
-            assign axis_m_keep_cgu [c][g][u + KERNEL_H_MAX/2] = slice_m_keep_cgu [c][g][u];
+            assign axis_m_data_cgu [c][g][u + KH_MAX      /2] = slice_m_data_cgu [c][g][u];
+            assign axis_m_keep_cgu [c][g][u + KH_MAX      /2] = slice_m_keep_cgu [c][g][u];
           end
 
           // Flatten

@@ -8,8 +8,8 @@ Parameters of the system. Written from build.tcl
 `define MEMBERS  12
 `define DW_FACTOR_1 3
 
-`define FREQ_HIGH     50
-`define FREQ_LOW      25
+`define FREQ_HIGH     200
+`define FREQ_LOW      100
 
 `define CORES              4
 `define UNITS_EDGES        6
@@ -17,30 +17,31 @@ Parameters of the system. Written from build.tcl
 
 `define WORD_WIDTH          8         
 `define WORD_WIDTH_ACC      32    
-`define KERNEL_H_MAX        3      
-`define KERNEL_W_MAX        3      
+`define KH_MAX              3      
+`define KW_MAX              3      
 
 `define TKEEP_WIDTH_IM_IN 16
-`define BITS_KERNEL_W     2    
-`define BITS_KERNEL_H     2    
+`define BITS_KW           2          
+`define BITS_KH           2          
 `define BITS_IM_COLS      9     
 `define BITS_IM_ROWS      8     
 `define BITS_IM_CIN       10      
 `define BITS_IM_BLOCKS    6   
 `define BITS_MEMBERS      4     
 `define BITS_KW2          1         
+`define BITS_KH2          1         
 
-`define DEBUG_CONFIG_WIDTH_W_ROT   86  
-`define DEBUG_CONFIG_WIDTH_IM_PIPE 7
+`define DEBUG_CONFIG_WIDTH_W_ROT   81  
+`define DEBUG_CONFIG_WIDTH_IM_PIPE 6
 `define DEBUG_CONFIG_WIDTH_LRELU   23  
 `define DEBUG_CONFIG_WIDTH_MAXPOOL 1
-`define DEBUG_CONFIG_WIDTH         121        
+`define DEBUG_CONFIG_WIDTH         113        
 
 /*
   IMAGE TUSER INDICES
 */
-`define TUSER_WIDTH_IM_SHIFT_IN   5 
-`define TUSER_WIDTH_IM_SHIFT_OUT  5
+`define TUSER_WIDTH_IM_SHIFT_IN   4 
+`define TUSER_WIDTH_IM_SHIFT_OUT  4
 
 `define IM_CIN_MAX       1024      
 `define IM_BLOCKS_MAX    64   
@@ -78,30 +79,30 @@ Parameters of the system. Written from build.tcl
 `define I_WEIGHTS_IS_COLS_1_K2     2   
 `define I_WEIGHTS_IS_CONFIG        3      
 `define I_WEIGHTS_IS_CIN_LAST      4    
-`define I_WEIGHTS_KERNEL_W_1       5      
-`define TUSER_WIDTH_WEIGHTS_OUT    7  
+`define I_WEIGHTS_KW2              5      
+`define TUSER_WIDTH_WEIGHTS_OUT    6  
 /*
   CONV TUSER INDICES
 */
 `define I_IS_NOT_MAX         0       
 `define I_IS_MAX             1           
-`define I_KERNEL_H_1         2      
-`define I_IS_LRELU           4         
-`define I_IS_TOP_BLOCK       5     
-`define I_IS_BOTTOM_BLOCK    6  
-`define I_IS_COLS_1_K2       7     
-`define I_IS_CONFIG          8        
-`define I_IS_CIN_LAST        9      
-`define I_KERNEL_W_1         10        
-`define TUSER_WIDTH_CONV_IN  12
+`define I_KH2                2      
+`define I_IS_LRELU           3         
+`define I_IS_TOP_BLOCK       4     
+`define I_IS_BOTTOM_BLOCK    5  
+`define I_IS_COLS_1_K2       6     
+`define I_IS_CONFIG          7        
+`define I_IS_CIN_LAST        8      
+`define I_KW2                9        
+`define TUSER_WIDTH_CONV_IN  10
 /*
   LRELU & MAXPOOL TUSER INDICES
 */
-`define I_CLR                7
+`define I_CLR                6
 
-`define TUSER_WIDTH_MAXPOOL_IN     4    
-`define TUSER_WIDTH_LRELU_FMA_1_IN 5
-`define TUSER_WIDTH_LRELU_IN       9      
+`define TUSER_WIDTH_MAXPOOL_IN     3    
+`define TUSER_WIDTH_LRELU_FMA_1_IN 4
+`define TUSER_WIDTH_LRELU_IN       8      
 `define IS_CONV_DW_SLICE           0
 
 /*

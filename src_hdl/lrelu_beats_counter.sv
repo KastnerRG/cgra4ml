@@ -20,11 +20,11 @@ package lrelu_beats;
   endfunction
 
   function integer calc_beats_max (
-      input integer KERNEL_W_MAX, 
+      input integer KW_MAX      , 
       input integer MEMBERS 
     );
     calc_beats_max = 2; // max(A)
-    for (int kw2 = 0; kw2 <= KERNEL_W_MAX/2; kw2++) begin
+    for (int kw2 = 0; kw2 <= KW_MAX      /2; kw2++) begin
       automatic int kw = kw2*2 +1;
       for (int clr_i = 0; clr_i <= kw2; clr_i++) begin
         automatic int beats_b = calc_beats_b(.clr_i(clr_i), .kw2(kw2), .MEMBERS(MEMBERS));
@@ -48,11 +48,11 @@ package lrelu_beats;
   endfunction
 
   function integer calc_beats_total_max (
-      input integer KERNEL_W_MAX, 
+      input integer KW_MAX      , 
       input integer MEMBERS 
     );
     calc_beats_total_max = 2; // max(A)
-    for (int kw2 = 0; kw2 <= KERNEL_W_MAX/2; kw2++) begin
+    for (int kw2 = 0; kw2 <= KW_MAX      /2; kw2++) begin
       automatic integer beats_tot = calc_beats_total(.kw2(kw2), .MEMBERS(MEMBERS));
       calc_beats_total_max = beats_tot > calc_beats_total_max ? beats_tot : calc_beats_total_max;
     end
@@ -64,8 +64,8 @@ module lrelu_beats_counter (
   clk,
   rstn,
   en,
-  kh_1,
-  kw_1,
+  kh2,
+  kw2,
 
   full,
   w_sel,
@@ -90,43 +90,45 @@ module lrelu_beats_counter (
   */
 
   parameter MEMBERS       = `MEMBERS     ;
-  parameter KERNEL_H_MAX  = `KERNEL_H_MAX;
-  parameter KERNEL_W_MAX  = `KERNEL_W_MAX;
-  parameter BITS_KERNEL_H = `BITS_KERNEL_H;
-  parameter BITS_KERNEL_W = `BITS_KERNEL_W;
+  parameter KH_MAX        = `KH_MAX      ;
+  parameter KW_MAX        = `KW_MAX      ;
+  parameter BITS_KH2      = `BITS_KH2;
+  parameter BITS_KW2      = `BITS_KW2;
+  parameter BITS_KH       = `BITS_KH;
+  parameter BITS_KW       = `BITS_KW;
 
-  localparam CLR_I_MAX    = KERNEL_W_MAX/2;
+  localparam CLR_I_MAX    = KW_MAX      /2;
   localparam BITS_CLR_I   = $clog2(CLR_I_MAX + 1);
 
   localparam BITS_W_SEL = 2;
 
-  localparam W_ADDR_MAX  = lrelu_beats::calc_beats_max(.KERNEL_W_MAX(KERNEL_W_MAX), .MEMBERS(MEMBERS));
+  localparam W_ADDR_MAX  = lrelu_beats::calc_beats_max(.KW_MAX      (KW_MAX      ), .MEMBERS(MEMBERS));
   localparam BITS_W_ADDR = $clog2(W_ADDR_MAX);
 
   input  logic clk;
   input  logic rstn;
   input  logic en;
-  input  logic [BITS_KERNEL_H-1 : 0] kh_1;
-  input  logic [BITS_KERNEL_W-1 : 0] kw_1;
+  input  logic [BITS_KH2-1 : 0] kh2;
+  input  logic [BITS_KW2-1 : 0] kw2;
 
   output logic full;
   output logic [BITS_W_SEL    -1: 0] w_sel;
   output logic [BITS_CLR_I    -1: 0] clr_i;
-  output logic [BITS_KERNEL_H -1: 0] mtb;
+  output logic [BITS_KH       -1: 0] mtb;
   output logic [BITS_W_ADDR   -1 : 0] w_addr;
 
   logic [BITS_W_SEL    -1: 0] w_sel_next;
   logic [BITS_CLR_I    -1: 0] clr_i_next;
-  logic [BITS_KERNEL_H -1: 0] mtb_next  ;
+  logic [BITS_KH       -1: 0] mtb_next  ;
   logic [BITS_W_ADDR   -1: 0] w_addr_next;
 
   logic clr_i_last, mtb_last, a_w_addr_last, b_w_addr_last;
   logic en_w_addr, en_mtb, en_clr_i, en_w_sel;
 
-  logic [BITS_W_ADDR-1:0] lut_beats_1_bram_a_kw2      [KERNEL_W_MAX/2:0];
-  logic [BITS_W_ADDR-1:0] lut_beats_1_bram_b_kw2_clri [KERNEL_W_MAX/2:0][KERNEL_W_MAX/2:0];
+  logic [BITS_W_ADDR-1:0] lut_beats_1_bram_a_kw2      [KW_MAX      /2:0];
+  logic [BITS_W_ADDR-1:0] lut_beats_1_bram_b_kw2_clri [KW_MAX      /2:0][KW_MAX      /2:0];
   generate
-    for (genvar KW2=0; KW2 <= KERNEL_W_MAX/2; KW2++) begin
+    for (genvar KW2=0; KW2 <= KW_MAX      /2; KW2++) begin
       localparam KW = KW2*2+1;
       assign lut_beats_1_bram_a_kw2[KW2] = `CEIL(2, KW)-1;
 
@@ -159,10 +161,10 @@ module lrelu_beats_counter (
 
 
   // LAST
-  assign clr_i_last    = clr_i == kw_1/2;  // to generalize: max(kw_1/2, kh/2)
+  assign clr_i_last    = clr_i == kw2;  // to generalize: max(kw_1/2, kh/2)
   assign mtb_last      = mtb   == clr_i*2; // to generalize: min(2*clr_i, kh-1)
-  assign a_w_addr_last = w_sel == S_BRAM_A  &&  w_addr == lut_beats_1_bram_a_kw2     [kw_1/2];
-  assign b_w_addr_last = w_sel == S_BRAM_B  &&  w_addr == lut_beats_1_bram_b_kw2_clri[kw_1/2][clr_i];
+  assign a_w_addr_last = w_sel == S_BRAM_A  &&  w_addr == lut_beats_1_bram_a_kw2     [kw2];
+  assign b_w_addr_last = w_sel == S_BRAM_B  &&  w_addr == lut_beats_1_bram_b_kw2_clri[kw2][clr_i];
 
   // FULL
   assign full = b_w_addr_last && mtb_last && clr_i_last;
@@ -205,7 +207,7 @@ module lrelu_beats_counter (
     .data_out     (clr_i)
   );
   register #(
-    .WORD_WIDTH   (BITS_KERNEL_H), 
+    .WORD_WIDTH   (BITS_KH), 
     .RESET_VALUE  (0)
   ) MTB (
     .clock        (clk),

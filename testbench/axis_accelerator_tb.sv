@@ -45,7 +45,7 @@ module axis_accelerator_tb ();
   localparam DEBUG_CONFIG_WIDTH_LRELU   = `DEBUG_CONFIG_WIDTH_LRELU  ;
   localparam DEBUG_CONFIG_WIDTH_MAXPOOL = `DEBUG_CONFIG_WIDTH_MAXPOOL;
   localparam DEBUG_CONFIG_WIDTH         = `DEBUG_CONFIG_WIDTH        ;
-  localparam BITS_KERNEL_H         = `BITS_KERNEL_H        ;
+  localparam BITS_KH2                   = `BITS_KH2        ;
   localparam TUSER_WIDTH_CONV_IN        = `TUSER_WIDTH_CONV_IN;
   localparam TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN    ;
   localparam TUSER_WIDTH_LRELU_FMA_1_IN = `TUSER_WIDTH_LRELU_FMA_1_IN;
@@ -204,7 +204,7 @@ module axis_accelerator_tb ();
 
   logic [DEBUG_CONFIG_WIDTH_W_ROT  -1:0] debug_config_w_rot;
   logic [DEBUG_CONFIG_WIDTH_IM_PIPE-1:0] debug_config_im_pipe;
-  logic [BITS_KERNEL_H-1           -1:0] debug_config_im_shift_1, debug_config_im_shift_2;
+  logic [BITS_KH2                  -1:0] debug_config_im_shift_1, debug_config_im_shift_2;
   logic [DEBUG_CONFIG_WIDTH_LRELU  -1:0] debug_config_lrelu  ;
   logic [DEBUG_CONFIG_WIDTH_MAXPOOL-1:0] debug_config_maxpool;
 

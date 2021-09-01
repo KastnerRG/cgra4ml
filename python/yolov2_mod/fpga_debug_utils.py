@@ -407,18 +407,18 @@ def get_weights(i_layers, i_itr, c):
     BLOCKS    = H // c.CONV_UNITS
     BLOCKS_PER_ARR = BLOCKS // max_factor
 
-    BITS_KW_MAX     = int(np.ceil(np.log2(c.KW_MAX    )))
-    BITS_KH_MAX     = int(np.ceil(np.log2(c.KH_MAX    )))
+    BITS_KW2_MAX    = int(np.ceil(np.log2(c.KW_MAX/2  )))
+    BITS_KH2_MAX    = int(np.ceil(np.log2(c.KH_MAX/2  )))
     BITS_CIN_MAX    = int(np.ceil(np.log2(c.CIN_MAX   )))
     BITS_COLS_MAX   = int(np.ceil(np.log2(c.COLS_MAX  )))
     BITS_BLOCKS_MAX = int(np.ceil(np.log2(c.BLOCKS_MAX)))
 
     weights_config = 0
-    weights_config |= (KW    -1)
-    weights_config |= (KH    -1) << (BITS_KW_MAX)
-    weights_config |= (CIN   -1) << (BITS_KW_MAX + BITS_KH_MAX)
-    weights_config |= (W     -1) << (BITS_KW_MAX + BITS_KH_MAX + BITS_CIN_MAX)
-    weights_config |= (BLOCKS_PER_ARR-1) << (BITS_KW_MAX + BITS_KH_MAX + BITS_CIN_MAX + BITS_COLS_MAX)
+    weights_config |= (KW//2)
+    weights_config |= (KH//2)    << (BITS_KW2_MAX)
+    weights_config |= (CIN   -1) << (BITS_KW2_MAX + BITS_KH2_MAX)
+    weights_config |= (W     -1) << (BITS_KW2_MAX + BITS_KH2_MAX + BITS_CIN_MAX)
+    weights_config |= (BLOCKS_PER_ARR-1) << (BITS_KW2_MAX + BITS_KH2_MAX + BITS_CIN_MAX + BITS_COLS_MAX)
     weights_config = np.frombuffer(np.int32(weights_config).tobytes(),np.int8)
     weights_config = np.repeat(weights_config[np.newaxis,...],repeats=ITR,axis=0)
 
@@ -485,7 +485,7 @@ def reshape_conv_in(i_layers, c):
     config[0] = IS_NOT_MAX
     config[1] = IS_MAX
     config[2] = IS_LRELU
-    config[3] = KH-1
+    config[3] = KH/2
 
     im_arrays[0] = np.concatenate([config [np.newaxis,:], im_arrays[0].reshape(BLOCKS//max_factor*W*CIN, c.UNITS_EDGES)], axis=0)
 
