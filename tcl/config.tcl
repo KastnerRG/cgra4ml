@@ -41,9 +41,9 @@ set BITS_EXP_FMA_2  5
 set BITS_FRA_FMA_2  10
 
 set IS_CONV_DW_SLICE 0
-set FREQ_LITE        50
-set FREQ_LOW         100
-set FREQ_HIGH        200
+set FREQ_LITE        20
+set FREQ_LOW         25
+set FREQ_HIGH        50
 set LRELU_BEATS_MAX    9
 
 set IM_BLOCKS_MAX      [expr int($IM_ROWS_MAX / $UNITS)]
