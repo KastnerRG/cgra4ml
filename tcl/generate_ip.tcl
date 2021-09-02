@@ -21,9 +21,25 @@ lappend IP_NAMES $IP_NAME
 create_ip -name axis_clock_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.TDATA_NUM_BYTES $BYTES CONFIG.HAS_TKEEP $T_KEEP CONFIG.HAS_TLAST $T_LAST CONFIG.IS_ACLK_ASYNC {1}] [get_ips $IP_NAME]
 
+set IP_NAME "axis_clk_conv_dw"
+lappend IP_NAMES $IP_NAME
+set BYTES [expr "$M_DATA_WIDTH_LF_CONV_DW / 8"]
+set T_LAST 1
+set T_KEEP 1
+create_ip -name axis_clock_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+set_property -dict [list CONFIG.TDATA_NUM_BYTES $BYTES CONFIG.HAS_TKEEP $T_KEEP CONFIG.HAS_TLAST $T_LAST CONFIG.IS_ACLK_ASYNC {1}] [get_ips $IP_NAME]
+
+set IP_NAME "axis_clk_lrelu"
+lappend IP_NAMES $IP_NAME
+set BYTES [expr "$M_DATA_WIDTH_LF_LRELU / 8"]
+set T_LAST 1
+set T_KEEP 1
+create_ip -name axis_clock_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+set_property -dict [list CONFIG.TDATA_NUM_BYTES $BYTES CONFIG.HAS_TKEEP $T_KEEP CONFIG.HAS_TLAST $T_LAST CONFIG.IS_ACLK_ASYNC {1}] [get_ips $IP_NAME]
+
 set IP_NAME "axis_clk_maxpool"
 lappend IP_NAMES $IP_NAME
-set BYTES [expr "$M_DATA_WIDTH_LF / 8"]
+set BYTES [expr "$M_DATA_WIDTH_LF_MAXPOOL / 8"]
 set T_LAST 1
 set T_KEEP 1
 create_ip -name axis_clock_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
@@ -117,6 +133,15 @@ set T_KEEP 1
 set TUSER_WIDTH [expr "$TUSER_WIDTH_LRELU_IN"]
 create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.TUSER_WIDTH $TUSER_WIDTH CONFIG.HAS_TKEEP $T_KEEP CONFIG.HAS_TLAST $T_LAST] [get_ips $IP_NAME]
+
+set IP_NAME "axis_dw_conv"
+lappend IP_NAMES $IP_NAME
+set S_BYTES [expr "$M_DATA_WIDTH_HF_CONV_DW/8"]
+set M_BYTES [expr "$M_DATA_WIDTH_LF_CONV_DW/8"]
+set T_LAST 1
+set T_KEEP 1
+create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
 
 #*********** LRELU **********#
 
@@ -274,11 +299,20 @@ set LATENCY $LATENCY_FLOAT_UPSIZE
 create_ip -name floating_point -vendor xilinx.com -library ip -version 7.1 -module_name $IP_NAME
 set_property -dict [list CONFIG.Operation_Type {Float_to_float} CONFIG.A_Precision_Type {Custom} CONFIG.Result_Precision_Type {Custom} CONFIG.C_Result_Exponent_Width $BITS_EXP_OUT CONFIG.C_Result_Fraction_Width $BITS_FRA_OUT CONFIG.Flow_Control {NonBlocking} CONFIG.Maximum_Latency {false} CONFIG.C_Latency $LATENCY CONFIG.C_A_Exponent_Width $BITS_EXP_IN CONFIG.C_A_Fraction_Width $BITS_FRA_IN CONFIG.C_Mult_Usage {No_Usage} CONFIG.Has_RESULT_TREADY {false} CONFIG.C_Rate {1} CONFIG.Has_ACLKEN {true}] [get_ips $IP_NAME]
 
+set IP_NAME "axis_dw_lrelu"
+lappend IP_NAMES $IP_NAME
+set S_BYTES [expr "$M_DATA_WIDTH_HF_LRELU/8"]
+set M_BYTES [expr "$M_DATA_WIDTH_LF_LRELU/8"]
+set T_LAST 1
+set T_KEEP 1
+create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
+set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BYTES $M_BYTES CONFIG.HAS_TLAST $T_LAST CONFIG.HAS_TKEEP $T_KEEP] [get_ips $IP_NAME]
+
 #*********** MAXPOOL **********#
 
 set IP_NAME "axis_reg_slice_maxpool"
 lappend IP_NAMES $IP_NAME
-set DATA_BYTES [expr "$GROUPS * $COPIES * $UNITS * $WORD_WIDTH    / 8"]
+set DATA_BYTES [expr "$GROUPS*$UNITS*$COPIES*$WORD_WIDTH / 8"]
 set T_LAST 1
 set T_KEEP 1
 create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
@@ -286,8 +320,8 @@ set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES CONFIG.HAS_TKEEP $T_
 
 set IP_NAME "axis_dw_max_1"
 lappend IP_NAMES $IP_NAME
-set S_BYTES [expr "$GROUPS * $COPIES * $UNITS_EDGES * $WORD_WIDTH    / 8"]
-set M_BYTES [expr "$GROUPS *           $UNITS_EDGES * $WORD_WIDTH    / 8"]
+set S_BYTES [expr "$M_DATA_WIDTH_HF_MAXPOOL / 8"]
+set M_BYTES [expr "$M_DATA_WIDTH_HF_MAX_DW1 / 8"]
 set T_LAST 1
 set T_KEEP 1
 create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
@@ -295,7 +329,7 @@ set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES CONFIG.M_TDATA_NUM_BY
 
 set IP_NAME "axis_dw_max_2"
 lappend IP_NAMES $IP_NAME
-set S_BYTES [expr "$GROUPS * $UNITS_EDGES * $WORD_WIDTH / 8"]
+set S_BYTES [expr "$M_DATA_WIDTH_HF_MAX_DW1/8"]
 set M_BYTES [expr "$M_DATA_WIDTH_LF/8"]
 set T_LAST 1
 set T_KEEP 1

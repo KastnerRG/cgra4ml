@@ -1,6 +1,9 @@
 set PROJ_NAME sys
 source ./tcl/config.tcl
 
+# Delete existing
+exec rm -rf ./$PROJ_FOLDER
+
 # Create project
 create_project $PROJ_NAME ./$PROJ_FOLDER -part xc7z045ffg900-2
 set_property board_part xilinx.com:zc706:part0:1.4 [current_project]

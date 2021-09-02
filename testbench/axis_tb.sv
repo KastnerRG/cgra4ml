@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 class AXIS_Slave #(WORD_WIDTH, WORDS_PER_BEAT, VALID_PROB);
 
   string file_path;
@@ -18,7 +19,7 @@ class AXIS_Slave #(WORD_WIDTH, WORDS_PER_BEAT, VALID_PROB);
   endfunction
 
   function void fill_beat(
-    ref logic [WORD_WIDTH    -1:0] s_data [WORDS_PER_BEAT-1:0], 
+    ref logic [WORDS_PER_BEAT-1:0][WORD_WIDTH-1:0] s_data, 
     ref logic [WORDS_PER_BEAT-1:0] s_keep,
     ref logic s_last);
 
@@ -37,7 +38,7 @@ class AXIS_Slave #(WORD_WIDTH, WORDS_PER_BEAT, VALID_PROB);
 
   function void reset(
     ref logic s_valid,
-    ref logic [WORD_WIDTH    -1:0] s_data [WORDS_PER_BEAT-1:0], 
+    ref logic [WORDS_PER_BEAT-1:0][WORD_WIDTH-1:0] s_data, 
     ref logic [WORDS_PER_BEAT-1:0] s_keep,
     ref logic s_last
   );
@@ -57,7 +58,7 @@ class AXIS_Slave #(WORD_WIDTH, WORDS_PER_BEAT, VALID_PROB);
     ref logic aclk,
     ref logic s_ready,
     ref logic s_valid,
-    ref logic [WORD_WIDTH    -1:0] s_data [WORDS_PER_BEAT-1:0], 
+    ref logic [WORDS_PER_BEAT-1:0][WORD_WIDTH-1:0] s_data, 
     ref logic [WORDS_PER_BEAT-1:0] s_keep,
     ref logic s_last
   );
@@ -149,7 +150,7 @@ class AXIS_Master #(WORD_WIDTH, WORDS_PER_BEAT, READY_PROB, CLK_PERIOD, IS_ACTIV
   endfunction
 
   function void read_beat(
-    ref logic [WORD_WIDTH    -1:0] m_data [WORDS_PER_BEAT-1:0], 
+    ref logic [WORDS_PER_BEAT-1:0][WORD_WIDTH-1:0] m_data, 
     ref logic [WORDS_PER_BEAT-1:0] m_keep,
     ref logic m_last);
 
@@ -182,7 +183,7 @@ class AXIS_Master #(WORD_WIDTH, WORDS_PER_BEAT, READY_PROB, CLK_PERIOD, IS_ACTIV
     ref logic aclk,
     ref bit   m_ready,
     ref logic m_valid,
-    ref logic [WORD_WIDTH    -1:0] m_data [WORDS_PER_BEAT-1:0], 
+    ref logic [WORDS_PER_BEAT-1:0][WORD_WIDTH-1:0] m_data, 
     ref logic [WORDS_PER_BEAT-1:0] m_keep,
     ref logic m_last
   );
@@ -222,7 +223,7 @@ module axis_tb_demo();
   localparam ITERATIONS        = 6;
   localparam BEATS             = int'($ceil(real'(WORDS_PER_PACKET)/real'(WORDS_PER_BEAT)));
 
-  logic [WORD_WIDTH      -1:0] data [WORDS_PER_BEAT-1:0];
+  logic [WORDS_PER_BEAT  -1:0][WORD_WIDTH-1:0] data;
   logic [WORDS_PER_BEAT  -1:0] keep;
   logic valid, ready, last;
 

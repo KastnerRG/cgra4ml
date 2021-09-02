@@ -17,7 +17,7 @@ Revision:
 Revision 0.01 - File Created
 Additional Comments: 
 //////////////////////////////////////////////////////////////////////////////////*/
-
+`timescale 1ns/1ps
 `include "params.v"
 
 module conv_engine #(ZERO) (

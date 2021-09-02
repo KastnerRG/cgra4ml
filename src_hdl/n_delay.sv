@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 module n_delay #(
     parameter N,
     parameter WORD_WIDTH,
