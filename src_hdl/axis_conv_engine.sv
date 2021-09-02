@@ -1,4 +1,5 @@
 
+`timescale 1ns/1ps
 `include "params.v"
 
 module axis_conv_engine #(ZERO) (

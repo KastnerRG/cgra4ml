@@ -11,7 +11,7 @@ Revision 0.01 - File Created
 Additional Comments: 
 
 //////////////////////////////////////////////////////////////////////////////////*/
-
+`timescale 1ns/1ps
 module cyclic_bram #(
   R_DEPTH      = 8,
   R_DATA_WIDTH = 8,

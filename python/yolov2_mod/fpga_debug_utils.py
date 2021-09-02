@@ -582,7 +582,7 @@ def reshape_image_out(image,order,KW,max_factor,c,copy_factor=1,flip_cols=True):
         - if     max: eff_c = 1, max_factor = 2, that dim has 2 blocks
         - if not max: eff_c = 2, max_factor = 1, that dim has 2 channels
     '''
-    eff_c  = 2//max_factor//copy_factor
+    eff_c  = c.COPIES//max_factor//copy_factor
     SUB_CORES = c.MEMBERS//KW
     image = image.reshape(ITR, SUB_CORES,eff_c,c.GROUPS, BLOCKS_PER_ARR,W,max_factor,c.CONV_UNITS) # (EFF_CORES -> SMCG)
 

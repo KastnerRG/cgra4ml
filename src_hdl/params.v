@@ -4,14 +4,15 @@ Parameters of the system. Written from build.tcl
 
 `define UNITS    4  
 `define GROUPS   2 
-`define COPIES   2 
+`define COPIES   1 
 `define MEMBERS  12
 `define DW_FACTOR_1 3
+`define OUTPUT_MODE "LRELU"
 
-`define FREQ_HIGH     250
-`define FREQ_RATIO    3
+`define FREQ_HIGH     200
+`define FREQ_RATIO    4
 
-`define CORES              4
+`define CORES              2
 `define UNITS_EDGES        6
 `define IM_IN_S_DATA_WORDS 32
 
@@ -51,8 +52,15 @@ Parameters of the system. Written from build.tcl
 
 `define S_WEIGHTS_WIDTH_HF  32
 `define S_WEIGHTS_WIDTH_LF  128
-`define M_DATA_WIDTH_HF     96
-`define M_DATA_WIDTH_LF     512
+`define M_DATA_WIDTH_HF_CONV    3072   
+`define M_DATA_WIDTH_HF_CONV_DW 256
+`define M_DATA_WIDTH_LF_CONV_DW 1024
+`define M_DATA_WIDTH_HF_LRELU   64  
+`define M_DATA_WIDTH_LF_LRELU   256  
+`define M_DATA_WIDTH_HF_MAXPOOL 96
+`define M_DATA_WIDTH_HF_MAX_DW1 96
+`define M_DATA_WIDTH_LF_MAXPOOL 512
+`define M_DATA_WIDTH_LF         256
 /*
   LATENCIES & float widths
 */

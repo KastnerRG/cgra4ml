@@ -7,8 +7,11 @@ set UNITS   4
 set GROUPS  2
 set COPIES  2
 set MEMBERS 12
-set FREQ_HIGH   250
-set FREQ_RATIO  3
+set FREQ_HIGH   200
+set FREQ_RATIO  4
+# set OUTPUT_MODE "CONV"
+# set OUTPUT_MODE "LRELU"
+set OUTPUT_MODE "MAXPOOL"
 
 set FREQ_LITE   50
 set DW_FACTOR_1 3 
@@ -59,8 +62,22 @@ set BITS_KW2           [expr int(ceil(log(($KW_MAX      +1)/2)/log(2)))]
 set BITS_KH2           [expr int(ceil(log(($KH_MAX      +1)/2)/log(2)))]
 
 set S_WEIGHTS_WIDTH_LF [expr 8 * 2**int(ceil(log($S_WEIGHTS_WIDTH_HF * $FREQ_RATIO / 8)/log(2)))]
-set M_DATA_WIDTH_HF    [expr int($GROUPS * $UNITS_EDGES * $WORD_WIDTH)]
-set M_DATA_WIDTH_LF    [expr 8 * 2**int(ceil(log($M_DATA_WIDTH_HF * $FREQ_RATIO / 8)/log(2)))]
+
+set M_DATA_WIDTH_HF_CONV    [expr int($COPIES * $GROUPS * $MEMBERS * $UNITS * $WORD_WIDTH_ACC)]
+set M_DATA_WIDTH_HF_CONV_DW [expr int($COPIES * $GROUPS * $UNITS * $WORD_WIDTH_ACC)]
+set M_DATA_WIDTH_HF_LRELU   [expr int($COPIES * $GROUPS * $UNITS * $WORD_WIDTH)]
+set M_DATA_WIDTH_HF_MAXPOOL [expr int($GROUPS * $COPIES * $UNITS_EDGES * $WORD_WIDTH)]
+set M_DATA_WIDTH_HF_MAX_DW1 [expr int($GROUPS * $UNITS_EDGES * $WORD_WIDTH)]
+
+set M_DATA_WIDTH_LF_CONV_DW [expr min(1024, 8 * 2**int(ceil(log($M_DATA_WIDTH_HF_CONV_DW * $FREQ_RATIO / 8)/log(2))))]
+set M_DATA_WIDTH_LF_LRELU   [expr min(1024, 8 * 2**int(ceil(log($M_DATA_WIDTH_HF_LRELU   * $FREQ_RATIO / 8)/log(2))))]
+set M_DATA_WIDTH_LF_MAXPOOL [expr min(1024, 8 * 2**int(ceil(log($M_DATA_WIDTH_HF_MAX_DW1 * $FREQ_RATIO / 8)/log(2))))]
+
+switch $OUTPUT_MODE {
+  "CONV"    {set M_DATA_WIDTH_LF $M_DATA_WIDTH_LF_CONV_DW}
+  "LRELU"   {set M_DATA_WIDTH_LF $M_DATA_WIDTH_LF_LRELU  }
+  "MAXPOOL" {set M_DATA_WIDTH_LF $M_DATA_WIDTH_LF_MAXPOOL}
+}
 
 set IM_IN_S_DATA_WORDS   [expr 2**int(ceil(log($UNITS_EDGES * $FREQ_RATIO)/log(2)))]
 set WORD_WIDTH_LRELU_1   [expr 1 + $BITS_EXP_FMA_1 + $BITS_FRA_FMA_1]
@@ -128,6 +145,7 @@ Parameters of the system. Written from build.tcl
 `define COPIES   $COPIES 
 `define MEMBERS  $MEMBERS
 `define DW_FACTOR_1 $DW_FACTOR_1
+`define OUTPUT_MODE \"$OUTPUT_MODE\"
 
 `define FREQ_HIGH     $FREQ_HIGH
 `define FREQ_RATIO    $FREQ_RATIO
@@ -172,8 +190,15 @@ Parameters of the system. Written from build.tcl
 
 `define S_WEIGHTS_WIDTH_HF  $S_WEIGHTS_WIDTH_HF
 `define S_WEIGHTS_WIDTH_LF  $S_WEIGHTS_WIDTH_LF
-`define M_DATA_WIDTH_HF     $M_DATA_WIDTH_HF
-`define M_DATA_WIDTH_LF     $M_DATA_WIDTH_LF
+`define M_DATA_WIDTH_HF_CONV    $M_DATA_WIDTH_HF_CONV   
+`define M_DATA_WIDTH_HF_CONV_DW $M_DATA_WIDTH_HF_CONV_DW
+`define M_DATA_WIDTH_LF_CONV_DW $M_DATA_WIDTH_LF_CONV_DW
+`define M_DATA_WIDTH_HF_LRELU   $M_DATA_WIDTH_HF_LRELU  
+`define M_DATA_WIDTH_LF_LRELU   $M_DATA_WIDTH_LF_LRELU  
+`define M_DATA_WIDTH_HF_MAXPOOL $M_DATA_WIDTH_HF_MAXPOOL
+`define M_DATA_WIDTH_HF_MAX_DW1 $M_DATA_WIDTH_HF_MAX_DW1
+`define M_DATA_WIDTH_LF_MAXPOOL $M_DATA_WIDTH_LF_MAXPOOL
+`define M_DATA_WIDTH_LF         $M_DATA_WIDTH_LF
 /*
   LATENCIES & float widths
 */

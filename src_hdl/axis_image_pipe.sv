@@ -34,6 +34,7 @@ Additional Comments:
 
 //////////////////////////////////////////////////////////////////////////////////*/
 
+`timescale 1ns/1ps
 `include "params.v"
 import lrelu_beats::*;
 
@@ -71,6 +72,7 @@ module axis_image_pipe #(ZERO)  (
   localparam I_IS_LRELU           = `I_IS_LRELU           ;
   localparam I_KH2                = `I_KH2               ; 
   localparam TUSER_WIDTH_IM_SHIFT_IN    = `TUSER_WIDTH_IM_SHIFT_IN    ;
+  localparam OUTPUT_MODE          = `OUTPUT_MODE;
 
   localparam UNITS_EDGES       = `UNITS_EDGES       ;
   localparam IM_IN_S_DATA_WORDS= `IM_IN_S_DATA_WORDS;
@@ -321,10 +323,10 @@ module axis_image_pipe #(ZERO)  (
     TUSER
   */
 
-  assign m_axis_tuser [I_IS_NOT_MAX] = is_not_max_out;
-  assign m_axis_tuser [I_IS_MAX    ] = is_max_out    ;
+  assign m_axis_tuser [I_IS_NOT_MAX] = COPIES==2 && is_not_max_out;
+  assign m_axis_tuser [I_IS_MAX    ] = COPIES==2 && is_max_out    ;
   assign m_axis_tuser [BITS_KH2+I_KH2-1 : I_KH2] = kh2_out;
-  assign m_axis_tuser [I_IS_LRELU  ] = is_lrelu_out  ;
+  assign m_axis_tuser [I_IS_LRELU  ] = OUTPUT_MODE != "CONV" && is_lrelu_out;
 
   /*
     MUX the output data

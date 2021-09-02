@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 `include "params.v"
 
 module axis_maxpool_engine #(ZERO=0) (
