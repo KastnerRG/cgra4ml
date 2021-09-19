@@ -22,6 +22,7 @@ add_files -norecurse [glob $HDL_DIR/*.sv]
 add_files -norecurse [glob $HDL_DIR/*.v]
 add_files -fileset sim_1 -norecurse $TB_DIR/axis_accelerator_tb.sv
 add_files -fileset sim_1 -norecurse $WAVE_DIR/axis_accelerator_tb_behav.wcfg
+set_property top axis_accelerator_tb [get_filesets sim_1]
 
 source ./tcl/generate_bd.tcl
 

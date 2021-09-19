@@ -3,6 +3,8 @@ set HDL_DIR src_hdl
 set TB_DIR testbench
 set WAVE_DIR wave
 
+set XILINX 1
+
 set UNITS   4
 set GROUPS  2
 set COPIES  2
@@ -130,12 +132,144 @@ set DEBUG_CONFIG_WIDTH_LRELU   [expr 3 + 4 + $BITS_FMA_2]
 set DEBUG_CONFIG_WIDTH_MAXPOOL 1
 set DEBUG_CONFIG_WIDTH         [expr $DEBUG_CONFIG_WIDTH_MAXPOOL + $DEBUG_CONFIG_WIDTH_LRELU + 2*$BITS_KH2      + $DEBUG_CONFIG_WIDTH_IM_PIPE + $DEBUG_CONFIG_WIDTH_W_ROT]
 
+# ************ IP PARAMETERS ************
 
+set M_BYTES_axis_dw_weights_clk    [expr "$S_WEIGHTS_WIDTH_HF / 8"]
+set S_BYTES_axis_dw_weights_clk    [expr "$S_WEIGHTS_WIDTH_LF / 8"]
+set DATA_BYTES_axis_clk_weights    [expr "$S_WEIGHTS_WIDTH_LF / 8"]
+set DATA_BYTES_axis_clk_image      $IM_IN_S_DATA_WORDS
+set DATA_BYTES_axis_clk_conv_dw    [expr "$M_DATA_WIDTH_LF_CONV_DW / 8"]
+set DATA_BYTES_axis_clk_lrelu      [expr "$M_DATA_WIDTH_LF_LRELU / 8"]
+set DATA_BYTES_axis_clk_maxpool    [expr "$M_DATA_WIDTH_LF_MAXPOOL / 8"]
+
+set S_BYTES_axis_dw_image_input $IM_IN_S_DATA_WORDS
+set M_BYTES_axis_dw_image_input [expr "($UNITS_EDGES * $WORD_WIDTH   ) / 8"]
+set TLAST_axis_dw_image_input 1
+set TKEEP_axis_dw_image_input 1
+
+set DATA_BYTES_axis_reg_slice_image_pipe [expr "$UNITS"]
+set TLAST_axis_reg_slice_image_pipe 0
+set TKEEP_axis_reg_slice_image_pipe 0
+set TUSER_WIDTH_axis_reg_slice_image_pipe $TUSER_WIDTH_IM_SHIFT_OUT
+
+set R_WIDTH_bram_weights [expr "$WORD_WIDTH   * $CORES * $MEMBERS"]
+set R_DEPTH_bram_weights [expr "$KH_MAX       * $IM_CIN_MAX + ($LRELU_BEATS_MAX-1)"]
+set W_WIDTH_bram_weights [expr "$R_WIDTH_bram_weights"]
+set W_DEPTH_bram_weights [expr "$R_WIDTH_bram_weights * $R_DEPTH_bram_weights / $W_WIDTH_bram_weights"]
+
+set S_BYTES_axis_dw_weights_input [expr "$S_WEIGHTS_WIDTH_HF / 8"]
+set M_BYTES_axis_dw_weights_input [expr "$W_WIDTH_bram_weights / 8"]
+set TLAST_axis_dw_weights_input 1
+set TKEEP_axis_dw_weights_input 1
+
+set DATA_BYTES_slice_conv [expr "$WORD_WIDTH_ACC * $UNITS /8"]
+set TLAST_slice_conv 0
+set TKEEP_slice_conv 0
+set TUSER_WIDTH_slice_conv 0
+
+set DATA_BYTES_slice_conv_semi_active [expr "$WORD_WIDTH_ACC * $UNITS /8"]
+set TLAST_slice_conv_semi_active 0
+set TKEEP_slice_conv_semi_active 1
+set TUSER_WIDTH_slice_conv_semi_active [expr "$TUSER_WIDTH_LRELU_IN"]
+
+set DATA_BYTES_slice_conv_active [expr "$WORD_WIDTH_ACC * $UNITS /8"]
+set TLAST_slice_conv_active 1
+set TKEEP_slice_conv_active 1
+set TUSER_WIDTH_slice_conv_active [expr "$TUSER_WIDTH_LRELU_IN"]
+
+set S_BYTES_axis_dw_conv [expr "$M_DATA_WIDTH_HF_CONV_DW/8"]
+set M_BYTES_axis_dw_conv [expr "$M_DATA_WIDTH_LF_CONV_DW/8"]
+set TLAST_axis_dw_conv 1
+set TKEEP_axis_dw_conv 1
+
+set S_BYTES_axis_dw_lrelu_1_active [expr "$DW_FACTOR_1 * $WORD_WIDTH_ACC / 8"]
+set M_BYTES_axis_dw_lrelu_1_active [expr "$WORD_WIDTH_ACC / 8"]
+set TUSER_WIDTH_axis_dw_lrelu_1_active $TUSER_WIDTH_LRELU_IN
+set TLAST_axis_dw_lrelu_1_active 1
+set TKEEP_axis_dw_lrelu_1_active 1
+
+set TUSER_WIDTH_axis_dw_lrelu_1 0
+set TLAST_axis_dw_lrelu_1 0
+set TKEEP_axis_dw_lrelu_1 1
+
+if ([expr $DW_FACTOR_1 != 1]) {
+  set S_BYTES_axis_dw_lrelu_2 [expr "($MEMBERS/$DW_FACTOR_1) * $WORD_WIDTH_ACC / 8"]
+  set M_BYTES_axis_dw_lrelu_2 [expr "$WORD_WIDTH_ACC / 8"]
+  set TUSER_WIDTH_axis_dw_lrelu_2_active $TUSER_WIDTH_LRELU_IN
+  set TLAST_axis_dw_lrelu_2_active 1
+  set TKEEP_axis_dw_lrelu_2_active 1
+
+  set TUSER_WIDTH_axis_dw_lrelu_2 0
+  set TLAST_axis_dw_lrelu_2 0
+  set TKEEP_axis_dw_lrelu_2 1
+} else {
+  set S_BYTES_axis_dw_lrelu_2 [expr "$MEMBERS * $WORD_WIDTH_ACC / 8"]
+  set M_BYTES_axis_dw_lrelu_2 [expr "$WORD_WIDTH_ACC / 8"]
+  set TUSER_WIDTH_axis_dw_lrelu_2_active $TUSER_WIDTH_LRELU_IN
+  set TLAST_axis_dw_lrelu_2_active 1
+  set TKEEP_axis_dw_lrelu_2_active 1
+
+  set TUSER_WIDTH_axis_dw_lrelu_2 0
+  set TLAST_axis_dw_lrelu_2 0
+  set TKEEP_axis_dw_lrelu_2 1
+}
+
+set DATA_BYTES_axis_reg_slice_lrelu_dw [expr "$UNITS * $WORD_WIDTH_ACC / 8"]
+set TID_WIDTH_axis_reg_slice_lrelu_dw $TUSER_WIDTH_LRELU_IN
+set TUSER_WIDTH_axis_reg_slice_lrelu_dw 0
+set TLAST_axis_reg_slice_lrelu_dw_active 1
+set TKEEP_axis_reg_slice_lrelu_dw 0
+
+set TLAST_axis_reg_slice_lrelu_dw 0
+set TKEEP_axis_reg_slice_lrelu_dw 0
+
+set DATA_BYTES_axis_reg_slice_lrelu  [expr "$GROUPS * $COPIES * $UNITS * $WORD_WIDTH    / 8"]
+set TLAST_axis_reg_slice_lrelu       1
+set TKEEP_axis_reg_slice_lrelu       0
+set TUSER_WIDTH_axis_reg_slice_lrelu $TUSER_WIDTH_MAXPOOL_IN
+
+set TUSER_WIDTH_float_to_fixed_active $TUSER_WIDTH_MAXPOOL_IN
+
+set BITS_FRA_IN_mod_float_downsize [expr $BITS_FRA_FMA_1 + 1]
+set BITS_EXP_IN_mod_float_downsize $BITS_EXP_FMA_1
+set BITS_FRA_OUT_mod_float_downsize [expr $BITS_FRA_FMA_2 + 1]
+set BITS_EXP_OUT_mod_float_downsize $BITS_EXP_FMA_2
+set LATENCY_mod_float_downsize $LATENCY_FLOAT_DOWNSIZE
+
+set BITS_FRA_IN_mod_float_upsize [expr $BITS_FRA_FMA_2 + 1]
+set BITS_EXP_IN_mod_float_upsize $BITS_EXP_FMA_2
+set BITS_FRA_OUT_mod_float_upsize [expr $BITS_FRA_FMA_1 + 1]
+set BITS_EXP_OUT_mod_float_upsize $BITS_EXP_FMA_1
+set LATENCY_mod_float_upsize $LATENCY_FLOAT_UPSIZE
+
+set S_BYTES_axis_dw_lrelu [expr "$M_DATA_WIDTH_HF_LRELU/8"]
+set M_BYTES_axis_dw_lrelu [expr "$M_DATA_WIDTH_LF_LRELU/8"]
+set TLAST_axis_dw_lrelu 1
+set TKEEP_axis_dw_lrelu 1
+
+set S_BYTES_axis_dw_max_1 [expr "$M_DATA_WIDTH_HF_MAXPOOL / 8"]
+set M_BYTES_axis_dw_max_1 [expr "$M_DATA_WIDTH_HF_MAX_DW1 / 8"]
+set TLAST_axis_dw_max_1 1
+set TKEEP_axis_dw_max_1 1
+
+set S_BYTES_axis_dw_max_2 [expr "$M_DATA_WIDTH_HF_MAX_DW1/8"]
+set M_BYTES_axis_dw_max_2 [expr "$M_DATA_WIDTH_LF/8"]
+set TLAST_axis_dw_max_2 1
+set TKEEP_axis_dw_max_2 1
+
+set DATA_BYTES_axis_reg_slice_maxpool [expr "$GROUPS*$UNITS*$COPIES*$WORD_WIDTH / 8"]
+set TLAST_axis_reg_slice_maxpool 1
+set TKEEP_axis_reg_slice_maxpool 1
 
 # **********    STORE PARAMS    *************
 
 
 set file_param [open $HDL_DIR/params.v w]
+
+if ($XILINX) {
+  puts $file_param "`define XILINX   $XILINX"
+}
+
 puts $file_param "/*
 Parameters of the system. Written from build.tcl
 */
@@ -256,5 +390,125 @@ Parameters of the system. Written from build.tcl
 */
 `define BEATS_CONFIG(KH,KW) 1+ 2*(2/KW + 2%KW) + 2*KH
 `define CEIL(N,D) N/D + (N%D != 0)
+
+/*
+  IP Parameters
+*/
+
+`define S_BYTES_axis_dw_weights_clk    $S_BYTES_axis_dw_weights_clk 
+`define M_BYTES_axis_dw_weights_clk    $M_BYTES_axis_dw_weights_clk 
+`define DATA_BYTES_axis_clk_weights    $DATA_BYTES_axis_clk_weights    
+`define DATA_BYTES_axis_clk_image      $DATA_BYTES_axis_clk_image      
+`define DATA_BYTES_axis_clk_conv_dw    $DATA_BYTES_axis_clk_conv_dw    
+`define DATA_BYTES_axis_clk_lrelu      $DATA_BYTES_axis_clk_lrelu      
+`define DATA_BYTES_axis_clk_maxpool    $DATA_BYTES_axis_clk_maxpool    
+
+`define S_BYTES_axis_dw_image_input    $S_BYTES_axis_dw_image_input 
+`define M_BYTES_axis_dw_image_input    $M_BYTES_axis_dw_image_input 
+`define TLAST_axis_dw_image_input      $TLAST_axis_dw_image_input   
+`define TKEEP_axis_dw_image_input      $TKEEP_axis_dw_image_input   
+
+`define DATA_BYTES_axis_reg_slice_image_pipe  $DATA_BYTES_axis_reg_slice_image_pipe 
+`define TLAST_axis_reg_slice_image_pipe       $TLAST_axis_reg_slice_image_pipe      
+`define TKEEP_axis_reg_slice_image_pipe       $TKEEP_axis_reg_slice_image_pipe      
+`define TUSER_WIDTH_axis_reg_slice_image_pipe $TUSER_WIDTH_axis_reg_slice_image_pipe
+
+`define R_WIDTH_bram_weights $R_WIDTH_bram_weights 
+`define R_DEPTH_bram_weights $R_DEPTH_bram_weights 
+`define W_WIDTH_bram_weights $W_WIDTH_bram_weights 
+`define W_DEPTH_bram_weights $W_DEPTH_bram_weights 
+
+`define S_BYTES_axis_dw_weights_input $S_BYTES_axis_dw_weights_input 
+`define M_BYTES_axis_dw_weights_input $M_BYTES_axis_dw_weights_input 
+`define TLAST_axis_dw_weights_input   $TLAST_axis_dw_weights_input   
+`define TKEEP_axis_dw_weights_input   $TKEEP_axis_dw_weights_input   
+
+`define DATA_BYTES_slice_conv  $DATA_BYTES_slice_conv  
+`define TLAST_slice_conv       $TLAST_slice_conv       
+`define TKEEP_slice_conv       $TKEEP_slice_conv       
+`define TUSER_WIDTH_slice_conv $TUSER_WIDTH_slice_conv 
+
+`define DATA_BYTES_slice_conv_semi_active  $DATA_BYTES_slice_conv_semi_active   
+`define TLAST_slice_conv_semi_active       $TLAST_slice_conv_semi_active       
+`define TKEEP_slice_conv_semi_active       $TKEEP_slice_conv_semi_active        
+`define TUSER_WIDTH_slice_conv_semi_active $TUSER_WIDTH_slice_conv_semi_active  
+
+`define DATA_BYTES_slice_conv_active  $DATA_BYTES_slice_conv_active  
+`define TLAST_slice_conv_active       $TLAST_slice_conv_active     
+`define TKEEP_slice_conv_active       $TKEEP_slice_conv_active     
+`define TUSER_WIDTH_slice_conv_active $TUSER_WIDTH_slice_conv_active 
+
+`define S_BYTES_axis_dw_conv $S_BYTES_axis_dw_conv 
+`define M_BYTES_axis_dw_conv $M_BYTES_axis_dw_conv 
+`define TLAST_axis_dw_conv   $TLAST_axis_dw_conv   
+`define TKEEP_axis_dw_conv   $TKEEP_axis_dw_conv   
+
+`define S_BYTES_axis_dw_lrelu_1_active     $S_BYTES_axis_dw_lrelu_1_active     
+`define M_BYTES_axis_dw_lrelu_1_active     $M_BYTES_axis_dw_lrelu_1_active     
+`define TUSER_WIDTH_axis_dw_lrelu_1_active $TUSER_WIDTH_axis_dw_lrelu_1_active 
+`define TLAST_axis_dw_lrelu_1_active       $TLAST_axis_dw_lrelu_1_active       
+`define TKEEP_axis_dw_lrelu_1_active       $TKEEP_axis_dw_lrelu_1_active       
+
+`define TUSER_WIDTH_axis_dw_lrelu_1 $TUSER_WIDTH_axis_dw_lrelu_1 
+`define TLAST_axis_dw_lrelu_1       $TLAST_axis_dw_lrelu_1       
+`define TKEEP_axis_dw_lrelu_1       $TKEEP_axis_dw_lrelu_1       
+
+`define S_BYTES_axis_dw_lrelu_2            $S_BYTES_axis_dw_lrelu_2            
+`define M_BYTES_axis_dw_lrelu_2            $M_BYTES_axis_dw_lrelu_2            
+`define TUSER_WIDTH_axis_dw_lrelu_2_active $TUSER_WIDTH_axis_dw_lrelu_2_active  
+`define TLAST_axis_dw_lrelu_2_active       $TLAST_axis_dw_lrelu_2_active       
+`define TKEEP_axis_dw_lrelu_2_active       $TKEEP_axis_dw_lrelu_2_active       
+
+`define TUSER_WIDTH_axis_dw_lrelu_2 $TUSER_WIDTH_axis_dw_lrelu_2 
+`define TLAST_axis_dw_lrelu_2       $TLAST_axis_dw_lrelu_2       
+`define TKEEP_axis_dw_lrelu_2       $TKEEP_axis_dw_lrelu_2       
+
+`define DATA_BYTES_axis_reg_slice_lrelu_dw   $DATA_BYTES_axis_reg_slice_lrelu_dw    
+`define TID_WIDTH_axis_reg_slice_lrelu_dw    $TID_WIDTH_axis_reg_slice_lrelu_dw     
+`define TUSER_WIDTH_axis_reg_slice_lrelu_dw  $TUSER_WIDTH_axis_reg_slice_lrelu_dw  
+`define TLAST_axis_reg_slice_lrelu_dw_active $TLAST_axis_reg_slice_lrelu_dw_active  
+`define TKEEP_axis_reg_slice_lrelu_dw        $TKEEP_axis_reg_slice_lrelu_dw        
+
+`define TLAST_axis_reg_slice_lrelu_dw $TLAST_axis_reg_slice_lrelu_dw        
+`define TKEEP_axis_reg_slice_lrelu_dw $TKEEP_axis_reg_slice_lrelu_dw        
+
+`define DATA_BYTES_axis_reg_slice_lrelu  $DATA_BYTES_axis_reg_slice_lrelu  
+`define TLAST_axis_reg_slice_lrelu       $TLAST_axis_reg_slice_lrelu       
+`define TKEEP_axis_reg_slice_lrelu       $TKEEP_axis_reg_slice_lrelu       
+`define TUSER_WIDTH_axis_reg_slice_lrelu $TUSER_WIDTH_axis_reg_slice_lrelu 
+
+`define TUSER_WIDTH_float_to_fixed_active $TUSER_WIDTH_float_to_fixed_active
+
+`define BITS_FRA_IN_mod_float_downsize  $BITS_FRA_IN_mod_float_downsize 
+`define BITS_EXP_IN_mod_float_downsize  $BITS_EXP_IN_mod_float_downsize 
+`define BITS_FRA_OUT_mod_float_downsize $BITS_FRA_OUT_mod_float_downsize 
+`define BITS_EXP_OUT_mod_float_downsize $BITS_EXP_OUT_mod_float_downsize 
+`define LATENCY_mod_float_downsize      $LATENCY_mod_float_downsize     
+
+`define BITS_FRA_IN_mod_float_upsize  $BITS_FRA_IN_mod_float_upsize 
+`define BITS_EXP_IN_mod_float_upsize  $BITS_EXP_IN_mod_float_upsize 
+`define BITS_FRA_OUT_mod_float_upsize $BITS_FRA_OUT_mod_float_upsize
+`define BITS_EXP_OUT_mod_float_upsize $BITS_EXP_OUT_mod_float_upsize
+`define LATENCY_mod_float_upsize      $LATENCY_mod_float_upsize     
+
+`define S_BYTES_axis_dw_lrelu $S_BYTES_axis_dw_lrelu
+`define M_BYTES_axis_dw_lrelu $M_BYTES_axis_dw_lrelu
+`define TLAST_axis_dw_lrelu   $TLAST_axis_dw_lrelu  
+`define TKEEP_axis_dw_lrelu   $TKEEP_axis_dw_lrelu  
+
+`define S_BYTES_axis_dw_max_1 $S_BYTES_axis_dw_max_1
+`define M_BYTES_axis_dw_max_1 $M_BYTES_axis_dw_max_1
+`define TLAST_axis_dw_max_1   $TLAST_axis_dw_max_1  
+`define TKEEP_axis_dw_max_1   $TKEEP_axis_dw_max_1  
+
+`define S_BYTES_axis_dw_max_2 $S_BYTES_axis_dw_max_2
+`define M_BYTES_axis_dw_max_2 $M_BYTES_axis_dw_max_2
+`define TLAST_axis_dw_max_2   $TLAST_axis_dw_max_2  
+`define TKEEP_axis_dw_max_2   $TKEEP_axis_dw_max_2  
+
+`define DATA_BYTES_axis_reg_slice_maxpool $DATA_BYTES_axis_reg_slice_maxpool
+`define TLAST_axis_reg_slice_maxpool      $TLAST_axis_reg_slice_maxpool     
+`define TKEEP_axis_reg_slice_maxpool      $TKEEP_axis_reg_slice_maxpool     
+
 "
 close $file_param
