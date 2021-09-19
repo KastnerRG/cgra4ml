@@ -1,18 +1,19 @@
+`define XILINX   1
 /*
 Parameters of the system. Written from build.tcl
 */
 
 `define UNITS    4  
 `define GROUPS   2 
-`define COPIES   1 
+`define COPIES   2 
 `define MEMBERS  12
 `define DW_FACTOR_1 3
-`define OUTPUT_MODE "LRELU"
+`define OUTPUT_MODE "MAXPOOL"
 
 `define FREQ_HIGH     200
 `define FREQ_RATIO    4
 
-`define CORES              2
+`define CORES              4
 `define UNITS_EDGES        6
 `define IM_IN_S_DATA_WORDS 32
 
@@ -52,15 +53,15 @@ Parameters of the system. Written from build.tcl
 
 `define S_WEIGHTS_WIDTH_HF  32
 `define S_WEIGHTS_WIDTH_LF  128
-`define M_DATA_WIDTH_HF_CONV    3072   
-`define M_DATA_WIDTH_HF_CONV_DW 256
+`define M_DATA_WIDTH_HF_CONV    6144   
+`define M_DATA_WIDTH_HF_CONV_DW 512
 `define M_DATA_WIDTH_LF_CONV_DW 1024
-`define M_DATA_WIDTH_HF_LRELU   64  
-`define M_DATA_WIDTH_LF_LRELU   256  
-`define M_DATA_WIDTH_HF_MAXPOOL 96
+`define M_DATA_WIDTH_HF_LRELU   128  
+`define M_DATA_WIDTH_LF_LRELU   512  
+`define M_DATA_WIDTH_HF_MAXPOOL 192
 `define M_DATA_WIDTH_HF_MAX_DW1 96
 `define M_DATA_WIDTH_LF_MAXPOOL 512
-`define M_DATA_WIDTH_LF         256
+`define M_DATA_WIDTH_LF         512
 /*
   LATENCIES & float widths
 */
@@ -118,4 +119,124 @@ Parameters of the system. Written from build.tcl
 */
 `define BEATS_CONFIG(KH,KW) 1+ 2*(2/KW + 2%KW) + 2*KH
 `define CEIL(N,D) N/D + (N%D != 0)
+
+/*
+  IP Parameters
+*/
+
+`define S_BYTES_axis_dw_weights_clk    16 
+`define M_BYTES_axis_dw_weights_clk    4 
+`define DATA_BYTES_axis_clk_weights    16    
+`define DATA_BYTES_axis_clk_image      32      
+`define DATA_BYTES_axis_clk_conv_dw    128    
+`define DATA_BYTES_axis_clk_lrelu      64      
+`define DATA_BYTES_axis_clk_maxpool    64    
+
+`define S_BYTES_axis_dw_image_input    32 
+`define M_BYTES_axis_dw_image_input    6 
+`define TLAST_axis_dw_image_input      1   
+`define TKEEP_axis_dw_image_input      1   
+
+`define DATA_BYTES_axis_reg_slice_image_pipe  4 
+`define TLAST_axis_reg_slice_image_pipe       0      
+`define TKEEP_axis_reg_slice_image_pipe       0      
+`define TUSER_WIDTH_axis_reg_slice_image_pipe 4
+
+`define R_WIDTH_bram_weights 384 
+`define R_DEPTH_bram_weights 3080 
+`define W_WIDTH_bram_weights 384 
+`define W_DEPTH_bram_weights 3080 
+
+`define S_BYTES_axis_dw_weights_input 4 
+`define M_BYTES_axis_dw_weights_input 48 
+`define TLAST_axis_dw_weights_input   1   
+`define TKEEP_axis_dw_weights_input   1   
+
+`define DATA_BYTES_slice_conv  16  
+`define TLAST_slice_conv       0       
+`define TKEEP_slice_conv       0       
+`define TUSER_WIDTH_slice_conv 0 
+
+`define DATA_BYTES_slice_conv_semi_active  16   
+`define TLAST_slice_conv_semi_active       0       
+`define TKEEP_slice_conv_semi_active       1        
+`define TUSER_WIDTH_slice_conv_semi_active 8  
+
+`define DATA_BYTES_slice_conv_active  16  
+`define TLAST_slice_conv_active       1     
+`define TKEEP_slice_conv_active       1     
+`define TUSER_WIDTH_slice_conv_active 8 
+
+`define S_BYTES_axis_dw_conv 64 
+`define M_BYTES_axis_dw_conv 128 
+`define TLAST_axis_dw_conv   1   
+`define TKEEP_axis_dw_conv   1   
+
+`define S_BYTES_axis_dw_lrelu_1_active     12     
+`define M_BYTES_axis_dw_lrelu_1_active     4     
+`define TUSER_WIDTH_axis_dw_lrelu_1_active 8 
+`define TLAST_axis_dw_lrelu_1_active       1       
+`define TKEEP_axis_dw_lrelu_1_active       1       
+
+`define TUSER_WIDTH_axis_dw_lrelu_1 0 
+`define TLAST_axis_dw_lrelu_1       0       
+`define TKEEP_axis_dw_lrelu_1       1       
+
+`define S_BYTES_axis_dw_lrelu_2            16            
+`define M_BYTES_axis_dw_lrelu_2            4            
+`define TUSER_WIDTH_axis_dw_lrelu_2_active 8  
+`define TLAST_axis_dw_lrelu_2_active       1       
+`define TKEEP_axis_dw_lrelu_2_active       1       
+
+`define TUSER_WIDTH_axis_dw_lrelu_2 0 
+`define TLAST_axis_dw_lrelu_2       0       
+`define TKEEP_axis_dw_lrelu_2       1       
+
+`define DATA_BYTES_axis_reg_slice_lrelu_dw   16    
+`define TID_WIDTH_axis_reg_slice_lrelu_dw    8     
+`define TUSER_WIDTH_axis_reg_slice_lrelu_dw  0  
+`define TLAST_axis_reg_slice_lrelu_dw_active 1  
+`define TKEEP_axis_reg_slice_lrelu_dw        0        
+
+`define TLAST_axis_reg_slice_lrelu_dw 0        
+`define TKEEP_axis_reg_slice_lrelu_dw 0        
+
+`define DATA_BYTES_axis_reg_slice_lrelu  16  
+`define TLAST_axis_reg_slice_lrelu       1       
+`define TKEEP_axis_reg_slice_lrelu       0       
+`define TUSER_WIDTH_axis_reg_slice_lrelu 3 
+
+`define TUSER_WIDTH_float_to_fixed_active 3
+
+`define BITS_FRA_IN_mod_float_downsize  24 
+`define BITS_EXP_IN_mod_float_downsize  8 
+`define BITS_FRA_OUT_mod_float_downsize 11 
+`define BITS_EXP_OUT_mod_float_downsize 5 
+`define LATENCY_mod_float_downsize      3     
+
+`define BITS_FRA_IN_mod_float_upsize  11 
+`define BITS_EXP_IN_mod_float_upsize  5 
+`define BITS_FRA_OUT_mod_float_upsize 24
+`define BITS_EXP_OUT_mod_float_upsize 8
+`define LATENCY_mod_float_upsize      2     
+
+`define S_BYTES_axis_dw_lrelu 16
+`define M_BYTES_axis_dw_lrelu 64
+`define TLAST_axis_dw_lrelu   1  
+`define TKEEP_axis_dw_lrelu   1  
+
+`define S_BYTES_axis_dw_max_1 24
+`define M_BYTES_axis_dw_max_1 12
+`define TLAST_axis_dw_max_1   1  
+`define TKEEP_axis_dw_max_1   1  
+
+`define S_BYTES_axis_dw_max_2 12
+`define M_BYTES_axis_dw_max_2 64
+`define TLAST_axis_dw_max_2   1  
+`define TKEEP_axis_dw_max_2   1  
+
+`define DATA_BYTES_axis_reg_slice_maxpool 16
+`define TLAST_axis_reg_slice_maxpool      1     
+`define TKEEP_axis_reg_slice_maxpool      1     
+
 
