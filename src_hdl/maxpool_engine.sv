@@ -34,7 +34,7 @@ Additional Comments:
 `timescale 1ns/1ps
 `include "params.v"
 
-module maxpool_engine #(ZERO) (
+module maxpool_engine #(ZERO=0) (
     clk,
     clken,
     resetn,

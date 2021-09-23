@@ -2,7 +2,7 @@
 `include "params.v"
 import float_ops::*;
 
-module lrelu_engine #(ZERO) (
+module lrelu_engine #(ZERO=0) (
   clk     ,
   clken   ,
   resetn  ,
@@ -493,20 +493,19 @@ module lrelu_engine #(ZERO) (
                 .data_in  ({sel_is_top_c_in [c],sel_is_bot_c_in [c]}),
                 .data_out ({sel_is_top_c_out[c],sel_is_bot_c_out[c]})
               );
-
-              if (c==0)
-                n_delay #(
-                  .N          (LATENCY_CYCLIC_REG + 1 + LATENCY_FLOAT_UPSIZE),
-                  .WORD_WIDTH (BITS_KH2)
-                ) USER_KH2 (
-                  .clk      (clk),
-                  .resetn   (resetn),
-                  .clken    (clken),
-                  .data_in  (user_1_kh2),
-                  .data_out (user_2_kh2)
-                );
-
             end
+
+            if (c==0)
+              n_delay #(
+                .N          (LATENCY_CYCLIC_REG + 1 + LATENCY_FLOAT_UPSIZE),
+                .WORD_WIDTH (BITS_KH2)
+              ) USER_KH2 (
+                .clk      (clk),
+                .resetn   (resetn),
+                .clken    (clken),
+                .data_in  (user_1_kh2),
+                .data_out (user_2_kh2)
+              );
           end
           /*
             CLR Mux
@@ -845,58 +844,6 @@ module lrelu_engine #(ZERO) (
     Convert float16 wires to shortreal for simulation
   */
   // synthesis translate_off
-
-  virtual class float_downsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);
-    static function logic [EXP_OUT+FRA_OUT:0] downsize (input logic [EXP_IN+FRA_IN:0] float_in);
-      /*
-        Downsize
-        * eg: Float32 -> Float16
-            - EXP_IN  : 8
-            - FRA_IN  : 23
-            - EXP_OUT : 5
-            - FRA_OUT : 10
-        * Mantissa is rounded to avoid error
-      */
-      logic sign;
-      logic [EXP_IN -1:0] exp_in;
-      logic [FRA_IN -1:0] fra_in;
-      logic [EXP_OUT-1:0] exp_out;
-      logic [FRA_OUT  :0] fra_out_extra, fra_out_round;
-      logic [FRA_OUT-1:0] fra_out;
-      
-      {sign, exp_in, fra_in} = float_in;
-      exp_out = exp_in - (2**(EXP_IN-1)-2**(EXP_OUT-1));
-      fra_out_extra = fra_in >> (FRA_IN-FRA_OUT-1);
-      // fra_out_round = sign ? fra_out_extra - fra_in[FRA_IN-FRA_OUT]: fra_out_extra + fra_in[FRA_IN-FRA_OUT];
-      // fra_out = fra_out_round >> 1;
-      fra_out = fra_in >> (FRA_IN-FRA_OUT);
-      return {sign, exp_out, fra_out};
-    endfunction
-  endclass
-
-  virtual class float_upsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);  
-    static function logic [EXP_OUT+FRA_OUT:0] upsize (input logic [EXP_IN+FRA_IN:0] float_in);
-      /*
-        Upsize
-        * eg: Float32 -> Float16
-            - EXP_IN  : 5
-            - FRA_IN  : 10
-            - EXP_OUT : 8
-            - FRA_OUT : 23
-        * No need to round
-      */
-      logic sign;
-      logic [EXP_IN -1:0] exp_in;
-      logic [FRA_IN -1:0] fra_in;
-      logic [EXP_OUT-1:0] exp_out;
-      logic [FRA_OUT-1:0] fra_out;
-      
-      {sign, exp_in, fra_in} = float_in;
-      exp_out = exp_in + (2**(EXP_OUT-1)-2**(EXP_IN-1));
-      fra_out = fra_in << (FRA_OUT-FRA_IN);
-      return {sign, exp_out, fra_out};
-    endfunction
-  endclass
 
   shortreal m_data_fma_1_cgu_sr      [COPIES-1:0][GROUPS-1:0][UNITS-1:0];
   shortreal m_data_fma_2_cgu_sr      [COPIES-1:0][GROUPS-1:0][UNITS-1:0];

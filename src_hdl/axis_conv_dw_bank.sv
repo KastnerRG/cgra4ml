@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 `include "params.v"
 
-module axis_conv_dw_bank #(ZERO) (
+module axis_conv_dw_bank #(ZERO=0) (
   aclk             ,
   aresetn          ,
 
@@ -198,11 +198,13 @@ module axis_conv_dw_bank #(ZERO) (
             );
         end
         else begin
-          assign m_axis_tvalid       = slice_s_valid       ; 
-          assign slice_s_ready       = m_axis_tready       ; 
           assign m_axis_tdata [c][g] = slice_s_data [c][g] ; 
-          assign m_axis_tlast        = slice_s_last        ; 
-          assign m_axis_tuser        = dw_m_user [0][0]    ; 
+          if (c==0 && g==0) begin
+            assign m_axis_tvalid       = slice_s_valid       ; 
+            assign slice_s_ready       = m_axis_tready       ; 
+            assign m_axis_tlast        = slice_s_last        ; 
+            assign m_axis_tuser        = dw_m_user [0][0]    ; 
+          end
         end
       end
     end

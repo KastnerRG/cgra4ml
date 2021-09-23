@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 module n_delay #(
-    parameter N,
-    parameter WORD_WIDTH,
+    parameter N = 1,
+    parameter WORD_WIDTH = 8,
     parameter LOCAL = 0
 )(
     clk,
