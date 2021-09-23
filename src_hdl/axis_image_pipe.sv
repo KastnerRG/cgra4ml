@@ -38,7 +38,7 @@ Additional Comments:
 `include "params.v"
 import lrelu_beats::*;
 
-module axis_image_pipe #(ZERO)  (
+module axis_image_pipe #(ZERO=0)  (
     aclk           ,
     aresetn        ,
     debug_config   ,
@@ -353,7 +353,7 @@ module axis_image_pipe #(ZERO)  (
 endmodule
 
 
-module axis_image_shift_buffer #(ZERO) (
+module axis_image_shift_buffer #(ZERO=0) (
     aclk         ,
     aresetn      ,
     debug_config ,

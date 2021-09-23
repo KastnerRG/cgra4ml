@@ -27,7 +27,7 @@ Additional Comments:
 `timescale 1ns/1ps
 `include "params.v"
 
-module axis_weight_rotator #(ZERO) (
+module axis_weight_rotator #(ZERO=0) (
     aclk         ,
     aresetn      ,
     debug_config ,

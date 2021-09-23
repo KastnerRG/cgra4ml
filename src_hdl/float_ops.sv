@@ -3,7 +3,7 @@ package float_ops;
 
   // synthesis translate_off
 
-  virtual class float_downsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);
+  virtual class float_downsize #(parameter EXP_IN=8, FRA_IN=23, EXP_OUT=5, FRA_OUT=10);
     static function logic [EXP_OUT+FRA_OUT:0] downsize (input logic [EXP_IN+FRA_IN:0] float_in);
       /*
         Downsize
@@ -31,7 +31,7 @@ package float_ops;
     endfunction
   endclass
 
-  virtual class float_upsize #(parameter EXP_IN, FRA_IN, EXP_OUT, FRA_OUT);  
+  virtual class float_upsize #(parameter EXP_IN=5, FRA_IN=10, EXP_OUT=8, FRA_OUT=23);  
     static function logic [EXP_OUT+FRA_OUT:0] upsize (input logic [EXP_IN+FRA_IN:0] float_in);
       /*
         Upsize

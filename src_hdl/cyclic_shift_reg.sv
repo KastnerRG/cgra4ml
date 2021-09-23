@@ -1,6 +1,4 @@
 `timescale 1ns/1ps
-`include "float_ops.sv"
-
 import float_ops::*;
 
 module cyclic_shift_reg #(
