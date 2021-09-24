@@ -604,8 +604,7 @@ def make_conv_out(i_layers,i_itr,c):
 
     conv_image = reshape_image_out(image=image,order='scg',KW=KW,max_factor=max_factor,c=c)
     ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS = conv_image.shape
-    DATA_BEATS = BLOCKS_PER_ARR*W
-    image = conv_image.reshape(ITR,DATA_BEATS,SUB_CORES,c.COPIES,c.GROUPS,c.CONV_UNITS)
+    image = conv_image.reshape(ITR,BLOCKS_PER_ARR,W,SUB_CORES,c.COPIES,c.GROUPS,c.CONV_UNITS)
     # zeros = np.zeros((ITR,DATA_BEATS,c.COPIES,c.GROUPS,c.MEMBERS,c.CONV_UNITS),dtype=image.dtype)
     # zeros[:,:,:,:,0:SUB_CORES,:] = image
     # image = zeros
@@ -623,8 +622,8 @@ def make_conv_out(i_layers,i_itr,c):
     assert lrelu_config_padded.shape == (ITR,LRELU_BEATS,COPIES,GROUPS,MEMBERS,c.CONV_UNITS)
     print(f"lrelu_config.shape: (ITR,LRELU_BEATS,COPIES,GROUPS,MEMBERS,CONV_UNITS) = {lrelu_config_padded.shape}")
 
-    assert image.shape == (ITR,DATA_BEATS,SUB_CORES,c.COPIES,c.GROUPS,c.CONV_UNITS)
-    print(f"image.shape: (ITR,DATA_BEATS,SUB_CORES,COPIES,GROUPS,CONV_UNITS) = {image.shape}")
+    assert image.shape == (ITR,BLOCKS_PER_ARR,W,SUB_CORES,c.COPIES,c.GROUPS,c.CONV_UNITS)
+    print(f"image.shape: (ITR,BLOCKS,W,SUB_CORES,COPIES,GROUPS,CONV_UNITS) = {image.shape}")
 
     conv_out_i = np.concatenate([lrelu_config_padded[i_itr].flatten(), image[i_itr].flatten()])
     np.savetxt(f"{c.DATA_DIR}/{i_layers}_conv_out.txt", conv_out_i, fmt='%d')

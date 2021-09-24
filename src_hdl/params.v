@@ -21,10 +21,14 @@ Parameters of the system. Written from build.tcl
 `define WORD_WIDTH_ACC      32    
 `define KH_MAX              3            
 `define KW_MAX              3            
+`define SH_MAX              3            
+`define SW_MAX              3            
 
 `define TKEEP_WIDTH_IM_IN 32
 `define BITS_KW           2          
 `define BITS_KH           2          
+`define BITS_SW           2          
+`define BITS_SH           2          
 `define BITS_IM_COLS      9     
 `define BITS_IM_ROWS      8     
 `define BITS_IM_CIN       10      
@@ -42,8 +46,8 @@ Parameters of the system. Written from build.tcl
 /*
   IMAGE TUSER INDICES
 */
-`define TUSER_WIDTH_IM_SHIFT_IN   4 
-`define TUSER_WIDTH_IM_SHIFT_OUT  4
+`define TUSER_WIDTH_IM_SHIFT_IN   6 
+`define TUSER_WIDTH_IM_SHIFT_OUT  6
 
 `define IM_CIN_MAX       1024      
 `define IM_BLOCKS_MAX    64   
@@ -88,30 +92,35 @@ Parameters of the system. Written from build.tcl
 `define I_WEIGHTS_IS_COLS_1_K2     2   
 `define I_WEIGHTS_IS_CONFIG        3      
 `define I_WEIGHTS_IS_CIN_LAST      4    
-`define I_WEIGHTS_KW2              5        
-`define TUSER_WIDTH_WEIGHTS_OUT    6  
+`define I_WEIGHTS_IS_W_FIRST       5    
+`define I_WEIGHTS_KW2              6        
+`define I_WEIGHTS_SW               7        
+`define TUSER_WIDTH_WEIGHTS_OUT    9  
 /*
   CONV TUSER INDICES
 */
 `define I_IS_NOT_MAX         0       
 `define I_IS_MAX             1           
 `define I_KH2                2      
-`define I_IS_LRELU           3         
-`define I_IS_TOP_BLOCK       4     
-`define I_IS_BOTTOM_BLOCK    5  
-`define I_IS_COLS_1_K2       6     
-`define I_IS_CONFIG          7        
-`define I_IS_CIN_LAST        8      
-`define I_KW2                9        
-`define TUSER_WIDTH_CONV_IN  10
+`define I_SH                 3      
+`define I_IS_LRELU           5         
+`define I_IS_TOP_BLOCK       6     
+`define I_IS_BOTTOM_BLOCK    7  
+`define I_IS_COLS_1_K2       8     
+`define I_IS_CONFIG          9        
+`define I_IS_CIN_LAST        10      
+`define I_IS_W_FIRST         11      
+`define I_KW2                12        
+`define I_SW                 13      
+`define TUSER_WIDTH_CONV_IN  15
 /*
   LRELU & MAXPOOL TUSER INDICES
 */
-`define I_CLR                6
+`define I_CLR                8
 
 `define TUSER_WIDTH_MAXPOOL_IN     3    
-`define TUSER_WIDTH_LRELU_FMA_1_IN 4
-`define TUSER_WIDTH_LRELU_IN       8      
+`define TUSER_WIDTH_LRELU_FMA_1_IN 6
+`define TUSER_WIDTH_LRELU_IN       10      
 `define IS_CONV_DW_SLICE           0
 
 /*
@@ -140,7 +149,7 @@ Parameters of the system. Written from build.tcl
 `define DATA_BYTES_axis_reg_slice_image_pipe  4 
 `define TLAST_axis_reg_slice_image_pipe       0      
 `define TKEEP_axis_reg_slice_image_pipe       0      
-`define TUSER_WIDTH_axis_reg_slice_image_pipe 4
+`define TUSER_WIDTH_axis_reg_slice_image_pipe 6
 
 `define R_WIDTH_bram_weights 384 
 `define R_DEPTH_bram_weights 3080 
@@ -160,12 +169,12 @@ Parameters of the system. Written from build.tcl
 `define DATA_BYTES_slice_conv_semi_active  16   
 `define TLAST_slice_conv_semi_active       0       
 `define TKEEP_slice_conv_semi_active       1        
-`define TUSER_WIDTH_slice_conv_semi_active 8  
+`define TUSER_WIDTH_slice_conv_semi_active 10  
 
 `define DATA_BYTES_slice_conv_active  16  
 `define TLAST_slice_conv_active       1     
 `define TKEEP_slice_conv_active       1     
-`define TUSER_WIDTH_slice_conv_active 8 
+`define TUSER_WIDTH_slice_conv_active 10 
 
 `define S_BYTES_axis_dw_conv 64 
 `define M_BYTES_axis_dw_conv 128 
@@ -174,7 +183,7 @@ Parameters of the system. Written from build.tcl
 
 `define S_BYTES_axis_dw_lrelu_1_active     12     
 `define M_BYTES_axis_dw_lrelu_1_active     4     
-`define TUSER_WIDTH_axis_dw_lrelu_1_active 8 
+`define TUSER_WIDTH_axis_dw_lrelu_1_active 10 
 `define TLAST_axis_dw_lrelu_1_active       1       
 `define TKEEP_axis_dw_lrelu_1_active       1       
 
@@ -184,7 +193,7 @@ Parameters of the system. Written from build.tcl
 
 `define S_BYTES_axis_dw_lrelu_2            16            
 `define M_BYTES_axis_dw_lrelu_2            4            
-`define TUSER_WIDTH_axis_dw_lrelu_2_active 8  
+`define TUSER_WIDTH_axis_dw_lrelu_2_active 10  
 `define TLAST_axis_dw_lrelu_2_active       1       
 `define TKEEP_axis_dw_lrelu_2_active       1       
 
@@ -193,7 +202,7 @@ Parameters of the system. Written from build.tcl
 `define TKEEP_axis_dw_lrelu_2       1       
 
 `define DATA_BYTES_axis_reg_slice_lrelu_dw   16    
-`define TID_WIDTH_axis_reg_slice_lrelu_dw    8     
+`define TID_WIDTH_axis_reg_slice_lrelu_dw    10     
 `define TUSER_WIDTH_axis_reg_slice_lrelu_dw  0  
 `define TLAST_axis_reg_slice_lrelu_dw_active 1  
 `define TKEEP_axis_reg_slice_lrelu_dw        0        

@@ -49,6 +49,8 @@ module axis_weight_rotator #(ZERO=0) (
   localparam DEBUG_CONFIG_WIDTH_W_ROT  = `DEBUG_CONFIG_WIDTH_W_ROT ;
   localparam KH_MAX                    = `KH_MAX                   ;   // odd number
   localparam KW_MAX                    = `KW_MAX                   ;   // odd number
+  localparam SH_MAX                    = `SH_MAX                   ;   // odd number
+  localparam SW_MAX                    = `SW_MAX                   ;   // odd number
   localparam IM_CIN_MAX                = `IM_CIN_MAX               ;
   localparam IM_BLOCKS_MAX             = `IM_BLOCKS_MAX            ;
   localparam IM_COLS_MAX               = `IM_COLS_MAX              ;
@@ -59,10 +61,13 @@ module axis_weight_rotator #(ZERO=0) (
   localparam I_WEIGHTS_IS_COLS_1_K2    = `I_WEIGHTS_IS_COLS_1_K2   ;
   localparam I_WEIGHTS_IS_CONFIG       = `I_WEIGHTS_IS_CONFIG      ;
   localparam I_WEIGHTS_IS_CIN_LAST     = `I_WEIGHTS_IS_CIN_LAST    ;
+  localparam I_WEIGHTS_IS_W_FIRST      = `I_WEIGHTS_IS_W_FIRST     ;
   localparam I_WEIGHTS_KW2             = `I_WEIGHTS_KW2            ; 
+  localparam I_WEIGHTS_SW              = `I_WEIGHTS_SW             ;
   localparam TUSER_WIDTH_WEIGHTS_OUT   = `TUSER_WIDTH_WEIGHTS_OUT  ;
   localparam BITS_KW2                  = `BITS_KW2                 ;
   localparam BITS_KH2                  = `BITS_KH2                 ;
+  localparam BITS_SW                   = `BITS_SW                  ;
   localparam BITS_KH                   = `BITS_KH                  ;
   localparam BITS_IM_CIN               = `BITS_IM_CIN   ;
   localparam BITS_IM_BLOCKS            = `BITS_IM_BLOCKS;
@@ -605,7 +610,9 @@ module axis_weight_rotator #(ZERO=0) (
   
   assign m_axis_tuser [I_WEIGHTS_IS_CONFIG  ] = state_read  == R_PASS_CONFIG_S;
   assign m_axis_tuser [I_WEIGHTS_KW2+BITS_KW2-1: I_WEIGHTS_KW2] = ref_kw2  [i_read];
+  assign m_axis_tuser [I_WEIGHTS_SW +BITS_SW -1: I_WEIGHTS_SW ] = -1;
 
+  assign m_axis_tuser [I_WEIGHTS_IS_W_FIRST     ] = count_cols == ref_1_cols[i_read] && count_cin == ref_1_cin[i_read] && count_kh == 2*ref_kh2 [i_read];
   assign m_axis_tuser [I_WEIGHTS_IS_CIN_LAST    ] = (last_kh && last_cin);
   assign m_axis_tuser [I_WEIGHTS_IS_COLS_1_K2   ] = count_cols   == ref_kw2      [i_read]; // i = cols-1-k/2 === [cols-1-i] = k/2
   assign m_axis_tuser [I_WEIGHTS_IS_TOP_BLOCK   ] = count_blocks == ref_1_blocks [i_read];
