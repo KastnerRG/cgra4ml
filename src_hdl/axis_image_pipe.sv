@@ -71,6 +71,7 @@ module axis_image_pipe #(ZERO=0)  (
   localparam I_IS_MAX             = `I_IS_MAX             ;
   localparam I_IS_LRELU           = `I_IS_LRELU           ;
   localparam I_KH2                = `I_KH2               ; 
+  localparam I_SH                 = `I_SH                ; 
   localparam TUSER_WIDTH_IM_SHIFT_IN    = `TUSER_WIDTH_IM_SHIFT_IN    ;
   localparam OUTPUT_MODE          = `OUTPUT_MODE;
 
@@ -78,6 +79,7 @@ module axis_image_pipe #(ZERO=0)  (
   localparam IM_IN_S_DATA_WORDS= `IM_IN_S_DATA_WORDS;
   localparam BITS_KH2    = `BITS_KH2    ;
   localparam BITS_KW2    = `BITS_KW2    ;
+  localparam BITS_SH     = `BITS_SH    ;
   localparam TKEEP_WIDTH_IM_IN = `TKEEP_WIDTH_IM_IN ;
   localparam CONFIG_COUNT_MAX  = lrelu_beats::calc_beats_total_max(.KW_MAX      (KW_MAX      ), .MEMBERS(MEMBERS));
   localparam BITS_CONFIG_COUNT = $clog2(CONFIG_COUNT_MAX);
@@ -326,6 +328,7 @@ module axis_image_pipe #(ZERO=0)  (
   assign m_axis_tuser [I_IS_NOT_MAX] = COPIES==2 && is_not_max_out;
   assign m_axis_tuser [I_IS_MAX    ] = COPIES==2 && is_max_out    ;
   assign m_axis_tuser [BITS_KH2+I_KH2-1 : I_KH2] = kh2_out;
+  assign m_axis_tuser [BITS_SH +I_SH -1 : I_SH ] = -1;
   assign m_axis_tuser [I_IS_LRELU  ] = OUTPUT_MODE != "CONV" && is_lrelu_out;
 
   /*

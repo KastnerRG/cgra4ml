@@ -237,7 +237,7 @@ module axis_accelerator_tb ();
   logic [M_DATA_WIDTH_HF_MAXPOOL/WORD_WIDTH -1:0][WORD_WIDTH-1:0] max_m_axis_tdata;
 
   logic max_dw2_lf_m_axis_tvalid;
-  bit   max_dw2_lf_m_axis_tready = 1;
+  bit   max_dw2_lf_m_axis_tready;
   logic max_dw2_lf_m_axis_tlast;
   logic [M_DATA_WIDTH_LF_MAXPOOL/WORD_WIDTH -1:0][WORD_WIDTH-1:0] max_dw2_lf_m_axis_tdata;
   logic [M_DATA_WIDTH_LF_MAXPOOL/8 -1:0] max_dw2_lf_m_axis_tkeep;
@@ -271,7 +271,7 @@ module axis_accelerator_tb ();
 
   initial forever m_conv .axis_read(hf_aclk, conv_m_axis_tready      , conv_m_axis_tvalid      , conv_m_axis_tdata      , conv_m_axis_tkeep_acc   , conv_m_axis_tlast      );
   initial forever m_lrelu.axis_read(hf_aclk, lrelu_m_axis_tready     , lrelu_m_axis_tvalid     , lrelu_m_axis_tdata     , lrelu_m_axis_tkeep      , lrelu_m_axis_tlast     );
-  initial forever m_max  .axis_read(hf_aclk, max_dw2_lf_m_axis_tready, max_dw2_lf_m_axis_tvalid, max_dw2_lf_m_axis_tdata, max_dw2_lf_m_axis_tkeep , max_dw2_lf_m_axis_tlast);
+  initial forever m_max  .axis_read(   aclk, max_dw2_lf_m_axis_tready, max_dw2_lf_m_axis_tvalid, max_dw2_lf_m_axis_tdata, max_dw2_lf_m_axis_tkeep , max_dw2_lf_m_axis_tlast);
 
   /* COUNTING ELEMENTS*/
 

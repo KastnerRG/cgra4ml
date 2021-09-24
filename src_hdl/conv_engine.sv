@@ -41,6 +41,7 @@ module conv_engine #(ZERO=0) (
   localparam I_IS_BOTTOM_BLOCK   = `I_IS_BOTTOM_BLOCK   ;
   localparam I_IS_CONFIG         = `I_IS_CONFIG         ;
   localparam I_IS_CIN_LAST       = `I_IS_CIN_LAST       ;
+  localparam I_IS_W_FIRST        = `I_IS_W_FIRST        ;
   localparam I_KW2               = `I_KW2               ;
   localparam I_CLR               = `I_CLR               ;
   localparam TUSER_WIDTH_CONV_IN = `TUSER_WIDTH_CONV_IN ;
@@ -58,11 +59,11 @@ module conv_engine #(ZERO=0) (
   input  logic [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0]           [WORD_WIDTH_IN    -1:0] s_data_weights;                                                                        
   output logic [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0][WORD_WIDTH_OUT   -1:0] m_data;
   output logic [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0][WORD_WIDTH_OUT/8 -1:0] m_keep;
-  output logic                               [MEMBERS-1:0][TUSER_WIDTH_CONV_OUT  -1:0] m_user;
+  output logic                         [MEMBERS-1:0]      [TUSER_WIDTH_CONV_OUT  -1:0] m_user;
 
   logic clken_mul, mux_sel_next, mux_sel, mul_m_valid, acc_m_valid_next, acc_m_valid, mul_m_last, acc_m_last;
   logic [BITS_KW2-1:0] mul_m_kw2;
-  logic [MEMBERS-1: 0] clken_acc, bypass, bypass_next;
+  logic [MEMBERS-1: 0] clken_acc, bypass_sum, bypass_sum_next, bypass;
   logic [MEMBERS-1: 0] acc_s_valid, acc_m_valid_masked;
   logic [TUSER_WIDTH_CONV_IN -1: 0] mul_m_user, acc_s_user, mux_s2_user, acc_m_user;
 
@@ -71,10 +72,9 @@ module conv_engine #(ZERO=0) (
   logic [MEMBERS-1: 0] mask_full;
   logic [BITS_KW-1: 0] pad_clr [MEMBERS-1: 0];
 
-  logic [WORD_WIDTH_IN*2-1:0] mul_m_data  [COPIES-1:0][GROUPS-1:0][UNITS-1:0][MEMBERS-1:0];
-  logic [WORD_WIDTH_OUT -1:0] acc_s_data  [COPIES-1:0][GROUPS-1:0][UNITS-1:0][MEMBERS-1:0];
-  logic [WORD_WIDTH_OUT -1:0] mux_s2_data [COPIES-1:0][GROUPS-1:0][UNITS-1:0][MEMBERS-1:0];
-  logic [WORD_WIDTH_OUT -1:0] acc_m_data  [COPIES-1:0][GROUPS-1:0][UNITS-1:0][MEMBERS-1:0];
+  logic [WORD_WIDTH_IN*2-1:0] mul_m_data  [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0];
+  logic [WORD_WIDTH_OUT -1:0] acc_s_data  [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0];
+  logic [WORD_WIDTH_OUT -1:0] mux_s2_data [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0];
 
   assign s_ready = clken_mul;
 
@@ -89,9 +89,9 @@ module conv_engine #(ZERO=0) (
             multiplier MUL (
               .CLK    (clk),
               .CE     (clken_mul),
-              .A      (s_data_pixels  [c]   [u]   ),
-              .B      (s_data_weights [c][g]   [m]),
-              .P      (mul_m_data     [c][g][u][m])
+              .A      (s_data_pixels  [c]      [u]),
+              .B      (s_data_weights [c][g][m]   ),
+              .P      (mul_m_data     [c][g][m][u])
             );
     end end end end
 
@@ -112,8 +112,8 @@ module conv_engine #(ZERO=0) (
       for (g=0; g < GROUPS; g++)
         for (u=0; u < UNITS; u++)
           for (m=0; m < MEMBERS; m++)
-            if (m==0) assign mux_s2_data [c][g][u][m] = 0;
-            else      assign mux_s2_data [c][g][u][m] = acc_m_data [c][g][u][m-1];
+            if (m==0) assign mux_s2_data [c][g][m][u] = 0;
+            else      assign mux_s2_data [c][g][m][u] = m_data     [c][g][m-1][u];
 
     assign mux_sel_next = mul_m_valid && mul_m_user[I_IS_CIN_LAST] && (mul_m_kw2 != 0);
 
@@ -133,7 +133,7 @@ module conv_engine #(ZERO=0) (
       for (g=0; g < GROUPS; g++)
         for (u=0; u < UNITS; u++)
           for (m=0; m < MEMBERS; m++)
-            assign acc_s_data  [c][g][u][m] = mux_sel ? mux_s2_data  [c][g][u][m] : WORD_WIDTH_OUT'(signed'(mul_m_data [c][g][u][m]));
+            assign acc_s_data  [c][g][m][u] = mux_sel ? mux_s2_data  [c][g][m][u] : WORD_WIDTH_OUT'(signed'(mul_m_data [c][g][m][u]));
             
     for (m=0; m < MEMBERS; m++) begin: Mb
 
@@ -143,19 +143,20 @@ module conv_engine #(ZERO=0) (
       end
       
       assign acc_s_valid [m] = mux_sel ? lut_not_sub_base[mul_m_kw2][m] : mul_m_valid;
-      assign bypass_next [m] = mul_m_user[I_IS_CIN_LAST] || mul_m_user [I_IS_CONFIG];
+      assign bypass_sum_next [m] = mul_m_user[I_IS_CIN_LAST] || mul_m_user [I_IS_CONFIG];
 
       register #(
         .WORD_WIDTH     (1),
         .RESET_VALUE    (0)
-      ) BYPASS (
-        .clock          (clk    ),
+      ) BYPASS_SUM (
+        .clock          (clk   ),
         .resetn         (resetn),
-        .clock_enable   (acc_s_valid  [m]),
-        .data_in        (bypass_next  [m]),
-        .data_out       (bypass       [m])
+        .clock_enable   (clken && acc_s_valid [m]), // first PE of each elastic core gets bypass for 2 clocks
+        .data_in        (bypass_sum_next      [m]),
+        .data_out       (bypass_sum           [m])
       );
 
+      assign bypass    [m] = bypass_sum [m] || mul_m_user [I_IS_W_FIRST]; // clears all partial sums for every first col
       assign clken_acc [m] = clken && acc_s_valid [m];
     end
 
@@ -168,11 +169,9 @@ module conv_engine #(ZERO=0) (
               .CLK    (clk),  
               .bypass (bypass      [m]),  
               .CE     (clken_acc   [m]),  
-              .B      (acc_s_data  [c][g][u][m]),  
-              .Q      (acc_m_data  [c][g][u][m])  
+              .B      (acc_s_data  [c][g][m][u]),  
+              .Q      (m_data      [c][g][m][u])  
             );
-
-            assign m_data [c][g][m][u] = acc_m_data [c][g][u][m];
     end end end end
 
     n_delay #(
@@ -181,7 +180,7 @@ module conv_engine #(ZERO=0) (
     ) ACC_USER (
       .clk      (clk         ),
       .resetn   (resetn      ),
-      .clken    (clken_acc[0]),
+      .clken    (clken & mul_m_valid),
       .data_in  (mul_m_user  ),
       .data_out (acc_m_user  )
     );
@@ -201,12 +200,10 @@ module conv_engine #(ZERO=0) (
 
     pad_filter # (.ZERO(ZERO)) PAD_FILTER (
       .aclk            (clk                ),
-      .aclken          (clken & mul_m_valid),
+      .aclken          (clken & (mul_m_valid | mux_sel)),
       .aresetn         (resetn             ),
       .user_in         (acc_m_user         ),
       .valid_in        (acc_m_valid        ),
-      .valid_masked_in (acc_m_valid_masked ),
-      .mask_partial    (mask_partial       ),
       .mask_full       (mask_full          ),
       .clr             (pad_clr            )
     );

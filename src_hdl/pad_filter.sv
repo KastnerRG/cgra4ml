@@ -40,10 +40,7 @@ module pad_filter #(ZERO=0)
     aresetn,
     user_in,
     valid_in,
-    
-    mask_partial,
     mask_full,
-    valid_masked_in,
     clr
 );
 
@@ -60,10 +57,7 @@ module pad_filter #(ZERO=0)
     localparam BITS_KW2         = `BITS_KW2;
 
     input  logic aclk, aresetn, aclken, valid_in;
-    input  logic [MEMBERS - 1 : 0]    valid_masked_in;
     input  logic [TUSER_WIDTH - 1: 0] user_in ;
-
-    output logic [MEMBERS - 1 : 1]    mask_partial;
     output logic [MEMBERS - 1 : 0]    mask_full;
     output logic [BITS_KW - 1 : 0]    clr     [MEMBERS - 1 : 0]; // 0-center, 1-center-left, 2-center-right, 3-left, 4-right
 
@@ -286,22 +280,3 @@ module pad_filter #(ZERO=0)
         end
     endgenerate
 endmodule
-
-        // for (genvar m=1; m < MEMBERS; m++)   begin: lookup_partial_datapath_gen
-        //     for (genvar kw2=0;  kw2 <=  KW2_MAX ; kw2++) begin: lut_partial_kw_gen
-        //         localparam kw = kw2*2 + 1;
-
-        //         logic unused_datapaths, end_partial;
-        //         assign unused_datapaths  =  m >= (MEMBERS/kw)*kw;  // Anything above m == kw2 should be blocked
-
-        //         if ((m % kw) > kw2)
-        //             assign end_partial =  col_end[kw2];       // Block m>kw2 datapaths, only for last col. For others, we need those partial sums for first few columns
-        //         else
-        //             assign end_partial = |col_end[kw2:(m%kw)];    // or(w, w+1, w+2, ... k2), horizontal rows of the blocking triangle
-
-        //        assign lut_stop_partial [m][kw2] =  end_partial | unused_datapaths;
-        //     end
-        //     assign    lut_stop_partial [m][ 0 ] =  1; 
-
-        //     assign    mask_partial[m]         = !lut_stop_partial [m][kw2_wire];
-        // end
