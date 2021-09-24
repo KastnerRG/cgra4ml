@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-class AXIS_Slave #(WORD_WIDTH, WORDS_PER_BEAT, VALID_PROB);
+class AXIS_Slave #(WORD_WIDTH=8, WORDS_PER_BEAT=1, VALID_PROB=100);
 
   string file_path;
   int words_per_packet, status, iterations, i_words;
@@ -122,7 +122,7 @@ class AXIS_Slave #(WORD_WIDTH, WORDS_PER_BEAT, VALID_PROB);
 endclass
 
 
-class AXIS_Master #(WORD_WIDTH, WORDS_PER_BEAT, READY_PROB, CLK_PERIOD, IS_ACTIVE=1);
+class AXIS_Master #(WORD_WIDTH=8, WORDS_PER_BEAT=1, READY_PROB=100, CLK_PERIOD=10, IS_ACTIVE=1);
   string file_base, file_path, s_itr;
   int status, words_per_packet, packets_per_file;
   int file = 0;

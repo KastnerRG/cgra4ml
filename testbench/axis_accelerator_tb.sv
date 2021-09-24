@@ -24,9 +24,9 @@ module axis_accelerator_tb ();
     forever #(CLK_PERIOD_HF/2) hf_aclk <= ~hf_aclk;
   end
 
-  localparam ITERATIONS = 2;
-  localparam VALID_PROB = 20;
-  localparam READY_PROB = 20;
+  localparam ITERATIONS = 1;
+  localparam VALID_PROB = 100;
+  localparam READY_PROB = 100;
   localparam string DIR_PATH = "D:/cnn-fpga/data/";
 
 
@@ -66,7 +66,7 @@ module axis_accelerator_tb ();
   localparam REPEATS = 3;
 
 
-  class Layer #(IDX, K, IS_MAX, IM_HEIGHT, IM_WIDTH, IM_CIN);
+  class Layer #(IDX=0, K=0, IS_MAX=0, IM_HEIGHT=0, IM_WIDTH=0, IM_CIN=0);
 
     string IDX_s, path_im_1, path_im_2, path_weights, base_conv_out, base_lrelu_out, base_max_out, base_output, base_conv_out_dw;
 

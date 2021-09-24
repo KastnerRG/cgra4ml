@@ -78,7 +78,7 @@ Parameters of the system. Written from build.tcl
 `define LATENCY_CYCLIC_REG    0         
 `define LATENCY_FLOAT_UPSIZE   2   
 `define LATENCY_FLOAT_DOWNSIZE 3   
-`define LATENCY_ACCUMULATOR   2    
+`define LATENCY_ACCUMULATOR   1    
 `define LATENCY_MULTIPLIER    3     
 /*
   WEIGHTS TUSER INDICES
