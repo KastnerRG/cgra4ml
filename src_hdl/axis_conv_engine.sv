@@ -2,7 +2,7 @@
 `timescale 1ns/1ps
 `include "params.v"
 
-module axis_conv_engine #(ZERO) (
+module axis_conv_engine #(ZERO=0) (
     aclk                 ,
     aresetn              ,
     s_axis_tvalid        ,
@@ -76,25 +76,25 @@ module axis_conv_engine #(ZERO) (
     .s_last       (s_axis_tlast       ),
     .s_user       (s_axis_tuser       ),
     .m_valid      (slice_s_axis_tvalid),
-    .m_data_flat  (slice_s_axis_tdata ),
+    .m_data       (slice_s_axis_tdata ),
     .m_last       (slice_s_axis_tlast ),
-    .m_user_flat  (slice_s_axis_tuser ),
-    .m_keep_flat  (slice_s_axis_tkeep ),
-    .s_data_pixels_flat   (s_axis_tdata_pixels  ),
-    .s_data_weights_flat  (s_axis_tdata_weights )
+    .m_user       (slice_s_axis_tuser ),
+    .m_keep       (slice_s_axis_tkeep ),
+    .s_data_pixels(s_axis_tdata_pixels  ),
+    .s_data_weights(s_axis_tdata_weights)
   );
 
   generate
-    for (genvar c=0; c<COPIES; c=c+1) begin
-      for (genvar g=0; g<GROUPS; g=g+1) begin
-        for (genvar m=0; m<MEMBERS; m=m+1) begin
+    for (genvar c=0; c<COPIES; c=c+1) begin: C
+      for (genvar g=0; g<GROUPS; g=g+1) begin: G
+        for (genvar m=0; m<MEMBERS; m=m+1) begin: M
 
           logic [UNITS*WORD_WIDTH_OUT  -1:0] slice_s_data_flat, slice_m_data_flat;
           assign {>>{slice_s_data_flat}} = slice_s_data [c][g][m];
           assign m_data [c][g][m] = {>>{slice_m_data_flat}};
 
 
-          if (c==0 && g==0) begin
+          if (c==0 && g==0) begin: A
 
             logic [UNITS*WORD_WIDTH_OUT/8-1:0] slice_s_keep_flat, slice_m_keep_flat;
             assign {>>{slice_s_keep_flat}} = slice_s_keep [c][g][m];
