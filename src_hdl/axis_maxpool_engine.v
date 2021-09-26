@@ -26,9 +26,7 @@ module axis_maxpool_engine #(ZERO=0) (
   localparam KH_MAX       = `KH_MAX      ; // odd
   localparam KW_MAX       = `KW_MAX      ; // odd
   localparam I_IS_NOT_MAX = `I_IS_NOT_MAX;
-  localparam I_KH2 = `I_KH2;
-  localparam BITS_KH= `BITS_KH;
-  localparam UNITS_EDGES  = UNITS + KH_MAX      -1;
+  localparam UNITS_EDGES  = `UNITS_EDGES;
 
   input  wire aclk, aresetn;
   input  wire s_axis_tvalid, m_axis_tready;

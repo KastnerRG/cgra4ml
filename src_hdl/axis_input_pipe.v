@@ -16,9 +16,8 @@ module axis_input_pipe
     DEBUG_CONFIG_WIDTH_W_ROT  = `DEBUG_CONFIG_WIDTH_W_ROT  ,
     DEBUG_CONFIG_WIDTH_IM_PIPE= `DEBUG_CONFIG_WIDTH_IM_PIPE,
     //  IMAGE TUSER INDICES 
-    I_KH2                     = `I_KH2             , 
-    I_SH                      = `I_SH              , 
-    I_SW                      = `I_SW              , 
+    I_SH_1                    = `I_SH_1            , 
+    I_SW_1                    = `I_SW_1            , 
     TUSER_WIDTH_IM_SHIFT_IN   = `TUSER_WIDTH_IM_SHIFT_IN  ,
     TUSER_WIDTH_IM_SHIFT_OUT  = `TUSER_WIDTH_IM_SHIFT_OUT ,
     IM_CIN_MAX                = `IM_CIN_MAX               ,
@@ -34,7 +33,7 @@ module axis_input_pipe
     I_WEIGHTS_IS_CIN_LAST     = `I_WEIGHTS_IS_CIN_LAST    ,
     I_WEIGHTS_IS_W_FIRST      = `I_WEIGHTS_IS_W_FIRST     ,
     I_WEIGHTS_KW2             = `I_WEIGHTS_KW2            , 
-    I_WEIGHTS_SW              = `I_WEIGHTS_SW             , 
+    I_WEIGHTS_SW_1            = `I_WEIGHTS_SW_1           , 
     TUSER_WIDTH_WEIGHTS_OUT   = `TUSER_WIDTH_WEIGHTS_OUT  ,
     //  CONV TUSER INDICES   
     I_IS_NOT_MAX              = `I_IS_NOT_MAX             ,
@@ -219,18 +218,16 @@ endgenerate
 
   assign m_axis_tuser [I_IS_NOT_MAX     ] = pixels_m_user  [I_IS_NOT_MAX];
   assign m_axis_tuser [I_IS_MAX         ] = pixels_m_user  [I_IS_MAX    ];
-  assign m_axis_tuser [I_KH2 + BITS_KH2-1: I_KH2] = pixels_m_user [I_KH2 + BITS_KH2-1: I_KH2];
-  assign m_axis_tuser [I_SH  + BITS_SH -1: I_SH ] = pixels_m_user [I_SH  + BITS_SH -1: I_SH ];
   assign m_axis_tuser [I_IS_LRELU       ] = pixels_m_user  [I_IS_LRELU  ];
 
+  assign m_axis_tuser [I_KW2 + BITS_KW2-1: I_KW2] = weights_m_user [I_WEIGHTS_KW2 + BITS_KW2-1: I_WEIGHTS_KW2];
+  assign m_axis_tuser [I_SW_1+ BITS_SW -1: I_SW_1] = weights_m_user [I_WEIGHTS_SW_1+ BITS_SW -1: I_WEIGHTS_SW_1];
   assign m_axis_tuser [I_IS_TOP_BLOCK   ] = weights_m_user [I_WEIGHTS_IS_TOP_BLOCK   ] && m_axis_tvalid;
   assign m_axis_tuser [I_IS_BOTTOM_BLOCK] = weights_m_user [I_WEIGHTS_IS_BOTTOM_BLOCK] && m_axis_tvalid;
   assign m_axis_tuser [I_IS_COLS_1_K2   ] = weights_m_user [I_WEIGHTS_IS_COLS_1_K2   ] && m_axis_tvalid;
   assign m_axis_tuser [I_IS_CONFIG      ] = weights_m_user [I_WEIGHTS_IS_CONFIG      ];
   assign m_axis_tuser [I_IS_CIN_LAST    ] = weights_m_user [I_WEIGHTS_IS_CIN_LAST    ] && m_axis_tvalid;
   assign m_axis_tuser [I_IS_W_FIRST     ] = weights_m_user [I_WEIGHTS_IS_W_FIRST     ] && m_axis_tvalid;
-  assign m_axis_tuser [I_KW2 + BITS_KW2-1: I_KW2] = weights_m_user [I_WEIGHTS_KW2 + BITS_KW2-1: I_WEIGHTS_KW2];
-  assign m_axis_tuser [I_SW  + BITS_SW -1: I_SW ] = weights_m_user [I_WEIGHTS_SW  + BITS_SW -1: I_WEIGHTS_SW ];
 
   /*
     DATA

@@ -6,12 +6,12 @@ module axis_dw_shift_1 #(
   WORD_WIDTH   = 8,
   UNITS        = 8,
   MEMBERS      = 24,
-  KH_MAX       = 11,
-  SH_MAX       = 4,
-  I_KH2        = 2,
-  BITS_KH2     = $clog2(KH_MAX/2+1),
-  I_SH         = I_KH2 + BITS_KH2,
-  BITS_SH      = $clog2(SH_MAX  +1),
+  KW_MAX       = 11,
+  SW_MAX       = 4,
+  I_KW2        = 2,
+  BITS_KW2     = $clog2(KW_MAX/2+1),
+  I_SW_1       = I_KW2 + BITS_KW2,
+  BITS_SW      = $clog2(SW_MAX  +1),
   TUSER_WIDTH  = `TUSER_WIDTH_LRELU_IN,
   BITS_MEMBERS = $clog2(MEMBERS)
 ) (
@@ -35,12 +35,6 @@ module axis_dw_shift_1 #(
   m_last  , // not registered
   m_user
 );
-  localparam KW_MAX    = KH_MAX;
-  localparam BITS_KW2  = BITS_KH2;
-  localparam I_KW2     = I_KH2;
-  localparam SW_MAX    = SH_MAX;
-  localparam BITS_SW   = BITS_SH;
-  localparam I_SW      = I_SH;
 
   input logic aclk, aresetn;
 
@@ -82,7 +76,7 @@ module axis_dw_shift_1 #(
       end
 
     assign m_kw2        = m_user[MEMBERS-1][BITS_KW2+I_KW2-1:I_KW2];
-    assign m_sw_1       = m_user[MEMBERS-1][BITS_SW +I_SW -1:I_SW ];
+    assign m_sw_1       = m_user[MEMBERS-1][BITS_SW +I_SW_1-1:I_SW_1];
     assign m_valid_next = m_keep[lut_valid_next_idx[m_kw2][m_sw_1]];
 
     // STATE MACHINE
@@ -175,12 +169,12 @@ module axis_dw_shift_2 #(
   WORD_WIDTH   = 8,
   UNITS        = 8,
   MEMBERS      = 24,
-  KH_MAX       = 11,
-  SH_MAX       = 4,
-  I_KH2        = 2,
-  BITS_KH2     = $clog2(KH_MAX/2+1),
-  I_SH         = I_KH2 + BITS_KH2,
-  BITS_SH      = $clog2(SH_MAX  +1),
+  KW_MAX       = 11,
+  SW_MAX       = 4,
+  I_KW2        = 2,
+  BITS_KW2     = $clog2(KW_MAX/2+1),
+  I_SW_1       = I_KW2 + BITS_KW2,
+  BITS_SW      = $clog2(SW_MAX  +1),
   TUSER_WIDTH  = `TUSER_WIDTH_LRELU_IN,
   BITS_MEMBERS = $clog2(MEMBERS)
 ) (
@@ -202,12 +196,6 @@ module axis_dw_shift_2 #(
   m_last  ,
   m_user
 );
-  localparam KW_MAX    = KH_MAX;
-  localparam BITS_KW2  = BITS_KH2;
-  localparam I_KW2     = I_KH2;
-  localparam SW_MAX    = SH_MAX;
-  localparam BITS_SW   = BITS_SH;
-  localparam I_SW      = I_SH;
 
   input logic aclk, aresetn;
 
@@ -355,12 +343,12 @@ module axis_dw_shift #(
   WORD_WIDTH   = 8,
   UNITS        = 8,
   MEMBERS      = 24,
-  KH_MAX       = 11,
-  SH_MAX       = 4,
-  I_KH2        = 2,
-  BITS_KH2     = $clog2(KH_MAX/2+1),
-  I_SH         = I_KH2 + BITS_KH2,
-  BITS_SH      = $clog2(SH_MAX  +1),
+  KW_MAX       = 11,
+  SW_MAX       = 4,
+  I_KW2        = 2,
+  BITS_KW2     = $clog2(KW_MAX/2+1),
+  I_SW_1       = I_KW2 + BITS_KW2,
+  BITS_SW      = $clog2(SW_MAX  +1),
   TUSER_WIDTH  = `TUSER_WIDTH_LRELU_IN,
   BITS_MEMBERS = $clog2(MEMBERS)
 ) (
@@ -380,12 +368,6 @@ module axis_dw_shift #(
   m_last  ,
   m_user
 );
-  localparam KW_MAX    = KH_MAX;
-  localparam BITS_KW2  = BITS_KH2;
-  localparam I_KW2     = I_KH2;
-  localparam SW_MAX    = SH_MAX;
-  localparam BITS_SW   = BITS_SH;
-  localparam I_SW      = I_SH;
 
   input logic aclk, aresetn;
 
@@ -412,12 +394,12 @@ module axis_dw_shift #(
     .WORD_WIDTH   (WORD_WIDTH  ),
     .UNITS        (UNITS       ),
     .MEMBERS      (MEMBERS     ),
-    .KH_MAX       (KH_MAX      ),
-    .SH_MAX       (SH_MAX      ),
-    .I_KH2        (I_KH2       ),
-    .BITS_KH2     (BITS_KH2    ),
-    .I_SH         (I_SH        ),
-    .BITS_SH      (BITS_SH     ),
+    .KW_MAX       (KW_MAX      ),
+    .SW_MAX       (SW_MAX      ),
+    .I_KW2        (I_KW2       ),
+    .BITS_KW2     (BITS_KW2    ),
+    .I_SW_1       (I_SW_1      ),
+    .BITS_SW      (BITS_SW     ),
     .TUSER_WIDTH  (TUSER_WIDTH ),
     .BITS_MEMBERS (BITS_MEMBERS)
   ) dw_1 (
@@ -444,12 +426,12 @@ module axis_dw_shift #(
     .WORD_WIDTH   (WORD_WIDTH  ),
     .UNITS        (UNITS       ),
     .MEMBERS      (MEMBERS     ),
-    .KH_MAX       (KH_MAX      ),
-    .SH_MAX       (SH_MAX      ),
-    .I_KH2        (I_KH2       ),
-    .BITS_KH2     (BITS_KH2    ),
-    .I_SH         (I_SH        ),
-    .BITS_SH      (BITS_SH     ),
+    .KW_MAX       (KW_MAX      ),
+    .SW_MAX       (SW_MAX      ),
+    .I_KW2        (I_KW2       ),
+    .BITS_KW2     (BITS_KW2    ),
+    .I_SW_1       (I_SW_1      ),
+    .BITS_SW      (BITS_SW     ),
     .TUSER_WIDTH  (TUSER_WIDTH ),
     .BITS_MEMBERS (BITS_MEMBERS)
   ) dw_2 (

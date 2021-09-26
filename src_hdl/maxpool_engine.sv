@@ -59,8 +59,8 @@ module maxpool_engine #(ZERO=0) (
   localparam KW_MAX                     = `KW_MAX                    ;
   localparam I_IS_NOT_MAX               = `I_IS_NOT_MAX              ;
   localparam I_IS_MAX                   = `I_IS_MAX                  ;
-  localparam I_KH2                      = `I_KH2                     ;
-  localparam BITS_KH2                   = `BITS_KH2                  ;
+  localparam I_KW2                      = `I_KW2                     ;
+  localparam BITS_KW2                   = `BITS_KW2                  ;
   localparam TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN;
 
   input  logic clk, clken, resetn;
@@ -138,7 +138,7 @@ module maxpool_engine #(ZERO=0) (
     * state = MAX_4_S during latter 8 handshakes of maxpool : we select max from 4
   */
   logic is_1x1;
-  assign is_1x1 = s_user[I_KH2+BITS_KH2-1:I_KH2] == 0;
+  assign is_1x1 = s_user[I_KW2+BITS_KW2-1:I_KW2] == 0;
   assign ref_sub_members_1 = is_1x1 ? MEMBERS-1 : MEMBERS/KW_MAX      -1;
 
   assign in_count_next = (in_count == ref_sub_members_1) ? 0 : in_count  + 1;

@@ -63,7 +63,7 @@ module axis_weight_rotator #(ZERO=0) (
   localparam I_WEIGHTS_IS_CIN_LAST     = `I_WEIGHTS_IS_CIN_LAST    ;
   localparam I_WEIGHTS_IS_W_FIRST      = `I_WEIGHTS_IS_W_FIRST     ;
   localparam I_WEIGHTS_KW2             = `I_WEIGHTS_KW2            ; 
-  localparam I_WEIGHTS_SW              = `I_WEIGHTS_SW             ;
+  localparam I_WEIGHTS_SW_1            = `I_WEIGHTS_SW_1           ;
   localparam TUSER_WIDTH_WEIGHTS_OUT   = `TUSER_WIDTH_WEIGHTS_OUT  ;
   localparam BITS_KW2                  = `BITS_KW2                 ;
   localparam BITS_KH2                  = `BITS_KH2                 ;
@@ -610,7 +610,7 @@ module axis_weight_rotator #(ZERO=0) (
   
   assign m_axis_tuser [I_WEIGHTS_IS_CONFIG  ] = state_read  == R_PASS_CONFIG_S;
   assign m_axis_tuser [I_WEIGHTS_KW2+BITS_KW2-1: I_WEIGHTS_KW2] = ref_kw2  [i_read];
-  assign m_axis_tuser [I_WEIGHTS_SW +BITS_SW -1: I_WEIGHTS_SW ] = -1;
+  assign m_axis_tuser [I_WEIGHTS_SW_1+BITS_SW -1: I_WEIGHTS_SW_1] = -1;
 
   assign m_axis_tuser [I_WEIGHTS_IS_W_FIRST     ] = count_cols == ref_1_cols[i_read] && count_cin == ref_1_cin[i_read] && count_kh == 2*ref_kh2 [i_read];
   assign m_axis_tuser [I_WEIGHTS_IS_CIN_LAST    ] = (last_kh && last_cin);

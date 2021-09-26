@@ -25,8 +25,8 @@ module axis_accelerator_tb ();
   end
 
   localparam ITERATIONS = 1;
-  localparam VALID_PROB = 100;
-  localparam READY_PROB = 100;
+  localparam VALID_PROB = 20;
+  localparam READY_PROB = 20;
   localparam string DIR_PATH = "D:/cnn-fpga/data/";
 
 
@@ -211,7 +211,7 @@ module axis_accelerator_tb ();
       assign conv_m_axis_tkeep_acc[i] = conv_m_axis_tkeep[i][0];
   endgenerate
 
-  bit   conv_dw2_lf_m_axis_tready = 1;
+  bit   conv_dw2_lf_m_axis_tready;
   logic conv_dw2_lf_m_axis_tvalid;
   logic conv_dw2_lf_m_axis_tlast ;
   logic [M_DATA_WIDTH_LF_CONV_DW/WORD_WIDTH_ACC -1:0][WORD_WIDTH_ACC   -1:0] conv_dw2_lf_m_axis_tdata;
@@ -265,9 +265,9 @@ module axis_accelerator_tb ();
   initial forever s_pixels_2.axis_feed(aclk, s_axis_pixels_2_tready, s_axis_pixels_2_tvalid, s_axis_pixels_2_tdata, s_axis_pixels_2_tkeep, s_axis_pixels_2_tlast);
   initial forever s_weights .axis_feed(aclk, s_axis_weights_tready , s_axis_weights_tvalid , s_axis_weights_tdata , s_axis_weights_tkeep , s_axis_weights_tlast );
   
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH_ACC), .WORDS_PER_BEAT(M_DATA_WIDTH_HF_CONV/WORD_WIDTH_ACC), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD_HF), .IS_ACTIVE(0)) m_conv    = new(.file_base(layer.base_conv_out   )); // sensitive to tlast
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH_ACC), .WORDS_PER_BEAT(M_DATA_WIDTH_HF_CONV/WORD_WIDTH_ACC), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD_HF), .IS_ACTIVE(1)) m_conv    = new(.file_base(layer.base_conv_out   )); // sensitive to tlast
   AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(M_DATA_WIDTH_HF_LRELU/WORD_WIDTH   ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD_HF), .IS_ACTIVE(0)) m_lrelu   = new(.file_base(layer.base_lrelu_out   ), .words_per_packet(layer.WORDS_OUT_LRELU    )); // sensitive to words_out
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(M_DATA_WIDTH_LF_MAXPOOL/WORD_WIDTH ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD_LF), .IS_ACTIVE(1)) m_max     = new(.file_base(layer.base_output      ), .packets_per_file(layer.PACKETS_PER_ITR_MAX)); // sensitive to tlast, but multiple tlasts per file
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(M_DATA_WIDTH_LF_MAXPOOL/WORD_WIDTH ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD_LF), .IS_ACTIVE(0)) m_max     = new(.file_base(layer.base_output      ), .packets_per_file(layer.PACKETS_PER_ITR_MAX)); // sensitive to tlast, but multiple tlasts per file
 
   initial forever m_conv .axis_read(hf_aclk, conv_m_axis_tready      , conv_m_axis_tvalid      , conv_m_axis_tdata      , conv_m_axis_tkeep_acc   , conv_m_axis_tlast      );
   initial forever m_lrelu.axis_read(hf_aclk, lrelu_m_axis_tready     , lrelu_m_axis_tvalid     , lrelu_m_axis_tdata     , lrelu_m_axis_tkeep      , lrelu_m_axis_tlast     );
