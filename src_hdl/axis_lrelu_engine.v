@@ -51,10 +51,9 @@ module axis_lrelu_engine #(ZERO=0) (
     localparam GROUPS                     = `GROUPS                    ;
     localparam COPIES                     = `COPIES                    ;
     localparam MEMBERS                    = `MEMBERS                   ;
-    localparam I_KH2                      = `I_KH2                     ;
+    localparam I_KW2                      = `I_KW2                     ;
     localparam TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN    ;
     localparam TUSER_WIDTH_LRELU_IN       = `TUSER_WIDTH_LRELU_IN      ;
-    localparam KH_MAX                     = `KH_MAX                    ;
     localparam KW_MAX                     = `KW_MAX                    ;
     localparam BITS_KW2                   = `BITS_KW2                  ;
     localparam BITS_KH2                   = `BITS_KH2                  ;
@@ -83,8 +82,8 @@ module axis_lrelu_engine #(ZERO=0) (
 
     localparam BYTES_IN = WORD_WIDTH_IN/8;
 
-    wire [BITS_KH2-1:0] s_axis_tuser_kh2;
-    assign s_axis_tuser_kh2 = s_axis_tuser[I_KH2+BITS_KH2-1 : I_KH2];
+    wire [BITS_KH2-1:0] s_axis_tuser_kw2;
+    assign s_axis_tuser_kw2 = s_axis_tuser[I_KW2+BITS_KW2-1 : I_KW2];
 
     /*
       STATE MACHINE
@@ -270,7 +269,7 @@ module axis_lrelu_engine #(ZERO=0) (
 
       .resetn_config     (resetn_config ),
       .s_valid_config    (config_s_valid),
-      .config_kh2        (s_axis_tuser_kh2 ),
+      .config_kw2        (s_axis_tuser_kw2 ),
       .s_data_conv_out   (s_axis_tdata     ),
       .count_config_full (count_config_full)
     );

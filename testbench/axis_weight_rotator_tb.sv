@@ -29,7 +29,6 @@ module axis_weight_rotator_tb ();
 
   localparam LATENCY_BRAM  = `LATENCY_BRAM ;
   localparam BITS_KW       = `BITS_KW;
-  localparam BITS_KH       = `BITS_KH;
 
   localparam I_WEIGHTS_IS_TOP_BLOCK    = `I_WEIGHTS_IS_TOP_BLOCK   ;
   localparam I_WEIGHTS_IS_BOTTOM_BLOCK = `I_WEIGHTS_IS_BOTTOM_BLOCK;

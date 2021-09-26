@@ -1,4 +1,4 @@
-`include "params.v";
+`include "params.v"
 `include "../src_hdl/params.v"
 
 module axis_maxpool_engine_tb();
@@ -27,8 +27,8 @@ module axis_maxpool_engine_tb();
 
   localparam I_IS_NOT_MAX = `I_IS_NOT_MAX;
   localparam I_IS_MAX     = `I_IS_MAX    ;
-  localparam I_KH2        = `I_KH2       ;
-  localparam BITS_KH2     = `BITS_KH2    ;
+  localparam I_KW2        = `I_KW2       ;
+  localparam BITS_KW2     = `BITS_KW2    ;
   localparam TUSER_WIDTH  = `TUSER_WIDTH_MAXPOOL_IN;
 
   typedef logic signed [WORD_WIDTH-1:0] word_t;
@@ -85,7 +85,7 @@ module axis_maxpool_engine_tb();
               end
           s_axis_tuser[I_IS_MAX    ] <= is_max;
           s_axis_tuser[I_IS_NOT_MAX] <= is_not_max;
-          s_axis_tuser[I_KH2: I_KH2+BITS_KH2] <= K/2;
+          s_axis_tuser[I_KW2: I_KW2+BITS_KW2] <= K/2;
         end
         else begin
           s_axis_tvalid <= 0;

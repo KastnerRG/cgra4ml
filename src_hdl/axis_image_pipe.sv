@@ -71,7 +71,7 @@ module axis_image_pipe #(ZERO=0)  (
   localparam I_IS_MAX             = `I_IS_MAX             ;
   localparam I_IS_LRELU           = `I_IS_LRELU           ;
   localparam I_KH2                = `I_KH2               ; 
-  localparam I_SH                 = `I_SH                ; 
+  localparam I_SH_1               = `I_SH_1              ; 
   localparam TUSER_WIDTH_IM_SHIFT_IN    = `TUSER_WIDTH_IM_SHIFT_IN    ;
   localparam OUTPUT_MODE          = `OUTPUT_MODE;
 
@@ -327,8 +327,8 @@ module axis_image_pipe #(ZERO=0)  (
 
   assign m_axis_tuser [I_IS_NOT_MAX] = COPIES==2 && is_not_max_out;
   assign m_axis_tuser [I_IS_MAX    ] = COPIES==2 && is_max_out    ;
-  assign m_axis_tuser [BITS_KH2+I_KH2-1 : I_KH2] = kh2_out;
-  assign m_axis_tuser [BITS_SH +I_SH -1 : I_SH ] = -1;
+  assign m_axis_tuser [BITS_KH2+I_KH2  -1 : I_KH2]   = kh2_out;
+  assign m_axis_tuser [BITS_SH +I_SH_1 -1 : I_SH_1 ] = -1;
   assign m_axis_tuser [I_IS_LRELU  ] = OUTPUT_MODE != "CONV" && is_lrelu_out;
 
   /*

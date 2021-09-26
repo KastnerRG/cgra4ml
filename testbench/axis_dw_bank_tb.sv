@@ -13,21 +13,14 @@ module axis_dw_bank_tb ();
   localparam WORD_WIDTH   = 8 ;
   localparam UNITS        = 2 ;
   localparam MEMBERS      = 24;
-  localparam KH_MAX       = 11;
-  localparam SH_MAX       = 4 ;
-  localparam I_KH2        = 2 ;
-  localparam BITS_KH2     = $clog2(KH_MAX/2+1)   ;
-  localparam I_SH         = I_KH2 + BITS_KH2     ;
-  localparam BITS_SH      = $clog2(SH_MAX  +1)   ;
+  localparam KW_MAX       = 11;
+  localparam SW_MAX       = 4 ;
+  localparam I_KW2        = 2 ;
+  localparam BITS_KW2     = $clog2(KW_MAX/2+1)   ;
+  localparam I_SW_1       = I_KW2 + BITS_KW2     ;
+  localparam BITS_SW      = $clog2(SW_MAX  +1)   ;
   localparam TUSER_WIDTH  = `TUSER_WIDTH_LRELU_IN;
   localparam BITS_MEMBERS = $clog2(MEMBERS)      ;
-
-  localparam KW_MAX    = KH_MAX;
-  localparam BITS_KW2  = BITS_KH2;
-  localparam I_KW2     = I_KH2;
-  localparam SW_MAX    = SH_MAX;
-  localparam BITS_SW   = BITS_SH;
-  localparam I_SW      = I_SH;
 
   /*
     Settings
@@ -54,12 +47,12 @@ module axis_dw_bank_tb ();
     .WORD_WIDTH   (WORD_WIDTH  ),
     .UNITS        (UNITS       ),
     .MEMBERS      (MEMBERS     ),
-    .KH_MAX       (KH_MAX      ),
-    .SH_MAX       (SH_MAX      ),
-    .I_KH2        (I_KH2       ),
-    .BITS_KH2     (BITS_KH2    ),
-    .I_SH         (I_SH        ),
-    .BITS_SH      (BITS_SH     ),
+    .KW_MAX       (KW_MAX      ),
+    .SW_MAX       (SW_MAX      ),
+    .I_KW2        (I_KW2       ),
+    .BITS_KW2     (BITS_KW2    ),
+    .I_SW_1       (I_SW_1      ),
+    .BITS_SW      (BITS_SW     ),
     .TUSER_WIDTH  (TUSER_WIDTH ),
     .BITS_MEMBERS (BITS_MEMBERS)) dut (.*);
 
@@ -73,7 +66,7 @@ module axis_dw_bank_tb ();
     s_user   <= 0;
     for (int m=0; m< MEMBERS; m++) begin
       s_user[m][BITS_KW2+I_KW2-1:I_KW2] <= K/2;
-      s_user[m][BITS_SW +I_SW -1:I_SW ] <= S-1;
+      s_user[m][BITS_SW +I_SW_1-1:I_SW_1] <= S-1;
     end
 
     repeat(3) @(posedge aclk);

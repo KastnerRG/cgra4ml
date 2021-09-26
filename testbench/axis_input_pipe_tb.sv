@@ -1,4 +1,3 @@
-`include "params.v"
 `include "axis_tb.sv"
 `include "../src_hdl/params.v"
 
