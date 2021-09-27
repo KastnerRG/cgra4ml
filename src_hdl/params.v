@@ -9,6 +9,7 @@ Parameters of the system. Written from build.tcl
 `define MEMBERS  12
 `define DW_FACTOR_1 3
 `define OUTPUT_MODE "CONV"
+`define KS_COMBINATIONS (k==1 & s==1)|(k==3 & s==1)|(k==5 & s==1)|(k==7 & s==2)|(k==11 & s==4)
 
 `define FREQ_HIGH     200
 `define FREQ_RATIO    1
