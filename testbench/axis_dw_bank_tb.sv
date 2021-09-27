@@ -25,8 +25,8 @@ module axis_dw_bank_tb ();
   /*
     Settings
   */
-  localparam K = 7;
-  localparam S = 2;
+  localparam K = 1;
+  localparam S = 1;
   localparam J = K + S -1;
 
   logic aresetn;
@@ -91,6 +91,9 @@ module axis_dw_bank_tb ();
 
 
     repeat(3) @(posedge aclk);
+
+    wait(s_ready);
+    @(posedge aclk);
     #1
     s_valid <= 1;
     s_last  <= 1;
@@ -128,6 +131,10 @@ module axis_dw_bank_tb ();
     repeat(4) @(posedge aclk);
     #1
     m_ready <= 0;
+
+    repeat(2) @(posedge aclk);
+    #1
+    m_ready <= 1;
 
   end
 endmodule
