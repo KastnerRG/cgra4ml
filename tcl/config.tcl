@@ -15,6 +15,8 @@ set OUTPUT_MODE "CONV"
 # set OUTPUT_MODE "LRELU"
 # set OUTPUT_MODE "MAXPOOL"
 
+set KS_COMBINATIONS "(k==1 & s==1)|(k==3 & s==1)|(k==5 & s==1)|(k==7 & s==2)|(k==11 & s==4)"
+
 set FREQ_LITE   50
 set DW_FACTOR_1 3 
 set LRELU_BEATS_MAX  9
@@ -288,6 +290,7 @@ Parameters of the system. Written from build.tcl
 `define MEMBERS  $MEMBERS
 `define DW_FACTOR_1 $DW_FACTOR_1
 `define OUTPUT_MODE \"$OUTPUT_MODE\"
+`define KS_COMBINATIONS $KS_COMBINATIONS
 
 `define FREQ_HIGH     $FREQ_HIGH
 `define FREQ_RATIO    $FREQ_RATIO

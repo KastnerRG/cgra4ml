@@ -69,18 +69,17 @@ module axis_dw_shift_1 #(
     end
 
     // Extract kw2, sw_1, m_valid
-    assign lut_valid_idx          [0][0] = MEMBERS-1;
-    assign lut_valid_next_idx     [0][0] = MEMBERS-2;
-    assign lut_valid_next_next_idx[0][0] = MEMBERS-3;
-    for (genvar kw2=1; kw2 <=KW_MAX/2; kw2++)
-      for (genvar sw_1=0; sw_1 < kw2 && sw_1 < SW_MAX; sw_1++) begin
-        localparam kw = kw2*2+1;
-        localparam sw = sw_1+1;
-        if ((kw==0 & sw==1)|(kw==3 & sw==1)|(kw==5 & sw==1)|(kw==7 & sw==2)|(kw==11 & sw==4)) // only allowed combos, to reduce mux
-        begin
-          assign lut_valid_idx     [kw2][sw_1]      = (kw2*2+1) + (sw_1+1)-2;
-          assign lut_valid_next_idx[kw2][sw_1]      = (kw2*2+1) + (sw_1+1)-3;
-          assign lut_valid_next_next_idx[kw2][sw_1] = (kw2*2+1) + (sw_1+1)-4;
+    for (genvar kw2=0; kw2 <=KW_MAX/2; kw2++)
+      for (genvar sw_1=0; sw_1 < SW_MAX; sw_1++) begin
+        
+        localparam k = kw2*2+1;
+        localparam s = sw_1+1;
+        localparam j = k==1 ? MEMBERS : k+s-1;
+
+        if(`KS_COMBINATIONS) begin
+          assign lut_valid_idx     [kw2][sw_1]      = j-1;
+          assign lut_valid_next_idx[kw2][sw_1]      = j-2;
+          assign lut_valid_next_next_idx[kw2][sw_1] = j-3;
         end
       end
 
@@ -228,37 +227,39 @@ module axis_dw_shift_2 #(
   generate
 
     assign not_valid_next = ~r_keep[1];
+    assign {m_data, m_user} = reg_data_r[0];
     
     for (genvar m3=0; m3<MEMBERS/3; m3++)
       assign {r_data[m3], r_user[m3]} = reg_data_r[m3];
-
-    assign {m_data, m_user} = reg_data_r[0];
 
     /*
       Input Mux
     */
     always_comb begin
-      reg_data_s_mux = 0;
-      reg_keep_s_mux = 0;
-      for (int m=0; m<MEMBERS; m++) begin
+
+      for (int m=0; m<MEMBERS; m++)
         s_data_packed [m] = {s_data[m], s_user[m]};
 
-        reg_data_s_mux[0][0][0] = s_data_packed[MEMBERS-1];
-        reg_keep_s_mux[0][0][0] = s_keep       [MEMBERS-1];
-        for (int kw2=1; kw2 <=KW_MAX/2; kw2++)
-          for (int sw_1=0; sw_1 < kw2 && sw_1 < SW_MAX; sw_1++) begin
-            automatic int kw = kw2*2+1;
-            automatic int sw = sw_1+1;
-            automatic int j  = kw + sw_1;
+      reg_data_s_mux = 0;
+      reg_keep_s_mux = 0;
+      reg_data_s_mux[0][0][0] = s_data_packed[MEMBERS-1];
+      reg_keep_s_mux[0][0][0] = s_keep       [MEMBERS-1];
 
-            if ((kw==0 & sw==1)|(kw==3 & sw==1)|(kw==5 & sw==1)|(kw==7 & sw==2)|(kw==11 & sw==4)) // only allowed combinations, to minimize mux
+      for (int m=0; m<MEMBERS; m++)
+        for (int kw2=1; kw2 <=KW_MAX/2; kw2++)
+          for (int sw_1=0; sw_1 < SW_MAX; sw_1++) begin
+
+            automatic int k  = kw2*2+1;
+            automatic int s  = sw_1+1;
+            automatic int j  = k + sw_1;
+
+            if(`KS_COMBINATIONS)
               if (m%j == j-1) 
                 begin
                   reg_data_s_mux[kw2][sw_1][m/j] = s_data_packed[m];
                   reg_keep_s_mux[kw2][sw_1][m/j] = s_keep       [m];
                 end
           end
-      end
     end
     assign reg_data_s_muxed = reg_data_s_mux[s_kw2][s_sw_1];
     assign reg_keep_s_muxed = reg_keep_s_mux[s_kw2][s_sw_1];
