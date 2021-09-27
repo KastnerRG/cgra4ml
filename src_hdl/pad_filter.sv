@@ -40,7 +40,8 @@ module pad_filter #(ZERO=0)
     aresetn,
     user_in,
     valid_in,
-    mask_full,
+    keep_mask,
+    valid_mask,
     clr
 );
 
@@ -58,8 +59,9 @@ module pad_filter #(ZERO=0)
 
     input  logic aclk, aresetn, aclken, valid_in;
     input  logic [TUSER_WIDTH - 1: 0] user_in ;
-    output logic [MEMBERS - 1 : 0]    mask_full;
+    output logic [MEMBERS - 1 : 0]    keep_mask;
     output logic [BITS_KW - 1 : 0]    clr     [MEMBERS - 1 : 0]; // 0-center, 1-center-left, 2-center-right, 3-left, 4-right
+    output logic valid_mask;
 
     /*
     KW2_1
@@ -254,29 +256,33 @@ module pad_filter #(ZERO=0)
 
     */
     
-    logic lut_allow_full     [MEMBERS - 1 : 0] [KW2_MAX : 0];
-    logic lut_stop_partial   [MEMBERS - 1 : 1] [KW2_MAX : 0]; 
+    logic lut_not_start_cols              [KW2_MAX : 0];
+    logic lut_allow     [MEMBERS - 1 : 0] [KW2_MAX : 0];
 
     generate
+        assign lut_not_start_cols[0] = 1;
+        for (genvar kw2=1;  kw2 <= KW2_MAX; kw2++)
+            assign lut_not_start_cols[kw2] = !(|col_start[kw2:1]);  // 1,2,...k2 : first k/2 colums are to be ignored
+
         for (genvar m=0; m < MEMBERS; m++)   begin: lookup_full_datapath_gen
             for (genvar kw2=1;  kw2 <= KW2_MAX; kw2++)   begin: lookup_full_kw_gen
                 localparam kw = kw2*2 + 1;
 
-                logic full_datapath, unused_datapaths, start_cols, last_col, last_malformed, at_start_and_middle, at_last_col;
+                logic full_datapath, unused_datapaths, last_col, last_malformed, at_start_and_middle, at_last_col;
             
                 assign full_datapath             =     (m % kw) == kw-1      ; // M=24, kw=5: m=0,4,9,14,19
                 assign unused_datapaths          =     m >= (MEMBERS/kw)*kw  ; // m >= 20
-                assign start_cols                =     |col_start[kw2:1]     ; // 1,2,...k2 : first k/2 colums are to be ignored
                 assign last_col                  =      col_end  [kw2  ]     ; // if the last column:
                 assign last_malformed            =     (m % kw) <  kw2       ; // M=24, kw=5: m=0,1,5,6; All (m<k2) datapaths contain malformed data, rest contain padded data
-                assign at_start_and_middle       =     full_datapath & !start_cols; // During start_cols, block all datapaths. During middle_cols, allow only full_datapth.
+                assign at_start_and_middle       =     lut_not_start_cols[kw2] & full_datapath; // During start_cols, block all datapaths. During middle_cols, allow only full_datapth.
                 assign at_last_col               =     last_col & !last_malformed & !unused_datapaths; // At the last_col, only allow datapaths that have partially formed padding
 
-                assign lut_allow_full   [m][kw2] =     at_start_and_middle | at_last_col;
+                assign lut_allow [m][kw2] = at_start_and_middle | at_last_col;
             end
-            assign     lut_allow_full   [m][ 0 ] =     1;
+            assign     lut_allow [m][ 0 ] = 1;
 
-            assign    mask_full[m]  =  lut_allow_full [m][kw2_wire] | user_in [I_IS_CONFIG];
+            assign     keep_mask[m]  =  lut_allow [m][kw2_wire] | user_in [I_IS_CONFIG];
         end
+        assign valid_mask = lut_not_start_cols[kw2_wire]  | user_in [I_IS_CONFIG];
     endgenerate
 endmodule

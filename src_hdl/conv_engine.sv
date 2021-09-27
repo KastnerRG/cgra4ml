@@ -64,12 +64,13 @@ module conv_engine #(ZERO=0) (
   logic clken_mul, mux_sel_next, mux_sel, mul_m_valid, acc_m_valid_next, acc_m_valid, mul_m_last, acc_m_last;
   logic [BITS_KW2-1:0] mul_m_kw2;
   logic [MEMBERS-1: 0] clken_acc, bypass_sum, bypass_sum_next, bypass;
-  logic [MEMBERS-1: 0] acc_s_valid, acc_m_valid_masked;
+  logic [MEMBERS-1: 0] acc_s_valid, acc_m_keep;
   logic [TUSER_WIDTH_CONV_IN -1: 0] mul_m_user, acc_s_user, mux_s2_user, acc_m_user;
 
   logic [KW_MAX  /2:0][MEMBERS -1:0] lut_not_sub_base;
 
-  logic [MEMBERS-1: 0] mask_full;
+  logic valid_mask;
+  logic [MEMBERS-1: 0] keep_mask;
   logic [BITS_KW-1: 0] pad_clr [MEMBERS-1: 0];
 
   logic [WORD_WIDTH_IN*2-1:0] mul_m_data  [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0];
@@ -200,17 +201,18 @@ module conv_engine #(ZERO=0) (
 
     pad_filter # (.ZERO(ZERO)) PAD_FILTER (
       .aclk            (clk                ),
-      .aclken          (clken & (mul_m_valid | mux_sel)),
+      .aclken          (clken              ),
       .aresetn         (resetn             ),
       .user_in         (acc_m_user         ),
       .valid_in        (acc_m_valid        ),
-      .mask_full       (mask_full          ),
+      .keep_mask       (keep_mask          ),
+      .valid_mask      (valid_mask         ),
       .clr             (pad_clr            )
     );
 
     for (m=0; m < MEMBERS; m++) begin: Mv
 
-      assign acc_m_valid_masked [m] = acc_m_valid & mask_full[m];
+      assign acc_m_keep [m] = acc_m_valid & keep_mask[m];
 
       assign m_user [m][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX] = acc_m_user [I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX];
       assign m_user [m][I_CLR+BITS_KW-1 :  I_CLR]       = pad_clr [m];
@@ -221,9 +223,9 @@ module conv_engine #(ZERO=0) (
         for (u=0; u < UNITS; u++)
           for (m=0; m < MEMBERS; m++)
             for (b=0; b < WORD_WIDTH_OUT/8; b++)
-              assign m_keep [c][g][m][u][b] = acc_m_valid_masked [m];
+              assign m_keep [c][g][m][u][b] = acc_m_keep [m];
 
     assign m_last  = acc_m_last;
-    assign m_valid = |acc_m_valid_masked[KW_MAX-1:0];
+    assign m_valid = acc_m_valid & valid_mask;
   endgenerate
 endmodule
