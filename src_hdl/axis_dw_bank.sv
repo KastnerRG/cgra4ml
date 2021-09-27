@@ -17,10 +17,11 @@ module axis_dw_shift_1 #(
 ) (
   aclk    ,
   aresetn ,
+  aclken  ,
 
   s_data  ,
   s_valid ,
-  s_ready ,
+  not_valid_next,
   s_last  ,
   s_user  ,
   s_keep  ,
@@ -31,20 +32,18 @@ module axis_dw_shift_1 #(
   m_data  ,
   m_valid ,
   m_keep  ,
-  m_ready ,
   m_last  , // not registered
   m_user
 );
 
-  input logic aclk, aresetn;
+  input logic aclk, aresetn, aclken;
 
   input  logic s_valid, s_last;
-  output logic s_ready;
+  output logic not_valid_next;
   input  logic [MEMBERS-1:0][UNITS-1:0][WORD_WIDTH -1:0] s_data;
   input  logic [MEMBERS-1:0]                             s_keep;
   input  logic [MEMBERS-1:0][TUSER_WIDTH-1:0]            s_user;
   
-  input  logic m_ready;
   output logic [MEMBERS-1:0][UNITS-1:0][WORD_WIDTH -1:0] m_data;
   output logic [MEMBERS-1:0]                             m_keep;
   output logic [MEMBERS-1:0][TUSER_WIDTH-1:0]            m_user;
@@ -52,73 +51,91 @@ module axis_dw_shift_1 #(
   output logic [BITS_KW2-1:0] m_kw2;
   output logic [BITS_SW -1:0] m_sw_1 ;
 
-  logic [KW_MAX/2:0][SW_MAX-1:0][BITS_MEMBERS-1:0] lut_valid_next_idx;
+  logic valid_next_in;
+  logic [BITS_KW2-1:0] s_kw2;
+  logic [BITS_SW -1:0] s_sw_1;
 
-  localparam SHIFT_WORD_WIDTH = UNITS*WORD_WIDTH + TUSER_WIDTH + 1;
+  logic [KW_MAX/2:0][SW_MAX-1:0][BITS_MEMBERS-1:0] lut_valid_idx, lut_valid_next_idx, lut_valid_next_next_idx;
+
+  localparam SHIFT_WORD_WIDTH = UNITS*WORD_WIDTH + TUSER_WIDTH;
   logic [MEMBERS -1:0][SHIFT_WORD_WIDTH-1:0] reg_data_s, reg_data_in, reg_data_m;
-  logic m_valid_next, s_ready_next, reg_last, reg_en, last_en;
+  logic reg_last, reg_en, last_en;
 
   generate
 
     for (genvar m=0; m<MEMBERS; m++) begin
-      assign reg_data_s [m] = {s_data[m], s_user[m], s_keep[m]};
-      assign {m_data[m], m_user[m], m_keep[m]} = reg_data_m[m];
+      assign reg_data_s [m] = {s_data[m], s_user[m]};
+      assign {m_data[m], m_user[m]} = reg_data_m[m];
     end
 
-    // Extract kw2, sw_1, m_valid_next, m_valid
-    assign lut_valid_next_idx[0][0] = MEMBERS-2;
+    // Extract kw2, sw_1, m_valid
+    assign lut_valid_idx          [0][0] = MEMBERS-1;
+    assign lut_valid_next_idx     [0][0] = MEMBERS-2;
+    assign lut_valid_next_next_idx[0][0] = MEMBERS-3;
     for (genvar kw2=1; kw2 <=KW_MAX/2; kw2++)
       for (genvar sw_1=0; sw_1 < kw2 && sw_1 < SW_MAX; sw_1++) begin
         localparam kw = kw2*2+1;
         localparam sw = sw_1+1;
         if ((kw==0 & sw==1)|(kw==3 & sw==1)|(kw==5 & sw==1)|(kw==7 & sw==2)|(kw==11 & sw==4)) // only allowed combos, to reduce mux
-          assign lut_valid_next_idx[kw2][sw_1] = (kw2*2+1) + (sw_1+1)-3;
+        begin
+          assign lut_valid_idx     [kw2][sw_1]      = (kw2*2+1) + (sw_1+1)-2;
+          assign lut_valid_next_idx[kw2][sw_1]      = (kw2*2+1) + (sw_1+1)-3;
+          assign lut_valid_next_next_idx[kw2][sw_1] = (kw2*2+1) + (sw_1+1)-4;
+        end
       end
 
     assign m_kw2        = m_user[MEMBERS-1][BITS_KW2+I_KW2-1:I_KW2];
     assign m_sw_1       = m_user[MEMBERS-1][BITS_SW +I_SW_1-1:I_SW_1];
-    assign m_valid_next = m_keep[lut_valid_next_idx[m_kw2][m_sw_1]];
 
-    // STATE MACHINE
-
-    localparam RX = 0;
-    localparam TX = 1;
-    logic state, state_next;
-
-    always_comb begin
-      state_next = state;
-      unique case (state)
-        RX : if (s_valid)                  state_next = TX;
-        TX : if (m_ready && !m_valid_next) state_next = RX;
-      endcase
-    end    
+    assign s_kw2        = s_user[MEMBERS-1][BITS_KW2+I_KW2-1:I_KW2];
+    assign s_sw_1       = s_user[MEMBERS-1][BITS_SW +I_SW_1-1:I_SW_1];
+    assign valid_next_in= not_valid_next ? s_keep[lut_valid_next_idx[s_kw2][s_sw_1]] : m_keep[lut_valid_next_next_idx[m_kw2][m_sw_1]];
 
     register #(
       .WORD_WIDTH  (1),
-      .RESET_VALUE (RX),
-      .LOCAL       (0)
-    ) STATE (
+      .RESET_VALUE (1),
+      .LOCAL       (1)
+    ) NOT_VALID_NEXT (
       .clock       (aclk),
-      .clock_enable(1'b1),
+      .clock_enable(aclken),
       .resetn      (aresetn),
-      .data_in     (state_next),
-      .data_out    (state     )
+      .data_in     (~valid_next_in),
+      .data_out    (not_valid_next)
     );
 
-    always_comb begin
-      unique case (state)
-        RX :  begin
-                reg_en      = s_valid;
-                reg_data_in = reg_data_s;
-              end
-        TX :  begin
-                reg_en      = m_ready;
-                reg_data_in = reg_data_m << SHIFT_WORD_WIDTH;
-              end
-      endcase
-    end
+    logic m_valid_in;
+    assign m_valid_in = not_valid_next ? s_keep[lut_valid_idx[s_kw2][s_sw_1]] : m_keep[lut_valid_next_idx[m_kw2][m_sw_1]];
+
+    register #(
+      .WORD_WIDTH  (1),
+      .RESET_VALUE (0),
+      .LOCAL       (0)
+    ) VALID (
+      .clock       (aclk),
+      .clock_enable(aclken),
+      .resetn      (aresetn),
+      .data_in     (m_valid_in),
+      .data_out    (m_valid)
+    );
 
     // OUTPUTS
+
+    logic [MEMBERS-1:0] keep_in;
+    assign keep_in = not_valid_next ? s_keep : m_keep << 1;
+
+    register #(
+      .WORD_WIDTH  (MEMBERS),
+      .RESET_VALUE (0),
+      .LOCAL       (0)
+    ) M_KEEP (
+      .clock       (aclk),
+      .clock_enable(aclken),
+      .resetn      (aresetn),
+      .data_in     (keep_in),
+      .data_out    (m_keep )
+    );
+    assign reg_en      = aclken & (not_valid_next ? s_valid : 1);
+    assign reg_data_in = not_valid_next ? reg_data_s : reg_data_m << SHIFT_WORD_WIDTH;
 
     register #(
       .WORD_WIDTH  (MEMBERS*SHIFT_WORD_WIDTH),
@@ -132,21 +149,7 @@ module axis_dw_shift_1 #(
       .data_out    (reg_data_m )
     );
 
-    assign m_valid      = state;       // TX = 1
-    assign s_ready_next = ~state_next; // RX = 0
-    register #(
-      .WORD_WIDTH  (1),
-      .RESET_VALUE (1),
-      .LOCAL       (0)
-    ) S_READY (
-      .clock       (aclk),
-      .clock_enable(1'b1),
-      .resetn      (aresetn),
-      .data_in     (s_ready_next),
-      .data_out    (s_ready     )
-    );
-
-    assign last_en = s_ready & s_valid;
+    assign last_en = aclken & not_valid_next & s_valid;
     register #(
       .WORD_WIDTH  (1),
       .RESET_VALUE (0),
@@ -159,7 +162,7 @@ module axis_dw_shift_1 #(
       .data_out    (reg_last)
     );
 
-    assign m_last  = reg_last && !m_valid_next;
+    assign m_last  = reg_last && not_valid_next;
 
   endgenerate
 endmodule
@@ -180,10 +183,11 @@ module axis_dw_shift_2 #(
 ) (
   aclk    ,
   aresetn ,
+  aclken  ,
 
   s_data  ,
   s_valid ,
-  s_ready ,
+  not_valid_next ,
   s_last  ,
   s_user  ,
   s_keep  ,
@@ -192,52 +196,55 @@ module axis_dw_shift_2 #(
 
   m_data  ,
   m_valid ,
-  m_ready ,
   m_last  ,
   m_user
 );
 
-  input logic aclk, aresetn;
+  input logic aclk, aresetn, aclken;
 
   input  logic s_valid, s_last;
-  output logic s_ready;
+  output logic not_valid_next;
   input  logic [MEMBERS-1:0][UNITS-1:0][WORD_WIDTH -1:0] s_data;
   input  logic [MEMBERS-1:0]                             s_keep;
   input  logic [MEMBERS-1:0][TUSER_WIDTH-1:0]            s_user;
   input  logic [BITS_KW2-1:0] s_kw2;
   input  logic [BITS_SW -1:0] s_sw_1;
   
-  input  logic m_ready;
   output logic [UNITS-1:0][WORD_WIDTH -1:0] m_data;
   output logic [TUSER_WIDTH-1:0]            m_user;
   output logic m_valid, m_last;
 
-  logic m_valid_next, s_ready_next, reg_last, reg_en, last_en;
-  localparam SHIFT_WORD_WIDTH = UNITS*WORD_WIDTH + TUSER_WIDTH + 1;
+  logic reg_last, reg_en, last_en;
+  localparam SHIFT_WORD_WIDTH = UNITS*WORD_WIDTH + TUSER_WIDTH;
   logic [MEMBERS  -1:0][SHIFT_WORD_WIDTH-1:0] s_data_packed;
   logic [KW_MAX/2:0][SW_MAX-1:0][MEMBERS/3-1:0][SHIFT_WORD_WIDTH-1:0] reg_data_s_mux;
+  logic [KW_MAX/2:0][SW_MAX-1:0][MEMBERS/3-1:0]                       reg_keep_s_mux;
 
   logic [MEMBERS/3-1:0][SHIFT_WORD_WIDTH-1:0]       reg_data_s_muxed, reg_data_in, reg_data_r;
   logic [MEMBERS/3-1:0][UNITS-1:0][WORD_WIDTH -1:0] r_data;
   logic [MEMBERS/3-1:0]           [WORD_WIDTH -1:0] r_user;
-  logic [MEMBERS/3-1:0]                             r_keep;
+  logic [MEMBERS/3-1:0]                             reg_keep_s_muxed, reg_keep_in, r_keep;
 
   generate
+
+    assign not_valid_next = ~r_keep[1];
     
     for (genvar m3=0; m3<MEMBERS/3; m3++)
-      assign {r_data[m3], r_user[m3], r_keep[m3]} = reg_data_r[m3];
+      assign {r_data[m3], r_user[m3]} = reg_data_r[m3];
 
-    assign {m_data, m_user, m_valid} = reg_data_r[0];
+    assign {m_data, m_user} = reg_data_r[0];
 
     /*
       Input Mux
     */
     always_comb begin
       reg_data_s_mux = 0;
+      reg_keep_s_mux = 0;
       for (int m=0; m<MEMBERS; m++) begin
-        s_data_packed [m] = {s_data[m], s_user[m], s_keep[m]};
+        s_data_packed [m] = {s_data[m], s_user[m]};
 
         reg_data_s_mux[0][0][0] = s_data_packed[MEMBERS-1];
+        reg_keep_s_mux[0][0][0] = s_keep       [MEMBERS-1];
         for (int kw2=1; kw2 <=KW_MAX/2; kw2++)
           for (int sw_1=0; sw_1 < kw2 && sw_1 < SW_MAX; sw_1++) begin
             automatic int kw = kw2*2+1;
@@ -246,54 +253,34 @@ module axis_dw_shift_2 #(
 
             if ((kw==0 & sw==1)|(kw==3 & sw==1)|(kw==5 & sw==1)|(kw==7 & sw==2)|(kw==11 & sw==4)) // only allowed combinations, to minimize mux
               if (m%j == j-1) 
-                reg_data_s_mux[kw2][sw_1][m/j] = s_data_packed[m];
+                begin
+                  reg_data_s_mux[kw2][sw_1][m/j] = s_data_packed[m];
+                  reg_keep_s_mux[kw2][sw_1][m/j] = s_keep       [m];
+                end
           end
       end
     end
     assign reg_data_s_muxed = reg_data_s_mux[s_kw2][s_sw_1];
-
-    // STATE MACHINE
-
-    localparam RX = 0;
-    localparam TX = 1;
-    logic state, state_next;
-
-    always_comb begin
-      state_next = state;
-      unique case (state)
-        RX : if (s_valid)                  state_next = TX;
-        TX : if (m_ready && !m_valid_next) state_next = RX;
-      endcase
-    end    
-
-    register #(
-      .WORD_WIDTH  (1),
-      .RESET_VALUE (RX),
-      .LOCAL       (0)
-    ) STATE (
-      .clock       (aclk),
-      .clock_enable(1'b1),
-      .resetn      (aresetn),
-      .data_in     (state_next),
-      .data_out    (state     )
-    );
-
-    always_comb begin
-      unique case (state)
-        RX :  begin
-                reg_en      = s_valid;
-                reg_data_in = reg_data_s_muxed;
-              end
-        TX :  begin
-                reg_en      = m_ready;
-                reg_data_in = reg_data_r >> SHIFT_WORD_WIDTH;
-              end
-      endcase
-    end
-
-    assign m_valid_next     = reg_data_in[0];
+    assign reg_keep_s_muxed = reg_keep_s_mux[s_kw2][s_sw_1];
 
     // OUTPUTS
+
+    assign reg_keep_in = not_valid_next ? reg_keep_s_muxed : r_keep     >> 1;
+    assign m_valid     = r_keep[0];
+    register #(
+      .WORD_WIDTH  (MEMBERS/3),
+      .RESET_VALUE (0),
+      .LOCAL       (0)
+    ) M_KEEP (
+      .clock       (aclk),
+      .clock_enable(aclken),
+      .resetn      (aresetn),
+      .data_in     (reg_keep_in),
+      .data_out    (r_keep     )
+    );
+
+    assign reg_en      = aclken & (not_valid_next ? s_valid : 1);
+    assign reg_data_in = not_valid_next ? reg_data_s_muxed : reg_data_r >> SHIFT_WORD_WIDTH;
 
     register #(
       .WORD_WIDTH  ((MEMBERS/3)*SHIFT_WORD_WIDTH),
@@ -307,20 +294,7 @@ module axis_dw_shift_2 #(
       .data_out    (reg_data_r )
     );
 
-    assign s_ready_next = ~state_next; // RX = 0
-    register #(
-      .WORD_WIDTH  (1),
-      .RESET_VALUE (1),
-      .LOCAL       (0)
-    ) S_READY (
-      .clock       (aclk),
-      .clock_enable(1'b1),
-      .resetn      (aresetn),
-      .data_in     (s_ready_next),
-      .data_out    (s_ready     )
-    );
-
-    assign last_en = s_ready & s_valid;
+    assign last_en = aclken & not_valid_next & s_valid;
     register #(
       .WORD_WIDTH  (1),
       .RESET_VALUE (0),
@@ -333,7 +307,7 @@ module axis_dw_shift_2 #(
       .data_out    (reg_last)
     );
 
-    assign m_last  = reg_last && !m_valid_next;
+    assign m_last  = reg_last && not_valid_next;
 
   endgenerate
 endmodule
@@ -382,12 +356,19 @@ module axis_dw_shift #(
   output logic [TUSER_WIDTH-1:0]            m_user;
   output logic m_valid, m_last;
 
-  logic i_ready, i_valid, i_last;
-  logic [MEMBERS-1:0][UNITS-1:0][WORD_WIDTH -1:0] i_data;
-  logic [MEMBERS-1:0]                             i_keep;
-  logic [MEMBERS-1:0][TUSER_WIDTH-1:0]            i_user;
-  logic [BITS_KW2-1:0] i_kw2;
-  logic [BITS_SW -1:0] i_sw_1 ;
+  logic not_valid_next, i_1_not_valid_next, i_1_valid, i_1_last;
+  logic [MEMBERS-1:0][UNITS-1:0][WORD_WIDTH -1:0] i_1_data;
+  logic [MEMBERS-1:0]                             i_1_keep;
+  logic [MEMBERS-1:0][TUSER_WIDTH-1:0]            i_1_user;
+  logic [BITS_KW2-1:0] i_1_kw2;
+  logic [BITS_SW -1:0] i_1_sw_1 ;
+
+  logic i_2_ready;
+  logic [UNITS-1:0][WORD_WIDTH -1:0] i_2_data;
+  logic [TUSER_WIDTH-1:0]            i_2_user;
+  logic i_2_valid, i_2_last;
+
+  assign s_ready = not_valid_next & i_1_not_valid_next & i_2_ready;
 
   axis_dw_shift_1 #(
     .ZERO         (ZERO        ),
@@ -403,22 +384,22 @@ module axis_dw_shift #(
     .TUSER_WIDTH  (TUSER_WIDTH ),
     .BITS_MEMBERS (BITS_MEMBERS)
   ) dw_1 (
-    .aclk    (aclk   ),
-    .aresetn (aresetn),
-    .s_data  (s_data ),
-    .s_valid (s_valid),
-    .s_ready (s_ready),
-    .s_last  (s_last ),
-    .s_user  (s_user ),
-    .s_keep  (s_keep ),
-    .m_kw2   (i_kw2  ),
-    .m_sw_1  (i_sw_1 ),
-    .m_data  (i_data ),
-    .m_valid (i_valid),
-    .m_keep  (i_keep ),
-    .m_ready (i_ready),
-    .m_last  (i_last ),
-    .m_user  (i_user )
+    .aclk              (aclk     ),
+    .aresetn           (aresetn  ),
+    .aclken            (i_1_not_valid_next & i_2_ready),
+    .s_data            (s_data   ),
+    .s_valid           (s_valid  ),
+    .not_valid_next    (not_valid_next),
+    .s_last            (s_last   ),
+    .s_user            (s_user   ),
+    .s_keep            (s_keep   ),
+    .m_kw2             (i_1_kw2  ),
+    .m_sw_1            (i_1_sw_1 ),
+    .m_data            (i_1_data ),
+    .m_valid           (i_1_valid),
+    .m_keep            (i_1_keep ),
+    .m_last            (i_1_last ),
+    .m_user            (i_1_user )
   );
 
   axis_dw_shift_2 #(
@@ -435,21 +416,50 @@ module axis_dw_shift #(
     .TUSER_WIDTH  (TUSER_WIDTH ),
     .BITS_MEMBERS (BITS_MEMBERS)
   ) dw_2 (
-    .aclk    (aclk   ),
-    .aresetn (aresetn),
-    .s_data  (i_data ),
-    .s_valid (i_valid),
-    .s_ready (i_ready),
-    .s_last  (i_last ),
-    .s_user  (i_user ),
-    .s_keep  (i_keep ),
-    .s_kw2   (i_kw2  ),
-    .s_sw_1  (i_sw_1 ),
-    .m_data  (m_data ),
-    .m_valid (m_valid),
-    .m_ready (m_ready),
-    .m_last  (m_last ),
-    .m_user  (m_user )
+    .aclk             (aclk     ),
+    .aresetn          (aresetn  ),
+    .aclken           (i_2_ready),
+    .s_data           (i_1_data ),
+    .s_valid          (i_1_valid),
+    .not_valid_next   (i_1_not_valid_next),
+    .s_last           (i_1_last ),
+    .s_user           (i_1_user ),
+    .s_keep           (i_1_keep ),
+    .s_kw2            (i_1_kw2  ),
+    .s_sw_1           (i_1_sw_1 ),
+    .m_data           (i_2_data ),
+    .m_valid          (i_2_valid),
+    .m_last           (i_2_last ),
+    .m_user           (i_2_user )
+  );
+
+  axis_register #
+  (
+    .DATA_WIDTH  (UNITS*WORD_WIDTH),
+    .KEEP_ENABLE (0),
+    .KEEP_WIDTH  (0),
+    .LAST_ENABLE (1),
+    .ID_ENABLE   (0),
+    .DEST_ENABLE (0),
+    .USER_ENABLE (1),
+    .USER_WIDTH  (TUSER_WIDTH),
+    .REG_TYPE    (2)
+  ) SLICE (
+    .clk          (aclk),
+    .rst          (~aresetn),
+    .s_axis_tdata (i_2_data ),
+    .s_axis_tvalid(i_2_valid),
+    .s_axis_tready(i_2_ready),
+    .s_axis_tlast (i_2_last ),
+    .s_axis_tuser (i_2_user ),
+    .s_axis_tkeep (1'b0     ),
+    .s_axis_tid   (1'b0     ),
+    .s_axis_tdest (1'b0     ),
+    .m_axis_tdata (m_data   ),
+    .m_axis_tvalid(m_valid  ),
+    .m_axis_tready(m_ready  ),
+    .m_axis_tlast (m_last   ),
+    .m_axis_tuser (m_user   )
   );
 
 endmodule
