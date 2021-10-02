@@ -34,8 +34,7 @@ module cyclic_bram #(
   w_last_in,
   r_addr_max,
   w_addr_max,
-  r_addr_min,
-  fifo_empty
+  r_addr_min
   );
   localparam SIZE = R_DEPTH * R_DATA_WIDTH;
   localparam W_DEPTH =  SIZE / W_DATA_WIDTH;
@@ -50,7 +49,6 @@ module cyclic_bram #(
   input  logic r_last_in, w_last_in;
   input  logic [R_ADDR_WIDTH-1:0] r_addr_max, r_addr_min;
   input  logic [W_ADDR_WIDTH-1:0] w_addr_max;
-  output logic fifo_empty;
  
   /*
     BRAM_WRITE_ADDRESS
@@ -96,6 +94,7 @@ module cyclic_bram #(
 
   generate
     if (IP_TYPE == 0)
+    `ifdef XILINX
       bram_weights bram (
         .clka   (clk),    
         .ena    (clken),     
@@ -107,6 +106,7 @@ module cyclic_bram #(
         .addrb  (r_addr),  
         .doutb  (bram_m_data)  
       );
+    `endif
   endgenerate
 
   /*
@@ -128,20 +128,24 @@ module cyclic_bram #(
       .data_out (r_en_delayed)
     );
 
-    if (IP_TYPE == 0)
-      fifo_weights fifo (
-        .clk    (clk),     
-        .srst   (~resetn),   
-        .din    (bram_m_data),    
-        .wr_en  (clken && r_en_delayed),
-        .rd_en  (clken && r_en), 
-        .dout   (m_data),  
-        // .full   (full), 
-        .empty  (fifo_empty),
-        .valid  (m_valid)
-      );
-
-    assign fifo_r_en = ~fifo_empty && r_en;
+    axis_pipeline_register # (
+      .DATA_WIDTH  (R_DATA_WIDTH),
+      .KEEP_ENABLE (0),
+      .LAST_ENABLE (0),
+      .ID_ENABLE   (0),
+      .DEST_ENABLE (0),
+      .USER_ENABLE (0),
+      .REG_TYPE    (2),
+      .LENGTH      (LATENCY)
+    ) REG_PIPE (
+      .clk          (clk),
+      .rst          (~resetn),
+      .s_axis_tdata (bram_m_data),
+      .s_axis_tvalid(clken && r_en_delayed),
+      .m_axis_tdata (m_data),
+      .m_axis_tvalid(m_valid),
+      .m_axis_tready(clken && r_en)
+    );
   end
   else assign m_data = bram_m_data;
 
