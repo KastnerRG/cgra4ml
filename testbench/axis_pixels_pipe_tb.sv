@@ -35,7 +35,7 @@ module axis_pixels_pipe_tb ();
   logic [COPIES-1:0][UNITS-1:0][WORD_WIDTH-1:0] m_data;
   logic [TUSER_WIDTH_PIXELS-1:0] m_user;
 
-  axis_image_dw DUT (.*);
+  axis_pixels_pipe DUT (.*);
 
   AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(S_PIXELS_WIDTH_LF/WORD_WIDTH), .VALID_PROB(VALID_PROB)) s_pixels  = new(.file_path(FILEPATH), .words_per_packet(NUM_WORDS), .iterations(1));
   initial forever s_pixels.axis_feed(aclk, s_ready, s_valid, s_data, s_keep, s_last);

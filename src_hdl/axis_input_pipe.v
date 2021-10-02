@@ -6,8 +6,8 @@ module axis_input_pipe
     ZERO=0,
     
     UNITS                     = `UNITS                    ,
-    CORES                     = `CORES                    ,
     COPIES                    = `COPIES                   ,
+    GROUPS                    = `GROUPS                   ,
     MEMBERS                   = `MEMBERS                  ,
     WORD_WIDTH                = `WORD_WIDTH               , 
     KH_MAX                    = `KH_MAX                   ,   // odd number
@@ -23,7 +23,7 @@ module axis_input_pipe
     IM_CIN_MAX                = `IM_CIN_MAX               ,
     IM_BLOCKS_MAX             = `IM_BLOCKS_MAX            ,
     IM_COLS_MAX               = `IM_COLS_MAX              ,
-    S_WEIGHTS_WIDTH_HF        = `S_WEIGHTS_WIDTH_HF          ,
+    S_WEIGHTS_WIDTH_LF        = `S_WEIGHTS_WIDTH_LF       ,
     LATENCY_BRAM              = `LATENCY_BRAM             ,
     // WEIGHTS TUSER INDICES 
     I_WEIGHTS_IS_TOP_BLOCK    = `I_WEIGHTS_IS_TOP_BLOCK   ,
@@ -34,6 +34,8 @@ module axis_input_pipe
     I_WEIGHTS_IS_W_FIRST      = `I_WEIGHTS_IS_W_FIRST     ,
     I_WEIGHTS_KW2             = `I_WEIGHTS_KW2            , 
     I_WEIGHTS_SW_1            = `I_WEIGHTS_SW_1           , 
+    I_WEIGHTS_IS_COL_VALID    = `I_WEIGHTS_IS_COL_VALID   , 
+    I_WEIGHTS_IS_SUM_START    = `I_WEIGHTS_IS_SUM_START   , 
     TUSER_WIDTH_WEIGHTS_OUT   = `TUSER_WIDTH_WEIGHTS_OUT  ,
     //  CONV TUSER INDICES   
     I_IS_NOT_MAX              = `I_IS_NOT_MAX             ,
@@ -45,22 +47,19 @@ module axis_input_pipe
     I_IS_CONFIG               = `I_IS_CONFIG              ,
     I_IS_CIN_LAST             = `I_IS_CIN_LAST            ,
     I_IS_W_FIRST              = `I_IS_W_FIRST             ,
+    I_IS_COL_VALID            = `I_IS_COL_VALID           ,
+    I_IS_SUM_START            = `I_IS_SUM_START           ,
     I_KW2                     = `I_KW2             , 
     TUSER_WIDTH_CONV_IN       = `TUSER_WIDTH_CONV_IN      
   )(
     aclk                  ,
     aresetn               ,
     debug_config          ,
-    s_axis_pixels_1_tready, 
-    s_axis_pixels_1_tvalid, 
-    s_axis_pixels_1_tlast , 
-    s_axis_pixels_1_tdata , 
-    s_axis_pixels_1_tkeep , 
-    s_axis_pixels_2_tready,  
-    s_axis_pixels_2_tvalid,  
-    s_axis_pixels_2_tlast ,   
-    s_axis_pixels_2_tdata ,   
-    s_axis_pixels_2_tkeep ,      
+    s_axis_pixels_tready  , 
+    s_axis_pixels_tvalid  , 
+    s_axis_pixels_tlast   , 
+    s_axis_pixels_tdata   , 
+    s_axis_pixels_tkeep   ,    
     s_axis_weights_tready ,
     s_axis_weights_tvalid ,
     s_axis_weights_tlast  ,
@@ -76,33 +75,26 @@ module axis_input_pipe
 
 
   localparam UNITS_EDGES       = `UNITS_EDGES      ;
-  localparam IM_IN_S_DATA_WORDS= `IM_IN_S_DATA_WORDS;
+  localparam S_PIXELS_WIDTH_LF = `S_PIXELS_WIDTH_LF;
   localparam BITS_KH2          = `BITS_KH2;
   localparam BITS_KW2          = `BITS_KW2;
   localparam BITS_SH           = `BITS_SH ;
   localparam BITS_SW           = `BITS_SW ;
-  localparam TKEEP_WIDTH_IM_IN = `TKEEP_WIDTH_IM_IN;
 
   input wire aclk;
   input wire aresetn;
 
-  output wire s_axis_pixels_1_tready;
-  input  wire s_axis_pixels_1_tvalid;
-  input  wire s_axis_pixels_1_tlast ;
-  input  wire [WORD_WIDTH*IM_IN_S_DATA_WORDS-1:0] s_axis_pixels_1_tdata;
-  input  wire [TKEEP_WIDTH_IM_IN            -1:0] s_axis_pixels_1_tkeep;
-
-  output wire s_axis_pixels_2_tready;
-  input  wire s_axis_pixels_2_tvalid;
-  input  wire s_axis_pixels_2_tlast ;
-  input  wire [WORD_WIDTH*IM_IN_S_DATA_WORDS-1:0] s_axis_pixels_2_tdata;
-  input  wire [TKEEP_WIDTH_IM_IN            -1:0] s_axis_pixels_2_tkeep;
+  output wire s_axis_pixels_tready;
+  input  wire s_axis_pixels_tvalid;
+  input  wire s_axis_pixels_tlast ;
+  input  wire [S_PIXELS_WIDTH_LF   -1:0] s_axis_pixels_tdata;
+  input  wire [S_PIXELS_WIDTH_LF/8 -1:0] s_axis_pixels_tkeep;
 
   output wire s_axis_weights_tready;
   input  wire s_axis_weights_tvalid;
   input  wire s_axis_weights_tlast ;
-  input  wire [S_WEIGHTS_WIDTH_HF -1:0] s_axis_weights_tdata;
-  input  wire [S_WEIGHTS_WIDTH_HF /8 -1:0] s_axis_weights_tkeep;
+  input  wire [S_WEIGHTS_WIDTH_LF -1:0] s_axis_weights_tdata;
+  input  wire [S_WEIGHTS_WIDTH_LF /8 -1:0] s_axis_weights_tkeep;
 
   wire image_is_config;
   wire im_mux_m_ready;
@@ -119,12 +111,12 @@ module axis_input_pipe
   wire weights_m_valid;
   wire weights_m_last;
   wire [TUSER_WIDTH_WEIGHTS_OUT-1:0] weights_m_user;
+  output wire [COPIES*WORD_WIDTH*UNITS         -1:0] m_axis_pixels_tdata;
 
   input  wire m_axis_tready;
   output wire m_axis_tvalid;
   output wire m_axis_tlast ;
-  output wire [COPIES*WORD_WIDTH*UNITS      -1:0] m_axis_pixels_tdata;
-  output wire [WORD_WIDTH*CORES*MEMBERS     -1:0] m_axis_weights_tdata;
+  output wire [WORD_WIDTH*COPIES*GROUPS*MEMBERS-1:0] m_axis_weights_tdata;
   output wire [TUSER_WIDTH_CONV_IN-1:0] m_axis_tuser;
 
   wire [DEBUG_CONFIG_WIDTH_IM_PIPE-1:0] image_pipe_debug_config;
@@ -135,56 +127,19 @@ module axis_input_pipe
   output wire [DEBUG_CONFIG_WIDTH-1:0] debug_config;
   assign debug_config = {im_shift_2_debug_config, im_shift_1_debug_config, image_pipe_debug_config, w_rot_debug_config};
 
-  axis_image_pipe #(.ZERO(ZERO)) IM_MUX (
-    .aclk            (aclk   ),
-    .aresetn         (aresetn),
-    .debug_config    (image_pipe_debug_config),
-    .is_config       (image_is_config        ),
-    .s_axis_1_tready (s_axis_pixels_1_tready), 
-    .s_axis_1_tvalid (s_axis_pixels_1_tvalid), 
-    .s_axis_1_tlast  (s_axis_pixels_1_tlast ), 
-    .s_axis_1_tdata  (s_axis_pixels_1_tdata ), 
-    .s_axis_1_tkeep  (s_axis_pixels_1_tkeep ), 
-    .s_axis_2_tready (s_axis_pixels_2_tready),  
-    .s_axis_2_tvalid (s_axis_pixels_2_tvalid),  
-    .s_axis_2_tlast  (s_axis_pixels_2_tlast ),   
-    .s_axis_2_tdata  (s_axis_pixels_2_tdata ),   
-    .s_axis_2_tkeep  (s_axis_pixels_2_tkeep ),      
-    .m_axis_tready   (im_mux_m_ready ),      
-    .m_axis_tvalid   (im_mux_m_valid ),     
-    .m_axis_1_tdata  (im_mux_m_data_1),
-    .m_axis_2_tdata  (im_mux_m_data_2),
-    .m_axis_tuser    (im_mux_m_user  )
+  axis_pixels_pipe #(.ZERO(ZERO)) PIXELS (
+    .aclk   (aclk   ),
+    .aresetn(aresetn),
+    .s_ready(s_axis_pixels_tready),
+    .s_valid(s_axis_pixels_tvalid),
+    .s_last (s_axis_pixels_tlast ),
+    .s_data (s_axis_pixels_tdata ),
+    .s_keep (s_axis_pixels_tkeep ),
+    .m_valid(pixels_m_valid      ),
+    .m_ready(pixels_m_ready      ),
+    .m_user (pixels_m_user       ),
+    .m_data (m_axis_pixels_tdata )
   );
-
-  axis_image_shift_buffer #(.ZERO(ZERO)) IM_SHIFT_1 (
-    .aclk          (aclk           ),
-    .aresetn       (aresetn        ),
-    .is_config     (image_is_config),
-    .debug_config  (im_shift_1_debug_config),
-    .s_axis_tready (im_mux_m_ready ),  
-    .s_axis_tvalid (im_mux_m_valid ),  
-    .s_axis_tdata  (im_mux_m_data_1),   
-    .s_axis_tuser  (im_mux_m_user  ),   
-    .m_axis_tvalid (pixels_m_valid ),     
-    .m_axis_tready (pixels_m_ready ),      
-    .m_axis_tuser  (pixels_m_user  ),
-    .m_axis_tdata  (m_axis_pixels_tdata [1*WORD_WIDTH*UNITS-1 : 0*WORD_WIDTH*UNITS])
-  );
-generate
-  if (COPIES==2)
-    axis_image_shift_buffer #(.ZERO(ZERO)) IM_SHIFT_2 (
-      .aclk          (aclk           ),
-      .aresetn       (aresetn        ),
-      .is_config     (image_is_config),
-      .debug_config  (im_shift_2_debug_config),
-      .s_axis_tvalid (im_mux_m_valid ),  
-      .s_axis_tdata  (im_mux_m_data_2),   
-      .s_axis_tuser  (im_mux_m_user  ),   
-      .m_axis_tready (pixels_m_ready ),      
-      .m_axis_tdata  (m_axis_pixels_tdata [2*WORD_WIDTH*UNITS-1 : 1*WORD_WIDTH*UNITS])
-    );
-endgenerate
 
   axis_weight_rotator #(.ZERO(ZERO)) WEIGHTS_ROTATOR (
     .aclk          (aclk                 ),
@@ -228,6 +183,8 @@ endgenerate
   assign m_axis_tuser [I_IS_CONFIG      ] = weights_m_user [I_WEIGHTS_IS_CONFIG      ];
   assign m_axis_tuser [I_IS_CIN_LAST    ] = weights_m_user [I_WEIGHTS_IS_CIN_LAST    ] && m_axis_tvalid;
   assign m_axis_tuser [I_IS_W_FIRST     ] = weights_m_user [I_WEIGHTS_IS_W_FIRST     ] && m_axis_tvalid;
+  assign m_axis_tuser [I_IS_COL_VALID   ] = weights_m_user [I_WEIGHTS_IS_COL_VALID   ] && m_axis_tvalid;
+  assign m_axis_tuser [I_IS_SUM_START   ] = weights_m_user [I_WEIGHTS_IS_SUM_START   ] && m_axis_tvalid;
 
   /*
     DATA

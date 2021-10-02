@@ -20,7 +20,7 @@ module cyclic_bram #(
   ABSORB       = 0,
   USE_R_LAST   = 0,
   USE_W_LAST   = 0,
-  IP_TYPE      = 0 // 0 - lrelu, 1 - lrelu_edge, 2 - weights
+  IP_TYPE      = 0 // 0 - weights, 1 - edge
 )(
   clk  ,
   clken,
@@ -96,31 +96,6 @@ module cyclic_bram #(
 
   generate
     if (IP_TYPE == 0)
-      bram_lrelu bram (
-        .clka   (clk),    
-        .ena    (clken),     
-        .wea    (w_en),     
-        .addra  (w_addr),  
-        .dina   (s_data),   
-        .clkb   (clk),   
-        .enb    (clken),     
-        .addrb  (r_addr),  
-        .doutb  (bram_m_data)  
-      );
-
-    else if (IP_TYPE == 1)
-      bram_lrelu_edge bram (
-        .clka   (clk),    
-        .ena    (clken),     
-        .wea    (w_en),     
-        .addra  (w_addr),  
-        .dina   (s_data),   
-        .clkb   (clk),   
-        .enb    (clken),     
-        .addrb  (r_addr),  
-        .doutb  (bram_m_data)  
-      );
-    else if (IP_TYPE == 2)
       bram_weights bram (
         .clka   (clk),    
         .ena    (clken),     
@@ -132,7 +107,6 @@ module cyclic_bram #(
         .addrb  (r_addr),  
         .doutb  (bram_m_data)  
       );
-
   endgenerate
 
   /*
@@ -154,7 +128,7 @@ module cyclic_bram #(
       .data_out (r_en_delayed)
     );
 
-    if (IP_TYPE == 2)
+    if (IP_TYPE == 0)
       fifo_weights fifo (
         .clk    (clk),     
         .srst   (~resetn),   

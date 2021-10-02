@@ -11,6 +11,7 @@ module axis_pixels_dw #(ZERO=0)  (
     s_data   , 
     s_keep   ,    
     m_shift  ,
+    m_ones   ,
     m_ready  ,      
     m_valid  ,   
     m_data   ,
@@ -57,6 +58,7 @@ module axis_pixels_dw #(ZERO=0)  (
   output logic [TUSER_WIDTH_PIXELS                -1:0] m_user;
   output logic [IM_SHIFT_REGS     -1:0][WORD_WIDTH-1:0] m_data;
   output logic [BITS_IM_SHIFT-1:0] m_shift;
+  output logic m_ones;
 
   logic s_beat, s_last_beat, m_beat;
   assign s_beat         = s_ready & s_valid;
@@ -255,6 +257,7 @@ module axis_pixels_dw #(ZERO=0)  (
     m_data          = muxed_dw_m_data;
     count_sh_en     = 0;
     m_shift         = count_sh_last ? lut_ks_shift_last[kh2][sh_1] : lut_ks_shift_general[kh2][sh_1];
+    m_ones          = 0;
 
     unique case (state)
       S_SET   : begin
@@ -274,8 +277,10 @@ module axis_pixels_dw #(ZERO=0)  (
                   dw_m_ready      = 0;
                   m_valid         = 1;
 
-                  m_data          = {UNITS{WORD_WIDTH'(1'b1)}};
+                  m_data          = WORD_WIDTH'(1'b1);
+                  // m_data          = {2{WORD_WIDTH'(1'b1)}}; // after verification, change to {WORD_WIDTH'(1'b1)
                   m_shift         = 0;
+                  m_ones          = 1;
                 end
       S_PASS : begin
                   s_ready         = muxed_dw_s_ready;

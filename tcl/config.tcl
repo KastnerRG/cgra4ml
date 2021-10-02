@@ -5,7 +5,7 @@ set WAVE_DIR wave
 
 set XILINX 1
 
-set UNITS   7
+set UNITS   4
 set GROUPS  2
 set MEMBERS 12
 set FREQ_HIGH   200
@@ -24,12 +24,13 @@ set IS_CONV_DW_SLICE 0
 
 set WORD_WIDTH       8
 set WORD_WIDTH_ACC   32
-set S_WEIGHTS_WIDTH_HF  64
+set S_WEIGHTS_WIDTH_LF 64
+set S_PIXELS_WIDTH_LF  64
 
-set KW_MAX        11
-set KH_MAX        11
-set SW_MAX        4
-set SH_MAX        4
+set KW_MAX        3
+set KH_MAX        3
+set SW_MAX        2
+set SH_MAX        2
 set IM_COLS_MAX   384
 set IM_ROWS_MAX   256
 set IM_CIN_MAX    1024
@@ -38,8 +39,6 @@ set LRELU_ALPHA   11878
 # BRAM_WEIGHTS_DEPTH = max(KH * CIN * SH + lrelu_beats-1)
 set BRAM_WEIGHTS_DEPTH  1024 
 
-set S_WEIGHTS_WIDTH_LF 64
-set S_PIXELS_WIDTH_LF  64
 
 set LATENCY_MULTIPLIER    3
 set LATENCY_ACCUMULATOR   1
@@ -111,6 +110,7 @@ set BITS_IM_CIN        [expr int(ceil(log($IM_CIN_MAX)/log(2)))]
 set BITS_IM_BLOCKS     [expr int(ceil(log($IM_ROWS_MAX/$UNITS)/log(2)))]
 set BITS_IM_SHIFT      [expr int(ceil(log($IM_SHIFT_MAX)/log(2)))]
 set BITS_IM_SHIFT_REGS [expr int(ceil(log($IM_SHIFT_REGS+1)/log(2)))]
+set BITS_WEIGHTS_ADDR  [expr int(ceil(log($BRAM_WEIGHTS_DEPTH)/log(2)))]
 set BITS_MEMBERS       [expr int(ceil(log($MEMBERS)/log(2)))]
 set BITS_KW2           [expr int(ceil(log(($KW_MAX      +1)/2)/log(2)))]
 set BITS_KH2           [expr int(ceil(log(($KH_MAX      +1)/2)/log(2)))]
@@ -193,7 +193,6 @@ set DEBUG_CONFIG_WIDTH         [expr $DEBUG_CONFIG_WIDTH_MAXPOOL + $DEBUG_CONFIG
 
 # ************ IP PARAMETERS ************
 
-set M_BYTES_axis_dw_weights_clk    [expr "$S_WEIGHTS_WIDTH_HF / 8"]
 set S_BYTES_axis_dw_weights_clk    [expr "$S_WEIGHTS_WIDTH_LF / 8"]
 set DATA_BYTES_axis_clk_weights    [expr "$S_WEIGHTS_WIDTH_LF / 8"]
 set DATA_BYTES_axis_clk_image      [expr "$S_PIXELS_WIDTH_LF  / 8"] 
@@ -216,7 +215,7 @@ set R_DEPTH_bram_weights $BRAM_WEIGHTS_DEPTH
 set W_WIDTH_bram_weights [expr "$R_WIDTH_bram_weights"]
 set W_DEPTH_bram_weights [expr "$R_WIDTH_bram_weights * $R_DEPTH_bram_weights / $W_WIDTH_bram_weights"]
 
-set S_BYTES_axis_dw_weights_input [expr "$S_WEIGHTS_WIDTH_HF / 8"]
+set S_BYTES_axis_dw_weights_input [expr "$S_WEIGHTS_WIDTH_LF / 8"]
 set M_BYTES_axis_dw_weights_input [expr "$W_WIDTH_bram_weights / 8"]
 set TLAST_axis_dw_weights_input 1
 set TKEEP_axis_dw_weights_input 1
@@ -365,6 +364,7 @@ Parameters of the system. Written from build.tcl
 `define BITS_IM_BLOCKS    $BITS_IM_BLOCKS   
 `define BITS_IM_SHIFT     $BITS_IM_SHIFT   
 `define BITS_IM_SHIFT_REGS $BITS_IM_SHIFT_REGS   
+`define BITS_WEIGHTS_ADDR  $BITS_WEIGHTS_ADDR   
 `define BITS_MEMBERS      $BITS_MEMBERS     
 `define BITS_KW2          $BITS_KW2         
 `define BITS_KH2          $BITS_KH2         
@@ -389,7 +389,6 @@ Parameters of the system. Written from build.tcl
 `define LRELU_BEATS_MAX  $LRELU_BEATS_MAX
 `define BRAM_WEIGHTS_DEPTH  $BRAM_WEIGHTS_DEPTH     
 
-`define S_WEIGHTS_WIDTH_HF  $S_WEIGHTS_WIDTH_HF
 `define S_WEIGHTS_WIDTH_LF  $S_WEIGHTS_WIDTH_LF
 `define S_PIXELS_WIDTH_LF   $S_PIXELS_WIDTH_LF
 `define M_DATA_WIDTH_HF_CONV    $M_DATA_WIDTH_HF_CONV   

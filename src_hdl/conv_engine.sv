@@ -37,16 +37,21 @@ module conv_engine #(ZERO=0) (
   localparam LATENCY_ACCUMULATOR = `LATENCY_ACCUMULATOR ;
   localparam LATENCY_MULTIPLIER  = `LATENCY_MULTIPLIER  ;
   localparam KW_MAX              = `KW_MAX              ;
+  localparam SW_MAX              = `SW_MAX              ;
   localparam I_IS_NOT_MAX        = `I_IS_NOT_MAX        ;
   localparam I_IS_BOTTOM_BLOCK   = `I_IS_BOTTOM_BLOCK   ;
   localparam I_IS_CONFIG         = `I_IS_CONFIG         ;
   localparam I_IS_CIN_LAST       = `I_IS_CIN_LAST       ;
   localparam I_IS_W_FIRST        = `I_IS_W_FIRST        ;
+  localparam I_IS_COL_VALID      = `I_IS_COL_VALID      ;
+  localparam I_IS_SUM_START      = `I_IS_SUM_START      ;
   localparam I_KW2               = `I_KW2               ;
+  localparam I_SW_1              = `I_SW_1              ;
   localparam I_CLR               = `I_CLR               ;
   localparam TUSER_WIDTH_CONV_IN = `TUSER_WIDTH_CONV_IN ;
   localparam TUSER_WIDTH_CONV_OUT= `TUSER_WIDTH_LRELU_IN;  
   localparam BITS_KW             = `BITS_KW             ;
+  localparam BITS_SW             = `BITS_SW             ;
   localparam BITS_MEMBERS        = `BITS_MEMBERS        ;
   localparam BITS_KW2            = `BITS_KW2            ;
 
@@ -62,12 +67,13 @@ module conv_engine #(ZERO=0) (
   output logic                         [MEMBERS-1:0]      [TUSER_WIDTH_CONV_OUT  -1:0] m_user;
 
   logic clken_mul, mux_sel_next, mux_sel, mul_m_valid, acc_m_valid_next, acc_m_valid, mul_m_last, acc_m_last;
-  logic [BITS_KW2-1:0] mul_m_kw2;
+  logic [BITS_KW2-1:0] mul_m_kw2, acc_m_kw2;
+  logic [BITS_SW -1:0] acc_m_sw_1;
   logic [MEMBERS-1: 0] clken_acc, bypass_sum, bypass_sum_next, bypass;
-  logic [MEMBERS-1: 0] acc_s_valid, acc_m_keep;
+  logic [MEMBERS-1: 0] acc_m_sum_start, acc_s_valid, acc_m_keep;
   logic [TUSER_WIDTH_CONV_IN -1: 0] mul_m_user, acc_s_user, mux_s2_user, acc_m_user;
 
-  logic [KW_MAX  /2:0][MEMBERS -1:0] lut_not_sub_base;
+  logic [KW_MAX/2:0][SW_MAX -1:0][MEMBERS -1:0] lut_sum_start;
 
   logic valid_mask;
   logic [MEMBERS-1: 0] keep_mask;
@@ -80,7 +86,7 @@ module conv_engine #(ZERO=0) (
   assign s_ready = clken_mul;
 
   generate
-    genvar c,g,u,m,b,kw2;
+    genvar c,g,u,m,b,kw2,sw_1;
     
     for (c=0; c < COPIES; c++) begin: Cm
       for (g=0; g < GROUPS; g++) begin: Gm
@@ -135,15 +141,21 @@ module conv_engine #(ZERO=0) (
         for (u=0; u < UNITS; u++)
           for (m=0; m < MEMBERS; m++)
             assign acc_s_data  [c][g][m][u] = mux_sel ? mux_s2_data  [c][g][m][u] : WORD_WIDTH_OUT'(signed'(mul_m_data [c][g][m][u]));
-            
+                
     for (m=0; m < MEMBERS; m++) begin: Mb
 
-      for (kw2=0; kw2 <= KW_MAX/2; kw2++) begin
-        localparam kw = kw2*2 + 1;
-        assign lut_not_sub_base[kw2][m] = m % kw != 0;
-      end
+      for (kw2=0; kw2 <= KW_MAX/2; kw2++)
+        for (sw_1=0; sw_1 < SW_MAX; sw_1++) begin
+          localparam k = kw2*2 + 1;
+          localparam s = sw_1 + 1;
+          localparam j = k + s -1;
+
+          assign lut_sum_start[kw2][sw_1][m] = m % j < s; // m % 3 < 1 : 0,1
+        end
       
-      assign acc_s_valid [m] = mux_sel ? lut_not_sub_base[mul_m_kw2][m] : mul_m_valid;
+      assign acc_m_sum_start [m] = lut_sum_start[acc_m_kw2][acc_m_sw_1][m] & acc_m_user[I_IS_SUM_START];
+      assign acc_s_valid     [m] = mux_sel ? ~acc_m_sum_start [m] : mul_m_valid;
+
       assign bypass_sum_next [m] = mul_m_user[I_IS_CIN_LAST] || mul_m_user [I_IS_CONFIG];
 
       register #(
@@ -185,6 +197,9 @@ module conv_engine #(ZERO=0) (
       .data_in  (mul_m_user  ),
       .data_out (acc_m_user  )
     );
+
+    assign acc_m_kw2  = acc_m_user[BITS_KW2+I_KW2-1 : I_KW2];
+    assign acc_m_sw_1 = acc_m_user[BITS_SW+I_SW_1-1 : I_SW_1];
 
     assign acc_m_valid_next = !mux_sel && mul_m_valid && (mul_m_user[I_IS_CONFIG] || mul_m_user[I_IS_CIN_LAST]);
     

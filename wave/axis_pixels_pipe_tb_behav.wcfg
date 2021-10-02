@@ -13,9 +13,9 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="2640000fs"></ZoomStartTime>
-      <ZoomEndTime time="18320001fs"></ZoomEndTime>
-      <Cursor1Time time="7450000fs"></Cursor1Time>
+      <ZoomStartTime time="4678667fs"></ZoomStartTime>
+      <ZoomEndTime time="6246668fs"></ZoomEndTime>
+      <Cursor1Time time="5360667fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="174"></NameColumnWidth>
@@ -141,6 +141,7 @@
          <wvobject fp_name="/axis_pixels_pipe_tb/DUT/DW/words" type="array">
             <obj_property name="ElementShortName">words[4:0]</obj_property>
             <obj_property name="ObjectShortName">words[4:0]</obj_property>
+            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
          </wvobject>
       </wvobject>
       <wvobject fp_name="group904" type="group">
