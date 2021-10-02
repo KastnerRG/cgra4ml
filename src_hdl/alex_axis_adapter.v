@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 /*
 
 Copyright (c) 2014-2018 Alex Forencich

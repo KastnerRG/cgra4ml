@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module alex_axis_adapter_any #(
   S_DATA_WIDTH  = 8,
   S_KEEP_ENABLE = 1,

@@ -5,17 +5,17 @@ set WAVE_DIR wave
 
 set XILINX 1
 
-set UNITS   4
+set UNITS   7
 set GROUPS  2
-set COPIES  2
 set MEMBERS 12
 set FREQ_HIGH   200
 set FREQ_RATIO  1
+
 set OUTPUT_MODE "CONV"
 # set OUTPUT_MODE "LRELU"
 # set OUTPUT_MODE "MAXPOOL"
 
-set KS_COMBINATIONS "(k==1 & s==1)|(k==3 & s==1)|(k==5 & s==1)|(k==7 & s==2)|(k==11 & s==4)"
+set KSM_COMBS_LIST {{1 1 1} {3 1 1} {3 1 2} {5 1 1} {7 2 1} {11 4 1}}
 
 set FREQ_LITE   50
 set DW_FACTOR_1 3 
@@ -24,16 +24,22 @@ set IS_CONV_DW_SLICE 0
 
 set WORD_WIDTH       8
 set WORD_WIDTH_ACC   32
-set S_WEIGHTS_WIDTH_HF  32
+set S_WEIGHTS_WIDTH_HF  64
 
-set KW_MAX        3
-set KH_MAX        3
-set SW_MAX        3
-set SH_MAX        3
+set KW_MAX        11
+set KH_MAX        11
+set SW_MAX        4
+set SH_MAX        4
 set IM_COLS_MAX   384
 set IM_ROWS_MAX   256
 set IM_CIN_MAX    1024
 set LRELU_ALPHA   11878
+
+# BRAM_WEIGHTS_DEPTH = max(KH * CIN * SH + lrelu_beats-1)
+set BRAM_WEIGHTS_DEPTH  1024 
+
+set S_WEIGHTS_WIDTH_LF 64
+set S_PIXELS_WIDTH_LF  64
 
 set LATENCY_MULTIPLIER    3
 set LATENCY_ACCUMULATOR   1
@@ -52,11 +58,49 @@ set BITS_FRA_FMA_1  23
 set BITS_EXP_FMA_2  5 
 set BITS_FRA_FMA_2  10
 
+# * Prepare KSM
+set KSM_COMBS_EXPR ""
+set KS_COMBS_EXPR ""
+set IM_SHIFT_REGS 0
+set IM_SHIFT_MAX 0
+set COPIES 1
+
+foreach comb $KSM_COMBS_LIST {
+  set k [lindex $comb  0]
+  set s [lindex $comb  1]
+  set m [lindex $comb  2]
+
+  set j [expr $k + $s - 1]
+  set f [expr int(ceil($k.0/$s))-1]
+
+  # Create string macro
+  set pair_str "(k==$k & s==$s & m==$m)"
+  set comb_str "$KSM_COMBS_EXPR | $pair_str"
+  if {[string trim $KSM_COMBS_EXPR] == ""} {set KSM_COMBS_EXPR $pair_str} else {set KSM_COMBS_EXPR $comb_str}
+  set KSM_COMBS_EXPR "($KSM_COMBS_EXPR)"
+
+  set pair_str "(k==$k & s==$s)"
+  set comb_str "$KS_COMBS_EXPR | $pair_str"
+  if {[string trim $KS_COMBS_EXPR] == ""} {set KS_COMBS_EXPR $pair_str} else {set KS_COMBS_EXPR $comb_str}
+  set KS_COMBS_EXPR "($KS_COMBS_EXPR)"
+
+  # Find max(m)
+  if {[expr $COPIES < $m]} {set COPIES $m}
+
+  # Find max(F)
+  if {[expr $IM_SHIFT_MAX < $f]} {set IM_SHIFT_MAX $f}
+
+  # Find reg number
+  set num_reg_needed [expr $m * $UNITS + $f]
+  if {[expr $IM_SHIFT_REGS < $num_reg_needed]} {set IM_SHIFT_REGS $num_reg_needed}
+}
+puts $KS_COMBS_EXPR
+puts $KSM_COMBS_EXPR
+puts $COPIES
 
 set FREQ_LOW           [expr $FREQ_HIGH.0/$FREQ_RATIO.0]
 set IM_BLOCKS_MAX      [expr int($IM_ROWS_MAX / $UNITS)]
 set UNITS_EDGES        [expr $UNITS + $KH_MAX      -1]
-set CORES              [expr $GROUPS * $COPIES]
 set BITS_KW            [expr int(ceil(log($KW_MAX      )/log(2)))]
 set BITS_KH            [expr int(ceil(log($KH_MAX      )/log(2)))]
 set BITS_SW            [expr int(ceil(log($SW_MAX      )/log(2)))]
@@ -65,11 +109,11 @@ set BITS_IM_COLS       [expr int(ceil(log($IM_COLS_MAX)/log(2)))]
 set BITS_IM_ROWS       [expr int(ceil(log($IM_ROWS_MAX)/log(2)))]
 set BITS_IM_CIN        [expr int(ceil(log($IM_CIN_MAX)/log(2)))]
 set BITS_IM_BLOCKS     [expr int(ceil(log($IM_ROWS_MAX/$UNITS)/log(2)))]
+set BITS_IM_SHIFT      [expr int(ceil(log($IM_SHIFT_MAX)/log(2)))]
+set BITS_IM_SHIFT_REGS [expr int(ceil(log($IM_SHIFT_REGS+1)/log(2)))]
 set BITS_MEMBERS       [expr int(ceil(log($MEMBERS)/log(2)))]
 set BITS_KW2           [expr int(ceil(log(($KW_MAX      +1)/2)/log(2)))]
 set BITS_KH2           [expr int(ceil(log(($KH_MAX      +1)/2)/log(2)))]
-
-set S_WEIGHTS_WIDTH_LF [expr 8 * 2**int(ceil(log($S_WEIGHTS_WIDTH_HF * $FREQ_RATIO / 8)/log(2)))]
 
 set M_DATA_WIDTH_HF_CONV    [expr int($COPIES * $GROUPS * $MEMBERS * $UNITS * $WORD_WIDTH_ACC)]
 set M_DATA_WIDTH_HF_CONV_DW [expr int($COPIES * $GROUPS * $UNITS * $WORD_WIDTH_ACC)]
@@ -87,11 +131,9 @@ switch $OUTPUT_MODE {
   "MAXPOOL" {set M_DATA_WIDTH_LF $M_DATA_WIDTH_LF_MAXPOOL}
 }
 
-set IM_IN_S_DATA_WORDS   [expr 2**int(ceil(log($UNITS_EDGES * $FREQ_RATIO)/log(2)))]
 set WORD_WIDTH_LRELU_1   [expr 1 + $BITS_EXP_FMA_1 + $BITS_FRA_FMA_1]
 set WORD_WIDTH_LRELU_2   [expr 1 + $BITS_EXP_FMA_2 + $BITS_FRA_FMA_2]
 set WORD_WIDTH_LRELU_OUT $WORD_WIDTH
-set TKEEP_WIDTH_IM_IN    [expr $WORD_WIDTH * $IM_IN_S_DATA_WORDS /8]
 
 set BITS_FMA_1 [expr $BITS_FRA_FMA_1 + $BITS_EXP_FMA_1 + 1]
 set BITS_FMA_2 [expr $BITS_FRA_FMA_2 + $BITS_EXP_FMA_2 + 1]
@@ -102,6 +144,9 @@ set I_IS_MAX           [expr $I_IS_NOT_MAX + 1]
 set I_IS_LRELU         [expr $I_IS_MAX     + 1]
 set I_KH2              [expr $I_IS_LRELU   + 1]
 set I_SH_1             [expr $I_KH2        + 1]
+set TUSER_WIDTH_PIXELS [expr $I_IS_LRELU   + 1]
+
+# ----------------DELETE
 set TUSER_WIDTH_IM_SHIFT_IN  [expr $I_SH_1+ $BITS_SH]
 set TUSER_WIDTH_IM_SHIFT_OUT [expr $I_IS_LRELU + 1]
 
@@ -114,7 +159,9 @@ set I_WEIGHTS_IS_COLS_1_K2     [expr $I_WEIGHTS_IS_BOTTOM_BLOCK + 1]
 set I_WEIGHTS_IS_CONFIG        [expr $I_WEIGHTS_IS_COLS_1_K2    + 1]
 set I_WEIGHTS_IS_CIN_LAST      [expr $I_WEIGHTS_IS_CONFIG       + 1] 
 set I_WEIGHTS_IS_W_FIRST       [expr $I_WEIGHTS_IS_CIN_LAST     + 1] 
-set TUSER_WIDTH_WEIGHTS_OUT    [expr $I_WEIGHTS_IS_W_FIRST      + 1]
+set I_WEIGHTS_IS_COL_VALID     [expr $I_WEIGHTS_IS_W_FIRST      + 1] 
+set I_WEIGHTS_IS_SUM_START     [expr $I_WEIGHTS_IS_COL_VALID    + 1] 
+set TUSER_WIDTH_WEIGHTS_OUT    [expr $I_WEIGHTS_IS_SUM_START    + 1]
 
 # PIPE TUSER INDICES
 set I_IS_NOT_MAX      0
@@ -128,13 +175,15 @@ set I_IS_COLS_1_K2    [expr $I_IS_BOTTOM_BLOCK + 1]
 set I_IS_CONFIG       [expr $I_IS_COLS_1_K2    + 1]
 set I_IS_CIN_LAST     [expr $I_IS_CONFIG       + 1]
 set I_IS_W_FIRST      [expr $I_IS_CIN_LAST     + 1]
+set I_IS_COL_VALID    [expr $I_IS_W_FIRST      + 1]
+set I_IS_SUM_START    [expr $I_IS_COL_VALID    + 1]
 
 set I_CLR             [expr $I_IS_BOTTOM_BLOCK + 1]
 
 set TUSER_WIDTH_MAXPOOL_IN     [expr $BITS_KW2      + $I_KW2]
 set TUSER_WIDTH_LRELU_IN       [expr $BITS_KW       + $I_CLR]
 set TUSER_WIDTH_LRELU_FMA_1_IN [expr 1         + $I_IS_LRELU]
-set TUSER_WIDTH_CONV_IN        [expr $I_IS_W_FIRST       + 1]
+set TUSER_WIDTH_CONV_IN        [expr $I_IS_SUM_START     + 1]
 
 set DEBUG_CONFIG_WIDTH_W_ROT   [expr 1 + 2*$BITS_KW2 + 3*($BITS_KH2      + $BITS_IM_CIN + $BITS_IM_COLS + $BITS_IM_BLOCKS)]
 set DEBUG_CONFIG_WIDTH_IM_PIPE [expr 3 + 2 + $BITS_KH2      + 0]
@@ -147,12 +196,12 @@ set DEBUG_CONFIG_WIDTH         [expr $DEBUG_CONFIG_WIDTH_MAXPOOL + $DEBUG_CONFIG
 set M_BYTES_axis_dw_weights_clk    [expr "$S_WEIGHTS_WIDTH_HF / 8"]
 set S_BYTES_axis_dw_weights_clk    [expr "$S_WEIGHTS_WIDTH_LF / 8"]
 set DATA_BYTES_axis_clk_weights    [expr "$S_WEIGHTS_WIDTH_LF / 8"]
-set DATA_BYTES_axis_clk_image      $IM_IN_S_DATA_WORDS
+set DATA_BYTES_axis_clk_image      [expr "$S_PIXELS_WIDTH_LF  / 8"] 
 set DATA_BYTES_axis_clk_conv_dw    [expr "$M_DATA_WIDTH_LF_CONV_DW / 8"]
 set DATA_BYTES_axis_clk_lrelu      [expr "$M_DATA_WIDTH_LF_LRELU / 8"]
 set DATA_BYTES_axis_clk_maxpool    [expr "$M_DATA_WIDTH_LF_MAXPOOL / 8"]
 
-set S_BYTES_axis_dw_image_input $IM_IN_S_DATA_WORDS
+set S_BYTES_axis_dw_image_input $DATA_BYTES_axis_clk_image
 set M_BYTES_axis_dw_image_input [expr "($UNITS_EDGES * $WORD_WIDTH   ) / 8"]
 set TLAST_axis_dw_image_input 1
 set TKEEP_axis_dw_image_input 1
@@ -162,8 +211,8 @@ set TLAST_axis_reg_slice_image_pipe 0
 set TKEEP_axis_reg_slice_image_pipe 0
 set TUSER_WIDTH_axis_reg_slice_image_pipe $TUSER_WIDTH_IM_SHIFT_OUT
 
-set R_WIDTH_bram_weights [expr "$WORD_WIDTH   * $CORES * $MEMBERS"]
-set R_DEPTH_bram_weights [expr "$KH_MAX       * $IM_CIN_MAX + ($LRELU_BEATS_MAX-1)"]
+set R_WIDTH_bram_weights [expr "$WORD_WIDTH  * $COPIES  * $GROUPS * $MEMBERS"]
+set R_DEPTH_bram_weights $BRAM_WEIGHTS_DEPTH
 set W_WIDTH_bram_weights [expr "$R_WIDTH_bram_weights"]
 set W_DEPTH_bram_weights [expr "$R_WIDTH_bram_weights * $R_DEPTH_bram_weights / $W_WIDTH_bram_weights"]
 
@@ -290,14 +339,14 @@ Parameters of the system. Written from build.tcl
 `define MEMBERS  $MEMBERS
 `define DW_FACTOR_1 $DW_FACTOR_1
 `define OUTPUT_MODE \"$OUTPUT_MODE\"
-`define KS_COMBINATIONS $KS_COMBINATIONS
+`define KSM_COMBS_EXPR $KSM_COMBS_EXPR
+`define KS_COMBS_EXPR $KS_COMBS_EXPR
 
 `define FREQ_HIGH     $FREQ_HIGH
 `define FREQ_RATIO    $FREQ_RATIO
 
-`define CORES              $CORES
 `define UNITS_EDGES        $UNITS_EDGES
-`define IM_IN_S_DATA_WORDS $IM_IN_S_DATA_WORDS
+`define IM_SHIFT_REGS      $IM_SHIFT_REGS
 
 `define WORD_WIDTH          $WORD_WIDTH         
 `define WORD_WIDTH_ACC      $WORD_WIDTH_ACC    
@@ -306,7 +355,6 @@ Parameters of the system. Written from build.tcl
 `define SH_MAX              $SH_MAX            
 `define SW_MAX              $SW_MAX            
 
-`define TKEEP_WIDTH_IM_IN $TKEEP_WIDTH_IM_IN
 `define BITS_KW           $BITS_KW          
 `define BITS_KH           $BITS_KH          
 `define BITS_SW           $BITS_SW          
@@ -315,6 +363,8 @@ Parameters of the system. Written from build.tcl
 `define BITS_IM_ROWS      $BITS_IM_ROWS     
 `define BITS_IM_CIN       $BITS_IM_CIN      
 `define BITS_IM_BLOCKS    $BITS_IM_BLOCKS   
+`define BITS_IM_SHIFT     $BITS_IM_SHIFT   
+`define BITS_IM_SHIFT_REGS $BITS_IM_SHIFT_REGS   
 `define BITS_MEMBERS      $BITS_MEMBERS     
 `define BITS_KW2          $BITS_KW2         
 `define BITS_KH2          $BITS_KH2         
@@ -328,6 +378,7 @@ Parameters of the system. Written from build.tcl
 /*
   IMAGE TUSER INDICES
 */
+`define TUSER_WIDTH_PIXELS   $TUSER_WIDTH_PIXELS 
 `define TUSER_WIDTH_IM_SHIFT_IN   $TUSER_WIDTH_IM_SHIFT_IN 
 `define TUSER_WIDTH_IM_SHIFT_OUT  $TUSER_WIDTH_IM_SHIFT_OUT
 
@@ -336,9 +387,11 @@ Parameters of the system. Written from build.tcl
 `define IM_COLS_MAX      $IM_COLS_MAX     
 `define LRELU_ALPHA      $LRELU_ALPHA     
 `define LRELU_BEATS_MAX  $LRELU_BEATS_MAX
+`define BRAM_WEIGHTS_DEPTH  $BRAM_WEIGHTS_DEPTH     
 
 `define S_WEIGHTS_WIDTH_HF  $S_WEIGHTS_WIDTH_HF
 `define S_WEIGHTS_WIDTH_LF  $S_WEIGHTS_WIDTH_LF
+`define S_PIXELS_WIDTH_LF   $S_PIXELS_WIDTH_LF
 `define M_DATA_WIDTH_HF_CONV    $M_DATA_WIDTH_HF_CONV   
 `define M_DATA_WIDTH_HF_CONV_DW $M_DATA_WIDTH_HF_CONV_DW
 `define M_DATA_WIDTH_LF_CONV_DW $M_DATA_WIDTH_LF_CONV_DW
@@ -377,6 +430,8 @@ Parameters of the system. Written from build.tcl
 `define I_WEIGHTS_IS_W_FIRST       $I_WEIGHTS_IS_W_FIRST    
 `define I_WEIGHTS_KW2              $I_WEIGHTS_KW2        
 `define I_WEIGHTS_SW_1             $I_WEIGHTS_SW_1      
+`define I_WEIGHTS_IS_COL_VALID     $I_WEIGHTS_IS_COL_VALID      
+`define I_WEIGHTS_IS_SUM_START     $I_WEIGHTS_IS_SUM_START      
 `define TUSER_WIDTH_WEIGHTS_OUT    $TUSER_WIDTH_WEIGHTS_OUT  
 /*
   CONV TUSER INDICES
@@ -395,6 +450,8 @@ Parameters of the system. Written from build.tcl
 `define I_IS_CONFIG          $I_IS_CONFIG        
 `define I_IS_CIN_LAST        $I_IS_CIN_LAST      
 `define I_IS_W_FIRST         $I_IS_W_FIRST      
+`define I_IS_COL_VALID       $I_IS_COL_VALID      
+`define I_IS_SUM_START       $I_IS_SUM_START      
 `define TUSER_WIDTH_CONV_IN  $TUSER_WIDTH_CONV_IN
 /*
   LRELU & MAXPOOL TUSER INDICES
