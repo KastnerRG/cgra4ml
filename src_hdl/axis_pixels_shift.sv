@@ -6,6 +6,7 @@ module axis_pixels_shift #(ZERO=0) (
     aresetn,
 
     s_shift,
+    s_ones ,
     s_ready,  
     s_valid,  
     s_data ,   
@@ -38,6 +39,7 @@ module axis_pixels_shift #(ZERO=0) (
 
   output logic s_ready;
   input  logic s_valid;
+  input  logic s_ones;
   input  logic [IM_SHIFT_REGS-1:0][WORD_WIDTH-1:0] s_data;
   input  logic [TUSER_WIDTH_PIXELS           -1:0] s_user;
   input  logic [BITS_IM_SHIFT-1:0] s_shift;
@@ -104,15 +106,16 @@ module axis_pixels_shift #(ZERO=0) (
   );
 
   logic [TUSER_WIDTH_PIXELS -1:0] reg_user;
+  logic reg_ones;
   register #(
-    .WORD_WIDTH     (TUSER_WIDTH_PIXELS),
+    .WORD_WIDTH     (TUSER_WIDTH_PIXELS+1),
     .RESET_VALUE    (0)
   ) REG_USER (
     .clock          (aclk),
     .resetn         (aresetn),
     .clock_enable   (s_valid & s_ready),
-    .data_in        (s_user),
-    .data_out       (reg_user)
+    .data_in        ({s_user, s_ones}),
+    .data_out       ({reg_user, reg_ones})
   );
 
   // Broadcast same values if not is_max
@@ -121,7 +124,7 @@ module axis_pixels_shift #(ZERO=0) (
   assign slice_s_data [0] = reg_data[UNITS-1:0];
   generate
     for (genvar c=1; c<COPIES; c++)
-      assign slice_s_data [c] = reg_user[I_IS_MAX] ? reg_data [(c+1)*UNITS-1 : c*UNITS] : reg_data [UNITS-1:0];
+      assign slice_s_data [c] = (reg_user[I_IS_MAX] & ~reg_ones) ? reg_data [(c+1)*UNITS-1 : c*UNITS] : reg_data [UNITS-1:0];
   endgenerate
 
   axis_register #

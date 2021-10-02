@@ -46,16 +46,20 @@ module pad_filter #(ZERO=0)
 );
 
     localparam KW_MAX           = `KW_MAX             ;
+    localparam SW_MAX           = `SW_MAX             ;
     localparam MEMBERS          = `MEMBERS            ;
     localparam TUSER_WIDTH      = `TUSER_WIDTH_CONV_IN;
     localparam I_IS_COLS_1_K2   = `I_IS_COLS_1_K2     ;
     localparam I_IS_CONFIG      = `I_IS_CONFIG        ;
     localparam I_IS_CIN_LAST    = `I_IS_CIN_LAST      ;
+    localparam I_IS_COL_VALID   = `I_IS_COL_VALID     ;
     localparam I_KW2            = `I_KW2              ;
+    localparam I_SW_1           = `I_SW_1             ;
 
     localparam KW2_MAX          = KW_MAX      /2; //R, 3->1, 5->2, 7->3
     localparam BITS_KW          = `BITS_KW;
     localparam BITS_KW2         = `BITS_KW2;
+    localparam BITS_SW          = `BITS_SW;
 
     input  logic aclk, aresetn, aclken, valid_in;
     input  logic [TUSER_WIDTH - 1: 0] user_in ;
@@ -63,18 +67,11 @@ module pad_filter #(ZERO=0)
     output logic [BITS_KW - 1 : 0]    clr     [MEMBERS - 1 : 0]; // 0-center, 1-center-left, 2-center-right, 3-left, 4-right
     output logic valid_mask;
 
-    /*
-    KW2_1
-
-    * From user_in, hence tied to valid and last
-    * Value: (kw/2 -1)
-        - (7 x m) : 2
-        - (5 x m) : 1
-        - (3 x m) : 0
-    * Acts as mux_sel for lookup logic
-    */
-    
+   
     logic   [BITS_KW2-1 : 0] kw2_wire;
+    logic   [BITS_SW -1 : 0] sw_1_wire;
+    assign kw2_wire  = user_in [BITS_KW2 + I_KW2  -1: I_KW2 ]; // kw = 7 : kw2_wire = 3,   kw = 5 : kw2_wire = 2,   kw = 3 : kw2_wire = 1
+    assign sw_1_wire = user_in [BITS_SW  + I_SW_1 -1: I_SW_1];
     
     /*
     COL_START, COL_END Registers
@@ -101,7 +98,6 @@ module pad_filter #(ZERO=0)
     */
 
     logic   reg_clken       ;
-    logic   col_left_in     ;
     logic   [KW2_MAX : 1] col_end_in     ;
     logic   [KW2_MAX : 0] col_end        ;
     logic   [MEMBERS-1:0] reg_clken_masked;
@@ -118,7 +114,6 @@ module pad_filter #(ZERO=0)
     logic lut_next_full  [MEMBERS - 1 : 0] [KW2_MAX : 0];
 
     generate
-        assign kw2_wire = user_in [BITS_KW2 + I_KW2-1: I_KW2]; // kw = 7 : kw2_wire = 3,   kw = 5 : kw2_wire = 2,   kw = 3 : kw2_wire = 1
         assign reg_clken = aclken && valid_in && (user_in [I_IS_CIN_LAST] || user_in [I_IS_CONFIG]);
 
         assign col_end_in   [1]  = user_in [I_IS_COLS_1_K2] && (kw2_wire != 0);
@@ -257,32 +252,38 @@ module pad_filter #(ZERO=0)
     */
     
     logic lut_not_start_cols              [KW2_MAX : 0];
-    logic lut_allow     [MEMBERS - 1 : 0] [KW2_MAX : 0];
+    logic lut_allow     [MEMBERS - 1 : 0] [KW2_MAX : 0][SW_MAX-1:0];
 
     generate
         assign lut_not_start_cols[0] = 1;
         for (genvar kw2=1;  kw2 <= KW2_MAX; kw2++)
             assign lut_not_start_cols[kw2] = !(|col_start[kw2:1]);  // 1,2,...k2 : first k/2 colums are to be ignored
 
-        for (genvar m=0; m < MEMBERS; m++)   begin: lookup_full_datapath_gen
-            for (genvar kw2=1;  kw2 <= KW2_MAX; kw2++)   begin: lookup_full_kw_gen
-                localparam kw = kw2*2 + 1;
+        for (genvar m=0; m < MEMBERS; m++)   begin: M
+            for (genvar kw2=1;  kw2 <= KW2_MAX; kw2++)
+                for (genvar sw_1=0;  sw_1 < SW_MAX; sw_1++)   begin: S
 
-                logic full_datapath, unused_datapaths, last_col, last_malformed, at_start_and_middle, at_last_col;
-            
-                assign full_datapath             =     (m % kw) == kw-1      ; // M=24, kw=5: m=0,4,9,14,19
-                assign unused_datapaths          =     m >= (MEMBERS/kw)*kw  ; // m >= 20
-                assign last_col                  =      col_end  [kw2  ]     ; // if the last column:
-                assign last_malformed            =     (m % kw) <  kw2       ; // M=24, kw=5: m=0,1,5,6; All (m<k2) datapaths contain malformed data, rest contain padded data
-                assign at_start_and_middle       =     lut_not_start_cols[kw2] & full_datapath; // During start_cols, block all datapaths. During middle_cols, allow only full_datapth.
-                assign at_last_col               =     last_col & !last_malformed & !unused_datapaths; // At the last_col, only allow datapaths that have partially formed padding
+                    localparam k = kw2*2 + 1;
+                    localparam s = sw_1 + 1;
+                    localparam j = k + s -1;
 
-                assign lut_allow [m][kw2] = at_start_and_middle | at_last_col;
-            end
-            assign     lut_allow [m][ 0 ] = 1;
+                    if (`KS_COMBS_EXPR) begin
+                        logic full_datapath, unused_datapaths, last_col, last_malformed, at_start_and_middle, at_last_col;
+                    
+                        assign full_datapath       = (m % j) >= k-1         ; // M=24, kw=5: m=0,4,9,14,19
+                        assign unused_datapaths    = m >= (MEMBERS/j)*j     ; // m >= 20
+                        assign last_col            = col_end  [kw2]         ; // if the last column:
+                        assign last_malformed      = (m % j) <  k-1-s       ; // M=24, kw=5: m=0,1,5,6; All (m<k2) datapaths contain malformed data, rest contain padded data
+                        assign at_start_and_middle = lut_not_start_cols[kw2] & full_datapath; // During start_cols, block all datapaths. During middle_cols, allow only full_datapth.
+                        assign at_last_col         = last_col & !last_malformed & !unused_datapaths; // At the last_col, only allow datapaths that have partially formed padding
 
-            assign     keep_mask[m]  =  lut_allow [m][kw2_wire] | user_in [I_IS_CONFIG];
+                        assign lut_allow [m][kw2][sw_1]  = at_start_and_middle | at_last_col;
+                    end
+                end
+            assign     lut_allow [m][0][0] = 1;
+
+            assign     keep_mask[m]  =  lut_allow [m][kw2_wire][sw_1_wire] | user_in [I_IS_CONFIG];
         end
-        assign valid_mask = lut_not_start_cols[kw2_wire]  | user_in [I_IS_CONFIG];
+        assign valid_mask = (lut_not_start_cols[kw2_wire] & user_in [I_IS_COL_VALID])  | user_in [I_IS_CONFIG];
     endgenerate
 endmodule

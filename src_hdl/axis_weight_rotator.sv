@@ -43,7 +43,8 @@ module axis_weight_rotator #(ZERO=0) (
     m_axis_tuser  
   );
 
-  localparam CORES                     = `CORES                    ;
+  localparam GROUPS                    = `GROUPS                   ;
+  localparam COPIES                    = `COPIES                   ;
   localparam MEMBERS                   = `MEMBERS                  ;
   localparam WORD_WIDTH                = `WORD_WIDTH               ; 
   localparam DEBUG_CONFIG_WIDTH_W_ROT  = `DEBUG_CONFIG_WIDTH_W_ROT ;
@@ -54,7 +55,7 @@ module axis_weight_rotator #(ZERO=0) (
   localparam IM_CIN_MAX                = `IM_CIN_MAX               ;
   localparam IM_BLOCKS_MAX             = `IM_BLOCKS_MAX            ;
   localparam IM_COLS_MAX               = `IM_COLS_MAX              ;
-  localparam S_WEIGHTS_WIDTH_HF        = `S_WEIGHTS_WIDTH_HF       ;
+  localparam S_WEIGHTS_WIDTH_LF        = `S_WEIGHTS_WIDTH_LF       ;
   localparam LATENCY_BRAM              = `LATENCY_BRAM             ;
   localparam I_WEIGHTS_IS_TOP_BLOCK    = `I_WEIGHTS_IS_TOP_BLOCK   ;
   localparam I_WEIGHTS_IS_BOTTOM_BLOCK = `I_WEIGHTS_IS_BOTTOM_BLOCK;
@@ -64,6 +65,8 @@ module axis_weight_rotator #(ZERO=0) (
   localparam I_WEIGHTS_IS_W_FIRST      = `I_WEIGHTS_IS_W_FIRST     ;
   localparam I_WEIGHTS_KW2             = `I_WEIGHTS_KW2            ; 
   localparam I_WEIGHTS_SW_1            = `I_WEIGHTS_SW_1           ;
+  localparam I_WEIGHTS_IS_COL_VALID    = `I_WEIGHTS_IS_COL_VALID   ;
+  localparam I_WEIGHTS_IS_SUM_START    = `I_WEIGHTS_IS_SUM_START   ;
   localparam TUSER_WIDTH_WEIGHTS_OUT   = `TUSER_WIDTH_WEIGHTS_OUT  ;
   localparam BITS_KW2                  = `BITS_KW2                 ;
   localparam BITS_KH2                  = `BITS_KH2                 ;
@@ -74,10 +77,10 @@ module axis_weight_rotator #(ZERO=0) (
   localparam BITS_IM_COLS              = `BITS_IM_COLS  ;
 
   localparam LRELU_BEATS_MAX = `LRELU_BEATS_MAX;
-  localparam M_WIDTH    = WORD_WIDTH*CORES*MEMBERS;
+  localparam M_WIDTH    = WORD_WIDTH*COPIES*GROUPS*MEMBERS;
   localparam BRAM_WIDTH = M_WIDTH;
-  localparam BRAM_DEPTH = KH_MAX       * IM_CIN_MAX + LRELU_BEATS_MAX;
-  localparam BITS_ADDR  = $clog2(BRAM_DEPTH);
+  localparam BRAM_DEPTH = `BRAM_WEIGHTS_DEPTH;
+  localparam BITS_ADDR  = `BITS_WEIGHTS_ADDR;
   localparam CONFIG_COUNT_MAX  = lrelu_beats::calc_beats_total_max(.KW_MAX      (KW_MAX      ), .MEMBERS(MEMBERS));
   localparam BITS_CONFIG_COUNT = $clog2(CONFIG_COUNT_MAX);
 
@@ -87,8 +90,8 @@ module axis_weight_rotator #(ZERO=0) (
   output logic s_axis_tready;
   input  logic s_axis_tvalid;
   input  logic s_axis_tlast ;
-  input  logic [S_WEIGHTS_WIDTH_HF    -1:0] s_axis_tdata;
-  input  logic [S_WEIGHTS_WIDTH_HF /8 -1:0] s_axis_tkeep;
+  input  logic [S_WEIGHTS_WIDTH_LF    -1:0] s_axis_tdata;
+  input  logic [S_WEIGHTS_WIDTH_LF /8 -1:0] s_axis_tkeep;
 
   input  logic m_axis_tready;
   output logic m_axis_tvalid;
@@ -102,9 +105,9 @@ module axis_weight_rotator #(ZERO=0) (
   logic dw_m_ready, dw_m_valid, dw_m_last, dw_s_valid, dw_s_ready;
   logic [M_WIDTH -1:0] dw_m_data_flat;
 
-  logic [WORD_WIDTH-1:0] s_data    [S_WEIGHTS_WIDTH_HF /WORD_WIDTH-1:0];
-  logic [WORD_WIDTH-1:0] m_data    [CORES-1:0][MEMBERS-1:0];
-  logic [WORD_WIDTH-1:0] dw_m_data [CORES-1:0][MEMBERS-1:0];
+  logic [WORD_WIDTH-1:0] s_data    [S_WEIGHTS_WIDTH_LF /WORD_WIDTH-1:0];
+  logic [WORD_WIDTH-1:0] m_data    [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0];
+  logic [WORD_WIDTH-1:0] dw_m_data [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0];
 
   assign s_data    = {>>{s_axis_tdata}};
   assign dw_m_data = {>>{dw_m_data_flat}};
@@ -130,14 +133,15 @@ module axis_weight_rotator #(ZERO=0) (
   logic [BITS_KW2         -1:0] s_kw2 , ref_kw2   [2];
   logic [BITS_KH2         -1:0] s_kh2 , ref_kh2   [2];
   logic [BITS_KH          -1:0] count_kh, count_next_kh;
+  logic [BITS_SW          -1:0] s_sw_1    , count_sw    , count_next_sw    , ref_1_sw     [2];
   logic [BITS_IM_CIN      -1:0] s_cin_1   , count_cin   , count_next_cin   , ref_1_cin    [2];
   logic [BITS_IM_COLS     -1:0] s_cols_1  , count_cols  , count_next_cols  , ref_1_cols   [2];
   logic [BITS_IM_BLOCKS   -1:0] s_blocks_1, count_blocks, count_next_blocks, ref_1_blocks [2];
   
-  logic en_count_kh, en_count_cin, en_count_cols, en_count_blocks, en_count_config;
+  logic en_count_kh, en_count_sw, en_count_cin, en_count_cols, en_count_blocks, en_count_config;
 
-  logic last_config, last_kh, last_cin, last_cols, last_blocks;
-  logic last_next_config, last_next_kh, last_next_cin, last_next_cols, last_next_blocks;
+  logic last_config, last_kh, last_sw, last_cin, last_cols, last_blocks;
+  logic last_next_config, last_next_kh, last_next_sw, last_next_cin, last_next_cols, last_next_blocks;
 
   output logic [DEBUG_CONFIG_WIDTH_W_ROT-1:0] debug_config;
   
@@ -338,11 +342,11 @@ module axis_weight_rotator #(ZERO=0) (
     Extract s_data into inputs of ref registers
     This will give error if SUM_BITS > S_WEIGHTS_WIDTH 
   */
-  localparam SUM_BITS = BITS_KW2 + BITS_KH2 + BITS_IM_CIN + BITS_IM_COLS + BITS_IM_BLOCKS;
-  assign {s_blocks_1, s_cols_1, s_cin_1, s_kh2 , s_kw2 } = s_axis_tdata[SUM_BITS-1:0];
+  localparam SUM_BITS = BITS_ADDR + BITS_IM_BLOCKS + BITS_IM_COLS + BITS_IM_CIN + BITS_SW + BITS_KH2 + BITS_KW2;
+  assign {s_addr_max, s_blocks_1, s_cols_1, s_cin_1, s_sw_1, s_kh2 , s_kw2 } = s_axis_tdata[SUM_BITS-1:0];
   
-  // s_addr_max = (s_kh_1+1)*(s_cin_1+1) = (s_kh_1 * s_cin_1) + s_kh_1 + s_cin_1 +1
-  assign s_addr_max = (s_kh2 * (s_cin_1+1)) * 2 + s_cin_1 + s_addr_min;
+  // s_addr_max = (s_kh_1+1)*(s_cin_1+1)*(s_sw_1+1) = (s_kh_1 * s_cin_1) + s_kh_1 + s_cin_1 +1
+  // assign s_addr_max = ((s_kh2 * (s_cin_1+1)) * 2 + s_cin_1 + s_addr_min)*s_sw_1 + ((s_kh2 * (s_cin_1+1)) * 2 + s_cin_1 + s_addr_min) + s_sw_1;
   assign s_addr_min = lut_lrelu_beats_1[s_kh2] + 1;
 
 
@@ -400,27 +404,6 @@ module axis_weight_rotator #(ZERO=0) (
         end
       end
 
-      // always_valid_cyclic_bram #(
-      //   .W_DEPTH (BRAM_DEPTH), 
-      //   .W_WIDTH (BRAM_WIDTH),
-      //   .R_WIDTH (BRAM_WIDTH),
-      //   .LATENCY (LATENCY_BRAM),
-      //   .IP_TYPE (2)
-      // ) BRAM (
-      //   .clk          (aclk),
-      //   .clken        (1'b1),
-      //   .resetn       (aresetn && bram_resetn [i]),
-      //   .s_data       (dw_m_data_flat),
-      //   .s_valid_ready(bram_wen    [i]),
-      //   .m_data       (bram_m_data [i]),
-      //   .m_ready      (bram_m_ready[i]),
-      //   .m_valid      (bram_m_valid[i]),
-      //   .w_full       (bram_w_full [i]),
-      //   .r_addr_min   (r_addr_min  [i]),
-      //   .r_addr_max   (addr_max    [i]),
-      //   .w_addr_max   (addr_max    [i])
-      // );
-
       cyclic_bram #(
         .R_DEPTH      (BRAM_DEPTH),
         .R_DATA_WIDTH (BRAM_WIDTH),
@@ -429,7 +412,7 @@ module axis_weight_rotator #(ZERO=0) (
         .ABSORB       (1),
         .USE_W_LAST   (1),
         .USE_R_LAST   (0),
-        .IP_TYPE      (2) // 0 - lrelu, 1 - lrelu_edge, 2 - weights
+        .IP_TYPE      (0) // 0 - weights
       ) BRAM (
         .clk          (aclk),
         .clken        (1'b1),
@@ -514,6 +497,16 @@ module axis_weight_rotator #(ZERO=0) (
         .data_out     (ref_kh2   [i])
       );
       register #(
+        .WORD_WIDTH   (BITS_SW), 
+        .RESET_VALUE  (0)
+      ) REF_SW_1 (
+        .clock        (aclk),
+        .resetn       (aresetn),
+        .data_in      (s_sw_1),
+        .clock_enable (en_ref     [i]),
+        .data_out     (ref_1_sw   [i])
+      );
+      register #(
         .WORD_WIDTH   (BITS_IM_CIN), 
         .RESET_VALUE  (0)
       ) REF_CIN_1 (
@@ -588,17 +581,20 @@ module axis_weight_rotator #(ZERO=0) (
 
   assign en_count_kh        = m_axis_tvalid && m_axis_tready && (last_config || state_read == R_READ_S);
   assign en_count_cin       = m_axis_tvalid && m_axis_tready && (last_config || (last_kh));
+  assign en_count_sw        = m_axis_tvalid && m_axis_tready && (last_config || (last_kh && last_cin)); // independant
   assign en_count_cols      = m_axis_tvalid && m_axis_tready && (last_config || (last_kh && last_cin));
   assign en_count_blocks    = m_axis_tvalid && m_axis_tready && (last_config || (last_kh && last_cin && last_cols));
 
   assign count_next_kh     = (last_kh       || last_config || ref_kh2      [i_read] == 0) ? 2*ref_kh2   [i_read] : count_kh     - 1;
   assign count_next_cin    = (last_cin      || last_config || ref_1_cin    [i_read] == 0) ? ref_1_cin   [i_read] : count_cin    - 1;
+  assign count_next_sw     = (last_sw       || last_config || ref_1_sw     [i_read] == 0) ? ref_1_sw    [i_read] : count_sw     - 1;
   assign count_next_cols   = (last_cols     || last_config || ref_1_cols   [i_read] == 0) ? ref_1_cols  [i_read] : count_cols   - 1;
   assign count_next_blocks = (last_blocks   || last_config || ref_1_blocks [i_read] == 0) ? ref_1_blocks[i_read] : count_blocks - 1;
 
   assign last_next_config  = count_next_config == 0;
   assign last_next_kh      = count_next_kh     == 0 || ref_kh2      [i_read] == 0;
   assign last_next_cin     = count_next_cin    == 0 || ref_1_cin    [i_read] == 0;
+  assign last_next_sw      = count_next_sw     == 0 || ref_1_sw     [i_read] == 0;
   assign last_next_cols    = count_next_cols   == 0 || ref_1_cols   [i_read] == 0;
   assign last_next_blocks  = count_next_blocks == 0 || ref_1_blocks [i_read] == 0;
 
@@ -610,13 +606,15 @@ module axis_weight_rotator #(ZERO=0) (
   
   assign m_axis_tuser [I_WEIGHTS_IS_CONFIG  ] = state_read  == R_PASS_CONFIG_S;
   assign m_axis_tuser [I_WEIGHTS_KW2+BITS_KW2-1: I_WEIGHTS_KW2] = ref_kw2  [i_read];
-  assign m_axis_tuser [I_WEIGHTS_SW_1+BITS_SW -1: I_WEIGHTS_SW_1] = -1;
+  assign m_axis_tuser [I_WEIGHTS_SW_1+BITS_SW -1: I_WEIGHTS_SW_1] = ref_1_sw [i_read];
 
   assign m_axis_tuser [I_WEIGHTS_IS_W_FIRST     ] = count_cols == ref_1_cols[i_read] && count_cin == ref_1_cin[i_read] && count_kh == 2*ref_kh2 [i_read];
   assign m_axis_tuser [I_WEIGHTS_IS_CIN_LAST    ] = (last_kh && last_cin);
   assign m_axis_tuser [I_WEIGHTS_IS_COLS_1_K2   ] = count_cols   == ref_kw2      [i_read]; // i = cols-1-k/2 === [cols-1-i] = k/2
   assign m_axis_tuser [I_WEIGHTS_IS_TOP_BLOCK   ] = count_blocks == ref_1_blocks [i_read];
   assign m_axis_tuser [I_WEIGHTS_IS_BOTTOM_BLOCK] = last_blocks;
+  assign m_axis_tuser [I_WEIGHTS_IS_COL_VALID   ] = count_sw == ref_1_sw [i_read] - (ref_1_sw [i_read] == 0  ? 0 : 1); // if no stride, si=0 else si=1
+  assign m_axis_tuser [I_WEIGHTS_IS_SUM_START   ] = count_sw == ref_1_sw [i_read] - (ref_1_sw [i_read] == 2-1? 1 : 0); // if (7,2)    , si=1 else si=0
 
   assign m_axis_tdata = bram_m_data[i_read];
 
@@ -682,6 +680,26 @@ module axis_weight_rotator #(ZERO=0) (
     .data_in      (last_next_cin),
     .clock_enable (en_count_cin),
     .data_out     (last_cin)
+  );
+  register #(
+    .WORD_WIDTH   (BITS_SW), 
+    .RESET_VALUE  (0)
+  ) COUNT_SW (
+    .clock        (aclk),
+    .resetn       (aresetn),
+    .data_in      (count_next_sw),
+    .clock_enable (en_count_sw),
+    .data_out     (count_sw)
+  );
+  register #(
+    .WORD_WIDTH   (1), 
+    .RESET_VALUE  (0)
+  ) LAST_SW (
+    .clock        (aclk),
+    .resetn       (aresetn),
+    .data_in      (last_next_sw),
+    .clock_enable (en_count_sw),
+    .data_out     (last_sw)
   );
   register #(
     .WORD_WIDTH   (BITS_IM_COLS), 

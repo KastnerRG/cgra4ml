@@ -37,7 +37,6 @@ module axis_accelerator_tb ();
   localparam GROUPS                = `GROUPS               ;
   localparam COPIES                = `COPIES               ;
   localparam MEMBERS               = `MEMBERS              ;
-  localparam CORES                 = `CORES                ;
   localparam WORD_WIDTH            = `WORD_WIDTH           ; 
   localparam WORD_WIDTH_ACC        = `WORD_WIDTH_ACC       ; 
   localparam DEBUG_CONFIG_WIDTH_W_ROT   = `DEBUG_CONFIG_WIDTH_W_ROT  ;
@@ -52,7 +51,6 @@ module axis_accelerator_tb ();
   localparam TUSER_WIDTH_LRELU_IN       = `TUSER_WIDTH_LRELU_IN      ;
 
   localparam S_WEIGHTS_WIDTH_LF      = `S_WEIGHTS_WIDTH_LF     ;
-  localparam S_WEIGHTS_WIDTH_HF      = `S_WEIGHTS_WIDTH_HF     ;
   localparam M_DATA_WIDTH_HF_CONV    = `M_DATA_WIDTH_HF_CONV   ;
   localparam M_DATA_WIDTH_HF_LRELU   = `M_DATA_WIDTH_HF_LRELU  ;
   localparam M_DATA_WIDTH_HF_MAXPOOL = `M_DATA_WIDTH_HF_MAXPOOL;
@@ -61,14 +59,13 @@ module axis_accelerator_tb ();
   localparam M_DATA_WIDTH_LF_MAXPOOL = `M_DATA_WIDTH_LF_MAXPOOL;
 
   localparam UNITS_EDGES        = `UNITS_EDGES;
-  localparam IM_IN_S_DATA_WORDS = `IM_IN_S_DATA_WORDS;
-  localparam TKEEP_WIDTH_IM_IN  = `TKEEP_WIDTH_IM_IN;
+  localparam S_PIXELS_WIDTH_LF  = `S_PIXELS_WIDTH_LF;
   localparam REPEATS = 3;
 
 
   class Layer #(IDX=0, K=0, IS_MAX=0, IM_HEIGHT=0, IM_WIDTH=0, IM_CIN=0);
 
-    string IDX_s, path_im_1, path_im_2, path_weights, base_conv_out, base_lrelu_out, base_max_out, base_output, base_conv_out_dw;
+    string IDX_s, path_im_in, path_weights, base_conv_out, base_lrelu_out, base_max_out, base_output, base_conv_out_dw;
 
     // Calculate beats
 
@@ -85,8 +82,7 @@ module axis_accelerator_tb ();
     parameter BEATS_CONFIG_1     = lrelu_beats::calc_beats_total (.kw2(K/2), .MEMBERS(MEMBERS)) -1;
     parameter W_M_BEATS          = BEATS_CONFIG_1+1 + K*IM_CIN;
     parameter W_S_LF_WORDS_PER_BEAT = S_WEIGHTS_WIDTH_LF /WORD_WIDTH;
-    parameter W_S_HF_WORDS_PER_BEAT = S_WEIGHTS_WIDTH_HF /WORD_WIDTH;
-    parameter WORDS_W            = W_S_HF_WORDS_PER_BEAT + W_M_BEATS*COPIES*GROUPS*MEMBERS;
+    parameter WORDS_W            = W_S_LF_WORDS_PER_BEAT + W_M_BEATS*COPIES*GROUPS*MEMBERS;
 
     parameter BEATS_PER_PACKET = MEMBERS/K;
     parameter PACKETS_PER_ITR  = (IM_BLOCKS/MAX_FACTOR)*IM_COLS;
@@ -115,14 +111,13 @@ module axis_accelerator_tb ();
     parameter IM_BLOCKS_OUT = IM_HEIGHT_OUT/UNITS;
 
     parameter SUB_CORES     = MEMBERS / K;
-    parameter EFF_CORES     = CORES * SUB_CORES / MAX_FACTOR;
+    parameter EFF_CORES     = COPIES*GROUPS * SUB_CORES / MAX_FACTOR;
 
     parameter KW_PAD        = K - 2*IS_MAX;
     
     function new();
         IDX_s.itoa(IDX);
-        path_im_1      = {DIR_PATH, IDX_s, "_conv_in_0.txt"    };
-        path_im_2      = {DIR_PATH, IDX_s, "_conv_in_1.txt"    };
+        path_im_in      = {DIR_PATH, IDX_s, "_conv_input.txt"    };
         path_weights   = {DIR_PATH, IDX_s, "_weights.txt"      };
         base_conv_out  = {DIR_PATH, IDX_s, "_conv_out_sim_"   };
         base_conv_out_dw = {DIR_PATH, IDX_s, "_conv_out_dw_sim_" };
@@ -140,7 +135,6 @@ module axis_accelerator_tb ();
         $display("WORDS_1                 = %d", WORDS_1                );
         $display("BEATS_CONFIG_1          = %d", BEATS_CONFIG_1         );
         $display("W_M_BEATS               = %d", W_M_BEATS              );
-        $display("W_S_HF_WORDS_PER_BEAT   = %d", W_S_HF_WORDS_PER_BEAT  );
         $display("W_S_LF_WORDS_PER_BEAT   = %d", W_S_LF_WORDS_PER_BEAT  );
         $display("WORDS_W                 = %d", WORDS_W                );
         $display("BEATS_PER_PACKET        = %d", BEATS_PER_PACKET       );
@@ -165,13 +159,12 @@ module axis_accelerator_tb ();
         $display("EFF_CORES               = %d", EFF_CORES              );
         $display("KW_PAD                  = %d", KW_PAD                 );
     endfunction
-
   endclass
 
-  Layer #(.IDX (1 ), .K(3), .IS_MAX(1), .IM_HEIGHT(256), .IM_WIDTH(384), .IM_CIN(3  )) layer = new();
+  // Layer #(.IDX (1 ), .K(3), .IS_MAX(1), .IM_HEIGHT(256), .IM_WIDTH(384), .IM_CIN(3  )) layer = new();
   // Layer #(.IDX (2 ), .K(3), .IS_MAX(1), .IM_HEIGHT(128), .IM_WIDTH(196), .IM_CIN(32  )) layer = new();
   // Layer #(.IDX (3 ), .K(3), .IS_MAX(0), .IM_HEIGHT(64 ), .IM_WIDTH(96 ), .IM_CIN(64 )) layer = new();
-  // Layer #(.IDX (4 ), .K(1), .IS_MAX(0), .IM_HEIGHT(64 ), .IM_WIDTH(96 ), .IM_CIN(128)) layer = new();
+  Layer #(.IDX (4 ), .K(1), .IS_MAX(0), .IM_HEIGHT(64 ), .IM_WIDTH(96 ), .IM_CIN(128)) layer = new();
   // Layer #(.IDX (14), .K(3), .IS_MAX(0), .IM_HEIGHT(8  ), .IM_WIDTH(12 ), .IM_CIN(512)) layer = new();
 
   localparam PACKETS_PER_ITR     = layer.PACKETS_PER_ITR;
@@ -180,17 +173,11 @@ module axis_accelerator_tb ();
 
   logic aresetn;
   logic hf_aresetn;
-  logic s_axis_pixels_1_tready;
-  logic s_axis_pixels_1_tvalid;
-  logic s_axis_pixels_1_tlast ;
-  logic [IM_IN_S_DATA_WORDS -1:0][WORD_WIDTH-1:0] s_axis_pixels_1_tdata;
-  logic [TKEEP_WIDTH_IM_IN-1:0] s_axis_pixels_1_tkeep;
-
-  logic s_axis_pixels_2_tready;
-  logic s_axis_pixels_2_tvalid;
-  logic s_axis_pixels_2_tlast ;
-  logic [IM_IN_S_DATA_WORDS -1:0][WORD_WIDTH-1:0] s_axis_pixels_2_tdata;
-  logic [TKEEP_WIDTH_IM_IN-1:0] s_axis_pixels_2_tkeep;
+  logic s_axis_pixels_tready;
+  logic s_axis_pixels_tvalid;
+  logic s_axis_pixels_tlast ;
+  logic [S_PIXELS_WIDTH_LF/WORD_WIDTH -1:0][WORD_WIDTH-1:0] s_axis_pixels_tdata;
+  logic [S_PIXELS_WIDTH_LF/8-1:0] s_axis_pixels_tkeep;
 
   logic s_axis_weights_tready;
   logic s_axis_weights_tvalid;
@@ -257,12 +244,10 @@ module axis_accelerator_tb ();
 
   axis_accelerator pipe (.*);
 
-  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(VALID_PROB)) s_pixels_1  = new(.file_path(layer.path_im_1   ), .words_per_packet(layer.WORDS_1), .iterations(1));
-  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(IM_IN_S_DATA_WORDS), .VALID_PROB(VALID_PROB)) s_pixels_2  = new(.file_path(layer.path_im_2   ), .words_per_packet(layer.WORDS_2), .iterations(1));
+  AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(S_PIXELS_WIDTH_LF/WORD_WIDTH ), .VALID_PROB(VALID_PROB)) s_pixels    = new(.file_path(layer.path_im_in  ), .words_per_packet(layer.WORDS_1), .iterations(1));
   AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(layer.W_S_LF_WORDS_PER_BEAT  ), .VALID_PROB(VALID_PROB)) s_weights   = new(.file_path(layer.path_weights), .words_per_packet(layer.WORDS_W), .iterations(1));
 
-  initial forever s_pixels_1.axis_feed(aclk, s_axis_pixels_1_tready, s_axis_pixels_1_tvalid, s_axis_pixels_1_tdata, s_axis_pixels_1_tkeep, s_axis_pixels_1_tlast);
-  initial forever s_pixels_2.axis_feed(aclk, s_axis_pixels_2_tready, s_axis_pixels_2_tvalid, s_axis_pixels_2_tdata, s_axis_pixels_2_tkeep, s_axis_pixels_2_tlast);
+  initial forever s_pixels  .axis_feed(aclk, s_axis_pixels_tready  , s_axis_pixels_tvalid  , s_axis_pixels_tdata  , s_axis_pixels_tkeep  , s_axis_pixels_tlast);
   initial forever s_weights .axis_feed(aclk, s_axis_weights_tready , s_axis_weights_tvalid , s_axis_weights_tdata , s_axis_weights_tkeep , s_axis_weights_tlast );
   
   AXIS_Master#(.WORD_WIDTH(WORD_WIDTH_ACC), .WORDS_PER_BEAT(M_DATA_WIDTH_HF_CONV/WORD_WIDTH_ACC), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD_HF), .IS_ACTIVE(1)) m_conv    = new(.file_base(layer.base_conv_out   )); // sensitive to tlast
@@ -287,30 +272,27 @@ module axis_accelerator_tb ();
   /*
     Get counters from drivers
   */
-  bit s_en_1, s_en_2, s_en_w, m_en_conv, m_en_lrelu, m_en_max;
-  int s_words_1, s_words_2, s_words_w, s_itr_1, s_itr_2, s_itr_w; 
+  bit s_en_p, s_en_w, m_en_conv, m_en_lrelu, m_en_max;
+  int s_words_p, s_words_w, s_itr_p, s_itr_w; 
   int m_words_max, m_words_lrelu, m_words_conv;  
   int m_itr_max, m_itr_lrelu, m_itr_conv;  
   int m_packets_max, m_packets_lrelu, m_packets_conv;
 
   initial forever begin
     @(posedge aclk);
-    s_en_1     = s_pixels_1.enable;
-    s_en_2     = s_pixels_2.enable;
+    s_en_p     = s_pixels.enable;
     s_en_w     = s_weights.enable;
     m_en_conv  = m_conv.enable;
     m_en_lrelu = m_lrelu.enable;
     m_en_max   = m_max    .enable;
 
-    s_words_1     = s_pixels_1.i_words;
-    s_words_2     = s_pixels_2.i_words;
+    s_words_p     = s_pixels.i_words;
     s_words_w     = s_weights .i_words;
     m_words_max   = m_max     .i_words;
     m_words_lrelu = m_lrelu   .i_words;
     m_words_conv  = m_conv.i_words;  
 
-    s_itr_1       = s_pixels_1.i_itr;
-    s_itr_2       = s_pixels_2.i_itr;
+    s_itr_p       = s_pixels.i_itr;
     s_itr_w       = s_weights .i_itr;
     m_itr_max     = m_max     .i_itr; 
     m_itr_lrelu   = m_lrelu   .i_itr;
@@ -327,8 +309,7 @@ module axis_accelerator_tb ();
     repeat(2) @(posedge aclk);
     aresetn = 1;
 
-    s_pixels_1.enable = 1;
-    if (layer.IS_MAX) s_pixels_2.enable = 1;
+    s_pixels.enable = 1;
     s_weights .enable = 1;
     m_conv.enable  = 1;
     m_lrelu.enable    = 1;
@@ -339,10 +320,8 @@ module axis_accelerator_tb ();
     end
 
     repeat(100) @(posedge aclk);
-    s_pixels_1.i_itr =0;
-    s_pixels_1.enable = 1;
-    s_pixels_2.i_itr =0;
-    if (layer.IS_MAX) s_pixels_2.enable = 1;
+    s_pixels.i_itr =0;
+    s_pixels.enable = 1;
 
     s_weights.i_itr  = 0;
     s_weights.enable = 1;

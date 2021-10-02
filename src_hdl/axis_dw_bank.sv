@@ -76,7 +76,7 @@ module axis_dw_shift_1 #(
         localparam s = sw_1+1;
         localparam j = k==1 ? MEMBERS : k+s-1;
 
-        if(`KS_COMBINATIONS) begin
+        if(`KS_COMBS_EXPR) begin
           assign lut_valid_idx     [kw2][sw_1]      = j-1;
           assign lut_valid_next_idx[kw2][sw_1]      = j-2;
           assign lut_valid_next_next_idx[kw2][sw_1] = j-3;
@@ -253,7 +253,7 @@ module axis_dw_shift_2 #(
             automatic int s  = sw_1+1;
             automatic int j  = k + sw_1;
 
-            if(`KS_COMBINATIONS)
+            if(`KS_COMBS_EXPR)
               if (m%j == j-1) 
                 begin
                   reg_data_s_mux[kw2][sw_1][m/j] = s_data_packed[m];
