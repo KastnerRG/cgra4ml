@@ -1,10 +1,11 @@
 # set params
 set HDL_DIR ../../src_hdl
+set LIB_DIR ../../../tsmc/40nm
 source ../../tcl/config.tcl
 
-set_db init_lib_search_path [list ../../../tsmc/40nm/lef ../../../tsmc/40nm/lib ../../../tsmc/40nm/cap]
-set_db library tcbn45gsbwpbc.lib 
-set_db lef_library tcbn45gsbwp_10lm7X2ZRDL.lef
+set_db init_lib_search_path [list $LIB_DIR/lef $LIB_DIR/lib $LIB_DIR/cap]
+set_db library [glob $LIB_DIR/lib/tcbn45gsbwpbc0d88*.lib]
+set_db lef_library [glob $LIB_DIR/lef/*.lef]
 
 set_db hdl_search_path $HDL_DIR
 
@@ -27,9 +28,11 @@ set_dont_touch_network [get_ports {aresetn}]
 
 # synth
 # set_db module:${TOP} .retime true
-synthesize -to_mapped -effort m
-# syn_generic
-# syn_map
+# synthesize -to_mapped -effort m
+set_db syn_global_effort high
+syn_generic
+syn_map
+syn_opt
 
 # 7. Write netlist
 write -mapped > ../output/${TOP}.v
@@ -39,5 +42,4 @@ write_sdc > ../output/${TOP}.sdc
 report_area > ../report/area.log
 report_gates > ../report/gates.log
 report_timing  -nworst 10 > ../report/timing.log
-report_constraint > ../report/constraint.log
 report_power > ../report/power.log
