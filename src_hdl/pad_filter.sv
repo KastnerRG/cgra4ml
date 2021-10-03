@@ -40,9 +40,10 @@ module pad_filter #(ZERO=0)
     aresetn,
     user_in,
     valid_in,
-    keep_mask,
     valid_mask,
-    clr
+    clr,
+    shift_a,
+    shift_b
 );
 
     localparam KW_MAX           = `KW_MAX             ;
@@ -60,12 +61,15 @@ module pad_filter #(ZERO=0)
     localparam BITS_KW          = `BITS_KW;
     localparam BITS_KW2         = `BITS_KW2;
     localparam BITS_SW          = `BITS_SW;
+    localparam BITS_MEMBERS     = `BITS_MEMBERS  ;
+    localparam BITS_OUT_SHIFT   = `BITS_OUT_SHIFT;
 
     input  logic aclk, aresetn, aclken, valid_in;
     input  logic [TUSER_WIDTH - 1: 0] user_in ;
-    output logic [MEMBERS - 1 : 0]    keep_mask;
-    output logic [BITS_KW - 1 : 0]    clr     [MEMBERS - 1 : 0]; // 0-center, 1-center-left, 2-center-right, 3-left, 4-right
+    output logic [MEMBERS - 1 : 0][BITS_KW - 1 : 0] clr; // 0-center, 1-center-left, 2-center-right, 3-left, 4-right
     output logic valid_mask;
+    output logic [BITS_MEMBERS  -1:0] shift_a;
+    output logic [BITS_OUT_SHIFT-1:0] shift_b;
 
    
     logic   [BITS_KW2-1 : 0] kw2_wire;
@@ -254,36 +258,55 @@ module pad_filter #(ZERO=0)
     logic lut_not_start_cols              [KW2_MAX : 0];
     logic lut_allow     [MEMBERS - 1 : 0] [KW2_MAX : 0][SW_MAX-1:0];
 
+    logic [KW2_MAX:0][SW_MAX-1:0][BITS_MEMBERS  -1:0] lut_shift_a;
+    logic [KW2_MAX:0][SW_MAX-1:0][BITS_OUT_SHIFT-1:0] lut_shift_b;
+
     generate
         assign lut_not_start_cols[0] = 1;
         for (genvar kw2=1;  kw2 <= KW2_MAX; kw2++)
             assign lut_not_start_cols[kw2] = !(|col_start[kw2:1]);  // 1,2,...k2 : first k/2 colums are to be ignored
 
-        for (genvar m=0; m < MEMBERS; m++)   begin: M
-            for (genvar kw2=1;  kw2 <= KW2_MAX; kw2++)
-                for (genvar sw_1=0;  sw_1 < SW_MAX; sw_1++)   begin: S
-
-                    localparam k = kw2*2 + 1;
-                    localparam s = sw_1 + 1;
-                    localparam j = k + s -1;
-
-                    if (`KS_COMBS_EXPR) begin
-                        logic full_datapath, unused_datapaths, last_col, last_malformed, at_start_and_middle, at_last_col;
-                    
-                        assign full_datapath       = (m % j) >= k-1         ; // M=24, kw=5: m=0,4,9,14,19
-                        assign unused_datapaths    = m >= (MEMBERS/j)*j     ; // m >= 20
-                        assign last_col            = col_end  [kw2]         ; // if the last column:
-                        assign last_malformed      = (m % j) <  k-1-s       ; // M=24, kw=5: m=0,1,5,6; All (m<k2) datapaths contain malformed data, rest contain padded data
-                        assign at_start_and_middle = lut_not_start_cols[kw2] & full_datapath; // During start_cols, block all datapaths. During middle_cols, allow only full_datapth.
-                        assign at_last_col         = last_col & !last_malformed & !unused_datapaths; // At the last_col, only allow datapaths that have partially formed padding
-
-                        assign lut_allow [m][kw2][sw_1]  = at_start_and_middle | at_last_col;
-                    end
-                end
-            assign     lut_allow [m][0][0] = 1;
-
-            assign     keep_mask[m]  =  lut_allow [m][kw2_wire][sw_1_wire] | user_in [I_IS_CONFIG];
-        end
         assign valid_mask = (lut_not_start_cols[kw2_wire] & user_in [I_IS_COL_VALID])  | user_in [I_IS_CONFIG];
+
+        for (genvar kw2=1;  kw2 <= KW2_MAX; kw2++)
+            for (genvar sw_1=0;  sw_1 < SW_MAX; sw_1++) begin
+                localparam k = kw2*2 + 1;
+                localparam s = sw_1 + 1;
+                localparam j = k + s -1;
+
+                if (`KS_COMBS_EXPR) begin
+                    assign lut_shift_a[kw2][sw_1] = col_end [kw2] ? kw2 : 0; // only for S=1
+                    assign lut_shift_b[kw2][sw_1] = k==1 ? 0 : MEMBERS/j-1; 
+                end
+            end
+
+        assign shift_a = lut_shift_a[kw2_wire][sw_1_wire];
+        assign shift_b = lut_shift_b[kw2_wire][sw_1_wire];
     endgenerate
+
+        // for (genvar m=0; m < MEMBERS; m++)   begin: M
+        //     for (genvar kw2=1;  kw2 <= KW2_MAX; kw2++)
+        //         for (genvar sw_1=0;  sw_1 < SW_MAX; sw_1++)   begin: S
+
+        //             localparam k = kw2*2 + 1;
+        //             localparam s = sw_1 + 1;
+        //             localparam j = k + s -1;
+
+        //             if (`KS_COMBS_EXPR) begin
+        //                 logic full_datapath, unused_datapaths, last_col, last_malformed, at_start_and_middle, at_last_col;
+                    
+        //                 assign full_datapath       = (m % j) >= k-1         ; // M=24, kw=5: m=0,4,9,14,19
+        //                 assign unused_datapaths    = m >= (MEMBERS/j)*j     ; // m >= 20
+        //                 assign last_col            = col_end  [kw2]         ; // if the last column:
+        //                 assign last_malformed      = (m % j) <  k-1-s       ; // M=24, kw=5: m=0,1,5,6; All (m<k2) datapaths contain malformed data, rest contain padded data
+        //                 assign at_start_and_middle = lut_not_start_cols[kw2] & full_datapath; // During start_cols, block all datapaths. During middle_cols, allow only full_datapth.
+        //                 assign at_last_col         = last_col & !last_malformed & !unused_datapaths; // At the last_col, only allow datapaths that have partially formed padding
+
+        //                 assign lut_allow [m][kw2][sw_1]  = at_start_and_middle | at_last_col;
+        //             end
+        //         end
+        //     assign     lut_allow [m][0][0] = 1;
+
+        //     // assign     keep_mask[m]  =  lut_allow [m][kw2_wire][sw_1_wire] | user_in [I_IS_CONFIG];
+        // end
 endmodule

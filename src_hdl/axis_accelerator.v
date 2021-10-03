@@ -18,18 +18,11 @@ module axis_accelerator #(ZERO=0) (
     s_axis_weights_tdata  ,
     s_axis_weights_tkeep  ,
 
-    conv_m_axis_tready,
-    conv_m_axis_tvalid,
-    conv_m_axis_tlast,
-    conv_m_axis_tuser,
-    conv_m_axis_tkeep,
-    conv_m_axis_tdata,
-
-    conv_dw2_lf_m_axis_tready ,
-    conv_dw2_lf_m_axis_tvalid ,
-    conv_dw2_lf_m_axis_tlast  ,
-    conv_dw2_lf_m_axis_tdata  ,
-    conv_dw2_lf_m_axis_tkeep  ,
+    conv_dw_lf_m_axis_tready ,
+    conv_dw_lf_m_axis_tvalid ,
+    conv_dw_lf_m_axis_tlast  ,
+    conv_dw_lf_m_axis_tdata  ,
+    conv_dw_lf_m_axis_tuser  ,
 
     lrelu_m_axis_tready,
     lrelu_m_axis_tvalid,
@@ -59,6 +52,7 @@ module axis_accelerator #(ZERO=0) (
   localparam S_PIXELS_WIDTH_LF = `S_PIXELS_WIDTH_LF   ;
   localparam BITS_KH2          = `BITS_KH2            ;
   localparam OUTPUT_MODE       = `OUTPUT_MODE         ;
+  localparam FREQ_RATIO        = `FREQ_RATIO          ;
 
   localparam S_WEIGHTS_WIDTH_LF= `S_WEIGHTS_WIDTH_LF  ;
   localparam M_DATA_WIDTH_LF   = `M_DATA_WIDTH_LF     ;
@@ -85,9 +79,12 @@ module axis_accelerator #(ZERO=0) (
   localparam DEBUG_CONFIG_WIDTH         = `DEBUG_CONFIG_WIDTH        ;
   // LATENCIES & float widths 
   localparam TUSER_WIDTH_CONV_IN        = `TUSER_WIDTH_CONV_IN       ;
+  localparam TUSER_CONV_DW_IN           = `TUSER_CONV_DW_IN          ;
   localparam TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN    ;
   localparam TUSER_WIDTH_LRELU_FMA_1_IN = `TUSER_WIDTH_LRELU_FMA_1_IN;
   localparam TUSER_WIDTH_LRELU_IN       = `TUSER_WIDTH_LRELU_IN      ;
+
+  localparam I_IS_CONFIG = `I_IS_CONFIG;
 
   /* WIRES */
 
@@ -123,30 +120,17 @@ module axis_accelerator #(ZERO=0) (
   wire [WORD_WIDTH*COPIES*GROUPS*MEMBERS -1:0] input_m_axis_weights_tdata;
   wire [TUSER_WIDTH_CONV_IN              -1:0] input_m_axis_tuser        ;
 
-  input  wire conv_m_axis_tready;
-  output wire conv_m_axis_tvalid;
-  output wire conv_m_axis_tlast ;
-  output wire [TUSER_WIDTH_LRELU_IN*MEMBERS -1:0] conv_m_axis_tuser;
-  output wire [M_DATA_WIDTH_HF_CONV/8       -1:0] conv_m_axis_tkeep;
-  output wire [M_DATA_WIDTH_HF_CONV         -1:0] conv_m_axis_tdata; // cgmu
+  wire conv_m_axis_tready;
+  wire conv_m_axis_tvalid;
+  wire conv_m_axis_tlast ;
+  wire [TUSER_CONV_DW_IN             -1:0] conv_m_axis_tuser;
+  wire [M_DATA_WIDTH_HF_CONV         -1:0] conv_m_axis_tdata; // cgmu
 
-  wire conv_dw1_m_axis_tready;
-  wire conv_dw1_m_axis_tvalid;
-  wire conv_dw1_m_axis_tlast ;
-  wire [TUSER_WIDTH_LRELU_IN    -1:0] conv_dw1_m_axis_tuser;
-  wire [M_DATA_WIDTH_HF_CONV_DW -1:0] conv_dw1_m_axis_tdata;
-
-  wire conv_dw2_m_axis_tready;
-  wire conv_dw2_m_axis_tvalid;
-  wire conv_dw2_m_axis_tlast ;
-  wire [M_DATA_WIDTH_LF_CONV_DW   -1:0] conv_dw2_m_axis_tdata;
-  wire [M_DATA_WIDTH_LF_CONV_DW/8 -1:0] conv_dw2_m_axis_tkeep;
-
-  input  wire conv_dw2_lf_m_axis_tready;
-  output wire conv_dw2_lf_m_axis_tvalid;
-  output wire conv_dw2_lf_m_axis_tlast ;
-  output wire [M_DATA_WIDTH_LF_CONV_DW   -1:0] conv_dw2_lf_m_axis_tdata;
-  output wire [M_DATA_WIDTH_LF_CONV_DW/8 -1:0] conv_dw2_lf_m_axis_tkeep;
+  input  wire conv_dw_lf_m_axis_tready;
+  output wire conv_dw_lf_m_axis_tvalid;
+  output wire conv_dw_lf_m_axis_tlast ;
+  output wire [TUSER_WIDTH_LRELU_IN    -1:0] conv_dw_lf_m_axis_tuser;
+  output wire [M_DATA_WIDTH_HF_CONV_DW -1:0] conv_dw_lf_m_axis_tdata;
 
   output wire lrelu_m_axis_tvalid;
   output wire lrelu_m_axis_tlast;
@@ -201,41 +185,60 @@ module axis_accelerator #(ZERO=0) (
   wire [DEBUG_CONFIG_WIDTH_MAXPOOL-1:0] debug_config_maxpool;
   assign debug_config = {debug_config_maxpool, debug_config_lrelu, debug_config_input_pipe};
 
+  `ifdef `XILINX
+    localparam XILINX = 1;
+  `else
+    localparam XILINX = 0;
+  `endif
 
-  axis_clk_weights CLK_WEIGHTS (
-    .s_axis_aresetn (aresetn ),  
-    .s_axis_aclk    (aclk    ),    
-    .s_axis_tready  (s_axis_weights_tready),
-    .s_axis_tvalid  (s_axis_weights_tvalid),
-    .s_axis_tlast   (s_axis_weights_tlast ),  
-    .s_axis_tdata   (s_axis_weights_tdata ),  
-    .s_axis_tkeep   (s_axis_weights_tkeep ),  
+  if (FREQ_RATIO == 1 | XILINX == 0) begin
+    assign s_axis_weights_tready     = m_axis_weights_clk_tready;
+    assign m_axis_weights_clk_tvalid = s_axis_weights_tvalid;
+    assign m_axis_weights_clk_tlast  = s_axis_weights_tlast ;
+    assign m_axis_weights_clk_tdata  = s_axis_weights_tdata ;
+    assign m_axis_weights_clk_tkeep  = s_axis_weights_tkeep ;
 
-    .m_axis_aclk    (hf_aclk    ),    
-    .m_axis_aresetn (hf_aresetn ),  
-    .m_axis_tready  (m_axis_weights_clk_tready),
-    .m_axis_tvalid  (m_axis_weights_clk_tvalid),
-    .m_axis_tlast   (m_axis_weights_clk_tlast ),
-    .m_axis_tdata   (m_axis_weights_clk_tdata ),
-    .m_axis_tkeep   (m_axis_weights_clk_tkeep )   
-  );
-  axis_clk_image CLK_IMAGE_1 (
-    .s_axis_aresetn (aresetn ),  
-    .s_axis_aclk    (aclk    ),    
-    .s_axis_tready  (s_axis_pixels_tready),
-    .s_axis_tvalid  (s_axis_pixels_tvalid),
-    .s_axis_tlast   (s_axis_pixels_tlast ),  
-    .s_axis_tdata   (s_axis_pixels_tdata ),  
-    .s_axis_tkeep   (s_axis_pixels_tkeep ),  
+    assign s_axis_pixels_tready      = m_axis_pixels_clk_tready;
+    assign m_axis_pixels_clk_tvalid  = s_axis_pixels_tvalid;
+    assign m_axis_pixels_clk_tlast   = s_axis_pixels_tlast ;
+    assign m_axis_pixels_clk_tdata   = s_axis_pixels_tdata ;
+    assign m_axis_pixels_clk_tkeep   = s_axis_pixels_tkeep ;
+  end else begin
+    axis_clk_weights CLK_WEIGHTS (
+      .s_axis_aresetn (aresetn ),  
+      .s_axis_aclk    (aclk    ),    
+      .s_axis_tready  (s_axis_weights_tready),
+      .s_axis_tvalid  (s_axis_weights_tvalid),
+      .s_axis_tlast   (s_axis_weights_tlast ),  
+      .s_axis_tdata   (s_axis_weights_tdata ),  
+      .s_axis_tkeep   (s_axis_weights_tkeep ),  
 
-    .m_axis_aclk    (hf_aclk    ),    
-    .m_axis_aresetn (hf_aresetn ),  
-    .m_axis_tready  (m_axis_pixels_clk_tready),
-    .m_axis_tvalid  (m_axis_pixels_clk_tvalid),
-    .m_axis_tlast   (m_axis_pixels_clk_tlast ),
-    .m_axis_tdata   (m_axis_pixels_clk_tdata ),
-    .m_axis_tkeep   (m_axis_pixels_clk_tkeep )   
-  );
+      .m_axis_aclk    (hf_aclk    ),    
+      .m_axis_aresetn (hf_aresetn ),  
+      .m_axis_tready  (m_axis_weights_clk_tready),
+      .m_axis_tvalid  (m_axis_weights_clk_tvalid),
+      .m_axis_tlast   (m_axis_weights_clk_tlast ),
+      .m_axis_tdata   (m_axis_weights_clk_tdata ),
+      .m_axis_tkeep   (m_axis_weights_clk_tkeep )   
+    );
+    axis_clk_image CLK_IMAGE_1 (
+      .s_axis_aresetn (aresetn ),  
+      .s_axis_aclk    (aclk    ),    
+      .s_axis_tready  (s_axis_pixels_tready),
+      .s_axis_tvalid  (s_axis_pixels_tvalid),
+      .s_axis_tlast   (s_axis_pixels_tlast ),  
+      .s_axis_tdata   (s_axis_pixels_tdata ),  
+      .s_axis_tkeep   (s_axis_pixels_tkeep ),  
+
+      .m_axis_aclk    (hf_aclk    ),    
+      .m_axis_aresetn (hf_aresetn ),  
+      .m_axis_tready  (m_axis_pixels_clk_tready),
+      .m_axis_tvalid  (m_axis_pixels_clk_tvalid),
+      .m_axis_tlast   (m_axis_pixels_clk_tlast ),
+      .m_axis_tdata   (m_axis_pixels_clk_tdata ),
+      .m_axis_tkeep   (m_axis_pixels_clk_tkeep )   
+    );
+  end
 
   axis_input_pipe #(.ZERO(ZERO)) input_pipe (
     .aclk                      (hf_aclk                    ),
@@ -271,60 +274,41 @@ module axis_accelerator #(ZERO=0) (
     .m_axis_tvalid        (conv_m_axis_tvalid         ),
     .m_axis_tready        (conv_m_axis_tready         ),
     .m_axis_tdata         (conv_m_axis_tdata          ), // cmgu
-    .m_axis_tkeep         (conv_m_axis_tkeep          ),
     .m_axis_tlast         (conv_m_axis_tlast          ),
     .m_axis_tuser         (conv_m_axis_tuser          )
     );
-  // generate
-  //   if (OUTPUT_MODE == "CONV") begin
-  //     axis_conv_dw_bank #(.ZERO(ZERO)) CONV_DW (
-  //       .aclk             (hf_aclk               ),
-  //       .aresetn          (hf_aresetn            ),
-  //       .s_axis_tvalid    (conv_m_axis_tvalid    ),
-  //       .s_axis_tready    (conv_m_axis_tready    ),
-  //       .s_axis_tdata     (conv_m_axis_tdata     ),
-  //       .s_axis_tkeep     (conv_m_axis_tkeep     ),
-  //       .s_axis_tlast     (conv_m_axis_tlast     ),
-  //       .s_axis_tuser     (conv_m_axis_tuser     ),
-  //       .m_axis_tvalid    (conv_dw1_m_axis_tvalid ),
-  //       .m_axis_tready    (conv_dw1_m_axis_tready ),
-  //       .m_axis_tdata     (conv_dw1_m_axis_tdata  ),
-  //       .m_axis_tlast     (conv_dw1_m_axis_tlast  ),
-  //       .m_axis_tuser     (conv_dw1_m_axis_tuser  )
-  //     );
-  //     axis_dw_conv DW_CONV (
-  //       .aclk           (hf_aclk                ),           
-  //       .aresetn        (hf_aresetn             ),        
-  //       .s_axis_tvalid  (conv_dw1_m_axis_tvalid    ),  
-  //       .s_axis_tready  (conv_dw1_m_axis_tready    ),  
-  //       .s_axis_tlast   (conv_dw1_m_axis_tlast     ),   
-  //       .s_axis_tdata   (conv_dw1_m_axis_tdata     ),  
-  //       .s_axis_tkeep   ({(M_DATA_WIDTH_HF_CONV_DW/8){1'b1}}),   
+  generate
+    if (OUTPUT_MODE == "CONV") begin
+      axis_conv_dw_bank #(.ZERO(ZERO)) CONV_DW (
+        .aclk    (hf_aclk               ),
+        .aresetn (hf_aresetn            ),
+        .s_ready (conv_m_axis_tready    ),
+        .s_valid (conv_m_axis_tvalid & ~conv_m_axis_tuser[I_IS_CONFIG]),
+        .s_data  (conv_m_axis_tdata     ),
+        .s_user  (conv_m_axis_tuser     ),
+        .s_last  (conv_m_axis_tlast     ),
+        .m_ready (conv_dw_lf_m_axis_tready),
+        .m_valid (conv_dw_lf_m_axis_tvalid),
+        .m_data  (conv_dw_lf_m_axis_tdata ),
+        .m_user  (conv_dw_lf_m_axis_tuser ),
+        .m_last  (conv_dw_lf_m_axis_tlast )
+      );
+      // axis_clk_conv_dw CLK_CONV_DW (
+      //   .s_axis_aresetn (hf_aresetn ),  
+      //   .s_axis_aclk    (hf_aclk    ),    
+      //   .s_axis_tvalid  (conv_dw2_m_axis_tvalid),
+      //   .s_axis_tready  (conv_dw2_m_axis_tready),
+      //   .s_axis_tdata   (conv_dw2_m_axis_tdata ),  
+      //   .s_axis_tlast   (conv_dw2_m_axis_tlast ) 
 
-  //       .m_axis_tready  (conv_dw2_m_axis_tready  ),  
-  //       .m_axis_tvalid  (conv_dw2_m_axis_tvalid  ),  
-  //       .m_axis_tlast   (conv_dw2_m_axis_tlast   ),    
-  //       .m_axis_tdata   (conv_dw2_m_axis_tdata   ),   
-  //       .m_axis_tkeep   (conv_dw2_m_axis_tkeep   ) 
-  //     );
-  //     axis_clk_conv_dw CLK_CONV_DW (
-  //       .s_axis_aresetn (hf_aresetn ),  
-  //       .s_axis_aclk    (hf_aclk    ),    
-  //       .s_axis_tvalid  (conv_dw2_m_axis_tvalid),
-  //       .s_axis_tready  (conv_dw2_m_axis_tready),
-  //       .s_axis_tdata   (conv_dw2_m_axis_tdata ),  
-  //       .s_axis_tlast   (conv_dw2_m_axis_tlast ),  
-  //       .s_axis_tkeep   (conv_dw2_m_axis_tkeep ),  
-
-  //       .m_axis_aclk    (aclk      ),    
-  //       .m_axis_aresetn (aresetn   ),  
-  //       .m_axis_tready  (conv_dw2_lf_m_axis_tready),
-  //       .m_axis_tvalid  (conv_dw2_lf_m_axis_tvalid),
-  //       .m_axis_tlast   (conv_dw2_lf_m_axis_tlast ),
-  //       .m_axis_tdata   (conv_dw2_lf_m_axis_tdata ),
-  //       .m_axis_tkeep   (conv_dw2_lf_m_axis_tkeep )   
-  //     );
-  //   end
+      //   .m_axis_aclk    (aclk      ),    
+      //   .m_axis_aresetn (aresetn   ),  
+      //   .m_axis_tready  (conv_dw2_lf_m_axis_tready),
+      //   .m_axis_tvalid  (conv_dw2_lf_m_axis_tvalid),
+      //   .m_axis_tlast   (conv_dw2_lf_m_axis_tlast ),
+      //   .m_axis_tdata   (conv_dw2_lf_m_axis_tdata )  
+      // );
+    end
   //   else begin
   //     axis_lrelu_engine #(.ZERO(ZERO)) LRELU_ENGINE (
   //       .aclk          (hf_aclk              ),
@@ -440,5 +424,5 @@ module axis_accelerator #(ZERO=0) (
   //     );
   //   end
   // end
-  // endgenerate
+  endgenerate
 endmodule

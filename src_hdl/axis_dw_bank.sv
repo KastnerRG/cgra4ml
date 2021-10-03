@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 `include "params.v"
 
-module axis_dw_bank #(ZERO=0) (
+module axis_dw_shift #(ZERO=0) (
     aclk   ,
     aresetn,
 
@@ -260,5 +260,75 @@ module axis_dw_bank #(ZERO=0) (
     .m_axis_tlast (m_last     ),
     .m_axis_tuser (m_user     )
   );
+
+endmodule
+
+module axis_conv_dw_bank #(ZERO=0) (
+  aclk       ,
+  aresetn    ,
+  s_data     ,
+  s_valid    ,
+  s_ready    ,
+  s_last     ,
+  s_user     ,
+  m_data     ,
+  m_valid    ,
+  m_ready    ,
+  m_last     ,
+  m_user
+);
+
+  localparam UNITS                = `UNITS                ;
+  localparam GROUPS               = `GROUPS               ;
+  localparam COPIES               = `COPIES               ;
+  localparam MEMBERS              = `MEMBERS              ;
+  localparam WORD_WIDTH           = `WORD_WIDTH_ACC       ;
+  localparam TUSER_WIDTH_LRELU_IN = `TUSER_WIDTH_LRELU_IN ;  
+  localparam TUSER_CONV_DW_IN     = `TUSER_CONV_DW_IN     ;  
+
+  localparam WORD_BYTES = WORD_WIDTH/8;
+
+  input logic aclk, aresetn;
+
+  input  logic s_valid, s_last;
+  output logic s_ready;
+  input  logic [TUSER_CONV_DW_IN-1:0] s_user;
+  input  logic [COPIES -1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0][WORD_WIDTH-1:0] s_data;
+
+  input  logic m_ready;
+  output logic [COPIES -1:0][GROUPS-1:0][UNITS-1:0][WORD_WIDTH  -1:0] m_data;
+  output logic [TUSER_WIDTH_LRELU_IN-1:0] m_user;
+  output logic m_valid, m_last;
+
+  logic [COPIES-1:0][GROUPS-1:0] s_ready_cg;
+  logic [COPIES-1:0][GROUPS-1:0] m_valid_cg;
+  logic [COPIES-1:0][GROUPS-1:0] m_last_cg;
+  logic [COPIES-1:0][GROUPS-1:0][TUSER_WIDTH_LRELU_IN-1:0] m_user_cg;
+
+  generate
+    for (genvar c=0 ; c<COPIES; c++) begin: C
+      for (genvar g=0 ; g<GROUPS; g++) begin: G
+        axis_dw_shift #(.ZERO(ZERO)) CONV_DW (
+          .aclk    (aclk             ),
+          .aresetn (aresetn          ),
+          .s_ready (s_ready_cg [c][g]),
+          .s_valid (s_valid          ),
+          .s_data  (s_data     [c][g]),
+          .s_user  (s_user           ),
+          .s_last  (s_last           ),
+          .m_ready (m_ready          ),
+          .m_valid (m_valid_cg [c][g]),
+          .m_data  (m_data     [c][g]),
+          .m_user  (m_user_cg  [c][g]),
+          .m_last  (m_last_cg  [c][g])
+        );
+      end 
+    end 
+  endgenerate
+
+  assign s_ready = s_ready_cg[0][0];
+  assign m_valid = m_valid_cg[0][0];
+  assign m_last  = m_last_cg [0][0];
+  assign m_user  = m_user_cg [0][0];
 
 endmodule
