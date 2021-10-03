@@ -185,7 +185,7 @@ module axis_accelerator #(ZERO=0) (
   wire [DEBUG_CONFIG_WIDTH_MAXPOOL-1:0] debug_config_maxpool;
   assign debug_config = {debug_config_maxpool, debug_config_lrelu, debug_config_input_pipe};
 
-  `ifdef `XILINX
+  `ifdef XILINX
     localparam XILINX = 1;
   `else
     localparam XILINX = 0;
