@@ -1,4 +1,9 @@
 set PROJ_NAME sys
+set PROJ_FOLDER projects/$PROJ_NAME
+set HDL_DIR src_hdl
+set TB_DIR testbench
+set WAVE_DIR wave
+
 source ./tcl/config.tcl
 
 # Delete existing

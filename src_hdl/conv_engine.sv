@@ -96,7 +96,11 @@ module conv_engine #(ZERO=0) (
         for (u=0; u < UNITS; u++) begin: Um
           for (m=0; m < MEMBERS; m++) begin: Mm
 
+`ifdef XILINX
             multiplier MUL (
+`else
+            multiplier_raw MUL (
+`endif
               .CLK    (clk),
               .CE     (clken_mul),
               .A      (s_data_pixels  [c]      [u]),
@@ -180,8 +184,12 @@ module conv_engine #(ZERO=0) (
       for (g=0; g < GROUPS; g++) begin: Ga
         for (u=0; u < UNITS; u++) begin: Ua
           for (m=0; m < MEMBERS; m++) begin: Ma
-            
+
+`ifdef XILINX
             accumulator ACC (
+`else
+            accumulator_raw ACC (
+`endif
               .CLK    (clk),  
               .bypass (bypass      [m]),  
               .CE     (clken_acc   [m]),  
