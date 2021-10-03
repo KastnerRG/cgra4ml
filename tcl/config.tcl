@@ -5,9 +5,9 @@ set WAVE_DIR wave
 
 set XILINX 1
 
-set UNITS   4
+set UNITS   2
 set GROUPS  2
-set MEMBERS 12
+set MEMBERS 24
 set FREQ_HIGH   200
 set FREQ_RATIO  1
 
@@ -27,10 +27,10 @@ set WORD_WIDTH_ACC   32
 set S_WEIGHTS_WIDTH_LF 64
 set S_PIXELS_WIDTH_LF  64
 
-set KW_MAX        3
-set KH_MAX        3
-set SW_MAX        2
-set SH_MAX        2
+set KW_MAX        11
+set KH_MAX        11
+set SW_MAX        4
+set SH_MAX        4
 set IM_COLS_MAX   384
 set IM_ROWS_MAX   256
 set IM_CIN_MAX    1024
@@ -100,6 +100,7 @@ puts $COPIES
 set FREQ_LOW           [expr $FREQ_HIGH.0/$FREQ_RATIO.0]
 set IM_BLOCKS_MAX      [expr int($IM_ROWS_MAX / $UNITS)]
 set UNITS_EDGES        [expr $UNITS + $KH_MAX      -1]
+set OUT_SHIFT_MAX      [expr $MEMBERS/3]
 set BITS_KW            [expr int(ceil(log($KW_MAX      )/log(2)))]
 set BITS_KH            [expr int(ceil(log($KH_MAX      )/log(2)))]
 set BITS_SW            [expr int(ceil(log($SW_MAX      )/log(2)))]
@@ -111,6 +112,7 @@ set BITS_IM_BLOCKS     [expr int(ceil(log($IM_ROWS_MAX/$UNITS)/log(2)))]
 set BITS_IM_SHIFT      [expr int(ceil(log($IM_SHIFT_MAX)/log(2)))]
 set BITS_IM_SHIFT_REGS [expr int(ceil(log($IM_SHIFT_REGS+1)/log(2)))]
 set BITS_WEIGHTS_ADDR  [expr int(ceil(log($BRAM_WEIGHTS_DEPTH)/log(2)))]
+set BITS_OUT_SHIFT     [expr int(ceil(log($OUT_SHIFT_MAX)/log(2)))]
 set BITS_MEMBERS       [expr int(ceil(log($MEMBERS)/log(2)))]
 set BITS_KW2           [expr int(ceil(log(($KW_MAX      +1)/2)/log(2)))]
 set BITS_KH2           [expr int(ceil(log(($KH_MAX      +1)/2)/log(2)))]
@@ -169,11 +171,11 @@ set I_IS_MAX          [expr $I_IS_NOT_MAX      + 1]
 set I_IS_LRELU        [expr $I_IS_MAX          + 1]
 set I_KW2             [expr $I_IS_LRELU        + 1]
 set I_SW_1            [expr $I_KW2     + $BITS_KW2]
-set I_IS_TOP_BLOCK    [expr $I_SW_1    + $BITS_SW ]
+set I_IS_CONFIG       [expr $I_SW_1    + $BITS_SW ]
+set I_IS_TOP_BLOCK    [expr $I_IS_CONFIG       + 1]
 set I_IS_BOTTOM_BLOCK [expr $I_IS_TOP_BLOCK    + 1]
 set I_IS_COLS_1_K2    [expr $I_IS_BOTTOM_BLOCK + 1]
-set I_IS_CONFIG       [expr $I_IS_COLS_1_K2    + 1]
-set I_IS_CIN_LAST     [expr $I_IS_CONFIG       + 1]
+set I_IS_CIN_LAST     [expr $I_IS_COLS_1_K2    + 1]
 set I_IS_W_FIRST      [expr $I_IS_CIN_LAST     + 1]
 set I_IS_COL_VALID    [expr $I_IS_W_FIRST      + 1]
 set I_IS_SUM_START    [expr $I_IS_COL_VALID    + 1]
@@ -182,6 +184,8 @@ set I_CLR             [expr $I_IS_BOTTOM_BLOCK + 1]
 
 set TUSER_WIDTH_MAXPOOL_IN     [expr $BITS_KW2      + $I_KW2]
 set TUSER_WIDTH_LRELU_IN       [expr $BITS_KW       + $I_CLR]
+set TUSER_CONV_DW_BASE         [expr 1 + $I_IS_BOTTOM_BLOCK ]
+set TUSER_CONV_DW_IN           [expr $MEMBERS*$BITS_KW + $BITS_OUT_SHIFT + $BITS_MEMBERS + $TUSER_CONV_DW_BASE]
 set TUSER_WIDTH_LRELU_FMA_1_IN [expr 1         + $I_IS_LRELU]
 set TUSER_WIDTH_CONV_IN        [expr $I_IS_SUM_START     + 1]
 
@@ -345,6 +349,7 @@ Parameters of the system. Written from build.tcl
 `define FREQ_RATIO    $FREQ_RATIO
 
 `define UNITS_EDGES        $UNITS_EDGES
+`define OUT_SHIFT_MAX      $OUT_SHIFT_MAX
 `define IM_SHIFT_REGS      $IM_SHIFT_REGS
 
 `define WORD_WIDTH          $WORD_WIDTH         
@@ -368,6 +373,7 @@ Parameters of the system. Written from build.tcl
 `define BITS_MEMBERS      $BITS_MEMBERS     
 `define BITS_KW2          $BITS_KW2         
 `define BITS_KH2          $BITS_KH2         
+`define BITS_OUT_SHIFT    $BITS_OUT_SHIFT         
 
 `define DEBUG_CONFIG_WIDTH_W_ROT   $DEBUG_CONFIG_WIDTH_W_ROT  
 `define DEBUG_CONFIG_WIDTH_IM_PIPE $DEBUG_CONFIG_WIDTH_IM_PIPE
@@ -443,10 +449,10 @@ Parameters of the system. Written from build.tcl
 
 `define I_KW2                $I_KW2        
 `define I_SW_1               $I_SW_1    
+`define I_IS_CONFIG          $I_IS_CONFIG        
 `define I_IS_TOP_BLOCK       $I_IS_TOP_BLOCK     
 `define I_IS_BOTTOM_BLOCK    $I_IS_BOTTOM_BLOCK  
 `define I_IS_COLS_1_K2       $I_IS_COLS_1_K2     
-`define I_IS_CONFIG          $I_IS_CONFIG        
 `define I_IS_CIN_LAST        $I_IS_CIN_LAST      
 `define I_IS_W_FIRST         $I_IS_W_FIRST      
 `define I_IS_COL_VALID       $I_IS_COL_VALID      
@@ -459,6 +465,8 @@ Parameters of the system. Written from build.tcl
 
 `define TUSER_WIDTH_MAXPOOL_IN     $TUSER_WIDTH_MAXPOOL_IN    
 `define TUSER_WIDTH_LRELU_FMA_1_IN $TUSER_WIDTH_LRELU_FMA_1_IN
+`define TUSER_CONV_DW_BASE         $TUSER_CONV_DW_BASE      
+`define TUSER_CONV_DW_IN           $TUSER_CONV_DW_IN      
 `define TUSER_WIDTH_LRELU_IN       $TUSER_WIDTH_LRELU_IN      
 `define IS_CONV_DW_SLICE           $IS_CONV_DW_SLICE
 
