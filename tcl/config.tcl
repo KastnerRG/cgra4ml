@@ -4,23 +4,14 @@ set TB_DIR testbench
 set WAVE_DIR wave
 
 set XILINX
-
 set UNITS   4
 set GROUPS  2
 set MEMBERS 12
-set FREQ_HIGH   200
-set FREQ_RATIO  1
-
-set OUTPUT_MODE "CONV"
-# set OUTPUT_MODE "LRELU"
-# set OUTPUT_MODE "MAXPOOL"
-
 set KSM_COMBS_LIST {{1 1 1} {3 1 1} {3 1 2} {5 1 1} {7 2 1} {11 4 1}}
 
-set FREQ_LITE   50
-set DW_FACTOR_1 3 
-set LRELU_BEATS_MAX  9
-set IS_CONV_DW_SLICE 0
+set LATENCY_BRAM          3
+set LATENCY_MULTIPLIER    3
+set LATENCY_ACCUMULATOR   1
 
 set WORD_WIDTH       8
 set WORD_WIDTH_ACC   32
@@ -34,18 +25,27 @@ set SH_MAX        2
 set IM_COLS_MAX   384
 set IM_ROWS_MAX   256
 set IM_CIN_MAX    1024
-set LRELU_ALPHA   11878
-
 # BRAM_WEIGHTS_DEPTH = max(KH * CIN * SH + lrelu_beats-1)
 set BRAM_WEIGHTS_DEPTH  1024 
 
+# ********************************************************************
 
-set LATENCY_MULTIPLIER    3
-set LATENCY_ACCUMULATOR   1
+set FREQ_HIGH   200
+set FREQ_RATIO  1
+
+set OUTPUT_MODE "CONV"
+# set OUTPUT_MODE "LRELU"
+# set OUTPUT_MODE "MAXPOOL"
+
+set FREQ_LITE   50
+set DW_FACTOR_1 3 
+set LRELU_BEATS_MAX  9
+set IS_CONV_DW_SLICE 0
+set LRELU_ALPHA   11878
+
 set LATENCY_FMA_1         16
 set LATENCY_FMA_2         15
 set LATENCY_FIXED_2_FLOAT  6
-set LATENCY_BRAM           3
 set LATENCY_CYCLIC_REG     0
 set LATENCY_FLOAT_UPSIZE   2
 set LATENCY_FLOAT_DOWNSIZE 3
@@ -481,7 +481,6 @@ Parameters of the system. Written from build.tcl
 */
 
 `define S_BYTES_axis_dw_weights_clk    $S_BYTES_axis_dw_weights_clk 
-`define M_BYTES_axis_dw_weights_clk    $M_BYTES_axis_dw_weights_clk 
 `define DATA_BYTES_axis_clk_weights    $DATA_BYTES_axis_clk_weights    
 `define DATA_BYTES_axis_clk_image      $DATA_BYTES_axis_clk_image      
 `define DATA_BYTES_axis_clk_conv_dw    $DATA_BYTES_axis_clk_conv_dw    

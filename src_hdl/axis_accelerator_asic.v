@@ -4,7 +4,7 @@
 module axis_accelerator_asic #(ZERO=0) (
     aclk                  ,
     aresetn               ,
-    
+
     s_axis_pixels_tready  , 
     s_axis_pixels_tvalid  , 
     s_axis_pixels_tlast   , 
@@ -25,19 +25,10 @@ module axis_accelerator_asic #(ZERO=0) (
 
   localparam S_PIXELS_WIDTH_LF = `S_PIXELS_WIDTH_LF   ;
   localparam BITS_KH2          = `BITS_KH2            ;
-  localparam OUTPUT_MODE       = `OUTPUT_MODE         ;
-  localparam FREQ_RATIO        = `FREQ_RATIO          ;
 
   localparam S_WEIGHTS_WIDTH_LF= `S_WEIGHTS_WIDTH_LF  ;
-  localparam M_DATA_WIDTH_LF   = `M_DATA_WIDTH_LF     ;
   localparam M_DATA_WIDTH_HF_CONV    = `M_DATA_WIDTH_HF_CONV   ;
   localparam M_DATA_WIDTH_HF_CONV_DW = `M_DATA_WIDTH_HF_CONV_DW;
-  localparam M_DATA_WIDTH_LF_CONV_DW = `M_DATA_WIDTH_LF_CONV_DW;
-  localparam M_DATA_WIDTH_HF_LRELU   = `M_DATA_WIDTH_HF_LRELU  ;
-  localparam M_DATA_WIDTH_LF_LRELU   = `M_DATA_WIDTH_LF_LRELU  ;
-  localparam M_DATA_WIDTH_HF_MAXPOOL = `M_DATA_WIDTH_HF_MAXPOOL;
-  localparam M_DATA_WIDTH_HF_MAX_DW1 = `M_DATA_WIDTH_HF_MAX_DW1;
-  localparam M_DATA_WIDTH_LF_MAXPOOL = `M_DATA_WIDTH_LF_MAXPOOL;
 
   localparam UNITS                      = `UNITS                ;
   localparam GROUPS                     = `GROUPS               ;
@@ -45,12 +36,7 @@ module axis_accelerator_asic #(ZERO=0) (
   localparam MEMBERS                    = `MEMBERS              ;
   localparam WORD_WIDTH                 = `WORD_WIDTH           ; 
   localparam WORD_WIDTH_ACC             = `WORD_WIDTH_ACC       ;
-  // DEBUG WIDTHS
-  localparam DEBUG_CONFIG_WIDTH_W_ROT   = `DEBUG_CONFIG_WIDTH_W_ROT  ;
-  localparam DEBUG_CONFIG_WIDTH_IM_PIPE = `DEBUG_CONFIG_WIDTH_IM_PIPE;
-  localparam DEBUG_CONFIG_WIDTH_LRELU   = `DEBUG_CONFIG_WIDTH_LRELU  ;
-  localparam DEBUG_CONFIG_WIDTH_MAXPOOL = `DEBUG_CONFIG_WIDTH_MAXPOOL;
-  localparam DEBUG_CONFIG_WIDTH         = `DEBUG_CONFIG_WIDTH        ;
+
   // LATENCIES & float widths 
   localparam TUSER_WIDTH_CONV_IN        = `TUSER_WIDTH_CONV_IN       ;
   localparam TUSER_CONV_DW_IN           = `TUSER_CONV_DW_IN          ;

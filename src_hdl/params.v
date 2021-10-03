@@ -1,4 +1,3 @@
-`define XILINX   1
 /*
 Parameters of the system. Written from build.tcl
 */
@@ -148,7 +147,6 @@ Parameters of the system. Written from build.tcl
 */
 
 `define S_BYTES_axis_dw_weights_clk    8 
-`define M_BYTES_axis_dw_weights_clk    8 
 `define DATA_BYTES_axis_clk_weights    8    
 `define DATA_BYTES_axis_clk_image      8      
 `define DATA_BYTES_axis_clk_conv_dw    64    

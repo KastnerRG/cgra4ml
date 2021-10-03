@@ -96,6 +96,13 @@ module cyclic_bram #(
     if (IP_TYPE == 0)
     `ifdef XILINX
       bram_weights bram (
+    `else 
+      bram_weights_asic #(
+        .R_DEPTH      (R_DEPTH     ),
+        .R_DATA_WIDTH (R_DATA_WIDTH),
+        .W_DATA_WIDTH (W_DATA_WIDTH)
+      ) bram (
+    `endif
         .clka   (clk),    
         .ena    (clken),     
         .wea    (w_en),     
@@ -106,7 +113,6 @@ module cyclic_bram #(
         .addrb  (r_addr),  
         .doutb  (bram_m_data)  
       );
-    `endif
   endgenerate
 
   /*
