@@ -3,11 +3,11 @@ set HDL_DIR src_hdl
 set TB_DIR testbench
 set WAVE_DIR wave
 
-set XILINX 1
+set XILINX
 
-set UNITS   2
+set UNITS   4
 set GROUPS  2
-set MEMBERS 24
+set MEMBERS 12
 set FREQ_HIGH   200
 set FREQ_RATIO  1
 
@@ -27,10 +27,10 @@ set WORD_WIDTH_ACC   32
 set S_WEIGHTS_WIDTH_LF 64
 set S_PIXELS_WIDTH_LF  64
 
-set KW_MAX        11
-set KH_MAX        11
-set SW_MAX        4
-set SH_MAX        4
+set KW_MAX        3
+set KH_MAX        3
+set SW_MAX        2
+set SH_MAX        2
 set IM_COLS_MAX   384
 set IM_ROWS_MAX   256
 set IM_CIN_MAX    1024

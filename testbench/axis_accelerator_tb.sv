@@ -54,7 +54,7 @@ module axis_accelerator_tb ();
   localparam M_DATA_WIDTH_HF_CONV    = `M_DATA_WIDTH_HF_CONV   ;
   localparam M_DATA_WIDTH_HF_LRELU   = `M_DATA_WIDTH_HF_LRELU  ;
   localparam M_DATA_WIDTH_HF_MAXPOOL = `M_DATA_WIDTH_HF_MAXPOOL;
-  localparam M_DATA_WIDTH_LF_CONV_DW = `M_DATA_WIDTH_LF_CONV_DW;
+  localparam M_DATA_WIDTH_HF_CONV_DW = `M_DATA_WIDTH_HF_CONV_DW;
   localparam M_DATA_WIDTH_LF_LRELU   = `M_DATA_WIDTH_LF_LRELU  ;
   localparam M_DATA_WIDTH_LF_MAXPOOL = `M_DATA_WIDTH_LF_MAXPOOL;
 
@@ -161,9 +161,9 @@ module axis_accelerator_tb ();
     endfunction
   endclass
 
-  Layer #(.IDX (1 ), .K(3), .IS_MAX(1), .IM_HEIGHT(256), .IM_WIDTH(384), .IM_CIN(3  )) layer = new();
+  // Layer #(.IDX (1 ), .K(3), .IS_MAX(1), .IM_HEIGHT(256), .IM_WIDTH(384), .IM_CIN(3  )) layer = new();
   // Layer #(.IDX (2 ), .K(3), .IS_MAX(1), .IM_HEIGHT(128), .IM_WIDTH(196), .IM_CIN(32  )) layer = new();
-  // Layer #(.IDX (3 ), .K(3), .IS_MAX(0), .IM_HEIGHT(64 ), .IM_WIDTH(96 ), .IM_CIN(64 )) layer = new();
+  Layer #(.IDX (3 ), .K(3), .IS_MAX(0), .IM_HEIGHT(64 ), .IM_WIDTH(96 ), .IM_CIN(64 )) layer = new();
   // Layer #(.IDX (4 ), .K(1), .IS_MAX(0), .IM_HEIGHT(64 ), .IM_WIDTH(96 ), .IM_CIN(128)) layer = new();
   // Layer #(.IDX (14), .K(3), .IS_MAX(0), .IM_HEIGHT(8  ), .IM_WIDTH(12 ), .IM_CIN(512)) layer = new();
 
@@ -185,24 +185,11 @@ module axis_accelerator_tb ();
   logic [S_WEIGHTS_WIDTH_LF/WORD_WIDTH-1:0][WORD_WIDTH-1:0] s_axis_weights_tdata;
   logic [S_WEIGHTS_WIDTH_LF/8 -1:0] s_axis_weights_tkeep;
 
-  bit   conv_m_axis_tready;
-  logic conv_m_axis_tvalid;
-  logic conv_m_axis_tlast ;
-  logic [MEMBERS-1:0][TUSER_WIDTH_LRELU_IN -1:0] conv_m_axis_tuser;
-  logic [M_DATA_WIDTH_HF_CONV/WORD_WIDTH_ACC -1:0][WORD_WIDTH_ACC   -1:0] conv_m_axis_tdata;
-  logic [M_DATA_WIDTH_HF_CONV/WORD_WIDTH_ACC -1:0][WORD_WIDTH_ACC/8 -1:0] conv_m_axis_tkeep;
-  logic [M_DATA_WIDTH_HF_CONV/WORD_WIDTH_ACC -1:0] conv_m_axis_tkeep_acc;
-
-  generate
-    for (genvar i=0; i<M_DATA_WIDTH_HF_CONV/WORD_WIDTH_ACC; i++)
-      assign conv_m_axis_tkeep_acc[i] = conv_m_axis_tkeep[i][0];
-  endgenerate
-
-  bit   conv_dw2_lf_m_axis_tready;
-  logic conv_dw2_lf_m_axis_tvalid;
-  logic conv_dw2_lf_m_axis_tlast ;
-  logic [M_DATA_WIDTH_LF_CONV_DW/WORD_WIDTH_ACC -1:0][WORD_WIDTH_ACC   -1:0] conv_dw2_lf_m_axis_tdata;
-  logic [M_DATA_WIDTH_LF_CONV_DW/WORD_WIDTH_ACC -1:0][WORD_WIDTH_ACC/8 -1:0] conv_dw2_lf_m_axis_tkeep;
+  bit   conv_dw_lf_m_axis_tready;
+  logic conv_dw_lf_m_axis_tvalid;
+  logic conv_dw_lf_m_axis_tlast ;
+  logic [M_DATA_WIDTH_HF_CONV_DW/WORD_WIDTH_ACC -1:0][WORD_WIDTH_ACC   -1:0] conv_dw_lf_m_axis_tdata;
+  logic [TUSER_WIDTH_LRELU_IN-1:0] conv_dw_lf_m_axis_tuser;
 
   logic lrelu_m_axis_tvalid;
   bit   lrelu_m_axis_tready;
@@ -242,7 +229,7 @@ module axis_accelerator_tb ();
 
   // splitter sp (.input_0(debug_config));
 
-  axis_accelerator pipe (.*);
+  axis_accelerator_asic pipe (.*);
 
   AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(S_PIXELS_WIDTH_LF/WORD_WIDTH ), .VALID_PROB(VALID_PROB)) s_pixels    = new(.file_path(layer.path_im_in  ), .words_per_packet(layer.WORDS_1), .iterations(1));
   AXIS_Slave #(.WORD_WIDTH(WORD_WIDTH), .WORDS_PER_BEAT(layer.W_S_LF_WORDS_PER_BEAT  ), .VALID_PROB(VALID_PROB)) s_weights   = new(.file_path(layer.path_weights), .words_per_packet(layer.WORDS_W), .iterations(1));
@@ -250,11 +237,14 @@ module axis_accelerator_tb ();
   initial forever s_pixels  .axis_feed(aclk, s_axis_pixels_tready  , s_axis_pixels_tvalid  , s_axis_pixels_tdata  , s_axis_pixels_tkeep  , s_axis_pixels_tlast);
   initial forever s_weights .axis_feed(aclk, s_axis_weights_tready , s_axis_weights_tvalid , s_axis_weights_tdata , s_axis_weights_tkeep , s_axis_weights_tlast );
   
-  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH_ACC), .WORDS_PER_BEAT(M_DATA_WIDTH_HF_CONV/WORD_WIDTH_ACC), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD_HF), .IS_ACTIVE(1)) m_conv    = new(.file_base(layer.base_conv_out   )); // sensitive to tlast
+  AXIS_Master#(.WORD_WIDTH(WORD_WIDTH_ACC), .WORDS_PER_BEAT(M_DATA_WIDTH_HF_CONV_DW/WORD_WIDTH_ACC), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD_HF), .IS_ACTIVE(1)) m_conv    = new(.file_base(layer.base_conv_out   )); // sensitive to tlast
   AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(M_DATA_WIDTH_HF_LRELU/WORD_WIDTH   ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD_HF), .IS_ACTIVE(0)) m_lrelu   = new(.file_base(layer.base_lrelu_out   ), .words_per_packet(layer.WORDS_OUT_LRELU    )); // sensitive to words_out
   AXIS_Master#(.WORD_WIDTH(WORD_WIDTH    ), .WORDS_PER_BEAT(M_DATA_WIDTH_LF_MAXPOOL/WORD_WIDTH ), .READY_PROB(READY_PROB), .CLK_PERIOD(CLK_PERIOD_LF), .IS_ACTIVE(0)) m_max     = new(.file_base(layer.base_output      ), .packets_per_file(layer.PACKETS_PER_ITR_MAX)); // sensitive to tlast, but multiple tlasts per file
 
-  initial forever m_conv .axis_read(hf_aclk, conv_m_axis_tready      , conv_m_axis_tvalid      , conv_m_axis_tdata      , conv_m_axis_tkeep_acc   , conv_m_axis_tlast      );
+  logic [M_DATA_WIDTH_HF_CONV_DW/WORD_WIDTH_ACC-1:0] conv_dw_lf_m_axis_tkeep;
+  assign conv_dw_lf_m_axis_tkeep = '1;
+
+  initial forever m_conv .axis_read(hf_aclk, conv_dw_lf_m_axis_tready, conv_dw_lf_m_axis_tvalid, conv_dw_lf_m_axis_tdata, conv_dw_lf_m_axis_tkeep , conv_dw_lf_m_axis_tlast);
   initial forever m_lrelu.axis_read(hf_aclk, lrelu_m_axis_tready     , lrelu_m_axis_tvalid     , lrelu_m_axis_tdata     , lrelu_m_axis_tkeep      , lrelu_m_axis_tlast     );
   initial forever m_max  .axis_read(   aclk, max_dw2_lf_m_axis_tready, max_dw2_lf_m_axis_tvalid, max_dw2_lf_m_axis_tdata, max_dw2_lf_m_axis_tkeep , max_dw2_lf_m_axis_tlast);
 

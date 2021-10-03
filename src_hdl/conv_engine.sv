@@ -24,8 +24,7 @@ module conv_engine #(ZERO=0) (
     m_valid        ,
     m_data         ,
     m_last         ,
-    m_user         ,
-    m_keep          
+    m_user         
 );
 
   localparam COPIES              = `COPIES              ;
@@ -49,7 +48,9 @@ module conv_engine #(ZERO=0) (
   localparam I_SW_1              = `I_SW_1              ;
   localparam I_CLR               = `I_CLR               ;
   localparam TUSER_WIDTH_CONV_IN = `TUSER_WIDTH_CONV_IN ;
-  localparam TUSER_WIDTH_CONV_OUT= `TUSER_WIDTH_LRELU_IN;  
+  localparam TUSER_WIDTH_CONV_OUT= `TUSER_CONV_DW_IN    ;  
+  localparam TUSER_CONV_DW_BASE  = `TUSER_CONV_DW_BASE  ;  
+  localparam BITS_OUT_SHIFT      = `BITS_OUT_SHIFT      ;  
   localparam BITS_KW             = `BITS_KW             ;
   localparam BITS_SW             = `BITS_SW             ;
   localparam BITS_MEMBERS        = `BITS_MEMBERS        ;
@@ -63,8 +64,12 @@ module conv_engine #(ZERO=0) (
   input  logic [COPIES-1:0][UNITS -1:0]                        [WORD_WIDTH_IN    -1:0] s_data_pixels;
   input  logic [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0]           [WORD_WIDTH_IN    -1:0] s_data_weights;                                                                        
   output logic [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0][WORD_WIDTH_OUT   -1:0] m_data;
-  output logic [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0][WORD_WIDTH_OUT/8 -1:0] m_keep;
-  output logic                         [MEMBERS-1:0]      [TUSER_WIDTH_CONV_OUT  -1:0] m_user;
+  output logic [TUSER_WIDTH_CONV_OUT-1:0] m_user;
+  
+  logic [TUSER_CONV_DW_BASE -1:0] m_user_base;
+  logic [BITS_MEMBERS  -1:0] m_shift_a;
+  logic [BITS_OUT_SHIFT-1:0] m_shift_b;
+  logic [MEMBERS-1:0][BITS_KW-1:0] m_clr;
 
   logic clken_mul, mux_sel_next, mux_sel, mul_m_valid, acc_m_valid_next, acc_m_valid, mul_m_last, acc_m_last;
   logic [BITS_KW2-1:0] mul_m_kw2, acc_m_kw2;
@@ -76,8 +81,6 @@ module conv_engine #(ZERO=0) (
   logic [KW_MAX/2:0][SW_MAX -1:0][MEMBERS -1:0] lut_sum_start;
 
   logic valid_mask;
-  logic [MEMBERS-1: 0] keep_mask;
-  logic [BITS_KW-1: 0] pad_clr [MEMBERS-1: 0];
 
   logic [WORD_WIDTH_IN*2-1:0] mul_m_data  [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0];
   logic [WORD_WIDTH_OUT -1:0] acc_s_data  [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0];
@@ -220,26 +223,14 @@ module conv_engine #(ZERO=0) (
       .aresetn         (resetn             ),
       .user_in         (acc_m_user         ),
       .valid_in        (acc_m_valid        ),
-      .keep_mask       (keep_mask          ),
+      .shift_a         (m_shift_a          ),
+      .shift_b         (m_shift_b          ),
       .valid_mask      (valid_mask         ),
-      .clr             (pad_clr            )
+      .clr             (m_clr              )
     );
 
-    for (m=0; m < MEMBERS; m++) begin: Mv
-
-      assign acc_m_keep [m] = acc_m_valid & keep_mask[m];
-
-      assign m_user [m][I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX] = acc_m_user [I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX];
-      assign m_user [m][I_CLR+BITS_KW-1 :  I_CLR]       = pad_clr [m];
-    end
-
-    for (c=0; c < COPIES; c++)
-      for (g=0; g < GROUPS; g++)
-        for (u=0; u < UNITS; u++)
-          for (m=0; m < MEMBERS; m++)
-            for (b=0; b < WORD_WIDTH_OUT/8; b++)
-              assign m_keep [c][g][m][u][b] = acc_m_keep [m];
-
+    assign m_user_base[I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX] = acc_m_user[I_IS_BOTTOM_BLOCK:I_IS_NOT_MAX];
+    assign m_user  = {m_clr, m_shift_b, m_shift_a, m_user_base};
     assign m_last  = acc_m_last;
     assign m_valid = acc_m_valid & valid_mask;
   endgenerate
