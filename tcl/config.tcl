@@ -1,20 +1,16 @@
-set PROJ_FOLDER projects/$PROJ_NAME
-set HDL_DIR src_hdl
-set TB_DIR testbench
-set WAVE_DIR wave
 
-set XILINX
-set UNITS   4
-set GROUPS  2
-set MEMBERS 12
-set KSM_COMBS_LIST {{1 1 1} {3 1 1} {3 1 2} {5 1 1} {7 2 1} {11 4 1}}
+set XILINX  0
+set UNITS   14
+set GROUPS  1
+set MEMBERS 14
+set KSM_COMBS_LIST {{1 1 1} {3 1 1} {3 1 1} {5 1 1} {7 2 1} {11 4 1}}
 
-set LATENCY_BRAM          3
-set LATENCY_MULTIPLIER    3
+set LATENCY_BRAM          2
+set LATENCY_MULTIPLIER    1
 set LATENCY_ACCUMULATOR   1
 
 set WORD_WIDTH       8
-set WORD_WIDTH_ACC   32
+set WORD_WIDTH_ACC   24
 set S_WEIGHTS_WIDTH_LF 64
 set S_PIXELS_WIDTH_LF  64
 
