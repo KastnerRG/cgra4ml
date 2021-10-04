@@ -19,7 +19,7 @@ module lrelu_beats_counter_tb ();
   localparam BITS_CLR_I   = $clog2(CLR_I_MAX + 1);
   localparam BITS_W_SEL = 2;
 
-  `include "lrelu_beats_functions.svh"
+  
   localparam W_ADDR_MAX  = calc_beats_max(KW_MAX, MEMBERS);
   localparam BITS_W_ADDR = $clog2(W_ADDR_MAX);
 

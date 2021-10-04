@@ -16,7 +16,7 @@ module axis_pixels_dw #(ZERO=0)  (
     m_data   ,
     m_user
   );
-  `include "lrelu_beats_functions.svh"
+  
 
   localparam UNITS                = `UNITS             ;
   localparam COPIES               = `COPIES            ;
