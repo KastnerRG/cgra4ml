@@ -2,7 +2,6 @@
 
 `include "../src_hdl/params.v"
 `include "axis_tb.sv"
-import lrelu_beats::*;
 
 module axis_accelerator_tb ();
 
@@ -69,6 +68,7 @@ module axis_accelerator_tb ();
 
     // Calculate beats
 
+    `include "lrelu_beats_functions.svh"
     parameter MAX_FACTOR = IS_MAX ? 2 : 1;
 
     parameter IM_BLOCKS = IM_HEIGHT/UNITS;
@@ -79,7 +79,7 @@ module axis_accelerator_tb ();
     parameter BEATS_1 = BEATS_2 + 1;
     parameter WORDS_1 = BEATS_1 * UNITS_EDGES;
     
-    parameter BEATS_CONFIG_1     = lrelu_beats::calc_beats_total (.kw2(K/2), .MEMBERS(MEMBERS)) -1;
+    parameter BEATS_CONFIG_1     = calc_beats_total (K/2, MEMBERS) -1;
     parameter W_M_BEATS          = BEATS_CONFIG_1+1 + K*IM_CIN;
     parameter W_S_LF_WORDS_PER_BEAT = S_WEIGHTS_WIDTH_LF /WORD_WIDTH;
     parameter WORDS_W            = W_S_LF_WORDS_PER_BEAT + W_M_BEATS*COPIES*GROUPS*MEMBERS;

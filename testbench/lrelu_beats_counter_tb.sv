@@ -18,16 +18,18 @@ module lrelu_beats_counter_tb ();
   localparam CLR_I_MAX    = KW_MAX      /2;
   localparam BITS_CLR_I   = $clog2(CLR_I_MAX + 1);
   localparam BITS_W_SEL = 2;
-  localparam W_ADDR_MAX  = lrelu_beats::calc_beats_max(.KW_MAX (KW_MAX), .MEMBERS(MEMBERS));
+
+  `include "lrelu_beats_functions.svh"
+  localparam W_ADDR_MAX  = calc_beats_max(KW_MAX, MEMBERS);
   localparam BITS_W_ADDR = $clog2(W_ADDR_MAX);
 
   // Total lut
-  localparam BEATS_TOTAL_MAX = lrelu_beats::calc_beats_total_max (.KW_MAX(KW_MAX), .MEMBERS(MEMBERS));
+  localparam BEATS_TOTAL_MAX = calc_beats_total_max (KW_MAX, MEMBERS);
   localparam BITS_BEATS_TOTAL = $clog2(BEATS_TOTAL_MAX+1);
-  logic [BITS_BEATS_TOTAL-1:0] lut_lrelu_beats_1 [KW_MAX      /2:0];
+  logic [BITS_BEATS_TOTAL-1:0] lut_lrelu_beats_1 [KW_MAX/2:0];
   generate
-    for (genvar KW2=0; KW2 <= KW_MAX      /2; KW2++)
-      assign lut_lrelu_beats_1[KW2] = lrelu_beats::calc_beats_total (.kw2(KW2), .MEMBERS(MEMBERS)) -1;
+    for (genvar KW2=0; KW2 <= KW_MAX/2; KW2++)
+      assign lut_lrelu_beats_1[KW2] = calc_beats_total(KW2, MEMBERS) -1;
   endgenerate
 
   logic rstn;

@@ -1,5 +1,4 @@
 `include "../src_hdl/params.v"
-import lrelu_beats::*;
 
 module axis_weight_rotator_tb ();
   timeunit 1ns;
@@ -18,6 +17,7 @@ module axis_weight_rotator_tb ();
 
   localparam CORES              = `CORES;
   
+  `include "lrelu_beats_functions.svh"
   localparam MEMBERS            = `MEMBERS           ;
   localparam WORD_WIDTH         = `WORD_WIDTH        ; 
   localparam KH_MAX             = `KH_MAX            ;   // odd number
@@ -52,7 +52,8 @@ module axis_weight_rotator_tb ();
   localparam BITS_IM_CIN       = $clog2(IM_CIN_MAX);
   localparam BITS_IM_BLOCKS    = $clog2(IM_BLOCKS_MAX);
   localparam BITS_IM_COLS      = $clog2(IM_COLS_MAX);
-  localparam CONFIG_COUNT_MAX  = lrelu_beats::calc_beats_total_max(.KW_MAX      (KW_MAX      ), .MEMBERS(MEMBERS));
+
+  localparam CONFIG_COUNT_MAX  = calc_beats_total_max(KW_MAX,MEMBERS);
   localparam BITS_CONFIG_COUNT = $clog2(CONFIG_COUNT_MAX);  
 
   logic aresetn;
@@ -81,7 +82,7 @@ module axis_weight_rotator_tb ();
 
   string path_weights = "D:/cnn-fpga/data/weights_rot_in.txt";
   
-  localparam BEATS_CONFIG_1 = lrelu_beats::calc_beats_total (.kw2(K_1/2), .MEMBERS(MEMBERS)) -1;
+  localparam BEATS_CONFIG_1 = calc_beats_total (K_1/2,MEMBERS) -1;
   localparam W_BEATS = 1 + BEATS_CONFIG_1+1 + (K_1+1)*(CIN_1+1);
   localparam W_WORDS = (W_BEATS-1) * MEMBERS * CORES + S_WEIGHTS_WIDTH_HF /WORD_WIDTH;
   localparam W_WORDS_PER_BEAT = S_WEIGHTS_WIDTH_HF /WORD_WIDTH;
