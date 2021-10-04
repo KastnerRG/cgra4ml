@@ -1,6 +1,5 @@
 `timescale 1ns/1ps
 `include "params.v"
-import lrelu_beats::*;
 
 module axis_pixels_dw #(ZERO=0)  (
     aclk     ,
@@ -17,6 +16,7 @@ module axis_pixels_dw #(ZERO=0)  (
     m_data   ,
     m_user
   );
+  `include "lrelu_beats_functions.svh"
 
   localparam UNITS                = `UNITS             ;
   localparam COPIES               = `COPIES            ;
@@ -41,7 +41,7 @@ module axis_pixels_dw #(ZERO=0)  (
   localparam BITS_IM_SHIFT_REGS   = `BITS_IM_SHIFT_REGS;
   localparam BITS_KW2             = `BITS_KW2          ;
   localparam BITS_SH              = `BITS_SH           ;
-  localparam CONFIG_COUNT_MAX     = lrelu_beats::calc_beats_total_max(.KW_MAX (KW_MAX), .MEMBERS(MEMBERS));
+  localparam CONFIG_COUNT_MAX     = calc_beats_total_max(KW_MAX, MEMBERS);
   localparam BITS_CONFIG_COUNT    = $clog2(CONFIG_COUNT_MAX);
 
   input logic aclk;
@@ -165,7 +165,7 @@ module axis_pixels_dw #(ZERO=0)  (
   generate
     for(genvar i_kh2=0; i_kh2<=KH_MAX/2; i_kh2++)
       for(genvar i_kw2=0; i_kw2<=KW_MAX/2; i_kw2++)
-        assign beats_config_1_lut[i_kh2][i_kw2] = lrelu_beats::calc_beats_total (.kw2(i_kw2), .MEMBERS(MEMBERS)) -1;
+        assign beats_config_1_lut[i_kh2][i_kw2] = calc_beats_total(i_kw2, MEMBERS) -1;
   endgenerate
 
   logic [BITS_CONFIG_COUNT-1:0] ones_count_next, ones_count;

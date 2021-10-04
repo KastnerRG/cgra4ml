@@ -33,6 +33,7 @@ module axis_input_pipe_tb ();
   localparam UNITS  = 2;
   localparam CORES  = 2;
   
+  `include "lrelu_beats_functions.svh"
   localparam WORD_WIDTH            = `WORD_WIDTH    ; 
   localparam MEMBERS               = `MEMBERS       ; 
   localparam WORD_WIDTH_ACC        = `WORD_WIDTH_ACC; 
@@ -96,7 +97,7 @@ module axis_input_pipe_tb ();
   localparam BEATS_1 = BEATS_2 + 1;
   localparam WORDS_1 = BEATS_1 * UNITS_EDGES;
   
-  localparam BEATS_CONFIG_1   = lrelu_beats::calc_beats_total (.kw2(K/2), .MEMBERS(MEMBERS)) -1;
+  localparam BEATS_CONFIG_1   = calc_beats_total (K/2, MEMBERS) -1;
   localparam W_BEATS          = 1 + BEATS_CONFIG_1+1 + K*IM_CIN;
   localparam WORDS_W          = (W_BEATS-1) * KW_MAX       * CORES + S_WEIGHTS_WIDTH_HF /WORD_WIDTH;
   localparam W_WORDS_PER_BEAT = S_WEIGHTS_WIDTH_HF /WORD_WIDTH;

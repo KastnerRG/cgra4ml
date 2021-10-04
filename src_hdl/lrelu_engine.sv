@@ -1,6 +1,5 @@
 `timescale 1ns/1ps
 `include "params.v"
-import float_ops::*;
 
 module lrelu_engine #(ZERO=0) (
   clk     ,
@@ -23,6 +22,8 @@ module lrelu_engine #(ZERO=0) (
   count_config_full
 );
 
+  `include "lrelu_beats_functions.svh"
+
   localparam WORD_WIDTH_IN              = `WORD_WIDTH_ACC            ;
   localparam WORD_WIDTH_OUT             = `WORD_WIDTH                ;
   localparam WORD_WIDTH_CONFIG          = `WORD_WIDTH                ;
@@ -38,6 +39,7 @@ module lrelu_engine #(ZERO=0) (
   localparam BITS_KW                    = `BITS_KW                   ;
   localparam BITS_MEMBERS               = `BITS_MEMBERS              ;
   localparam BITS_KW2                   = `BITS_KW2                  ;
+  localparam BITS_KH2                   = `BITS_KH2                  ;
   localparam BITS_EXP_CONFIG            = `BITS_EXP_CONFIG           ;
   localparam BITS_FRA_CONFIG            = `BITS_FRA_CONFIG           ;
   localparam BITS_EXP_FMA_1             = `BITS_EXP_FMA_1            ;
@@ -113,7 +115,8 @@ module lrelu_engine #(ZERO=0) (
   localparam CLR_I_MAX    = KW_MAX      /2;
   localparam BITS_CLR_I   = $clog2(CLR_I_MAX + 1);
   localparam BITS_W_SEL = 2;
-  localparam W_ADDR_MAX  = lrelu_beats::calc_beats_max(.KW_MAX      (KW_MAX      ), .MEMBERS(MEMBERS));
+
+  localparam W_ADDR_MAX  = calc_beats_max(KW_MAX,MEMBERS);
   localparam BITS_W_ADDR = $clog2(W_ADDR_MAX);
 
   logic [BITS_W_SEL    -1: 0] w_sel_bram, w_sel_bram_1;
@@ -125,7 +128,7 @@ module lrelu_engine #(ZERO=0) (
     .MEMBERS       (MEMBERS      ),
     .KH_MAX        (KH_MAX       ),
     .KW_MAX        (KW_MAX       ),
-    .BITS_KW2      (BITS_KW2),
+    .BITS_KH2      (BITS_KH2),
     .BITS_KW2      (BITS_KW2),
     .BITS_KW       (BITS_KW ),
     .BITS_KH       (BITS_KH )
