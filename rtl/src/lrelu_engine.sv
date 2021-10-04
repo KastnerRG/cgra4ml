@@ -116,7 +116,7 @@ module lrelu_engine #(ZERO=0) (
   localparam BITS_CLR_I   = $clog2(CLR_I_MAX + 1);
   localparam BITS_W_SEL = 2;
 
-  localparam W_ADDR_MAX  = calc_beats_max(KW_MAX,MEMBERS);
+  localparam W_ADDR_MAX  = lrelu_beats::calc_beats_max(KW_MAX,MEMBERS);
   localparam BITS_W_ADDR = $clog2(W_ADDR_MAX);
 
   logic [BITS_W_SEL    -1: 0] w_sel_bram, w_sel_bram_1;
