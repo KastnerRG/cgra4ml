@@ -168,18 +168,29 @@ module axis_weight_rotator #(ZERO=0) (
   localparam DW_BLOCK_S = 0;
   localparam DW_PASS_S  = 1;
 
-  axis_dw_weights_input DW (
-    .aclk           (aclk),
-    .aresetn        (aresetn),
-    .s_axis_tvalid  (dw_s_valid     ),
-    .s_axis_tready  (dw_s_ready     ),
-    .s_axis_tdata   (s_axis_tdata   ),
-    .s_axis_tkeep   (s_axis_tkeep   ),
-    .s_axis_tlast   (s_axis_tlast   ),
-    .m_axis_tvalid  (dw_m_valid     ),
-    .m_axis_tready  (dw_m_ready     ),
-    .m_axis_tdata   (dw_m_data_flat ),
-    .m_axis_tlast   (dw_m_last      )
+  alex_axis_adapter_any #(
+    .S_DATA_WIDTH  (S_WEIGHTS_WIDTH_LF),
+    .M_DATA_WIDTH  (M_WIDTH),
+    .S_KEEP_ENABLE (1),
+    .M_KEEP_ENABLE (1),
+    .ID_ENABLE     (0),
+    .DEST_ENABLE   (0),
+    .USER_ENABLE   (0)
+  ) DW (
+    .clk           (aclk       ),
+    .rst           (~aresetn   ),
+    .s_axis_tvalid (dw_s_valid  ),
+    .s_axis_tready (dw_s_ready  ),
+    .s_axis_tdata  (s_axis_tdata),
+    .s_axis_tkeep  (s_axis_tkeep),
+    .s_axis_tlast  (s_axis_tlast),
+    .s_axis_tid    ('0),
+    .s_axis_tdest  ('0),
+    .s_axis_tuser  ('0),
+    .m_axis_tvalid (dw_m_valid     ),
+    .m_axis_tready (dw_m_ready     ),
+    .m_axis_tdata  (dw_m_data_flat ),
+    .m_axis_tlast  (dw_m_last      )
   );
 
   assign dw_m_handshake      = dw_m_valid     && dw_m_ready;
