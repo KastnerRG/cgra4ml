@@ -17,7 +17,7 @@ module axis_weight_rotator_tb ();
 
   localparam CORES              = `CORES;
   
-  `include "lrelu_beats_functions.svh"
+  
   localparam MEMBERS            = `MEMBERS           ;
   localparam WORD_WIDTH         = `WORD_WIDTH        ; 
   localparam KH_MAX             = `KH_MAX            ;   // odd number

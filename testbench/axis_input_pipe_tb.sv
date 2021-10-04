@@ -33,7 +33,7 @@ module axis_input_pipe_tb ();
   localparam UNITS  = 2;
   localparam CORES  = 2;
   
-  `include "lrelu_beats_functions.svh"
+  
   localparam WORD_WIDTH            = `WORD_WIDTH    ; 
   localparam MEMBERS               = `MEMBERS       ; 
   localparam WORD_WIDTH_ACC        = `WORD_WIDTH_ACC; 

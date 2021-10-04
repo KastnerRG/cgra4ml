@@ -68,7 +68,7 @@ module axis_accelerator_tb ();
 
     // Calculate beats
 
-    `include "lrelu_beats_functions.svh"
+    
     parameter MAX_FACTOR = IS_MAX ? 2 : 1;
 
     parameter IM_BLOCKS = IM_HEIGHT/UNITS;
