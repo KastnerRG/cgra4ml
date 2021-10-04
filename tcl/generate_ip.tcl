@@ -33,26 +33,10 @@ set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES_axis_clk_maxpool CON
 
 #*********** INPUT PIPE **********#
 
-set IP_NAME "axis_dw_image_input"
-lappend IP_NAMES $IP_NAME
-create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
-set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES_axis_dw_image_input CONFIG.M_TDATA_NUM_BYTES $M_BYTES_axis_dw_image_input CONFIG.HAS_TLAST $TLAST_axis_dw_image_input CONFIG.HAS_TKEEP $TKEEP_axis_dw_image_input] [get_ips $IP_NAME]
-
-set IP_NAME "axis_reg_slice_image_pipe"
-lappend IP_NAMES $IP_NAME
-create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
-set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES_axis_reg_slice_image_pipe CONFIG.TUSER_WIDTH $TUSER_WIDTH_axis_reg_slice_image_pipe CONFIG.TID_WIDTH 0 CONFIG.HAS_TKEEP $TKEEP_axis_reg_slice_image_pipe CONFIG.HAS_TLAST $TLAST_axis_reg_slice_image_pipe] [get_ips $IP_NAME]
-
 set IP_NAME "bram_weights"
 lappend IP_NAMES $IP_NAME
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name $IP_NAME
 set_property -dict [list  CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A $W_WIDTH_bram_weights CONFIG.Write_Depth_A $W_DEPTH_bram_weights CONFIG.Read_Width_A $W_WIDTH_bram_weights CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $R_WIDTH_bram_weights CONFIG.Read_Width_B $R_WIDTH_bram_weights CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100} CONFIG.Register_PortB_Output_of_Memory_Core {true} ] [get_ips $IP_NAME]
-
-set IP_NAME "fifo_weights"
-lappend IP_NAMES $IP_NAME
-create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.2 -module_name $IP_NAME
-set_property -dict [list CONFIG.Reset_Type {Synchronous_Reset} CONFIG.Performance_Options {First_Word_Fall_Through} CONFIG.Input_Data_Width $R_WIDTH_bram_weights CONFIG.Input_Depth {16} CONFIG.Output_Data_Width $R_WIDTH_bram_weights CONFIG.Output_Depth {16} CONFIG.Use_Extra_Logic {true} CONFIG.Valid_Flag {true} ] [get_ips $IP_NAME]
-
 
 set IP_NAME "axis_dw_weights_input"
 lappend IP_NAMES $IP_NAME
@@ -70,26 +54,6 @@ set IP_NAME "accumulator"
 lappend IP_NAMES $IP_NAME
 create_ip -name c_accum -vendor xilinx.com -library ip -version 12.0 -module_name $IP_NAME
 set_property -dict [list CONFIG.Implementation {DSP48} CONFIG.Input_Width $WORD_WIDTH_ACC CONFIG.Output_Width $WORD_WIDTH_ACC CONFIG.Latency $LATENCY_ACCUMULATOR CONFIG.CE {true}] [get_ips $IP_NAME]
-
-set IP_NAME "slice_conv"
-lappend IP_NAMES $IP_NAME
-create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
-set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES_slice_conv CONFIG.TUSER_WIDTH $TUSER_WIDTH_slice_conv CONFIG.HAS_TKEEP $TKEEP_slice_conv CONFIG.HAS_TLAST $TLAST_slice_conv] [get_ips $IP_NAME]
-
-set IP_NAME "slice_conv_semi_active"
-lappend IP_NAMES $IP_NAME
-create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
-set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES_slice_conv_semi_active CONFIG.TUSER_WIDTH $TUSER_WIDTH_slice_conv_semi_active CONFIG.HAS_TKEEP $TKEEP_slice_conv_semi_active CONFIG.HAS_TLAST $TLAST_slice_conv_semi_active] [get_ips $IP_NAME]
-
-set IP_NAME "slice_conv_active"
-lappend IP_NAMES $IP_NAME
-create_ip -name axis_register_slice -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
-set_property -dict [list CONFIG.TDATA_NUM_BYTES $DATA_BYTES_slice_conv_active CONFIG.TUSER_WIDTH $TUSER_WIDTH_slice_conv_active CONFIG.HAS_TKEEP $TKEEP_slice_conv_active CONFIG.HAS_TLAST $TLAST_slice_conv_active] [get_ips $IP_NAME]
-
-set IP_NAME "axis_dw_conv"
-lappend IP_NAMES $IP_NAME
-create_ip -name axis_dwidth_converter -vendor xilinx.com -library ip -version 1.1 -module_name $IP_NAME
-set_property -dict [list CONFIG.S_TDATA_NUM_BYTES $S_BYTES_axis_dw_conv CONFIG.M_TDATA_NUM_BYTES $M_BYTES_axis_dw_conv CONFIG.HAS_TLAST $TLAST_axis_dw_conv CONFIG.HAS_TKEEP $TKEEP_axis_dw_conv] [get_ips $IP_NAME]
 
 #*********** LRELU **********#
 
