@@ -1,16 +1,16 @@
 
 set XILINX  0
-set UNITS   14
+set UNITS   4
 set GROUPS  1
-set MEMBERS 14
+set MEMBERS 12
 set KSM_COMBS_LIST {{1 1 1} {3 1 1} {3 1 1} {5 1 1} {7 2 1} {11 4 1}}
 
 set LATENCY_BRAM          2
-set LATENCY_MULTIPLIER    1
+set LATENCY_MULTIPLIER    3
 set LATENCY_ACCUMULATOR   1
 
 set WORD_WIDTH       8
-set WORD_WIDTH_ACC   24
+set WORD_WIDTH_ACC   32
 set S_WEIGHTS_WIDTH_LF 64
 set S_PIXELS_WIDTH_LF  64
 
@@ -194,6 +194,7 @@ set DEBUG_CONFIG_WIDTH         [expr $DEBUG_CONFIG_WIDTH_MAXPOOL + $DEBUG_CONFIG
 # ************ IP PARAMETERS ************
 
 set S_BYTES_axis_dw_weights_clk    [expr "$S_WEIGHTS_WIDTH_LF / 8"]
+set M_BYTES_axis_dw_weights_clk    [expr "$S_WEIGHTS_WIDTH_LF / 8"]
 set DATA_BYTES_axis_clk_weights    [expr "$S_WEIGHTS_WIDTH_LF / 8"]
 set DATA_BYTES_axis_clk_image      [expr "$S_PIXELS_WIDTH_LF  / 8"] 
 set DATA_BYTES_axis_clk_conv_dw    [expr "$M_DATA_WIDTH_LF_CONV_DW / 8"]
@@ -322,7 +323,7 @@ set TKEEP_axis_reg_slice_maxpool 1
 # **********    STORE PARAMS    *************
 
 
-set file_param [open $HDL_DIR/params.v w]
+set file_param [open $RTL_DIR/include/params.h w]
 
 if ($XILINX) {
   puts $file_param "`define XILINX   $XILINX"
@@ -483,16 +484,6 @@ Parameters of the system. Written from build.tcl
 `define DATA_BYTES_axis_clk_lrelu      $DATA_BYTES_axis_clk_lrelu      
 `define DATA_BYTES_axis_clk_maxpool    $DATA_BYTES_axis_clk_maxpool    
 
-`define S_BYTES_axis_dw_image_input    $S_BYTES_axis_dw_image_input 
-`define M_BYTES_axis_dw_image_input    $M_BYTES_axis_dw_image_input 
-`define TLAST_axis_dw_image_input      $TLAST_axis_dw_image_input   
-`define TKEEP_axis_dw_image_input      $TKEEP_axis_dw_image_input   
-
-`define DATA_BYTES_axis_reg_slice_image_pipe  $DATA_BYTES_axis_reg_slice_image_pipe 
-`define TLAST_axis_reg_slice_image_pipe       $TLAST_axis_reg_slice_image_pipe      
-`define TKEEP_axis_reg_slice_image_pipe       $TKEEP_axis_reg_slice_image_pipe      
-`define TUSER_WIDTH_axis_reg_slice_image_pipe $TUSER_WIDTH_axis_reg_slice_image_pipe
-
 `define R_WIDTH_bram_weights $R_WIDTH_bram_weights 
 `define R_DEPTH_bram_weights $R_DEPTH_bram_weights 
 `define W_WIDTH_bram_weights $W_WIDTH_bram_weights 
@@ -502,26 +493,6 @@ Parameters of the system. Written from build.tcl
 `define M_BYTES_axis_dw_weights_input $M_BYTES_axis_dw_weights_input 
 `define TLAST_axis_dw_weights_input   $TLAST_axis_dw_weights_input   
 `define TKEEP_axis_dw_weights_input   $TKEEP_axis_dw_weights_input   
-
-`define DATA_BYTES_slice_conv  $DATA_BYTES_slice_conv  
-`define TLAST_slice_conv       $TLAST_slice_conv       
-`define TKEEP_slice_conv       $TKEEP_slice_conv       
-`define TUSER_WIDTH_slice_conv $TUSER_WIDTH_slice_conv 
-
-`define DATA_BYTES_slice_conv_semi_active  $DATA_BYTES_slice_conv_semi_active   
-`define TLAST_slice_conv_semi_active       $TLAST_slice_conv_semi_active       
-`define TKEEP_slice_conv_semi_active       $TKEEP_slice_conv_semi_active        
-`define TUSER_WIDTH_slice_conv_semi_active $TUSER_WIDTH_slice_conv_semi_active  
-
-`define DATA_BYTES_slice_conv_active  $DATA_BYTES_slice_conv_active  
-`define TLAST_slice_conv_active       $TLAST_slice_conv_active     
-`define TKEEP_slice_conv_active       $TKEEP_slice_conv_active     
-`define TUSER_WIDTH_slice_conv_active $TUSER_WIDTH_slice_conv_active 
-
-`define S_BYTES_axis_dw_conv $S_BYTES_axis_dw_conv 
-`define M_BYTES_axis_dw_conv $M_BYTES_axis_dw_conv 
-`define TLAST_axis_dw_conv   $TLAST_axis_dw_conv   
-`define TKEEP_axis_dw_conv   $TKEEP_axis_dw_conv   
 
 `define S_BYTES_axis_dw_lrelu_1_active     $S_BYTES_axis_dw_lrelu_1_active     
 `define M_BYTES_axis_dw_lrelu_1_active     $M_BYTES_axis_dw_lrelu_1_active     

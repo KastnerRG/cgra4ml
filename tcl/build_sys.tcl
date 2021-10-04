@@ -1,7 +1,7 @@
 set PROJ_NAME sys
 set PROJ_FOLDER projects/$PROJ_NAME
-set HDL_DIR src_hdl
-set TB_DIR testbench
+set RTL_DIR rtl
+set TB_DIR rtl/tb
 set WAVE_DIR wave
 
 source ./tcl/config.tcl
@@ -23,8 +23,9 @@ foreach IP_NAME $IP_NAMES {
 }
 
 # Add files
-add_files -norecurse [glob $HDL_DIR/*.sv]
-add_files -norecurse [glob $HDL_DIR/*.v]
+add_files -norecurse [glob $RTL_DIR/include/*]
+add_files -norecurse [glob $RTL_DIR/external/*]
+add_files -norecurse [glob $RTL_DIR/src/*]
 add_files -fileset sim_1 -norecurse $TB_DIR/axis_accelerator_tb.sv
 add_files -fileset sim_1 -norecurse $WAVE_DIR/axis_accelerator_tb_behav.wcfg
 set_property top axis_accelerator_tb [get_filesets sim_1]
