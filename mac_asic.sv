@@ -8,12 +8,12 @@ module accumulator_raw #(
   input  logic CLK   ,
   input  logic bypass,
   input  logic CE    ,
-  input  logic [WORD_WIDTH-1:0] B,     
-  output logic [WORD_WIDTH-1:0] Q     
+  input  logic signed [WORD_WIDTH-1:0] B,     
+  output logic signed [WORD_WIDTH-1:0] Q     
 );
 
   logic bypass_d;
-  logic [WORD_WIDTH-1:0] B_d;  
+  logic signed [WORD_WIDTH-1:0] B_d;  
 
   n_delay #(
     .N          (LATENCY    -1),
@@ -27,7 +27,7 @@ module accumulator_raw #(
     .data_out ({B_d, bypass_d})
   );
 
-  logic [WORD_WIDTH-1:0] reg_in;
+  logic signed [WORD_WIDTH-1:0] reg_in;
   assign reg_in = B_d + (bypass_d ? 0 : Q);
 
   register #(
@@ -51,12 +51,12 @@ module multiplier_raw # (
 (
   input  logic CLK ,
   input  logic CE  ,
-  input  logic [WORD_WIDTH   -1:0] A,
-  input  logic [WORD_WIDTH   -1:0] B,
-  output logic [WORD_WIDTH*2 -1:0] P   
+  input  logic signed [WORD_WIDTH   -1:0] A,
+  input  logic signed [WORD_WIDTH   -1:0] B,
+  output logic signed [WORD_WIDTH*2 -1:0] P   
 );
 
-  logic [WORD_WIDTH-1:0] A_d, B_d;
+  logic signed [WORD_WIDTH-1:0] A_d, B_d;
 
   n_delay #(
     .N          (LATENCY   -1),
@@ -70,7 +70,7 @@ module multiplier_raw # (
     .data_out ({A_d,B_d})
   );
 
-  logic [WORD_WIDTH*2-1:0] mul_in;
+  logic signed [WORD_WIDTH*2-1:0] mul_in;
   assign mul_in = A_d * B_d;
 
   register #(
