@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-`include "../include/params.h"
+`include "../include/params.v"
 `include "axis_tb.sv"
 
 module axis_accelerator_tb ();

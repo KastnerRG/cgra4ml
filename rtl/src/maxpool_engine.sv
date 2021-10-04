@@ -32,7 +32,7 @@ Additional Comments:
 
 //////////////////////////////////////////////////////////////////////////////////*/
 `timescale 1ns/1ps
-`include "../include/params.h"
+`include "../include/params.v"
 
 module maxpool_engine #(ZERO=0) (
     clk,

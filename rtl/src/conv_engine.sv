@@ -9,7 +9,7 @@ Revision 0.01 - File Created
 Additional Comments: 
 //////////////////////////////////////////////////////////////////////////////////*/
 `timescale 1ns/1ps
-`include "../include/params.h"
+`include "../include/params.v"
 
 module conv_engine #(ZERO=0) (
     clk            ,
@@ -96,7 +96,7 @@ module conv_engine #(ZERO=0) (
         for (u=0; u < UNITS; u++) begin: Um
           for (m=0; m < MEMBERS; m++) begin: Mm
 
-`ifdef XILINX
+`ifdef MAC_XILINX
             multiplier MUL (
 `else
             multiplier_raw MUL (
@@ -185,7 +185,7 @@ module conv_engine #(ZERO=0) (
         for (u=0; u < UNITS; u++) begin: Ua
           for (m=0; m < MEMBERS; m++) begin: Ma
 
-`ifdef XILINX
+`ifdef MAC_XILINX
             accumulator ACC (
 `else
             accumulator_raw ACC (

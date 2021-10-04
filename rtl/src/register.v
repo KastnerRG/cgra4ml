@@ -1,4 +1,5 @@
 `timescale 10ns / 1ns
+`include "../include/params.v"
 // `default_nettype none
 
 /*
@@ -47,11 +48,24 @@ module register
   input   wire                        clock_enable,
   input   wire                        resetn,
   input   wire    [WORD_WIDTH-1:0]    data_in,
+
+`ifdef ASIC_REG
+  output  reg     [WORD_WIDTH-1:0]    data_out
+`else
   output  reg     [WORD_WIDTH-1:0]    data_out = RESET_VALUE
+`endif
+
 );
 
+
+`ifdef ASIC_REG
+  always @(posedge clock or negedge resetn) begin
+    if (~resetn) data_out <= RESET_VALUE;
+`else
   always @(posedge clock) begin
     if (LOCAL && ~resetn ) data_out <= RESET_VALUE;
+`endif
+
     else if (clock_enable) data_out <= data_in;
     else                   data_out <= data_out;
   end

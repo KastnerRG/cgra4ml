@@ -1,9 +1,10 @@
 `timescale 1ns/1ps
 
-module bram_weights_asic #(
+module bram_sdp_shell #(
   R_DEPTH      = 8,
   R_DATA_WIDTH = 8,
-  W_DATA_WIDTH = 8
+  W_DATA_WIDTH = 8,
+  TYPE         = "XILINX_WEIGHTS" //, "EMPTY"
 )(
   clka ,    
   ena  ,     
@@ -31,6 +32,21 @@ module bram_weights_asic #(
   input  logic [W_DATA_WIDTH-1:0] dina ;
   output logic [R_DATA_WIDTH-1:0] doutb;
 
-  assign doutb = dina & ena & wea & enb & addra & addrb;
+  generate
+    if (TYPE =="EMPTY")
+      assign doutb = dina & ena & wea & enb & addra & addrb;
 
+    else if (TYPE == "XILINX_WEIGHTS")
+      bram_weights bram (
+        .clka   (clka),    
+        .ena    (ena),     
+        .wea    (wea),     
+        .addra  (addra),  
+        .dina   (dina),   
+        .clkb   (clkb),   
+        .enb    (enb),     
+        .addrb  (addrb),  
+        .doutb  (doutb)  
+      );
+  endgenerate
 endmodule

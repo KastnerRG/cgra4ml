@@ -31,7 +31,7 @@ Additional Comments:
 //////////////////////////////////////////////////////////////////////////////////*/
 
 `timescale 1ns/1ps
-`include "../include/params.h"
+`include "../include/params.v"
 
 module pad_filter #(ZERO=0)
 (

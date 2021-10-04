@@ -20,7 +20,7 @@ module cyclic_bram #(
   ABSORB       = 0,
   USE_R_LAST   = 0,
   USE_W_LAST   = 0,
-  IP_TYPE      = 0 // 0 - weights, 1 - edge
+  TYPE         = "XILINX_WEIGHTS" //, "EMPTY"
 )(
   clk  ,
   clken,
@@ -93,26 +93,22 @@ module cyclic_bram #(
   logic [R_DATA_WIDTH-1 :0] bram_m_data;
 
   generate
-    if (IP_TYPE == 0)
-    // `ifdef XILINX
-      bram_weights bram (
-    // `else 
-    //   bram_weights_asic #(
-    //     .R_DEPTH      (R_DEPTH     ),
-    //     .R_DATA_WIDTH (R_DATA_WIDTH),
-    //     .W_DATA_WIDTH (W_DATA_WIDTH)
-    //   ) bram (
-    // `endif
-        .clka   (clk),    
-        .ena    (clken),     
-        .wea    (w_en),     
-        .addra  (w_addr),  
-        .dina   (s_data),   
-        .clkb   (clk),   
-        .enb    (clken),     
-        .addrb  (r_addr),  
-        .doutb  (bram_m_data)  
-      );
+    bram_sdp_shell #(
+      .R_DEPTH      (R_DEPTH     ),
+      .R_DATA_WIDTH (R_DATA_WIDTH),
+      .W_DATA_WIDTH (W_DATA_WIDTH),
+      .TYPE         (TYPE        )
+    ) BRAM (
+      .clka   (clk),    
+      .ena    (clken),     
+      .wea    (w_en),     
+      .addra  (w_addr),  
+      .dina   (s_data),   
+      .clkb   (clk),   
+      .enb    (clken),     
+      .addrb  (r_addr),  
+      .doutb  (bram_m_data)  
+    );
   endgenerate
 
   /*

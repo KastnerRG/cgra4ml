@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`include "../include/params.h"
+`include "../include/params.v"
 
 module accumulator_raw #(
   WORD_WIDTH = `WORD_WIDTH_ACC,

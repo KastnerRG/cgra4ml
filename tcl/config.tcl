@@ -1,28 +1,66 @@
 
-set XILINX  0
-set UNITS   4
-set GROUPS  1
-set MEMBERS 12
-set KSM_COMBS_LIST {{1 1 1} {3 1 1} {3 1 1} {5 1 1} {7 2 1} {11 4 1}}
+if {$XILINX} {
+  
+  set UNITS   4
+  set GROUPS  2
+  set MEMBERS 12
+  set KSM_COMBS_LIST {{1 1 1} {3 1 1} {3 1 2} {5 1 1} {7 2 1} {11 4 1}}
 
-set LATENCY_BRAM          2
-set LATENCY_MULTIPLIER    3
-set LATENCY_ACCUMULATOR   1
+  set LATENCY_BRAM          3
+  set LATENCY_MULTIPLIER    3
+  set LATENCY_ACCUMULATOR   1
 
-set WORD_WIDTH       8
-set WORD_WIDTH_ACC   32
-set S_WEIGHTS_WIDTH_LF 64
-set S_PIXELS_WIDTH_LF  64
+  set WORD_WIDTH       8
+  set WORD_WIDTH_ACC   32
+  set S_WEIGHTS_WIDTH_LF 64
+  set S_PIXELS_WIDTH_LF  64
 
-set KW_MAX        3
-set KH_MAX        3
-set SW_MAX        2
-set SH_MAX        2
-set IM_COLS_MAX   384
-set IM_ROWS_MAX   256
-set IM_CIN_MAX    1024
-# BRAM_WEIGHTS_DEPTH = max(KH * CIN * SH + lrelu_beats-1)
+  set SRAM_TYPE "XILINX"
+  set MAC_TYPE "RAW"
+  set REG_TYPE "FPGA"
+
+  set KW_MAX        3
+  set KH_MAX        3
+  set SW_MAX        2
+  set SH_MAX        2
+  set IM_COLS_MAX   384
+  set IM_ROWS_MAX   256
+  set IM_CIN_MAX    1024
+  # BRAM_WEIGHTS_DEPTH = max(KH * CIN * SH + lrelu_beats-1)
+  set BRAM_WEIGHTS_DEPTH  1024 
 set BRAM_WEIGHTS_DEPTH  1024 
+  set BRAM_WEIGHTS_DEPTH  1024 
+
+} else {
+  
+  set UNITS   14
+  set GROUPS  1
+  set MEMBERS 14
+  set KSM_COMBS_LIST {{1 1 1} {3 1 1} {3 1 1} {5 1 1} {7 2 1} {11 4 1}}
+
+  set LATENCY_BRAM          2
+  set LATENCY_MULTIPLIER    1
+  set LATENCY_ACCUMULATOR   1
+
+  set WORD_WIDTH       8
+  set WORD_WIDTH_ACC   24
+  set S_WEIGHTS_WIDTH_LF 64
+  set S_PIXELS_WIDTH_LF  64
+
+  set SRAM_TYPE "EMPTY"
+  set MAC_TYPE "RAW"
+  set REG_TYPE "ASIC"
+
+  set KW_MAX        11
+  set KH_MAX        11
+  set SW_MAX        4
+  set SH_MAX        4
+  set IM_COLS_MAX   384
+  set IM_ROWS_MAX   256
+  set IM_CIN_MAX    1024
+  # BRAM_WEIGHTS_DEPTH = max(KH * CIN * SH + lrelu_beats-1)
+  set BRAM_WEIGHTS_DEPTH  1024 
+}
 
 # ********************************************************************
 
@@ -323,15 +361,18 @@ set TKEEP_axis_reg_slice_maxpool 1
 # **********    STORE PARAMS    *************
 
 
-set file_param [open $RTL_DIR/include/params.h w]
+set file_param [open $RTL_DIR/include/params.v w]
 
-if ($XILINX) {
-  puts $file_param "`define XILINX   $XILINX"
+if {$MAC_TYPE == "XILINX"} {
+  puts $file_param "`define MAC_XILINX 1"
+}
+if {$REG_TYPE == "ASIC"} {
+  puts $file_param "`define ASIC_REG 1"
 }
 
-puts $file_param "/*
-Parameters of the system. Written from build.tcl
-*/
+puts $file_param "
+`define SRAM_TYPE   \"$SRAM_TYPE\"  
+`define MAC_TYPE    \"$MAC_TYPE\"  
 
 `define UNITS    $UNITS  
 `define GROUPS   $GROUPS 
