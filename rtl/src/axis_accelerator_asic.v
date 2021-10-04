@@ -16,13 +16,14 @@ module axis_accelerator_asic #(ZERO=0) (
     s_axis_weights_tdata  ,
     s_axis_weights_tkeep  ,
 
-    conv_dw_lf_m_axis_tready ,
-    conv_dw_lf_m_axis_tvalid ,
-    conv_dw_lf_m_axis_tlast  ,
-    conv_dw_lf_m_axis_tdata  ,
-    conv_dw_lf_m_axis_tuser  
+    m_axis_tready ,
+    m_axis_tvalid ,
+    m_axis_tlast  ,
+    m_axis_tdata  ,
+    m_axis_tkeep  
   ); 
 
+  localparam M_OUTPUT_WIDTH_LF = `M_OUTPUT_WIDTH_LF;
   localparam S_PIXELS_WIDTH_LF = `S_PIXELS_WIDTH_LF   ;
   localparam BITS_KH2          = `BITS_KH2            ;
 
@@ -76,11 +77,17 @@ module axis_accelerator_asic #(ZERO=0) (
   wire [TUSER_CONV_DW_IN             -1:0] conv_m_axis_tuser;
   wire [M_DATA_WIDTH_HF_CONV         -1:0] conv_m_axis_tdata; // cgmu
 
-  input  wire conv_dw_lf_m_axis_tready;
-  output wire conv_dw_lf_m_axis_tvalid;
-  output wire conv_dw_lf_m_axis_tlast ;
-  output wire [TUSER_WIDTH_LRELU_IN    -1:0] conv_dw_lf_m_axis_tuser;
-  output wire [M_DATA_WIDTH_HF_CONV_DW -1:0] conv_dw_lf_m_axis_tdata;
+  wire dw_s_axis_tready;
+  wire dw_s_axis_tvalid;
+  wire dw_s_axis_tlast ;
+  wire [TUSER_WIDTH_LRELU_IN    -1:0] dw_s_axis_tuser ;
+  wire [M_DATA_WIDTH_HF_CONV_DW -1:0] dw_s_axis_tdata ;
+
+  input  wire m_axis_tready;
+  output wire m_axis_tvalid;
+  output wire m_axis_tlast ;
+  output wire [M_OUTPUT_WIDTH_LF       -1:0] m_axis_tdata;
+  output wire [M_OUTPUT_WIDTH_LF/8     -1:0] m_axis_tkeep;
 
   axis_input_pipe #(.ZERO(ZERO)) input_pipe (
     .aclk                      (aclk    ),
@@ -125,10 +132,33 @@ module axis_accelerator_asic #(ZERO=0) (
     .s_data  (conv_m_axis_tdata     ),
     .s_user  (conv_m_axis_tuser     ),
     .s_last  (conv_m_axis_tlast     ),
-    .m_ready (conv_dw_lf_m_axis_tready),
-    .m_valid (conv_dw_lf_m_axis_tvalid),
-    .m_data  (conv_dw_lf_m_axis_tdata ),
-    .m_user  (conv_dw_lf_m_axis_tuser ),
-    .m_last  (conv_dw_lf_m_axis_tlast )
+    .m_ready (dw_s_axis_tready),
+    .m_valid (dw_s_axis_tvalid),
+    .m_data  (dw_s_axis_tdata ),
+    .m_user  (dw_s_axis_tuser ),
+    .m_last  (dw_s_axis_tlast )
+  );
+
+  alex_axis_adapter_any #(
+    .S_DATA_WIDTH  (M_DATA_WIDTH_HF_CONV_DW),
+    .M_DATA_WIDTH  (M_OUTPUT_WIDTH_LF),
+    .S_KEEP_ENABLE (1),
+    .M_KEEP_ENABLE (1),
+    .ID_ENABLE     (0),
+    .DEST_ENABLE   (0),
+    .USER_ENABLE   (0)
+  ) DW_OUT (
+    .clk           (aclk    ),
+    .rst           (~aresetn),
+    .s_axis_tready (dw_s_axis_tready),
+    .s_axis_tvalid (dw_s_axis_tvalid),
+    .s_axis_tdata  (dw_s_axis_tdata ),
+    .s_axis_tkeep  ({(M_DATA_WIDTH_HF_CONV_DW/8){1'b1}}),
+    .s_axis_tlast  (dw_s_axis_tlast ),
+    .m_axis_tready (m_axis_tready),
+    .m_axis_tvalid (m_axis_tvalid),
+    .m_axis_tdata  (m_axis_tdata ),
+    .m_axis_tkeep  (m_axis_tkeep ),
+    .m_axis_tlast  (m_axis_tlast )
   );
 endmodule
