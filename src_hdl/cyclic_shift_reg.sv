@@ -1,5 +1,4 @@
 `timescale 1ns/1ps
-import float_ops::*;
 
 module cyclic_shift_reg #(
   R_DEPTH        = 24     ,

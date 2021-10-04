@@ -1,66 +1,6 @@
 `timescale 1ns/1ps
 `include "params.v"
 
-package lrelu_beats;
-
-  function integer calc_beats_b (
-      input integer clr_i, 
-      input integer  kw2, 
-      input integer MEMBERS
-    );
-    
-    automatic integer clr_kw, kw, WIDTH_Bi, WRITE_DEPTH;
-    
-    clr_kw  = clr_i*2 + 1;
-    kw      = kw2  *2 + 1;
-
-    WIDTH_Bi    = MEMBERS/clr_kw;
-    WRITE_DEPTH = 2*(MEMBERS/kw);
-    
-    calc_beats_b  = `CEIL(WRITE_DEPTH, WIDTH_Bi);
-  endfunction
-
-  function integer calc_beats_max (
-      input integer KW_MAX      , 
-      input integer MEMBERS 
-    );
-    calc_beats_max = 2; // max(A)
-    for (int kw2 = 0; kw2 <= KW_MAX      /2; kw2++) begin
-      automatic int kw = kw2*2 +1;
-      for (int clr_i = 0; clr_i <= kw2; clr_i++) begin
-        automatic int beats_b = calc_beats_b(.clr_i(clr_i), .kw2(kw2), .MEMBERS(MEMBERS));
-        calc_beats_max = beats_b > calc_beats_max ? beats_b : calc_beats_max;
-      end
-    end    
-  endfunction
-
-  function integer calc_beats_total (
-      input integer  kw2, 
-      input integer MEMBERS
-    );
-
-    automatic integer kw = kw2*2 + 1;
-    calc_beats_total = 1 + `CEIL(2, kw);
-    
-    for (int clr_i = 0; clr_i <= kw2; clr_i++)
-      for (int mtb = 0; mtb <= clr_i*2; mtb++)
-        calc_beats_total += calc_beats_b(.clr_i(clr_i), .kw2(kw2), .MEMBERS(MEMBERS));
-
-  endfunction
-
-  function integer calc_beats_total_max (
-      input integer KW_MAX      , 
-      input integer MEMBERS 
-    );
-    calc_beats_total_max = 2; // max(A)
-    for (int kw2 = 0; kw2 <= KW_MAX      /2; kw2++) begin
-      automatic integer beats_tot = calc_beats_total(.kw2(kw2), .MEMBERS(MEMBERS));
-      calc_beats_total_max = beats_tot > calc_beats_total_max ? beats_tot : calc_beats_total_max;
-    end
-  endfunction
-
-endpackage
-
 module lrelu_beats_counter (
   clk,
   rstn,
@@ -74,6 +14,7 @@ module lrelu_beats_counter (
   mtb,
   w_addr
 );
+  `include "lrelu_beats_functions.svh"
   /*
     w_sel:
       0 : IDLE
@@ -103,7 +44,7 @@ module lrelu_beats_counter (
 
   localparam BITS_W_SEL = 2;
 
-  localparam W_ADDR_MAX  = lrelu_beats::calc_beats_max(.KW_MAX      (KW_MAX      ), .MEMBERS(MEMBERS));
+  localparam W_ADDR_MAX  = calc_beats_max(KW_MAX, MEMBERS);
   localparam BITS_W_ADDR = $clog2(W_ADDR_MAX);
 
   input  logic clk;
@@ -134,7 +75,7 @@ module lrelu_beats_counter (
       assign lut_beats_1_bram_a_kw2[KW2] = `CEIL(2, KW)-1;
 
       for (genvar CLR_I = 0; CLR_I <= KW2; CLR_I++)
-        assign lut_beats_1_bram_b_kw2_clri[KW2][CLR_I] = lrelu_beats::calc_beats_b(.clr_i(CLR_I), .kw2(KW2), .MEMBERS(MEMBERS)) -1;
+        assign lut_beats_1_bram_b_kw2_clri[KW2][CLR_I] = calc_beats_b(CLR_I, KW2, MEMBERS) -1;
     end
   endgenerate
 
