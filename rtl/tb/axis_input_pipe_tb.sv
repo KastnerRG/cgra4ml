@@ -1,5 +1,5 @@
 `include "axis_tb.sv"
-`include "../include/params.h"
+`include "../include/params.v"
 
 module axis_input_pipe_tb ();
   timeunit 1ns;

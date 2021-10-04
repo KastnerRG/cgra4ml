@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`include "../include/params.h"
+`include "../include/params.v"
 
 module axis_pixels_shift #(ZERO=0) (
     aclk   ,

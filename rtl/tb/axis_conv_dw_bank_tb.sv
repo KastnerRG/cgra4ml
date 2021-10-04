@@ -1,4 +1,4 @@
-`include "../include/params.h"
+`include "../include/params.v"
 
 module axis_conv_dw_bank_tb ();
 

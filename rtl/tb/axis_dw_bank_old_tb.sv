@@ -1,4 +1,4 @@
-`include "../include/params.h"
+`include "../include/params.v"
 
 module axis_dw_bank_tb ();
   timeunit 1ns;

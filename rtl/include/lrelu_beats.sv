@@ -1,4 +1,4 @@
-`include "params.h"
+`include "params.v"
 package lrelu_beats;
 
   function integer calc_beats_b (

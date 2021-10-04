@@ -1,14 +1,14 @@
-/*
-Parameters of the system. Written from build.tcl
-*/
+
+`define SRAM_TYPE   "XILINX"  
+`define MAC_TYPE    "RAW"  
 
 `define UNITS    4  
-`define GROUPS   1 
-`define COPIES   1 
+`define GROUPS   2 
+`define COPIES   2 
 `define MEMBERS  12
 `define DW_FACTOR_1 3
 `define OUTPUT_MODE "CONV"
-`define KSM_COMBS_EXPR (((((((k==1 & s==1 & m==1)) | (k==3 & s==1 & m==1)) | (k==3 & s==1 & m==1)) | (k==5 & s==1 & m==1)) | (k==7 & s==2 & m==1)) | (k==11 & s==4 & m==1))
+`define KSM_COMBS_EXPR (((((((k==1 & s==1 & m==1)) | (k==3 & s==1 & m==1)) | (k==3 & s==1 & m==2)) | (k==5 & s==1 & m==1)) | (k==7 & s==2 & m==1)) | (k==11 & s==4 & m==1))
 `define KS_COMBS_EXPR (((((((k==1 & s==1)) | (k==3 & s==1)) | (k==3 & s==1)) | (k==5 & s==1)) | (k==7 & s==2)) | (k==11 & s==4))
 
 `define FREQ_HIGH     200
@@ -16,7 +16,7 @@ Parameters of the system. Written from build.tcl
 
 `define UNITS_EDGES        6
 `define OUT_SHIFT_MAX      4
-`define IM_SHIFT_REGS      8
+`define IM_SHIFT_REGS      10
 
 `define WORD_WIDTH          8         
 `define WORD_WIDTH_ACC      32    
@@ -63,15 +63,15 @@ Parameters of the system. Written from build.tcl
 
 `define S_WEIGHTS_WIDTH_LF  64
 `define S_PIXELS_WIDTH_LF   64
-`define M_DATA_WIDTH_HF_CONV    1536   
-`define M_DATA_WIDTH_HF_CONV_DW 128
-`define M_DATA_WIDTH_LF_CONV_DW 128
-`define M_DATA_WIDTH_HF_LRELU   32  
-`define M_DATA_WIDTH_LF_LRELU   32  
-`define M_DATA_WIDTH_HF_MAXPOOL 48
-`define M_DATA_WIDTH_HF_MAX_DW1 48
-`define M_DATA_WIDTH_LF_MAXPOOL 64
-`define M_DATA_WIDTH_LF         128
+`define M_DATA_WIDTH_HF_CONV    6144   
+`define M_DATA_WIDTH_HF_CONV_DW 512
+`define M_DATA_WIDTH_LF_CONV_DW 512
+`define M_DATA_WIDTH_HF_LRELU   128  
+`define M_DATA_WIDTH_LF_LRELU   128  
+`define M_DATA_WIDTH_HF_MAXPOOL 192
+`define M_DATA_WIDTH_HF_MAX_DW1 96
+`define M_DATA_WIDTH_LF_MAXPOOL 128
+`define M_DATA_WIDTH_LF         512
 /*
   LATENCIES & float widths
 */
@@ -84,7 +84,7 @@ Parameters of the system. Written from build.tcl
 `define LATENCY_FMA_1         16        
 `define LATENCY_FMA_2         15        
 `define LATENCY_FIXED_2_FLOAT 6
-`define LATENCY_BRAM          2         
+`define LATENCY_BRAM          3         
 `define LATENCY_CYCLIC_REG    0         
 `define LATENCY_FLOAT_UPSIZE   2   
 `define LATENCY_FLOAT_DOWNSIZE 3   
@@ -149,17 +149,17 @@ Parameters of the system. Written from build.tcl
 `define S_BYTES_axis_dw_weights_clk    8 
 `define DATA_BYTES_axis_clk_weights    8    
 `define DATA_BYTES_axis_clk_image      8      
-`define DATA_BYTES_axis_clk_conv_dw    16    
-`define DATA_BYTES_axis_clk_lrelu      4      
-`define DATA_BYTES_axis_clk_maxpool    8    
+`define DATA_BYTES_axis_clk_conv_dw    64    
+`define DATA_BYTES_axis_clk_lrelu      16      
+`define DATA_BYTES_axis_clk_maxpool    16    
 
-`define R_WIDTH_bram_weights 96 
+`define R_WIDTH_bram_weights 384 
 `define R_DEPTH_bram_weights 1024 
-`define W_WIDTH_bram_weights 96 
+`define W_WIDTH_bram_weights 384 
 `define W_DEPTH_bram_weights 1024 
 
 `define S_BYTES_axis_dw_weights_input 8 
-`define M_BYTES_axis_dw_weights_input 12 
+`define M_BYTES_axis_dw_weights_input 48 
 `define TLAST_axis_dw_weights_input   1   
 `define TKEEP_axis_dw_weights_input   1   
 
@@ -192,7 +192,7 @@ Parameters of the system. Written from build.tcl
 `define TLAST_axis_reg_slice_lrelu_dw 0        
 `define TKEEP_axis_reg_slice_lrelu_dw 0        
 
-`define DATA_BYTES_axis_reg_slice_lrelu  4  
+`define DATA_BYTES_axis_reg_slice_lrelu  16  
 `define TLAST_axis_reg_slice_lrelu       1       
 `define TKEEP_axis_reg_slice_lrelu       0       
 `define TUSER_WIDTH_axis_reg_slice_lrelu 4 
@@ -211,22 +211,22 @@ Parameters of the system. Written from build.tcl
 `define BITS_EXP_OUT_mod_float_upsize 8
 `define LATENCY_mod_float_upsize      2     
 
-`define S_BYTES_axis_dw_lrelu 4
-`define M_BYTES_axis_dw_lrelu 4
+`define S_BYTES_axis_dw_lrelu 16
+`define M_BYTES_axis_dw_lrelu 16
 `define TLAST_axis_dw_lrelu   1  
 `define TKEEP_axis_dw_lrelu   1  
 
-`define S_BYTES_axis_dw_max_1 6
-`define M_BYTES_axis_dw_max_1 6
+`define S_BYTES_axis_dw_max_1 24
+`define M_BYTES_axis_dw_max_1 12
 `define TLAST_axis_dw_max_1   1  
 `define TKEEP_axis_dw_max_1   1  
 
-`define S_BYTES_axis_dw_max_2 6
-`define M_BYTES_axis_dw_max_2 16
+`define S_BYTES_axis_dw_max_2 12
+`define M_BYTES_axis_dw_max_2 64
 `define TLAST_axis_dw_max_2   1  
 `define TKEEP_axis_dw_max_2   1  
 
-`define DATA_BYTES_axis_reg_slice_maxpool 4
+`define DATA_BYTES_axis_reg_slice_maxpool 16
 `define TLAST_axis_reg_slice_maxpool      1     
 `define TKEEP_axis_reg_slice_maxpool      1     
 

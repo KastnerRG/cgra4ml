@@ -1,5 +1,5 @@
 `include "params.v"
-`include "../include/params.h"
+`include "../include/params.v"
 
 module axis_maxpool_engine_tb();
   

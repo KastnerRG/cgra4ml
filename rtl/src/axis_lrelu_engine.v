@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`include "../include/params.h"
+`include "../include/params.v"
 /*//////////////////////////////////////////////////////////////////////////////////
 Group : ABruTECH
 Engineer: Abarajithan G.

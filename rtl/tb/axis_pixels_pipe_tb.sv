@@ -1,4 +1,4 @@
-`include "../include/params.h"
+`include "../include/params.v"
 `include "axis_tb.sv"
 
 module axis_pixels_pipe_tb ();

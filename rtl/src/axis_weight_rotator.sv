@@ -25,7 +25,7 @@ Additional Comments:
 
 //////////////////////////////////////////////////////////////////////////////////*/
 `timescale 1ns/1ps
-`include "../include/params.h"
+`include "../include/params.v"
 
 module axis_weight_rotator #(ZERO=0) (
     aclk         ,
@@ -82,6 +82,8 @@ module axis_weight_rotator #(ZERO=0) (
   localparam BRAM_WIDTH = M_WIDTH;
   localparam BRAM_DEPTH = `BRAM_WEIGHTS_DEPTH;
   localparam BITS_ADDR  = `BITS_WEIGHTS_ADDR;
+
+  localparam BRAM_TYPE = `SRAM_TYPE == "XILINX" ? "XILINX_WEIGHTS" : `SRAM_TYPE;
 
   localparam CONFIG_COUNT_MAX  = lrelu_beats::calc_beats_total_max(KW_MAX,MEMBERS);
   localparam BITS_CONFIG_COUNT = $clog2(CONFIG_COUNT_MAX);
@@ -417,7 +419,7 @@ module axis_weight_rotator #(ZERO=0) (
         .ABSORB       (0),
         .USE_W_LAST   (1),
         .USE_R_LAST   (0),
-        .IP_TYPE      (0) // 0 - weights
+        .TYPE         (BRAM_TYPE)
       ) BRAM (
         .clk          (aclk),
         .clken        (1'b1),

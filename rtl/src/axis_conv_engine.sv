@@ -1,6 +1,6 @@
 
 `timescale 1ns/1ps
-`include "../include/params.h"
+`include "../include/params.v"
 
 module axis_conv_engine #(ZERO=0) (
     aclk                 ,

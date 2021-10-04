@@ -1,4 +1,4 @@
-`include "../include/params.h"
+`include "../include/params.v"
 
 module axis_weight_rotator_tb ();
   timeunit 1ns;
