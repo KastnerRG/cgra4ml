@@ -14,7 +14,6 @@ module lrelu_beats_counter (
   mtb,
   w_addr
 );
-  `include "lrelu_beats_functions.svh"
   /*
     w_sel:
       0 : IDLE
@@ -44,7 +43,7 @@ module lrelu_beats_counter (
 
   localparam BITS_W_SEL = 2;
 
-  localparam W_ADDR_MAX  = calc_beats_max(KW_MAX, MEMBERS);
+  localparam W_ADDR_MAX  = lrelu_beats::calc_beats_max(KW_MAX, MEMBERS);
   localparam BITS_W_ADDR = $clog2(W_ADDR_MAX);
 
   input  logic clk;
@@ -75,7 +74,7 @@ module lrelu_beats_counter (
       assign lut_beats_1_bram_a_kw2[KW2] = `CEIL(2, KW)-1;
 
       for (genvar CLR_I = 0; CLR_I <= KW2; CLR_I++)
-        assign lut_beats_1_bram_b_kw2_clri[KW2][CLR_I] = calc_beats_b(CLR_I, KW2, MEMBERS) -1;
+        assign lut_beats_1_bram_b_kw2_clri[KW2][CLR_I] = lrelu_beats::calc_beats_b(CLR_I, KW2, MEMBERS) -1;
     end
   endgenerate
 
