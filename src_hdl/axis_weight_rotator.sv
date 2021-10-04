@@ -42,7 +42,7 @@ module axis_weight_rotator #(ZERO=0) (
     m_axis_tlast ,
     m_axis_tuser  
   );
-  `include "lrelu_beats_functions.svh"
+  
 
   localparam GROUPS                    = `GROUPS                   ;
   localparam COPIES                    = `COPIES                   ;

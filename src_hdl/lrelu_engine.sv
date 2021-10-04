@@ -22,7 +22,7 @@ module lrelu_engine #(ZERO=0) (
   count_config_full
 );
 
-  `include "lrelu_beats_functions.svh"
+  
 
   localparam WORD_WIDTH_IN              = `WORD_WIDTH_ACC            ;
   localparam WORD_WIDTH_OUT             = `WORD_WIDTH                ;
