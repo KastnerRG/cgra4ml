@@ -42,6 +42,7 @@ module axis_weight_rotator #(ZERO=0) (
     m_axis_tlast ,
     m_axis_tuser  
   );
+  `include "lrelu_beats_functions.svh"
 
   localparam GROUPS                    = `GROUPS                   ;
   localparam COPIES                    = `COPIES                   ;
@@ -81,7 +82,8 @@ module axis_weight_rotator #(ZERO=0) (
   localparam BRAM_WIDTH = M_WIDTH;
   localparam BRAM_DEPTH = `BRAM_WEIGHTS_DEPTH;
   localparam BITS_ADDR  = `BITS_WEIGHTS_ADDR;
-  localparam CONFIG_COUNT_MAX  = lrelu_beats::calc_beats_total_max(.KW_MAX      (KW_MAX      ), .MEMBERS(MEMBERS));
+
+  localparam CONFIG_COUNT_MAX  = calc_beats_total_max(KW_MAX,MEMBERS);
   localparam BITS_CONFIG_COUNT = $clog2(CONFIG_COUNT_MAX);
 
   input logic aclk;
@@ -152,12 +154,12 @@ module axis_weight_rotator #(ZERO=0) (
   
 
   // Total lut
-  localparam BEATS_TOTAL_MAX = lrelu_beats::calc_beats_total_max (.KW_MAX      (KW_MAX      ), .MEMBERS(MEMBERS));
+  localparam BEATS_TOTAL_MAX = calc_beats_total_max (KW_MAX, MEMBERS);
   localparam BITS_BEATS_TOTAL = $clog2(BEATS_TOTAL_MAX+1);
   logic [BITS_BEATS_TOTAL-1:0] lut_lrelu_beats_1 [KW_MAX      /2:0];
   generate
     for (genvar KW2=0; KW2 <= KW_MAX      /2; KW2++)
-      assign lut_lrelu_beats_1[KW2] = lrelu_beats::calc_beats_total (.kw2(KW2), .MEMBERS(MEMBERS)) -1;
+      assign lut_lrelu_beats_1[KW2] = calc_beats_total(KW2,MEMBERS) -1;
   endgenerate
 
 
