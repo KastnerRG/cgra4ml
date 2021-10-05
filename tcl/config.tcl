@@ -38,7 +38,7 @@ if {$XILINX} {
   set KSM_COMBS_LIST {{1 1 1} {3 1 1} {3 1 1} {5 1 1} {7 2 1} {11 4 1}}
 
   set LATENCY_BRAM          2
-  set LATENCY_MULTIPLIER    1
+  set LATENCY_MULTIPLIER    0
   set LATENCY_ACCUMULATOR   1
 
   set WORD_WIDTH       16
