@@ -48,10 +48,21 @@ module axis_conv_engine #(ZERO=0) (
   output wire [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0][WORD_WIDTH_OUT-1:0] m_axis_tdata;
   output wire [TUSER_WIDTH_CONV_OUT-1:0] m_axis_tuser;
 
+  /*
+    To fully adhere to AXIS, slice_reg needs to have two reg stages, which costs lot of area 
+    With one reg stage, it turns down s_ready on clock after s_valid, which would freeze conv engine unnessarily.
+    
+    Conv engine will NEVER release valid data on consecutive clocks. So, the following is done to keep area low 
+  */
+
+  logic not_valid_prev, clken_engine;
+  assign clken_engine = valid_prev | slice_s_ready;
+
+
   conv_engine #(.ZERO(ZERO)) ENGINE (
     .clk           (aclk),
     .resetn        (aresetn),
-    .clken         (slice_s_ready        ),
+    .clken         (clken_engine),
     .s_data_pixels (s_axis_tdata_pixels  ),
     .s_data_weights(s_axis_tdata_weights ),
     .s_valid       (s_axis_tvalid        ),
@@ -64,6 +75,18 @@ module axis_conv_engine #(ZERO=0) (
     .m_user        (slice_s_user         )
   );
 
+  register #(
+    .WORD_WIDTH (1),
+    .RESET_VALUE(1),
+    .LOCAL      (0)
+  ) VALID_PREV (
+    .clock       (aclk),
+    .clock_enable(1'b1),
+    .resetn      (aresetn),
+    .data_in     (slice_s_valid),
+    .data_out    (valid_prev)
+  );
+
   axis_register #
   (
     .DATA_WIDTH   (COPIES*GROUPS*MEMBERS*UNITS*WORD_WIDTH_OUT),
@@ -73,7 +96,7 @@ module axis_conv_engine #(ZERO=0) (
     .DEST_ENABLE  (0),
     .USER_ENABLE  (1),
     .USER_WIDTH   (TUSER_WIDTH_CONV_OUT),
-    .REG_TYPE     (2)
+    .REG_TYPE     (1)
   ) SLICE (
     .clk          (aclk        ),
     .rst          (~aresetn    ),
