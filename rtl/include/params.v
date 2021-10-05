@@ -1,6 +1,6 @@
 `define ASIC_REG 1
 
-`define SRAM_TYPE   "EMPTY"  
+`define SRAM_TYPE   "XILINX"  
 `define MAC_TYPE    "RAW"  
 
 `define UNITS    14  
