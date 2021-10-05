@@ -29,8 +29,6 @@ if {$XILINX} {
   set IM_CIN_MAX    1024
   # BRAM_WEIGHTS_DEPTH = max(KH * CIN * SH + lrelu_beats-1)
   set BRAM_WEIGHTS_DEPTH  1024 
-  set BRAM_WEIGHTS_DEPTH  1024 
-  set BRAM_WEIGHTS_DEPTH  1024 
 
 } else {
   
@@ -43,7 +41,7 @@ if {$XILINX} {
   set LATENCY_MULTIPLIER    1
   set LATENCY_ACCUMULATOR   1
 
-  set WORD_WIDTH       8
+  set WORD_WIDTH       16
   set WORD_WIDTH_ACC   24
   set S_WEIGHTS_WIDTH_LF 64
   set S_PIXELS_WIDTH_LF  64
