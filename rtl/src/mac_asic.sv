@@ -55,34 +55,19 @@ module multiplier_raw # (
   input  logic signed [WORD_WIDTH   -1:0] B,
   output logic signed [WORD_WIDTH*2 -1:0] P   
 );
-
-  logic signed [WORD_WIDTH-1:0] A_d, B_d;
+  logic signed [WORD_WIDTH*2-1:0] mul_in;
+  assign mul_in = A * B;
 
   n_delay #(
-    .N          (LATENCY   -1),
+    .N          (LATENCY),
     .WORD_WIDTH (WORD_WIDTH*2),
     .LOCAL      (0)
   ) DELAY (
     .clk      (CLK ),
     .resetn   (1'b1),
     .clken    (CE  ),
-    .data_in  ({A,B}),
-    .data_out ({A_d,B_d})
-  );
-
-  logic signed [WORD_WIDTH*2-1:0] mul_in;
-  assign mul_in = A_d * B_d;
-
-  register #(
-    .WORD_WIDTH  (WORD_WIDTH*2),
-    .RESET_VALUE (0),
-    .LOCAL       (0)
-  ) REG (
-    .clock       (CLK),
-    .clock_enable(CE),
-    .resetn      (1'b1),
-    .data_in     (mul_in),
-    .data_out    (P)
+    .data_in  (mul_in),
+    .data_out (P)
   );
 
 endmodule
