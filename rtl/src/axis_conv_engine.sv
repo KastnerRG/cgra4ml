@@ -55,7 +55,7 @@ module axis_conv_engine #(ZERO=0) (
     Conv engine will NEVER release valid data on consecutive clocks. So, the following is done to keep area low 
   */
 
-  logic not_valid_prev, clken_engine;
+  logic valid_prev, clken_engine;
   assign clken_engine = valid_prev | slice_s_ready;
 
 
