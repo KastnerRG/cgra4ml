@@ -19,7 +19,7 @@
 `define OUT_SHIFT_MAX      4
 `define IM_SHIFT_REGS      18
 
-`define WORD_WIDTH          8         
+`define WORD_WIDTH          16         
 `define WORD_WIDTH_ACC      24    
 `define KH_MAX              11            
 `define KW_MAX              11            
@@ -68,11 +68,11 @@
 `define M_DATA_WIDTH_HF_CONV    4704   
 `define M_DATA_WIDTH_HF_CONV_DW 336
 `define M_DATA_WIDTH_LF_CONV_DW 512
-`define M_DATA_WIDTH_HF_LRELU   112  
-`define M_DATA_WIDTH_LF_LRELU   128  
-`define M_DATA_WIDTH_HF_MAXPOOL 192
-`define M_DATA_WIDTH_HF_MAX_DW1 192
-`define M_DATA_WIDTH_LF_MAXPOOL 256
+`define M_DATA_WIDTH_HF_LRELU   224  
+`define M_DATA_WIDTH_LF_LRELU   256  
+`define M_DATA_WIDTH_HF_MAXPOOL 384
+`define M_DATA_WIDTH_HF_MAX_DW1 384
+`define M_DATA_WIDTH_LF_MAXPOOL 512
 `define M_DATA_WIDTH_LF         512
 /*
   LATENCIES & float widths

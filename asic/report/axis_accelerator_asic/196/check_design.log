@@ -10,19 +10,19 @@
 Unresolved References                    2 
 Empty Modules                            0 
 Unloaded Port(s)                         0 
-Unloaded Sequential Pin(s)              94 
+Unloaded Sequential Pin(s)             173 
 Unloaded Combinational Pin(s)            0 
-Assigns                                897 
+Assigns                                925 
 Undriven Port(s)                         0 
 Undriven Leaf Pin(s)                     0 
-Undriven hierarchical pin(s)          2376 
+Undriven hierarchical pin(s)          2534 
 Multidriven Port(s)                      0 
 Multidriven Leaf Pin(s)                  0 
-Multidriven hierarchical Pin(s)        274 
+Multidriven hierarchical Pin(s)        498 
 Multidriven unloaded net(s)              0 
 Constant Port(s)                         0 
 Constant Leaf Pin(s)                     0 
-Constant hierarchical Pin(s)         35732 
+Constant hierarchical Pin(s)         37439 
 Preserved leaf instance(s)               0 
 Preserved hierarchical instance(s)       0 
 Libcells with no LEF cell                0 
