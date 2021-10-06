@@ -42,7 +42,7 @@ if {$XILINX} {
   set LATENCY_MULTIPLIER    0
   set LATENCY_ACCUMULATOR   1
 
-  set FREQ_HIGH        600
+  set FREQ_HIGH        800
   set WORD_WIDTH       16
   set WORD_WIDTH_ACC   24
   set S_WEIGHTS_WIDTH_LF 64
