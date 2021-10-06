@@ -28,9 +28,16 @@ check_design > ${REPORT_DIR}/check_design.log
 uniquify $TOP
 
 #--------- CONSTRAINTS
-create_clock -name aclk -period 5 [get_ports aclk]
+set PERIOD [expr 1000.0/$FREQ_HIGH]
+create_clock -name aclk -period $PERIOD [get_ports aclk]
 set_dont_touch_network [all_clocks]
 set_dont_touch_network [get_ports {aresetn}]
+
+set design_inputs [get_ports {m_axis_tready, s_axis_pixels_tvalid, s_axis_pixels_tlast, s_axis_pixels_tdata, s_axis_pixels_tkeep, s_axis_weights_tvalid, s_axis_weights_tlast, s_axis_weights_tdata, s_axis_weights_tkeep}]
+set design_outputs [get_ports {s_axis_pixels_tready,  s_axis_weights_tready, m_axis_tvalid, m_axis_tlast, m_axis_tdata, m_axis_tkeep}]
+
+set_input_delay  [expr $PERIOD * 0.6] -clock aclk $design_inputs
+set_output_delay [expr $PERIOD * 0.6] -clock aclk $design_outputs
 
 #--------- RETIME OPTIONS
 set_db retime_async_reset true

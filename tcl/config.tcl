@@ -10,6 +10,7 @@ if {$XILINX} {
   set LATENCY_MULTIPLIER    3
   set LATENCY_ACCUMULATOR   1
 
+  set FREQ_HIGH        200
   set WORD_WIDTH       8
   set WORD_WIDTH_ACC   32
   set S_WEIGHTS_WIDTH_LF 64
@@ -41,6 +42,7 @@ if {$XILINX} {
   set LATENCY_MULTIPLIER    0
   set LATENCY_ACCUMULATOR   1
 
+  set FREQ_HIGH        600
   set WORD_WIDTH       16
   set WORD_WIDTH_ACC   24
   set S_WEIGHTS_WIDTH_LF 64
@@ -64,7 +66,6 @@ if {$XILINX} {
 
 # ********************************************************************
 
-set FREQ_HIGH   200
 set FREQ_RATIO  1
 
 set OUTPUT_MODE "CONV"
