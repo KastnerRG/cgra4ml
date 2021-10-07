@@ -12,9 +12,9 @@ exec mkdir -p $REPORT_DIR
 
 #--------- LIBRARIES
 set LIB_DIR ../../../tsmc/40nm
-set_db init_lib_search_path [list $LIB_DIR/lef $LIB_DIR/lib $LIB_DIR/cap]
-set_db library [glob $LIB_DIR/lib/tcbn45gsbwpbc0d88*.lib]
-set_db lef_library [glob $LIB_DIR/lef/*.lef]
+set_db library [glob $LIB_DIR/cg/tcbn45gsbwpcgtc.lib $LIB_DIR/cg/tcbn45gsbwptc.lib]
+set_db lef_library [glob $LIB_DIR/cg/tcbn45gsbwpcg_7lm4X2ZRDL.lef $LIB_DIR/cg/tcbn45gsbwp_7lm4X2ZRDL.lef]
+set_db cap_table_file [glob $LIB_DIR/cg/cln40g_1p07m+alrdl_4x2z_typical.captab]
 
 #--------- READ
 read_hdl -mixvlog [glob $RTL_DIR/include/*]
@@ -33,8 +33,8 @@ create_clock -name aclk -period $PERIOD [get_ports aclk]
 set_dont_touch_network [all_clocks]
 set_dont_touch_network [get_ports {aresetn}]
 
-set design_inputs [get_ports {m_axis_tready, s_axis_pixels_tvalid, s_axis_pixels_tlast, s_axis_pixels_tdata, s_axis_pixels_tkeep, s_axis_weights_tvalid, s_axis_weights_tlast, s_axis_weights_tdata, s_axis_weights_tkeep}]
-set design_outputs [get_ports {s_axis_pixels_tready,  s_axis_weights_tready, m_axis_tvalid, m_axis_tlast, m_axis_tdata, m_axis_tkeep}]
+set design_inputs [get_ports {m_axis_tready s_axis_pixels_tvalid s_axis_pixels_tlast s_axis_pixels_tdata s_axis_pixels_tkeep s_axis_weights_tvalid s_axis_weights_tlast s_axis_weights_tdata s_axis_weights_tkeep}]
+set design_outputs [get_ports {s_axis_pixels_tready  s_axis_weights_tready m_axis_tvalid m_axis_tlast m_axis_tdata m_axis_tkeep}]
 
 set_input_delay  [expr $PERIOD * 0.6] -clock aclk $design_inputs
 set_output_delay [expr $PERIOD * 0.6] -clock aclk $design_outputs
