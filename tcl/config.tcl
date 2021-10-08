@@ -33,17 +33,17 @@ if {$XILINX} {
 
 } else {
   
-  set UNITS   14
+  set UNITS   7
   set GROUPS  1
-  set MEMBERS 14
+  set MEMBERS 96
   set KSM_COMBS_LIST {{1 1 1} {3 1 1} {3 1 1} {5 1 1} {7 2 1} {11 4 1}}
 
   set LATENCY_BRAM          2
   set LATENCY_MULTIPLIER    0
   set LATENCY_ACCUMULATOR   1
 
-  set FREQ_HIGH        800
-  set WORD_WIDTH       16
+  set FREQ_HIGH        400
+  set WORD_WIDTH       8
   set WORD_WIDTH_ACC   24
   set S_WEIGHTS_WIDTH_LF 64
   set S_PIXELS_WIDTH_LF  64

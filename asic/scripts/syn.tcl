@@ -5,6 +5,7 @@ set TOP axis_accelerator_asic
 set RTL_DIR ../../rtl
 set XILINX 0
 source ../../tcl/config.tcl
+set_db hdl_max_loop_limit 10000000
 
 set NUM_MACS [expr $MEMBERS*$UNITS*$GROUPS*$COPIES]
 set REPORT_DIR ../report/${TOP}/${NUM_MACS}
