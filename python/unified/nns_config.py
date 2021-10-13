@@ -1,4 +1,5 @@
 from math import floor, ceil
+import torch
 
 BYTES_XK = 1
 BYTES_Y = 3
@@ -25,13 +26,19 @@ def kraken_calc_params(r,c, layer_config, BYTES_XK, BYTES_Y):
     '''
     Operations
     '''
-    p = kw*kh*ci*co*ho*wo*n # operations in the layer
+    conv = torch.nn.Conv2d(in_channels=1, out_channels=1, kernel_size=k, stride=s, padding=k//2, bias=None)
+    xt = torch.ones(1,1,hi,wi)
+    kt = torch.ones(1,1,kh,kw)
+    conv.weight.data = kt
+    yt = conv(xt)
+    sum_non_zero = int(torch.sum(yt))
+    p = sum_non_zero*ci*co*n # operations in the layer
     
 
     shift_clock = 1 if is_conv and kw != 1 else 0
     n_eff = n if is_conv else n/r
 
-    q = t*(1+n_eff*l*wi*(shift_clock+ci*kh)) # clocks needed
+    q = n_eff*t*l*wi*(shift_clock+ci*kh) # clocks needed
 
     p_max = q*r*c # peak op
     eff = p/p_max # perf eff
@@ -54,7 +61,7 @@ def kraken_calc_params(r,c, layer_config, BYTES_XK, BYTES_Y):
 
     data_ratio = layer_bytes/min_bytes
 
-    return eff, q, data_ratio, layer_bytes, p
+    return eff, q, data_ratio, layer_bytes, p, dx, dk, dy
 
 '''
 CNN CONFIG
@@ -63,7 +70,7 @@ is_conv, k,s,H,Ci,Ho,Co
 
 
 alex = [
-    [1, 11	,4, 228, 3   , 57, 96  ],
+    [1, 11, 4, 228, 3   , 57, 96  ],
     [1, 5  ,1, 27 , 96  , 27, 256 ],
     [1, 3  ,1, 13 , 256 , 13, 384 ],
     [1, 3  ,1, 13 , 384 , 13, 384 ],
