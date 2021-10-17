@@ -90,24 +90,6 @@ module conv_engine #(ZERO=0) (
 
   generate
     genvar c,g,u,m,b,kw2,sw_1;
-    
-    for (c=0; c < COPIES; c++) begin: Cm
-      for (g=0; g < GROUPS; g++) begin: Gm
-        for (u=0; u < UNITS; u++) begin: Um
-          for (m=0; m < MEMBERS; m++) begin: Mm
-
-`ifdef MAC_XILINX
-            multiplier MUL (
-`else
-            multiplier_raw MUL (
-`endif
-              .CLK    (clk),
-              .CE     (clken_mul),
-              .A      (s_data_pixels  [c]      [u]),
-              .B      (s_data_weights [c][g][m]   ),
-              .P      (mul_m_data     [c][g][m][u])
-            );
-    end end end end
 
     n_delay #(
       .N          (LATENCY_MULTIPLIER     ),
@@ -143,14 +125,7 @@ module conv_engine #(ZERO=0) (
     );
     assign clken_mul = clken && !mux_sel;
             
-    for (c=0; c < COPIES; c++)
-      for (g=0; g < GROUPS; g++)
-        for (u=0; u < UNITS; u++)
-          for (m=0; m < MEMBERS; m++)
-            assign acc_s_data  [c][g][m][u] = mux_sel ? mux_s2_data  [c][g][m][u] : WORD_WIDTH_OUT'(signed'(mul_m_data [c][g][m][u]));
-                
     for (m=0; m < MEMBERS; m++) begin: Mb
-
       for (kw2=0; kw2 <= KW_MAX/2; kw2++)
         for (sw_1=0; sw_1 < SW_MAX; sw_1++) begin
           localparam k = kw2*2 + 1;
@@ -184,17 +159,23 @@ module conv_engine #(ZERO=0) (
       for (g=0; g < GROUPS; g++) begin: Ga
         for (u=0; u < UNITS; u++) begin: Ua
           for (m=0; m < MEMBERS; m++) begin: Ma
-
-`ifdef MAC_XILINX
-            accumulator ACC (
-`else
-            accumulator_raw ACC (
-`endif
-              .CLK    (clk),  
-              .bypass (bypass      [m]),  
-              .CE     (clken_acc   [m]),  
-              .B      (acc_s_data  [c][g][m][u]),  
-              .Q      (m_data      [c][g][m][u])  
+            processing_element #(
+              .WORD_WIDTH_IN (WORD_WIDTH_IN ),
+              .WORD_WIDTH_OUT(WORD_WIDTH_OUT)
+              ) PROCESSING_ELEMENT (
+              .clk           (clk           ),
+              .clken         (clken         ),
+              .resetn        (resetn        ),
+              .clken_mul     (clken_mul     ),
+              .s_data_pixels (s_data_pixels [c]      [u]), 
+              .s_data_weights(s_data_weights[c][g][m]   ),
+              .mul_m_data    (mul_m_data    [c][g][m][u]),
+              .mux_sel       (mux_sel       ),
+              .mux_s2_data   (mux_s2_data   [c][g][m][u]),
+              .bypass        (bypass        [m]),
+              .clken_acc     (clken_acc     [m]),
+              .acc_s_data    (acc_s_data    [c][g][m][u]),
+              .m_data        (m_data        [c][g][m][u])
             );
     end end end end
 
@@ -242,4 +223,63 @@ module conv_engine #(ZERO=0) (
     assign m_last  = acc_m_last;
     assign m_valid = acc_m_valid & valid_mask;
   endgenerate
+endmodule
+
+module processing_element #(
+  WORD_WIDTH_IN  = 8,
+  WORD_WIDTH_OUT = 24
+)(
+  clk    ,
+  clken  ,
+  resetn ,
+
+  clken_mul,
+  s_data_pixels, 
+  s_data_weights,
+  mul_m_data,
+
+  mux_sel,
+  mux_s2_data,
+  bypass,
+  clken_acc,
+  acc_s_data,
+  m_data
+);
+
+  input  logic clk, clken, resetn;
+  input  logic clken_mul, mux_sel, bypass, clken_acc;
+
+  input  logic [WORD_WIDTH_IN  -1:0] s_data_pixels, s_data_weights;
+  input  logic [WORD_WIDTH_OUT -1:0] mux_s2_data;
+  
+  output logic [WORD_WIDTH_IN*2-1:0] mul_m_data;
+  output logic [WORD_WIDTH_OUT -1:0] acc_s_data;
+  output logic [WORD_WIDTH_OUT -1:0] m_data;
+
+`ifdef MAC_XILINX
+  multiplier MUL (
+`else
+  multiplier_raw MUL (
+`endif
+    .CLK    (clk),
+    .CE     (clken_mul),
+    .A      (s_data_pixels ),
+    .B      (s_data_weights),
+    .P      (mul_m_data    )
+  );
+
+  assign acc_s_data = mux_sel ? mux_s2_data  : WORD_WIDTH_OUT'(signed'(mul_m_data));
+  
+`ifdef MAC_XILINX
+  accumulator ACC (
+`else
+  accumulator_raw ACC (
+`endif
+    .CLK    (clk),  
+    .bypass (bypass     ),  
+    .CE     (clken_acc  ),  
+    .B      (acc_s_data ),  
+    .Q      (m_data     )  
+  );
+
 endmodule
