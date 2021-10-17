@@ -13,13 +13,13 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="918083fs"></ZoomStartTime>
-      <ZoomEndTime time="1016384fs"></ZoomEndTime>
-      <Cursor1Time time="1000000fs"></Cursor1Time>
+      <ZoomStartTime time="0fs"></ZoomStartTime>
+      <ZoomEndTime time="7570001fs"></ZoomEndTime>
+      <Cursor1Time time="52fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="205"></NameColumnWidth>
-      <ValueColumnWidth column_width="70"></ValueColumnWidth>
+      <ValueColumnWidth column_width="66"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="1" />
    <wvobject fp_name="group533" type="group">
@@ -804,10 +804,6 @@
                   <obj_property name="ElementShortName">ABSORB[31:0]</obj_property>
                   <obj_property name="ObjectShortName">ABSORB[31:0]</obj_property>
                </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /IP_TYPE" type="array">
-                  <obj_property name="ElementShortName">IP_TYPE[31:0]</obj_property>
-                  <obj_property name="ObjectShortName">IP_TYPE[31:0]</obj_property>
-               </wvobject>
                <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /SIZE" type="array">
                   <obj_property name="ElementShortName">SIZE[31:0]</obj_property>
                   <obj_property name="ObjectShortName">SIZE[31:0]</obj_property>
@@ -928,10 +924,6 @@
                   <obj_property name="ElementShortName">ABSORB[31:0]</obj_property>
                   <obj_property name="ObjectShortName">ABSORB[31:0]</obj_property>
                </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /IP_TYPE" type="array">
-                  <obj_property name="ElementShortName">IP_TYPE[31:0]</obj_property>
-                  <obj_property name="ObjectShortName">IP_TYPE[31:0]</obj_property>
-               </wvobject>
                <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /SIZE" type="array">
                   <obj_property name="ElementShortName">SIZE[31:0]</obj_property>
                   <obj_property name="ObjectShortName">SIZE[31:0]</obj_property>
@@ -962,43 +954,6 @@
                <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0]" type="array">
                   <obj_property name="ElementShortName">[0][1:0][11:0][7:0]</obj_property>
                   <obj_property name="ObjectShortName">[0][1:0][11:0][7:0]</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /\genblk1.bram /clka" type="logic">
-                  <obj_property name="ElementShortName">clka</obj_property>
-                  <obj_property name="ObjectShortName">clka</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /\genblk1.bram /ena" type="logic">
-                  <obj_property name="ElementShortName">ena</obj_property>
-                  <obj_property name="ObjectShortName">ena</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /\genblk1.bram /wea" type="array">
-                  <obj_property name="ElementShortName">wea[0:0]</obj_property>
-                  <obj_property name="ObjectShortName">wea[0:0]</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /\genblk1.bram /addra" type="array">
-                  <obj_property name="ElementShortName">addra[9:0]</obj_property>
-                  <obj_property name="ObjectShortName">addra[9:0]</obj_property>
-                  <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /\genblk1.bram /dina" type="array">
-                  <obj_property name="ElementShortName">dina[383:0]</obj_property>
-                  <obj_property name="ObjectShortName">dina[383:0]</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /\genblk1.bram /clkb" type="logic">
-                  <obj_property name="ElementShortName">clkb</obj_property>
-                  <obj_property name="ObjectShortName">clkb</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /\genblk1.bram /enb" type="logic">
-                  <obj_property name="ElementShortName">enb</obj_property>
-                  <obj_property name="ObjectShortName">enb</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /\genblk1.bram /addrb" type="array">
-                  <obj_property name="ElementShortName">addrb[9:0]</obj_property>
-                  <obj_property name="ObjectShortName">addrb[9:0]</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /\genblk1.bram /doutb" type="array">
-                  <obj_property name="ElementShortName">doutb[383:0]</obj_property>
-                  <obj_property name="ObjectShortName">doutb[383:0]</obj_property>
                </wvobject>
             </wvobject>
          </wvobject>
@@ -1115,44 +1070,6 @@
                <obj_property name="label">MUL</obj_property>
                <obj_property name="DisplayName">label</obj_property>
                <obj_property name="isExpanded"></obj_property>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/\Cm[0].Gm[0].Um[0].Mm[0].MUL /CLK" type="logic">
-                  <obj_property name="ElementShortName">CLK</obj_property>
-                  <obj_property name="ObjectShortName">CLK</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/\Cm[0].Gm[0].Um[0].Mm[0].MUL /CE" type="logic">
-                  <obj_property name="ElementShortName">CE</obj_property>
-                  <obj_property name="ObjectShortName">CE</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/\Cm[0].Gm[0].Um[0].Mm[0].MUL /A" type="array">
-                  <obj_property name="ElementShortName">A[7:0]</obj_property>
-                  <obj_property name="ObjectShortName">A[7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/\Cm[0].Gm[0].Um[0].Mm[0].MUL /B" type="array">
-                  <obj_property name="ElementShortName">B[7:0]</obj_property>
-                  <obj_property name="ObjectShortName">B[7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/\Cm[0].Gm[0].Um[0].Mm[0].MUL /A_d" type="array">
-                  <obj_property name="ElementShortName">A_d[7:0]</obj_property>
-                  <obj_property name="ObjectShortName">A_d[7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/\Cm[0].Gm[0].Um[0].Mm[0].MUL /B_d" type="array">
-                  <obj_property name="ElementShortName">B_d[7:0]</obj_property>
-                  <obj_property name="ObjectShortName">B_d[7:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/\Cm[0].Gm[0].Um[0].Mm[0].MUL /mul_in" type="array">
-                  <obj_property name="ElementShortName">mul_in[15:0]</obj_property>
-                  <obj_property name="ObjectShortName">mul_in[15:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/\Cm[0].Gm[0].Um[0].Mm[0].MUL /P" type="array">
-                  <obj_property name="ElementShortName">P[15:0]</obj_property>
-                  <obj_property name="ObjectShortName">P[15:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
             </wvobject>
          </wvobject>
          <wvobject fp_name="group379" type="group">
@@ -1295,38 +1212,6 @@
             <obj_property name="label">ACC</obj_property>
             <obj_property name="DisplayName">label</obj_property>
             <obj_property name="isExpanded"></obj_property>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/\Ca[0].Ga[0].Ua[0].Ma[0].ACC /CLK" type="logic">
-               <obj_property name="ElementShortName">CLK</obj_property>
-               <obj_property name="ObjectShortName">CLK</obj_property>
-            </wvobject>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/\Ca[0].Ga[0].Ua[0].Ma[0].ACC /bypass" type="logic">
-               <obj_property name="ElementShortName">bypass</obj_property>
-               <obj_property name="ObjectShortName">bypass</obj_property>
-            </wvobject>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/\Ca[0].Ga[0].Ua[0].Ma[0].ACC /CE" type="logic">
-               <obj_property name="ElementShortName">CE</obj_property>
-               <obj_property name="ObjectShortName">CE</obj_property>
-            </wvobject>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/\Ca[0].Ga[0].Ua[0].Ma[0].ACC /B" type="array">
-               <obj_property name="ElementShortName">B[31:0]</obj_property>
-               <obj_property name="ObjectShortName">B[31:0]</obj_property>
-            </wvobject>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/\Ca[0].Ga[0].Ua[0].Ma[0].ACC /bypass_d" type="logic">
-               <obj_property name="ElementShortName">bypass_d</obj_property>
-               <obj_property name="ObjectShortName">bypass_d</obj_property>
-            </wvobject>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/\Ca[0].Ga[0].Ua[0].Ma[0].ACC /B_d" type="array">
-               <obj_property name="ElementShortName">B_d[31:0]</obj_property>
-               <obj_property name="ObjectShortName">B_d[31:0]</obj_property>
-            </wvobject>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/\Ca[0].Ga[0].Ua[0].Ma[0].ACC /reg_in" type="array">
-               <obj_property name="ElementShortName">reg_in[31:0]</obj_property>
-               <obj_property name="ObjectShortName">reg_in[31:0]</obj_property>
-            </wvobject>
-            <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/\Ca[0].Ga[0].Ua[0].Ma[0].ACC /Q" type="array">
-               <obj_property name="ElementShortName">Q[31:0]</obj_property>
-               <obj_property name="ObjectShortName">Q[31:0]</obj_property>
-            </wvobject>
          </wvobject>
          <wvobject fp_name="group4982" type="group">
             <obj_property name="label">acc_0</obj_property>
