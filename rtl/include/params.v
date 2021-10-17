@@ -12,7 +12,7 @@
 `define KSM_COMBS_EXPR (((((((k==1 & s==1 & m==1)) | (k==3 & s==1 & m==1)) | (k==3 & s==1 & m==1)) | (k==5 & s==1 & m==1)) | (k==7 & s==2 & m==1)) | (k==11 & s==4 & m==1))
 `define KS_COMBS_EXPR (((((((k==1 & s==1)) | (k==3 & s==1)) | (k==3 & s==1)) | (k==5 & s==1)) | (k==7 & s==2)) | (k==11 & s==4))
 
-`define FREQ_HIGH     400
+`define FREQ_HIGH     800
 `define FREQ_RATIO    1
 
 `define UNITS_EDGES        17
@@ -36,7 +36,7 @@
 `define BITS_IM_BLOCKS    6   
 `define BITS_IM_SHIFT     2   
 `define BITS_IM_SHIFT_REGS 4   
-`define BITS_WEIGHTS_ADDR  10   
+`define BITS_WEIGHTS_ADDR  11   
 `define BITS_MEMBERS      7     
 `define BITS_KW2          3         
 `define BITS_KH2          3         
@@ -60,7 +60,7 @@
 `define IM_COLS_MAX      384     
 `define LRELU_ALPHA      11878     
 `define LRELU_BEATS_MAX  9
-`define BRAM_WEIGHTS_DEPTH  1024     
+`define BRAM_WEIGHTS_DEPTH  2048     
 
 `define S_WEIGHTS_WIDTH_LF  64
 `define S_PIXELS_WIDTH_LF   64
