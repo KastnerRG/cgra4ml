@@ -26,7 +26,7 @@ Constant hierarchical Pin(s)         37193
 Preserved leaf instance(s)               0 
 Preserved hierarchical instance(s)       0 
 Libcells with no LEF cell                0 
-Physical (LEF) cells with no libcell     9 
+Physical (LEF) cells with no libcell    34 
 Subdesigns with long module name         0 
 Physical only instance(s)                0 
 Logical only instance(s)                 0 
