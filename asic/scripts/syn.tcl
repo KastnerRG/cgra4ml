@@ -7,15 +7,18 @@ set XILINX 0
 source ../../tcl/config.tcl
 set_db hdl_max_loop_limit 10000000
 
+set TECH 65nm
 set NUM_MACS [expr $MEMBERS*$UNITS*$GROUPS*$COPIES]
-set REPORT_DIR ../report/${TOP}/${NUM_MACS}
+set REPORT_DIR ../report/${TECH}/${TOP}/${NUM_MACS}
 exec mkdir -p $REPORT_DIR
 
 #--------- LIBRARIES
-set LIB_DIR ../../../tsmc/40nm
-set_db library [glob $LIB_DIR/cg/tcbn45gsbwpcgtc.lib $LIB_DIR/cg/tcbn45gsbwptc.lib]
-set_db lef_library [glob $LIB_DIR/cg/tcbn45gsbwpcg_7lm4X2ZRDL.lef $LIB_DIR/cg/tcbn45gsbwp_7lm4X2ZRDL.lef]
-set_db cap_table_file [glob $LIB_DIR/cg/cln40g_1p07m+alrdl_4x2z_typical.captab]
+set LIB_DIR ../../../tsmc/${TECH}/GP
+set_db library [glob $LIB_DIR/cc_lib/noise_scadv10_cln65gp_hvt_tt_1p0v_25c.lib $LIB_DIR/cc_lib/scadv10_cln65gp_hvt_tt_1p0v_25c.lib]
+set_db lef_library [glob $LIB_DIR/lef/tsmc_cln65_a10_6X1Z_tech.lef $LIB_DIR/lef/tsmc_cln65_a10_6X2Z_tech.lef $LIB_DIR/lef/tsmc65_hvt_sc_adv10_macro.lef]
+# set LIB_DIR ../../../tsmc/${TECH}/LP
+# set_db library [glob $LIB_DIR/lib/sc12_cln65lp_base_hvt_tt_typical_max_1p00v_25c.lib $LIB_DIR/lib/sc12_cln65lp_base_hvt_tt_typical_max_1p20v_25c.lib]
+# set_db lef_library [glob $LIB_DIR/lef/sc12_cln65lp_base_hvt.lef]
 
 #--------- READ
 read_hdl -mixvlog [glob $RTL_DIR/include/*]
@@ -41,11 +44,11 @@ set_input_delay  [expr $PERIOD * 0.6] -clock aclk $design_inputs
 set_output_delay [expr $PERIOD * 0.6] -clock aclk $design_outputs
 
 #--------- RETIME OPTIONS
-set_db retime_async_reset true
-set_db design:${TOP} .retime true
+# set_db retime_async_reset true
+# set_db design:${TOP} .retime true
 
 #--------- SYNTHESIZE
-set_db syn_global_effort high
+set_db syn_global_effort medium
 syn_generic
 syn_map
 syn_opt
