@@ -16,6 +16,7 @@ exec mkdir -p $REPORT_DIR
 set LIB_DIR ../../../tsmc/${TECH}/GP
 set_db library [glob $LIB_DIR/cc_lib/noise_scadv10_cln65gp_hvt_tt_1p0v_25c.lib $LIB_DIR/cc_lib/scadv10_cln65gp_hvt_tt_1p0v_25c.lib]
 set_db lef_library [glob $LIB_DIR/lef/tsmc_cln65_a10_6X1Z_tech.lef $LIB_DIR/lef/tsmc_cln65_a10_6X2Z_tech.lef $LIB_DIR/lef/tsmc65_hvt_sc_adv10_macro.lef]
+set_db qrc_tech_file $LIB_DIR/other/icecaps.tch
 # set LIB_DIR ../../../tsmc/${TECH}/LP
 # set_db library [glob $LIB_DIR/lib/sc12_cln65lp_base_hvt_tt_typical_max_1p00v_25c.lib $LIB_DIR/lib/sc12_cln65lp_base_hvt_tt_typical_max_1p20v_25c.lib]
 # set_db lef_library [glob $LIB_DIR/lef/sc12_cln65lp_base_hvt.lef]
@@ -44,11 +45,11 @@ set_input_delay  [expr $PERIOD * 0.6] -clock aclk $design_inputs
 set_output_delay [expr $PERIOD * 0.6] -clock aclk $design_outputs
 
 #--------- RETIME OPTIONS
-# set_db retime_async_reset true
-# set_db design:${TOP} .retime true
+set_db retime_async_reset true
+set_db design:${TOP} .retime true
 
 #--------- SYNTHESIZE
-set_db syn_global_effort medium
+set_db syn_global_effort high
 syn_generic
 syn_map
 syn_opt
