@@ -49,7 +49,7 @@ if {$XILINX} {
   set S_PIXELS_WIDTH_LF  64
   set M_OUTPUT_WIDTH_LF  64
 
-  set SRAM_TYPE "XILINX"
+  set SRAM_TYPE "ASIC"
   set MAC_TYPE "RAW"
   set REG_TYPE "ASIC"
 

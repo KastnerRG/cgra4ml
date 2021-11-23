@@ -48,5 +48,17 @@ module bram_sdp_shell #(
         .addrb  (addrb),  
         .doutb  (doutb)  
       );
+    else if (TYPE == "ASIC")
+      sdp_array bram (
+        .clka   (clka),    
+        .ena    (ena),     
+        .wea    (wea),     
+        .addra  (addra),  
+        .dina   (dina),   
+        .clkb   (clkb),   
+        .enb    (enb),     
+        .addrb  (addrb),  
+        .doutb  (doutb)  
+      );
   endgenerate
 endmodule
