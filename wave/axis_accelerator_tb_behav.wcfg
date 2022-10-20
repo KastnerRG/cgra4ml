@@ -5,7 +5,7 @@
    <db_ref_list>
       <db_ref path="axis_accelerator_tb_behav.wdb" id="1">
          <top_modules>
-            <top_module name="\$unit_alex_axis_adapter_any_sv " />
+            <top_module name="\$unit_alex_axis_adapter_any_sv_1332764645 " />
             <top_module name="axis_accelerator_tb" />
             <top_module name="glbl" />
             <top_module name="lrelu_beats" />
@@ -13,19 +13,18 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="0fs"></ZoomStartTime>
-      <ZoomEndTime time="7570001fs"></ZoomEndTime>
-      <Cursor1Time time="52fs"></Cursor1Time>
+      <ZoomStartTime time="26.452000 us"></ZoomStartTime>
+      <ZoomEndTime time="110.702001 us"></ZoomEndTime>
+      <Cursor1Time time="52.902000 us"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="205"></NameColumnWidth>
-      <ValueColumnWidth column_width="66"></ValueColumnWidth>
+      <NameColumnWidth column_width="431"></NameColumnWidth>
+      <ValueColumnWidth column_width="210"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="1" />
+   <WVObjectSize size="2" />
    <wvobject fp_name="group533" type="group">
       <obj_property name="label">All</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="group965" type="group">
          <obj_property name="label">ref</obj_property>
          <obj_property name="DisplayName">label</obj_property>
@@ -162,7 +161,6 @@
       <wvobject fp_name="group1249" type="group">
          <obj_property name="label">Weight Rot</obj_property>
          <obj_property name="DisplayName">label</obj_property>
-         <obj_property name="isExpanded"></obj_property>
          <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/aresetn" type="logic">
             <obj_property name="ElementShortName">aresetn</obj_property>
             <obj_property name="ObjectShortName">aresetn</obj_property>
@@ -1684,6 +1682,7 @@
       <wvobject fp_name="group1120" type="group">
          <obj_property name="label">DW BANK</obj_property>
          <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
       </wvobject>
       <wvobject fp_name="group1209" type="group">
          <obj_property name="label">lrelu_counter</obj_property>
@@ -1860,10 +1859,12 @@
       <wvobject fp_name="group1455" type="group">
          <obj_property name="label">DW_MAX_1</obj_property>
          <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
       </wvobject>
       <wvobject fp_name="group1456" type="group">
          <obj_property name="label">DW_MAX_2</obj_property>
          <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
       </wvobject>
       <wvobject fp_name="group1457" type="group">
          <obj_property name="label">CLK_MAXPOOL</obj_property>
@@ -1923,6 +1924,7 @@
          <wvobject fp_name="group2228" type="group">
             <obj_property name="label">LRELU</obj_property>
             <obj_property name="DisplayName">label</obj_property>
+            <obj_property name="isExpanded"></obj_property>
             <wvobject fp_name="/axis_accelerator_tb/lrelu_m_axis_tvalid" type="logic">
                <obj_property name="ElementShortName">lrelu_m_axis_tvalid</obj_property>
                <obj_property name="ObjectShortName">lrelu_m_axis_tvalid</obj_property>
@@ -1951,6 +1953,7 @@
          <wvobject fp_name="group2229" type="group">
             <obj_property name="label">LRELU LF</obj_property>
             <obj_property name="DisplayName">label</obj_property>
+            <obj_property name="isExpanded"></obj_property>
             <wvobject fp_name="/axis_accelerator_tb/lrelu_dw_lf_m_axis_tvalid" type="logic">
                <obj_property name="ElementShortName">lrelu_dw_lf_m_axis_tvalid</obj_property>
                <obj_property name="ObjectShortName">lrelu_dw_lf_m_axis_tvalid</obj_property>
@@ -2058,6 +2061,31 @@
             <obj_property name="ObjectShortName">TUSER_WIDTH_LRELU_IN[31:0]</obj_property>
             <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
          </wvobject>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group532" type="group">
+      <obj_property name="label">Output</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/axis_accelerator_tb/m_axis_tvalid" type="logic">
+         <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
+         <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_accelerator_tb/m_axis_tready" type="logic">
+         <obj_property name="ElementShortName">m_axis_tready</obj_property>
+         <obj_property name="ObjectShortName">m_axis_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_accelerator_tb/m_axis_tlast" type="logic">
+         <obj_property name="ElementShortName">m_axis_tlast</obj_property>
+         <obj_property name="ObjectShortName">m_axis_tlast</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_accelerator_tb/m_axis_tdata" type="array">
+         <obj_property name="ElementShortName">m_axis_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">m_axis_tdata[63:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axis_accelerator_tb/m_axis_tkeep" type="array">
+         <obj_property name="ElementShortName">m_axis_tkeep[7:0]</obj_property>
+         <obj_property name="ObjectShortName">m_axis_tkeep[7:0]</obj_property>
       </wvobject>
    </wvobject>
 </wave_config>
