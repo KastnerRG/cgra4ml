@@ -20,8 +20,12 @@ class SysConfig:
 
     KW_MAX     :int 
     KH_MAX     :int 
+    SH_MAX     :int 
+    SW_MAX     :int 
     CIN_MAX    :int 
     COLS_MAX   :int 
+    ROWS_MAX   :int 
+    BRAM_WEIGHTS_DEPTH :int 
 
     ADDR_WEIGHTS : str
     ADDR_IN_LUT  : str
@@ -39,7 +43,7 @@ class SysConfig:
     LRELU_BEATS_3x3 :int = 9
 
     def __post_init__(self):
-        super().__setattr__('BLOCKS_MAX', self.COLS_MAX//self.CONV_UNITS)
+        super().__setattr__('BLOCKS_MAX', self.ROWS_MAX//self.CONV_UNITS)
         super().__setattr__('UNITS_EDGES', self.CONV_UNITS + self.KH_MAX-1)
         super().__setattr__('CORES', self.COPIES*self.GROUPS)
 
@@ -339,6 +343,9 @@ def get_lrelu_config(i_layers, c, get_params=False):
 
 def get_weights(i_layers, i_itr, c):
 
+    SW = 1
+    SH = 1
+
     weights = c.LAYERS[f'{c.PREFIX_CONV}{i_layers}'].weights
 
     KH, KW, CIN, COUT = weights.shape
@@ -404,22 +411,30 @@ def get_weights(i_layers, i_itr, c):
     c
     '''
     _,H,W,CIN = c.LAYERS[f'{c.PREFIX_CONV}{i_layers}'].in_data.shape
-    BLOCKS    = H // c.CONV_UNITS
-    BLOCKS_PER_ARR = BLOCKS // max_factor
+    BLOCKS    = H // (SH*max_factor*c.CONV_UNITS)
 
-    BITS_KW2_MAX    = int(np.ceil(np.log2(c.KW_MAX/2  )))
-    BITS_KH2_MAX    = int(np.ceil(np.log2(c.KH_MAX/2  )))
+    BITS_KW2    = int(np.ceil(np.log2((c.KW_MAX+1)/2)))
+    BITS_KH2    = int(np.ceil(np.log2((c.KH_MAX+1)/2)))
+    BITS_SW     = int(np.ceil(np.log2(c.SW_MAX)))
     BITS_CIN_MAX    = int(np.ceil(np.log2(c.CIN_MAX   )))
     BITS_COLS_MAX   = int(np.ceil(np.log2(c.COLS_MAX  )))
     BITS_BLOCKS_MAX = int(np.ceil(np.log2(c.BLOCKS_MAX)))
+    BITS_BRAM_WEIGHTS_ADDR = int(np.ceil(np.log2(c.BRAM_WEIGHTS_DEPTH)))
+
+    bram_weights_addr_max = LRELU_BEATS + SW*KH*CIN-1
+    print("bram_weights_addr_max: ", bram_weights_addr_max)
+    print(BITS_KW2,BITS_KH2,BITS_SW,BITS_CIN_MAX,BITS_COLS_MAX,BITS_BLOCKS_MAX,BITS_BRAM_WEIGHTS_ADDR)
 
     weights_config = 0
     weights_config |= (KW//2)
-    weights_config |= (KH//2)    << (BITS_KW2_MAX)
-    weights_config |= (CIN   -1) << (BITS_KW2_MAX + BITS_KH2_MAX)
-    weights_config |= (W     -1) << (BITS_KW2_MAX + BITS_KH2_MAX + BITS_CIN_MAX)
-    weights_config |= (BLOCKS_PER_ARR-1) << (BITS_KW2_MAX + BITS_KH2_MAX + BITS_CIN_MAX + BITS_COLS_MAX)
-    weights_config = np.frombuffer(np.int32(weights_config).tobytes(),np.int8)
+    weights_config |= (KH//2)               << (BITS_KW2)
+    weights_config |= SW-1                  << (BITS_KW2 + BITS_KH2)
+    weights_config |= (CIN   -1)            << (BITS_KW2 + BITS_KH2 + BITS_SW)
+    weights_config |= (W     -1)            << (BITS_KW2 + BITS_KH2 + BITS_SW + BITS_CIN_MAX)
+    weights_config |= (BLOCKS-1)            << (BITS_KW2 + BITS_KH2 + BITS_SW + BITS_CIN_MAX + BITS_COLS_MAX)
+    weights_config |= bram_weights_addr_max << (BITS_KW2 + BITS_KH2 + BITS_SW + BITS_CIN_MAX + BITS_COLS_MAX + BITS_BLOCKS_MAX)
+
+    weights_config = np.frombuffer(np.uint64(weights_config).tobytes(),np.int8)
     weights_config = np.repeat(weights_config[np.newaxis,...],repeats=ITR,axis=0)
 
     '''
@@ -427,7 +442,7 @@ def get_weights(i_layers, i_itr, c):
     '''
     weights_dma_beats = np.concatenate([weights_config,weights_beats.reshape(ITR,-1)], axis=1)
 
-    assert weights_dma_beats.shape == (ITR, 4 + (LRELU_BEATS + CIN*KH)*c.COPIES*c.GROUPS*c.MEMBERS)
+    assert weights_dma_beats.shape == (ITR, 8 + (LRELU_BEATS + CIN*KH*SW)*c.COPIES*c.GROUPS*c.MEMBERS)
     print(f"get_weights - weights_dma_beats.shape: (ITR, 4 + (LRELU_BEATS + CIN*KH)*COPIES*GROUPS*MEMBERS) = {weights_dma_beats.shape}")
 
     np.savetxt(f"{c.DATA_DIR}{i_layers}_weights.txt", weights_dma_beats[i_itr].flatten(), fmt='%d')
@@ -437,75 +452,86 @@ def get_weights(i_layers, i_itr, c):
 
 def reshape_conv_in(i_layers, c):
 
+    SH = 1
+
     image = c.LAYERS[f'{c.PREFIX_CONV}{i_layers}'].in_data[0]
     max_factor = 2 if f'{c.PREFIX_MAX}{i_layers}' in c.LAYERS else 1
     H,W,CIN = image.shape
 
     print(f'reshape_conv_in - in_shape: (H,W,CIN) = ({image.shape})')
 
-    BLOCKS = H//c.CONV_UNITS
-    assert H % c.CONV_UNITS == 0
-    assert BLOCKS % max_factor == 0
-
-    IS_LRELU   = f'{c.PREFIX_LRELU}{i_layers}' in c.LAYERS
+    BLOCK_HEIGHT = max_factor*c.CONV_UNITS*SH
+    BLOCKS = H//BLOCK_HEIGHT
+    assert H % BLOCK_HEIGHT == 0
     KH         = c.LAYERS[f'{c.PREFIX_CONV}{i_layers}'].weights.shape[0]             
+    KW         = c.LAYERS[f'{c.PREFIX_CONV}{i_layers}'].weights.shape[1]             
 
-    image = np.pad(image, ((c.KH_MAX//2, c.KH_MAX//2), (0, 0), (0, 0)), mode='constant')
+    image = image.reshape(BLOCKS,BLOCK_HEIGHT,W,CIN)
 
-    im_arrays = []
-    for m in range(max_factor):
-        im_arrays += [np.zeros([BLOCKS//max_factor, W, CIN, c.UNITS_EDGES], image.dtype)]
+    '''(BLOCKS,SH(MR+F),W,CIN)'''
+    SHIFT = int(np.ceil(KH/SH)-1)
+    WORDS = max_factor*c.CONV_UNITS + SHIFT
 
-    REMOVE_PAD = c.KH_MAX//2 - KH//2
-    for b in range(BLOCKS):
-        h_index_start = b*c.CONV_UNITS
-        h_index_end   = h_index_start + c.UNITS_EDGES
-        block = image[h_index_start:h_index_end,:,:] # padding with prev & next block
-        block = block.transpose([1, 2, 0]) # (H,W,C) -> (W,C,H)
+    zeros = np.zeros((BLOCKS,SH*WORDS,W,CIN),image.dtype)
+    top_edges = KH//2
+    bot_edges = SH*WORDS - top_edges - BLOCK_HEIGHT
 
-        '''
-        Zero out unnessasary padding
-        '''
-        block = np.copy(block)
-        block[:,:,:REMOVE_PAD] = 0
-        block[:,:,c.UNITS_EDGES-REMOVE_PAD:] = 0
+    zeros[:,top_edges:SH*WORDS-bot_edges,:,:] = image
 
-        im_array_index = b %  max_factor
-        blocks_index   = b // max_factor
-        im_arrays[im_array_index][blocks_index] = block
+    for l in range(BLOCKS):
+        ''' Fill top rows from prev '''
+        if l == 0:
+            zeros[l,:top_edges,:,:] = np.zeros((1,top_edges,W,CIN),image.dtype)
+        else:
+            zeros[l,:top_edges,:,:] = image[l-1,BLOCK_HEIGHT-top_edges:,:,:]
+
+        ''' Fill bot rows from next '''
+        if l == BLOCKS-1:
+            zeros[l,SH*WORDS-bot_edges:,:,:] = np.zeros((1,bot_edges,W,CIN),image.dtype)
+        else:
+            zeros[l,SH*WORDS-bot_edges:,:,:] = image[l+1,:bot_edges,:,:]
+    image = zeros
+
+    '''(BLOCKS,W,CIN,SH,MR+F)'''
+    image = image.reshape(BLOCKS,WORDS,SH,W,CIN)
+    image = image.transpose(0,3,4,2,1)
+
+    print(f'reshape_conv_in - image_out.shape: (BLOCKS,W,CIN,SH,max*UNITS+shift) = {image.shape}')
 
     '''
     Config
     '''
-    IS_MAX     = max_factor != 1
-    IS_NOT_MAX = max_factor == 1
+    BITS_KW2 = int(np.ceil(np.log2((c.KW_MAX+1)/2)))
+    BITS_KH2 = int(np.ceil(np.log2((c.KH_MAX+1)/2))) 
+    BITS_SH  = int(np.ceil(np.log2(c.SW_MAX)))
 
-    assert c.UNITS_EDGES >= 4
-    config = np.zeros((c.UNITS_EDGES),np.int8)
-    config[0] = IS_NOT_MAX
-    config[1] = IS_MAX
-    config[2] = IS_LRELU
-    config[3] = KH/2
+    is_max     = max_factor != 1
+    is_not_max = max_factor == 1
+    is_relu    = f'{c.PREFIX_LRELU}{i_layers}' in c.LAYERS
 
-    im_arrays[0] = np.concatenate([config [np.newaxis,:], im_arrays[0].reshape(BLOCKS//max_factor*W*CIN, c.UNITS_EDGES)], axis=0)
+    config = 0
+    config |= is_not_max
+    config |= is_max  << 1
+    config |= is_relu << 2
+    config |= (KH//2) << 3
+    config |= (KW//2) << 3 + BITS_KH2
+    config |= (SH-1 ) << 3 + BITS_KH2 + BITS_KW2
+    config |= WORDS   << 3 + BITS_KH2 + BITS_KW2 + BITS_SH
 
-    print(f'reshape_conv_in - output im_arrays[0]: (1 + BLOCKS/max_factor * W * CIN, UNITS_EDGES) = {im_arrays[0].shape}')
+    im_data = np.concatenate([np.frombuffer(np.array(config, dtype=np.uint64).tobytes(), np.uint8), image.flatten()])
 
-    for i in range(1,max_factor-1):
-        print(f"im_arrays[i]: {BLOCKS//max_factor, W, CIN, c.UNITS_EDGES} = {im_arrays[i].shape}")
+    print(f'im_data.size = image.size + 8: {im_data.shape}')
 
-    for m in range(max_factor):
-        np.savetxt(f"{c.DATA_DIR}{i_layers}_conv_in_{m}.txt", im_arrays[m].flatten(), fmt='%d')
+    np.savetxt(f"{c.DATA_DIR}{i_layers}_conv_input.txt", im_data.flatten(), fmt='%d')
 
-    return im_arrays, (BLOCKS,max_factor,W,CIN, c.UNITS_EDGES)
+    return im_data, (BLOCKS,W,CIN,SH,WORDS)
 
-
-def fpga_mwr_weights(i_layers,c):
+def fpga_mwr_weights(i_layers,c, i_itr=None):
 
     '''
     Get weights, flatten, write to bin, generate cmd
     '''
-    weights = get_weights(i_layers,i_itr=None, c=c).flatten()  
+    weights = get_weights(i_layers,i_itr=i_itr, c=c).flatten()  
     w_path = f"{c.DATA_DIR}{i_layers}_weights.bin"
     weights.tofile(w_path)
 
@@ -582,7 +608,7 @@ def reshape_image_out(image,order,KW,max_factor,c,copy_factor=1,flip_cols=True):
         - if     max: eff_c = 1, max_factor = 2, that dim has 2 blocks
         - if not max: eff_c = 2, max_factor = 1, that dim has 2 channels
     '''
-    eff_c  = 2//max_factor//copy_factor
+    eff_c  = c.COPIES//max_factor//copy_factor
     SUB_CORES = c.MEMBERS//KW
     image = image.reshape(ITR, SUB_CORES,eff_c,c.GROUPS, BLOCKS_PER_ARR,W,max_factor,c.CONV_UNITS) # (EFF_CORES -> SMCG)
 
@@ -604,8 +630,7 @@ def make_conv_out(i_layers,i_itr,c):
 
     conv_image = reshape_image_out(image=image,order='scg',KW=KW,max_factor=max_factor,c=c)
     ITR,BLOCKS_PER_ARR,W,SUB_CORES,CORES,CONV_UNITS = conv_image.shape
-    DATA_BEATS = BLOCKS_PER_ARR*W
-    image = conv_image.reshape(ITR,DATA_BEATS,SUB_CORES,c.COPIES,c.GROUPS,c.CONV_UNITS)
+    image = conv_image.reshape(ITR,BLOCKS_PER_ARR,W,SUB_CORES,c.COPIES,c.GROUPS,c.CONV_UNITS)
     # zeros = np.zeros((ITR,DATA_BEATS,c.COPIES,c.GROUPS,c.MEMBERS,c.CONV_UNITS),dtype=image.dtype)
     # zeros[:,:,:,:,0:SUB_CORES,:] = image
     # image = zeros
@@ -623,8 +648,8 @@ def make_conv_out(i_layers,i_itr,c):
     assert lrelu_config_padded.shape == (ITR,LRELU_BEATS,COPIES,GROUPS,MEMBERS,c.CONV_UNITS)
     print(f"lrelu_config.shape: (ITR,LRELU_BEATS,COPIES,GROUPS,MEMBERS,CONV_UNITS) = {lrelu_config_padded.shape}")
 
-    assert image.shape == (ITR,DATA_BEATS,SUB_CORES,c.COPIES,c.GROUPS,c.CONV_UNITS)
-    print(f"image.shape: (ITR,DATA_BEATS,SUB_CORES,COPIES,GROUPS,CONV_UNITS) = {image.shape}")
+    assert image.shape == (ITR,BLOCKS_PER_ARR,W,SUB_CORES,c.COPIES,c.GROUPS,c.CONV_UNITS)
+    print(f"image.shape: (ITR,BLOCKS,W,SUB_CORES,COPIES,GROUPS,CONV_UNITS) = {image.shape}")
 
     conv_out_i = np.concatenate([lrelu_config_padded[i_itr].flatten(), image[i_itr].flatten()])
     np.savetxt(f"{c.DATA_DIR}/{i_layers}_conv_out.txt", conv_out_i, fmt='%d')

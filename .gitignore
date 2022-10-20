@@ -1,9 +1,5 @@
 *
 
-# only track .py, .md, 
-# cant just enable *.v, *.sv, *.c, *.cpp, *.tcl, cuz they are created by vivado also
-# allow only .tcl files named "build*.tcl"
-
 !.gitignore
 !.gitattributes
 !*.py
@@ -17,9 +13,12 @@
 # in subfolders also
 # allow all stuff inside any subfolder named "src"
 
-!src_hdl/
-!testbench/
+!rtl/src/*
+!rtl/tb/*
+!rtl/include/*
+!rtl/ext/*
+
+!c/
+
 !tcl/
-!src_c/
 !wave/
-!projects/build*

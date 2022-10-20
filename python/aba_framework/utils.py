@@ -5,7 +5,10 @@ import tensorflow as tf
 import copy
 import cv2
 
-def float_convert(arr_in, bits_in, bits_out):
+def float_convert(arr_in, bits_in, bits_out, is_convert):
+
+    if not is_convert:
+        return arr_in.astype(np.float64)
 
     f16_tuple = (10, 5, np.int16, np.uint16)
     f32_tuple = (23, 8, np.int32, np.uint32)

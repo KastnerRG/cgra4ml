@@ -9,9 +9,8 @@ Aba's custom numpy-based forward-pass framework for any CNN.
 '''
 
 from scipy.signal import convolve2d
-import keras
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 from utils import float_convert
 
 __author__ = "Abarajithan G"
@@ -36,15 +35,7 @@ class MyModel:
 
     Methods:
         get_np_output_data()
-        get_keras_output_data() : ndarray
-            - Call the get_np/keras_output_recursively() fucntion of the output layer
-            - Which will call the same fucntion of its prev_layer(s)
-            - This call will go like a chain
-            - When the fucntion of input layer is called, it simply returns the image,
-                without calling anyone else
-            - The results are passed through the np_out() of each layer
-                as each recursive call returns
-        np/keras_reset()
+        np_reset()
             - The output_lock of each layer is changed to True when the
                 layer computes an output. This is to prevent wasting time
                 in recomputing if we want the values again.
@@ -74,36 +65,11 @@ class MyModel:
     def get_quantized_output_data(self, quant_vals):
         return self.d[self.output_name].get_quantized_output_recursively(quant_vals)
 
-    def get_keras_output_data(self):
-        return self.d[self.output_name].get_keras_output_recursively()
-
     def np_reset(self):
         for name in self.d.keys():
             self.d[name].np_output_lock = False
 
-    def keras_reset(self):
-        for name in self.d.keys():
-            self.d[name].keras_output_lock = False
-
     def set_encode_decode(self, encode, decode):
-        # Check Equivalence:
-
-        # print('To verify Encode Decode Equivalance')
-
-        # print('In_data:')
-        # in_data = np.random.randn(5, 32, 32, 128)
-        # show_hist(in_data, 'blue')
-
-        # print('Encoded_data:')
-        # data = encode(in_data)
-        # show_hist(data, 'red')
-
-        # print('Decoded_data:')
-        # data = decode(data)
-        # show_hist(data, 'blue')
-
-        # print('Error: ')
-        # e(in_data, data)
 
         for name in self.d.keys():
             self.d[name].encode = encode
@@ -124,23 +90,23 @@ class MyLayer:
 
     Attributes:
         name (str)
-        np_dtype, tf_dtype
+        np_dtype
 
         prev_layer : MyLayer
             - Helps to chain the layers and get
                 results from previous layers
 
-        np_output, keras_output : ndarray
+        np_output: ndarray
             -initally None, stores the value of
-                calculation result from np_out()/keras_out()
+                calculation result from np_out()
 
-        np_output_lock, keras_ouput_lock : bool
+        np_output_lock: bool
             - False by default
             - When output is calculated, set to True
             - When true, get_output_recursively()
                 doesnt recalculate results. it returns
                 previously calculated value from
-                np_output or keras_output
+                np_output
 
         apply : function
             - Default is self.no_change
@@ -154,11 +120,11 @@ class MyLayer:
 
     Methods:
         set_dtype():
-            - Sets the default types for np, tf, keras
+            - Sets the default types for np
 
         compare (in_data: ndarray 4 dims):
             - compares implementations in
-                numpy, keras, tf (if avail)
+                numpy
 
         show_hist(in_data: ndarray 4 dims):
             - shows histograms of layer
@@ -168,18 +134,16 @@ class MyLayer:
 
         get_np_output_recursively()
         get_np_output_recursively()
-            - Recursively call the get_np/keras_output_recursively
+            - Recursively call the get_np
                 method(s) of the prev_layer(s),
-            - Feed the output(s) to np/keras_out() of current layer
+            - Feed the output(s) to np of current layer
             - Return the output
             - If output_lock is placed (True),
-                return np/keras_output without
+                return np without
                 calculation or recursive call
             - Overriden under MyConcat child class to allow multiple inputs
 
         np_out(in_data: nd_array) : ndarray
-        keras_out(in_data: nd_array) : ndarray
-        tf_out(in_data: nd_array) : ndarray
             - 3 methods defined inside each child class
             - Apply the current layer to input array and
                 return the result
@@ -198,7 +162,6 @@ class MyLayer:
 
         self.np_output_lock = False
         self.quantized_output_lock = False
-        self.keras_output_lock = False
         self.decode = self.no_change
         self.encode = self.no_change
         self.np_dtype = np_dtype
@@ -207,17 +170,6 @@ class MyLayer:
         self.zero_point = None
         self.quantize = quantize
         self.float_ieee = float_ieee
-
-    # def set_dtype(self, np_dtype):
-    #     dtype_dict = {
-    #         'float16': [np.float16, tf.float16],
-    #         'float64': [np.float64, tf.float64],
-    #         'float16': [np.float16, tf.float16]
-    #     }
-    #     self.np_dtype = dtype_dict[np_dtype][0]
-    #     self.tf_dtype = dtype_dict[np_dtype][1]
-
-    #     keras.backend.set_floatx(np_dtype)
 
     def show_hist(self, show_encoded=False):
         if isinstance(self, MyConv):
@@ -243,21 +195,6 @@ class MyLayer:
             print('\n Encoded Outputs')
             show_hist(self.np_out_data, color='red')
 
-    def compare(self, in_data):
-        np_out = self.decode(self.np_out(in_data))
-        keras_out = self.keras_out(in_data)
-
-        print('\nnp vs keras ALLCLOSE: ', np.allclose(np_out, keras_out))
-        print('np vs keras abs error: ', np.sum(np.abs(np_out - keras_out)))
-
-        if hasattr(self, 'tf_out'):
-            tf_out = self.tf_out(in_data)
-            print('np vs tf ALLCLOSE: ', np.allclose(np_out, tf_out))
-            print('np vs tf abs error: ', np.sum(np.abs(np_out - tf_out)))
-
-            print('\ntf vs keras ALLCLOSE: ', np.allclose(tf_out, keras_out))
-            print('tf vs keras abs error: ', np.sum(np.abs(tf_out - keras_out)))
-
     def get_np_output_recursively(self):
         if self.np_output_lock:
             return self.np_out_data
@@ -278,16 +215,6 @@ class MyLayer:
             print('Quantized Evaluated Layer: ' + self.name)
             return out
 
-    def get_keras_output_recursively(self):
-        if self.keras_output_lock:
-            return self.keras_out_data
-        else:
-            self.keras_output_lock = True
-            out = self.keras_out(
-                self.prev_layer.get_keras_output_recursively())
-            print('Keras Evaluated Layer: ' + self.name)
-            return out
-
     def no_change(self, in_data):
         return in_data
         # return in_data.astype(self.np_dtype)
@@ -297,7 +224,7 @@ class MyLayer:
 
 class MyConv(MyLayer):
     '''
-    * Numpy, TF, Keras Based Implementations of Convolution Layer
+    * Numpy Based Implementations of Convolution Layer
     * Support Multiple dtypes (Defined in Class:Layer)
     * Optionally allows fused Batch Normalization
 
@@ -356,20 +283,15 @@ class MyConv(MyLayer):
             Number of input and output channels (filters)
 
         np_out_data : ndarray
-        tf_out_data : ndarray
-        keras_out_data : ndarray
 
     Methods:
         np_out(in_data : ndarray 4 dims): ndarray
-        tf_out(in_data : ndarray 4 dims): ndarray
-        keras_out(in_data : ndarray 4 dims): ndarray
 
         fuse_bn(bn_weights: list, epsilon: int)
             Performs the BN fusions
 
     NOTE:
         - Have not generalized for multiple images yet
-        - Keras BatchNorm accepts only float16
     '''
 
     def __init__(self,
@@ -380,6 +302,7 @@ class MyConv(MyLayer):
                  np_dtype=np.float64,
                  np_dtype_sum=np.float64,
                  np_dtype_conv_out=np.float64,
+                 float_dtype=np.float64,
                  bits_conv_out=32,
                  quantize=False,
                  float_ieee=True):
@@ -392,6 +315,7 @@ class MyConv(MyLayer):
                          float_ieee=float_ieee)
         self.np_dtype_sum = np_dtype_sum
         self.np_dtype_conv_out = np_dtype_conv_out
+        self.float_dtype = float_dtype
 
         assert len(weights_biases[0].shape) == 4
         # Set Weights and Biases
@@ -467,6 +391,7 @@ class MyConv(MyLayer):
                 fa=self.scale,
                 a_0=self.zero_point,
                 alpha=1,
+                float_dtype=self.float_dtype,
                 np_dtype=self.np_dtype)
 
             self.out_float_data = self.requantize_params['y'] * self.scale
@@ -532,89 +457,25 @@ class MyConv(MyLayer):
         self.biases = beta + scale * (self.biases - self.mean)
         self.is_fused_bn = True
 
-    def tf_out(self, in_data):
-
-        if self.is_fused_bn:
-            kernel_t = tf.convert_to_tensor(
-                self.pure_weights, dtype=self.tf_dtype)
-            bias_t = tf.convert_to_tensor(
-                self.pure_biases, dtype=self.tf_dtype)
-        else:
-            kernel_t = tf.convert_to_tensor(self.weights, dtype=self.tf_dtype)
-            bias_t = tf.convert_to_tensor(self.biases, dtype=self.tf_dtype)
-
-        in_t = tf.convert_to_tensor(in_data, dtype=self.tf_dtype)
-        out_t = tf.nn.conv2d(in_t, kernel_t, [1, 1, 1, 1], "SAME")
-        out_t = tf.nn.bias_add(out_t, bias_t)
-
-        if self.is_fused_bn:
-            out_t = tf.nn.batch_normalization(out_t,
-                                              mean=self.mean,
-                                              variance=self.variance,
-                                              offset=self.beta,
-                                              scale=self.gamma,
-                                              variance_epsilon=self.epsilon,
-                                              name=None)
-
-        sess = keras.backend.get_session()
-
-        self.tf_out_data = sess.run(out_t)
-
-        return self.tf_out_data
-
-    def keras_out(self, in_data):
-
-        input_image = keras.layers.Input(
-            shape=in_data.shape[1:4], name='input_image')
-        x = keras.layers.Conv2D(self.out_ch_n,
-                                self.kernel,
-                                strides=(1, 1),
-                                padding='same',
-                                name='conv_keras',
-                                use_bias=True)(input_image)
-
-        if self.is_fused_bn:
-            x = keras.layers.BatchNormalization(name='norm_keras')(x)
-
-        model = keras.models.Model(input_image, x)
-        conv_keras_layer = model.get_layer('conv_keras')
-
-        if self.is_fused_bn:
-            conv_keras_layer.set_weights([self.pure_weights, self.pure_biases])
-            norm_keras_layer = model.get_layer('norm_keras')
-            norm_keras_layer.set_weights([self.gamma,
-                                          self.beta,
-                                          self.mean,
-                                          self.variance])
-            out_layer = norm_keras_layer
-        else:
-            conv_keras_layer.set_weights([self.weights, self.biases])
-            out_layer = conv_keras_layer
-
-        sess = keras.backend.get_session()
-
-        self.keras_out_data = sess.run(out_layer.output,
-                                       feed_dict={
-                                           model.inputs[0].op.name+':0': in_data})
-
-        return self.keras_out_data
-
     @staticmethod
     def conv2d_einsum(img, kernel):
         pad_h = kernel.shape[0]//2
         pad_w = kernel.shape[1]//2
-        img_pad = np.pad(
-            img[0], ((pad_h, pad_h), (pad_w, pad_w), (0, 0)), 'constant')
 
-        sub_shape = tuple(np.subtract(img_pad.shape, kernel.shape[0:-1]) + 1)
-        strd = np.lib.stride_tricks.as_strided
-        submatrices = strd(
-            img_pad, kernel.shape[0:-1] + sub_shape, img_pad.strides * 2, writeable=False)
+        out_batch = []
+        for n in range(img.shape[0]):
+            img_pad = np.pad(
+                img[n], ((pad_h, pad_h), (pad_w, pad_w), (0, 0)), 'constant')
 
-        out = np.einsum('ijkl,ijkmno->mnl', kernel, submatrices,
-                        optimize='greedy')[np.newaxis, :]
+            sub_shape = tuple(np.subtract(img_pad.shape, kernel.shape[0:-1]) + 1)
+            strd = np.lib.stride_tricks.as_strided
+            submatrices = strd(
+                img_pad, kernel.shape[0:-1] + sub_shape, img_pad.strides * 2, writeable=False)
 
-        return out
+            out_batch += [np.einsum('ijkl,ijkmno->mnl', kernel, submatrices,
+                            optimize='greedy')]
+
+        return np.array(out_batch)
 
     @staticmethod
     def conv2d_as_12_blocks(img, kernel):
@@ -674,43 +535,37 @@ class MyInput(MyLayer):
     The first layer for any custom Model.
     prev_layer is always None
 
-    get_np/keras_output_recursively() 
+    get_np
         - Overidden (from parent class) here
-        - Simply returns the image, ending the recursive call
+        - Simply returns the BATCH OF IMAGES, ending the recursive call
     '''
 
-    def __init__(self, input_image, name='input', GAMMA=1, np_dtype=np.float64, quantize=False):
+    def __init__(self, input_batch, name='input', GAMMA=1, np_dtype=np.float64, quantize=False):
         MyLayer.__init__(self, prev_layer=None,
                          name=name, np_dtype=np_dtype,
                          quantize=quantize)
-        self.input_image = input_image
+        self.input_batch = input_batch
         self.quantize_lut = None
         self.GAMMA = GAMMA
 
-    def set_input_image(self):
-        input_image = self.input_image.copy()
+    def set_input_batch(self):
+        input_batch = self.input_batch.copy()
 
         if self.quantize:
-            self.input_image = self.quantize_lut[input_image]
+            self.input_batch = np.rint(self.input_batch/self.scale + self.zero_point).astype(self.np_dtype)
         else:
-            self.input_image = (input_image/255.0)**(1/self.GAMMA)
-            self.input_image = self.input_image.astype(self.np_dtype)
+            self.input_batch = (input_batch/255.0)**(1/self.GAMMA)
+            self.input_batch = self.input_batch.astype(self.np_dtype)
 
     def get_np_output_recursively(self):
-        self.np_out_data = self.decode(self.encode(self.input_image))
+        self.np_out_data = self.decode(self.encode(self.input_batch))
         return self.np_out_data
 
-    def get_keras_output_recursively(self):
-        self.keras_out_data = self.decode(self.encode(self.input_image))
-        return self.keras_out_data
-
     def get_quantized_output_recursively(self, quant_vals):
-        # .astype(np.float16).astype(np.float64)
         g_x0 = quant_vals['conv2d_1 lrelu_1']['g_x0']
-        # .astype(np.float16).astype(np.float64)
         h_x0 = quant_vals['conv2d_1 lrelu_1']['h_x0']
 
-        self.quantized_out_data = (self.input_image-h_x0)*g_x0
+        self.quantized_out_data = (self.input_batch-h_x0)*g_x0
 
         self.quantized_out_data = np.print(self.quantized_out_data)
         return self.quantized_out_data
@@ -721,6 +576,7 @@ class MyLeakyRelu(MyLayer):
                  prev_layer=None,
                  alpha=0.1, name='',
                  np_dtype=np.float64,
+                 float_dtype=np.float64,
                  quantize=False,
                  float_ieee=True):
 
@@ -736,6 +592,7 @@ class MyLeakyRelu(MyLayer):
         self.biases_zero_points = None
         self.biases = None
         self.weights = None
+        self.float_dtype = float_dtype
 
         self.prev_scale = None
         self.prev_zero_point = None
@@ -751,6 +608,7 @@ class MyLeakyRelu(MyLayer):
                    fa,
                    a_0,
                    alpha=0.1,
+                   float_dtype=np.float64,
                    np_dtype=np.int8):
         '''
         Build  max(conv(K_q, x_0))
@@ -779,21 +637,23 @@ class MyLeakyRelu(MyLayer):
         A = fx*fk/fa
         B = (-fx*fk*k_sum + b)/fa
 
-        A = np.float16(A)
-        B = np.float16(B)
-        in_data = np.float32(in_data)
+        A = float_dtype(A)
+        B = float_dtype(B)
+        in_data = float_dtype(in_data)
 
-        y = (A.astype(np.float32) * in_data) + B.astype(np.float32)
-        y_custom = (float_convert(A,16,32) * in_data) + float_convert(B,16,32)
+        is_convert = float_dtype == np.float16
+
+        y = (A.astype(float_dtype) * in_data) + B.astype(float_dtype)
+        y_custom = (float_convert(A,16,32,is_convert) * in_data) + float_convert(B,16,32,is_convert)
 
         D = a_0
-        D = np.float16(D)
+        D = float_dtype(D)
 
-        y_f16 = y.astype(np.float16)
-        alpha_arr = (y_f16 > 0) + (y_f16 < 0) * np.array(alpha, np.float16)
+        y_f16 = y.astype(float_dtype)
+        alpha_arr = (y_f16 > 0) + (y_f16 < 0) * np.array(alpha, float_dtype)
 
-        a_q_f16 = (alpha_arr.astype(np.float16) * y_f16) + D
-        a_q_f16_custom = (alpha_arr.astype(np.float16) * float_convert(y_custom,32,16)) + D
+        a_q_f16 = (alpha_arr.astype(float_dtype) * y_f16) + D
+        a_q_f16_custom = (alpha_arr.astype(float_dtype) * float_convert(y_custom,32,16,is_convert)) + D
 
         if np_dtype == np.int8:
             a_min, a_max = -128,127
@@ -836,6 +696,8 @@ class MyLeakyRelu(MyLayer):
             else:
                 self.np_out_data = self.requantize_params['a_q_custom']
 
+            self.out_float_data = self.scale * (self.requantize_params['a_q'] - self.zero_point)
+
         else:
             self.np_out_data = x * ((x > 0) + (x < 0) * self.alpha)
             self.np_out_data = self.decode(self.encode(self.np_out_data))
@@ -849,21 +711,9 @@ class MyLeakyRelu(MyLayer):
                 full_name = key
                 break
 
-        # self.de_quantized_out_data = ((conv_out > 0) + (conv_out < 0) * self.alpha) * (conv_out)
-
-        # k1 = quant_vals[full_name]['k1']#.astype(np.float32)
-        # k2 = quant_vals[full_name]['k2']#.astype(np.float32)
-        # k3 = quant_vals[full_name]['k3']#.astype(np.float32)
-        # k4 = quant_vals[full_name]['k4']#.astype(np.float32)
-        # k5 = quant_vals[full_name]['k5']#.astype(np.float32)
-
-        # .astype(np.float16).astype(np.float64)
         A = quant_vals[full_name]['A']
-        # .astype(np.float16).astype(np.float64)
         B = quant_vals[full_name]['B']
-        # .astype(np.float16).astype(np.float64)
         g_x1 = quant_vals[full_name]['g_x1']
-        # .astype(np.float16).astype(np.float64)
         h_x1 = quant_vals[full_name]['h_x1']
         alpha = self.alpha
 
@@ -880,21 +730,6 @@ class MyLeakyRelu(MyLayer):
 
         return self.quantized_out_data
 
-    def keras_out(self, in_data):
-        in_data_t = keras.layers.Input(
-            shape=in_data.shape[1:4], name='in_data')
-        x = keras.layers.LeakyReLU(
-            alpha=self.alpha, name='leaky_relu_keras')(in_data_t)
-        model = keras.models.Model(in_data_t, x)
-
-        leaky_relu_keras_layer = model.get_layer('leaky_relu_keras')
-
-        sess = keras.backend.get_session()
-
-        self.keras_out_data = sess.run(leaky_relu_keras_layer.output,
-                                       feed_dict={model.inputs[0].op.name+':0': in_data})
-        return self.keras_out_data
-
 
 class MySpaceToDepth(MyLayer):
     '''
@@ -908,8 +743,6 @@ class MySpaceToDepth(MyLayer):
                          name=name, np_dtype=np_dtype)
 
         self.block_size = block_size
-
-        self.keras_out = self.tf_out  # Cannot implement in keras
 
     def np_out(self, in_data):
 
@@ -926,17 +759,25 @@ class MySpaceToDepth(MyLayer):
     def quantized_out(self, in_data, quant_vals):
         return self.np_out(in_data)
 
-    def tf_out(self, in_data):
-        in_data_t = tf.convert_to_tensor(in_data, dtype=self.tf_dtype)
-        x = tf.space_to_depth(in_data_t, self.block_size)
-        self.tf_out_data = keras.backend.get_session().run(x)
-        return self.tf_out_data
+class MyFlatten(MyLayer):
+    def __init__(self, prev_layer=None, name='', np_dtype='float64'):
+        MyLayer.__init__(self, prev_layer=prev_layer,
+                         name=name, np_dtype=np_dtype)
 
+    def np_out(self, in_data):
+        #(n,ci) -> (1,n,1,ci) = (n,h,w,ci)
+        n, h, w, ci = in_data.shape
+        y = in_data.reshape(1, n, 1, h*w*ci)
+        self.np_out_data = y
+        return self.np_out_data
+
+    def quantized_out(self, in_data, quant_vals):
+        return self.np_out(in_data)
 
 class MyConcat(MyLayer):
     '''
     Concats a list of input layers (their outputs) along the channel dimension
-    get_np/keras_output_recursively() are overidden to work with a list of prev_layers
+    get_np_output_recursively() are overidden to work with a list of prev_layers
     '''
 
     def __init__(self, prev_layers=None,
@@ -953,23 +794,6 @@ class MyConcat(MyLayer):
 
     def quantized_out(self, in_data, quant_vals):
         return self.np_out(in_data)
-
-    def keras_out(self, in_data_list):
-        in_data_t_list = [keras.layers.Input(shape=in_data.shape[1:4])
-                          for in_data in in_data_list]
-
-        x = keras.layers.merge.concatenate(in_data_t_list, name='concat_keras')
-        model = keras.models.Model(in_data_t_list, x)
-
-        feed_dict = {}
-        for i in range(len(model.inputs)):
-            feed_dict[model.inputs[i].op.name+':0'] = in_data_list[i]
-
-        sess = keras.backend.get_session()
-        concat_keras_layer = model.get_layer('concat_keras')
-        self.keras_out_data = sess.run(concat_keras_layer.output,
-                                       feed_dict=feed_dict)
-        return self.keras_out_data
 
     def get_np_output_recursively(self):
         if self.np_output_lock:
@@ -990,15 +814,6 @@ class MyConcat(MyLayer):
 
             return self.np_out(in_data_list)
 
-    def get_keras_output_recursively(self):
-        if self.keras_output_lock:
-            return self.keras_out_data
-        else:
-            self.np_output_lock = True
-            in_data_list = [prev_layer.get_keras_output_recursively()
-                            for prev_layer in self.prev_layers]
-            return self.keras_out(in_data_list)
-
 
 class MyMaxPool(MyLayer):
     def __init__(self, prev_layer=None,
@@ -1010,6 +825,7 @@ class MyMaxPool(MyLayer):
         self.pool_size = pool_size
 
     def np_out(self, in_data):
+        self.in_data = in_data
         batch, height, width, depth = in_data.shape
         reduced_height = height // self.pool_size[0]
         reduced_width = width // self.pool_size[1]
@@ -1023,19 +839,6 @@ class MyMaxPool(MyLayer):
 
     def quantized_out(self, in_data, quant_vals):
         return self.np_out(in_data)
-
-    def keras_out(self, in_data):
-        in_data_t = keras.layers.Input(shape=in_data.shape[1:4])
-
-        x = keras.layers.MaxPooling2D(
-            pool_size=self.pool_size, name='out_keras')(in_data_t)
-        model = keras.models.Model(in_data_t, x)
-
-        sess = keras.backend.get_session()
-        out_layer = model.get_layer('out_keras')
-        self.keras_out_data = sess.run(out_layer.output,
-                                       feed_dict={model.inputs[0].op.name+':0': in_data})
-        return self.keras_out_data
 
 
 # ---------------------------- PURE BATCH NORM----------------------
@@ -1084,24 +887,6 @@ class MyBatchNorm(MyLayer):
         assert out.dtype == self.np_dtype
         return out
 
-    def keras_out(self, in_data):
-
-        input_data = Input(shape=in_data.shape[1:4], name='input_data')
-        bn = keras.layers.BatchNormalization(name='bn_keras')(input_data)
-        model = keras.models.Model(input_data, bn)
-        bn_keras_layer = model.get_layer('bn_keras')
-        bn_keras_layer.set_weights([self.gamma,
-                                    self.beta,
-                                    self.mean,
-                                    self.variance
-                                    ])
-        sess = keras.backend.get_session()
-
-        out = sess.run(bn_keras_layer.output, feed_dict={
-                       model.inputs[0].op.name+':0': in_data})
-
-        return out
-
 
 # -------------------------- HELPER FUNCTIONS ----------------------------
 
@@ -1117,15 +902,3 @@ def e(a1, a2):
     Returns the L1 error (sum of absolute error between two ndarrays)
     '''
     print(np.sum(np.abs(np.asarray(a1)-np.asarray(a2))))
-
-
-def eval(keras_t):
-    '''
-    keras_layer.output is a tensor. It should be evaluated through a sess.run()
-
-    Args:
-        keras_t : tensor
-
-    Return: ndarray
-    '''
-    return keras.backend.get_session().run(keras_t, feed_dict={'input_1:0': input_image})
