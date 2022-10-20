@@ -47,7 +47,8 @@ if {$XILINX} {
   set WORD_WIDTH_ACC   24
   set S_WEIGHTS_WIDTH_LF 64
   set S_PIXELS_WIDTH_LF  64
-  set M_OUTPUT_WIDTH_LF  64
+  # same as conv_dw_out // 64
+  set M_OUTPUT_WIDTH_LF  168
 
   set SRAM_TYPE "ASIC"
   set MAC_TYPE "RAW"
