@@ -2,21 +2,21 @@
 `define SRAM_TYPE   "XILINX"  
 `define MAC_TYPE    "RAW"  
 
-`define UNITS    4  
-`define GROUPS   2 
-`define COPIES   2 
-`define MEMBERS  12
+`define UNITS    8  
+`define GROUPS   1 
+`define COPIES   1 
+`define MEMBERS  24
 `define DW_FACTOR_1 3
 `define OUTPUT_MODE "CONV"
-`define KSM_COMBS_EXPR (((((((k==1 & s==1 & m==1)) | (k==3 & s==1 & m==1)) | (k==3 & s==1 & m==2)) | (k==5 & s==1 & m==1)) | (k==7 & s==2 & m==1)) | (k==11 & s==4 & m==1))
+`define KSM_COMBS_EXPR (((((((k==1 & s==1 & m==1)) | (k==3 & s==1 & m==1)) | (k==3 & s==1 & m==1)) | (k==5 & s==1 & m==1)) | (k==7 & s==2 & m==1)) | (k==11 & s==4 & m==1))
 `define KS_COMBS_EXPR (((((((k==1 & s==1)) | (k==3 & s==1)) | (k==3 & s==1)) | (k==5 & s==1)) | (k==7 & s==2)) | (k==11 & s==4))
 
 `define FREQ_HIGH     200
 `define FREQ_RATIO    1
 
-`define UNITS_EDGES        6
-`define OUT_SHIFT_MAX      4
-`define IM_SHIFT_REGS      10
+`define UNITS_EDGES        10
+`define OUT_SHIFT_MAX      8
+`define IM_SHIFT_REGS      12
 
 `define WORD_WIDTH          8         
 `define WORD_WIDTH_ACC      32    
@@ -32,20 +32,20 @@
 `define BITS_IM_COLS      9     
 `define BITS_IM_ROWS      8     
 `define BITS_IM_CIN       10      
-`define BITS_IM_BLOCKS    6   
+`define BITS_IM_BLOCKS    5   
 `define BITS_IM_SHIFT     2   
 `define BITS_IM_SHIFT_REGS 4   
 `define BITS_WEIGHTS_ADDR  10   
-`define BITS_MEMBERS      4     
+`define BITS_MEMBERS      5     
 `define BITS_KW2          1         
 `define BITS_KH2          1         
-`define BITS_OUT_SHIFT    2         
+`define BITS_OUT_SHIFT    3         
 
-`define DEBUG_CONFIG_WIDTH_W_ROT   81  
+`define DEBUG_CONFIG_WIDTH_W_ROT   78  
 `define DEBUG_CONFIG_WIDTH_IM_PIPE 6
 `define DEBUG_CONFIG_WIDTH_LRELU   23  
 `define DEBUG_CONFIG_WIDTH_MAXPOOL 1
-`define DEBUG_CONFIG_WIDTH         113        
+`define DEBUG_CONFIG_WIDTH         110        
 
 /*
   IMAGE TUSER INDICES
@@ -55,7 +55,7 @@
 `define TUSER_WIDTH_IM_SHIFT_OUT  3
 
 `define IM_CIN_MAX       1024      
-`define IM_BLOCKS_MAX    64   
+`define IM_BLOCKS_MAX    32   
 `define IM_COLS_MAX      384     
 `define LRELU_ALPHA      11878     
 `define LRELU_BEATS_MAX  9
@@ -65,14 +65,14 @@
 `define S_PIXELS_WIDTH_LF   64
 `define M_OUTPUT_WIDTH_LF   64
 `define M_DATA_WIDTH_HF_CONV    6144   
-`define M_DATA_WIDTH_HF_CONV_DW 512
-`define M_DATA_WIDTH_LF_CONV_DW 512
-`define M_DATA_WIDTH_HF_LRELU   128  
-`define M_DATA_WIDTH_LF_LRELU   128  
-`define M_DATA_WIDTH_HF_MAXPOOL 192
-`define M_DATA_WIDTH_HF_MAX_DW1 96
+`define M_DATA_WIDTH_HF_CONV_DW 256
+`define M_DATA_WIDTH_LF_CONV_DW 256
+`define M_DATA_WIDTH_HF_LRELU   64  
+`define M_DATA_WIDTH_LF_LRELU   64  
+`define M_DATA_WIDTH_HF_MAXPOOL 80
+`define M_DATA_WIDTH_HF_MAX_DW1 80
 `define M_DATA_WIDTH_LF_MAXPOOL 128
-`define M_DATA_WIDTH_LF         512
+`define M_DATA_WIDTH_LF         256
 /*
   LATENCIES & float widths
 */
@@ -133,7 +133,7 @@
 `define TUSER_WIDTH_MAXPOOL_IN     4    
 `define TUSER_WIDTH_LRELU_FMA_1_IN 3
 `define TUSER_CONV_DW_BASE         8      
-`define TUSER_CONV_DW_IN           38      
+`define TUSER_CONV_DW_IN           64      
 `define TUSER_WIDTH_LRELU_IN       10      
 `define IS_CONV_DW_SLICE           0
 
