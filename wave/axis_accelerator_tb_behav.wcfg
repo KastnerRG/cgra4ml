@@ -13,18 +13,19 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="26.452000 us"></ZoomStartTime>
-      <ZoomEndTime time="110.702001 us"></ZoomEndTime>
-      <Cursor1Time time="52.902000 us"></Cursor1Time>
+      <ZoomStartTime time="0.000000 us"></ZoomStartTime>
+      <ZoomEndTime time="71.100001 us"></ZoomEndTime>
+      <Cursor1Time time="12.000000 us"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="431"></NameColumnWidth>
-      <ValueColumnWidth column_width="210"></ValueColumnWidth>
+      <ValueColumnWidth column_width="204"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="2" />
    <wvobject fp_name="group533" type="group">
       <obj_property name="label">All</obj_property>
       <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
       <wvobject fp_name="group965" type="group">
          <obj_property name="label">ref</obj_property>
          <obj_property name="DisplayName">label</obj_property>
@@ -64,6 +65,14 @@
             <obj_property name="ElementShortName">aresetn</obj_property>
             <obj_property name="ObjectShortName">aresetn</obj_property>
          </wvobject>
+         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/DW/state" type="array">
+            <obj_property name="ElementShortName">state[1:0]</obj_property>
+            <obj_property name="ObjectShortName">state[1:0]</obj_property>
+         </wvobject>
+         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/DW/state_next" type="array">
+            <obj_property name="ElementShortName">state_next[1:0]</obj_property>
+            <obj_property name="ObjectShortName">state_next[1:0]</obj_property>
+         </wvobject>
          <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/s_ready" type="logic">
             <obj_property name="ElementShortName">s_ready</obj_property>
             <obj_property name="ObjectShortName">s_ready</obj_property>
@@ -79,6 +88,7 @@
          <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/s_data" type="array">
             <obj_property name="ElementShortName">s_data[7:0][7:0]</obj_property>
             <obj_property name="ObjectShortName">s_data[7:0][7:0]</obj_property>
+            <obj_property name="isExpanded"></obj_property>
          </wvobject>
          <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/s_keep" type="array">
             <obj_property name="ElementShortName">s_keep[7:0]</obj_property>
@@ -93,8 +103,8 @@
             <obj_property name="ObjectShortName">i_valid</obj_property>
          </wvobject>
          <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/i_data" type="array">
-            <obj_property name="ElementShortName">i_data[9:0][7:0]</obj_property>
-            <obj_property name="ObjectShortName">i_data[9:0][7:0]</obj_property>
+            <obj_property name="ElementShortName">i_data[11:0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">i_data[11:0][7:0]</obj_property>
          </wvobject>
          <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/i_user" type="array">
             <obj_property name="ElementShortName">i_user[2:0]</obj_property>
@@ -113,8 +123,8 @@
             <obj_property name="ObjectShortName">m_valid</obj_property>
          </wvobject>
          <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_data" type="array">
-            <obj_property name="ElementShortName">m_data[1:0][3:0][7:0]</obj_property>
-            <obj_property name="ObjectShortName">m_data[1:0][3:0][7:0]</obj_property>
+            <obj_property name="ElementShortName">m_data[0:0][7:0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">m_data[0:0][7:0][7:0]</obj_property>
          </wvobject>
          <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_user" type="array">
             <obj_property name="ElementShortName">m_user[2:0]</obj_property>
@@ -216,8 +226,8 @@
                <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/s_blocks_1" type="array">
-               <obj_property name="ElementShortName">s_blocks_1[5:0]</obj_property>
-               <obj_property name="ObjectShortName">s_blocks_1[5:0]</obj_property>
+               <obj_property name="ElementShortName">s_blocks_1[4:0]</obj_property>
+               <obj_property name="ObjectShortName">s_blocks_1[4:0]</obj_property>
                <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/s_addr_max" type="array">
@@ -250,8 +260,8 @@
                <obj_property name="ObjectShortName">dw_s_ready</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data" type="array">
-               <obj_property name="ElementShortName">dw_m_data[1:0][1:0][11:0][7:0]</obj_property>
-               <obj_property name="ObjectShortName">dw_m_data[1:0][1:0][11:0][7:0]</obj_property>
+               <obj_property name="ElementShortName">dw_m_data[0:0][0:0][23:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">dw_m_data[0:0][0:0][23:0][7:0]</obj_property>
                <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                <obj_property name="isExpanded"></obj_property>
             </wvobject>
@@ -396,13 +406,13 @@
                <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/s_blocks_1" type="array">
-               <obj_property name="ElementShortName">s_blocks_1[5:0]</obj_property>
-               <obj_property name="ObjectShortName">s_blocks_1[5:0]</obj_property>
+               <obj_property name="ElementShortName">s_blocks_1[4:0]</obj_property>
+               <obj_property name="ObjectShortName">s_blocks_1[4:0]</obj_property>
                <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/ref_1_blocks" type="array">
-               <obj_property name="ElementShortName">ref_1_blocks[0:1][5:0]</obj_property>
-               <obj_property name="ObjectShortName">ref_1_blocks[0:1][5:0]</obj_property>
+               <obj_property name="ElementShortName">ref_1_blocks[0:1][4:0]</obj_property>
+               <obj_property name="ObjectShortName">ref_1_blocks[0:1][4:0]</obj_property>
                <obj_property name="CustomSignalColor">#FF00FF</obj_property>
                <obj_property name="UseCustomSignalColor">true</obj_property>
                <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
@@ -552,13 +562,13 @@
                <obj_property name="ObjectShortName">en_count_blocks</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/count_next_blocks" type="array">
-               <obj_property name="ElementShortName">count_next_blocks[5:0]</obj_property>
-               <obj_property name="ObjectShortName">count_next_blocks[5:0]</obj_property>
+               <obj_property name="ElementShortName">count_next_blocks[4:0]</obj_property>
+               <obj_property name="ObjectShortName">count_next_blocks[4:0]</obj_property>
                <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/count_blocks" type="array">
-               <obj_property name="ElementShortName">count_blocks[5:0]</obj_property>
-               <obj_property name="ObjectShortName">count_blocks[5:0]</obj_property>
+               <obj_property name="ElementShortName">count_blocks[4:0]</obj_property>
+               <obj_property name="ObjectShortName">count_blocks[4:0]</obj_property>
                <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
                <obj_property name="CustomSignalColor">#FFD700</obj_property>
                <obj_property name="UseCustomSignalColor">true</obj_property>
@@ -595,8 +605,8 @@
                <obj_property name="ObjectShortName">bram_m_valid</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/bram_m_data" type="array">
-               <obj_property name="ElementShortName">bram_m_data[0:1][383:0]</obj_property>
-               <obj_property name="ObjectShortName">bram_m_data[0:1][383:0]</obj_property>
+               <obj_property name="ElementShortName">bram_m_data[0:1][191:0]</obj_property>
+               <obj_property name="ObjectShortName">bram_m_data[0:1][191:0]</obj_property>
             </wvobject>
          </wvobject>
          <wvobject fp_name="group3078" type="group">
@@ -643,8 +653,8 @@
                <obj_property name="ObjectShortName">s_axis_tready</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/REG_PIPE/m_axis_tdata" type="array">
-               <obj_property name="ElementShortName">m_axis_tdata[383:0]</obj_property>
-               <obj_property name="ObjectShortName">m_axis_tdata[383:0]</obj_property>
+               <obj_property name="ElementShortName">m_axis_tdata[191:0]</obj_property>
+               <obj_property name="ObjectShortName">m_axis_tdata[191:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/REG_PIPE/m_axis_tvalid" type="logic">
                <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
@@ -705,19 +715,19 @@
                   <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
                </wvobject>
                <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/dw_m_data" type="array">
-                  <obj_property name="ElementShortName">dw_m_data[1:0][1:0][11:0][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">dw_m_data[1:0][1:0][11:0][7:0]</obj_property>
+                  <obj_property name="ElementShortName">dw_m_data[0:0][0:0][23:0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">dw_m_data[0:0][0:0][23:0][7:0]</obj_property>
                   <obj_property name="CustomSignalColor">#FFFF00</obj_property>
                   <obj_property name="UseCustomSignalColor">true</obj_property>
                   <obj_property name="isExpanded"></obj_property>
                </wvobject>
                <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /s_data" type="array">
-                  <obj_property name="ElementShortName">s_data[383:0]</obj_property>
-                  <obj_property name="ObjectShortName">s_data[383:0]</obj_property>
+                  <obj_property name="ElementShortName">s_data[191:0]</obj_property>
+                  <obj_property name="ObjectShortName">s_data[191:0]</obj_property>
                </wvobject>
                <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /m_data" type="array">
-                  <obj_property name="ElementShortName">m_data[383:0]</obj_property>
-                  <obj_property name="ObjectShortName">m_data[383:0]</obj_property>
+                  <obj_property name="ElementShortName">m_data[191:0]</obj_property>
+                  <obj_property name="ObjectShortName">m_data[191:0]</obj_property>
                   <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                </wvobject>
                <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /r_last_in" type="logic">
@@ -773,14 +783,14 @@
                   <obj_property name="ObjectShortName">m_valid</obj_property>
                </wvobject>
                <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data" type="array">
-                  <obj_property name="ElementShortName">m_data[1:0][1:0][11:0][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">m_data[1:0][1:0][11:0][7:0]</obj_property>
+                  <obj_property name="ElementShortName">m_data[0:0][0:0][23:0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">m_data[0:0][0:0][23:0][7:0]</obj_property>
                   <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                   <obj_property name="isExpanded"></obj_property>
                </wvobject>
                <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /bram_m_data" type="array">
-                  <obj_property name="ElementShortName">bram_m_data[383:0]</obj_property>
-                  <obj_property name="ObjectShortName">bram_m_data[383:0]</obj_property>
+                  <obj_property name="ElementShortName">bram_m_data[191:0]</obj_property>
+                  <obj_property name="ObjectShortName">bram_m_data[191:0]</obj_property>
                </wvobject>
                <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[0].BRAM /R_DEPTH" type="array">
                   <obj_property name="ElementShortName">R_DEPTH[31:0]</obj_property>
@@ -843,12 +853,12 @@
                   <obj_property name="ObjectShortName">r_en</obj_property>
                </wvobject>
                <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /s_data" type="array">
-                  <obj_property name="ElementShortName">s_data[383:0]</obj_property>
-                  <obj_property name="ObjectShortName">s_data[383:0]</obj_property>
+                  <obj_property name="ElementShortName">s_data[191:0]</obj_property>
+                  <obj_property name="ObjectShortName">s_data[191:0]</obj_property>
                </wvobject>
                <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /m_data" type="array">
-                  <obj_property name="ElementShortName">m_data[383:0]</obj_property>
-                  <obj_property name="ObjectShortName">m_data[383:0]</obj_property>
+                  <obj_property name="ElementShortName">m_data[191:0]</obj_property>
+                  <obj_property name="ObjectShortName">m_data[191:0]</obj_property>
                </wvobject>
                <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /m_valid" type="logic">
                   <obj_property name="ElementShortName">m_valid</obj_property>
@@ -899,8 +909,8 @@
                   <obj_property name="ObjectShortName">r_last</obj_property>
                </wvobject>
                <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /bram_m_data" type="array">
-                  <obj_property name="ElementShortName">bram_m_data[383:0]</obj_property>
-                  <obj_property name="ObjectShortName">bram_m_data[383:0]</obj_property>
+                  <obj_property name="ElementShortName">bram_m_data[191:0]</obj_property>
+                  <obj_property name="ObjectShortName">bram_m_data[191:0]</obj_property>
                </wvobject>
                <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/\genblk2[1].BRAM /R_DEPTH" type="array">
                   <obj_property name="ElementShortName">R_DEPTH[31:0]</obj_property>
@@ -940,8 +950,8 @@
                </wvobject>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data" type="array">
-               <obj_property name="ElementShortName">m_data[1:0][1:0][11:0][7:0]</obj_property>
-               <obj_property name="ObjectShortName">m_data[1:0][1:0][11:0][7:0]</obj_property>
+               <obj_property name="ElementShortName">m_data[0:0][0:0][23:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">m_data[0:0][0:0][23:0][7:0]</obj_property>
                <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                <obj_property name="isExpanded"></obj_property>
             </wvobject>
@@ -950,8 +960,8 @@
                <obj_property name="DisplayName">label</obj_property>
                <obj_property name="isExpanded"></obj_property>
                <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_data[0]" type="array">
-                  <obj_property name="ElementShortName">[0][1:0][11:0][7:0]</obj_property>
-                  <obj_property name="ObjectShortName">[0][1:0][11:0][7:0]</obj_property>
+                  <obj_property name="ElementShortName">[0][0:0][23:0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][0:0][23:0][7:0]</obj_property>
                </wvobject>
             </wvobject>
          </wvobject>
@@ -973,8 +983,8 @@
             <obj_property name="ObjectShortName">m_axis_tlast</obj_property>
          </wvobject>
          <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/m_axis_weights_tdata" type="array">
-            <obj_property name="ElementShortName">m_axis_weights_tdata[383:0]</obj_property>
-            <obj_property name="ObjectShortName">m_axis_weights_tdata[383:0]</obj_property>
+            <obj_property name="ElementShortName">m_axis_weights_tdata[191:0]</obj_property>
+            <obj_property name="ObjectShortName">m_axis_weights_tdata[191:0]</obj_property>
          </wvobject>
          <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/m_axis_tuser" type="array">
             <obj_property name="ElementShortName">m_axis_tuser[12:0]</obj_property>
@@ -996,7 +1006,6 @@
          <wvobject fp_name="group302" type="group">
             <obj_property name="label">Conv_slave</obj_property>
             <obj_property name="DisplayName">label</obj_property>
-            <obj_property name="isExpanded"></obj_property>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/s_axis_tvalid" type="logic">
                <obj_property name="ElementShortName">s_axis_tvalid</obj_property>
                <obj_property name="ObjectShortName">s_axis_tvalid</obj_property>
@@ -1006,13 +1015,13 @@
                <obj_property name="ObjectShortName">s_axis_tready</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/s_data_pixels" type="array">
-               <obj_property name="ElementShortName">s_data_pixels[1:0][3:0][7:0]</obj_property>
-               <obj_property name="ObjectShortName">s_data_pixels[1:0][3:0][7:0]</obj_property>
+               <obj_property name="ElementShortName">s_data_pixels[0:0][7:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">s_data_pixels[0:0][7:0][7:0]</obj_property>
                <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/s_data_weights" type="array">
-               <obj_property name="ElementShortName">s_data_weights[1:0][1:0][11:0][7:0]</obj_property>
-               <obj_property name="ObjectShortName">s_data_weights[1:0][1:0][11:0][7:0]</obj_property>
+               <obj_property name="ElementShortName">s_data_weights[0:0][0:0][23:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">s_data_weights[0:0][0:0][23:0][7:0]</obj_property>
                <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                <obj_property name="isExpanded"></obj_property>
             </wvobject>
@@ -1047,8 +1056,8 @@
                <obj_property name="ObjectShortName">clken_mul</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/mul_m_data" type="array">
-               <obj_property name="ElementShortName">mul_m_data[1:0][1:0][11:0][3:0][15:0]</obj_property>
-               <obj_property name="ObjectShortName">mul_m_data[1:0][1:0][11:0][3:0][15:0]</obj_property>
+               <obj_property name="ElementShortName">mul_m_data[0:0][0:0][23:0][7:0][15:0]</obj_property>
+               <obj_property name="ObjectShortName">mul_m_data[0:0][0:0][23:0][7:0][15:0]</obj_property>
                <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                <obj_property name="isExpanded"></obj_property>
             </wvobject>
@@ -1098,8 +1107,8 @@
                <obj_property name="ObjectShortName">clken_mul</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/clken_acc" type="array">
-               <obj_property name="ElementShortName">clken_acc[11:0]</obj_property>
-               <obj_property name="ObjectShortName">clken_acc[11:0]</obj_property>
+               <obj_property name="ElementShortName">clken_acc[23:0]</obj_property>
+               <obj_property name="ObjectShortName">clken_acc[23:0]</obj_property>
                <obj_property name="Radix">BINARYRADIX</obj_property>
             </wvobject>
          </wvobject>
@@ -1133,8 +1142,8 @@
                <obj_property name="ObjectShortName">clken_mul</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/clken_acc" type="array">
-               <obj_property name="ElementShortName">clken_acc[11:0]</obj_property>
-               <obj_property name="ObjectShortName">clken_acc[11:0]</obj_property>
+               <obj_property name="ElementShortName">clken_acc[23:0]</obj_property>
+               <obj_property name="ObjectShortName">clken_acc[23:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/acc_s_data[0][0][0][0]" type="array">
                <obj_property name="DisplayName">label</obj_property>
@@ -1146,8 +1155,8 @@
                <obj_property name="UseCustomSignalColor">true</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/clken_acc" type="array">
-               <obj_property name="ElementShortName">clken_acc[11:0]</obj_property>
-               <obj_property name="ObjectShortName">clken_acc[11:0]</obj_property>
+               <obj_property name="ElementShortName">clken_acc[23:0]</obj_property>
+               <obj_property name="ObjectShortName">clken_acc[23:0]</obj_property>
                <obj_property name="Radix">BINARYRADIX</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/mux_sel" type="logic">
@@ -1155,38 +1164,38 @@
                <obj_property name="ObjectShortName">mux_sel</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/lut_sum_start" type="array">
-               <obj_property name="ElementShortName">lut_sum_start[1:0][1:0][11:0]</obj_property>
-               <obj_property name="ObjectShortName">lut_sum_start[1:0][1:0][11:0]</obj_property>
+               <obj_property name="ElementShortName">lut_sum_start[1:0][1:0][23:0]</obj_property>
+               <obj_property name="ObjectShortName">lut_sum_start[1:0][1:0][23:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/mul_m_kw2" type="array">
                <obj_property name="ElementShortName">mul_m_kw2[0:0]</obj_property>
                <obj_property name="ObjectShortName">mul_m_kw2[0:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/bypass_sum" type="array">
-               <obj_property name="ElementShortName">bypass_sum[11:0]</obj_property>
-               <obj_property name="ObjectShortName">bypass_sum[11:0]</obj_property>
+               <obj_property name="ElementShortName">bypass_sum[23:0]</obj_property>
+               <obj_property name="ObjectShortName">bypass_sum[23:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/bypass_sum_next" type="array">
-               <obj_property name="ElementShortName">bypass_sum_next[11:0]</obj_property>
-               <obj_property name="ObjectShortName">bypass_sum_next[11:0]</obj_property>
+               <obj_property name="ElementShortName">bypass_sum_next[23:0]</obj_property>
+               <obj_property name="ObjectShortName">bypass_sum_next[23:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/bypass" type="array">
-               <obj_property name="ElementShortName">bypass[11:0]</obj_property>
-               <obj_property name="ObjectShortName">bypass[11:0]</obj_property>
+               <obj_property name="ElementShortName">bypass[23:0]</obj_property>
+               <obj_property name="ObjectShortName">bypass[23:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/acc_s_valid" type="array">
-               <obj_property name="ElementShortName">acc_s_valid[11:0]</obj_property>
-               <obj_property name="ObjectShortName">acc_s_valid[11:0]</obj_property>
+               <obj_property name="ElementShortName">acc_s_valid[23:0]</obj_property>
+               <obj_property name="ObjectShortName">acc_s_valid[23:0]</obj_property>
                <obj_property name="Radix">BINARYRADIX</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/acc_s_data" type="array">
-               <obj_property name="ElementShortName">acc_s_data[1:0][1:0][11:0][3:0][31:0]</obj_property>
-               <obj_property name="ObjectShortName">acc_s_data[1:0][1:0][11:0][3:0][31:0]</obj_property>
+               <obj_property name="ElementShortName">acc_s_data[0:0][0:0][23:0][7:0][31:0]</obj_property>
+               <obj_property name="ObjectShortName">acc_s_data[0:0][0:0][23:0][7:0][31:0]</obj_property>
                <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/bypass" type="array">
-               <obj_property name="ElementShortName">bypass[11:0]</obj_property>
-               <obj_property name="ObjectShortName">bypass[11:0]</obj_property>
+               <obj_property name="ElementShortName">bypass[23:0]</obj_property>
+               <obj_property name="ObjectShortName">bypass[23:0]</obj_property>
                <obj_property name="Radix">BINARYRADIX</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/acc_m_valid_next" type="logic">
@@ -1240,8 +1249,8 @@
                <obj_property name="ObjectShortName">user_in[12:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/PAD_FILTER/clr" type="array">
-               <obj_property name="ElementShortName">clr[11:0][1:0]</obj_property>
-               <obj_property name="ObjectShortName">clr[11:0][1:0]</obj_property>
+               <obj_property name="ElementShortName">clr[23:0][1:0]</obj_property>
+               <obj_property name="ObjectShortName">clr[23:0][1:0]</obj_property>
                <obj_property name="CustomSignalColor">#FFD700</obj_property>
                <obj_property name="UseCustomSignalColor">true</obj_property>
             </wvobject>
@@ -1262,8 +1271,8 @@
                <obj_property name="ObjectShortName">col_end[1:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/PAD_FILTER/reg_clken_masked" type="array">
-               <obj_property name="ElementShortName">reg_clken_masked[11:0]</obj_property>
-               <obj_property name="ObjectShortName">reg_clken_masked[11:0]</obj_property>
+               <obj_property name="ElementShortName">reg_clken_masked[23:0]</obj_property>
+               <obj_property name="ObjectShortName">reg_clken_masked[23:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/PAD_FILTER/col_start_in" type="array">
                <obj_property name="ElementShortName">col_start_in[1:1]</obj_property>
@@ -1274,8 +1283,8 @@
                <obj_property name="ObjectShortName">col_start[1:1]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/PAD_FILTER/col_end_masked" type="array">
-               <obj_property name="ElementShortName">col_end_masked[11:0][1:0]</obj_property>
-               <obj_property name="ObjectShortName">col_end_masked[11:0][1:0]</obj_property>
+               <obj_property name="ElementShortName">col_end_masked[23:0][1:0]</obj_property>
+               <obj_property name="ObjectShortName">col_end_masked[23:0][1:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/PAD_FILTER/clr_left_lut" type="array">
                <obj_property name="ElementShortName">clr_left_lut[2:0][1:0][1:0]</obj_property>
@@ -1294,8 +1303,8 @@
                <obj_property name="ObjectShortName">clr_left_out[1:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/PAD_FILTER/lut_next_full" type="array">
-               <obj_property name="ElementShortName">lut_next_full[11:0][1:0]</obj_property>
-               <obj_property name="ObjectShortName">lut_next_full[11:0][1:0]</obj_property>
+               <obj_property name="ElementShortName">lut_next_full[23:0][1:0]</obj_property>
+               <obj_property name="ObjectShortName">lut_next_full[23:0][1:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/PAD_FILTER/lut_not_start_cols" type="array">
                <obj_property name="ElementShortName">lut_not_start_cols[1:0]</obj_property>
@@ -1306,8 +1315,8 @@
                <obj_property name="ObjectShortName">sw_1_wire[0:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/PAD_FILTER/lut_allow" type="array">
-               <obj_property name="ElementShortName">lut_allow[11:0][1:0][1:0]</obj_property>
-               <obj_property name="ObjectShortName">lut_allow[11:0][1:0][1:0]</obj_property>
+               <obj_property name="ElementShortName">lut_allow[23:0][1:0][1:0]</obj_property>
+               <obj_property name="ObjectShortName">lut_allow[23:0][1:0][1:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/valid_mask" type="logic">
                <obj_property name="ElementShortName">valid_mask</obj_property>
@@ -1338,8 +1347,8 @@
                <obj_property name="UseCustomSignalColor">true</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/m_data" type="array">
-               <obj_property name="ElementShortName">m_data[1:0][1:0][11:0][3:0][31:0]</obj_property>
-               <obj_property name="ObjectShortName">m_data[1:0][1:0][11:0][3:0][31:0]</obj_property>
+               <obj_property name="ElementShortName">m_data[0:0][0:0][23:0][7:0][31:0]</obj_property>
+               <obj_property name="ObjectShortName">m_data[0:0][0:0][23:0][7:0][31:0]</obj_property>
                <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                <obj_property name="isExpanded"></obj_property>
             </wvobject>
@@ -1375,8 +1384,8 @@
                <obj_property name="ObjectShortName">m_last</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/m_user" type="array">
-               <obj_property name="ElementShortName">m_user[37:0]</obj_property>
-               <obj_property name="ObjectShortName">m_user[37:0]</obj_property>
+               <obj_property name="ElementShortName">m_user[63:0]</obj_property>
+               <obj_property name="ObjectShortName">m_user[63:0]</obj_property>
             </wvobject>
          </wvobject>
          <wvobject fp_name="group509" type="group">
@@ -1421,8 +1430,8 @@
                <obj_property name="ObjectShortName">s_axis_tdest[7:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/SLICE/s_axis_tuser" type="array">
-               <obj_property name="ElementShortName">s_axis_tuser[37:0]</obj_property>
-               <obj_property name="ObjectShortName">s_axis_tuser[37:0]</obj_property>
+               <obj_property name="ElementShortName">s_axis_tuser[63:0]</obj_property>
+               <obj_property name="ObjectShortName">s_axis_tuser[63:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/SLICE/m_axis_tdata" type="array">
                <obj_property name="ElementShortName">m_axis_tdata[6143:0]</obj_property>
@@ -1453,8 +1462,8 @@
                <obj_property name="ObjectShortName">m_axis_tdest[7:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/SLICE/m_axis_tuser" type="array">
-               <obj_property name="ElementShortName">m_axis_tuser[37:0]</obj_property>
-               <obj_property name="ObjectShortName">m_axis_tuser[37:0]</obj_property>
+               <obj_property name="ElementShortName">m_axis_tuser[63:0]</obj_property>
+               <obj_property name="ObjectShortName">m_axis_tuser[63:0]</obj_property>
             </wvobject>
          </wvobject>
          <wvobject fp_name="group751" type="group">
@@ -1481,20 +1490,20 @@
                <obj_property name="ObjectShortName">s_ready</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /s_data" type="array">
-               <obj_property name="ElementShortName">s_data[11:0][3:0][31:0]</obj_property>
-               <obj_property name="ObjectShortName">s_data[11:0][3:0][31:0]</obj_property>
+               <obj_property name="ElementShortName">s_data[23:0][7:0][31:0]</obj_property>
+               <obj_property name="ObjectShortName">s_data[23:0][7:0][31:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /s_user" type="array">
-               <obj_property name="ElementShortName">s_user[37:0]</obj_property>
-               <obj_property name="ObjectShortName">s_user[37:0]</obj_property>
+               <obj_property name="ElementShortName">s_user[63:0]</obj_property>
+               <obj_property name="ObjectShortName">s_user[63:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /m_ready" type="logic">
                <obj_property name="ElementShortName">m_ready</obj_property>
                <obj_property name="ObjectShortName">m_ready</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /m_data" type="array">
-               <obj_property name="ElementShortName">m_data[3:0][31:0]</obj_property>
-               <obj_property name="ObjectShortName">m_data[3:0][31:0]</obj_property>
+               <obj_property name="ElementShortName">m_data[7:0][31:0]</obj_property>
+               <obj_property name="ObjectShortName">m_data[7:0][31:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /m_user" type="array">
                <obj_property name="ElementShortName">m_user[9:0]</obj_property>
@@ -1521,16 +1530,16 @@
                <obj_property name="ObjectShortName">s_user_base[7:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /s_shift_a" type="array">
-               <obj_property name="ElementShortName">s_shift_a[3:0]</obj_property>
-               <obj_property name="ObjectShortName">s_shift_a[3:0]</obj_property>
+               <obj_property name="ElementShortName">s_shift_a[4:0]</obj_property>
+               <obj_property name="ObjectShortName">s_shift_a[4:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /s_shift_b" type="array">
-               <obj_property name="ElementShortName">s_shift_b[1:0]</obj_property>
-               <obj_property name="ObjectShortName">s_shift_b[1:0]</obj_property>
+               <obj_property name="ElementShortName">s_shift_b[2:0]</obj_property>
+               <obj_property name="ObjectShortName">s_shift_b[2:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /s_clr" type="array">
-               <obj_property name="ElementShortName">s_clr[11:0][1:0]</obj_property>
-               <obj_property name="ObjectShortName">s_clr[11:0][1:0]</obj_property>
+               <obj_property name="ElementShortName">s_clr[23:0][1:0]</obj_property>
+               <obj_property name="ObjectShortName">s_clr[23:0][1:0]</obj_property>
                <obj_property name="isExpanded"></obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /count_a_en" type="logic">
@@ -1542,32 +1551,32 @@
                <obj_property name="ObjectShortName">count_a_last</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /count_a_next" type="array">
-               <obj_property name="ElementShortName">count_a_next[3:0]</obj_property>
-               <obj_property name="ObjectShortName">count_a_next[3:0]</obj_property>
+               <obj_property name="ElementShortName">count_a_next[4:0]</obj_property>
+               <obj_property name="ObjectShortName">count_a_next[4:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /count_a" type="array">
-               <obj_property name="ElementShortName">count_a[3:0]</obj_property>
-               <obj_property name="ObjectShortName">count_a[3:0]</obj_property>
+               <obj_property name="ElementShortName">count_a[4:0]</obj_property>
+               <obj_property name="ObjectShortName">count_a[4:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /reg_a_data_s" type="array">
-               <obj_property name="ElementShortName">reg_a_data_s[11:0][129:0]</obj_property>
-               <obj_property name="ObjectShortName">reg_a_data_s[11:0][129:0]</obj_property>
+               <obj_property name="ElementShortName">reg_a_data_s[23:0][257:0]</obj_property>
+               <obj_property name="ObjectShortName">reg_a_data_s[23:0][257:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /reg_a_data_in" type="array">
-               <obj_property name="ElementShortName">reg_a_data_in[11:0][129:0]</obj_property>
-               <obj_property name="ObjectShortName">reg_a_data_in[11:0][129:0]</obj_property>
+               <obj_property name="ElementShortName">reg_a_data_in[23:0][257:0]</obj_property>
+               <obj_property name="ObjectShortName">reg_a_data_in[23:0][257:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /reg_a_data" type="array">
-               <obj_property name="ElementShortName">reg_a_data[11:0][129:0]</obj_property>
-               <obj_property name="ObjectShortName">reg_a_data[11:0][129:0]</obj_property>
+               <obj_property name="ElementShortName">reg_a_data[23:0][257:0]</obj_property>
+               <obj_property name="ObjectShortName">reg_a_data[23:0][257:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /a_data" type="array">
-               <obj_property name="ElementShortName">a_data[11:0][3:0][31:0]</obj_property>
-               <obj_property name="ObjectShortName">a_data[11:0][3:0][31:0]</obj_property>
+               <obj_property name="ElementShortName">a_data[23:0][7:0][31:0]</obj_property>
+               <obj_property name="ObjectShortName">a_data[23:0][7:0][31:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /a_clr" type="array">
-               <obj_property name="ElementShortName">a_clr[11:0][1:0]</obj_property>
-               <obj_property name="ObjectShortName">a_clr[11:0][1:0]</obj_property>
+               <obj_property name="ElementShortName">a_clr[23:0][1:0]</obj_property>
+               <obj_property name="ObjectShortName">a_clr[23:0][1:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /a_valid" type="logic">
                <obj_property name="ElementShortName">a_valid</obj_property>
@@ -1578,8 +1587,8 @@
                <obj_property name="ObjectShortName">a_user_base[7:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /a_shift_b" type="array">
-               <obj_property name="ElementShortName">a_shift_b[1:0]</obj_property>
-               <obj_property name="ObjectShortName">a_shift_b[1:0]</obj_property>
+               <obj_property name="ElementShortName">a_shift_b[2:0]</obj_property>
+               <obj_property name="ObjectShortName">a_shift_b[2:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /a_last" type="logic">
                <obj_property name="ElementShortName">a_last</obj_property>
@@ -1606,36 +1615,36 @@
                <obj_property name="ObjectShortName">count_b_last</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /count_b_next" type="array">
-               <obj_property name="ElementShortName">count_b_next[1:0]</obj_property>
-               <obj_property name="ObjectShortName">count_b_next[1:0]</obj_property>
+               <obj_property name="ElementShortName">count_b_next[2:0]</obj_property>
+               <obj_property name="ObjectShortName">count_b_next[2:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /count_b" type="array">
-               <obj_property name="ElementShortName">count_b[1:0]</obj_property>
-               <obj_property name="ObjectShortName">count_b[1:0]</obj_property>
+               <obj_property name="ElementShortName">count_b[2:0]</obj_property>
+               <obj_property name="ObjectShortName">count_b[2:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /reg_b_data_mux" type="array">
-               <obj_property name="ElementShortName">reg_b_data_mux[1:0][1:0][3:0][129:0]</obj_property>
-               <obj_property name="ObjectShortName">reg_b_data_mux[1:0][1:0][3:0][129:0]</obj_property>
+               <obj_property name="ElementShortName">reg_b_data_mux[1:0][1:0][7:0][257:0]</obj_property>
+               <obj_property name="ObjectShortName">reg_b_data_mux[1:0][1:0][7:0][257:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /reg_b_data_muxed" type="array">
-               <obj_property name="ElementShortName">reg_b_data_muxed[3:0][129:0]</obj_property>
-               <obj_property name="ObjectShortName">reg_b_data_muxed[3:0][129:0]</obj_property>
+               <obj_property name="ElementShortName">reg_b_data_muxed[7:0][257:0]</obj_property>
+               <obj_property name="ObjectShortName">reg_b_data_muxed[7:0][257:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /reg_b_data_in" type="array">
-               <obj_property name="ElementShortName">reg_b_data_in[3:0][129:0]</obj_property>
-               <obj_property name="ObjectShortName">reg_b_data_in[3:0][129:0]</obj_property>
+               <obj_property name="ElementShortName">reg_b_data_in[7:0][257:0]</obj_property>
+               <obj_property name="ObjectShortName">reg_b_data_in[7:0][257:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /reg_b_data" type="array">
-               <obj_property name="ElementShortName">reg_b_data[3:0][129:0]</obj_property>
-               <obj_property name="ObjectShortName">reg_b_data[3:0][129:0]</obj_property>
+               <obj_property name="ElementShortName">reg_b_data[7:0][257:0]</obj_property>
+               <obj_property name="ObjectShortName">reg_b_data[7:0][257:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /b_data" type="array">
-               <obj_property name="ElementShortName">b_data[3:0][3:0][31:0]</obj_property>
-               <obj_property name="ObjectShortName">b_data[3:0][3:0][31:0]</obj_property>
+               <obj_property name="ElementShortName">b_data[7:0][7:0][31:0]</obj_property>
+               <obj_property name="ObjectShortName">b_data[7:0][7:0][31:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /b_clr" type="array">
-               <obj_property name="ElementShortName">b_clr[3:0][1:0]</obj_property>
-               <obj_property name="ObjectShortName">b_clr[3:0][1:0]</obj_property>
+               <obj_property name="ElementShortName">b_clr[7:0][1:0]</obj_property>
+               <obj_property name="ObjectShortName">b_clr[7:0][1:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/\C[0].G[0].CONV_DW /b_valid" type="logic">
                <obj_property name="ElementShortName">b_valid</obj_property>
@@ -1755,8 +1764,8 @@
          <obj_property name="ObjectShortName">lrelu_m_axis_tready</obj_property>
       </wvobject>
       <wvobject fp_name="/axis_accelerator_tb/lrelu_m_axis_tdata" type="array">
-         <obj_property name="ElementShortName">lrelu_m_axis_tdata[15:0][7:0]</obj_property>
-         <obj_property name="ObjectShortName">lrelu_m_axis_tdata[15:0][7:0]</obj_property>
+         <obj_property name="ElementShortName">lrelu_m_axis_tdata[7:0][7:0]</obj_property>
+         <obj_property name="ObjectShortName">lrelu_m_axis_tdata[7:0][7:0]</obj_property>
          <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
          <obj_property name="isExpanded"></obj_property>
       </wvobject>
@@ -1847,12 +1856,12 @@
             <obj_property name="ObjectShortName">max_m_axis_tlast</obj_property>
          </wvobject>
          <wvobject fp_name="/axis_accelerator_tb/max_m_axis_tkeep" type="array">
-            <obj_property name="ElementShortName">max_m_axis_tkeep[23:0]</obj_property>
-            <obj_property name="ObjectShortName">max_m_axis_tkeep[23:0]</obj_property>
+            <obj_property name="ElementShortName">max_m_axis_tkeep[9:0]</obj_property>
+            <obj_property name="ObjectShortName">max_m_axis_tkeep[9:0]</obj_property>
          </wvobject>
          <wvobject fp_name="/axis_accelerator_tb/max_m_axis_tdata" type="array">
-            <obj_property name="ElementShortName">max_m_axis_tdata[23:0][7:0]</obj_property>
-            <obj_property name="ObjectShortName">max_m_axis_tdata[23:0][7:0]</obj_property>
+            <obj_property name="ElementShortName">max_m_axis_tdata[9:0][7:0]</obj_property>
+            <obj_property name="ObjectShortName">max_m_axis_tdata[9:0][7:0]</obj_property>
             <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
          </wvobject>
       </wvobject>
@@ -1938,16 +1947,16 @@
                <obj_property name="ObjectShortName">lrelu_m_axis_tlast</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/lrelu_m_axis_tdata" type="array">
-               <obj_property name="ElementShortName">lrelu_m_axis_tdata[15:0][7:0]</obj_property>
-               <obj_property name="ObjectShortName">lrelu_m_axis_tdata[15:0][7:0]</obj_property>
+               <obj_property name="ElementShortName">lrelu_m_axis_tdata[7:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">lrelu_m_axis_tdata[7:0][7:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/lrelu_m_axis_tuser" type="array">
                <obj_property name="ElementShortName">lrelu_m_axis_tuser[3:0]</obj_property>
                <obj_property name="ObjectShortName">lrelu_m_axis_tuser[3:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/lrelu_m_axis_tkeep" type="array">
-               <obj_property name="ElementShortName">lrelu_m_axis_tkeep[15:0]</obj_property>
-               <obj_property name="ObjectShortName">lrelu_m_axis_tkeep[15:0]</obj_property>
+               <obj_property name="ElementShortName">lrelu_m_axis_tkeep[7:0]</obj_property>
+               <obj_property name="ObjectShortName">lrelu_m_axis_tkeep[7:0]</obj_property>
             </wvobject>
          </wvobject>
          <wvobject fp_name="group2229" type="group">
@@ -1967,14 +1976,14 @@
                <obj_property name="ObjectShortName">lrelu_dw_lf_m_axis_tlast</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/lrelu_dw_lf_m_axis_tdata" type="array">
-               <obj_property name="ElementShortName">lrelu_dw_lf_m_axis_tdata[15:0][7:0]</obj_property>
-               <obj_property name="ObjectShortName">lrelu_dw_lf_m_axis_tdata[15:0][7:0]</obj_property>
+               <obj_property name="ElementShortName">lrelu_dw_lf_m_axis_tdata[7:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">lrelu_dw_lf_m_axis_tdata[7:0][7:0]</obj_property>
                <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                <obj_property name="isExpanded"></obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/lrelu_dw_lf_m_axis_tkeep" type="array">
-               <obj_property name="ElementShortName">lrelu_dw_lf_m_axis_tkeep[15:0]</obj_property>
-               <obj_property name="ObjectShortName">lrelu_dw_lf_m_axis_tkeep[15:0]</obj_property>
+               <obj_property name="ElementShortName">lrelu_dw_lf_m_axis_tkeep[7:0]</obj_property>
+               <obj_property name="ObjectShortName">lrelu_dw_lf_m_axis_tkeep[7:0]</obj_property>
             </wvobject>
          </wvobject>
          <wvobject fp_name="group2230" type="group">

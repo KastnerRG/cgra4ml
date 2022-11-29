@@ -24,9 +24,9 @@ module axis_accelerator_tb ();
   end
 
   localparam ITERATIONS = 1;
-  localparam VALID_PROB = 20;
-  localparam READY_PROB = 20;
-  localparam string DIR_PATH = "D:/cnn-fpga/data/";
+  localparam VALID_PROB = 100;
+  localparam READY_PROB = 100;
+  localparam string DIR_PATH = "D:/cnn-fpga/py/vectors/";
 
 
   /*
@@ -63,7 +63,7 @@ module axis_accelerator_tb ();
   localparam REPEATS = 3;
 
 
-  class Layer #(IDX=0, K=0, IS_MAX=0, IM_HEIGHT=0, IM_WIDTH=0, IM_CIN=0);
+  class Layer #(MODEL="", IDX=0, K=0, IS_MAX=0, IM_HEIGHT=0, IM_WIDTH=0, IM_CIN=0);
 
     string IDX_s, path_im_in, path_weights, base_conv_out, base_lrelu_out, base_max_out, base_output, base_conv_out_dw;
 
@@ -78,7 +78,8 @@ module axis_accelerator_tb ();
     parameter BEATS_2 = (IM_BLOCKS/MAX_FACTOR) * IM_COLS * IM_CIN;
     parameter WORDS_2 = BEATS_2 * UNITS_EDGES;
     parameter BEATS_1 = BEATS_2 + 1;
-    parameter WORDS_1 = BEATS_1 * UNITS_EDGES;
+    // parameter WORDS_1 = BEATS_1 * UNITS_EDGES;
+    parameter WORDS_1 = S_PIXELS_WIDTH_LF/WORD_WIDTH + (IM_BLOCKS * IM_COLS * IM_CIN * UNITS_EDGES);
     
     parameter BEATS_CONFIG_1     = lrelu_beats::calc_beats_total (K/2, MEMBERS) -1;
     parameter W_M_BEATS          = BEATS_CONFIG_1+1 + K*IM_CIN;
@@ -118,13 +119,13 @@ module axis_accelerator_tb ();
     
     function new();
         IDX_s.itoa(IDX);
-        path_im_in      = {DIR_PATH, IDX_s, "_conv_input.txt"    };
-        path_weights   = {DIR_PATH, IDX_s, "_weights.txt"      };
-        base_conv_out  = {DIR_PATH, IDX_s, "_conv_out_sim_"   };
-        base_conv_out_dw = {DIR_PATH, IDX_s, "_conv_out_dw_sim_" };
-        base_lrelu_out = {DIR_PATH, IDX_s, "_lrelu_out_sim_"  };
-        base_max_out   = {DIR_PATH, IDX_s, "_maxpool_out_sim_"};
-        base_output    = {DIR_PATH, IDX_s, "_output_sim_"     };
+        path_im_in       = {DIR_PATH, MODEL, "_conv_", IDX_s, "_x.txt"         };
+        path_weights     = {DIR_PATH, MODEL, "_conv_", IDX_s, "_w.txt"         };
+        base_conv_out    = {DIR_PATH, MODEL, "_conv_", IDX_s, "_y_pe_sim.txt"  };
+        base_conv_out_dw = {DIR_PATH, MODEL, "_conv_", IDX_s, "_y_dw_sim.txt"  };
+        base_lrelu_out   = {DIR_PATH, MODEL, "_conv_", IDX_s, "_y_lr_sim.txt"  };
+        base_max_out     = {DIR_PATH, MODEL, "_conv_", IDX_s, "_y_max_sim.txt" };
+        base_output      = {DIR_PATH, MODEL, "_conv_", IDX_s, "_y_out_sim.txt" };
 
         $display("IDX                     = %d", IDX                    );
         $display("MAX_FACTOR              = %d", MAX_FACTOR             );
@@ -162,9 +163,10 @@ module axis_accelerator_tb ();
     endfunction
   endclass
 
+  Layer #(.MODEL("vgg16_quant"), .IDX (5 ), .K(3), .IS_MAX(0), .IM_HEIGHT(8 ), .IM_WIDTH(8 ), .IM_CIN(128)) layer = new();
   // Layer #(.IDX (1 ), .K(3), .IS_MAX(1), .IM_HEIGHT(256), .IM_WIDTH(384), .IM_CIN(3  )) layer = new();
   // Layer #(.IDX (2 ), .K(3), .IS_MAX(1), .IM_HEIGHT(128), .IM_WIDTH(196), .IM_CIN(32  )) layer = new();
-  Layer #(.IDX (3 ), .K(3), .IS_MAX(0), .IM_HEIGHT(64 ), .IM_WIDTH(96 ), .IM_CIN(64 )) layer = new();
+  // Layer #(.IDX (3 ), .K(3), .IS_MAX(0), .IM_HEIGHT(64 ), .IM_WIDTH(96 ), .IM_CIN(64 )) layer = new();
   // Layer #(.IDX (4 ), .K(1), .IS_MAX(0), .IM_HEIGHT(64 ), .IM_WIDTH(96 ), .IM_CIN(128)) layer = new();
   // Layer #(.IDX (14), .K(3), .IS_MAX(0), .IM_HEIGHT(8  ), .IM_WIDTH(12 ), .IM_CIN(512)) layer = new();
 

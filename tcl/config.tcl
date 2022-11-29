@@ -1,10 +1,10 @@
 
 if {$XILINX} {
   
-  set UNITS   4
-  set GROUPS  2
-  set MEMBERS 12
-  set KSM_COMBS_LIST {{1 1 1} {3 1 1} {3 1 2} {5 1 1} {7 2 1} {11 4 1}}
+  set UNITS   8
+  set GROUPS  1
+  set MEMBERS 24
+  set KSM_COMBS_LIST {{1 1 1} {3 1 1} {3 1 1} {5 1 1} {7 2 1} {11 4 1}}
 
   set LATENCY_BRAM          3
   set LATENCY_MULTIPLIER    3

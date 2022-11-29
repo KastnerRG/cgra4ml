@@ -19,7 +19,7 @@ if True:    # To prevent reordering of imports
     import os
     os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
-    from aba_framework import MyLayer, MyInput, MyConv, MyMaxPool, MyConcat, MySpaceToDepth, MyModel, MyLeakyRelu, e, eval
+    from aba_framework import MyLayer, MyInput, MyConv, MyMaxPool, MyConcat, MySpaceToDepth, MyModel, MyLeakyRelu
     from preprocessing import parse_annotation, BatchGenerator
     from utils import decode_netout, draw_boxes
 
