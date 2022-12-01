@@ -51,7 +51,7 @@ module axis_pixels_dw #(ZERO=0)  (
   input  logic s_valid;
   input  logic s_last ;
   input  logic [S_PIXELS_WIDTH_LF/WORD_WIDTH-1:0][WORD_WIDTH-1:0] s_data;
-  input  logic [S_PIXELS_WIDTH_LF/8                         -1:0] s_keep;
+  input  logic [S_PIXELS_WIDTH_LF/WORD_WIDTH                -1:0] s_keep;
 
   input  logic m_ready;
   output logic m_valid;
@@ -124,6 +124,8 @@ module axis_pixels_dw #(ZERO=0)  (
           .M_DATA_WIDTH  (m_words*WORD_WIDTH),
           .S_KEEP_ENABLE (1),
           .M_KEEP_ENABLE (1),
+          .S_KEEP_WIDTH  (S_PIXELS_WIDTH_LF/WORD_WIDTH),
+          .M_KEEP_WIDTH  (m_words),
           .ID_ENABLE     (0),
           .DEST_ENABLE   (0),
           .USER_ENABLE   (0)

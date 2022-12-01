@@ -1,5 +1,6 @@
-class AXIS_Sink #(WORD_WIDTH=8, WORDS_PER_BEAT=1, READY_PROB=100, CLK_PERIOD=10);
+class AXIS_Sink #(WORD_WIDTH=8, BUS_WIDTH=8, READY_PROB=100);
 
+  localparam WORDS_PER_BEAT = BUS_WIDTH/WORD_WIDTH;
   string file_path;
   int status, file, i_words = 0;
   rand bit random;
@@ -43,8 +44,9 @@ endclass
 
 
 
-class AXIS_Source #(WORD_WIDTH=8, WORDS_PER_BEAT=1, VALID_PROB=100);
+class AXIS_Source #(WORD_WIDTH=8, BUS_WIDTH=8, VALID_PROB=100);
 
+  localparam WORDS_PER_BEAT = BUS_WIDTH/WORD_WIDTH;
   string file_path;
   int status, i_words=0, file=0;
 

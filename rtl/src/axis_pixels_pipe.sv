@@ -30,7 +30,7 @@ module axis_pixels_pipe #(ZERO=0)  (
   input  logic s_valid;
   input  logic s_last ;
   input  logic [S_PIXELS_WIDTH_LF/WORD_WIDTH-1:0][WORD_WIDTH-1:0] s_data;
-  input  logic [S_PIXELS_WIDTH_LF/8-1:0] s_keep;
+  input  logic [S_PIXELS_WIDTH_LF/WORD_WIDTH-1:0] s_keep;
 
   logic i_ready;
   logic i_valid;

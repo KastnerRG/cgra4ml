@@ -56,13 +56,13 @@ module axis_accelerator_asic #(ZERO=0) (
   input  wire s_axis_pixels_tvalid;
   input  wire s_axis_pixels_tlast ;
   input  wire [S_PIXELS_WIDTH_LF  -1:0] s_axis_pixels_tdata;
-  input  wire [S_PIXELS_WIDTH_LF/8-1:0] s_axis_pixels_tkeep;
+  input  wire [S_PIXELS_WIDTH_LF/WORD_WIDTH-1:0] s_axis_pixels_tkeep;
 
   output wire s_axis_weights_tready;
   input  wire s_axis_weights_tvalid;
   input  wire s_axis_weights_tlast ;
   input  wire [S_WEIGHTS_WIDTH_LF    -1:0] s_axis_weights_tdata;
-  input  wire [S_WEIGHTS_WIDTH_LF /8 -1:0] s_axis_weights_tkeep;
+  input  wire [S_WEIGHTS_WIDTH_LF /WORD_WIDTH -1:0] s_axis_weights_tkeep;
 
   wire input_m_axis_tready;
   wire input_m_axis_tvalid;
@@ -87,7 +87,7 @@ module axis_accelerator_asic #(ZERO=0) (
   output wire m_axis_tvalid;
   output wire m_axis_tlast ;
   output wire [M_OUTPUT_WIDTH_LF       -1:0] m_axis_tdata;
-  output wire [M_OUTPUT_WIDTH_LF/8     -1:0] m_axis_tkeep;
+  output wire [M_OUTPUT_WIDTH_LF/WORD_WIDTH_ACC     -1:0] m_axis_tkeep;
 
   axis_input_pipe #(.ZERO(ZERO)) input_pipe (
     .aclk                      (aclk    ),
@@ -144,6 +144,8 @@ module axis_accelerator_asic #(ZERO=0) (
     .M_DATA_WIDTH  (M_OUTPUT_WIDTH_LF),
     .S_KEEP_ENABLE (1),
     .M_KEEP_ENABLE (1),
+    .S_KEEP_WIDTH  (M_DATA_WIDTH_HF_CONV_DW/WORD_WIDTH_ACC),
+    .M_KEEP_WIDTH  (M_OUTPUT_WIDTH_LF/WORD_WIDTH_ACC),
     .ID_ENABLE     (0),
     .DEST_ENABLE   (0),
     .USER_ENABLE   (0)
@@ -153,7 +155,7 @@ module axis_accelerator_asic #(ZERO=0) (
     .s_axis_tready (dw_s_axis_tready),
     .s_axis_tvalid (dw_s_axis_tvalid),
     .s_axis_tdata  (dw_s_axis_tdata ),
-    .s_axis_tkeep  ({(M_DATA_WIDTH_HF_CONV_DW/8){1'b1}}),
+    .s_axis_tkeep  ({(M_DATA_WIDTH_HF_CONV_DW/WORD_WIDTH_ACC){1'b1}}),
     .s_axis_tlast  (dw_s_axis_tlast ),
     .m_axis_tready (m_axis_tready),
     .m_axis_tvalid (m_axis_tvalid),

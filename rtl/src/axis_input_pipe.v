@@ -88,13 +88,13 @@ module axis_input_pipe
   input  wire s_axis_pixels_tvalid;
   input  wire s_axis_pixels_tlast ;
   input  wire [S_PIXELS_WIDTH_LF   -1:0] s_axis_pixels_tdata;
-  input  wire [S_PIXELS_WIDTH_LF/8 -1:0] s_axis_pixels_tkeep;
+  input  wire [S_PIXELS_WIDTH_LF/WORD_WIDTH -1:0] s_axis_pixels_tkeep;
 
   output wire s_axis_weights_tready;
   input  wire s_axis_weights_tvalid;
   input  wire s_axis_weights_tlast ;
   input  wire [S_WEIGHTS_WIDTH_LF -1:0] s_axis_weights_tdata;
-  input  wire [S_WEIGHTS_WIDTH_LF /8 -1:0] s_axis_weights_tkeep;
+  input  wire [S_WEIGHTS_WIDTH_LF /WORD_WIDTH -1:0] s_axis_weights_tkeep;
 
   wire image_is_config;
   wire im_mux_m_ready;
