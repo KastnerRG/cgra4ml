@@ -249,37 +249,66 @@ module processing_element #(
   input  logic clk, clken, resetn;
   input  logic clken_mul, mux_sel, bypass, clken_acc;
 
-  input  logic [WORD_WIDTH_IN  -1:0] s_data_pixels, s_data_weights;
-  input  logic [WORD_WIDTH_OUT -1:0] mux_s2_data;
-  
-  output logic [WORD_WIDTH_IN*2-1:0] mul_m_data;
-  output logic [WORD_WIDTH_OUT -1:0] acc_s_data;
-  output logic [WORD_WIDTH_OUT -1:0] m_data;
+  input  logic signed [WORD_WIDTH_IN  -1:0] s_data_pixels, s_data_weights;
+  input  logic signed [WORD_WIDTH_OUT -1:0] mux_s2_data;
+  output logic signed [WORD_WIDTH_IN*2-1:0] mul_m_data;
+  output logic signed [WORD_WIDTH_OUT -1:0] acc_s_data;
+  output logic signed [WORD_WIDTH_OUT -1:0] m_data;
 
-`ifdef MAC_XILINX
-  multiplier MUL (
-`else
-  multiplier_raw MUL (
-`endif
-    .CLK    (clk),
-    .CE     (clken_mul),
-    .A      (s_data_pixels ),
-    .B      (s_data_weights),
-    .P      (mul_m_data    )
+  // Multiplier
+
+  logic signed [WORD_WIDTH_IN  -1:0] s_data_pixels_q, s_data_weights_q;
+
+  // wire both_non_zero = (|s_data_pixels) && (|s_data_weights);
+
+  n_delay #(
+    .N          (`LATENCY_MULTIPLIER),
+    .WORD_WIDTH (WORD_WIDTH_IN*2),
+    .LOCAL      (0)
+  ) MUL_IN (
+    .clk      (clk ),
+    .resetn   (1'b1),
+    .clken    (clken_mul ),
+    .data_in  ({s_data_pixels  , s_data_weights  }),
+    .data_out ({s_data_pixels_q, s_data_weights_q})
   );
 
+  assign mul_m_data = s_data_pixels_q * s_data_weights_q;
+
+  // Mux
+
   assign acc_s_data = mux_sel ? mux_s2_data  : WORD_WIDTH_OUT'(signed'(mul_m_data));
-  
-`ifdef MAC_XILINX
-  accumulator ACC (
-`else
-  accumulator_raw ACC (
-`endif
-    .CLK    (clk),  
-    .bypass (bypass     ),  
-    .CE     (clken_acc  ),  
-    .B      (acc_s_data ),  
-    .Q      (m_data     )  
+
+  // Accumulator
+
+  logic bypass_d;
+  logic signed [WORD_WIDTH_OUT-1:0] acc_s_data_d;  
+
+  n_delay #(
+    .N          (`LATENCY_ACCUMULATOR    -1),
+    .WORD_WIDTH (WORD_WIDTH_OUT +1),
+    .LOCAL      (0)
+  ) ACC_IN (
+    .clk      (clk ),
+    .resetn   (1'b1),
+    .clken    (clken_acc  ),
+    .data_in  ({acc_s_data  , bypass  }),
+    .data_out ({acc_s_data_d, bypass_d})
+  );
+
+  logic signed [WORD_WIDTH_OUT-1:0] acc_in;
+  assign acc_in = acc_s_data_d + (bypass_d ? 0 : m_data);
+
+  register #(
+    .WORD_WIDTH  (WORD_WIDTH_OUT),
+    .RESET_VALUE (0),
+    .LOCAL       (0)
+  ) ACC (
+    .clock       (clk),
+    .clock_enable(clken_acc),
+    .resetn      (1'b1),
+    .data_in     (acc_in),
+    .data_out    (m_data)
   );
 
 endmodule
