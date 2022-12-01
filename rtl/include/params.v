@@ -1,5 +1,5 @@
 
-`define SRAM_TYPE   "XILINX"  
+`define SRAM_TYPE   "RAW"  
 `define MAC_TYPE    "RAW"  
 
 `define UNITS    8  

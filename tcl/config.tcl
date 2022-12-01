@@ -6,7 +6,7 @@ if {$XILINX} {
   set MEMBERS 24
   set KSM_COMBS_LIST {{1 1 1} {3 1 1} {3 1 1} {5 1 1} {7 2 1} {11 4 1}}
 
-  set LATENCY_BRAM          3
+  set LATENCY_BRAM          2
   set LATENCY_MULTIPLIER    3
   set LATENCY_ACCUMULATOR   1
 
@@ -17,7 +17,7 @@ if {$XILINX} {
   set S_PIXELS_WIDTH_LF  64
   set M_OUTPUT_WIDTH_LF  64
 
-  set SRAM_TYPE "XILINX"
+  set SRAM_TYPE "RAW"
   set MAC_TYPE "RAW"
   set REG_TYPE "FPGA"
 
