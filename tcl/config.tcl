@@ -8,7 +8,7 @@ if {$XILINX} {
 
   set LATENCY_BRAM          2
   set LATENCY_MULTIPLIER    1
-  set LATENCY_ACCUMULATOR   1
+  set LATENCY_ACCUMULATOR   2
 
   set FREQ_HIGH        200
   set WORD_WIDTH       8
