@@ -271,7 +271,7 @@ module processing_element #(
   ) MUL_IN (
     .clk      (clk ),
     .resetn   (1'b1),
-    .clken    (clken_mul),
+    .clken    (clken_mul_valid),
     .data_in  ({s_data_pixels  , s_data_weights  }),
     .data_out ({s_data_pixels_q, s_data_weights_q})
   );
@@ -309,7 +309,7 @@ module processing_element #(
   ) ACC_IN (
     .clk      (clk ),
     .resetn   (1'b1),
-    .clken    (clken_acc),
+    .clken    (clken_acc_s_valid),
     .data_in  ({acc_s_data  , bypass  }),
     .data_out ({acc_s_data_d, bypass_d})
   );
@@ -326,17 +326,16 @@ module processing_element #(
   );
 
   logic signed [WORD_WIDTH_OUT-1:0] acc_in;
-  assign acc_in = acc_s_data_d + (bypass_d ? 0 : m_data);
-  assign acc_in_valid = bypass_d ? 1 : acc_s_valid_d;
+  assign acc_in = (acc_s_valid_d ? acc_s_data_d : 0) + (bypass_d ? 0 : m_data);
 
-  wire clken_acc_valid = clken_acc && acc_in_valid;
+  wire clken_acc_valid = clken_acc && (acc_s_valid_d || bypass_d);
   register #(
     .WORD_WIDTH  (WORD_WIDTH_OUT),
     .RESET_VALUE (0),
     .LOCAL       (0)
   ) ACC (
     .clock       (clk),
-    .clock_enable(clken_acc),
+    .clock_enable(clken_acc_valid),
     .resetn      (1'b1),
     .data_in     (acc_in),
     .data_out    (m_data)
