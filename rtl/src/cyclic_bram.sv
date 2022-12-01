@@ -1,16 +1,3 @@
-/*//////////////////////////////////////////////////////////////////////////////////
-Group : ABruTECH
-Engineer: Abarajithan G.
-
-Create Date: 12/05/2021
-Design Name: CYCLIC_BRAM
-Tool Versions: Vivado 2018.2
-
-Revision:
-Revision 0.01 - File Created
-Additional Comments: 
-
-//////////////////////////////////////////////////////////////////////////////////*/
 `timescale 1ns/1ps
 module cyclic_bram #(
   R_DEPTH      = 8,
@@ -20,7 +7,7 @@ module cyclic_bram #(
   ABSORB       = 0,
   USE_R_LAST   = 0,
   USE_W_LAST   = 0,
-  TYPE         = "XILINX_WEIGHTS" //, "EMPTY"
+  TYPE         = "RAW" //, "EMPTY"
 )(
   clk  ,
   clken,
@@ -97,7 +84,8 @@ module cyclic_bram #(
       .R_DEPTH      (R_DEPTH     ),
       .R_DATA_WIDTH (R_DATA_WIDTH),
       .W_DATA_WIDTH (W_DATA_WIDTH),
-      .TYPE         (TYPE        )
+      .TYPE         (TYPE        ),
+      .LATENCY      (LATENCY     )
     ) BRAM (
       .clka   (clk),    
       .ena    (clken),     
@@ -109,13 +97,13 @@ module cyclic_bram #(
       .addrb  (r_addr),  
       .doutb  (bram_m_data)  
     );
-  endgenerate
+
 
   /*
     FIFO and Delay to make an always valid cyclic BRAM
   */
 
-  if (ABSORB) begin
+  if (ABSORB) begin: FIFO
     
     logic fifo_r_en, r_en_delayed;
 
@@ -150,5 +138,7 @@ module cyclic_bram #(
     );
   end
   else assign m_data = bram_m_data;
+  
+  endgenerate
 
 endmodule
