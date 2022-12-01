@@ -11,6 +11,8 @@ module axis_accelerator_tb #(
   DIR_PATH   = "D:/cnn-fpga/py/vectors/",
   MODEL      = "vgg16_quant",
   IDX        = "5"
+  // MODEL      = "test",
+  // IDX        = "0"
 );
 
   // CLOCK GENERATION
@@ -82,9 +84,9 @@ module axis_accelerator_tb #(
 
   // SOURCEs & SINKS
 
-  AXIS_Source #(WORD_WIDTH    , S_PIXELS_WIDTH_LF /WORD_WIDTH    , VALID_PROB) source_x = new({DIR_PATH, MODEL, "_conv_", IDX, "_x.txt"});
-  AXIS_Source #(WORD_WIDTH    , S_WEIGHTS_WIDTH_LF/WORD_WIDTH    , VALID_PROB) source_w = new({DIR_PATH, MODEL, "_conv_", IDX, "_w.txt"});
-  AXIS_Sink   #(WORD_WIDTH_OUT, M_OUTPUT_WIDTH_LF /WORD_WIDTH_OUT, READY_PROB) sink_y   = new({DIR_PATH, MODEL, "_conv_", IDX, "_y_sim.txt"});
+  AXIS_Source #(WORD_WIDTH    , S_PIXELS_WIDTH_LF , VALID_PROB) source_x = new({DIR_PATH, MODEL, "_conv_", IDX, "_x.txt"});
+  AXIS_Source #(WORD_WIDTH    , S_WEIGHTS_WIDTH_LF, VALID_PROB) source_w = new({DIR_PATH, MODEL, "_conv_", IDX, "_w.txt"});
+  AXIS_Sink   #(WORD_WIDTH_OUT, M_OUTPUT_WIDTH_LF , READY_PROB) sink_y   = new({DIR_PATH, MODEL, "_conv_", IDX, "_y_sim.txt"});
   
   initial source_x.axis_push(aclk, aresetn, s_axis_pixels_tready , s_axis_pixels_tvalid , s_axis_pixels_tlast , s_axis_pixels_tdata , s_axis_pixels_tkeep );
   initial source_w.axis_push(aclk, aresetn, s_axis_weights_tready, s_axis_weights_tvalid, s_axis_weights_tlast, s_axis_weights_tdata, s_axis_weights_tkeep);

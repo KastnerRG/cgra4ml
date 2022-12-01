@@ -18,7 +18,7 @@
 `define OUT_SHIFT_MAX      8
 `define IM_SHIFT_REGS      12
 
-`define WORD_WIDTH          8         
+`define WORD_WIDTH          8
 `define WORD_WIDTH_ACC      32    
 `define KH_MAX              3            
 `define KW_MAX              3            
