@@ -7,22 +7,50 @@ The design is hierarchical & highly parametrized. Any kind of multiplier and add
 
 Step-by-step process of how I developed this is [documented here](https://aba-blog.xyz/dnn-to-chip-1/index.html).
 
-### Results for 8-bit
+## Todo
 
-The dataflow and its implementation results in 5.8× more Gops/mm2, 1.6× more Gops/W, higher MAC utilization & fewer DRAM accesses than the state-of-the-art (TCAS-1, TCOMP), processing AlexNet, VGG16 & ResNet50 at 336.6, 17.5 & 64.2 fps, when synthesized as a 7mm^2 chip usign TSMC 65nm GP.
+- [ ] CocoTB + Github Actions + iVerilog for automatic verification
+- [ ] Refactor, simplify RTL design
+- [ ] Run Length Decoder for Pixels Pipe
+- [ ] Huffman Decoder for weights DMA
 
-![Results](docs/results.png)
 
-Performance Efficiency (PE utilization across space & time) and number of DRAM accesses:
+## Current Features
 
-![Results](docs/perf.png)
-![Results](docs/memory.png)
+![System](docs/sys.PNG)
 
-## Reconfigurability
+#### AXI Stream Design
 
-* Pre-synthesis: The design is statically configured through a set of options in the given tcl scripts such as number of rows & columns in PE array, bit widths of weights, inputs & outputs, maximum in & out channels...etc, which are used to calculate the right parameters for the RTL design. Optimal options for a given set of Deep Neural Network architectures can be obtained from the equations given in analysis section.
+* Every submodule is designed as an AXI Stream unit. This helps with modularity & ease of pipelining, resulting in a high Fmax. The system and its subsystems are also able to handle the backpressure and unpredictable availability of data from the DRAM this way.
 
-* Runtime: A header of few configuration bits is sent along the datapath, which is received at various stages of the pipelined design to reconfigure those stages locally, on-the-fly within one clock. This eliminates the need to flush the entire pipeline to process a different layer or a new DNN with different size. PEs dynamically regroup to processes different kernel sizes optimally.
+#### Distributed Controller
+
+* Systems with a central controller, controlled by an ISA pose multiple issues. Such systems need to wait for the pipeline to clear out, stop the execution and reconfigure everything, wasting clock cycles. Also, such central controllers pose routing issues since they need to be connected to all parts of the circuit. 
+
+* Here, the control is decentralized. A header of few configuration bits is sent along the datapath itself, which is received at various stages of the pipelined design to reconfigure those stages locally, on-the-fly within one clock. This eliminates the need to flush the entire pipeline to process a different layer or a new DNN with different size. PEs dynamically regroup to processes different kernel sizes optimally.
+
+#### PE Design
+
+* A processing element here consists of only a multiplier, adder and pipeline registers. Partial sums are kept only inside accumulators through the entire processing, to produce an output pixel. No SRAMs are needed to store partial sums.
+* Inputs to multiplier and adder come from clock-gated registers, which prevent switching when (1) master is invalid, (2) slave is not ready & data needs to be pushed, (3) either weight or input is zero, resulting in zero. (3) stops switching in 86% of the computations of a 4-bit VGG16 network trained for 80% weight sparsity, achieving 90% accuracy in CIFAR10.
+
+![PE](docs/pe.PNG)
+
+
+#### Dataflow
+
+* A unique, universal dataflow accommodates all convolution, fully-connected layers and matrix products into a single datapath. 
+* The dataflow eliminates need for partial sum SRAMs, saving area. It also eliminates the need for multiple datapaths, saving resources.
+* Primarily output stationary, since data movement of outputs is minimized. Weight stationary wrt system, as weights are fetched once and reused thousands of times. Inputs are reused in both dimensions of spatial convolution.
+
+![Tiling](docs/tiling.PNG)
+![Dataflow](docs/dataflow.PNG)
+
+#### Verification
+
+* Constrained random verification using custom SystemVerilog classes to drive AXI-Stream data in and out of the system.
+* Python code to perform tiling, generate test vectors and compare the outputs.
+
 
 ## Modules:
 
@@ -66,3 +94,14 @@ The engine is implemented as a pipelined AXI-stream module that contains the fol
 * Performs 2x2 and 3x3 maxpooling.
 
 <!-- ## Analysis -->
+
+### Results for 8-bit
+
+The dataflow and its implementation results in 5.8× more Gops/mm2, 1.6× more Gops/W, higher MAC utilization & fewer DRAM accesses than the state-of-the-art (TCAS-1, TCOMP), processing AlexNet, VGG16 & ResNet50 at 336.6, 17.5 & 64.2 fps, when synthesized as a 7mm^2 chip usign TSMC 65nm GP.
+
+![Results](docs/results.png)
+
+Performance Efficiency (PE utilization across space & time) and number of DRAM accesses:
+
+![Results](docs/perf.png)
+![Results](docs/memory.png)
