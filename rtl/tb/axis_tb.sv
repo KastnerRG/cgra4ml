@@ -37,13 +37,13 @@ module AXIS_Sink #(
 
         for (int i=0; i < WORDS_PER_BEAT; i=i+1)
           if (m_keep[i]) begin
-            $fdisplay(file, "%d", m_data[i]);
+            $fdisplay(file, "%d", $signed(m_data[i]));
             i_words  += 1;
           end
         $fclose(file);
       end
 
-      #1 // delay before writing
+      #10ps // delay before writing
       m_ready = $urandom_range(0,99) < PROB_READY;
 
     end
@@ -60,8 +60,14 @@ module AXIS_Source #(
     output logic [WORDS_PER_BEAT-1:0][WORD_WIDTH-1:0] s_data,
     output logic [WORDS_PER_BEAT-1:0] s_keep
 ); 
+
+  logic s_last_val;
+  logic [WORDS_PER_BEAT-1:0][WORD_WIDTH-1:0] s_data_val;
+  logic [WORDS_PER_BEAT-1:0] s_keep_val;
+
   int status, i_words=0, file, val;
-  logic prev_handshake=0, prev_slast=0;
+  logic prev_handshake=1; // data is released first
+  logic prev_slast=0;
 
   task axis_push();
     {s_valid, s_data, s_last, s_keep} = '0;
@@ -70,7 +76,7 @@ module AXIS_Source #(
     if (file == 0) 
       $fatal(1, "File '%s' does not exist\n", FILE_PATH);
 
-    wait(aresetn & s_ready); // wait for slave to begin
+    wait(aresetn); // wait for slave to begin
     
     // iverilog doesnt support break. so the loop is rolled to have break at top
     while (~prev_slast) begin    // loop goes from (aresetn & s_ready) to s_last
@@ -78,26 +84,31 @@ module AXIS_Source #(
         for (int i=0; i < WORDS_PER_BEAT; i++) begin
           if($feof(file)) begin
             $display(1, "EOF found at i_words=%d, path=%s \n", i_words, FILE_PATH); // If files ends in the middle of beat, fill rest with zeros
-            s_data[i] = 0;
-            s_keep[i] = 0;
+            s_data_val[i] = 0;
+            s_keep_val[i] = 0;
           end
           else begin
             $fscanf(file,"%d\n", val);
-            s_data[i] = val;
-            s_keep[i] = 1;
+            s_data_val[i] = val;
+            s_keep_val[i] = 1;
             i_words  += 1;
           end
-          s_last = $feof(file); // need to check one extra time to catch eof
+          s_last_val = $feof(file); // need to check one extra time to catch eof
         end
       end
       s_valid = $urandom_range(0,99) < PROB_VALID;      // randomize s_valid
+      
+      // scrable data signals on every cycle if !valid to catch slave reading it at wrong time
+      s_data = s_valid ? s_data_val : '1;
+      s_keep = s_valid ? s_keep_val : '1;
+      s_last = s_valid ? s_last_val :  1;
 
       // -------------- LOOP BEGINS HERE -----------
       @(posedge aclk);
       prev_handshake = s_valid && s_ready; // read at posedge
       prev_slast     = s_valid && s_ready && s_last;
       
-      #1; // Delay before writing s_valid, s_data, s_keep
+      #10ps; // Delay before writing s_valid, s_data, s_keep
     end
 
     // Reset & close packet after done
@@ -111,7 +122,7 @@ endmodule
 
 module axis_tb;
 
-  localparam WORD_W = 16, BUS_W=64, PROB_VALID=20, PROB_READY=20, NUM_DATA=((BUS_W/WORD_W)*101)/2;
+  localparam WORD_W = 16, BUS_W=64, PROB_VALID=5, PROB_READY=20, NUM_DATA=((BUS_W/WORD_W)*101)/2;
 
   logic aclk=0, aresetn, i_ready, i_valid, i_last;
   logic [BUS_W/WORD_W-1:0][WORD_W-1:0] i_data;
@@ -142,7 +153,7 @@ module axis_tb;
     repeat(2) @(posedge aclk)
     aresetn = 1;
 
-    @(negedge i_last) 
+    @(negedge (i_valid && i_ready && i_last)) 
     @(posedge aclk)
 
     file_out = $fopen(file_path_out, "r");
