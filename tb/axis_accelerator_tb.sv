@@ -8,7 +8,8 @@ parameter
   VALID_PROB = 20,
   READY_PROB = 20,
 
-  DIR_PATH   = "D:/dnn-engine/tb/vectors/",//"vectors/",
+  DIR_PATH   = "D:/dnn-engine/tb/vectors/",
+  // DIR_PATH   = "vectors/",
   MODEL      = "vgg16_quant",
   IDX        = "5"
   // MODEL      = "test",

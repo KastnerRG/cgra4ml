@@ -137,9 +137,6 @@ module axis_pixels_dw (
           .s_axis_tvalid (dw_s_valid ),
           .s_axis_tlast  (s_last     ),
           .s_axis_tready (mux_dw_s_ready [m_words]),
-          .s_axis_tid    ('0),
-          .s_axis_tdest  ('0),
-          .s_axis_tuser  ('0),
           .m_axis_tdata  (dw_m_data),
           .m_axis_tready (dw_m_ready),
           .m_axis_tvalid (mux_dw_m_valid [m_words]),
@@ -206,7 +203,8 @@ module axis_pixels_dw (
 
   // Calculate shift amount
 
-  logic [KH_MAX/2:0][SH_MAX-1:0][BITS_KH-1:0] lut_ks_shift_general, lut_ks_shift_last;
+  logic [BITS_KH-1:0] lut_ks_shift_general [KH_MAX/2:0][SH_MAX-1:0];
+  logic [BITS_KH-1:0] lut_ks_shift_last    [KH_MAX/2:0][SH_MAX-1:0];
 
   generate
     for (genvar i_kh2 = 0; i_kh2 <= KH_MAX/2; i_kh2++)

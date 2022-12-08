@@ -162,14 +162,12 @@ module axis_dw_shift (
 
   // Data: shift Registers
 
-  logic [KW_MAX/2:0][SW_MAX-1:0][MEMBERS/3-1:0][SHIFT_WORD_WIDTH-1:0] reg_b_data_mux;
-  logic [MEMBERS/3-1:0][SHIFT_WORD_WIDTH-1:0]       reg_b_data_muxed, reg_b_data_in, reg_b_data;
-  logic [MEMBERS/3-1:0][UNITS-1:0][WORD_WIDTH -1:0] b_data;
+  logic [MEMBERS/3-1:0][SHIFT_WORD_WIDTH-1:0] reg_b_data_mux   [KW_MAX/2:0][SW_MAX-1:0];
+  logic [MEMBERS/3-1:0][SHIFT_WORD_WIDTH-1:0] reg_b_data_muxed , reg_b_data_in, reg_b_data, b_data;
   logic [MEMBERS/3-1:0][CLR_WIDTH-1:0] b_clr;
 
   generate
     always_comb begin
-      reg_b_data_mux = 0;
       reg_b_data_mux[0][0][0] = reg_a_data[MEMBERS-1];
       for (int m=0; m<MEMBERS; m++)
         for (int kw2=1; kw2 <=KW_MAX/2; kw2++)
@@ -180,9 +178,9 @@ module axis_dw_shift (
             s  = sw_1+1;
             j  = k + sw_1;
 
-            if(`KS_COMBS_EXPR)
-              if (m%j == j-1) 
+            if((`KS_COMBS_EXPR) && (m%j == j-1))
                   reg_b_data_mux[kw2][sw_1][m/j] = reg_a_data[m];
+            else  reg_b_data_mux[kw2][sw_1][m/j] = 0;
           end
     end
     assign reg_b_data_muxed = reg_b_data_mux[a_kw2][a_sw_1];

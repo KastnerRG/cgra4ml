@@ -257,8 +257,8 @@ module pad_filter (
     logic lut_not_start_cols              [KW2_MAX : 0];
     logic lut_allow     [MEMBERS - 1 : 0] [KW2_MAX : 0][SW_MAX-1:0];
 
-    logic [KW2_MAX:0][SW_MAX-1:0][BITS_MEMBERS  -1:0] lut_shift_a;
-    logic [KW2_MAX:0][SW_MAX-1:0][BITS_OUT_SHIFT-1:0] lut_shift_b;
+    wire [BITS_MEMBERS  -1:0] lut_shift_a [KW2_MAX:0][SW_MAX-1:0];
+    wire [BITS_OUT_SHIFT-1:0] lut_shift_b [KW2_MAX:0][SW_MAX-1:0];
 
     generate
         assign lut_not_start_cols[0] = 1;
