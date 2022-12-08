@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-`include "../include/params.v"
+`include "../params/params.v"
 `include "axis_tb.sv"
 
 
@@ -8,7 +8,7 @@ module axis_accelerator_tb #(
   VALID_PROB = 20,
   READY_PROB = 20,
 
-  DIR_PATH   = "D:/cnn-fpga/py/vectors/",
+  DIR_PATH   = "D:/dnn-engine/tb/vectors/",
   MODEL      = "vgg16_quant",
   IDX        = "5"
   // MODEL      = "test",

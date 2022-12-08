@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`include "../include/params.v"
+`include "../params/params.v"
 
 module axis_dw_shift #(ZERO=0) (
     aclk   ,
