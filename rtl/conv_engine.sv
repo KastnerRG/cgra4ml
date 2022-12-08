@@ -78,7 +78,7 @@ module conv_engine (
   logic [MEMBERS-1: 0] acc_m_sum_start, acc_s_valid, acc_m_keep;
   logic [TUSER_WIDTH_CONV_IN -1: 0] mul_m_user, acc_s_user, mux_s2_user, acc_m_user;
 
-  logic [KW_MAX/2:0][SW_MAX -1:0][MEMBERS -1:0] lut_sum_start;
+  logic [MEMBERS -1:0] lut_sum_start [KW_MAX/2:0][SW_MAX -1:0];
 
   logic valid_mask;
 

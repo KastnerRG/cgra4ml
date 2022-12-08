@@ -105,8 +105,6 @@ module axis_conv_engine (
     .s_axis_tready(slice_s_ready),
     .s_axis_tuser (slice_s_user ),
     .s_axis_tlast (slice_s_last ),
-    .s_axis_tid   ('0),
-    .s_axis_tdest ('0),
     .m_axis_tdata (m_axis_tdata ),
     .m_axis_tvalid(m_axis_tvalid),
     .m_axis_tready(m_axis_tready),
