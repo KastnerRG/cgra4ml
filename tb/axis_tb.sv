@@ -69,7 +69,7 @@ module AXIS_Source #(
   logic prev_handshake=1; // data is released first
   logic prev_slast=0;
 
-  task axis_push();
+  task axis_push;
     {s_valid, s_data, s_last, s_keep} = '0;
 
     file = $fopen(FILE_PATH, "r");

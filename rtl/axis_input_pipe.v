@@ -3,8 +3,7 @@
 
 module axis_input_pipe 
   #(
-    ZERO=0,
-    
+    parameter     
     UNITS                     = `UNITS                    ,
     COPIES                    = `COPIES                   ,
     GROUPS                    = `GROUPS                   ,
@@ -127,7 +126,7 @@ module axis_input_pipe
   output wire [DEBUG_CONFIG_WIDTH-1:0] debug_config;
   assign debug_config = {im_shift_2_debug_config, im_shift_1_debug_config, image_pipe_debug_config, w_rot_debug_config};
 
-  axis_pixels_pipe #(.ZERO(ZERO)) PIXELS (
+  axis_pixels_pipe PIXELS (
     .aclk   (aclk   ),
     .aresetn(aresetn),
     .s_ready(s_axis_pixels_tready),
@@ -141,7 +140,7 @@ module axis_input_pipe
     .m_data (m_axis_pixels_tdata )
   );
 
-  axis_weight_rotator #(.ZERO(ZERO)) WEIGHTS_ROTATOR (
+  axis_weight_rotator WEIGHTS_ROTATOR (
     .aclk          (aclk                 ),
     .aresetn       (aresetn              ),
     .debug_config  (w_rot_debug_config   ),

@@ -1,6 +1,7 @@
 `timescale 1ns/1ps
 
 module alex_axis_adapter_any #(
+  parameter
   S_DATA_WIDTH  = 8,
   S_KEEP_ENABLE = 1,
   S_KEEP_WIDTH  = (S_DATA_WIDTH/8),
@@ -36,10 +37,7 @@ module alex_axis_adapter_any #(
 
   function integer lcm (input integer x, input integer y);
     lcm = x > y ? x : y;
-    while(1)
-      if((lcm % x == 0) & (lcm % y == 0))
-        break;
-      else
+    while(!((lcm % x == 0) & (lcm % y == 0)))
         lcm += 1;
   endfunction
 

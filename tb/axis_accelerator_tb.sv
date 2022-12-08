@@ -1,14 +1,14 @@
 `timescale 1ns/1ps
 
 `include "../params/params.v"
-`include "axis_tb.sv"
 
 
-module axis_accelerator_tb #(
+module axis_accelerator_tb #( 
+parameter
   VALID_PROB = 20,
   READY_PROB = 20,
 
-  DIR_PATH   = "D:/dnn-engine/tb/vectors/",
+  DIR_PATH   = "D:/dnn-engine/tb/vectors/",//"vectors/",
   MODEL      = "vgg16_quant",
   IDX        = "5"
   // MODEL      = "test",

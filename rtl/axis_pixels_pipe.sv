@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 `include "../params/params.v"
 
-module axis_pixels_pipe #(ZERO=0)  (
+module axis_pixels_pipe (
     aclk     ,
     aresetn  ,
     s_ready  , 
@@ -44,7 +44,7 @@ module axis_pixels_pipe #(ZERO=0)  (
   output logic [COPIES-1:0][UNITS-1:0][WORD_WIDTH-1:0] m_data;
   output logic [TUSER_WIDTH_PIXELS-1:0] m_user;
 
-  axis_pixels_dw #(.ZERO(ZERO)) DW (
+  axis_pixels_dw DW (
     .aclk    (aclk   ),
     .aresetn (aresetn),
     .s_ready (s_ready), 
@@ -60,7 +60,7 @@ module axis_pixels_pipe #(ZERO=0)  (
     .m_user  (i_user )
   );
 
-  axis_pixels_shift #(.ZERO(ZERO)) SHIFT (
+  axis_pixels_shift SHIFT (
     .aclk    (aclk   ),
     .aresetn (aresetn),
     .s_shift (i_shift),

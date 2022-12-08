@@ -2,7 +2,7 @@
 `timescale 1ns/1ps
 `include "../params/params.v"
 
-module axis_conv_engine #(ZERO=0) (
+module axis_conv_engine (
     aclk                 ,
     aresetn              ,
     s_axis_tvalid        ,
@@ -59,7 +59,7 @@ module axis_conv_engine #(ZERO=0) (
   assign clken_engine = valid_prev | slice_s_ready;
 
 
-  conv_engine #(.ZERO(ZERO)) ENGINE (
+  conv_engine ENGINE (
     .clk           (aclk),
     .resetn        (aresetn),
     .clken         (clken_engine),
