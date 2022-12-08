@@ -33,8 +33,7 @@ Additional Comments:
 `timescale 1ns/1ps
 `include "../params/params.v"
 
-module pad_filter #(ZERO=0)
-(
+module pad_filter (
     aclk,
     aclken,
     aresetn,

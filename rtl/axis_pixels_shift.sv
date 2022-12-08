@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 `include "../params/params.v"
 
-module axis_pixels_shift #(ZERO=0) (
+module axis_pixels_shift (
     aclk   ,
     aresetn,
 

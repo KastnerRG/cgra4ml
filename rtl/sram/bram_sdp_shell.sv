@@ -1,6 +1,7 @@
 `timescale 1ns/1ps
 
 module bram_sdp_shell #(
+  parameter
   R_DEPTH      = 8,
   R_DATA_WIDTH = 8,
   W_DATA_WIDTH = 8,

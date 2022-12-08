@@ -1,5 +1,6 @@
 `timescale 1ns/1ps
 module cyclic_bram #(
+  parameter
   R_DEPTH      = 8,
   R_DATA_WIDTH = 8,
   W_DATA_WIDTH = 8,

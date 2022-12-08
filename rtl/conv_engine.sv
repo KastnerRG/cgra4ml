@@ -11,7 +11,7 @@ Additional Comments:
 `timescale 1ns/1ps
 `include "../params/params.v"
 
-module conv_engine #(ZERO=0) (
+module conv_engine (
     clk            ,
     clken          ,
     resetn         ,
@@ -206,7 +206,7 @@ module conv_engine #(ZERO=0) (
       .data_out ({acc_m_valid     , acc_m_last})
     );
 
-    pad_filter # (.ZERO(ZERO)) PAD_FILTER (
+    pad_filter PAD_FILTER (
       .aclk            (clk                ),
       .aclken          (clken              ),
       .aresetn         (resetn             ),
@@ -226,6 +226,7 @@ module conv_engine #(ZERO=0) (
 endmodule
 
 module processing_element #(
+  parameter
   WORD_WIDTH_IN  = 8,
   WORD_WIDTH_OUT = 24
 )(
@@ -293,7 +294,7 @@ module processing_element #(
 
   logic acc_s_valid, acc_s_valid_d, acc_in_valid;
 
-  assign acc_s_data = mux_sel ? mux_s2_data  : WORD_WIDTH_OUT'(signed'(mul_m_data));
+  assign acc_s_data = mux_sel ? mux_s2_data  : WORD_WIDTH_OUT'($signed(mul_m_data));
   assign acc_s_valid = mux_sel ? 1           : mul_valid;
 
   // Accumulator

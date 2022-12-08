@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 `include "../params/params.v"
 
-module axis_dw_shift #(ZERO=0) (
+module axis_dw_shift (
     aclk   ,
     aresetn,
 
@@ -175,9 +175,10 @@ module axis_dw_shift #(ZERO=0) (
         for (int kw2=1; kw2 <=KW_MAX/2; kw2++)
           for (int sw_1=0; sw_1 < SW_MAX; sw_1++) begin
 
-            automatic int k  = kw2*2+1;
-            automatic int s  = sw_1+1;
-            automatic int j  = k + sw_1;
+            static int k, s, j;
+            k  = kw2*2+1;
+            s  = sw_1+1;
+            j  = k + sw_1;
 
             if(`KS_COMBS_EXPR)
               if (m%j == j-1) 
@@ -263,7 +264,7 @@ module axis_dw_shift #(ZERO=0) (
 
 endmodule
 
-module axis_conv_dw_bank #(ZERO=0) (
+module axis_conv_dw_bank (
   aclk       ,
   aresetn    ,
   s_data     ,
@@ -308,7 +309,7 @@ module axis_conv_dw_bank #(ZERO=0) (
   generate
     for (genvar c=0 ; c<COPIES; c++) begin: C
       for (genvar g=0 ; g<GROUPS; g++) begin: G
-        axis_dw_shift #(.ZERO(ZERO)) CONV_DW (
+        axis_dw_shift CONV_DW (
           .aclk    (aclk             ),
           .aresetn (aresetn          ),
           .s_ready (s_ready_cg [c][g]),

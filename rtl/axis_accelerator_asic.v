@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 `include "../params/params.v"
 
-module axis_accelerator_asic #(ZERO=0) (
+module axis_accelerator_asic (
     aclk                  ,
     aresetn               ,
 
@@ -89,7 +89,7 @@ module axis_accelerator_asic #(ZERO=0) (
   output wire [M_OUTPUT_WIDTH_LF       -1:0] m_axis_tdata;
   output wire [M_OUTPUT_WIDTH_LF/WORD_WIDTH_ACC     -1:0] m_axis_tkeep;
 
-  axis_input_pipe #(.ZERO(ZERO)) input_pipe (
+  axis_input_pipe input_pipe (
     .aclk                      (aclk    ),
     .aresetn                   (aresetn ),
     .s_axis_pixels_tready      (s_axis_pixels_tready       ), 
@@ -109,7 +109,7 @@ module axis_accelerator_asic #(ZERO=0) (
     .m_axis_weights_tdata      (input_m_axis_weights_tdata ), // CMG_flat
     .m_axis_tuser              (input_m_axis_tuser         )
   );
-  axis_conv_engine #(.ZERO(ZERO)) CONV_ENGINE (
+  axis_conv_engine CONV_ENGINE (
     .aclk                 (aclk    ),
     .aresetn              (aresetn ),
     .s_axis_tvalid        (input_m_axis_tvalid        ),
@@ -124,7 +124,7 @@ module axis_accelerator_asic #(ZERO=0) (
     .m_axis_tlast         (conv_m_axis_tlast          ),
     .m_axis_tuser         (conv_m_axis_tuser          )
     );
-  axis_conv_dw_bank #(.ZERO(ZERO)) CONV_DW (
+  axis_conv_dw_bank CONV_DW (
     .aclk    (aclk   ),
     .aresetn (aresetn),
     .s_ready (conv_m_axis_tready    ),

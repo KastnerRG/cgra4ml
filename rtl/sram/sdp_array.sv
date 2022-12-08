@@ -1,5 +1,6 @@
 
 module sdp_array #(
+  parameter
   WIDTH = 96*8,
   DEPTH = 2048,
   SDP_WIDTH = 32

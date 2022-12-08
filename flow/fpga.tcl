@@ -26,7 +26,7 @@ foreach IP_NAME $IP_NAMES {
 # Add files
 add_files -norecurse [glob $RTL_DIR/*]
 # add_files -norecurse [glob $RTL_DIR/**/*]
-add_files -fileset sim_1 -norecurse $TB_DIR/axis_accelerator_tb.sv
+add_files -fileset sim_1 -norecurse [glob $TB_DIR/*]
 add_files -fileset sim_1 -norecurse $TB_DIR/wave/axis_accelerator_tb_behav.wcfg
 set_property top axis_accelerator_tb [get_filesets sim_1]
 

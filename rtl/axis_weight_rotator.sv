@@ -27,7 +27,7 @@ Additional Comments:
 `timescale 1ns/1ps
 `include "../params/params.v"
 
-module axis_weight_rotator #(ZERO=0) (
+module axis_weight_rotator (
     aclk         ,
     aresetn      ,
     debug_config ,
@@ -85,7 +85,7 @@ module axis_weight_rotator #(ZERO=0) (
 
   localparam BRAM_TYPE = `SRAM_TYPE == "XILINX" ? "XILINX_WEIGHTS" : `SRAM_TYPE;
 
-  localparam CONFIG_COUNT_MAX  = lrelu_beats::calc_beats_total_max(KW_MAX,MEMBERS);
+  localparam CONFIG_COUNT_MAX  = 1;// lrelu_beats
   localparam BITS_CONFIG_COUNT = $clog2(CONFIG_COUNT_MAX);
 
   input logic aclk;
@@ -108,14 +108,6 @@ module axis_weight_rotator #(ZERO=0) (
 
   logic dw_m_ready, dw_m_valid, dw_m_last, dw_s_valid, dw_s_ready;
   logic [M_WIDTH -1:0] dw_m_data_flat;
-
-  logic [WORD_WIDTH-1:0] s_data    [S_WEIGHTS_WIDTH_LF /WORD_WIDTH-1:0];
-  logic [WORD_WIDTH-1:0] m_data    [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0];
-  logic [WORD_WIDTH-1:0] dw_m_data [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0];
-
-  assign s_data    = {>>{s_axis_tdata}};
-  assign dw_m_data = {>>{dw_m_data_flat}};
-  assign m_data    = {>>{m_axis_tdata}};
   
   logic state_dw_next, state_dw, s_handshake, s_last_handshake;
 
@@ -156,12 +148,12 @@ module axis_weight_rotator #(ZERO=0) (
   
 
   // Total lut
-  localparam BEATS_TOTAL_MAX = lrelu_beats::calc_beats_total_max (KW_MAX, MEMBERS);
+  localparam BEATS_TOTAL_MAX = 1; // lrelu_beats
   localparam BITS_BEATS_TOTAL = $clog2(BEATS_TOTAL_MAX+1);
   logic [BITS_BEATS_TOTAL-1:0] lut_lrelu_beats_1 [KW_MAX      /2:0];
   generate
     for (genvar KW2=0; KW2 <= KW_MAX      /2; KW2++)
-      assign lut_lrelu_beats_1[KW2] = lrelu_beats::calc_beats_total(KW2,MEMBERS) -1;
+      assign lut_lrelu_beats_1[KW2] = 1 -1; // lrelu_beats
   endgenerate
 
 
