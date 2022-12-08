@@ -162,30 +162,26 @@ module axis_dw_shift (
 
   // Data: shift Registers
 
-  logic [MEMBERS/3-1:0][SHIFT_WORD_WIDTH-1:0] reg_b_data_mux   [KW_MAX/2:0][SW_MAX-1:0];
-  logic [MEMBERS/3-1:0][SHIFT_WORD_WIDTH-1:0] reg_b_data_muxed , reg_b_data_in, reg_b_data, b_data;
+  wire  [MEMBERS/3-1:0][SHIFT_WORD_WIDTH-1:0] reg_b_data_mux   [KW_MAX/2:0][SW_MAX-1:0];
+  logic [MEMBERS/3-1:0][SHIFT_WORD_WIDTH-1:0] reg_b_data_muxed , reg_b_data_in, reg_b_data;
   logic [MEMBERS/3-1:0][CLR_WIDTH-1:0] b_clr;
 
+  assign reg_b_data_mux[0][0][0] = reg_a_data[MEMBERS-1];
   generate
-    always_comb begin
-      reg_b_data_mux[0][0][0] = reg_a_data[MEMBERS-1];
-      for (int m=0; m<MEMBERS; m++)
-        for (int kw2=1; kw2 <=KW_MAX/2; kw2++)
-          for (int sw_1=0; sw_1 < SW_MAX; sw_1++) begin
+      for (genvar m=0; m<MEMBERS; m++)
+        for (genvar kw2=1; kw2 <=KW_MAX/2; kw2++)
+          for (genvar sw_1=0; sw_1 < SW_MAX; sw_1++) begin
 
-            static int k, s, j;
-            k  = kw2*2+1;
-            s  = sw_1+1;
-            j  = k + sw_1;
+            localparam k  = kw2*2+1;
+            localparam s  = sw_1+1;
+            localparam j  = k + sw_1;
 
             if((`KS_COMBS_EXPR) && (m%j == j-1))
-                  reg_b_data_mux[kw2][sw_1][m/j] = reg_a_data[m];
-            else  reg_b_data_mux[kw2][sw_1][m/j] = 0;
+                  assign reg_b_data_mux[kw2][sw_1][m/j] = reg_a_data[m];
           end
-    end
-    assign reg_b_data_muxed = reg_b_data_mux[a_kw2][a_sw_1];
   endgenerate
 
+  assign reg_b_data_muxed = reg_b_data_mux[a_kw2][a_sw_1];
   assign reg_b_data_in = count_b_last ? reg_b_data_muxed : reg_b_data >> SHIFT_WORD_WIDTH;
 
   register #(
@@ -199,6 +195,7 @@ module axis_dw_shift (
     .data_out       (reg_b_data)
   );
 
+  logic [MEMBERS/3-1:0][UNITS*WORD_WIDTH-1:0] b_data;
   generate
     for (genvar m=0; m<MEMBERS/3; m++)
       assign {b_data[m], b_clr[m]} = reg_b_data[m];

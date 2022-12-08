@@ -88,7 +88,7 @@ module AXIS_Source #(
             s_keep_val[i] = 0;
           end
           else begin
-            $fscanf(file,"%d\n", val);
+            status = $fscanf(file,"%d\n", val);
             s_data_val[i] = val;
             s_keep_val[i] = 1;
             i_words  += 1;

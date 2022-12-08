@@ -8,8 +8,12 @@ parameter
   VALID_PROB = 20,
   READY_PROB = 20,
 
+`ifdef ICARUS
+  DIR_PATH   = "vectors/",
+`else
   DIR_PATH   = "D:/dnn-engine/tb/vectors/",
-  // DIR_PATH   = "vectors/",
+`endif
+
   MODEL      = "vgg16_quant",
   IDX        = "5"
   // MODEL      = "test",
