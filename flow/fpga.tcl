@@ -1,4 +1,11 @@
-source ./tcl/fpga_config.tcl
+set PROJ_NAME sys
+set PROJ_FOLDER flow/fpga/$PROJ_NAME
+set RTL_DIR rtl
+set TB_DIR tb
+
+set XILINX 1
+
+source ./flow/config.tcl
 
 # Delete existing
 exec rm -rf ./$PROJ_FOLDER
@@ -9,7 +16,7 @@ set_property board_part xilinx.com:zc706:part0:1.4 [current_project]
 
 # Make IPs
 set IP_NAMES [list ]
-source ./tcl/generate_ip.tcl
+source ./flow/gen_fpga_ip.tcl
 
 # Generate IP output products
 foreach IP_NAME $IP_NAMES {
@@ -17,14 +24,13 @@ foreach IP_NAME $IP_NAMES {
 }
 
 # Add files
-add_files -norecurse [glob $RTL_DIR/include/*]
-add_files -norecurse [glob $RTL_DIR/external/*]
-add_files -norecurse [glob $RTL_DIR/src/*]
+add_files -norecurse [glob $RTL_DIR/*]
+# add_files -norecurse [glob $RTL_DIR/**/*]
 add_files -fileset sim_1 -norecurse $TB_DIR/axis_accelerator_tb.sv
-add_files -fileset sim_1 -norecurse $WAVE_DIR/axis_accelerator_tb_behav.wcfg
+add_files -fileset sim_1 -norecurse $TB_DIR/wave/axis_accelerator_tb_behav.wcfg
 set_property top axis_accelerator_tb [get_filesets sim_1]
 
-# source ./tcl/generate_bd.tcl
+# source ./tcl/zynq_bd.tcl
 
 # # Strategies
 # set_property strategy {Best - with retiming and all} [get_runs synth_1]

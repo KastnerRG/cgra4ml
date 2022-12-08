@@ -8,7 +8,7 @@ if {$XILINX} {
 
   set LATENCY_BRAM          2
   set LATENCY_MULTIPLIER    1
-  set LATENCY_ACCUMULATOR   2
+  set LATENCY_ACCUMULATOR   1
 
   set FREQ_HIGH        200
   set WORD_WIDTH       8
@@ -39,7 +39,7 @@ if {$XILINX} {
   set KSM_COMBS_LIST {{1 1 1} {3 1 1} {3 1 1} {5 1 1} {7 2 1} {11 4 1}}
 
   set LATENCY_BRAM          2
-  set LATENCY_MULTIPLIER    0
+  set LATENCY_MULTIPLIER    1
   set LATENCY_ACCUMULATOR   1
 
   set FREQ_HIGH        600
@@ -234,7 +234,7 @@ set DEBUG_CONFIG_WIDTH         [expr $DEBUG_CONFIG_WIDTH_MAXPOOL + $DEBUG_CONFIG
 # **********    STORE PARAMS    *************
 
 
-set file_param [open $RTL_DIR/include/params.v w]
+set file_param [open params/params.v w]
 
 if {$MAC_TYPE == "XILINX"} {
   puts $file_param "`define MAC_XILINX 1"

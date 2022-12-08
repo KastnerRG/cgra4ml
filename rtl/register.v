@@ -1,5 +1,5 @@
 `timescale 10ns / 1ns
-`include "../include/params.v"
+`include "../params/params.v"
 // `default_nettype none
 
 /*

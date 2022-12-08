@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`include "../include/params.v"
+`include "../params/params.v"
 
 module axis_pixels_pipe #(ZERO=0)  (
     aclk     ,

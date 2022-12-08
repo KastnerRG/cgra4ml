@@ -9,7 +9,7 @@ Revision 0.01 - File Created
 Additional Comments: 
 //////////////////////////////////////////////////////////////////////////////////*/
 `timescale 1ns/1ps
-`include "../include/params.v"
+`include "../params/params.v"
 
 module conv_engine #(ZERO=0) (
     clk            ,

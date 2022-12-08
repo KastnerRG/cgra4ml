@@ -1,4 +1,4 @@
-`include "params.v"
+`include "../params/params.v"
 package lrelu_beats;
 
   function integer calc_beats_b (
