@@ -150,11 +150,13 @@ module axis_tb;
     $dumpfile ("axis_tb.vcd"); $dumpvars;
 
     aresetn = 0;
-    repeat(2) @(posedge aclk)
+    repeat(2) @(posedge aclk);
     aresetn = 1;
 
-    @(negedge (i_valid && i_ready && i_last)) 
-    @(posedge aclk)
+    while(!(i_valid && i_ready && i_last))
+      @(posedge aclk);
+
+    @(posedge aclk);
 
     file_out = $fopen(file_path_out, "r");
     for (int i=0; i<NUM_DATA; i++) begin
