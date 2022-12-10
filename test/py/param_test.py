@@ -4,6 +4,9 @@ import os
 import torch
 import subprocess
 import glob
+import sys
+import os.path
+
 
 '''
 SOFT PARAMS
@@ -38,20 +41,18 @@ XW_MAX  = 384
 XH_MAX  = 256
 BRAM_WEIGHTS_DEPTH = 1024
 
-'''
-META
-'''
-SOURCES = glob.glob("sv/*") + glob.glob("../rtl/**/*", recursive=True)
-TB_MODULE = "axis_accelerator_tb"
 DATA_DIR   = 'vectors'
 os.makedirs(DATA_DIR, exist_ok=True)
 
 i_layers = 0
 MODEL_NAME = 'test'
-
+SIM = sys.argv[1] if len(sys.argv) == 2 else "xsim" # icarus
+SOURCES = glob.glob('sv/*') + glob.glob("../rtl/**/*.v", recursive=True) + glob.glob("../rtl/**/*.sv", recursive=True)
 print(SOURCES)
 
-
+TB_MODULE = "axis_accelerator_tb"
+WAVEFORM = "axis_accelerator_tb_behav.wcfg"
+XIL_PATH = os.path.join("F:", "Xilinx", "Vivado", "2022.1", "bin")
 
 
 '''
@@ -289,24 +290,49 @@ print(f'output final (IT,XN,L,XW,CO_PRL,ROWS)={y.shape} \nSaved as "{path}"')
 '''
 RUN SIMULATION
 '''
-print("COMPILING...")
-cmd = [
-  "iverilog", 
-  "-g2012", 
-  "-DICARUS", 
-  "-I", "sv", 
-  "-s", TB_MODULE
-  ] + SOURCES
 
-print(" ".join(cmd))
-if subprocess.run(cmd).returncode:
-  exit()
+os.makedirs('xsim', exist_ok=-True)
 
-print("SIMULATING...")
-subprocess.run(["vvp", "a.out" ])
+if SIM == 'xsim':
+
+  SOURCES_STR = " ".join([os.path.normpath('../' + s) for s in SOURCES]) # since called from subdir
+
+  sim_tcl = '''
+log_wave -recursive *
+run all
+exit
+'''
+  xsim_bat = fr'''
+call {XIL_PATH}\xvlog -sv {SOURCES_STR}
+call {XIL_PATH}\xelab {TB_MODULE} --snapshot {TB_MODULE} -log elaborate.log --debug typical
+call {XIL_PATH}\xsim {TB_MODULE} --tclbatch xsim_cfg.tcl
+'''
+  with open('xsim/xsim_cfg.tcl', 'w') as f:
+    f.write(sim_tcl)
+  with open('xsim/xsim.bat', 'w') as f:
+    f.write(xsim_bat)
+  subprocess.run("xsim/xsim.bat", cwd="xsim")
 
 
+if SIM == 'icarus':
+  
+  print("COMPILING...")
 
+  cmd = [
+    "iverilog", 
+    "-g2012", 
+    "-DICARUS", 
+    "-o", "xsim/a.out", 
+    "-I", "sv", 
+    "-s", TB_MODULE
+    ] + SOURCES
+
+  print(" ".join(cmd))
+  if subprocess.run(cmd).returncode:
+    exit()
+
+  print("SIMULATING...")
+  subprocess.run(["vvp", "xsim/a.out"])
 
 '''
 CHECK ERROR
@@ -315,3 +341,8 @@ y_sim = np.loadtxt(f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_y_sim.txt",np.int32
 error = np.sum(np.abs(y_sim.reshape(y.shape) - y))
 
 print("Error: ", error)
+
+if error != 0 and SIM=='xsim':
+  print(fr'''Non zero error. Open waveform with:
+
+call {XIL_PATH}\xsim --gui {TB_MODULE}.wdb -view ..\wave\{WAVEFORM}''')
