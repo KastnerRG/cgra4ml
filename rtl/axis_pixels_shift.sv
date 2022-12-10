@@ -127,30 +127,7 @@ module axis_pixels_shift (
       assign slice_s_data [c] = (reg_user[I_IS_MAX] & ~reg_ones) ? reg_data [(c+1)*UNITS-1 : c*UNITS] : reg_data [UNITS-1:0];
   endgenerate
 
-  // axis_register #
-  // (
-  //   .DATA_WIDTH   (COPIES*UNITS*WORD_WIDTH),
-  //   .KEEP_ENABLE  (0),
-  //   .LAST_ENABLE  (0),
-  //   .ID_ENABLE    (0),
-  //   .DEST_ENABLE  (0),
-  //   .USER_ENABLE  (1),
-  //   .USER_WIDTH   (TUSER_WIDTH_PIXELS),
-  //   .REG_TYPE     (2)
-  // ) SLICE (
-  //   .clk          (aclk        ),
-  //   .rst          (~aresetn    ),
-  //   .s_axis_tdata (slice_s_data),
-  //   .s_axis_tvalid(reg_valid   ),
-  //   .s_axis_tready(clken       ),
-  //   .s_axis_tuser (reg_user),
-  //   .m_axis_tdata (m_data ),
-  //   .m_axis_tvalid(m_valid),
-  //   .m_axis_tready(m_ready),
-  //   .m_axis_tuser (m_user )
-  // );
-
-  axis_register #(
+  skid_buffer #(
     .WIDTH   (COPIES*UNITS*WORD_WIDTH + TUSER_WIDTH_PIXELS)
   ) AXIS_REG (
     .aclk    (aclk        ),

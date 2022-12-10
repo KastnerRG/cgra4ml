@@ -130,7 +130,7 @@ assign i_ready[DEPTH] = m_ready;
 generate
     genvar i;
     for (i = 0; i < DEPTH; i = i + 1) begin : pipe_reg
-        axis_register #(.WIDTH(WIDTH))
+        skid_buffer #(.WIDTH(WIDTH))
         reg_inst (
             .aclk   (aclk),
             .aresetn(aresetn),

@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-`include "../params/params.v"
+`include "../../params/params.v"
 
 
 module axis_accelerator_tb #( 
@@ -11,13 +11,13 @@ parameter
 `ifdef ICARUS
   DIR_PATH   = "vectors/",
 `else
-  DIR_PATH   = "D:/dnn-engine/tb/vectors/",
+  DIR_PATH   = "D:/dnn-engine/test/vectors/",
 `endif
 
-  MODEL      = "vgg16_quant",
-  IDX        = "5"
-  // MODEL      = "test",
-  // IDX        = "0"
+  // MODEL      = "vgg16_quant",
+  // IDX        = "5"
+  MODEL      = "test",
+  IDX        = "0"
 );
 
   // CLOCK GENERATION

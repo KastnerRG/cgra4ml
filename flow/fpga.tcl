@@ -1,7 +1,7 @@
 set PROJ_NAME sys
 set PROJ_FOLDER flow/fpga/$PROJ_NAME
 set RTL_DIR rtl
-set TB_DIR tb
+set TEST_DIR test
 
 set XILINX 1
 
@@ -26,8 +26,8 @@ foreach IP_NAME $IP_NAMES {
 # Add files
 add_files -norecurse [glob $RTL_DIR/*]
 # add_files -norecurse [glob $RTL_DIR/**/*]
-add_files -fileset sim_1 -norecurse [glob $TB_DIR/*]
-add_files -fileset sim_1 -norecurse $TB_DIR/wave/axis_accelerator_tb_behav.wcfg
+add_files -fileset sim_1 -norecurse [glob $TEST_DIR/sv/*]
+add_files -fileset sim_1 -norecurse $TEST_DIR/wave/axis_accelerator_tb_behav.wcfg
 set_property top axis_accelerator_tb [get_filesets sim_1]
 
 # source ./tcl/zynq_bd.tcl
