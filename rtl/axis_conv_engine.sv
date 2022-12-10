@@ -87,29 +87,17 @@ module axis_conv_engine (
     .data_out    (valid_prev)
   );
 
-  axis_register #
-  (
-    .DATA_WIDTH   (COPIES*GROUPS*MEMBERS*UNITS*WORD_WIDTH_OUT),
-    .KEEP_ENABLE  (0),
-    .LAST_ENABLE  (1),
-    .ID_ENABLE    (0),
-    .DEST_ENABLE  (0),
-    .USER_ENABLE  (1),
-    .USER_WIDTH   (TUSER_WIDTH_CONV_OUT),
-    .REG_TYPE     (1)
-  ) SLICE (
-    .clk          (aclk        ),
-    .rst          (~aresetn    ),
-    .s_axis_tdata (slice_s_data ),
-    .s_axis_tvalid(slice_s_valid),
-    .s_axis_tready(slice_s_ready),
-    .s_axis_tuser (slice_s_user ),
-    .s_axis_tlast (slice_s_last ),
-    .m_axis_tdata (m_axis_tdata ),
-    .m_axis_tvalid(m_axis_tvalid),
-    .m_axis_tready(m_axis_tready),
-    .m_axis_tuser (m_axis_tuser ),
-    .m_axis_tlast (m_axis_tlast )
+  skid_buffer #(
+    .WIDTH   (COPIES*GROUPS*MEMBERS*UNITS*WORD_WIDTH_OUT + TUSER_WIDTH_CONV_OUT + 1)
+  ) AXIS_REG (
+    .aclk    (aclk        ),
+    .aresetn (aresetn     ),
+    .s_ready (slice_s_ready),
+    .s_valid (slice_s_valid),
+    .s_data  ({slice_s_data, slice_s_user, slice_s_last}),
+    .m_data  ({m_axis_tdata, m_axis_tuser, m_axis_tlast}),
+    .m_valid (m_axis_tvalid),
+    .m_ready (m_axis_tready)
   );
 
 endmodule

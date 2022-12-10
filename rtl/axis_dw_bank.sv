@@ -231,31 +231,19 @@ module axis_dw_shift (
   logic [USER_WIDTH_OUT-1:0] b_user;
   assign b_user = {b_clr[0], b_user_base};
 
-
-  axis_register #
-  (
-    .DATA_WIDTH  (UNITS*WORD_WIDTH),
-    .KEEP_ENABLE (0),
-    .LAST_ENABLE (1),
-    .ID_ENABLE   (0),
-    .DEST_ENABLE (0),
-    .USER_ENABLE (1),
-    .USER_WIDTH  (USER_WIDTH_OUT),
-    .REG_TYPE    (2)
-  ) SLICE (
-    .clk          (aclk       ),
-    .rst          (~aresetn   ),
-    .s_axis_tready(slice_ready),
-    .s_axis_tdata (b_data  [0]),
-    .s_axis_tvalid(b_valid    ),
-    .s_axis_tlast (b_last     ),
-    .s_axis_tuser (b_user     ),
-    .m_axis_tdata (m_data     ),
-    .m_axis_tvalid(m_valid    ),
-    .m_axis_tready(m_ready    ),
-    .m_axis_tlast (m_last     ),
-    .m_axis_tuser (m_user     )
+  skid_buffer #(
+    .WIDTH   (UNITS*WORD_WIDTH + USER_WIDTH_OUT + 1)
+  ) AXIS_REG (
+    .aclk    (aclk        ),
+    .aresetn (aresetn     ),
+    .s_ready (slice_ready ),
+    .s_valid (b_valid     ),
+    .s_data  ({b_data[0], b_user, b_last}),
+    .m_data  ({m_data   , m_user, m_last}),
+    .m_valid (m_valid),
+    .m_ready (m_ready)
   );
+
 
 endmodule
 

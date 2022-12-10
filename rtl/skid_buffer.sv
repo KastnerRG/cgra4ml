@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module axis_register_aba #(
+module skid_buffer #(
   parameter WIDTH = 8
 )(
   input  logic aclk, aresetn, s_valid, m_ready,
@@ -40,7 +40,7 @@ module axis_register_aba #(
     .RESET_VALUE(1)
   ) S_READY (
     .clock       (aclk),
-    .clock_enable(1),
+    .clock_enable(1'b1),
     .resetn      (aresetn),
     .data_in     (s_ready_next),
     .data_out    (s_ready)
@@ -101,9 +101,54 @@ module axis_register_aba #(
 endmodule
 
 
-module axis_register_tb;
+module axis_pipeline_register #(
+    parameter WIDTH = 8,
+              DEPTH = 2
+)(
+    input  logic aclk,
+    input  logic aresetn,
+    input  logic [WIDTH-1:0] s_data,
+    input  logic             s_valid,
+    output logic             s_ready,
+    output logic [WIDTH-1:0] m_data,
+    output logic             m_valid,
+    input  logic             m_ready
+);
 
-  localparam WORD_W=32, BUS_W=WORD_W, PROB_VALID=100, PROB_READY=90, NUM_DATA=((BUS_W/WORD_W)*200);
+wire [WIDTH-1:0] i_data  [0:DEPTH];
+wire             i_valid [0:DEPTH];
+wire             i_ready [0:DEPTH];
+
+assign i_data [0] = s_data;
+assign i_valid[0] = s_valid;
+assign s_ready = i_ready[0];
+
+assign m_data  = i_data [DEPTH];
+assign m_valid = i_valid[DEPTH];
+assign i_ready[DEPTH] = m_ready;
+
+generate
+    genvar i;
+    for (i = 0; i < DEPTH; i = i + 1) begin : pipe_reg
+        axis_register #(.WIDTH(WIDTH))
+        reg_inst (
+            .aclk   (aclk),
+            .aresetn(aresetn),
+            .s_data (i_data [i]),
+            .s_valid(i_valid[i]),
+            .s_ready(i_ready[i]),
+            .m_data (i_data [i+1]),
+            .m_valid(i_valid[i+1]),
+            .m_ready(i_ready[i+1])
+        );
+    end
+endgenerate
+
+endmodule
+
+module skid_buffer_tb;
+
+  localparam WORD_W=32, BUS_W=WORD_W, PROB_VALID=100, PROB_READY=70, NUM_DATA=((BUS_W/WORD_W)*200);
 
   logic aclk=0, aresetn;
   logic s_ready, s_valid, s_last;
@@ -117,7 +162,7 @@ module axis_register_tb;
   localparam file_path_in  = "D:/axis_reg_in.txt";
   localparam file_path_out = "D:/axis_reg_out.txt";
 
-  axis_register_aba #(BUS_W + BUS_W/WORD_W + 1) dut (
+  axis_pipeline_register #(BUS_W + BUS_W/WORD_W + 1, 3) dut (
     .s_data ({s_data, s_keep, s_last}),
     .m_data ({m_data, m_keep, m_last}),
     .*

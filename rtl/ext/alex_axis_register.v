@@ -29,7 +29,7 @@ THE SOFTWARE.
 /*
  * AXI4-Stream register
  */
-module axis_register #
+module axis_register2 #
 (
     // Width of AXI stream interfaces in bits
     parameter DATA_WIDTH = 8,

@@ -29,7 +29,7 @@ THE SOFTWARE.
 /*
  * AXI4-Stream pipeline register
  */
-module axis_pipeline_register #
+module axis_pipeline_register2 #
 (
     // Width of AXI stream interfaces in bits
     parameter DATA_WIDTH = 8,
@@ -117,7 +117,7 @@ generate
     genvar i;
 
     for (i = 0; i < LENGTH; i = i + 1) begin : pipe_reg
-        axis_register #(
+        axis_register2 #(
             .DATA_WIDTH(DATA_WIDTH),
             .KEEP_ENABLE(KEEP_ENABLE),
             .KEEP_WIDTH(KEEP_WIDTH),

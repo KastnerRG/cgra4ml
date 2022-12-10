@@ -580,7 +580,7 @@ module axis_weight_rotator (
     .data_out  (bram_m_valid)
   );
 
-  axis_pipeline_register # (
+  axis_pipeline_register2 # (
     .DATA_WIDTH  (BRAM_WIDTH),
     .KEEP_ENABLE (0),
     .LAST_ENABLE (0),
@@ -598,6 +598,19 @@ module axis_weight_rotator (
     .m_axis_tvalid(bram_reg_m_valid),
     .m_axis_tready(bram_m_ready[i_read])
   );
+
+  // axis_pipeline_register #(
+  //   .WIDTH   (BRAM_WIDTH),
+  //   .DEPTH   (LATENCY_BRAM)
+  // ) REG_PIPE (
+  //   .aclk    (aclk),
+  //   .aresetn (aresetn & bram_reg_resetn),
+  //   .s_data  (bram_m_data [i_read]),
+  //   .s_valid (bram_m_valid),
+  //   .m_data  (m_axis_tdata ),
+  //   .m_valid (bram_reg_m_valid),
+  //   .m_ready (bram_m_ready[i_read])
+  // );
 
   /*
     COUNTER REGISTERS
