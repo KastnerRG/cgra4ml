@@ -1,0 +1,21 @@
+
+name: Verify
+
+on: [push]
+
+jobs:
+  verify-with-icarus:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install Icarus & Pytorch
+      run: |
+        sudo apt install -y --no-install-recommends iverilog
+        pip install numpy torch==1.12.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+
+    - name: Verify UART RX & TX
+      run: |
+        cd test
+        python py/param_test.py icarus
