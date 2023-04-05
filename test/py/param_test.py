@@ -104,7 +104,7 @@ LRELU_BEATS = 1
 #   raise "Error, unsupported KH for lrelu beats"
 
 def clog2(x):
-  return int(np.ceil(np.log2(x)))
+    return int(np.ceil(np.log2(x)))
 
 BITS_KW2        = clog2((KW_MAX+1)/2)
 BITS_KH2        = clog2((KH_MAX+1)/2)
@@ -287,52 +287,47 @@ print(f'output final (IT,XN,L,XW,CO_PRL,ROWS)={y.shape} \nSaved as "{path}"')
 
 
 
+
+
+
+
+
+
 '''
 RUN SIMULATION
 '''
 
-os.makedirs('xsim', exist_ok=-True)
+os.makedirs('xsim', exist_ok=True)
 
 if SIM == 'xsim':
 
-  SOURCES_STR = " ".join([os.path.normpath('../' + s) for s in SOURCES]) # since called from subdir
+    SOURCES_STR = " ".join([os.path.normpath('../' + s) for s in SOURCES]) # since called from subdir
 
-  sim_tcl = '''
+    with open('xsim/xsim_cfg.tcl', 'w') as f:
+        f.write('''
 log_wave -recursive *
 run all
 exit
-'''
-  xsim_bat = fr'''
+''')
+    with open('xsim/xsim.bat', 'w') as f:
+        f.write(fr'''
 call {XIL_PATH}\xvlog -sv {SOURCES_STR}
 call {XIL_PATH}\xelab {TB_MODULE} --snapshot {TB_MODULE} -log elaborate.log --debug typical
 call {XIL_PATH}\xsim {TB_MODULE} --tclbatch xsim_cfg.tcl
-'''
-  with open('xsim/xsim_cfg.tcl', 'w') as f:
-    f.write(sim_tcl)
-  with open('xsim/xsim.bat', 'w') as f:
-    f.write(xsim_bat)
-  subprocess.run("xsim/xsim.bat", cwd="xsim")
+''')
+    subprocess.run("xsim/xsim.bat", cwd="xsim")
 
 
 if SIM == 'icarus':
-  
-  print("COMPILING...")
+    print("COMPILING...")
 
-  cmd = [
-    "iverilog", 
-    "-g2012", 
-    "-DICARUS", 
-    "-o", "xsim/a.out", 
-    "-I", "sv", 
-    "-s", TB_MODULE
-    ] + SOURCES
+    cmd = [ "iverilog", "-g2012", "-DICARUS", "-o", "xsim/a.out", "-I", "sv", "-s", TB_MODULE] + SOURCES
+    print(" ".join(cmd))
+    if subprocess.run(cmd).returncode:
+        exit()
 
-  print(" ".join(cmd))
-  if subprocess.run(cmd).returncode:
-    exit()
-
-  print("SIMULATING...")
-  subprocess.run(["vvp", "xsim/a.out"])
+    print("SIMULATING...")
+    subprocess.run(["vvp", "xsim/a.out"])
 
 '''
 CHECK ERROR
@@ -341,8 +336,9 @@ y_sim = np.loadtxt(f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_y_sim.txt",np.int32
 error = np.sum(np.abs(y_sim.reshape(y.shape) - y))
 
 print("Error: ", error)
+assert error == 0
 
 if error != 0 and SIM=='xsim':
-  print(fr'''Non zero error. Open waveform with:
+    print(fr'''Non zero error. Open waveform with:
 
 call {XIL_PATH}\xsim --gui {TB_MODULE}.wdb -view ..\wave\{WAVEFORM}''')
