@@ -47,13 +47,15 @@ os.makedirs(DATA_DIR, exist_ok=True)
 i_layers = 0
 MODEL_NAME = 'test'
 SIM = sys.argv[1] if len(sys.argv) == 2 else "xsim" # icarus
-SOURCES = glob.glob('sv/*') + glob.glob("../rtl/**/*.v", recursive=True) + glob.glob("../rtl/**/*.sv", recursive=True)
+SOURCES = glob.glob('../params/*') + glob.glob('sv/*') + glob.glob("../rtl/**/*.v", recursive=True) + glob.glob("../rtl/**/*.sv", recursive=True)
 print(SOURCES)
 
 TB_MODULE = "axis_accelerator_tb"
 WAVEFORM = "axis_accelerator_tb_behav.wcfg"
 XIL_PATH = os.path.join("F:", "Xilinx", "Vivado", "2022.1", "bin")
 
+for file in os.scandir(DATA_DIR):
+    os.remove(file.path)
 
 '''
 GOLDEN MODEL
@@ -311,9 +313,12 @@ exit
 ''')
     with open('xsim/xsim.bat', 'w') as f:
         f.write(fr'''
-call {XIL_PATH}\xvlog -sv {SOURCES_STR}
+call {XIL_PATH}\xvlog -sv {SOURCES_STR} 
+IF %ERRORLEVEL% NEQ 0 exit
 call {XIL_PATH}\xelab {TB_MODULE} --snapshot {TB_MODULE} -log elaborate.log --debug typical
+IF %ERRORLEVEL% NEQ 0 exit
 call {XIL_PATH}\xsim {TB_MODULE} --tclbatch xsim_cfg.tcl
+IF %ERRORLEVEL% NEQ 0 exit
 ''')
     subprocess.run("xsim/xsim.bat", cwd="xsim")
 
