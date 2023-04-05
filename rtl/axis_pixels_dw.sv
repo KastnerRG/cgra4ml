@@ -99,6 +99,8 @@ module axis_pixels_dw (
   logic [IM_SHIFT_REGS:UNITS] mux_dw_s_ready, mux_dw_m_valid, mux_dw_m_last;
   logic [IM_SHIFT_REGS:UNITS][IM_SHIFT_REGS-1:0][WORD_WIDTH-1:0] mux_dw_m_data;
 
+  `define CEIL(N,D) N/D + (N%D != 0)
+
   function bit valid_n (input integer n);
     static integer k, s, shift, words;
     valid_n = 0;
