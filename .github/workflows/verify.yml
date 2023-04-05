@@ -15,7 +15,7 @@ jobs:
         sudo apt install -y --no-install-recommends iverilog
         pip install numpy torch==1.12.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
 
-    - name: Verify UART RX & TX
+    - name: Verify Full Design
       run: |
         cd test
         python py/param_test.py icarus
