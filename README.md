@@ -9,10 +9,17 @@ Step-by-step process of how I developed this is [documented here](https://aba-bl
 
 ## Todo
 
-- [ ] CocoTB + Github Actions + iVerilog for automatic verification
+- [x] Github Actions + iVerilog for automatic verification
+- [ ] PyTest for parametrized testing
+- [ ] Simplify parameters
 - [ ] Refactor, simplify RTL design
-- [ ] Run Length Decoder for Pixels Pipe
+- [ ] Fix Skid Buffer
+- [ ] Remove weight datawidth converter
 - [ ] Huffman Decoder for weights DMA
+- [ ] Remove pixel pipe datawidth converter
+- [ ] Run Length Decoder for Pixels Pipe
+- [ ] Build FIFO
+- [ ] Systolic Architecture
 
 
 ## Current Features

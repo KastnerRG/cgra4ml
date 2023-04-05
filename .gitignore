@@ -1,5 +1,7 @@
 *
 
+!README.md
+!.github/workflows/verify.yml
 !.gitignore
 !.gitattributes
 !*.py
@@ -10,13 +12,12 @@
 
 **/.ipynb_checkpoints/**
 
-# in subfolders also
-# allow all stuff inside any subfolder named "src"
-
-!rtl/src/*
-!rtl/tb/*
-!rtl/include/*
+!rtl/*
 !rtl/ext/*
+!rtl/sram/*
+
+!test/py/*.py
+!rtl/sv/*
 
 !c/
 
