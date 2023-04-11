@@ -1,0 +1,6 @@
+[option]
+exclude_paths = ["ip/.*"]
+
+[rules]
+non_ansi_module = false
+wire_reg = false
