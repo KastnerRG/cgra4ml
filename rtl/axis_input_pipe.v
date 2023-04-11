@@ -9,9 +9,7 @@ module axis_input_pipe
     WORD_WIDTH                = `WORD_WIDTH               , 
     KH_MAX                    = `KH_MAX                   ,   // odd number
     KW_MAX                    = `KW_MAX                   ,
-    // DEBUG WIDTHS
-    DEBUG_CONFIG_WIDTH_W_ROT  = `DEBUG_CONFIG_WIDTH_W_ROT  ,
-    DEBUG_CONFIG_WIDTH_IM_PIPE= `DEBUG_CONFIG_WIDTH_IM_PIPE,
+
     //  IMAGE TUSER INDICES 
     I_SH_1                    = `I_SH_1            , 
     I_SW_1                    = `I_SW_1            , 
@@ -51,7 +49,6 @@ module axis_input_pipe
   )(
     aclk                  ,
     aresetn               ,
-    debug_config          ,
     s_axis_pixels_tready  , 
     s_axis_pixels_tvalid  , 
     s_axis_pixels_tlast   , 
@@ -71,7 +68,7 @@ module axis_input_pipe
   ); 
 
 
-  localparam UNITS_EDGES       = `UNITS_EDGES      ;
+  localparam ROWS_SHIFT       = `ROWS_SHIFT      ;
   localparam S_PIXELS_WIDTH_LF = `S_PIXELS_WIDTH_LF;
   localparam BITS_KH2          = `BITS_KH2;
   localparam BITS_KW2          = `BITS_KW2;
@@ -97,8 +94,8 @@ module axis_input_pipe
   wire im_mux_m_ready;
   wire im_mux_m_valid;
   wire [TUSER_WIDTH_IM_SHIFT_IN-1:0] im_mux_m_user;
-  wire [WORD_WIDTH*UNITS_EDGES-1:0] im_mux_m_data_1;
-  wire [WORD_WIDTH*UNITS_EDGES-1:0] im_mux_m_data_2;
+  wire [WORD_WIDTH*ROWS_SHIFT-1:0] im_mux_m_data_1;
+  wire [WORD_WIDTH*ROWS_SHIFT-1:0] im_mux_m_data_2;
 
   wire pixels_m_ready;
   wire pixels_m_valid;
@@ -115,14 +112,6 @@ module axis_input_pipe
   output wire m_axis_tlast ;
   output wire [WORD_WIDTH*COLS   -1:0] m_axis_weights_tdata;
   output wire [TUSER_WIDTH_CONV_IN-1:0] m_axis_tuser;
-
-  wire [DEBUG_CONFIG_WIDTH_IM_PIPE-1:0] image_pipe_debug_config;
-  wire [BITS_KH2     -1:0]              im_shift_1_debug_config, im_shift_2_debug_config;
-  wire [DEBUG_CONFIG_WIDTH_W_ROT  -1:0] w_rot_debug_config;
-
-  localparam DEBUG_CONFIG_WIDTH = 2*BITS_KH2      + DEBUG_CONFIG_WIDTH_IM_PIPE + DEBUG_CONFIG_WIDTH_W_ROT;
-  output wire [DEBUG_CONFIG_WIDTH-1:0] debug_config;
-  assign debug_config = {im_shift_2_debug_config, im_shift_1_debug_config, image_pipe_debug_config, w_rot_debug_config};
 
   axis_pixels_pipe PIXELS (
     .aclk   (aclk   ),
@@ -141,7 +130,6 @@ module axis_input_pipe
   axis_weight_rotator WEIGHTS_ROTATOR (
     .aclk          (aclk                 ),
     .aresetn       (aresetn              ),
-    .debug_config  (w_rot_debug_config   ),
     .s_axis_tready (s_axis_weights_tready), 
     .s_axis_tvalid (s_axis_weights_tvalid), 
     .s_axis_tlast  (s_axis_weights_tlast ), 

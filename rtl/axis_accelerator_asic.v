@@ -39,9 +39,7 @@ module axis_accelerator_asic (
   // LATENCIES & float widths 
   localparam TUSER_WIDTH_CONV_IN        = `TUSER_WIDTH_CONV_IN       ;
   localparam TUSER_CONV_DW_IN           = `TUSER_CONV_DW_IN          ;
-  localparam TUSER_WIDTH_MAXPOOL_IN     = `TUSER_WIDTH_MAXPOOL_IN    ;
-  localparam TUSER_WIDTH_LRELU_FMA_1_IN = `TUSER_WIDTH_LRELU_FMA_1_IN;
-  localparam TUSER_WIDTH_LRELU_IN       = `TUSER_WIDTH_LRELU_IN      ;
+  localparam TUSER_WIDTH_CONV_OUT       = `TUSER_WIDTH_CONV_OUT      ;
 
   localparam I_IS_CONFIG = `I_IS_CONFIG;
 
@@ -78,7 +76,7 @@ module axis_accelerator_asic (
   wire dw_s_axis_tready;
   wire dw_s_axis_tvalid;
   wire dw_s_axis_tlast ;
-  wire [TUSER_WIDTH_LRELU_IN    -1:0] dw_s_axis_tuser ;
+  wire [TUSER_WIDTH_CONV_OUT    -1:0] dw_s_axis_tuser ;
   wire [M_DATA_WIDTH_HF_CONV_DW -1:0] dw_s_axis_tdata ;
 
   input  wire m_axis_tready;

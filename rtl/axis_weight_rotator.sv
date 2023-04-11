@@ -30,7 +30,6 @@ Additional Comments:
 module axis_weight_rotator (
     aclk         ,
     aresetn      ,
-    debug_config ,
     s_axis_tready, 
     s_axis_tvalid, 
     s_axis_tlast , 
@@ -46,7 +45,6 @@ module axis_weight_rotator (
 
   localparam COLS                      = `COLS                     ;
   localparam WORD_WIDTH                = `WORD_WIDTH               ; 
-  localparam DEBUG_CONFIG_WIDTH_W_ROT  = `DEBUG_CONFIG_WIDTH_W_ROT ;
   localparam KH_MAX                    = `KH_MAX                   ;   // odd number
   localparam KW_MAX                    = `KW_MAX                   ;   // odd number
   localparam SH_MAX                    = `SH_MAX                   ;   // odd number
@@ -136,13 +134,6 @@ module axis_weight_rotator (
 
   logic last_config, last_kh, last_sw, last_cin, last_cols, last_blocks;
   logic last_next_config, last_next_kh, last_next_sw, last_next_cin, last_next_cols, last_next_blocks;
-
-  output logic [DEBUG_CONFIG_WIDTH_W_ROT-1:0] debug_config;
-  
-  assign debug_config = {state_dw, ref_kw2  [0], ref_kw2 [1], 
-                        ref_kh2 [0], ref_1_cin[0], ref_1_cols[0], ref_1_blocks[0], 
-                        ref_kh2 [1], ref_1_cin[1], ref_1_cols[1], ref_1_blocks[1], 
-                        count_kh, count_cin, count_cols, count_blocks};
   
 
   // Total lut
