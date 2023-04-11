@@ -18,10 +18,8 @@ module axis_conv_engine (
     m_axis_tuser         
   );
 
-  localparam COPIES              = `COPIES              ;
-  localparam GROUPS              = `GROUPS              ;
-  localparam MEMBERS             = `MEMBERS             ;
-  localparam UNITS               = `UNITS               ;
+  localparam COLS                = `COLS                ;
+  localparam ROWS                = `ROWS                ;
   localparam WORD_WIDTH_IN       = `WORD_WIDTH          ; 
   localparam WORD_WIDTH_OUT      = `WORD_WIDTH_ACC      ; 
   localparam TUSER_WIDTH_CONV_IN = `TUSER_WIDTH_CONV_IN ;
@@ -34,18 +32,18 @@ module axis_conv_engine (
   input  wire s_axis_tlast;
   input  wire m_axis_tready;
   input  wire [TUSER_WIDTH_CONV_IN-1:0] s_axis_tuser;
-  input  wire [COPIES-1:0][UNITS-1:0][WORD_WIDTH_IN-1:0] s_axis_tdata_pixels;
-  input  wire [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][WORD_WIDTH_IN-1:0] s_axis_tdata_weights;
+  input  wire [ROWS -1:0][WORD_WIDTH_IN-1:0] s_axis_tdata_pixels;
+  input  wire [COLS   -1:0][WORD_WIDTH_IN-1:0] s_axis_tdata_weights;
 
   wire slice_s_ready;
   wire slice_s_valid;
   wire slice_s_last ;
   logic [TUSER_WIDTH_CONV_OUT-1:0] slice_s_user;
-  logic [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0][WORD_WIDTH_OUT-1:0]   slice_s_data;
+  logic [COLS   -1:0][ROWS -1:0][WORD_WIDTH_OUT-1:0]   slice_s_data;
 
   output wire m_axis_tvalid;
   output wire m_axis_tlast ;
-  output wire [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0][WORD_WIDTH_OUT-1:0] m_axis_tdata;
+  output wire [COLS   -1:0][ROWS -1:0][WORD_WIDTH_OUT-1:0] m_axis_tdata;
   output wire [TUSER_WIDTH_CONV_OUT-1:0] m_axis_tuser;
 
   /*
@@ -88,7 +86,7 @@ module axis_conv_engine (
   );
 
   skid_buffer #(
-    .WIDTH   (COPIES*GROUPS*MEMBERS*UNITS*WORD_WIDTH_OUT + TUSER_WIDTH_CONV_OUT + 1)
+    .WIDTH   (COLS   *ROWS *WORD_WIDTH_OUT + TUSER_WIDTH_CONV_OUT + 1)
   ) AXIS_REG (
     .aclk    (aclk        ),
     .aresetn (aresetn     ),

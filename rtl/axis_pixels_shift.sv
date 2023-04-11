@@ -18,8 +18,7 @@ module axis_pixels_shift (
     m_user
   );
 
-  localparam COPIES          = `COPIES        ;
-  localparam UNITS           = `UNITS         ;
+  localparam ROWS            = `ROWS          ;
   localparam WORD_WIDTH      = `WORD_WIDTH    ; 
   localparam KH_MAX          = `KH_MAX        ;
   localparam IM_SHIFT_REGS   = `IM_SHIFT_REGS ;
@@ -46,7 +45,7 @@ module axis_pixels_shift (
 
   input  logic m_ready;
   output logic m_valid;
-  output logic [COPIES-1:0][UNITS-1:0][WORD_WIDTH-1:0] m_data;
+  output logic [ROWS -1:0][WORD_WIDTH-1:0] m_data;
   output logic [TUSER_WIDTH_PIXELS               -1:0] m_user;
 
   logic clken ;
@@ -120,15 +119,11 @@ module axis_pixels_shift (
 
   // Broadcast same values if not is_max
 
-  logic [COPIES-1:0][UNITS-1:0][WORD_WIDTH-1:0] slice_s_data;
-  assign slice_s_data [0] = reg_data[UNITS-1:0];
-  generate
-    for (genvar c=1; c<COPIES; c++)
-      assign slice_s_data [c] = (reg_user[I_IS_MAX] & ~reg_ones) ? reg_data [(c+1)*UNITS-1 : c*UNITS] : reg_data [UNITS-1:0];
-  endgenerate
+  logic [ROWS -1:0][WORD_WIDTH-1:0] slice_s_data;
+  assign slice_s_data = reg_data[ROWS -1:0];
 
   skid_buffer #(
-    .WIDTH   (COPIES*UNITS*WORD_WIDTH + TUSER_WIDTH_PIXELS)
+    .WIDTH   (ROWS *WORD_WIDTH + TUSER_WIDTH_PIXELS)
   ) AXIS_REG (
     .aclk    (aclk        ),
     .aresetn (aresetn     ),

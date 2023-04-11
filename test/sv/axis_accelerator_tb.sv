@@ -34,10 +34,8 @@ parameter
 
   // SIGNALS
 
-  localparam  UNITS                      = `UNITS                     ,
-              GROUPS                     = `GROUPS                    ,
-              COPIES                     = `COPIES                    ,
-              MEMBERS                    = `MEMBERS                   ,
+  localparam  ROWS                       = `ROWS                      ,
+              COLS                       = `COLS                      ,
               WORD_WIDTH                 = `WORD_WIDTH                , 
               WORD_WIDTH_ACC             = `WORD_WIDTH_ACC            ,
               DEBUG_CONFIG_WIDTH_W_ROT   = `DEBUG_CONFIG_WIDTH_W_ROT  ,

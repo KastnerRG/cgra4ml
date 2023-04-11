@@ -4,10 +4,8 @@
 module axis_input_pipe 
   #(
     parameter     
-    UNITS                     = `UNITS                    ,
-    COPIES                    = `COPIES                   ,
-    GROUPS                    = `GROUPS                   ,
-    MEMBERS                   = `MEMBERS                  ,
+    ROWS                      = `ROWS                     ,
+    COLS                      = `COLS                     ,
     WORD_WIDTH                = `WORD_WIDTH               , 
     KH_MAX                    = `KH_MAX                   ,   // odd number
     KW_MAX                    = `KW_MAX                   ,
@@ -110,12 +108,12 @@ module axis_input_pipe
   wire weights_m_valid;
   wire weights_m_last;
   wire [TUSER_WIDTH_WEIGHTS_OUT-1:0] weights_m_user;
-  output wire [COPIES*WORD_WIDTH*UNITS         -1:0] m_axis_pixels_tdata;
+  output wire [WORD_WIDTH*ROWS          -1:0] m_axis_pixels_tdata;
 
   input  wire m_axis_tready;
   output wire m_axis_tvalid;
   output wire m_axis_tlast ;
-  output wire [WORD_WIDTH*COPIES*GROUPS*MEMBERS-1:0] m_axis_weights_tdata;
+  output wire [WORD_WIDTH*COLS   -1:0] m_axis_weights_tdata;
   output wire [TUSER_WIDTH_CONV_IN-1:0] m_axis_tuser;
 
   wire [DEBUG_CONFIG_WIDTH_IM_PIPE-1:0] image_pipe_debug_config;

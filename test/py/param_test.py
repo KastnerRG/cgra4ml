@@ -62,10 +62,8 @@ def compile(request):
     `define SRAM_TYPE   "RAW"  
     `define MAC_TYPE    "RAW"  
 
-    `define UNITS    {c.ROWS}  
-    `define GROUPS   1 
-    `define COPIES   1 
-    `define MEMBERS  {c.COLS}
+    `define ROWS     {c.ROWS}  
+    `define COLS     {c.COLS}
     `define DW_FACTOR_1 3
     `define OUTPUT_MODE "CONV"
     `define KSM_COMBS_EXPR 1
@@ -111,11 +109,11 @@ def compile(request):
 
     // Calculated
 
-    `define IM_BLOCKS_MAX    `IM_ROWS_MAX / `UNITS   
-    `define UNITS_EDGES        `UNITS + `KH_MAX -1
-    `define OUT_SHIFT_MAX      `MEMBERS/3
+    `define IM_BLOCKS_MAX    `IM_ROWS_MAX / `ROWS    
+    `define UNITS_EDGES        `ROWS  + `KH_MAX -1
+    `define OUT_SHIFT_MAX      `COLS   /3
     `define IM_SHIFT_MAX       4   /* max( ceil(k/s)-1 )*/
-    `define IM_SHIFT_REGS      `UNITS + `IM_SHIFT_MAX
+    `define IM_SHIFT_REGS      `ROWS  + `IM_SHIFT_MAX
 
     `define BITS_KW            $clog2( `KW_MAX             )         
     `define BITS_KH            $clog2( `KH_MAX             )         
@@ -124,21 +122,21 @@ def compile(request):
     `define BITS_IM_COLS       $clog2( `IM_COLS_MAX        )    
     `define BITS_IM_ROWS       $clog2( `IM_ROWS_MAX        )    
     `define BITS_IM_CIN        $clog2( `IM_CIN_MAX         )      
-    `define BITS_IM_BLOCKS     $clog2( `IM_ROWS_MAX/`UNITS )  
+    `define BITS_IM_BLOCKS     $clog2( `IM_ROWS_MAX/`ROWS  )  
     `define BITS_IM_SHIFT      $clog2( `IM_SHIFT_MAX       )  
     `define BITS_IM_SHIFT_REGS $clog2( `IM_SHIFT_REGS+1    )  
     `define BITS_WEIGHTS_ADDR  $clog2( `BRAM_WEIGHTS_DEPTH )   
-    `define BITS_MEMBERS       $clog2( `MEMBERS            )    
+    `define BITS_MEMBERS       $clog2( `COLS               )    
     `define BITS_KW2           $clog2((`KW_MAX+1)/2        )        
     `define BITS_KH2           $clog2((`KH_MAX+1)/2        )        
     `define BITS_OUT_SHIFT     $clog2( `OUT_SHIFT_MAX      )        
 
 
-    `define M_DATA_WIDTH_HF_CONV     `COPIES * `GROUPS * `MEMBERS * `UNITS * `WORD_WIDTH_ACC
-    `define M_DATA_WIDTH_HF_CONV_DW  `COPIES * `GROUPS * `UNITS * `WORD_WIDTH_ACC
-    `define M_DATA_WIDTH_HF_LRELU    `COPIES * `GROUPS * `UNITS * `WORD_WIDTH
-    `define M_DATA_WIDTH_HF_MAXPOOL  `GROUPS * `COPIES * `UNITS_EDGES * `WORD_WIDTH
-    `define M_DATA_WIDTH_HF_MAX_DW1  `GROUPS * `UNITS_EDGES * `WORD_WIDTH
+    `define M_DATA_WIDTH_HF_CONV     `COLS    * `ROWS  * `WORD_WIDTH_ACC
+    `define M_DATA_WIDTH_HF_CONV_DW  `ROWS  * `WORD_WIDTH_ACC
+    `define M_DATA_WIDTH_HF_LRELU    `ROWS  * `WORD_WIDTH
+    `define M_DATA_WIDTH_HF_MAXPOOL  `UNITS_EDGES * `WORD_WIDTH
+    `define M_DATA_WIDTH_HF_MAX_DW1  `UNITS_EDGES * `WORD_WIDTH
     `define M_DATA_WIDTH_LF_CONV_DW  8 * $clog2(`M_DATA_WIDTH_HF_CONV_DW * `FREQ_RATIO / 8) /* max 1024 */
     `define M_DATA_WIDTH_LF_LRELU    8 * $clog2(`M_DATA_WIDTH_HF_LRELU   * `FREQ_RATIO / 8) /* max 1024 */
     `define M_DATA_WIDTH_LF_MAXPOOL  8 * $clog2(`M_DATA_WIDTH_HF_MAX_DW1 * `FREQ_RATIO / 8) /* max 1024 */
@@ -190,7 +188,7 @@ def compile(request):
     `define TUSER_WIDTH_MAXPOOL_IN      `BITS_KW2      + `I_KW2
     `define TUSER_WIDTH_LRELU_IN        `BITS_KW       + `I_CLR
     `define TUSER_CONV_DW_BASE          1 + `I_IS_BOTTOM_BLOCK 
-    `define TUSER_CONV_DW_IN            `MEMBERS*`BITS_KW + `BITS_OUT_SHIFT + `BITS_MEMBERS + `TUSER_CONV_DW_BASE
+    `define TUSER_CONV_DW_IN            `COLS   *`BITS_KW + `BITS_OUT_SHIFT + `BITS_MEMBERS + `TUSER_CONV_DW_BASE
     `define TUSER_WIDTH_LRELU_FMA_1_IN  1         + `I_IS_LRELU
     `define TUSER_WIDTH_CONV_IN         `I_IS_SUM_START     + 1
 

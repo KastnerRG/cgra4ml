@@ -1,7 +1,7 @@
 
 if {$SRAM_TYPE == "XILINX"} {
 
-  set R_WIDTH_bram_weights [expr "$WORD_WIDTH  * $COPIES  * $GROUPS * $MEMBERS"]
+  set R_WIDTH_bram_weights [expr "$WORD_WIDTH  * $COPIES  * $GROUPS * $COLS   "]
   set R_DEPTH_bram_weights $BRAM_WEIGHTS_DEPTH
   set W_WIDTH_bram_weights [expr "$R_WIDTH_bram_weights"]
   set W_DEPTH_bram_weights [expr "$R_WIDTH_bram_weights * $R_DEPTH_bram_weights / $W_WIDTH_bram_weights"]
@@ -72,7 +72,7 @@ if {$MAC_TYPE == "XILINX"} {
 
 if {$OUTPUT_MODE == "LRELU" || $OUTPUT_MODE == "MAXPOOL"} {
 
-  set DATA_BYTES_axis_reg_slice_lrelu_dw [expr "$UNITS * $WORD_WIDTH_ACC / 8"]
+  set DATA_BYTES_axis_reg_slice_lrelu_dw [expr "$ROWS  * $WORD_WIDTH_ACC / 8"]
   set TID_WIDTH_axis_reg_slice_lrelu_dw $TUSER_WIDTH_LRELU_IN
   set TUSER_WIDTH_axis_reg_slice_lrelu_dw 0
   set TLAST_axis_reg_slice_lrelu_dw_active 1
@@ -81,7 +81,7 @@ if {$OUTPUT_MODE == "LRELU" || $OUTPUT_MODE == "MAXPOOL"} {
   set TLAST_axis_reg_slice_lrelu_dw 0
   set TKEEP_axis_reg_slice_lrelu_dw 0
 
-  set DATA_BYTES_axis_reg_slice_lrelu  [expr "$GROUPS * $COPIES * $UNITS * $WORD_WIDTH    / 8"]
+  set DATA_BYTES_axis_reg_slice_lrelu  [expr "$GROUPS * $COPIES * $ROWS  * $WORD_WIDTH    / 8"]
   set TLAST_axis_reg_slice_lrelu       1
   set TKEEP_axis_reg_slice_lrelu       0
   set TUSER_WIDTH_axis_reg_slice_lrelu $TUSER_WIDTH_MAXPOOL_IN
@@ -200,7 +200,7 @@ if {$OUTPUT_MODE == "MAXPOOL"} {
   set TLAST_axis_dw_max_2 1
   set TKEEP_axis_dw_max_2 1
 
-  set DATA_BYTES_axis_reg_slice_maxpool [expr "$GROUPS*$UNITS*$COPIES*$WORD_WIDTH / 8"]
+  set DATA_BYTES_axis_reg_slice_maxpool [expr "$GROUPS*$ROWS *$COPIES*$WORD_WIDTH / 8"]
   set TLAST_axis_reg_slice_maxpool 1
   set TKEEP_axis_reg_slice_maxpool 1
 

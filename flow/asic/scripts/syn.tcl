@@ -8,7 +8,7 @@ source ../../tcl/config.tcl
 set_db hdl_max_loop_limit 10000000
 
 set TECH 65nm
-set NUM_MACS [expr $MEMBERS*$UNITS*$GROUPS*$COPIES]
+set NUM_MACS [expr $COLS   *$ROWS *$GROUPS*$COPIES]
 set REPORT_DIR ../report/${TECH}/${TOP}/${NUM_MACS}
 exec mkdir -p $REPORT_DIR
 

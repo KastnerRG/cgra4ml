@@ -31,10 +31,8 @@ module axis_accelerator_asic (
   localparam M_DATA_WIDTH_HF_CONV    = `M_DATA_WIDTH_HF_CONV   ;
   localparam M_DATA_WIDTH_HF_CONV_DW = `M_DATA_WIDTH_HF_CONV_DW;
 
-  localparam UNITS                      = `UNITS                ;
-  localparam GROUPS                     = `GROUPS               ;
-  localparam COPIES                     = `COPIES               ;
-  localparam MEMBERS                    = `MEMBERS              ;
+  localparam ROWS                       = `ROWS                 ;
+  localparam COLS                       = `COLS                 ;
   localparam WORD_WIDTH                 = `WORD_WIDTH           ; 
   localparam WORD_WIDTH_ACC             = `WORD_WIDTH_ACC       ;
 
@@ -67,8 +65,8 @@ module axis_accelerator_asic (
   wire input_m_axis_tready;
   wire input_m_axis_tvalid;
   wire input_m_axis_tlast ;
-  wire [COPIES*WORD_WIDTH*UNITS          -1:0] input_m_axis_pixels_tdata;
-  wire [WORD_WIDTH*COPIES*GROUPS*MEMBERS -1:0] input_m_axis_weights_tdata;
+  wire [WORD_WIDTH*ROWS           -1:0] input_m_axis_pixels_tdata;
+  wire [WORD_WIDTH*COLS    -1:0] input_m_axis_weights_tdata;
   wire [TUSER_WIDTH_CONV_IN              -1:0] input_m_axis_tuser        ;
 
   wire conv_m_axis_tready;

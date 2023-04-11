@@ -1,9 +1,9 @@
 
 if {$XILINX} {
   
-  set UNITS   8
+  set ROWS    8
   set GROUPS  1
-  set MEMBERS 24
+  set COLS    24
   set KSM_COMBS_LIST {{1 1 1} {3 1 1} {3 1 1} {5 1 1} {7 2 1} {11 4 1}}
 
   set LATENCY_BRAM          2
@@ -33,9 +33,9 @@ if {$XILINX} {
 
 } else {
   
-  set UNITS   7
+  set ROWS    7
   set GROUPS  1
-  set MEMBERS 96
+  set COLS    96
   set KSM_COMBS_LIST {{1 1 1} {3 1 1} {3 1 1} {5 1 1} {7 2 1} {11 4 1}}
 
   set LATENCY_BRAM          2
@@ -126,7 +126,7 @@ foreach comb $KSM_COMBS_LIST {
   if {[expr $IM_SHIFT_MAX < $f]} {set IM_SHIFT_MAX $f}
 
   # Find reg number
-  set num_reg_needed [expr $m * $UNITS + $f]
+  set num_reg_needed [expr $m * $ROWS  + $f]
   if {[expr $IM_SHIFT_REGS < $num_reg_needed]} {set IM_SHIFT_REGS $num_reg_needed}
 }
 puts $KS_COMBS_EXPR
@@ -134,9 +134,9 @@ puts $KSM_COMBS_EXPR
 puts $COPIES
 
 set FREQ_LOW           [expr $FREQ_HIGH.0/$FREQ_RATIO.0]
-set IM_BLOCKS_MAX      [expr int($IM_ROWS_MAX / $UNITS)]
-set UNITS_EDGES        [expr $UNITS + $KH_MAX      -1]
-set OUT_SHIFT_MAX      [expr $MEMBERS/3]
+set IM_BLOCKS_MAX      [expr int($IM_ROWS_MAX / $ROWS )]
+set UNITS_EDGES        [expr $ROWS  + $KH_MAX      -1]
+set OUT_SHIFT_MAX      [expr $COLS   /3]
 set BITS_KW            [expr int(ceil(log($KW_MAX      )/log(2)))]
 set BITS_KH            [expr int(ceil(log($KH_MAX      )/log(2)))]
 set BITS_SW            [expr int(ceil(log($SW_MAX      )/log(2)))]
@@ -144,18 +144,18 @@ set BITS_SH            [expr int(ceil(log($SH_MAX      )/log(2)))]
 set BITS_IM_COLS       [expr int(ceil(log($IM_COLS_MAX)/log(2)))]
 set BITS_IM_ROWS       [expr int(ceil(log($IM_ROWS_MAX)/log(2)))]
 set BITS_IM_CIN        [expr int(ceil(log($IM_CIN_MAX)/log(2)))]
-set BITS_IM_BLOCKS     [expr int(ceil(log($IM_ROWS_MAX/$UNITS)/log(2)))]
+set BITS_IM_BLOCKS     [expr int(ceil(log($IM_ROWS_MAX/$ROWS )/log(2)))]
 set BITS_IM_SHIFT      [expr int(ceil(log($IM_SHIFT_MAX)/log(2)))]
 set BITS_IM_SHIFT_REGS [expr int(ceil(log($IM_SHIFT_REGS+1)/log(2)))]
 set BITS_WEIGHTS_ADDR  [expr int(ceil(log($BRAM_WEIGHTS_DEPTH)/log(2)))]
 set BITS_OUT_SHIFT     [expr int(ceil(log($OUT_SHIFT_MAX)/log(2)))]
-set BITS_MEMBERS       [expr int(ceil(log($MEMBERS)/log(2)))]
+set BITS_MEMBERS       [expr int(ceil(log($COLS   )/log(2)))]
 set BITS_KW2           [expr int(ceil(log(($KW_MAX      +1)/2)/log(2)))]
 set BITS_KH2           [expr int(ceil(log(($KH_MAX      +1)/2)/log(2)))]
 
-set M_DATA_WIDTH_HF_CONV    [expr int($COPIES * $GROUPS * $MEMBERS * $UNITS * $WORD_WIDTH_ACC)]
-set M_DATA_WIDTH_HF_CONV_DW [expr int($COPIES * $GROUPS * $UNITS * $WORD_WIDTH_ACC)]
-set M_DATA_WIDTH_HF_LRELU   [expr int($COPIES * $GROUPS * $UNITS * $WORD_WIDTH)]
+set M_DATA_WIDTH_HF_CONV    [expr int($COPIES * $GROUPS * $COLS    * $ROWS  * $WORD_WIDTH_ACC)]
+set M_DATA_WIDTH_HF_CONV_DW [expr int($COPIES * $GROUPS * $ROWS  * $WORD_WIDTH_ACC)]
+set M_DATA_WIDTH_HF_LRELU   [expr int($COPIES * $GROUPS * $ROWS  * $WORD_WIDTH)]
 set M_DATA_WIDTH_HF_MAXPOOL [expr int($GROUPS * $COPIES * $UNITS_EDGES * $WORD_WIDTH)]
 set M_DATA_WIDTH_HF_MAX_DW1 [expr int($GROUPS * $UNITS_EDGES * $WORD_WIDTH)]
 
@@ -221,7 +221,7 @@ set I_CLR             [expr $I_IS_BOTTOM_BLOCK + 1]
 set TUSER_WIDTH_MAXPOOL_IN     [expr $BITS_KW2      + $I_KW2]
 set TUSER_WIDTH_LRELU_IN       [expr $BITS_KW       + $I_CLR]
 set TUSER_CONV_DW_BASE         [expr 1 + $I_IS_BOTTOM_BLOCK ]
-set TUSER_CONV_DW_IN           [expr $MEMBERS*$BITS_KW + $BITS_OUT_SHIFT + $BITS_MEMBERS + $TUSER_CONV_DW_BASE]
+set TUSER_CONV_DW_IN           [expr $COLS   *$BITS_KW + $BITS_OUT_SHIFT + $BITS_MEMBERS + $TUSER_CONV_DW_BASE]
 set TUSER_WIDTH_LRELU_FMA_1_IN [expr 1         + $I_IS_LRELU]
 set TUSER_WIDTH_CONV_IN        [expr $I_IS_SUM_START     + 1]
 
@@ -247,10 +247,10 @@ puts $file_param "
 `define SRAM_TYPE   \"$SRAM_TYPE\"  
 `define MAC_TYPE    \"$MAC_TYPE\"  
 
-`define UNITS    $UNITS  
+`define ROWS     $ROWS   
 `define GROUPS   $GROUPS 
 `define COPIES   $COPIES 
-`define MEMBERS  $MEMBERS
+`define COLS     $COLS   
 `define DW_FACTOR_1 $DW_FACTOR_1
 `define OUTPUT_MODE \"$OUTPUT_MODE\"
 `define KSM_COMBS_EXPR $KSM_COMBS_EXPR
