@@ -44,9 +44,7 @@ module axis_weight_rotator (
   );
   
 
-  localparam GROUPS                    = `GROUPS                   ;
-  localparam COPIES                    = `COPIES                   ;
-  localparam MEMBERS                   = `MEMBERS                  ;
+  localparam COLS                      = `COLS                     ;
   localparam WORD_WIDTH                = `WORD_WIDTH               ; 
   localparam DEBUG_CONFIG_WIDTH_W_ROT  = `DEBUG_CONFIG_WIDTH_W_ROT ;
   localparam KH_MAX                    = `KH_MAX                   ;   // odd number
@@ -78,7 +76,7 @@ module axis_weight_rotator (
   localparam BITS_IM_COLS              = `BITS_IM_COLS  ;
 
   localparam LRELU_BEATS_MAX = `LRELU_BEATS_MAX;
-  localparam M_WIDTH    = WORD_WIDTH*COPIES*GROUPS*MEMBERS;
+  localparam M_WIDTH    = WORD_WIDTH*COLS   ;
   localparam BRAM_WIDTH = M_WIDTH;
   localparam BRAM_DEPTH = `BRAM_WEIGHTS_DEPTH;
   localparam BITS_ADDR  = `BITS_WEIGHTS_ADDR;

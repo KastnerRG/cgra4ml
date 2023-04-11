@@ -27,10 +27,8 @@ module conv_engine (
     m_user         
 );
 
-  localparam COPIES              = `COPIES              ;
-  localparam GROUPS              = `GROUPS              ;
-  localparam MEMBERS             = `MEMBERS             ;
-  localparam UNITS               = `UNITS               ;
+  localparam COLS                = `COLS                ;
+  localparam ROWS                = `ROWS                ;
   localparam WORD_WIDTH_IN       = `WORD_WIDTH          ;
   localparam WORD_WIDTH_OUT      = `WORD_WIDTH_ACC      ;
   localparam LATENCY_ACCUMULATOR = `LATENCY_ACCUMULATOR ;
@@ -61,35 +59,35 @@ module conv_engine (
   output logic s_ready;
   output logic m_valid, m_last;
   input  logic [TUSER_WIDTH_CONV_IN-1:0] s_user;
-  input  logic [COPIES-1:0][UNITS -1:0]                        [WORD_WIDTH_IN    -1:0] s_data_pixels;
-  input  logic [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0]           [WORD_WIDTH_IN    -1:0] s_data_weights;                                                                        
-  output logic [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0][WORD_WIDTH_OUT   -1:0] m_data;
+  input  logic [ROWS  -1:0]                        [WORD_WIDTH_IN    -1:0] s_data_pixels;
+  input  logic [COLS   -1:0]           [WORD_WIDTH_IN    -1:0] s_data_weights;                                                                        
+  output logic [COLS   -1:0][ROWS -1:0][WORD_WIDTH_OUT   -1:0] m_data;
   output logic [TUSER_WIDTH_CONV_OUT-1:0] m_user;
   
   logic [TUSER_CONV_DW_BASE -1:0] m_user_base;
   logic [BITS_MEMBERS  -1:0] m_shift_a;
   logic [BITS_OUT_SHIFT-1:0] m_shift_b;
-  logic [MEMBERS-1:0][BITS_KW-1:0] m_clr;
+  logic [COLS   -1:0][BITS_KW-1:0] m_clr;
 
   logic clken_mul, mux_sel_next, mux_sel, mul_m_valid, acc_m_valid_next, acc_m_valid, mul_m_last, acc_m_last;
   logic [BITS_KW2-1:0] mul_m_kw2, acc_m_kw2;
   logic [BITS_SW -1:0] acc_m_sw_1;
-  logic [MEMBERS-1: 0] clken_acc, bypass_sum, bypass_sum_next, bypass;
-  logic [MEMBERS-1: 0] acc_m_sum_start, acc_s_valid, acc_m_keep;
+  logic [COLS   -1: 0] clken_acc, bypass_sum, bypass_sum_next, bypass;
+  logic [COLS   -1: 0] acc_m_sum_start, acc_s_valid, acc_m_keep;
   logic [TUSER_WIDTH_CONV_IN -1: 0] mul_m_user, acc_s_user, mux_s2_user, acc_m_user;
 
-  logic [MEMBERS -1:0] lut_sum_start [KW_MAX/2:0][SW_MAX -1:0];
+  logic [COLS    -1:0] lut_sum_start [KW_MAX/2:0][SW_MAX -1:0];
 
   logic valid_mask;
 
-  logic [WORD_WIDTH_IN*2-1:0] mul_m_data  [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0];
-  logic [WORD_WIDTH_OUT -1:0] acc_s_data  [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0];
-  logic [WORD_WIDTH_OUT -1:0] mux_s2_data [COPIES-1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0];
+  logic [WORD_WIDTH_IN*2-1:0] mul_m_data  [COLS   -1:0][ROWS -1:0];
+  logic [WORD_WIDTH_OUT -1:0] acc_s_data  [COLS   -1:0][ROWS -1:0];
+  logic [WORD_WIDTH_OUT -1:0] mux_s2_data [COLS   -1:0][ROWS -1:0];
 
   assign s_ready = clken_mul;
 
   generate
-    genvar c,g,u,m,b,kw2,sw_1;
+    genvar u,m,b,kw2,sw_1;
 
     n_delay #(
       .N          (LATENCY_MULTIPLIER     ),
@@ -104,12 +102,10 @@ module conv_engine (
 
     assign mul_m_kw2 = mul_m_user[BITS_KW2+I_KW2-1 : I_KW2];
 
-    for (c=0; c < COPIES; c++)
-      for (g=0; g < GROUPS; g++)
-        for (u=0; u < UNITS; u++)
-          for (m=0; m < MEMBERS; m++)
-            if (m==0) assign mux_s2_data [c][g][m][u] = 0;
-            else      assign mux_s2_data [c][g][m][u] = m_data     [c][g][m-1][u];
+        for (u=0; u < ROWS ; u++)
+          for (m=0; m < COLS   ; m++)
+            if (m==0) assign mux_s2_data [m][u] = 0;
+            else      assign mux_s2_data [m][u] = m_data     [m-1][u];
 
     assign mux_sel_next = mul_m_valid && mul_m_user[I_IS_CIN_LAST] && (mul_m_kw2 != 0);
 
@@ -125,7 +121,7 @@ module conv_engine (
     );
     assign clken_mul = clken && !mux_sel;
             
-    for (m=0; m < MEMBERS; m++) begin: Mb
+    for (m=0; m < COLS   ; m++) begin: Mb
       for (kw2=0; kw2 <= KW_MAX/2; kw2++)
         for (sw_1=0; sw_1 < SW_MAX; sw_1++) begin
           localparam k = kw2*2 + 1;
@@ -155,10 +151,8 @@ module conv_engine (
       assign clken_acc [m] = clken && acc_s_valid [m];
     end
 
-    for (c=0; c < COPIES; c++) begin: Ca
-      for (g=0; g < GROUPS; g++) begin: Ga
-        for (u=0; u < UNITS; u++) begin: Ua
-          for (m=0; m < MEMBERS; m++) begin: Ma
+        for (u=0; u < ROWS ; u++) begin: Ua
+          for (m=0; m < COLS   ; m++) begin: Ma
             processing_element #(
               .WORD_WIDTH_IN (WORD_WIDTH_IN ),
               .WORD_WIDTH_OUT(WORD_WIDTH_OUT)
@@ -167,17 +161,17 @@ module conv_engine (
               .clken         (clken         ),
               .resetn        (resetn        ),
               .clken_mul     (clken_mul     ),
-              .s_data_pixels (s_data_pixels [c]      [u]), 
-              .s_data_weights(s_data_weights[c][g][m]   ),
-              .mul_m_data    (mul_m_data    [c][g][m][u]),
+              .s_data_pixels (s_data_pixels    [u]), 
+              .s_data_weights(s_data_weights[m]   ),
+              .mul_m_data    (mul_m_data    [m][u]),
               .mux_sel       (mux_sel       ),
-              .mux_s2_data   (mux_s2_data   [c][g][m][u]),
+              .mux_s2_data   (mux_s2_data   [m][u]),
               .bypass        (bypass        [m]),
               .clken_acc     (clken_acc     [m]),
-              .acc_s_data    (acc_s_data    [c][g][m][u]),
-              .m_data        (m_data        [c][g][m][u])
+              .acc_s_data    (acc_s_data    [m][u]),
+              .m_data        (m_data        [m][u])
             );
-    end end end end
+    end end
 
     n_delay #(
       .N          (LATENCY_ACCUMULATOR),

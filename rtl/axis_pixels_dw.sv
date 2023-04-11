@@ -18,10 +18,9 @@ module axis_pixels_dw (
   );
   
 
-  localparam UNITS                = `UNITS             ;
-  localparam COPIES               = `COPIES            ;
+  localparam ROWS                 = `ROWS              ;
   localparam WORD_WIDTH           = `WORD_WIDTH        ; 
-  localparam MEMBERS              = `MEMBERS           ;
+  localparam COLS                 = `COLS              ;
   localparam IM_SHIFT_REGS        = `IM_SHIFT_REGS     ;
   localparam LATENCY_BRAM         = `LATENCY_BRAM      ;
   localparam KH_MAX               = `KH_MAX            ;
@@ -87,8 +86,8 @@ module axis_pixels_dw (
     .data_in      (CONFIG_WIDTH'(s_data)),
     .data_out     ({words, sh_1, kw2, kh2, is_lrelu, is_max, is_not_max})
   );
-  assign m_user [I_IS_NOT_MAX ] = COPIES!=1 && is_not_max;
-  assign m_user [I_IS_MAX     ] = COPIES!=1 && is_max    ;
+  assign m_user [I_IS_NOT_MAX ] = is_not_max;
+  assign m_user [I_IS_MAX     ] = is_max    ;
   assign m_user [I_IS_LRELU   ] = OUTPUT_MODE != "CONV" && is_lrelu;
 
   /*
@@ -96,8 +95,8 @@ module axis_pixels_dw (
   */
 
   logic dw_s_valid, dw_m_ready;
-  logic [IM_SHIFT_REGS:UNITS] mux_dw_s_ready, mux_dw_m_valid, mux_dw_m_last;
-  logic [IM_SHIFT_REGS:UNITS][IM_SHIFT_REGS-1:0][WORD_WIDTH-1:0] mux_dw_m_data;
+  logic [IM_SHIFT_REGS:ROWS ] mux_dw_s_ready, mux_dw_m_valid, mux_dw_m_last;
+  logic [IM_SHIFT_REGS:ROWS ][IM_SHIFT_REGS-1:0][WORD_WIDTH-1:0] mux_dw_m_data;
 
   `define CEIL(N,D) N/D + (N%D != 0)
 
@@ -105,18 +104,17 @@ module axis_pixels_dw (
     static integer k, s, shift, words;
     valid_n = 0;
     for (integer i_kh2 = 0; i_kh2 <= KH_MAX/2; i_kh2++)
-      for (integer i_sh_1 = 0; i_sh_1 < SH_MAX; i_sh_1++)
-        for (integer m = 1; m <= COPIES; m++) begin
+      for (integer i_sh_1 = 0; i_sh_1 < SH_MAX; i_sh_1++) begin
           k     = i_kh2*2+1;
           s     = i_sh_1+1;
           shift = `CEIL(k,s)-1;
-          words = m*UNITS + shift;
+          words = ROWS  + shift;
           if(`KSM_COMBS_EXPR & n==words) valid_n = 1;
         end
   endfunction
 
   generate
-    for (genvar m_words = UNITS; m_words <= IM_SHIFT_REGS; m_words++) begin:N
+    for (genvar m_words = ROWS ; m_words <= IM_SHIFT_REGS; m_words++) begin:N
       if (valid_n(m_words)) begin
         logic [m_words-1:0][WORD_WIDTH-1:0] dw_m_data;
         assign mux_dw_m_data[m_words] = dw_m_data;

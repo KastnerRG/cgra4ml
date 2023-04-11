@@ -15,8 +15,7 @@ module axis_pixels_pipe (
     m_user
   );
 
-  localparam UNITS              = `UNITS                   ;
-  localparam COPIES             = `COPIES                  ;
+  localparam ROWS               = `ROWS                    ;
   localparam WORD_WIDTH         = `WORD_WIDTH              ; 
   localparam IM_SHIFT_REGS      = `IM_SHIFT_REGS           ;
   localparam TUSER_WIDTH_PIXELS = `TUSER_WIDTH_PIXELS      ;
@@ -41,7 +40,7 @@ module axis_pixels_pipe (
 
   input  logic m_ready;
   output logic m_valid;
-  output logic [COPIES-1:0][UNITS-1:0][WORD_WIDTH-1:0] m_data;
+  output logic [ROWS -1:0][WORD_WIDTH-1:0] m_data;
   output logic [TUSER_WIDTH_PIXELS-1:0] m_user;
 
   axis_pixels_dw DW (

@@ -18,8 +18,8 @@ module axis_dw_shift (
     m_last
   );
   localparam WORD_WIDTH          = `WORD_WIDTH_ACC      ;
-  localparam UNITS               = `UNITS               ;
-  localparam MEMBERS             = `MEMBERS             ;
+  localparam ROWS                = `ROWS                ;
+  localparam COLS                = `COLS                ;
   localparam KW_MAX              = `KW_MAX              ;
   localparam SW_MAX              = `SW_MAX              ;
   localparam I_KW2               = `I_KW2               ;
@@ -37,11 +37,11 @@ module axis_dw_shift (
 
   input  logic s_valid, s_last;
   output logic s_ready;
-  input  logic [MEMBERS-1:0][UNITS-1:0][WORD_WIDTH -1:0] s_data;
+  input  logic [COLS   -1:0][ROWS -1:0][WORD_WIDTH -1:0] s_data;
   input  logic [USER_WIDTH_IN -1:0] s_user;
 
   input  logic m_ready;
-  output logic [UNITS-1:0][WORD_WIDTH -1:0] m_data;
+  output logic [ROWS -1:0][WORD_WIDTH -1:0] m_data;
   output logic [USER_WIDTH_OUT        -1:0] m_user;
   output logic m_valid, m_last;
 
@@ -54,7 +54,7 @@ module axis_dw_shift (
   logic  [TUSER_CONV_DW_BASE -1:0] s_user_base;
   logic  [BITS_MEMBERS  -1:0] s_shift_a;
   logic  [BITS_OUT_SHIFT-1:0] s_shift_b;
-  logic  [MEMBERS-1:0][CLR_WIDTH-1:0] s_clr;
+  logic  [COLS   -1:0][CLR_WIDTH-1:0] s_clr;
   assign {s_clr, s_shift_b, s_shift_a, s_user_base} = s_user;
 
   // Counter
@@ -78,13 +78,13 @@ module axis_dw_shift (
   assign s_ready = b_ready & count_a_last;
 
   // Data: shift Registers
-  localparam SHIFT_WORD_WIDTH = UNITS*WORD_WIDTH + CLR_WIDTH;
-  logic [MEMBERS -1:0][SHIFT_WORD_WIDTH-1:0] reg_a_data_s, reg_a_data_in, reg_a_data;
-  logic [MEMBERS-1:0][UNITS-1:0][WORD_WIDTH -1:0] a_data;
-  logic [MEMBERS-1:0][CLR_WIDTH-1:0] a_clr;
+  localparam SHIFT_WORD_WIDTH = ROWS *WORD_WIDTH + CLR_WIDTH;
+  logic [COLS    -1:0][SHIFT_WORD_WIDTH-1:0] reg_a_data_s, reg_a_data_in, reg_a_data;
+  logic [COLS   -1:0][ROWS -1:0][WORD_WIDTH -1:0] a_data;
+  logic [COLS   -1:0][CLR_WIDTH-1:0] a_clr;
 
   generate
-    for (genvar m=0; m<MEMBERS; m++) begin
+    for (genvar m=0; m<COLS   ; m++) begin
       assign reg_a_data_s [m] = {s_data[m], s_clr[m]};
       assign {a_data[m], a_clr[m]} = reg_a_data[m];
     end
@@ -93,7 +93,7 @@ module axis_dw_shift (
   assign reg_a_data_in = count_a_last ? reg_a_data_s : reg_a_data << SHIFT_WORD_WIDTH;
 
   register #(
-    .WORD_WIDTH     (MEMBERS*SHIFT_WORD_WIDTH),
+    .WORD_WIDTH     (COLS   *SHIFT_WORD_WIDTH),
     .RESET_VALUE    (0)
   ) REG_A_DATA (
     .clock          (aclk   ),
@@ -162,13 +162,13 @@ module axis_dw_shift (
 
   // Data: shift Registers
 
-  wire  [MEMBERS/3-1:0][SHIFT_WORD_WIDTH-1:0] reg_b_data_mux   [KW_MAX/2:0][SW_MAX-1:0];
-  logic [MEMBERS/3-1:0][SHIFT_WORD_WIDTH-1:0] reg_b_data_muxed , reg_b_data_in, reg_b_data;
-  logic [MEMBERS/3-1:0][CLR_WIDTH-1:0] b_clr;
+  wire  [COLS   /3-1:0][SHIFT_WORD_WIDTH-1:0] reg_b_data_mux   [KW_MAX/2:0][SW_MAX-1:0];
+  logic [COLS   /3-1:0][SHIFT_WORD_WIDTH-1:0] reg_b_data_muxed , reg_b_data_in, reg_b_data;
+  logic [COLS   /3-1:0][CLR_WIDTH-1:0] b_clr;
 
-  assign reg_b_data_mux[0][0][0] = reg_a_data[MEMBERS-1];
+  assign reg_b_data_mux[0][0][0] = reg_a_data[COLS   -1];
   generate
-      for (genvar m=0; m<MEMBERS; m++)
+      for (genvar m=0; m<COLS   ; m++)
         for (genvar kw2=1; kw2 <=KW_MAX/2; kw2++)
           for (genvar sw_1=0; sw_1 < SW_MAX; sw_1++) begin
 
@@ -185,7 +185,7 @@ module axis_dw_shift (
   assign reg_b_data_in = count_b_last ? reg_b_data_muxed : reg_b_data >> SHIFT_WORD_WIDTH;
 
   register #(
-    .WORD_WIDTH     ((MEMBERS/3)*SHIFT_WORD_WIDTH),
+    .WORD_WIDTH     ((COLS   /3)*SHIFT_WORD_WIDTH),
     .RESET_VALUE    (0)
   ) REG_B_DATA (
     .clock          (aclk   ),
@@ -195,9 +195,9 @@ module axis_dw_shift (
     .data_out       (reg_b_data)
   );
 
-  logic [MEMBERS/3-1:0][UNITS*WORD_WIDTH-1:0] b_data;
+  logic [COLS   /3-1:0][ROWS *WORD_WIDTH-1:0] b_data;
   generate
-    for (genvar m=0; m<MEMBERS/3; m++)
+    for (genvar m=0; m<COLS   /3; m++)
       assign {b_data[m], b_clr[m]} = reg_b_data[m];
   endgenerate
 
@@ -232,7 +232,7 @@ module axis_dw_shift (
   assign b_user = {b_clr[0], b_user_base};
 
   skid_buffer #(
-    .WIDTH   (UNITS*WORD_WIDTH + USER_WIDTH_OUT + 1)
+    .WIDTH   (ROWS *WORD_WIDTH + USER_WIDTH_OUT + 1)
   ) AXIS_REG (
     .aclk    (aclk        ),
     .aresetn (aresetn     ),
@@ -262,10 +262,8 @@ module axis_conv_dw_bank (
   m_user
 );
 
-  localparam UNITS                = `UNITS                ;
-  localparam GROUPS               = `GROUPS               ;
-  localparam COPIES               = `COPIES               ;
-  localparam MEMBERS              = `MEMBERS              ;
+  localparam ROWS                 = `ROWS                 ;
+  localparam COLS                 = `COLS                 ;
   localparam WORD_WIDTH           = `WORD_WIDTH_ACC       ;
   localparam TUSER_WIDTH_LRELU_IN = `TUSER_WIDTH_LRELU_IN ;  
   localparam TUSER_CONV_DW_IN     = `TUSER_CONV_DW_IN     ;  
@@ -277,42 +275,36 @@ module axis_conv_dw_bank (
   input  logic s_valid, s_last;
   output logic s_ready;
   input  logic [TUSER_CONV_DW_IN-1:0] s_user;
-  input  logic [COPIES -1:0][GROUPS-1:0][MEMBERS-1:0][UNITS-1:0][WORD_WIDTH-1:0] s_data;
+  input  logic [COLS   -1:0][ROWS -1:0][WORD_WIDTH-1:0] s_data;
 
   input  logic m_ready;
-  output logic [COPIES -1:0][GROUPS-1:0][UNITS-1:0][WORD_WIDTH  -1:0] m_data;
+  output logic [ROWS -1:0][WORD_WIDTH  -1:0] m_data;
   output logic [TUSER_WIDTH_LRELU_IN-1:0] m_user;
   output logic m_valid, m_last;
 
-  logic [COPIES-1:0][GROUPS-1:0] s_ready_cg;
-  logic [COPIES-1:0][GROUPS-1:0] m_valid_cg;
-  logic [COPIES-1:0][GROUPS-1:0] m_last_cg;
-  logic [COPIES-1:0][GROUPS-1:0][TUSER_WIDTH_LRELU_IN-1:0] m_user_cg;
+  logic  s_ready_cg;
+  logic  m_valid_cg;
+  logic  m_last_cg;
+  logic [TUSER_WIDTH_LRELU_IN-1:0] m_user_cg;
 
-  generate
-    for (genvar c=0 ; c<COPIES; c++) begin: C
-      for (genvar g=0 ; g<GROUPS; g++) begin: G
-        axis_dw_shift CONV_DW (
-          .aclk    (aclk             ),
-          .aresetn (aresetn          ),
-          .s_ready (s_ready_cg [c][g]),
-          .s_valid (s_valid          ),
-          .s_data  (s_data     [c][g]),
-          .s_user  (s_user           ),
-          .s_last  (s_last           ),
-          .m_ready (m_ready          ),
-          .m_valid (m_valid_cg [c][g]),
-          .m_data  (m_data     [c][g]),
-          .m_user  (m_user_cg  [c][g]),
-          .m_last  (m_last_cg  [c][g])
-        );
-      end 
-    end 
-  endgenerate
+  axis_dw_shift CONV_DW (
+    .aclk    (aclk       ),
+    .aresetn (aresetn    ),
+    .s_ready (s_ready_cg ),
+    .s_valid (s_valid    ),
+    .s_data  (s_data     ),
+    .s_user  (s_user     ),
+    .s_last  (s_last     ),
+    .m_ready (m_ready    ),
+    .m_valid (m_valid_cg ),
+    .m_data  (m_data     ),
+    .m_user  (m_user_cg  ),
+    .m_last  (m_last_cg  )
+  );
 
-  assign s_ready = s_ready_cg[0][0];
-  assign m_valid = m_valid_cg[0][0];
-  assign m_last  = m_last_cg [0][0];
-  assign m_user  = m_user_cg [0][0];
+  assign s_ready = s_ready_cg;
+  assign m_valid = m_valid_cg;
+  assign m_last  = m_last_cg ;
+  assign m_user  = m_user_cg ;
 
 endmodule

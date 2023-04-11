@@ -47,7 +47,7 @@ module pad_filter (
 
     localparam KW_MAX           = `KW_MAX             ;
     localparam SW_MAX           = `SW_MAX             ;
-    localparam MEMBERS          = `MEMBERS            ;
+    localparam COLS             = `COLS               ;
     localparam TUSER_WIDTH      = `TUSER_WIDTH_CONV_IN;
     localparam I_IS_COLS_1_K2   = `I_IS_COLS_1_K2     ;
     localparam I_IS_CONFIG      = `I_IS_CONFIG        ;
@@ -65,7 +65,7 @@ module pad_filter (
 
     input  logic aclk, aresetn, aclken, valid_in;
     input  logic [TUSER_WIDTH - 1: 0] user_in ;
-    output logic [MEMBERS - 1 : 0][BITS_KW - 1 : 0] clr; // 0-center, 1-center-left, 2-center-right, 3-left, 4-right
+    output logic [COLS    - 1 : 0][BITS_KW - 1 : 0] clr; // 0-center, 1-center-left, 2-center-right, 3-left, 4-right
     output logic valid_mask;
     output logic [BITS_MEMBERS  -1:0] shift_a;
     output logic [BITS_OUT_SHIFT-1:0] shift_b;
@@ -103,10 +103,10 @@ module pad_filter (
     logic   reg_clken       ;
     logic   [KW2_MAX : 1] col_end_in     ;
     logic   [KW2_MAX : 0] col_end        ;
-    logic   [MEMBERS-1:0] reg_clken_masked;
+    logic   [COLS   -1:0] reg_clken_masked;
     logic   [KW2_MAX : 1] col_start_in   ;
     logic   [KW2_MAX : 1] col_start      ;
-    logic   [MEMBERS-1:0][KW2_MAX : 0] col_end_masked;
+    logic   [COLS   -1:0][KW2_MAX : 0] col_end_masked;
 
     logic [BITS_KW-1:0] clr_left_lut  [2**KW2_MAX:0][KW_MAX      /2:0];
     logic [BITS_KW-1:0] clr_right_lut [2**KW2_MAX:0];
@@ -114,7 +114,7 @@ module pad_filter (
     logic [BITS_KW-1: 0] clr_left_in ;
     logic [BITS_KW-1: 0] clr_left_out;
 
-    logic lut_next_full  [MEMBERS - 1 : 0] [KW2_MAX : 0];
+    logic lut_next_full  [COLS    - 1 : 0] [KW2_MAX : 0];
 
     generate
         assign reg_clken = aclken && valid_in && (user_in [I_IS_CIN_LAST] || user_in [I_IS_CONFIG]);
@@ -204,7 +204,7 @@ module pad_filter (
             - right = 2*log(col_end_masked)
         */
 
-        for (genvar m=0; m<MEMBERS; m++) begin
+        for (genvar m=0; m<COLS   ; m++) begin
 
             assign lut_next_full[m][0] = 1;
             for (genvar kw2=1;  kw2 <= KW2_MAX; kw2++) begin
@@ -255,7 +255,7 @@ module pad_filter (
     */
     
     logic lut_not_start_cols              [KW2_MAX : 0];
-    logic lut_allow     [MEMBERS - 1 : 0] [KW2_MAX : 0][SW_MAX-1:0];
+    logic lut_allow     [COLS    - 1 : 0] [KW2_MAX : 0][SW_MAX-1:0];
 
     wire [BITS_MEMBERS  -1:0] lut_shift_a [KW2_MAX:0][SW_MAX-1:0];
     wire [BITS_OUT_SHIFT-1:0] lut_shift_b [KW2_MAX:0][SW_MAX-1:0];
@@ -275,7 +275,7 @@ module pad_filter (
 
                 if (`KS_COMBS_EXPR) begin
                     assign lut_shift_a[kw2][sw_1] = col_end [kw2] ? kw2 : 0; // only for S=1
-                    assign lut_shift_b[kw2][sw_1] = k==1 ? 0 : MEMBERS/j-1; 
+                    assign lut_shift_b[kw2][sw_1] = k==1 ? 0 : COLS   /j-1; 
                 end
             end
 
@@ -283,7 +283,7 @@ module pad_filter (
         assign shift_b = lut_shift_b[kw2_wire][sw_1_wire];
     endgenerate
 
-        // for (genvar m=0; m < MEMBERS; m++)   begin: M
+        // for (genvar m=0; m < COLS   ; m++)   begin: M
         //     for (genvar kw2=1;  kw2 <= KW2_MAX; kw2++)
         //         for (genvar sw_1=0;  sw_1 < SW_MAX; sw_1++)   begin: S
 
@@ -295,7 +295,7 @@ module pad_filter (
         //                 logic full_datapath, unused_datapaths, last_col, last_malformed, at_start_and_middle, at_last_col;
                     
         //                 assign full_datapath       = (m % j) >= k-1         ; // M=24, kw=5: m=0,4,9,14,19
-        //                 assign unused_datapaths    = m >= (MEMBERS/j)*j     ; // m >= 20
+        //                 assign unused_datapaths    = m >= (COLS   /j)*j     ; // m >= 20
         //                 assign last_col            = col_end  [kw2]         ; // if the last column:
         //                 assign last_malformed      = (m % j) <  k-1-s       ; // M=24, kw=5: m=0,1,5,6; All (m<k2) datapaths contain malformed data, rest contain padded data
         //                 assign at_start_and_middle = lut_not_start_cols[kw2] & full_datapath; // During start_cols, block all datapaths. During middle_cols, allow only full_datapth.
