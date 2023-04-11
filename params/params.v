@@ -116,8 +116,6 @@
 
     // PIPE TUSER INDICES
     `define I_IS_NOT_MAX      0
-    `define I_IS_MAX           `I_IS_NOT_MAX      + 1
-    `define I_IS_LRELU         `I_IS_MAX          + 1
     `define I_KW2              `I_IS_LRELU        + 1
     `define I_SW_1             `I_KW2     + `BITS_KW2
     `define I_IS_CONFIG        `I_SW_1    + `BITS_SW 
