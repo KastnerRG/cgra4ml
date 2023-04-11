@@ -29,30 +29,17 @@
 
     `define LATENCY_ACCUMULATOR   1    
     `define LATENCY_MULTIPLIER    1     
+    `define LATENCY_BRAM          2     
 
     `define S_WEIGHTS_WIDTH_LF  64
     `define S_PIXELS_WIDTH_LF   64
     `define M_OUTPUT_WIDTH_LF   64
 
-    `define BITS_EXP_CONFIG       5      
-    `define BITS_FRA_CONFIG       10      
-    `define BITS_EXP_FMA_1        8       
-    `define BITS_FRA_FMA_1        23       
-    `define BITS_EXP_FMA_2        5       
-    `define BITS_FRA_FMA_2        10       
-    `define LATENCY_FMA_1         16        
-    `define LATENCY_FMA_2         15        
-    `define LATENCY_FIXED_2_FLOAT 6
-    `define LATENCY_BRAM          2         
-    `define LATENCY_CYCLIC_REG    0         
-    `define LATENCY_FLOAT_UPSIZE   2   
-    `define LATENCY_FLOAT_DOWNSIZE 3   
-
 
     // Calculated
 
     `define IM_BLOCKS_MAX    `IM_ROWS_MAX / `ROWS    
-    `define UNITS_EDGES        `ROWS  + `KH_MAX -1
+    `define ROWS_SHIFT        `ROWS  + `KH_MAX -1
     `define OUT_SHIFT_MAX      `COLS   /3
     `define IM_SHIFT_MAX       4   /* max( ceil(k/s)-1 )*/
     `define IM_SHIFT_REGS      `ROWS  + `IM_SHIFT_MAX
@@ -74,21 +61,13 @@
     `define BITS_OUT_SHIFT     $clog2( `OUT_SHIFT_MAX      )        
 
 
-    `define M_DATA_WIDTH_HF_CONV     `COLS    * `ROWS  * `WORD_WIDTH_ACC
+    `define M_DATA_WIDTH_HF_CONV     `COLS  * `ROWS  * `WORD_WIDTH_ACC
     `define M_DATA_WIDTH_HF_CONV_DW  `ROWS  * `WORD_WIDTH_ACC
     `define M_DATA_WIDTH_HF_LRELU    `ROWS  * `WORD_WIDTH
-    `define M_DATA_WIDTH_HF_MAXPOOL  `UNITS_EDGES * `WORD_WIDTH
-    `define M_DATA_WIDTH_HF_MAX_DW1  `UNITS_EDGES * `WORD_WIDTH
+    `define M_DATA_WIDTH_HF_MAX_DW1  `ROWS_SHIFT * `WORD_WIDTH
     `define M_DATA_WIDTH_LF_CONV_DW  8 * $clog2(`M_DATA_WIDTH_HF_CONV_DW * `FREQ_RATIO / 8) /* max 1024 */
     `define M_DATA_WIDTH_LF_LRELU    8 * $clog2(`M_DATA_WIDTH_HF_LRELU   * `FREQ_RATIO / 8) /* max 1024 */
-    `define M_DATA_WIDTH_LF_MAXPOOL  8 * $clog2(`M_DATA_WIDTH_HF_MAX_DW1 * `FREQ_RATIO / 8) /* max 1024 */
-    `define M_DATA_WIDTH_LF         `OUTPUT_MODE=="CONV" ? `M_DATA_WIDTH_LF_CONV_DW : `OUTPUT_MODE=="LRELU" ? `M_DATA_WIDTH_LF_LRELU : `OUTPUT_MODE=="MAXPOOL" ? `M_DATA_WIDTH_LF_MAXPOOL : 0
-
-    `define DEBUG_CONFIG_WIDTH_W_ROT   1 + 2*`BITS_KW2 + 3*(`BITS_KH2      + `BITS_IM_CIN + `BITS_IM_COLS + `BITS_IM_BLOCKS)
-    `define DEBUG_CONFIG_WIDTH_IM_PIPE 3 + 2 + `BITS_KH2      + 0
-    `define DEBUG_CONFIG_WIDTH_LRELU   3 + 4 + `BITS_FRA_FMA_2 + `BITS_EXP_FMA_2 + 1
-    `define DEBUG_CONFIG_WIDTH_MAXPOOL 1
-    `define DEBUG_CONFIG_WIDTH         `DEBUG_CONFIG_WIDTH_MAXPOOL + `DEBUG_CONFIG_WIDTH_LRELU + 2*`BITS_KH2      + `DEBUG_CONFIG_WIDTH_IM_PIPE + `DEBUG_CONFIG_WIDTH_W_ROT
+    `define M_DATA_WIDTH_LF         `OUTPUT_MODE=="CONV" ? `M_DATA_WIDTH_LF_CONV_DW : `OUTPUT_MODE=="LRELU" ? `M_DATA_WIDTH_LF_LRELU : 0
 
 
     // IMAGE TUSER INDICES
@@ -127,8 +106,7 @@
 
     `define I_CLR              `I_IS_BOTTOM_BLOCK + 1
 
-    `define TUSER_WIDTH_MAXPOOL_IN      `BITS_KW2      + `I_KW2
-    `define TUSER_WIDTH_LRELU_IN        `BITS_KW       + `I_CLR
+    `define TUSER_WIDTH_CONV_OUT        `BITS_KW       + `I_CLR
     `define TUSER_CONV_DW_BASE          1 + `I_IS_BOTTOM_BLOCK 
     `define TUSER_CONV_DW_IN            `COLS   *`BITS_KW + `BITS_OUT_SHIFT + `BITS_MEMBERS + `TUSER_CONV_DW_BASE
     `define TUSER_WIDTH_LRELU_FMA_1_IN  1         + `I_IS_LRELU

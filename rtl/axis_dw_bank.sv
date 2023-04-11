@@ -31,7 +31,7 @@ module axis_dw_shift (
   localparam BITS_OUT_SHIFT      = `BITS_OUT_SHIFT      ;
   localparam USER_WIDTH_IN       = `TUSER_CONV_DW_IN    ;
   localparam CLR_WIDTH           = `BITS_KW             ;
-  localparam USER_WIDTH_OUT      = `TUSER_WIDTH_LRELU_IN;
+  localparam USER_WIDTH_OUT      = `TUSER_WIDTH_CONV_OUT;
 
   input logic aclk, aresetn;
 
@@ -265,7 +265,7 @@ module axis_conv_dw_bank (
   localparam ROWS                 = `ROWS                 ;
   localparam COLS                 = `COLS                 ;
   localparam WORD_WIDTH           = `WORD_WIDTH_ACC       ;
-  localparam TUSER_WIDTH_LRELU_IN = `TUSER_WIDTH_LRELU_IN ;  
+  localparam TUSER_WIDTH_CONV_OUT = `TUSER_WIDTH_CONV_OUT ;  
   localparam TUSER_CONV_DW_IN     = `TUSER_CONV_DW_IN     ;  
 
   localparam WORD_BYTES = WORD_WIDTH/8;
@@ -279,13 +279,13 @@ module axis_conv_dw_bank (
 
   input  logic m_ready;
   output logic [ROWS -1:0][WORD_WIDTH  -1:0] m_data;
-  output logic [TUSER_WIDTH_LRELU_IN-1:0] m_user;
+  output logic [TUSER_WIDTH_CONV_OUT-1:0] m_user;
   output logic m_valid, m_last;
 
   logic  s_ready_cg;
   logic  m_valid_cg;
   logic  m_last_cg;
-  logic [TUSER_WIDTH_LRELU_IN-1:0] m_user_cg;
+  logic [TUSER_WIDTH_CONV_OUT-1:0] m_user_cg;
 
   axis_dw_shift CONV_DW (
     .aclk    (aclk       ),
