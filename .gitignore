@@ -1,25 +1,12 @@
-*
+old/
+flow/fpga
+flow/asic/report
+flow/asic/tsmc
+__pycache__
 
-!README.md
-!.github/workflows/verify.yml
-!.gitignore
-!.gitattributes
-!*.py
-!*.md
-!*.sv
-!*.v
-!*.cpp
+*.pickle
+test/vectors
+test/xsim
 
-**/.ipynb_checkpoints/**
-
-!rtl/*
-!rtl/ext/*
-!rtl/sram/*
-
-!test/py/*.py
-!rtl/sv/*
-
-!c/
-
-!tcl/
-!wave/
+docs/Calc Pattern.xlsx
+docs/file_hierrarchy.txt
