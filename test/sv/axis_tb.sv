@@ -99,9 +99,9 @@ module AXIS_Source #(
       s_valid = $urandom_range(0,99) < PROB_VALID;      // randomize s_valid
       
       // scrable data signals on every cycle if !valid to catch slave reading it at wrong time
-      s_data = s_valid ? s_data_val : '1;
-      s_keep = s_valid ? s_keep_val : '1;
-      s_last = s_valid ? s_last_val :  1;
+      s_data = s_valid ? s_data_val : 'x;
+      s_keep = s_valid ? s_keep_val : 'x;
+      s_last = s_valid ? s_last_val : 'x;
 
       // -------------- LOOP BEGINS HERE -----------
       @(posedge aclk);

@@ -7,6 +7,7 @@ __pycache__
 *.pickle
 test/vectors
 test/xsim
+test/wave
 
 docs/Calc Pattern.xlsx
 docs/file_hierrarchy.txt
