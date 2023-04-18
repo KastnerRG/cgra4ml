@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`include "../params/params.v"
+`include "../params/params.sv"
 
 module axis_pixels_dw (
     aclk     ,
@@ -26,12 +26,6 @@ module axis_pixels_dw (
   localparam KH_MAX               = `KH_MAX            ;
   localparam KW_MAX               = `KW_MAX            ;
   localparam SH_MAX               = `SH_MAX            ;
-  localparam I_IS_NOT_MAX         = `I_IS_NOT_MAX      ;
-  localparam I_IS_MAX             = `I_IS_MAX          ;
-  localparam I_IS_LRELU           = `I_IS_LRELU        ;
-  localparam I_KH2                = `I_KH2             ; 
-  localparam I_SH_1               = `I_SH_1            ; 
-  localparam TUSER_WIDTH_PIXELS   = `TUSER_WIDTH_PIXELS;
   localparam OUTPUT_MODE          = `OUTPUT_MODE       ;
   localparam S_PIXELS_WIDTH_LF    = `S_PIXELS_WIDTH_LF ;
   localparam BITS_KH              = `BITS_KH           ;
@@ -54,7 +48,7 @@ module axis_pixels_dw (
 
   input  logic m_ready;
   output logic m_valid;
-  output logic [TUSER_WIDTH_PIXELS                -1:0] m_user;
+  output tuser_st m_user;
   output logic [IM_SHIFT_REGS     -1:0][WORD_WIDTH-1:0] m_data;
   output logic [BITS_IM_SHIFT-1:0] m_shift;
   output logic m_ones;
@@ -86,9 +80,9 @@ module axis_pixels_dw (
     .data_in      (CONFIG_WIDTH'(s_data)),
     .data_out     ({words, sh_1, kw2, kh2, is_lrelu, is_max, is_not_max})
   );
-  assign m_user [I_IS_NOT_MAX ] = is_not_max;
-  assign m_user [I_IS_MAX     ] = is_max    ;
-  assign m_user [I_IS_LRELU   ] = OUTPUT_MODE != "CONV" && is_lrelu;
+  assign m_user.is_not_max = is_not_max;
+  assign m_user.is_max     = is_max    ;
+  assign m_user.is_lrelu   = OUTPUT_MODE != "CONV" && is_lrelu;
 
   /*
     DW BANKS

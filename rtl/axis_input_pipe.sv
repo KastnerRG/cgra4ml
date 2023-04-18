@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`include "../params/params.v"
+`include "../params/params.sv"
 
 module axis_input_pipe 
   #(
@@ -9,43 +9,11 @@ module axis_input_pipe
     WORD_WIDTH                = `WORD_WIDTH               , 
     KH_MAX                    = `KH_MAX                   ,   // odd number
     KW_MAX                    = `KW_MAX                   ,
-
-    //  IMAGE TUSER INDICES 
-    I_SH_1                    = `I_SH_1            , 
-    I_SW_1                    = `I_SW_1            , 
-    TUSER_WIDTH_IM_SHIFT_IN   = `TUSER_WIDTH_IM_SHIFT_IN  ,
-    TUSER_WIDTH_IM_SHIFT_OUT  = `TUSER_WIDTH_IM_SHIFT_OUT ,
     IM_CIN_MAX                = `IM_CIN_MAX               ,
     IM_BLOCKS_MAX             = `IM_BLOCKS_MAX            ,
     IM_COLS_MAX               = `IM_COLS_MAX              ,
     S_WEIGHTS_WIDTH_LF        = `S_WEIGHTS_WIDTH_LF       ,
-    LATENCY_BRAM              = `LATENCY_BRAM             ,
-    // WEIGHTS TUSER INDICES 
-    I_WEIGHTS_IS_TOP_BLOCK    = `I_WEIGHTS_IS_TOP_BLOCK   ,
-    I_WEIGHTS_IS_BOTTOM_BLOCK = `I_WEIGHTS_IS_BOTTOM_BLOCK,
-    I_WEIGHTS_IS_COLS_1_K2    = `I_WEIGHTS_IS_COLS_1_K2   ,
-    I_WEIGHTS_IS_CONFIG       = `I_WEIGHTS_IS_CONFIG      ,
-    I_WEIGHTS_IS_CIN_LAST     = `I_WEIGHTS_IS_CIN_LAST    ,
-    I_WEIGHTS_IS_W_FIRST      = `I_WEIGHTS_IS_W_FIRST     ,
-    I_WEIGHTS_KW2             = `I_WEIGHTS_KW2            , 
-    I_WEIGHTS_SW_1            = `I_WEIGHTS_SW_1           , 
-    I_WEIGHTS_IS_COL_VALID    = `I_WEIGHTS_IS_COL_VALID   , 
-    I_WEIGHTS_IS_SUM_START    = `I_WEIGHTS_IS_SUM_START   , 
-    TUSER_WIDTH_WEIGHTS_OUT   = `TUSER_WIDTH_WEIGHTS_OUT  ,
-    //  CONV TUSER INDICES   
-    I_IS_NOT_MAX              = `I_IS_NOT_MAX             ,
-    I_IS_MAX                  = `I_IS_MAX                 ,
-    I_IS_LRELU                = `I_IS_LRELU               ,
-    I_IS_TOP_BLOCK            = `I_IS_TOP_BLOCK           ,
-    I_IS_BOTTOM_BLOCK         = `I_IS_BOTTOM_BLOCK        ,
-    I_IS_COLS_1_K2            = `I_IS_COLS_1_K2           ,
-    I_IS_CONFIG               = `I_IS_CONFIG              ,
-    I_IS_CIN_LAST             = `I_IS_CIN_LAST            ,
-    I_IS_W_FIRST              = `I_IS_W_FIRST             ,
-    I_IS_COL_VALID            = `I_IS_COL_VALID           ,
-    I_IS_SUM_START            = `I_IS_SUM_START           ,
-    I_KW2                     = `I_KW2             , 
-    TUSER_WIDTH_CONV_IN       = `TUSER_WIDTH_CONV_IN      
+    LATENCY_BRAM              = `LATENCY_BRAM             
   )(
     aclk                  ,
     aresetn               ,
@@ -93,25 +61,24 @@ module axis_input_pipe
   wire image_is_config;
   wire im_mux_m_ready;
   wire im_mux_m_valid;
-  wire [TUSER_WIDTH_IM_SHIFT_IN-1:0] im_mux_m_user;
   wire [WORD_WIDTH*ROWS_SHIFT-1:0] im_mux_m_data_1;
   wire [WORD_WIDTH*ROWS_SHIFT-1:0] im_mux_m_data_2;
 
   wire pixels_m_ready;
   wire pixels_m_valid;
-  wire [TUSER_WIDTH_IM_SHIFT_OUT-1:0] pixels_m_user;
+  tuser_st pixels_m_user;
   
   wire weights_m_ready;
   wire weights_m_valid;
   wire weights_m_last;
-  wire [TUSER_WIDTH_WEIGHTS_OUT-1:0] weights_m_user;
+  tuser_st weights_m_user;
   output wire [WORD_WIDTH*ROWS          -1:0] m_axis_pixels_tdata;
 
   input  wire m_axis_tready;
   output wire m_axis_tvalid;
   output wire m_axis_tlast ;
   output wire [WORD_WIDTH*COLS   -1:0] m_axis_weights_tdata;
-  output wire [TUSER_WIDTH_CONV_IN-1:0] m_axis_tuser;
+  output tuser_st m_axis_tuser;
 
   axis_pixels_pipe PIXELS (
     .aclk   (aclk   ),
@@ -156,20 +123,20 @@ module axis_input_pipe
   
   assign m_axis_tlast    = weights_m_last;
 
-  assign m_axis_tuser [I_IS_NOT_MAX     ] = pixels_m_user  [I_IS_NOT_MAX];
-  assign m_axis_tuser [I_IS_MAX         ] = pixels_m_user  [I_IS_MAX    ];
-  assign m_axis_tuser [I_IS_LRELU       ] = pixels_m_user  [I_IS_LRELU  ];
+  assign m_axis_tuser.is_not_max = pixels_m_user.is_not_max;
+  assign m_axis_tuser.is_max     = pixels_m_user.is_max    ;
+  assign m_axis_tuser.is_lrelu   = pixels_m_user.is_lrelu  ;
 
-  assign m_axis_tuser [I_KW2 + BITS_KW2-1: I_KW2] = weights_m_user [I_WEIGHTS_KW2 + BITS_KW2-1: I_WEIGHTS_KW2];
-  assign m_axis_tuser [I_SW_1+ BITS_SW -1: I_SW_1] = weights_m_user [I_WEIGHTS_SW_1+ BITS_SW -1: I_WEIGHTS_SW_1];
-  assign m_axis_tuser [I_IS_TOP_BLOCK   ] = weights_m_user [I_WEIGHTS_IS_TOP_BLOCK   ] && m_axis_tvalid;
-  assign m_axis_tuser [I_IS_BOTTOM_BLOCK] = weights_m_user [I_WEIGHTS_IS_BOTTOM_BLOCK] && m_axis_tvalid;
-  assign m_axis_tuser [I_IS_COLS_1_K2   ] = weights_m_user [I_WEIGHTS_IS_COLS_1_K2   ] && m_axis_tvalid;
-  assign m_axis_tuser [I_IS_CONFIG      ] = weights_m_user [I_WEIGHTS_IS_CONFIG      ];
-  assign m_axis_tuser [I_IS_CIN_LAST    ] = weights_m_user [I_WEIGHTS_IS_CIN_LAST    ] && m_axis_tvalid;
-  assign m_axis_tuser [I_IS_W_FIRST     ] = weights_m_user [I_WEIGHTS_IS_W_FIRST     ] && m_axis_tvalid;
-  assign m_axis_tuser [I_IS_COL_VALID   ] = weights_m_user [I_WEIGHTS_IS_COL_VALID   ] && m_axis_tvalid;
-  assign m_axis_tuser [I_IS_SUM_START   ] = weights_m_user [I_WEIGHTS_IS_SUM_START   ] && m_axis_tvalid;
+  assign m_axis_tuser.kw2          = weights_m_user.kw2          ;
+  assign m_axis_tuser.sw_1         = weights_m_user.sw_1         ;
+  assign m_axis_tuser.is_top_block = weights_m_user.is_top_block  && m_axis_tvalid;
+  assign m_axis_tuser.is_bot_block = weights_m_user.is_bot_block  && m_axis_tvalid;
+  assign m_axis_tuser.is_col_1_k2  = weights_m_user.is_col_1_k2   && m_axis_tvalid;
+  assign m_axis_tuser.is_config    = weights_m_user.is_config    ;
+  assign m_axis_tuser.is_cin_last  = weights_m_user.is_cin_last   && m_axis_tvalid;
+  assign m_axis_tuser.is_w_first   = weights_m_user.is_w_first    && m_axis_tvalid;
+  assign m_axis_tuser.is_col_valid = weights_m_user.is_col_valid  && m_axis_tvalid;
+  assign m_axis_tuser.is_sum_start = weights_m_user.is_sum_start  && m_axis_tvalid;
 
   /*
     DATA

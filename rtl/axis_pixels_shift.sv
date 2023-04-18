@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`include "../params/params.v"
+`include "../params/params.sv"
 
 module axis_pixels_shift (
     aclk   ,
@@ -20,18 +20,13 @@ module axis_pixels_shift (
 
   localparam ROWS            = `ROWS          ;
   localparam WORD_WIDTH      = `WORD_WIDTH    ; 
+  localparam TUSER_WIDTH     = `TUSER_WIDTH   ; 
   localparam KH_MAX          = `KH_MAX        ;
   localparam IM_SHIFT_REGS   = `IM_SHIFT_REGS ;
   localparam BITS_SH         = `BITS_SH       ;
   localparam BITS_KH         = `BITS_KH       ;
   localparam BITS_IM_SHIFT   = `BITS_IM_SHIFT ;
-  
-  localparam I_IS_NOT_MAX             = `I_IS_NOT_MAX; 
-  localparam I_IS_MAX                 = `I_IS_MAX; 
-  localparam I_IS_LRELU               = `I_IS_LRELU; 
-  localparam I_KH2                    = `I_KH2 ; 
-  localparam I_SH_1                   = `I_SH_1; 
-  localparam TUSER_WIDTH_PIXELS       = `TUSER_WIDTH_PIXELS;
+
 
   input logic aclk;
   input logic aresetn;
@@ -40,13 +35,13 @@ module axis_pixels_shift (
   input  logic s_valid;
   input  logic s_ones;
   input  logic [IM_SHIFT_REGS-1:0][WORD_WIDTH-1:0] s_data;
-  input  logic [TUSER_WIDTH_PIXELS           -1:0] s_user;
+  input  tuser_st s_user;
   input  logic [BITS_IM_SHIFT-1:0] s_shift;
 
   input  logic m_ready;
   output logic m_valid;
   output logic [ROWS -1:0][WORD_WIDTH-1:0] m_data;
-  output logic [TUSER_WIDTH_PIXELS               -1:0] m_user;
+  output tuser_st m_user;
 
   logic clken ;
 
@@ -104,10 +99,10 @@ module axis_pixels_shift (
     .data_out       (reg_valid)
   );
 
-  logic [TUSER_WIDTH_PIXELS -1:0] reg_user;
+  logic [TUSER_WIDTH -1:0] reg_user;
   logic reg_ones;
   register #(
-    .WORD_WIDTH     (TUSER_WIDTH_PIXELS+1),
+    .WORD_WIDTH     (TUSER_WIDTH+1),
     .RESET_VALUE    (0)
   ) REG_USER (
     .clock          (aclk),
@@ -123,7 +118,7 @@ module axis_pixels_shift (
   assign slice_s_data = reg_data[ROWS -1:0];
 
   skid_buffer #(
-    .WIDTH   (ROWS *WORD_WIDTH + TUSER_WIDTH_PIXELS)
+    .WIDTH   (ROWS *WORD_WIDTH + TUSER_WIDTH)
   ) AXIS_REG (
     .aclk    (aclk        ),
     .aresetn (aresetn     ),

@@ -1,5 +1,7 @@
 `timescale 1ns/1ps
-`include "../params/params.v"
+`define VERILOG
+`include "../params/params.sv"
+`undef  VERILOG
 
 module axis_accelerator_asic (
     aclk                  ,
@@ -35,14 +37,7 @@ module axis_accelerator_asic (
   localparam COLS                       = `COLS                 ;
   localparam WORD_WIDTH                 = `WORD_WIDTH           ; 
   localparam WORD_WIDTH_ACC             = `WORD_WIDTH_ACC       ;
-
-  // LATENCIES & float widths 
-  localparam TUSER_WIDTH_CONV_IN        = `TUSER_WIDTH_CONV_IN       ;
-  localparam TUSER_CONV_DW_IN           = `TUSER_CONV_DW_IN          ;
-  localparam TUSER_WIDTH_CONV_OUT       = `TUSER_WIDTH_CONV_OUT      ;
-
-  localparam I_IS_CONFIG = `I_IS_CONFIG;
-
+  localparam TUSER_WIDTH                = `TUSER_WIDTH               ;
   /* WIRES */
 
   input  wire aclk;
@@ -65,18 +60,18 @@ module axis_accelerator_asic (
   wire input_m_axis_tlast ;
   wire [WORD_WIDTH*ROWS           -1:0] input_m_axis_pixels_tdata;
   wire [WORD_WIDTH*COLS    -1:0] input_m_axis_weights_tdata;
-  wire [TUSER_WIDTH_CONV_IN              -1:0] input_m_axis_tuser        ;
+  wire [TUSER_WIDTH        -1:0] input_m_axis_tuser        ;
 
   wire conv_m_axis_tready;
   wire conv_m_axis_tvalid;
   wire conv_m_axis_tlast ;
-  wire [TUSER_CONV_DW_IN             -1:0] conv_m_axis_tuser;
+  wire [TUSER_WIDTH             -1:0] conv_m_axis_tuser;
   wire [M_DATA_WIDTH_HF_CONV         -1:0] conv_m_axis_tdata; // cgmu
 
   wire dw_s_axis_tready;
   wire dw_s_axis_tvalid;
   wire dw_s_axis_tlast ;
-  wire [TUSER_WIDTH_CONV_OUT    -1:0] dw_s_axis_tuser ;
+  wire [TUSER_WIDTH    -1:0] dw_s_axis_tuser ;
   wire [M_DATA_WIDTH_HF_CONV_DW -1:0] dw_s_axis_tdata ;
 
   input  wire m_axis_tready;
@@ -124,7 +119,7 @@ module axis_accelerator_asic (
     .aclk    (aclk   ),
     .aresetn (aresetn),
     .s_ready (conv_m_axis_tready    ),
-    .s_valid (conv_m_axis_tvalid & ~conv_m_axis_tuser[I_IS_CONFIG]),
+    .s_valid (conv_m_axis_tvalid    ),
     .s_data  (conv_m_axis_tdata     ),
     .s_user  (conv_m_axis_tuser     ),
     .s_last  (conv_m_axis_tlast     ),
