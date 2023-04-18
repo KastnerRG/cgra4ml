@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`include "../params/params.v"
+`include "../params/params.sv"
 
 module axis_pixels_pipe (
     aclk     ,
@@ -18,7 +18,6 @@ module axis_pixels_pipe (
   localparam ROWS               = `ROWS                    ;
   localparam WORD_WIDTH         = `WORD_WIDTH              ; 
   localparam IM_SHIFT_REGS      = `IM_SHIFT_REGS           ;
-  localparam TUSER_WIDTH_PIXELS = `TUSER_WIDTH_PIXELS      ;
   localparam BITS_IM_SHIFT      = `BITS_IM_SHIFT           ;
   localparam S_PIXELS_WIDTH_LF  = `S_PIXELS_WIDTH_LF       ;
 
@@ -35,13 +34,13 @@ module axis_pixels_pipe (
   logic i_valid;
   logic i_ones;
   logic [IM_SHIFT_REGS-1:0][WORD_WIDTH-1:0] i_data;
-  logic [TUSER_WIDTH_PIXELS-1:0] i_user;
+  tuser_st i_user;
   logic [BITS_IM_SHIFT-1:0] i_shift;
 
   input  logic m_ready;
   output logic m_valid;
   output logic [ROWS -1:0][WORD_WIDTH-1:0] m_data;
-  output logic [TUSER_WIDTH_PIXELS-1:0] m_user;
+  output tuser_st m_user;
 
   axis_pixels_dw DW (
     .aclk    (aclk   ),

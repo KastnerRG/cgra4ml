@@ -31,7 +31,7 @@ Additional Comments:
 //////////////////////////////////////////////////////////////////////////////////*/
 
 `timescale 1ns/1ps
-`include "../params/params.v"
+`include "../params/params.sv"
 
 module pad_filter (
     aclk,
@@ -48,13 +48,6 @@ module pad_filter (
     localparam KW_MAX           = `KW_MAX             ;
     localparam SW_MAX           = `SW_MAX             ;
     localparam COLS             = `COLS               ;
-    localparam TUSER_WIDTH      = `TUSER_WIDTH_CONV_IN;
-    localparam I_IS_COLS_1_K2   = `I_IS_COLS_1_K2     ;
-    localparam I_IS_CONFIG      = `I_IS_CONFIG        ;
-    localparam I_IS_CIN_LAST    = `I_IS_CIN_LAST      ;
-    localparam I_IS_COL_VALID   = `I_IS_COL_VALID     ;
-    localparam I_KW2            = `I_KW2              ;
-    localparam I_SW_1           = `I_SW_1             ;
 
     localparam KW2_MAX          = KW_MAX      /2; //R, 3->1, 5->2, 7->3
     localparam BITS_KW          = `BITS_KW;
@@ -64,7 +57,7 @@ module pad_filter (
     localparam BITS_OUT_SHIFT   = `BITS_OUT_SHIFT;
 
     input  logic aclk, aresetn, aclken, valid_in;
-    input  logic [TUSER_WIDTH - 1: 0] user_in ;
+    input  tuser_st user_in ;
     output logic [COLS    - 1 : 0][BITS_KW - 1 : 0] clr; // 0-center, 1-center-left, 2-center-right, 3-left, 4-right
     output logic valid_mask;
     output logic [BITS_MEMBERS  -1:0] shift_a;
@@ -73,8 +66,8 @@ module pad_filter (
    
     logic   [BITS_KW2-1 : 0] kw2_wire;
     logic   [BITS_SW -1 : 0] sw_1_wire;
-    assign kw2_wire  = user_in [BITS_KW2 + I_KW2  -1: I_KW2 ]; // kw = 7 : kw2_wire = 3,   kw = 5 : kw2_wire = 2,   kw = 3 : kw2_wire = 1
-    assign sw_1_wire = user_in [BITS_SW  + I_SW_1 -1: I_SW_1];
+    assign kw2_wire  = user_in.kw2; // kw = 7 : kw2_wire = 3,   kw = 5 : kw2_wire = 2,   kw = 3 : kw2_wire = 1
+    assign sw_1_wire = user_in.sw_1;
     
     /*
     COL_START, COL_END Registers
@@ -117,14 +110,14 @@ module pad_filter (
     logic lut_next_full  [COLS    - 1 : 0] [KW2_MAX : 0];
 
     generate
-        assign reg_clken = aclken && valid_in && (user_in [I_IS_CIN_LAST] || user_in [I_IS_CONFIG]);
+        assign reg_clken = aclken && valid_in && (user_in.is_cin_last || user_in.is_config);
 
-        assign col_end_in   [1]  = user_in [I_IS_COLS_1_K2] && (kw2_wire != 0);
-        assign col_start_in [1]  = user_in [I_IS_CONFIG] ? (kw2_wire != 0) : col_end[kw2_wire]; // This is a mux
+        assign col_end_in   [1]  = user_in.is_col_1_k2 && (kw2_wire != 0);
+        assign col_start_in [1]  = user_in.is_config ? (kw2_wire != 0) : col_end[kw2_wire]; // This is a mux
 
         for (genvar k=2; k < KW2_MAX+1; k++) begin: col_end_gen_k
             assign col_end_in     [k]  = col_end  [k-1];
-            assign col_start_in   [k]  = user_in  [I_IS_CONFIG] ? 0 : col_start[k-1];
+            assign col_start_in   [k]  = user_in.is_config ? 0 : col_start[k-1];
         end
 
         register #(
@@ -211,7 +204,7 @@ module pad_filter (
                 localparam kw = kw2*2+1;
                 assign lut_next_full[m][kw2] = (m % kw) == kw-2; // before last
             end
-            assign reg_clken_masked  [m] = aclken && valid_in && lut_next_full[m][kw2_wire] && user_in [I_IS_CIN_LAST];
+            assign reg_clken_masked  [m] = aclken && valid_in && lut_next_full[m][kw2_wire] && user_in.is_cin_last;
 
             register #(
                 .WORD_WIDTH     (KW2_MAX),
@@ -265,7 +258,7 @@ module pad_filter (
         for (genvar kw2=1;  kw2 <= KW2_MAX; kw2++)
             assign lut_not_start_cols[kw2] = !(|col_start[kw2:1]);  // 1,2,...k2 : first k/2 colums are to be ignored
 
-        assign valid_mask = (lut_not_start_cols[kw2_wire] & user_in [I_IS_COL_VALID])  | user_in [I_IS_CONFIG];
+        assign valid_mask = (lut_not_start_cols[kw2_wire] & user_in.is_col_valid)  | user_in.is_config;
 
         for (genvar kw2=1;  kw2 <= KW2_MAX; kw2++)
             for (genvar sw_1=0;  sw_1 < SW_MAX; sw_1++) begin

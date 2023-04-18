@@ -1,12 +1,12 @@
 `timescale 1ns/1ps
 
-`include "../../params/params.v"
+`include "../../params/params.sv"
 
 
 module axis_accelerator_tb #( 
 parameter
   VALID_PROB = 20,
-  READY_PROB = 20,
+  READY_PROB = 100,
 
 `ifdef ICARUS
   DIR_PATH   = "vectors/",
@@ -39,9 +39,6 @@ parameter
               WORD_WIDTH                 = `WORD_WIDTH                , 
               WORD_WIDTH_ACC             = `WORD_WIDTH_ACC            ,
               BITS_KH2                   = `BITS_KH2                  ,
-              TUSER_WIDTH_CONV_IN        = `TUSER_WIDTH_CONV_IN       ,
-              TUSER_WIDTH_LRELU_FMA_1_IN = `TUSER_WIDTH_LRELU_FMA_1_IN,
-              TUSER_WIDTH_CONV_OUT       = `TUSER_WIDTH_CONV_OUT      ,
               M_OUTPUT_WIDTH_LF          = `M_OUTPUT_WIDTH_LF         ,
               S_WEIGHTS_WIDTH_LF         = `S_WEIGHTS_WIDTH_LF        ,
               M_DATA_WIDTH_HF_CONV       = `M_DATA_WIDTH_HF_CONV      ,

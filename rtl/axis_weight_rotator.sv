@@ -25,7 +25,7 @@ Additional Comments:
 
 //////////////////////////////////////////////////////////////////////////////////*/
 `timescale 1ns/1ps
-`include "../params/params.v"
+`include "../params/params.sv"
 
 module axis_weight_rotator (
     aclk         ,
@@ -54,17 +54,6 @@ module axis_weight_rotator (
   localparam IM_COLS_MAX               = `IM_COLS_MAX              ;
   localparam S_WEIGHTS_WIDTH_LF        = `S_WEIGHTS_WIDTH_LF       ;
   localparam LATENCY_BRAM              = `LATENCY_BRAM             ;
-  localparam I_WEIGHTS_IS_TOP_BLOCK    = `I_WEIGHTS_IS_TOP_BLOCK   ;
-  localparam I_WEIGHTS_IS_BOTTOM_BLOCK = `I_WEIGHTS_IS_BOTTOM_BLOCK;
-  localparam I_WEIGHTS_IS_COLS_1_K2    = `I_WEIGHTS_IS_COLS_1_K2   ;
-  localparam I_WEIGHTS_IS_CONFIG       = `I_WEIGHTS_IS_CONFIG      ;
-  localparam I_WEIGHTS_IS_CIN_LAST     = `I_WEIGHTS_IS_CIN_LAST    ;
-  localparam I_WEIGHTS_IS_W_FIRST      = `I_WEIGHTS_IS_W_FIRST     ;
-  localparam I_WEIGHTS_KW2             = `I_WEIGHTS_KW2            ; 
-  localparam I_WEIGHTS_SW_1            = `I_WEIGHTS_SW_1           ;
-  localparam I_WEIGHTS_IS_COL_VALID    = `I_WEIGHTS_IS_COL_VALID   ;
-  localparam I_WEIGHTS_IS_SUM_START    = `I_WEIGHTS_IS_SUM_START   ;
-  localparam TUSER_WIDTH_WEIGHTS_OUT   = `TUSER_WIDTH_WEIGHTS_OUT  ;
   localparam BITS_KW2                  = `BITS_KW2                 ;
   localparam BITS_KH2                  = `BITS_KH2                 ;
   localparam BITS_SW                   = `BITS_SW                  ;
@@ -73,7 +62,6 @@ module axis_weight_rotator (
   localparam BITS_IM_BLOCKS            = `BITS_IM_BLOCKS;
   localparam BITS_IM_COLS              = `BITS_IM_COLS  ;
 
-  localparam LRELU_BEATS_MAX = `LRELU_BEATS_MAX;
   localparam M_WIDTH    = WORD_WIDTH*COLS   ;
   localparam BRAM_WIDTH = M_WIDTH;
   localparam BRAM_DEPTH = `BRAM_WEIGHTS_DEPTH;
@@ -96,7 +84,7 @@ module axis_weight_rotator (
   input  logic m_axis_tready;
   output logic m_axis_tvalid;
   output logic m_axis_tlast ;
-  output logic [TUSER_WIDTH_WEIGHTS_OUT-1:0] m_axis_tuser;
+  output tuser_st m_axis_tuser;
   output logic [M_WIDTH         -1:0] m_axis_tdata;
 
   typedef logic logic_2_t [2];
@@ -641,18 +629,17 @@ module axis_weight_rotator (
   */
 
   assign m_axis_tlast = last_kh && last_cin && last_cols && last_blocks;
-  
-  assign m_axis_tuser [I_WEIGHTS_IS_CONFIG  ] = state_read  == R_PASS_CONFIG_S;
-  assign m_axis_tuser [I_WEIGHTS_KW2+BITS_KW2-1: I_WEIGHTS_KW2] = ref_kw2  [i_read];
-  assign m_axis_tuser [I_WEIGHTS_SW_1+BITS_SW -1: I_WEIGHTS_SW_1] = ref_1_sw [i_read];
 
-  assign m_axis_tuser [I_WEIGHTS_IS_W_FIRST     ] = count_cols == ref_1_cols[i_read] && count_cin == ref_1_cin[i_read] && count_kh == 2*ref_kh2 [i_read];
-  assign m_axis_tuser [I_WEIGHTS_IS_CIN_LAST    ] = (last_kh && last_cin);
-  assign m_axis_tuser [I_WEIGHTS_IS_COLS_1_K2   ] = count_cols   == ref_kw2      [i_read]; // i = cols-1-k/2 === [cols-1-i] = k/2
-  assign m_axis_tuser [I_WEIGHTS_IS_TOP_BLOCK   ] = count_blocks == ref_1_blocks [i_read];
-  assign m_axis_tuser [I_WEIGHTS_IS_BOTTOM_BLOCK] = last_blocks;
-  assign m_axis_tuser [I_WEIGHTS_IS_COL_VALID   ] = count_sw == ref_1_sw [i_read] - (ref_1_sw [i_read] == 0  ? 0 : 1); // if no stride, si=0 else si=1
-  assign m_axis_tuser [I_WEIGHTS_IS_SUM_START   ] = count_sw == ref_1_sw [i_read] - (ref_1_sw [i_read] == 2-1? 1 : 0); // if (7,2)    , si=1 else si=0
+  assign m_axis_tuser.is_config    = state_read  == R_PASS_CONFIG_S;
+  assign m_axis_tuser.kw2          = ref_kw2  [i_read];
+  assign m_axis_tuser.sw_1         = ref_1_sw [i_read];
+  assign m_axis_tuser.is_w_first   = count_cols == ref_1_cols[i_read] && count_cin == ref_1_cin[i_read] && count_kh == 2*ref_kh2 [i_read];
+  assign m_axis_tuser.is_cin_last  = (last_kh && last_cin);
+  assign m_axis_tuser.is_col_1_k2  = count_cols   == ref_kw2      [i_read]; // i = cols-1-k/2 === [cols-1-i] = k/2
+  assign m_axis_tuser.is_top_block = count_blocks == ref_1_blocks [i_read];
+  assign m_axis_tuser.is_bot_block = last_blocks;
+  assign m_axis_tuser.is_col_valid = count_sw == ref_1_sw [i_read] - (ref_1_sw [i_read] == 0  ? 0 : 1); // if no stride, si=0 else si=1
+  assign m_axis_tuser.is_sum_start = count_sw == ref_1_sw [i_read] - (ref_1_sw [i_read] == 2-1? 1 : 0); // if (7,2)    , si=1 else si=0
 
   register #(
     .WORD_WIDTH   (BITS_CONFIG_COUNT), 
