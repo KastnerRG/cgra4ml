@@ -191,7 +191,7 @@ def compile(request):
     return c
 
 
-@pytest.mark.parametrize("KH", [3])
+@pytest.mark.parametrize("KH", [3,1])
 @pytest.mark.parametrize("CI", [8])
 @pytest.mark.parametrize("CO", [8])
 @pytest.mark.parametrize("XH", [8])
@@ -313,12 +313,13 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW):
 
     w = np.pad(w, ((0,0),(0,0),(0,0),(0,CO_PAD-CO)))   # (KH, KW, CI, CO_PAD)
     w = w.reshape(KH, KW, CI, IT, CO_PRL)              # (KH, KW, CI, IT, CO_PRL)
+    w = np.flip(w, axis=4)
 
-    '''To fix DW bank issue'''
-    RATIO = c.KW_MAX//KW
-    w = w.reshape  (KH, KW, CI, IT, RATIO, CO_PRL//RATIO)
-    w = w.transpose(0,1,2,3,5,4)                       # (KH, KW, CI, IT, CO_PRL//RATIO, RATIO)
-    w = w.reshape  (KH, KW, CI, IT, CO_PRL)            # (KH, KW, CI, IT, CO_PRL)
+    # '''To fix DW bank issue'''
+    # RATIO = c.KW_MAX//KW
+    # w = w.reshape  (KH, KW, CI, IT, RATIO, CO_PRL//RATIO)
+    # w = w.transpose(0,1,2,3,5,4)                       # (KH, KW, CI, IT, CO_PRL//RATIO, RATIO)
+    # w = w.reshape  (KH, KW, CI, IT, CO_PRL)            # (KH, KW, CI, IT, CO_PRL)
     w = w.transpose(0,2,3,4,1)                         # (KH, CI, IT, CO_PRL, KW)
 
     '''Assume SW=1'''
@@ -435,6 +436,12 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW):
     y = y.transpose(4,0,1,3,5,2)                             # (IT,XN,L,XW,CO_PRL,c.ROWS)
 
     assert y.shape == (IT,XN,L,XW,CO_PRL,c.ROWS)
+
+    y_w_last = y[:,:,:,-(KW//2+1):,:,:]
+    y_w_last = y_w_last.transpose(0,1,2,4,3,5).reshape(IT,XN,L,(KW//2+1)*CO_PRL,c.ROWS)
+
+    y = y.reshape(IT,XN,L,XW*CO_PRL,c.ROWS)
+    y[:,:,:,-(KW//2+1)*CO_PRL:,:] = y_w_last
 
     y = y[0,0]
     path = f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_y_exp.txt"
