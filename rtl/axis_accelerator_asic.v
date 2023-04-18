@@ -120,7 +120,7 @@ module axis_accelerator_asic (
     .m_axis_tlast         (conv_m_axis_tlast          ),
     .m_axis_tuser         (conv_m_axis_tuser          )
     );
-  axis_conv_dw_bank CONV_DW (
+  axis_out_shift CONV_DW (
     .aclk    (aclk   ),
     .aresetn (aresetn),
     .s_ready (conv_m_axis_tready    ),
