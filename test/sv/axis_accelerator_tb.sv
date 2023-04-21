@@ -6,7 +6,7 @@
 module axis_accelerator_tb #( 
 parameter
   VALID_PROB = 20,
-  READY_PROB = 100,
+  READY_PROB = 20,
 
 `ifdef ICARUS
   DIR_PATH   = "vectors/",

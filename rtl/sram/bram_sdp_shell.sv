@@ -64,33 +64,27 @@ module bram_sdp_shell #(
         .doutb  (doutb)  
       );
     else if (TYPE == "RAW") begin
+      
+      // Write
+      logic [W_DEPTH-1:0][W_DATA_WIDTH-1:0] data;
 
-      wire [W_DEPTH-1:0][W_DATA_WIDTH-1:0] data;
+      always_ff @(posedge clka)
+        if (ena && wea) data[addra] <= dina;
 
-      for (i=0; i < W_DEPTH; i++) begin: WD 
-        register #(
-          .WORD_WIDTH     (W_DATA_WIDTH),
-          .RESET_VALUE    (0)
-        ) CELL (
-          .clock          (clka        ),
-          .resetn         (1'b1        ),
-          .clock_enable   (ena & wea & (i == addra)),
-          .data_in        (dina        ),
-          .data_out       (data     [i])
-        );
+      // Read
+      wire  [R_DEPTH-1:0][R_DATA_WIDTH-1:0] data_r = data;
+
+      // Based on latency
+      if (LATENCY == 1) begin
+        always_ff @(posedge clkb)
+          if (enb) doutb <= data_r[addrb];
+
+      end else begin
+        logic [LATENCY-2:0][R_DATA_WIDTH-1:0] delay;
+        always_ff @(posedge clkb)
+          if (enb) {doutb, delay} <= {delay, data_r[addrb]};
+
       end
-
-      wire [R_DEPTH-1:0][R_DATA_WIDTH-1:0] data_r = data;
-      n_delay #(
-        .N          (LATENCY     ),
-        .WORD_WIDTH (R_DATA_WIDTH)
-      ) DELAY (
-        .clk      (clkb         ),
-        .resetn   (1'b1         ),
-        .clken    (enb          ),
-        .data_in  (data_r[addrb]),
-        .data_out (doutb        )
-      );
     end
   endgenerate
 endmodule
