@@ -5,20 +5,20 @@
    <db_ref_list>
       <db_ref path="axis_accelerator_tb_behav.wdb" id="1">
          <top_modules>
-            <top_module name="\$unit_alex_axis_adapter_any_sv_4159402184 " />
+            <top_module name="\$unit_alex_axis_adapter_any_sv_307694674 " />
             <top_module name="axis_accelerator_tb" />
             <top_module name="glbl" />
          </top_modules>
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="0.000000 us"></ZoomStartTime>
-      <ZoomEndTime time="19.610001 us"></ZoomEndTime>
-      <Cursor1Time time="1.678000 us"></Cursor1Time>
+      <ZoomStartTime time="147.304 ns"></ZoomStartTime>
+      <ZoomEndTime time="187.485 ns"></ZoomEndTime>
+      <Cursor1Time time="154.000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="431"></NameColumnWidth>
-      <ValueColumnWidth column_width="144"></ValueColumnWidth>
+      <ValueColumnWidth column_width="96"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="3" />
    <wvobject fp_name="group533" type="group">
@@ -36,79 +36,451 @@
       <wvobject fp_name="group396" type="group">
          <obj_property name="label">Pixels Pipe</obj_property>
          <obj_property name="DisplayName">label</obj_property>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/aclk" type="logic">
-            <obj_property name="ElementShortName">aclk</obj_property>
-            <obj_property name="ObjectShortName">aclk</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="group735" type="group">
+            <obj_property name="label">Pixels&apos;</obj_property>
+            <obj_property name="DisplayName">label</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/aclk" type="logic">
+               <obj_property name="ElementShortName">aclk</obj_property>
+               <obj_property name="ObjectShortName">aclk</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/aresetn" type="logic">
+               <obj_property name="ElementShortName">aresetn</obj_property>
+               <obj_property name="ObjectShortName">aresetn</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/s_ready" type="logic">
+               <obj_property name="ElementShortName">s_ready</obj_property>
+               <obj_property name="ObjectShortName">s_ready</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/s_valid" type="logic">
+               <obj_property name="ElementShortName">s_valid</obj_property>
+               <obj_property name="ObjectShortName">s_valid</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/s_last" type="logic">
+               <obj_property name="ElementShortName">s_last</obj_property>
+               <obj_property name="ObjectShortName">s_last</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/s_data" type="array">
+               <obj_property name="ElementShortName">s_data[7:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">s_data[7:0][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/s_keep" type="array">
+               <obj_property name="ElementShortName">s_keep[7:0]</obj_property>
+               <obj_property name="ObjectShortName">s_keep[7:0]</obj_property>
+               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_ready" type="logic">
+               <obj_property name="ElementShortName">m_ready</obj_property>
+               <obj_property name="ObjectShortName">m_ready</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_valid" type="logic">
+               <obj_property name="ElementShortName">m_valid</obj_property>
+               <obj_property name="ObjectShortName">m_valid</obj_property>
+               <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_last" type="logic">
+               <obj_property name="ElementShortName">m_last</obj_property>
+               <obj_property name="ObjectShortName">m_last</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_data" type="array">
+               <obj_property name="ElementShortName">m_data[7:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">m_data[7:0][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+               <obj_property name="UseCustomSignalColor">true</obj_property>
+               <obj_property name="isExpanded"></obj_property>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_data[7]" type="array">
+                  <obj_property name="ElementShortName">[7][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[7][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_data[6]" type="array">
+                  <obj_property name="ElementShortName">[6][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[6][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_data[5]" type="array">
+                  <obj_property name="ElementShortName">[5][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[5][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_data[4]" type="array">
+                  <obj_property name="ElementShortName">[4][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[4][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_data[3]" type="array">
+                  <obj_property name="ElementShortName">[3][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_data[2]" type="array">
+                  <obj_property name="ElementShortName">[2][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_data[1]" type="array">
+                  <obj_property name="ElementShortName">[1][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+               <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_data[0]" type="array">
+                  <obj_property name="ElementShortName">[0][7:0]</obj_property>
+                  <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               </wvobject>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_user" type="array">
+               <obj_property name="ElementShortName">m_user</obj_property>
+               <obj_property name="ObjectShortName">m_user</obj_property>
+               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/dw_s_valid" type="logic">
+               <obj_property name="ElementShortName">dw_s_valid</obj_property>
+               <obj_property name="ObjectShortName">dw_s_valid</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/dw_s_ready" type="logic">
+               <obj_property name="ElementShortName">dw_s_ready</obj_property>
+               <obj_property name="ObjectShortName">dw_s_ready</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/dw_m_ready" type="logic">
+               <obj_property name="ElementShortName">dw_m_ready</obj_property>
+               <obj_property name="ObjectShortName">dw_m_ready</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/dw_m_valid" type="logic">
+               <obj_property name="ElementShortName">dw_m_valid</obj_property>
+               <obj_property name="ObjectShortName">dw_m_valid</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/dw_m_last" type="logic">
+               <obj_property name="ElementShortName">dw_m_last</obj_property>
+               <obj_property name="ObjectShortName">dw_m_last</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/dw_m_data" type="array">
+               <obj_property name="ElementShortName">dw_m_data[8:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">dw_m_data[8:0][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/state" type="array">
+               <obj_property name="ElementShortName">state[31:0]</obj_property>
+               <obj_property name="ObjectShortName">state[31:0]</obj_property>
+               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/en_config" type="logic">
+               <obj_property name="ElementShortName">en_config</obj_property>
+               <obj_property name="ObjectShortName">en_config</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/en_shift" type="logic">
+               <obj_property name="ElementShortName">en_shift</obj_property>
+               <obj_property name="ObjectShortName">en_shift</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/en_copy" type="logic">
+               <obj_property name="ElementShortName">en_copy</obj_property>
+               <obj_property name="ObjectShortName">en_copy</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/last_clk_kh" type="logic">
+               <obj_property name="ElementShortName">last_clk_kh</obj_property>
+               <obj_property name="ObjectShortName">last_clk_kh</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/last_clk_ci" type="logic">
+               <obj_property name="ElementShortName">last_clk_ci</obj_property>
+               <obj_property name="ObjectShortName">last_clk_ci</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/last_clk_w" type="logic">
+               <obj_property name="ElementShortName">last_clk_w</obj_property>
+               <obj_property name="ObjectShortName">last_clk_w</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/last_l" type="logic">
+               <obj_property name="ElementShortName">last_l</obj_property>
+               <obj_property name="ObjectShortName">last_l</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/ref_kh2" type="array">
+               <obj_property name="ElementShortName">ref_kh2[0:0]</obj_property>
+               <obj_property name="ObjectShortName">ref_kh2[0:0]</obj_property>
+               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/ref_kh2_in" type="array">
+               <obj_property name="ElementShortName">ref_kh2_in[0:0]</obj_property>
+               <obj_property name="ObjectShortName">ref_kh2_in[0:0]</obj_property>
+               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/ref_ci_in" type="array">
+               <obj_property name="ElementShortName">ref_ci_in[9:0]</obj_property>
+               <obj_property name="ObjectShortName">ref_ci_in[9:0]</obj_property>
+               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/ref_w_in" type="array">
+               <obj_property name="ElementShortName">ref_w_in[8:0]</obj_property>
+               <obj_property name="ObjectShortName">ref_w_in[8:0]</obj_property>
+               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/ref_l_in" type="array">
+               <obj_property name="ElementShortName">ref_l_in[4:0]</obj_property>
+               <obj_property name="ObjectShortName">ref_l_in[4:0]</obj_property>
+               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/dw_m_last_beat" type="logic">
+               <obj_property name="ElementShortName">dw_m_last_beat</obj_property>
+               <obj_property name="ObjectShortName">dw_m_last_beat</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/s_last_beat" type="logic">
+               <obj_property name="ElementShortName">s_last_beat</obj_property>
+               <obj_property name="ObjectShortName">s_last_beat</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_beat" type="logic">
+               <obj_property name="ElementShortName">m_beat</obj_property>
+               <obj_property name="ObjectShortName">m_beat</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/ram_addr" type="array">
+               <obj_property name="ElementShortName">ram_addr[23:0]</obj_property>
+               <obj_property name="ObjectShortName">ram_addr[23:0]</obj_property>
+               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/ram_dout" type="array">
+               <obj_property name="ElementShortName">ram_dout[0:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">ram_dout[0:0][7:0]</obj_property>
+               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/edge_top" type="array">
+               <obj_property name="ElementShortName">edge_top[0:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">edge_top[0:0][7:0]</obj_property>
+               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/edge_bot" type="array">
+               <obj_property name="ElementShortName">edge_bot[0:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">edge_bot[0:0][7:0]</obj_property>
+               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/shift_reg" type="array">
+               <obj_property name="ElementShortName">shift_reg[9:0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">shift_reg[9:0][7:0]</obj_property>
+               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+            </wvobject>
          </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/aresetn" type="logic">
-            <obj_property name="ElementShortName">aresetn</obj_property>
-            <obj_property name="ObjectShortName">aresetn</obj_property>
+         <wvobject fp_name="group745" type="group">
+            <obj_property name="label">KH</obj_property>
+            <obj_property name="DisplayName">label</obj_property>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_KH/clk" type="logic">
+               <obj_property name="ElementShortName">clk</obj_property>
+               <obj_property name="ObjectShortName">clk</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_KH/reset" type="logic">
+               <obj_property name="ElementShortName">reset</obj_property>
+               <obj_property name="ObjectShortName">reset</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_KH/en" type="logic">
+               <obj_property name="ElementShortName">en</obj_property>
+               <obj_property name="ObjectShortName">en</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_KH/max_in" type="array">
+               <obj_property name="ElementShortName">max_in[1:0]</obj_property>
+               <obj_property name="ObjectShortName">max_in[1:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_KH/count" type="array">
+               <obj_property name="ElementShortName">count[1:0]</obj_property>
+               <obj_property name="ObjectShortName">count[1:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_KH/last" type="logic">
+               <obj_property name="ElementShortName">last</obj_property>
+               <obj_property name="ObjectShortName">last</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_KH/last_clk" type="logic">
+               <obj_property name="ElementShortName">last_clk</obj_property>
+               <obj_property name="ObjectShortName">last_clk</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_KH/max_1" type="array">
+               <obj_property name="ElementShortName">max_1[1:0]</obj_property>
+               <obj_property name="ObjectShortName">max_1[1:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_KH/max" type="array">
+               <obj_property name="ElementShortName">max[1:0]</obj_property>
+               <obj_property name="ObjectShortName">max[1:0]</obj_property>
+            </wvobject>
          </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/DW/state" type="array">
-            <obj_property name="ElementShortName">state[1:0]</obj_property>
-            <obj_property name="ObjectShortName">state[1:0]</obj_property>
+         <wvobject fp_name="group757" type="group">
+            <obj_property name="label">CI</obj_property>
+            <obj_property name="DisplayName">label</obj_property>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_CI/clk" type="logic">
+               <obj_property name="ElementShortName">clk</obj_property>
+               <obj_property name="ObjectShortName">clk</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_CI/reset" type="logic">
+               <obj_property name="ElementShortName">reset</obj_property>
+               <obj_property name="ObjectShortName">reset</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_CI/en" type="logic">
+               <obj_property name="ElementShortName">en</obj_property>
+               <obj_property name="ObjectShortName">en</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_CI/max_in" type="array">
+               <obj_property name="ElementShortName">max_in[9:0]</obj_property>
+               <obj_property name="ObjectShortName">max_in[9:0]</obj_property>
+               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_CI/count" type="array">
+               <obj_property name="ElementShortName">count[9:0]</obj_property>
+               <obj_property name="ObjectShortName">count[9:0]</obj_property>
+               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_CI/last" type="logic">
+               <obj_property name="ElementShortName">last</obj_property>
+               <obj_property name="ObjectShortName">last</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_CI/last_clk" type="logic">
+               <obj_property name="ElementShortName">last_clk</obj_property>
+               <obj_property name="ObjectShortName">last_clk</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_CI/max_1" type="array">
+               <obj_property name="ElementShortName">max_1[9:0]</obj_property>
+               <obj_property name="ObjectShortName">max_1[9:0]</obj_property>
+               <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_CI/max" type="array">
+               <obj_property name="ElementShortName">max[9:0]</obj_property>
+               <obj_property name="ObjectShortName">max[9:0]</obj_property>
+            </wvobject>
          </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/DW/state_next" type="array">
-            <obj_property name="ElementShortName">state_next[1:0]</obj_property>
-            <obj_property name="ObjectShortName">state_next[1:0]</obj_property>
+         <wvobject fp_name="group769" type="group">
+            <obj_property name="label">W</obj_property>
+            <obj_property name="DisplayName">label</obj_property>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_W/reset" type="logic">
+               <obj_property name="ElementShortName">reset</obj_property>
+               <obj_property name="ObjectShortName">reset</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_W/max_in" type="array">
+               <obj_property name="ElementShortName">max_in[8:0]</obj_property>
+               <obj_property name="ObjectShortName">max_in[8:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_W/max_1" type="array">
+               <obj_property name="ElementShortName">max_1[8:0]</obj_property>
+               <obj_property name="ObjectShortName">max_1[8:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_W/max" type="array">
+               <obj_property name="ElementShortName">max[8:0]</obj_property>
+               <obj_property name="ObjectShortName">max[8:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_W/last_clk" type="logic">
+               <obj_property name="ElementShortName">last_clk</obj_property>
+               <obj_property name="ObjectShortName">last_clk</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_W/last" type="logic">
+               <obj_property name="ElementShortName">last</obj_property>
+               <obj_property name="ObjectShortName">last</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_W/en" type="logic">
+               <obj_property name="ElementShortName">en</obj_property>
+               <obj_property name="ObjectShortName">en</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_W/count" type="array">
+               <obj_property name="ElementShortName">count[8:0]</obj_property>
+               <obj_property name="ObjectShortName">count[8:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_W/clk" type="logic">
+               <obj_property name="ElementShortName">clk</obj_property>
+               <obj_property name="ObjectShortName">clk</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_W/W" type="array">
+               <obj_property name="ElementShortName">W[31:0]</obj_property>
+               <obj_property name="ObjectShortName">W[31:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_W/ALLOW_ONE" type="array">
+               <obj_property name="ElementShortName">ALLOW_ONE[31:0]</obj_property>
+               <obj_property name="ObjectShortName">ALLOW_ONE[31:0]</obj_property>
+            </wvobject>
          </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/s_ready" type="logic">
-            <obj_property name="ElementShortName">s_ready</obj_property>
-            <obj_property name="ObjectShortName">s_ready</obj_property>
+         <wvobject fp_name="group782" type="group">
+            <obj_property name="label">L</obj_property>
+            <obj_property name="DisplayName">label</obj_property>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_L/clk" type="logic">
+               <obj_property name="ElementShortName">clk</obj_property>
+               <obj_property name="ObjectShortName">clk</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_L/reset" type="logic">
+               <obj_property name="ElementShortName">reset</obj_property>
+               <obj_property name="ObjectShortName">reset</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_L/en" type="logic">
+               <obj_property name="ElementShortName">en</obj_property>
+               <obj_property name="ObjectShortName">en</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_L/max_in" type="array">
+               <obj_property name="ElementShortName">max_in[4:0]</obj_property>
+               <obj_property name="ObjectShortName">max_in[4:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_L/count" type="array">
+               <obj_property name="ElementShortName">count[4:0]</obj_property>
+               <obj_property name="ObjectShortName">count[4:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_L/last" type="logic">
+               <obj_property name="ElementShortName">last</obj_property>
+               <obj_property name="ObjectShortName">last</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_L/last_clk" type="logic">
+               <obj_property name="ElementShortName">last_clk</obj_property>
+               <obj_property name="ObjectShortName">last_clk</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_L/max_1" type="array">
+               <obj_property name="ElementShortName">max_1[4:0]</obj_property>
+               <obj_property name="ObjectShortName">max_1[4:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_L/max" type="array">
+               <obj_property name="ElementShortName">max[4:0]</obj_property>
+               <obj_property name="ObjectShortName">max[4:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_L/W" type="array">
+               <obj_property name="ElementShortName">W[31:0]</obj_property>
+               <obj_property name="ObjectShortName">W[31:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/C_L/ALLOW_ONE" type="array">
+               <obj_property name="ElementShortName">ALLOW_ONE[31:0]</obj_property>
+               <obj_property name="ObjectShortName">ALLOW_ONE[31:0]</obj_property>
+            </wvobject>
          </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/s_valid" type="logic">
-            <obj_property name="ElementShortName">s_valid</obj_property>
-            <obj_property name="ObjectShortName">s_valid</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/s_last" type="logic">
-            <obj_property name="ElementShortName">s_last</obj_property>
-            <obj_property name="ObjectShortName">s_last</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/s_data" type="array">
-            <obj_property name="ElementShortName">s_data[7:0][7:0]</obj_property>
-            <obj_property name="ObjectShortName">s_data[7:0][7:0]</obj_property>
-            <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/s_keep" type="array">
-            <obj_property name="ElementShortName">s_keep[7:0]</obj_property>
-            <obj_property name="ObjectShortName">s_keep[7:0]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/i_ready" type="logic">
-            <obj_property name="ElementShortName">i_ready</obj_property>
-            <obj_property name="ObjectShortName">i_ready</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/i_valid" type="logic">
-            <obj_property name="ElementShortName">i_valid</obj_property>
-            <obj_property name="ObjectShortName">i_valid</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/i_data" type="array">
-            <obj_property name="ElementShortName">i_data[11:0][7:0]</obj_property>
-            <obj_property name="ObjectShortName">i_data[11:0][7:0]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/i_user" type="array">
-            <obj_property name="ElementShortName">i_user</obj_property>
-            <obj_property name="ObjectShortName">i_user</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/i_shift" type="array">
-            <obj_property name="ElementShortName">i_shift[1:0]</obj_property>
-            <obj_property name="ObjectShortName">i_shift[1:0]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_ready" type="logic">
-            <obj_property name="ElementShortName">m_ready</obj_property>
-            <obj_property name="ObjectShortName">m_ready</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_valid" type="logic">
-            <obj_property name="ElementShortName">m_valid</obj_property>
-            <obj_property name="ObjectShortName">m_valid</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_data" type="array">
-            <obj_property name="ElementShortName">m_data[7:0][7:0]</obj_property>
-            <obj_property name="ObjectShortName">m_data[7:0][7:0]</obj_property>
-            <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-         </wvobject>
-         <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/m_user" type="array">
-            <obj_property name="ElementShortName">m_user</obj_property>
-            <obj_property name="ObjectShortName">m_user</obj_property>
+         <wvobject fp_name="group792" type="group">
+            <obj_property name="label">RAM</obj_property>
+            <obj_property name="DisplayName">label</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/RAM/clka" type="logic">
+               <obj_property name="ElementShortName">clka</obj_property>
+               <obj_property name="ObjectShortName">clka</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/RAM/clkb" type="logic">
+               <obj_property name="ElementShortName">clkb</obj_property>
+               <obj_property name="ObjectShortName">clkb</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/RAM/ena" type="logic">
+               <obj_property name="ElementShortName">ena</obj_property>
+               <obj_property name="ObjectShortName">ena</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/RAM/wea" type="logic">
+               <obj_property name="ElementShortName">wea</obj_property>
+               <obj_property name="ObjectShortName">wea</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/RAM/enb" type="logic">
+               <obj_property name="ElementShortName">enb</obj_property>
+               <obj_property name="ObjectShortName">enb</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/RAM/addra" type="array">
+               <obj_property name="ElementShortName">addra[23:0]</obj_property>
+               <obj_property name="ObjectShortName">addra[23:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/RAM/addrb" type="array">
+               <obj_property name="ElementShortName">addrb[23:0]</obj_property>
+               <obj_property name="ObjectShortName">addrb[23:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/RAM/dina" type="array">
+               <obj_property name="ElementShortName">dina[7:0]</obj_property>
+               <obj_property name="ObjectShortName">dina[7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/PIXELS/RAM/doutb" type="array">
+               <obj_property name="ElementShortName">doutb[7:0]</obj_property>
+               <obj_property name="ObjectShortName">doutb[7:0]</obj_property>
+            </wvobject>
          </wvobject>
       </wvobject>
       <wvobject fp_name="group289" type="group">
@@ -536,7 +908,6 @@
          <wvobject fp_name="group2741" type="group">
             <obj_property name="label">BRAM</obj_property>
             <obj_property name="DisplayName">label</obj_property>
-            <obj_property name="isExpanded"></obj_property>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/bram_wen" type="array">
                <obj_property name="ElementShortName">bram_wen[0:1]</obj_property>
                <obj_property name="ObjectShortName">bram_wen[0:1]</obj_property>
@@ -622,6 +993,7 @@
          <wvobject fp_name="group2742" type="group">
             <obj_property name="label">MASTER</obj_property>
             <obj_property name="DisplayName">label</obj_property>
+            <obj_property name="isExpanded"></obj_property>
             <wvobject fp_name="/axis_accelerator_tb/pipe/input_pipe/WEIGHTS_ROTATOR/m_axis_tvalid" type="logic">
                <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
                <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
@@ -924,7 +1296,6 @@
       <wvobject fp_name="group1093" type="group">
          <obj_property name="label">Conv</obj_property>
          <obj_property name="DisplayName">label</obj_property>
-         <obj_property name="isExpanded"></obj_property>
          <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/aclk" type="logic">
             <obj_property name="ElementShortName">aclk</obj_property>
             <obj_property name="ObjectShortName">aclk</obj_property>
@@ -932,6 +1303,7 @@
          <wvobject fp_name="group302" type="group">
             <obj_property name="label">Conv_slave</obj_property>
             <obj_property name="DisplayName">label</obj_property>
+            <obj_property name="isExpanded"></obj_property>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/s_axis_tvalid" type="logic">
                <obj_property name="ElementShortName">s_axis_tvalid</obj_property>
                <obj_property name="ObjectShortName">s_axis_tvalid</obj_property>
@@ -944,11 +1316,13 @@
                <obj_property name="ElementShortName">s_data_pixels[7:0][7:0]</obj_property>
                <obj_property name="ObjectShortName">s_data_pixels[7:0][7:0]</obj_property>
                <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               <obj_property name="isExpanded"></obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/ENGINE/s_data_weights" type="array">
                <obj_property name="ElementShortName">s_data_weights[23:0][7:0]</obj_property>
                <obj_property name="ObjectShortName">s_data_weights[23:0][7:0]</obj_property>
                <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+               <obj_property name="isExpanded"></obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_ENGINE/s_axis_tlast" type="logic">
                <obj_property name="ElementShortName">s_axis_tlast</obj_property>
@@ -1384,8 +1758,8 @@
                <obj_property name="ObjectShortName">m_data[7:0][31:0]</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/m_user" type="array">
-               <obj_property name="ElementShortName">m_user[9:0]</obj_property>
-               <obj_property name="ObjectShortName">m_user[9:0]</obj_property>
+               <obj_property name="ElementShortName">m_user</obj_property>
+               <obj_property name="ObjectShortName">m_user</obj_property>
             </wvobject>
             <wvobject fp_name="/axis_accelerator_tb/pipe/CONV_DW/m_valid" type="logic">
                <obj_property name="ElementShortName">m_valid</obj_property>

@@ -39,8 +39,9 @@
     `define IM_BLOCKS_MAX    `IM_ROWS_MAX / `ROWS    
     `define ROWS_SHIFT        `ROWS  + `KH_MAX -1
     `define OUT_SHIFT_MAX      `COLS   /3
-    `define IM_SHIFT_MAX       4   /* max( ceil(k/s)-1 )*/
+    `define IM_SHIFT_MAX       `KH_MAX - 1   /* max( ceil(k/s)-1 )*/
     `define IM_SHIFT_REGS      `ROWS  + `IM_SHIFT_MAX
+    `define RAM_EDGES_DEPTH    `IM_CIN_MAX * `IM_COLS_MAX * (`IM_BLOCKS_MAX-1)  // should be optimized
 
     `define BITS_KW            $clog2( `KW_MAX             )         
     `define BITS_KH            $clog2( `KH_MAX             )         
