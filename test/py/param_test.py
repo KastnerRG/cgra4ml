@@ -97,8 +97,9 @@ def compile(request):
     `define IM_BLOCKS_MAX    `IM_ROWS_MAX / `ROWS    
     `define ROWS_SHIFT        `ROWS  + `KH_MAX -1
     `define OUT_SHIFT_MAX      `COLS   /3
-    `define IM_SHIFT_MAX       4   /* max( ceil(k/s)-1 )*/
+    `define IM_SHIFT_MAX       `KH_MAX - 1   /* max( ceil(k/s)-1 )*/
     `define IM_SHIFT_REGS      `ROWS  + `IM_SHIFT_MAX
+    `define RAM_EDGES_DEPTH    `IM_CIN_MAX * `IM_COLS_MAX * (`IM_BLOCKS_MAX-1)  // should be optimized
 
     `define BITS_KW            $clog2( `KW_MAX             )         
     `define BITS_KH            $clog2( `KH_MAX             )         
@@ -188,7 +189,7 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW):
     '''
     GOLDEN MODEL
     '''
-
+    # torch.manual_seed(0)
     x = torch.from_numpy(np.random.randint(-2**(c.X_BITS-1), 2**(c.X_BITS-1)-1 ,size=(N,CI,XH,XW)).astype(np.float32))
     w = torch.from_numpy(np.random.randint(-2**(c.K_BITS-1), 2**(c.K_BITS-1)-1 ,size=(CO,CI,KH,KW)).astype(np.float32))
     y = torch.nn.functional.conv2d(x, w, bias=None, stride=1, padding='same', dilation=1, groups=1)
@@ -245,8 +246,7 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW):
     BITS_BRAM_WEIGHTS_ADDR = clog2(c.BRAM_WEIGHTS_DEPTH)
     BRAM_WEIGHTS_ADDR_MAX  = LRELU_BEATS + SW*KH*CI-1
 
-    '''Shift'''
-    SHIFT = int(np.ceil(KH/SH)-1)
+    X_PAD = int(np.ceil(c.KH_MAX//2))
 
 
 
@@ -338,33 +338,24 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW):
 
     x = np.pad(x, ((0,0),(0,LH*L-XH),(0,0),(0,0)))   # (XN, L*HL , XW, CI)
     x = x.reshape  (XN, L, LH, XW, CI)               # (XN, L, HL, XW, CI)
-    # x = x.transpose(0,1,3,4,2)                     # (XN, L, HW, CI, HL)
 
-    zeros = np.zeros((XN,L,SH*(c.ROWS+SHIFT),XW,CI),x.dtype)  # (XN,L,SH*(c.ROWS+SHIFT),XW,CI)
-    top_edges = KH//2
-    bot_edges = SH*(c.ROWS+SHIFT) - top_edges - LH
+    zeros = np.zeros((XN,L,c.ROWS+X_PAD,XW,CI),x.dtype)  # (XN,L,c.ROWS+X_PAD,XW,CI)
 
-    zeros[:,:,top_edges:SH*(c.ROWS+SHIFT)-bot_edges,:,:] = x
+    zeros[:,:,:c.ROWS,:,:] = x
 
     for l in range(L):
-        ''' Fill top rows from prev '''
-        if l == 0:
-            zeros[:,l,:top_edges,:,:] = np.zeros((XN,top_edges,XW,CI),x.dtype)
-        else:
-            zeros[:,l,:top_edges,:,:] = x[:,l-1,LH-top_edges:,:,:]
-
         ''' Fill bot rows from next '''
         if l == L-1:
-            zeros[:,l,SH*(c.ROWS+SHIFT)-bot_edges:,:,:] = np.zeros((XN,bot_edges,XW,CI),x.dtype)
+            zeros[:,l, c.ROWS: ,:,:] = np.zeros((XN,X_PAD,XW,CI),x.dtype)
         else:
-            zeros[:,l,SH*(c.ROWS+SHIFT)-bot_edges:,:,:] = x[:,l+1,:bot_edges,:,:]
+            zeros[:,l, c.ROWS: ,:,:] = x[:,l+1,:X_PAD,:,:]
 
 
-    x = zeros                  # (XN,L,SH*(c.ROWS+SHIFT),XW,CI)
-    x = x.transpose(0,1,3,4,2) # (XN,L,XW,CI,SH*(c.ROWS+SHIFT))
+    x = zeros                  # (XN,L,c.ROWS+X_PAD,XW,CI)
+    x = x.transpose(0,1,3,4,2) # (XN,L,XW,CI,c.ROWS+X_PAD)
 
     x = x[i_n]
-    x = x.reshape((L*XW*CI*SH*(c.ROWS+SHIFT)))  #! XN should be moved in
+    x = x.reshape((L*XW*CI*(c.ROWS+X_PAD)))  #! XN should be moved in
 
     '''
     Config
@@ -374,23 +365,23 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW):
     is_relu    = 0
 
     config = 0
-    config |= is_not_max
-    config |= is_max  << 1
-    config |= is_relu << 2
-    config |= (KH//2) << 3
-    config |= (KW//2) << 3 + BITS_KH2
-    config |= (SH-1 ) << 3 + BITS_KH2 + BITS_KW2
-    config |= (c.ROWS+SHIFT) << 3 + BITS_KH2 + BITS_KW2 + BITS_SH
+    config |= (KH//2)
+    config |= (CI-1) << BITS_KW2
+    config |= (XW-1) << BITS_KW2 + BITS_CIN_MAX
+    config |= (L -1) << BITS_KW2 + BITS_CIN_MAX + BITS_COLS_MAX
+
+    assert c.IN_BITS >= BITS_KW2 + BITS_CIN_MAX + BITS_COLS_MAX + BITS_BLOCKS_MAX
+    # config |= (c.ROWS+int(np.ceil(KH/SH)-1)) << 3 + BITS_KH2 + BITS_KW2 + BITS_SH
 
     config = format(config, f'#0{c.IN_BITS}b')
     config_words = [int(config[i:i+c.X_BITS], 2) for i in range(0, len(config), c.X_BITS)]
     config_words.reverse()
     x = np.concatenate([np.array(config_words, dtype=np.uint8), x.flatten()])
-    assert x.shape == (c.IN_BITS/c.X_BITS + L*XW*CI*SH*(c.ROWS+SHIFT),)
+    assert x.shape == (c.IN_BITS/c.X_BITS + L*XW*CI*(c.ROWS+X_PAD),)
 
     path = f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_x.txt"
     np.savetxt(path, x.flatten(), fmt='%d')
-    print(f'input final (c.IN_BITS/c.X_BITS + L*XW*CI*SH*(c.ROWS+SHIFT))={x.shape} \nSaved as "{path}"')
+    print(f'input final (c.IN_BITS/c.X_BITS + L*XW*CI*c.ROWS+X_PAD)={x.shape} \nSaved as "{path}"')
 
 
 

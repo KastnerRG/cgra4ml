@@ -80,7 +80,7 @@ module axis_input_pipe
   output wire [WORD_WIDTH*COLS   -1:0] m_axis_weights_tdata;
   output tuser_st m_axis_tuser;
 
-  axis_pixels_pipe PIXELS (
+  axis_pixels PIXELS (
     .aclk   (aclk   ),
     .aresetn(aresetn),
     .s_ready(s_axis_pixels_tready),
@@ -113,9 +113,9 @@ module axis_input_pipe
     Synchronizing streams
   */
 
-  assign m_axis_tvalid   = weights_m_valid && pixels_m_valid;
-  assign weights_m_ready = m_axis_tready   && pixels_m_valid;
-  assign pixels_m_ready  = m_axis_tready   && weights_m_valid;
+  assign m_axis_tvalid   = weights_m_valid && (pixels_m_valid || m_axis_tuser.is_config);
+  assign weights_m_ready = m_axis_tready   && (pixels_m_valid || m_axis_tuser.is_config);
+  assign pixels_m_ready  = m_axis_tready   && weights_m_valid && !m_axis_tuser.is_config;
 
   /* 
     TUSER 
