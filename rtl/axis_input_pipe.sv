@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`include "../params/params.sv"
+`include "../params/params.svh"
 
 module axis_input_pipe 
   #(
@@ -134,7 +134,7 @@ module axis_input_pipe
   assign m_axis_tuser.is_col_1_k2  = weights_m_user.is_col_1_k2   && m_axis_tvalid;
   assign m_axis_tuser.is_config    = weights_m_user.is_config    ;
   assign m_axis_tuser.is_cin_last  = weights_m_user.is_cin_last   && m_axis_tvalid;
-  assign m_axis_tuser.is_w_first   = weights_m_user.is_w_first    && m_axis_tvalid;
+  assign m_axis_tuser.is_w_first_clk   = weights_m_user.is_w_first_clk    && m_axis_tvalid;
   assign m_axis_tuser.is_col_valid = weights_m_user.is_col_valid  && m_axis_tvalid;
   assign m_axis_tuser.is_sum_start = weights_m_user.is_sum_start  && m_axis_tvalid;
 

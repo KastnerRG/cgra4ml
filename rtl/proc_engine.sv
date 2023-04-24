@@ -9,7 +9,7 @@ Revision 0.01 - File Created
 Additional Comments: 
 //////////////////////////////////////////////////////////////////////////////////*/
 `timescale 1ns/1ps
-`include "../params/params.sv"
+`include "../params/params.svh"
 
 module proc_engine #(
   localparam  COLS                = `COLS                ,
@@ -126,7 +126,7 @@ module proc_engine #(
         .data_out       (bypass_sum           [m])
       );
 
-      assign bypass    [m] = bypass_sum [m] || mul_m_user.is_w_first; // clears all partial sums for every first col
+      assign bypass    [m] = bypass_sum [m] || mul_m_user.is_w_first_clk; // clears all partial sums for every first col
       assign clken_acc [m] = en    && acc_s_valid [m];
     end
 
