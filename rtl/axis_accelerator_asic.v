@@ -100,22 +100,22 @@ module axis_accelerator_asic (
     .m_axis_weights_tdata      (input_m_axis_weights_tdata ), // CMG_flat
     .m_axis_tuser              (input_m_axis_tuser         )
   );
-  axis_conv_engine CONV_ENGINE (
-    .aclk                 (aclk    ),
-    .aresetn              (aresetn ),
-    .s_axis_tvalid        (input_m_axis_tvalid        ),
-    .s_axis_tready        (input_m_axis_tready        ),
-    .s_axis_tlast         (input_m_axis_tlast         ),
-    .s_axis_tuser         (input_m_axis_tuser         ),
-    .s_axis_tdata_pixels  (input_m_axis_pixels_tdata  ), // cu
-    .s_axis_tdata_weights (input_m_axis_weights_tdata ), // cr = cmg
-    .m_axis_tvalid        (conv_m_axis_tvalid         ),
-    .m_axis_tready        (conv_m_axis_tready         ),
-    .m_axis_tdata         (conv_m_axis_tdata          ), // cmgu
-    .m_axis_tlast         (conv_m_axis_tlast          ),
-    .m_axis_tuser         (conv_m_axis_tuser          )
+  proc_engine PROC_ENGINE (
+    .clk            (aclk    ),
+    .resetn         (aresetn ),
+    .s_valid        (input_m_axis_tvalid        ),
+    .s_ready        (input_m_axis_tready        ),
+    .s_last         (input_m_axis_tlast         ),
+    .s_user         (input_m_axis_tuser         ),
+    .s_data_pixels  (input_m_axis_pixels_tdata  ),
+    .s_data_weights (input_m_axis_weights_tdata ),
+    .m_valid        (conv_m_axis_tvalid         ),
+    .m_ready        (conv_m_axis_tready         ),
+    .m_data         (conv_m_axis_tdata          ),
+    .m_last         (conv_m_axis_tlast          ),
+    .m_user         (conv_m_axis_tuser          )
     );
-  axis_out_shift CONV_DW (
+  axis_out_shift OUT (
     .aclk    (aclk   ),
     .aresetn (aresetn),
     .s_ready (conv_m_axis_tready    ),
