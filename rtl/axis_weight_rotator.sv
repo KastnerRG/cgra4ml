@@ -25,7 +25,7 @@ Additional Comments:
 
 //////////////////////////////////////////////////////////////////////////////////*/
 `timescale 1ns/1ps
-`include "../params/params.sv"
+`include "../params/params.svh"
 
 module axis_weight_rotator (
     aclk         ,
@@ -633,7 +633,7 @@ module axis_weight_rotator (
   assign m_axis_tuser.is_config    = state_read  == R_PASS_CONFIG_S;
   assign m_axis_tuser.kw2          = ref_kw2  [i_read];
   assign m_axis_tuser.sw_1         = ref_1_sw [i_read];
-  assign m_axis_tuser.is_w_first   = count_cols == ref_1_cols[i_read] && count_cin == ref_1_cin[i_read] && count_kh == 2*ref_kh2 [i_read];
+  assign m_axis_tuser.is_w_first_clk   = count_cols == ref_1_cols[i_read] && count_cin == ref_1_cin[i_read] && count_kh == 2*ref_kh2 [i_read];
   assign m_axis_tuser.is_cin_last  = (last_kh && last_cin);
   assign m_axis_tuser.is_col_1_k2  = count_cols   == ref_kw2      [i_read]; // i = cols-1-k/2 === [cols-1-i] = k/2
   assign m_axis_tuser.is_top_block = count_blocks == ref_1_blocks [i_read];

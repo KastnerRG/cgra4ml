@@ -1,4 +1,4 @@
-`include "../params/params.sv"
+`include "../params/params.svh"
 
 module axis_out_shift #(
   localparam ROWS                 = `ROWS                 ,

@@ -1,6 +1,6 @@
 `timescale 10ns / 1ns
 `define VERILOG
-`include "../params/params.sv"
+`include "../params/params.svh"
 // `default_nettype none
 
 /*

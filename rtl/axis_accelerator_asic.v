@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 `define VERILOG
-`include "../params/params.sv"
+`include "../params/params.svh"
 `undef  VERILOG
 
 module axis_accelerator_asic (
