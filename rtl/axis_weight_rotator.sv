@@ -640,6 +640,8 @@ module axis_weight_rotator (
   assign m_axis_tuser.is_bot_block = last_blocks;
   assign m_axis_tuser.is_col_valid = count_sw == ref_1_sw [i_read] - (ref_1_sw [i_read] == 0  ? 0 : 1); // if no stride, si=0 else si=1
   assign m_axis_tuser.is_sum_start = count_sw == ref_1_sw [i_read] - (ref_1_sw [i_read] == 2-1? 1 : 0); // if (7,2)    , si=1 else si=0
+  assign m_axis_tuser.is_w_first_kw2   = (ref_1_cols[i_read] - count_cols) < ref_kh2 [i_read];
+  assign m_axis_tuser.is_w_last        = count_cols == 0;
 
   register #(
     .WORD_WIDTH   (BITS_CONFIG_COUNT), 

@@ -102,14 +102,14 @@ def compile(request):
         assert subprocess.run(fr'{XIL_PATH}\xelab {TB_MODULE} --snapshot {TB_MODULE} -log elaborate.log --debug typical', cwd="xsim", shell=True).returncode == 0
 
     if SIM == 'icarus':
-        cmd = [ "iverilog", "-g2012", "-DICARUS", "-o", "xsim/a.out", "-I", "sv", "-s", TB_MODULE] + SOURCES
+        cmd = [ "iverilog", "-g2012", "-DICARUS", "-o", "xsim/a.out", "-I", "sv", "-I", "../params", "-s", TB_MODULE] + SOURCES
         print(" ".join(cmd))
         assert subprocess.run(cmd).returncode == 0
 
     return c
 
 
-@pytest.mark.parametrize("KH", [3,1])
+@pytest.mark.parametrize("KH", [1,3])
 @pytest.mark.parametrize("CI", [8])
 @pytest.mark.parametrize("CO", [8])
 @pytest.mark.parametrize("XH", [8])
