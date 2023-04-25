@@ -135,14 +135,11 @@ module axis_pixels #(
   logic [EDGE_WORDS-1:0][WORD_WIDTH-1:0] ram_dout, edge_top, edge_bot;
 
   assign edge_bot = dw_m_data[ROWS+EDGE_WORDS-1 : ROWS];
-  assign edge_top = first_l_ram ? '0 : ram_dout;
+  assign edge_top = first_l ? '0 : ram_dout;
 
   always_ff @(posedge aclk)
     if (en_config || last_clk_w) ram_addr <= 0;
     else if (en_copy)            ram_addr <= ram_addr + 1;
-
-  always_ff @(posedge aclk)
-    if (en_copy) first_l_ram <= first_l;
 
   bram_sdp_shell #(
     .R_DEPTH      (RAM_EDGES_DEPTH),

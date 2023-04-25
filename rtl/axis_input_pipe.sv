@@ -137,6 +137,8 @@ module axis_input_pipe
   assign m_axis_tuser.is_w_first_clk   = weights_m_user.is_w_first_clk    && m_axis_tvalid;
   assign m_axis_tuser.is_col_valid = weights_m_user.is_col_valid  && m_axis_tvalid;
   assign m_axis_tuser.is_sum_start = weights_m_user.is_sum_start  && m_axis_tvalid;
+  assign m_axis_tuser.is_w_first_kw2 = weights_m_user.is_w_first_kw2;
+  assign m_axis_tuser.is_w_last      = weights_m_user.is_w_last     ;
 
   /*
     DATA

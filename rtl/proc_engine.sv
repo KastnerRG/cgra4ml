@@ -191,11 +191,11 @@ module proc_engine #(
       .clr             (m_clr              )
     );
 
-    assign i_user.kw2 = acc_m_user.kw2;
-    assign i_last  = acc_m_last;
-    assign i_valid = acc_m_valid && valid_mask && !acc_m_user.is_config;
-
     // AXI Stream
+
+    assign i_user  = acc_m_user;
+    assign i_last  = acc_m_last;
+    assign i_valid = acc_m_valid;
 
     logic valid_prev, i_ready;
     assign en = valid_prev | i_ready;
