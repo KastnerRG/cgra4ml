@@ -55,7 +55,7 @@ def compile(request):
 
     print(f"\n\n---------- {SIM}:{c} ----------\n\n")
 
-    with open('../params/params.svh', 'w') as f:
+    with open('../params/params_input.svh', 'w') as f:
         f.write(f'''
     // Written from param_tests.py
 
@@ -90,8 +90,6 @@ def compile(request):
     `define S_WEIGHTS_WIDTH_LF  {c.IN_BITS}
     `define S_PIXELS_WIDTH_LF   {c.IN_BITS}
     `define M_OUTPUT_WIDTH_LF   64
-
-    `include "params_calc.svh"
     ''')
 
     os.makedirs('xsim', exist_ok=True)
