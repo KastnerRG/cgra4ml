@@ -43,10 +43,6 @@ module proc_engine #(
   logic en, i_valid, i_last;
   logic [COLS-1:0][ROWS -1:0][WORD_WIDTH_OUT-1:0] i_data;
   tuser_st i_user;
-  
-  logic [BITS_MEMBERS  -1:0] m_shift_a;
-  logic [BITS_OUT_SHIFT-1:0] m_shift_b;
-  logic [COLS   -1:0][BITS_KW-1:0] m_clr;
 
   logic clken_mul, mux_sel_next, mux_sel, mul_m_valid, acc_m_valid_next, acc_m_valid, mul_m_last, acc_m_last;
   logic [BITS_KW2-1:0] mul_m_kw2, acc_m_kw2;
@@ -56,8 +52,6 @@ module proc_engine #(
   tuser_st mul_m_user, acc_s_user, mux_s2_user, acc_m_user;
 
   logic [COLS    -1:0] lut_sum_start [KW_MAX/2:0][SW_MAX -1:0];
-
-  logic valid_mask;
 
   logic [WORD_WIDTH_IN*2-1:0] mul_m_data  [COLS   -1:0][ROWS -1:0];
   logic [WORD_WIDTH_OUT -1:0] acc_s_data  [COLS   -1:0][ROWS -1:0];
@@ -177,18 +171,6 @@ module proc_engine #(
       .clken    (en    ),
       .data_in  ({acc_m_valid_next, mul_m_last}),
       .data_out ({acc_m_valid     , acc_m_last})
-    );
-
-    pad_filter PAD_FILTER (
-      .aclk            (clk                ),
-      .aclken          (en                 ),
-      .aresetn         (resetn             ),
-      .user_in         (acc_m_user         ),
-      .valid_in        (acc_m_valid        ),
-      .shift_a         (m_shift_a          ),
-      .shift_b         (m_shift_b          ),
-      .valid_mask      (valid_mask         ),
-      .clr             (m_clr              )
     );
 
     // AXI Stream
