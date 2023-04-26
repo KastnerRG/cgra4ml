@@ -27,66 +27,56 @@ Additional Comments:
 `timescale 1ns/1ps
 `include "../params/params.svh"
 
-module axis_weight_rotator (
-    aclk         ,
-    aresetn      ,
-    s_axis_tready, 
-    s_axis_tvalid, 
-    s_axis_tlast , 
-    s_axis_tdata ,
-    s_axis_tkeep ,
-    m_axis_tready,      
-    m_axis_tvalid,   
-    m_axis_tdata ,
-    m_axis_tlast ,
-    m_axis_tuser  
+module axis_weight_rotator #(
+  parameter 
+    COLS                = `COLS                     ,
+    WORD_WIDTH          = `WORD_WIDTH               , 
+    KH_MAX              = `KH_MAX                   ,   // odd number
+    KW_MAX              = `KW_MAX                   ,   // odd number
+    SH_MAX              = `SH_MAX                   ,   // odd number
+    SW_MAX              = `SW_MAX                   ,   // odd number
+    IM_CIN_MAX          = `IM_CIN_MAX               ,
+    IM_COLS_MAX         = `IM_COLS_MAX              ,
+    IM_ROWS_MAX         = `IM_ROWS_MAX              ,
+    S_WEIGHTS_WIDTH_LF  = `S_WEIGHTS_WIDTH_LF       ,
+    LATENCY_BRAM        = `LATENCY_BRAM             ,
+    BRAM_WEIGHTS_DEPTH  = `BRAM_WEIGHTS_DEPTH       ,
+    SRAM_TYPE           = `SRAM_TYPE                ,
+
+  localparam  
+    BITS_KW2            = $clog2((KW_MAX+1)/2)     ,
+    BITS_KH2            = $clog2((KH_MAX+1)/2)     ,
+    BITS_SW             = $clog2(SW_MAX      )     ,
+    BITS_KH             = $clog2(KH_MAX      )     ,
+    BITS_IM_CIN         = $clog2(IM_CIN_MAX  )     ,
+    BITS_IM_BLOCKS      = $clog2(IM_ROWS_MAX/`ROWS),
+    BITS_IM_COLS        = $clog2(IM_COLS_MAX      ),
+
+    M_WIDTH             = WORD_WIDTH*COLS          ,
+    BRAM_WIDTH          = M_WIDTH                  ,
+    BRAM_DEPTH          = BRAM_WEIGHTS_DEPTH       ,
+    BITS_ADDR           = $clog2(BRAM_WEIGHTS_DEPTH),
+    BRAM_TYPE           = SRAM_TYPE == "XILINX" ? "XILINX_WEIGHTS" : SRAM_TYPE,
+    CONFIG_COUNT_MAX    = 1                        ,// lrelu_beats
+    BITS_CONFIG_COUNT   = $clog2(CONFIG_COUNT_MAX)
+  )(
+    
+    input logic aclk,
+    input logic aresetn,
+
+    output logic                                       s_axis_tready,
+    input  logic                                       s_axis_tvalid,
+    input  logic                                       s_axis_tlast ,
+    input  logic [S_WEIGHTS_WIDTH_LF    -1:0]          s_axis_tdata ,
+    input  logic [S_WEIGHTS_WIDTH_LF /WORD_WIDTH -1:0] s_axis_tkeep ,
+
+    input  logic               m_axis_tready,
+    output logic               m_axis_tvalid,
+    output logic               m_axis_tlast ,
+    output tuser_st            m_axis_tuser ,
+    output logic [M_WIDTH-1:0] m_axis_tdata
   );
   
-
-  localparam COLS                      = `COLS                     ;
-  localparam WORD_WIDTH                = `WORD_WIDTH               ; 
-  localparam KH_MAX                    = `KH_MAX                   ;   // odd number
-  localparam KW_MAX                    = `KW_MAX                   ;   // odd number
-  localparam SH_MAX                    = `SH_MAX                   ;   // odd number
-  localparam SW_MAX                    = `SW_MAX                   ;   // odd number
-  localparam IM_CIN_MAX                = `IM_CIN_MAX               ;
-  localparam IM_BLOCKS_MAX             = `IM_BLOCKS_MAX            ;
-  localparam IM_COLS_MAX               = `IM_COLS_MAX              ;
-  localparam S_WEIGHTS_WIDTH_LF        = `S_WEIGHTS_WIDTH_LF       ;
-  localparam LATENCY_BRAM              = `LATENCY_BRAM             ;
-  localparam BITS_KW2                  = `BITS_KW2                 ;
-  localparam BITS_KH2                  = `BITS_KH2                 ;
-  localparam BITS_SW                   = `BITS_SW                  ;
-  localparam BITS_KH                   = `BITS_KH                  ;
-  localparam BITS_IM_CIN               = `BITS_IM_CIN   ;
-  localparam BITS_IM_BLOCKS            = `BITS_IM_BLOCKS;
-  localparam BITS_IM_COLS              = `BITS_IM_COLS  ;
-
-  localparam M_WIDTH    = WORD_WIDTH*COLS   ;
-  localparam BRAM_WIDTH = M_WIDTH;
-  localparam BRAM_DEPTH = `BRAM_WEIGHTS_DEPTH;
-  localparam BITS_ADDR  = `BITS_WEIGHTS_ADDR;
-
-  localparam BRAM_TYPE = `SRAM_TYPE == "XILINX" ? "XILINX_WEIGHTS" : `SRAM_TYPE;
-
-  localparam CONFIG_COUNT_MAX  = 1;// lrelu_beats
-  localparam BITS_CONFIG_COUNT = $clog2(CONFIG_COUNT_MAX);
-
-  input logic aclk;
-  input logic aresetn;
-
-  output logic s_axis_tready;
-  input  logic s_axis_tvalid;
-  input  logic s_axis_tlast ;
-  input  logic [S_WEIGHTS_WIDTH_LF    -1:0] s_axis_tdata;
-  input  logic [S_WEIGHTS_WIDTH_LF /WORD_WIDTH -1:0] s_axis_tkeep;
-
-  input  logic m_axis_tready;
-  output logic m_axis_tvalid;
-  output logic m_axis_tlast ;
-  output tuser_st m_axis_tuser;
-  output logic [M_WIDTH         -1:0] m_axis_tdata;
-
   typedef logic logic_2_t [2];
   typedef logic [BITS_CONFIG_COUNT-1:0] config_2_t [2];
 

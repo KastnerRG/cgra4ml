@@ -3,7 +3,7 @@
 `include "../../params/params.svh"
 
 
-module axis_accelerator_tb #( 
+module dnn_engine_tb #( 
 parameter
   VALID_PROB = 20,
   READY_PROB = 20,
@@ -38,16 +38,9 @@ parameter
               COLS                       = `COLS                      ,
               WORD_WIDTH                 = `WORD_WIDTH                , 
               WORD_WIDTH_ACC             = `WORD_WIDTH_ACC            ,
-              BITS_KH2                   = `BITS_KH2                  ,
               M_OUTPUT_WIDTH_LF          = `M_OUTPUT_WIDTH_LF         ,
               S_WEIGHTS_WIDTH_LF         = `S_WEIGHTS_WIDTH_LF        ,
-              M_DATA_WIDTH_HF_CONV       = `M_DATA_WIDTH_HF_CONV      ,
-              M_DATA_WIDTH_HF_LRELU      = `M_DATA_WIDTH_HF_LRELU     ,
-              M_DATA_WIDTH_HF_CONV_DW    = `M_DATA_WIDTH_HF_CONV_DW   ,
-              M_DATA_WIDTH_LF_LRELU      = `M_DATA_WIDTH_LF_LRELU     ,
-              ROWS_SHIFT                 = `ROWS_SHIFT               ,
               S_PIXELS_WIDTH_LF          = `S_PIXELS_WIDTH_LF         ,
-
               WORD_WIDTH_OUT             = WORD_WIDTH_ACC             ; 
 
   logic aresetn, hf_aresetn;
@@ -65,7 +58,7 @@ parameter
 
   assign hf_aresetn = aresetn;
 
-  axis_accelerator_asic pipe (.*);
+  dnn_engine pipe (.*);
 
   // SOURCEs & SINKS
 

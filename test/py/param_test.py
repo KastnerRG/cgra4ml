@@ -18,8 +18,8 @@ MODEL_NAME = 'test'
 SOURCES = glob.glob('../params/*') + glob.glob('sv/*') + glob.glob("../rtl/**/*.v", recursive=True) + glob.glob("../rtl/**/*.sv", recursive=True)
 print(SOURCES)
 
-TB_MODULE = "axis_accelerator_tb"
-WAVEFORM = "axis_accelerator_tb_behav.wcfg"
+TB_MODULE = "dnn_engine_tb"
+WAVEFORM = "dnn_engine_tb_behav.wcfg"
 XIL_PATH = os.path.join("F:", "Xilinx", "Vivado", "2022.1", "bin")
 
 

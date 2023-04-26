@@ -2,21 +2,24 @@
 `include "../params/params.svh"
 
 module axis_pixels #(
-  localparam  ROWS               = `ROWS                    ,
+  parameter   ROWS               = `ROWS                    ,
               KH_MAX             = `KH_MAX                  ,
-              BITS_KH            = `BITS_KH                 ,
-              BITS_KH2           = `BITS_KH2                ,
-              BITS_IM_CIN        = `BITS_IM_CIN             ,
-              BITS_IM_COLS       = `BITS_IM_COLS            ,
-              BITS_IM_BLOCKS     = `BITS_IM_BLOCKS          ,
+              IM_CIN_MAX         = `IM_CIN_MAX              ,
+              IM_COLS_MAX        = `IM_COLS_MAX             ,
+              IM_ROWS_MAX        = `IM_ROWS_MAX             ,
               WORD_WIDTH         = `WORD_WIDTH              ,
               RAM_EDGES_DEPTH    = `RAM_EDGES_DEPTH         , 
               SRAM_TYPE          = `SRAM_TYPE               ,
-              EDGE_WORDS         =  KH_MAX/2,
+              S_PIXELS_WIDTH_LF  = `S_PIXELS_WIDTH_LF       ,
+
+  localparam  EDGE_WORDS         =  KH_MAX/2                ,
               IM_SHIFT_REGS      =  ROWS + KH_MAX-1         ,
               BITS_IM_PASS       = $clog2(IM_SHIFT_REGS+1)  ,
-              S_PIXELS_WIDTH_LF  = `S_PIXELS_WIDTH_LF       
-
+              BITS_KH            = $clog2(KH_MAX          ) ,
+              BITS_KH2           = $clog2((KH_MAX+1)/2    ) ,
+              BITS_IM_CIN        = $clog2(IM_CIN_MAX      ) ,
+              BITS_IM_COLS       = $clog2(IM_COLS_MAX     ) ,
+              BITS_IM_BLOCKS     = $clog2(IM_ROWS_MAX/ROWS) 
   )(
     input logic aclk, aresetn,
 

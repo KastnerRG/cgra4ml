@@ -6,7 +6,7 @@ apply_bd_automation -rule xilinx.com:bd_rule:processing_system7 -config {make_ex
 set_property -dict [list CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ $FREQ_LITE CONFIG.PCW_FPGA1_PERIPHERAL_FREQMHZ $FREQ_LOW CONFIG.PCW_FPGA2_PERIPHERAL_FREQMHZ $FREQ_HIGH CONFIG.PCW_EN_CLK2_PORT $FREQ_LITE CONFIG.PCW_USE_S_AXI_ACP {1} CONFIG.PCW_USE_DEFAULT_ACP_USER_VAL {1} CONFIG.PCW_USE_FABRIC_INTERRUPT {1} CONFIG.PCW_EN_CLK1_PORT {1} CONFIG.PCW_EN_CLK2_PORT {1} CONFIG.PCW_IRQ_F2P_INTR {1} CONFIG.PCW_QSPI_PERIPHERAL_ENABLE {0} CONFIG.PCW_SD0_PERIPHERAL_ENABLE {0} CONFIG.PCW_I2C0_PERIPHERAL_ENABLE {0} CONFIG.PCW_GPIO_MIO_GPIO_ENABLE {0}] [get_bd_cells processing_system7_0]
 
 # Accelerator
-create_bd_cell -type module -reference axis_accelerator axis_accelerator_0
+create_bd_cell -type module -reference dnn_engine dnn_engine_0
 
 # Weights & out DMA
 set IP_NAME "dma_weights_im_out"
@@ -27,14 +27,14 @@ connect_bd_net [get_bd_pins dma_weights_im_out/s2mm_introut] [get_bd_pins xlconc
 connect_bd_net [get_bd_pins xlconcat_0/dout] [get_bd_pins processing_system7_0/IRQ_F2P]
 
 # Engine connections
-connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK1] [get_bd_pins axis_accelerator_0/aclk]
-connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK2] [get_bd_pins axis_accelerator_0/hf_aclk]
-connect_bd_intf_net [get_bd_intf_pins dma_im_in/M_AXIS_MM2S] [get_bd_intf_pins axis_accelerator_0/s_axis_pixels]
-connect_bd_intf_net [get_bd_intf_pins dma_weights_im_out/M_AXIS_MM2S] [get_bd_intf_pins axis_accelerator_0/s_axis_weights]
+connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK1] [get_bd_pins dnn_engine_0/aclk]
+connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK2] [get_bd_pins dnn_engine_0/hf_aclk]
+connect_bd_intf_net [get_bd_intf_pins dma_im_in/M_AXIS_MM2S] [get_bd_intf_pins dnn_engine_0/s_axis_pixels]
+connect_bd_intf_net [get_bd_intf_pins dma_weights_im_out/M_AXIS_MM2S] [get_bd_intf_pins dnn_engine_0/s_axis_weights]
 switch $OUTPUT_MODE {
-  "CONV"    {connect_bd_intf_net [get_bd_intf_pins dma_weights_im_out/S_AXIS_S2MM] [get_bd_intf_pins axis_accelerator_0/conv_dw2_lf_m_axis]}
-  "LRELU"   {connect_bd_intf_net [get_bd_intf_pins dma_weights_im_out/S_AXIS_S2MM] [get_bd_intf_pins axis_accelerator_0/lrelu_dw_lf_m_axis]}
-  "MAXPOOL" {connect_bd_intf_net [get_bd_intf_pins dma_weights_im_out/S_AXIS_S2MM] [get_bd_intf_pins axis_accelerator_0/max_dw2_lf_m_axis ]}
+  "CONV"    {connect_bd_intf_net [get_bd_intf_pins dma_weights_im_out/S_AXIS_S2MM] [get_bd_intf_pins dnn_engine_0/conv_dw2_lf_m_axis]}
+  "LRELU"   {connect_bd_intf_net [get_bd_intf_pins dma_weights_im_out/S_AXIS_S2MM] [get_bd_intf_pins dnn_engine_0/lrelu_dw_lf_m_axis]}
+  "MAXPOOL" {connect_bd_intf_net [get_bd_intf_pins dma_weights_im_out/S_AXIS_S2MM] [get_bd_intf_pins dnn_engine_0/max_dw2_lf_m_axis ]}
 }
 
 # AXI Lite
@@ -55,11 +55,11 @@ set IP_NAME "reset_hf"
 create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 $IP_NAME
 connect_bd_net [get_bd_pins processing_system7_0/FCLK_CLK2] [get_bd_pins $IP_NAME/slowest_sync_clk]
 connect_bd_net [get_bd_pins processing_system7_0/FCLK_RESET0_N] [get_bd_pins $IP_NAME/ext_reset_in]
-connect_bd_net [get_bd_pins $IP_NAME/peripheral_aresetn] [get_bd_pins axis_accelerator_0/hf_aresetn]
+connect_bd_net [get_bd_pins $IP_NAME/peripheral_aresetn] [get_bd_pins dnn_engine_0/hf_aresetn]
 
 # LF Reset
 # NOTE: axi_mem_intercon gets created after axi lite
-connect_bd_net [get_bd_pins axis_accelerator_0/aresetn] [get_bd_pins axi_mem_intercon/ARESETN]
+connect_bd_net [get_bd_pins dnn_engine_0/aresetn] [get_bd_pins axi_mem_intercon/ARESETN]
 
 save_bd_design
 validate_bd_design

@@ -1,4 +1,4 @@
-set TOP axis_accelerator_asic
+set TOP dnn_engine
 # set TOP axis_conv_engine
 
 #--------- CONFIG

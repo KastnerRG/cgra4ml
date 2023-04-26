@@ -4,8 +4,6 @@ module axis_out_shift #(
   localparam ROWS                 = `ROWS                 ,
              COLS                 = `COLS                 ,
              KW_MAX               = `KW_MAX               ,
-             BITS_KW              = `BITS_KW              ,
-             BITS_KW2             = `BITS_KW2             ,
              WORD_WIDTH           = `WORD_WIDTH_ACC       
 
 )(

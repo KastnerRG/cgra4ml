@@ -20,11 +20,6 @@ module proc_engine #(
               LATENCY_MULTIPLIER  = `LATENCY_MULTIPLIER  ,
               KW_MAX              = `KW_MAX              ,
               SW_MAX              = `SW_MAX              ,
-              BITS_OUT_SHIFT      = `BITS_OUT_SHIFT      ,  
-              BITS_KW             = `BITS_KW             ,
-              BITS_SW             = `BITS_SW             ,
-              BITS_MEMBERS        = `BITS_MEMBERS        ,
-              BITS_KW2            = `BITS_KW2            ,
               TUSER_WIDTH         = `TUSER_WIDTH         
 )(
   input  logic clk, resetn,
@@ -45,8 +40,6 @@ module proc_engine #(
   tuser_st i_user;
 
   logic clken_mul, mux_sel_next, mux_sel, mul_m_valid, acc_m_valid_next, acc_m_valid, mul_m_last, acc_m_last;
-  logic [BITS_KW2-1:0] mul_m_kw2, acc_m_kw2;
-  logic [BITS_SW -1:0] acc_m_sw_1;
   logic [COLS   -1: 0] clken_acc, bypass_sum, bypass_sum_next, bypass;
   logic [COLS   -1: 0] acc_m_sum_start, acc_s_valid, acc_m_keep;
   tuser_st mul_m_user, acc_s_user, mux_s2_user, acc_m_user;
@@ -73,14 +66,13 @@ module proc_engine #(
       .data_out ({mul_m_valid, mul_m_last, mul_m_user})
     );
 
-    assign mul_m_kw2 = mul_m_user.kw2;
 
         for (u=0; u < ROWS ; u++)
           for (m=0; m < COLS   ; m++)
             if (m==0) assign mux_s2_data [m][u] = 0;
             else      assign mux_s2_data [m][u] = i_data     [m-1][u];
 
-    assign mux_sel_next = mul_m_valid && mul_m_user.is_cin_last && (mul_m_kw2 != 0);
+    assign mux_sel_next = mul_m_valid && mul_m_user.is_cin_last && (mul_m_user.kw2 != 0);
 
     register #(
       .WORD_WIDTH     (1),
@@ -104,7 +96,7 @@ module proc_engine #(
           assign lut_sum_start[kw2][sw_1][m] = m % j < s; // m % 3 < 1 : 0,1
         end
       
-      assign acc_m_sum_start [m] = lut_sum_start[acc_m_kw2][acc_m_sw_1][m] & acc_m_user.is_sum_start;
+      assign acc_m_sum_start [m] = lut_sum_start[acc_m_user.kw2][acc_m_user.sw_1][m] & acc_m_user.is_sum_start;
       assign acc_s_valid     [m] = mux_sel ? ~acc_m_sum_start [m] : mul_m_valid;
 
       assign bypass_sum_next [m] = mul_m_user.is_cin_last || mul_m_user.is_config;
@@ -156,9 +148,6 @@ module proc_engine #(
       .data_in  (mul_m_user  ),
       .data_out (acc_m_user  )
     );
-
-    assign acc_m_kw2  = acc_m_user.kw2;
-    assign acc_m_sw_1 = acc_m_user.sw_1;
 
     assign acc_m_valid_next = !mux_sel && mul_m_valid && (mul_m_user.is_config || mul_m_user.is_cin_last);
     

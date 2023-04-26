@@ -1,6 +1,6 @@
 # Version:1.0 MMMC View Definition File
 # Do Not Remove Above Line
-set TOP axis_accelerator_asic
+set TOP dnn_engine
 set TECH 65nm
 set LIB_DIR ../../../tsmc/${TECH}/GP
 create_rc_corner -name rc_slow -T {125} -preRoute_res {1.0} -preRoute_cap {1.0} -preRoute_clkres {0.0} -preRoute_clkcap {0.0} -postRoute_res {1.0} -postRoute_cap {1.0} -postRoute_xcap {1.0} -postRoute_clkres {0.0} -postRoute_clkcap {0.0} -qx_tech_file $LIB_DIR/other/icecaps.tch

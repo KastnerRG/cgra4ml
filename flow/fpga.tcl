@@ -27,8 +27,8 @@ foreach IP_NAME $IP_NAMES {
 add_files -norecurse [glob $RTL_DIR/*]
 # add_files -norecurse [glob $RTL_DIR/**/*]
 add_files -fileset sim_1 -norecurse [glob $TEST_DIR/sv/*]
-add_files -fileset sim_1 -norecurse $TEST_DIR/wave/axis_accelerator_tb_behav.wcfg
-set_property top axis_accelerator_tb [get_filesets sim_1]
+add_files -fileset sim_1 -norecurse $TEST_DIR/wave/dnn_engine_tb_behav.wcfg
+set_property top dnn_engine_tb [get_filesets sim_1]
 
 # source ./tcl/zynq_bd.tcl
 
