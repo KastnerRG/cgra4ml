@@ -7,13 +7,7 @@ module axis_input_pipe
     ROWS                      = `ROWS                     ,
     COLS                      = `COLS                     ,
     WORD_WIDTH                = `WORD_WIDTH               , 
-    KH_MAX                    = `KH_MAX                   ,   // odd number
-    KW_MAX                    = `KW_MAX                   ,
-    IM_CIN_MAX                = `IM_CIN_MAX               ,
-    IM_BLOCKS_MAX             = `IM_BLOCKS_MAX            ,
-    IM_COLS_MAX               = `IM_COLS_MAX              ,
-    S_WEIGHTS_WIDTH_LF        = `S_WEIGHTS_WIDTH_LF       ,
-    LATENCY_BRAM              = `LATENCY_BRAM             
+    S_WEIGHTS_WIDTH_LF        = `S_WEIGHTS_WIDTH_LF       
   )(
     aclk                  ,
     aresetn               ,
@@ -36,12 +30,7 @@ module axis_input_pipe
   ); 
 
 
-  localparam ROWS_SHIFT       = `ROWS_SHIFT      ;
   localparam S_PIXELS_WIDTH_LF = `S_PIXELS_WIDTH_LF;
-  localparam BITS_KH2          = `BITS_KH2;
-  localparam BITS_KW2          = `BITS_KW2;
-  localparam BITS_SH           = `BITS_SH ;
-  localparam BITS_SW           = `BITS_SW ;
 
   input wire aclk;
   input wire aresetn;
@@ -57,12 +46,6 @@ module axis_input_pipe
   input  wire s_axis_weights_tlast ;
   input  wire [S_WEIGHTS_WIDTH_LF -1:0] s_axis_weights_tdata;
   input  wire [S_WEIGHTS_WIDTH_LF /WORD_WIDTH -1:0] s_axis_weights_tkeep;
-
-  wire image_is_config;
-  wire im_mux_m_ready;
-  wire im_mux_m_valid;
-  wire [WORD_WIDTH*ROWS_SHIFT-1:0] im_mux_m_data_1;
-  wire [WORD_WIDTH*ROWS_SHIFT-1:0] im_mux_m_data_2;
 
   wire pixels_m_ready;
   wire pixels_m_valid;
