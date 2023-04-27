@@ -4,7 +4,7 @@
     `define SRAM_TYPE   "RAW"  
     `define MAC_TYPE    "RAW"  
 
-    `define ROWS     8  
+    `define ROWS     4  
     `define COLS     24
     `define DW_FACTOR_1 3
     `define OUTPUT_MODE "CONV"

@@ -36,7 +36,7 @@ def product_dict(**kwargs):
 
 @pytest.fixture(scope="module", params=list(product_dict(
                                                 X_BITS = [8    ], 
-                                                ROWS   = [8    ], 
+                                                ROWS   = [4    ], 
                                                 COLS   = [24   ], 
                                                 KW_MAX = [3    ], 
                                                 SW_MAX = [2    ], 
@@ -110,7 +110,7 @@ def compile(request):
 @pytest.mark.parametrize("KH", [1,3])
 @pytest.mark.parametrize("CI", [8])
 @pytest.mark.parametrize("CO", [8])
-@pytest.mark.parametrize("XH", [8])
+@pytest.mark.parametrize("XH", [12])
 @pytest.mark.parametrize("XW", [8])
 def test_dnn_engine(compile, KH, CI, CO, XH, XW):
     c= compile
