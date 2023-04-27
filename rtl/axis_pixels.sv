@@ -35,8 +35,8 @@ module axis_pixels #(
     output tuser_st m_user
   );
 
-  logic dw_s_valid, dw_s_ready, dw_m_ready, dw_m_valid, dw_m_last;
-  logic [ROWS+EDGE_WORDS-1:0][WORD_WIDTH-1:0] dw_m_data;
+  logic dw_s_valid, dw_s_ready, dw_m_ready, dw_m_valid, dw_m_last, dw_m_last_r;
+  logic [ROWS+EDGE_WORDS-1:0][WORD_WIDTH-1:0] dw_m_data, dw_m_data_r;
 
   alex_axis_adapter_any #(
     .S_DATA_WIDTH  (S_PIXELS_WIDTH_LF),
@@ -65,7 +65,7 @@ module axis_pixels #(
   // State machine
   enum {SET, PASS , BLOCK} state;
 
-  logic en_config, en_shift, en_copy, last_clk_kh, last_clk_ci, last_clk_w, last_l, m_last_reg, m_last, first_l, first_l_ram;
+  logic en_config, en_shift, en_copy, en_copy_r, last_clk_kh, last_clk_kh_r, last_clk_ci, last_clk_w, last_l, last_l_r, m_last_reg, m_last, first_l, first_l_r;
   logic [BITS_KH2      -1:0] ref_kh2, ref_kh2_in;
   logic [BITS_IM_CIN   -1:0] ref_ci_in;
   logic [BITS_IM_COLS  -1:0] ref_w_in ;
@@ -103,7 +103,7 @@ module axis_pixels #(
       PASS  : begin
                 en_config    = 0;
                 en_shift     = m_ready;
-                en_copy      = dw_m_valid && last_clk_kh;
+                en_copy      = dw_m_valid && last_clk_kh && m_ready;
 
                 s_ready      = dw_s_ready;
                 dw_s_valid   = s_valid;
@@ -112,7 +112,7 @@ module axis_pixels #(
       BLOCK : begin
                 en_config    = 0;
                 en_shift     = m_ready;
-                en_copy      = dw_m_valid && last_clk_kh;
+                en_copy      = dw_m_valid && last_clk_kh && m_ready;
 
                 s_ready      = 0;
                 dw_s_valid   = 0;
@@ -120,25 +120,15 @@ module axis_pixels #(
             end
     endcase
 
-  always_ff @(posedge aclk)
-    if (!aresetn || m_last_beat) {m_valid, m_last_reg} <= '0;
-    else if (en_copy)            {m_valid, m_last_reg} <= {1'b1, dw_m_last};
-  
-  assign m_last = m_last_reg && last_clk_kh;
-
   // Counters: KH, CI, W, Blocks
-
   counter #(.W(BITS_KH),        .ALLOW_ONE(1)) C_KH (.clk(aclk), .reset(en_config), .en(en_shift   ), .max_in(ref_kh2_in*2 ), .reset_val(ref_kh2_in*2 ), .last_clk(last_clk_kh ));
   counter #(.W(BITS_IM_CIN                  )) C_CI (.clk(aclk), .reset(en_config), .en(last_clk_kh), .max_in(ref_ci_in    ), .reset_val('0           ), .last_clk(last_clk_ci ));
   counter #(.W(BITS_IM_COLS                 )) C_W  (.clk(aclk), .reset(en_config), .en(last_clk_ci), .max_in(ref_w_in     ), .reset_val('0           ), .last_clk(last_clk_w  ));
   counter #(.W(BITS_IM_BLOCKS), .ALLOW_ONE(1)) C_L  (.clk(aclk), .reset(en_config), .en(last_clk_w ), .max_in(ref_l_in     ), .reset_val('0           ), .last    (last_l      ), .first(first_l));
 
   // RAM
-  logic [$clog2(RAM_EDGES_DEPTH) -1:0] ram_addr;
-  logic [EDGE_WORDS-1:0][WORD_WIDTH-1:0] ram_dout, edge_top, edge_bot;
-
-  assign edge_bot = dw_m_data[ROWS+EDGE_WORDS-1 : ROWS];
-  assign edge_top = first_l ? '0 : ram_dout;
+  logic [$clog2(RAM_EDGES_DEPTH) -1:0] ram_addr, ram_addr_r;
+  logic [EDGE_WORDS-1:0][WORD_WIDTH-1:0] ram_dout_r, edge_top_r, edge_bot_r;
 
   always_ff @(posedge aclk)
     if (en_config || last_clk_w) ram_addr <= 0;
@@ -151,25 +141,42 @@ module axis_pixels #(
     .LATENCY      (1),
     .TYPE         (SRAM_TYPE)
     ) RAM (
-    // Write
-    .clka  (aclk),    
-    .ena   (en_copy),     
-    .wea   (en_copy && !last_l),     
-    .addra (ram_addr),  
-    .dina  (edge_bot),   
     // Read
     .clkb  (aclk),   
     .enb   (en_copy && !first_l),     
-    .addrb (ram_addr),  
-    .doutb (ram_dout)
+    .addrb (ram_addr),
+
+  // ------------------ PIPELINE STAGE: (_R), to match RAM Read Latency = 1;
+
+    .doutb (ram_dout_r),
+    // Write
+    .clka  (aclk),    
+    .ena   (en_copy_r),     
+    .wea   (en_copy_r && !last_l_r),     
+    .addra (ram_addr_r),  
+    .dina  (edge_bot_r)
   );
+
+  always_ff @(posedge aclk)
+    if (en_shift) begin // m_ready
+      first_l_r     <= first_l;
+      last_l_r      <= last_l;
+      last_clk_kh_r <= last_clk_kh;
+      en_copy_r     <= en_copy;
+      ram_addr_r    <= ram_addr;
+      dw_m_data_r   <= dw_m_data;
+      dw_m_last_r   <= dw_m_last;
+    end
+
+  assign edge_top_r = first_l_r ? '0 : ram_dout_r;
+  assign edge_bot_r = dw_m_data_r[ROWS-1: ROWS-EDGE_WORDS];
 
   // Shift Regs
   logic [IM_SHIFT_REGS-1:0][WORD_WIDTH-1:0] shift_reg;
 
   always_ff @(posedge aclk)
-    if      (en_copy ) shift_reg <= {dw_m_data, edge_top};
-    else if (en_shift) shift_reg <= shift_reg >> WORD_WIDTH;
+    if      (en_copy_r && en_shift) shift_reg <= {dw_m_data_r, edge_top_r};
+    else if (en_shift ) shift_reg <= shift_reg >> WORD_WIDTH;
 
   // Out mux
   always_ff @(posedge aclk )
@@ -183,5 +190,14 @@ module axis_pixels #(
   assign m_user.is_not_max = 1;
   assign m_user.is_max     = 0;
   assign m_user.is_lrelu   = 0;
+
+  // m_valid, m_last
+
+  always_ff @(posedge aclk)
+    if (!aresetn || m_last_beat)       {m_valid, m_last_reg} <= '0;
+    else if (en_copy_r && en_shift)    {m_valid, m_last_reg} <= {1'b1, dw_m_last_r};
+  
+  assign m_last = m_last_reg && last_clk_kh_r;
+
 
 endmodule
