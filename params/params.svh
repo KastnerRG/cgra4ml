@@ -1,6 +1,5 @@
     `include "params_input.svh"
 
-    `define RAM_EDGES_DEPTH    `IM_CIN_MAX * `IM_COLS_MAX * (`IM_ROWS_MAX/`ROWS-1)  // should be optimized
     `define BITS_KW2  $clog2((`KW_MAX+1)/2)
     `define BITS_SW   $clog2(`SW_MAX)
     

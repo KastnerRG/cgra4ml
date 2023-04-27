@@ -10,7 +10,8 @@
     `define OUTPUT_MODE "CONV"
     `define KSM_COMBS_EXPR 1
     `define KS_COMBS_EXPR 1
-    `define BRAM_WEIGHTS_DEPTH  1024     
+    `define BRAM_WEIGHTS_DEPTH  1024
+    `define RAM_EDGES_DEPTH     256
 
     `define FREQ_HIGH     200
     `define FREQ_RATIO    1
