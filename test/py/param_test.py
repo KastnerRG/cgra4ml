@@ -49,7 +49,10 @@ def product_dict(**kwargs):
 def compile(request):
     c = request.param
 
-    d = { 'KH_MAX':c.KW_MAX, 'SH_MAX':c.SW_MAX, 'K_BITS':c.X_BITS}
+
+    d = { 'KH_MAX':c.KW_MAX, 'SH_MAX':c.SW_MAX, 'K_BITS':c.X_BITS,
+            'RAM_EDGES_DEPTH': 8*8*4 # max(CI * XW * (XH/ROWS-1))
+         }
     n = namedtuple('Compile', d)(**d)
     c = namedtuple("Compile", c._fields + n._fields)(*(c + n))
 
@@ -68,7 +71,8 @@ def compile(request):
     `define OUTPUT_MODE "CONV"
     `define KSM_COMBS_EXPR 1
     `define KS_COMBS_EXPR 1
-    `define BRAM_WEIGHTS_DEPTH  {c.BRAM_WEIGHTS_DEPTH}     
+    `define BRAM_WEIGHTS_DEPTH  {c.BRAM_WEIGHTS_DEPTH}
+    `define RAM_EDGES_DEPTH     {c.RAM_EDGES_DEPTH}
 
     `define FREQ_HIGH     200
     `define FREQ_RATIO    1
@@ -100,7 +104,7 @@ def compile(request):
         assert subprocess.run(fr'{XIL_PATH}\xelab {TB_MODULE} --snapshot {TB_MODULE} -log elaborate.log --debug typical', cwd="xsim", shell=True).returncode == 0
 
     if SIM == 'icarus':
-        cmd = [ "iverilog", "-g2012", "-DICARUS", "-o", "xsim/a.out", "-I", "sv", "-I", "../params", "-s", TB_MODULE] + SOURCES
+        cmd = [ "iverilog", "-v", "-g2012", "-DICARUS", "-o", "xsim/a.out", "-I", "sv", "-I", "../params", "-s", TB_MODULE] + SOURCES
         print(" ".join(cmd))
         assert subprocess.run(cmd).returncode == 0
 
@@ -125,6 +129,7 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW):
     assert CI <= c.CI_MAX
     assert XH <= c.XH_MAX
     assert XW <= c.XW_MAX
+    assert CI * XW * int(np.ceil(XH/c.ROWS)-1) <= c.RAM_EDGES_DEPTH
 
     for file in os.scandir(DATA_DIR):
         os.remove(file.path)
