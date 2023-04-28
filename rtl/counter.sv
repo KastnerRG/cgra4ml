@@ -1,35 +1,27 @@
 `timescale 1ns/1ps
 
-module counter #(parameter W = 8, ALLOW_ONE=0)(
+module counter #(parameter W = 8)(
   input  logic clk, reset, en,
-  input  logic [W-1:0] max_in, reset_val,
+  input  logic [W-1:0] max_in,
   output logic [W-1:0] count,
   output logic last, last_clk, first
 );
-  logic [W-1:0] max_1, max;
-
-  // If max == 0 is not needed, we can register last signal
-  if (ALLOW_ONE) begin
-
-    assign last = count == max;
-    always_ff @(posedge clk)
-      if (reset) max <= max_in;
-
-  end else
-    always_ff @(posedge clk)
-      if (reset) begin
-        max_1  <= max_in-1;
-        last   <= 0;
-      end
-      else if (en)
-        last   <= count == max_1;
+  logic [W-1:0] max;
+  wire  [W-1:0] count_next = last ? max : count - 1;
 
   always_ff @(posedge clk)
-    if (reset)   count <= reset_val;
-    else if (en) count <= last ? '0 : count + 1;
+    if (reset) begin
+      count  <= max_in;
+      max    <= max_in;
+      last   <= max_in==0;
+    end
+    else if (en) begin
+      last   <= count_next == 0;
+      count  <= count_next;
+    end
   
   assign last_clk = en && last;
-  assign first = count == 0;
+  assign first = count == max;
 
 endmodule
 
