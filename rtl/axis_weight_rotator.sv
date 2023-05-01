@@ -1,5 +1,4 @@
 /*//////////////////////////////////////////////////////////////////////////////////
-Group : ABruTECH
 Engineer: Abarajithan G.
 
 Create Date: 30/12/2020
@@ -76,28 +75,23 @@ module axis_weight_rotator #(
     output tuser_st            m_axis_tuser ,
     output logic [M_WIDTH-1:0] m_axis_tdata
   );
-  
-  typedef logic logic_2_t [2];
-  typedef logic [BITS_CONFIG_COUNT-1:0] config_2_t [2];
+
+  enum {W_IDLE_S, W_GET_REF_S, W_WRITE_S, W_FILL_1_S, W_FILL_2_S, W_SWITCH_S} state_write;
+  enum {R_IDLE_S, R_PASS_CONFIG_S, R_READ_S, R_SWITCH_S} state_read;
+  enum {DW_PASS_S, DW_BLOCK_S} state_dw;
 
   logic dw_m_ready, dw_m_valid, dw_m_last, dw_s_valid, dw_s_ready;
   logic [M_WIDTH -1:0] dw_m_data_flat;
-  
-  logic state_dw_next, state_dw, s_handshake, s_last_handshake;
 
-  logic dw_m_handshake, dw_m_last_handshake;
-  logic i_read, i_write, tog_i_read, tog_i_write;
+  logic i_read, i_write;
 
-  logic_2_t done_read_next, done_write_next, en_ref;
-  logic_2_t done_read, done_write, bram_resetn, bram_wen, bram_w_full, bram_m_ready;
+  logic [1:0] done_read_next, done_write_next, en_ref;
+  logic [1:0] done_read, done_write, bram_resetn, bram_wen, bram_w_full, bram_m_ready;
   logic     bram_reg_resetn, bram_m_valid, bram_reg_m_valid;
 
-  logic[M_WIDTH-1:0]    bram_m_data  [2];
+  logic [M_WIDTH-1:0]    bram_m_data  [2];
   
-  logic [BITS_ADDR-1:0] s_addr_max; 
-  logic [BITS_ADDR-1:0] s_addr_min; 
-  logic [BITS_ADDR-1:0] r_addr_min    [2];
-  logic [BITS_ADDR-1:0] addr_max      [2];
+  logic [BITS_ADDR-1:0] s_addr_max, s_addr_min, r_addr_min [2], addr_max [2];
   logic [BITS_CONFIG_COUNT-1:0] count_config, count_next_config;
 
   logic [BITS_KW2         -1:0] s_kw2 , ref_kw2   [2];
@@ -109,7 +103,6 @@ module axis_weight_rotator #(
   logic [BITS_IM_BLOCKS   -1:0] s_blocks_1, count_blocks, count_next_blocks, ref_1_blocks [2];
   
   logic en_count_kh, en_count_sw, en_count_cin, en_count_cols, en_count_blocks, en_count_config;
-
   logic last_config, last_kh, last_sw, last_cin, last_cols, last_blocks;
   logic last_next_config, last_next_kh, last_next_sw, last_next_cin, last_next_cols, last_next_blocks;
   
@@ -123,9 +116,9 @@ module axis_weight_rotator #(
       assign lut_lrelu_beats_1[KW2] = 1 -1; // lrelu_beats
   endgenerate
 
+  wire s_handshake      = s_axis_tready && s_axis_tvalid;
+  wire s_last_handshake = s_handshake   && s_axis_tlast;
 
-  localparam DW_BLOCK_S = 0;
-  localparam DW_PASS_S  = 1;
 
   alex_axis_adapter_any #(
     .S_DATA_WIDTH  (S_WEIGHTS_WIDTH_LF),
@@ -151,59 +144,31 @@ module axis_weight_rotator #(
     .m_axis_tlast  (dw_m_last      )
   );
 
-  assign dw_m_handshake      = dw_m_valid     && dw_m_ready;
-  assign dw_m_last_handshake = dw_m_handshake && dw_m_last;
+  wire dw_m_handshake      = dw_m_valid     && dw_m_ready;
+  wire dw_m_last_handshake = dw_m_handshake && dw_m_last;
 
-  /*
-    STATE MACHINE: WRITE
-  */
 
-  localparam W_IDLE_S     = 0;
-  localparam W_GET_REF_S  = 1;
-  localparam W_WRITE_S    = 2;
-  localparam W_FILL_1_S   = 3;
-  localparam W_FILL_2_S   = 4;
-  localparam W_SWITCH_S   = 5;
-
-  localparam BITS_W_STATE = 3;
-
-  logic [BITS_W_STATE-1:0] state_write, state_write_next;
-
-  always_comb begin
-    state_write_next = state_write;
-    unique case (state_write)
-      W_IDLE_S    : if (done_read [i_write]   ) state_write_next = W_GET_REF_S;
-      W_GET_REF_S : if (s_handshake && state_dw == DW_BLOCK_S) state_write_next = W_WRITE_S;
-      W_WRITE_S   : if (dw_m_last_handshake   ) state_write_next = W_FILL_1_S;    // dw_m_last_handshake and bram_w_full[w_i] should be same
-      W_FILL_1_S  :                             state_write_next = W_SWITCH_S;
-      // W_FILL_1_S  :                             state_write_next = W_FILL_2_S;
-      // W_FILL_2_S  : if (~fifo_empty [i_write] ) state_write_next = W_SWITCH_S;
-      W_SWITCH_S  : state_write_next = W_IDLE_S;
+  //  STATE MACHINE: WRITE
+  always_ff @(posedge aclk) 
+    if (!aresetn)                                              state_write <= W_IDLE_S;
+    else unique case (state_write)
+      W_IDLE_S    : if (done_read [i_write]   )                state_write <= W_GET_REF_S;
+      W_GET_REF_S : if (s_handshake && state_dw == DW_BLOCK_S) state_write <= W_WRITE_S;
+      W_WRITE_S   : if (dw_m_last_handshake   )                state_write <= W_FILL_1_S;    // dw_m_last_handshake and bram_w_full[w_i] should be same
+      W_FILL_1_S  :                                            state_write <= W_SWITCH_S;
+      W_SWITCH_S  :                                            state_write <= W_IDLE_S;
     endcase 
-  end
 
-  register #(
-    .WORD_WIDTH   (BITS_W_STATE), 
-    .RESET_VALUE  (W_IDLE_S)
-  ) STATE_W (
-    .clock        (aclk),
-    .clock_enable (1'b1),
-    .resetn       (aresetn),
-    .data_in      (state_write_next),
-    .data_out     (state_write)
-  );
 
-  /*
-    STATE MACHINE: READ
-  */
-
-  localparam R_IDLE_S        = 0;
-  localparam R_PASS_CONFIG_S = 1;
-  localparam R_READ_S        = 2;
-  localparam R_SWITCH_S      = 3;
-  localparam BITS_R_STATE    = 2;
-
-  logic [BITS_R_STATE-1:0] state_read, state_read_next;
+  //  STATE MACHINE: READ
+  always_ff @(posedge aclk)
+    if (!aresetn)                                           state_read <= R_IDLE_S;
+    else unique case (state_read)
+      R_IDLE_S        : if (done_write [i_read])            state_read <= R_PASS_CONFIG_S;
+      R_PASS_CONFIG_S : if (en_count_config && last_config) state_read <= R_READ_S;
+      R_READ_S        : if (en_count_blocks && last_blocks) state_read <= R_SWITCH_S;
+      R_SWITCH_S      :                                     state_read <= R_IDLE_S;
+    endcase 
 
   always_comb begin
 
@@ -228,156 +193,76 @@ module axis_weight_rotator #(
                           bram_reg_resetn    = 0;
                         end
     endcase 
-
-    state_read_next = state_read;
-    unique case (state_read)
-      R_IDLE_S        : if (done_write [i_read])            state_read_next = R_PASS_CONFIG_S;
-      R_PASS_CONFIG_S : if (en_count_config && last_config) state_read_next = R_READ_S;
-      R_READ_S        : if (en_count_blocks && last_blocks) state_read_next = R_SWITCH_S;
-      R_SWITCH_S      : state_read_next = R_IDLE_S;
-    endcase 
   end
 
-  register #(
-    .WORD_WIDTH   (BITS_R_STATE), 
-    .RESET_VALUE  (R_IDLE_S)
-  ) STATE_R (
-    .clock        (aclk),
-    .clock_enable (1'b1),
-    .resetn       (aresetn),
-    .data_in      (state_read_next),
-    .data_out     (state_read)
-  );
-
-  assign tog_i_write = state_write == W_SWITCH_S;
-  assign tog_i_read  = state_read  == R_SWITCH_S;
-
-  register #(
-    .WORD_WIDTH   (1), 
-    .RESET_VALUE  (0)
-  ) I_WEIGHTS_WRITE (
-    .clock        (aclk),
-    .clock_enable (tog_i_write),
-    .resetn       (aresetn),
-    .data_in      (~i_write),
-    .data_out     ( i_write)
-  );
-  register #(
-    .WORD_WIDTH   (1), 
-    .RESET_VALUE  (0)
-  ) I_WEIGHTS_READ (
-    .clock        (aclk),
-    .clock_enable (tog_i_read),
-    .resetn       (aresetn),
-    .data_in      (~i_read),
-    .data_out     ( i_read)
-  );
+  // Switching RAMs
+  always_ff @(posedge aclk)
+    if (!aresetn)  {i_write, i_read} <= 0;
+    else begin
+      if (state_write == W_SWITCH_S)  i_write <= !i_write;
+      if (state_read  == R_SWITCH_S)  i_read  <= !i_read;
+    end
   
-    /*
-    FSM to bypass DATAWIDTH CONVERTER
 
-    - slave side is smaller (32 bits)
-    - get config bits from slave side
-  */
- 
-  assign s_handshake      = s_axis_tready && s_axis_tvalid;
-  assign s_last_handshake = s_handshake   && s_axis_tlast;
+  // State machine DW
+  always_ff @(posedge aclk)
+    if (!aresetn)                       state_dw <= DW_BLOCK_S;
+    else unique case (state_dw)
+      DW_BLOCK_S: if (s_handshake)      state_dw <= DW_PASS_S;
+      DW_PASS_S : if (s_last_handshake) state_dw <= DW_BLOCK_S;
+    endcase
 
   always_comb begin
-
     dw_m_ready    = (state_write == W_WRITE_S);
 
     if (state_dw == DW_BLOCK_S) begin
       dw_s_valid    = 0;
       s_axis_tready = (state_write == W_GET_REF_S);
-
-      if (s_handshake)      state_dw_next = DW_PASS_S;
-      else                  state_dw_next = DW_BLOCK_S;
     end
     else begin
       dw_s_valid    = s_axis_tvalid;
       s_axis_tready = dw_s_ready;
-
-      if (s_last_handshake) state_dw_next = DW_BLOCK_S;
-      else                  state_dw_next = DW_PASS_S;
     end
   end
 
-  register #(
-    .WORD_WIDTH   (1), 
-    .RESET_VALUE  (DW_BLOCK_S)
-  ) STATE_DW (
-    .clock        (aclk),
-    .clock_enable (1'd1),
-    .resetn       (aresetn),
-    .data_in      (state_dw_next),
-    .data_out     (state_dw)
-  );
-
-  /*
-    Extract s_data into inputs of ref registers
-    This will give error if SUM_BITS > S_WEIGHTS_WIDTH 
-  */
   localparam SUM_BITS = BITS_ADDR + BITS_IM_BLOCKS + BITS_IM_COLS + BITS_IM_CIN + BITS_SW + BITS_KH2 + BITS_KW2;
-  assign {s_addr_max, s_blocks_1, s_cols_1, s_cin_1, s_sw_1, s_kh2 , s_kw2 } = s_axis_tdata[SUM_BITS-1:0];
-  
-  // s_addr_max = (s_kh_1+1)*(s_cin_1+1)*(s_sw_1+1) = (s_kh_1 * s_cin_1) + s_kh_1 + s_cin_1 +1
-  // assign s_addr_max = ((s_kh2 * (s_cin_1+1)) * 2 + s_cin_1 + s_addr_min)*s_sw_1 + ((s_kh2 * (s_cin_1+1)) * 2 + s_cin_1 + s_addr_min) + s_sw_1;
+  assign {s_addr_max, s_blocks_1, s_cols_1, s_cin_1, s_sw_1, s_kh2 , s_kw2 } = s_axis_tdata[SUM_BITS-1:0]; // gives error if SUM_BITS > S_WEIGHTS_WIDTH
   assign s_addr_min = lut_lrelu_beats_1[s_kh2] + 1;
 
 
   generate
     for (genvar i=0; i<2; i++) begin
-
-      /*
-        FSM Output Decoders for indexed signals
-      */
-
+      //  FSM Output Decoders for indexed signals
       always_comb begin
         bram_resetn     [i] = 1;
         bram_wen        [i] = 0;
         en_ref          [i] = 0;
         done_write_next [i] = done_write[i];
         
-        done_read_next[i]    = done_read[i];
-        bram_m_ready  [i]    = 0;
+        done_read_next  [i]    = done_read[i];
+        bram_m_ready    [i]    = 0;
 
-        if (i==i_write) begin
-          unique case (state_write)
-            W_IDLE_S    : begin
-                          end
+        if (i==i_write) 
+          case (state_write)
             W_GET_REF_S : begin
                             done_write_next [i] = 0;
                             bram_resetn     [i] = 0;
                             en_ref          [i] = s_handshake && (state_dw == DW_BLOCK_S);
                           end
-            W_WRITE_S   : begin
-                            bram_wen[i] = dw_m_valid;
-                          end
-            W_FILL_1_S  : bram_m_ready     [i] = 1;
-            W_FILL_2_S  : begin end
-            W_SWITCH_S  : begin
-                            done_write_next[i] = 1;
-                          end
+            W_WRITE_S   :   bram_wen        [i] = dw_m_valid;
+            W_FILL_1_S  :   bram_m_ready    [i] = 1;
+            W_SWITCH_S  :   done_write_next [i] = 1;
           endcase 
-        end
 
-        if (i==i_read) begin
-          unique case (state_read)
-            R_IDLE_S        : begin
-                              end
+        if (i==i_read)
+          case (state_read)
             R_PASS_CONFIG_S : begin
                                 done_read_next [i] = 0;
                                 bram_m_ready   [i] = m_axis_tready;
                               end
-            R_READ_S        : begin
-                                bram_m_ready   [i] = m_axis_tready;
-                              end
-            R_SWITCH_S      : begin
-                                done_read_next [i] = 1;
-                              end
+            R_READ_S        :   bram_m_ready   [i] = m_axis_tready;
+            R_SWITCH_S      :   done_read_next [i] = 1;
           endcase 
-        end
       end
 
       cyclic_bram #(
@@ -419,120 +304,23 @@ module axis_weight_rotator #(
           - When FSM_read finishes, it sets 1, FSM_write gets out of IDLE and starts reading
       */
       
-      register #(
-        .WORD_WIDTH   (1), 
-        .RESET_VALUE  (0)
-      ) DONE_WRITE (
-        .clock        (aclk),
-        .clock_enable (1'b1),
-        .resetn       (aresetn),
-        .data_in      (done_write_next[i]),
-        .data_out     (done_write     [i])
-      );
-      register #(
-        .WORD_WIDTH   (1), 
-        .RESET_VALUE  (1)
-      ) DONE_READ (
-        .clock        (aclk),
-        .clock_enable (1'b1),
-        .resetn       (aresetn),
-        .data_in      (done_read_next[i]),
-        .data_out     (done_read     [i])
-      );
+      always_ff @(posedge aclk) begin
+        done_write[i] <= !aresetn ? 0 : done_write_next[i];
+        done_read [i] <= !aresetn ? 1 : done_read_next [i];
+      end
 
-      /*
-        REFERENCE REGISTERS
-
-        - We bypass DW converter and take s_data, since that has lower width (32)
-        - Directly connect s_data (sliced appropriately) to ref registers
-        - Enabled during GET_REF state:
-          - en_ref [i_write] = (state == W_GET_REF_S)
-      */
-
-      register #(
-        .WORD_WIDTH   (BITS_KW2), 
-        .RESET_VALUE  (0)
-      ) REF_KW2 (
-        .clock        (aclk),
-        .resetn       (aresetn),
-        .data_in      (s_kw2 ),
-        .clock_enable (en_ref    [i]),
-        .data_out     (ref_kw2   [i])
-      );
-      register #(
-        .WORD_WIDTH   (BITS_KH2), 
-        .RESET_VALUE  (0)
-      ) REF_KH2 (
-        .clock        (aclk),
-        .resetn       (aresetn),
-        .data_in      (s_kh2 ),
-        .clock_enable (en_ref    [i]),
-        .data_out     (ref_kh2   [i])
-      );
-      register #(
-        .WORD_WIDTH   (BITS_SW), 
-        .RESET_VALUE  (0)
-      ) REF_SW_1 (
-        .clock        (aclk),
-        .resetn       (aresetn),
-        .data_in      (s_sw_1),
-        .clock_enable (en_ref     [i]),
-        .data_out     (ref_1_sw   [i])
-      );
-      register #(
-        .WORD_WIDTH   (BITS_IM_CIN), 
-        .RESET_VALUE  (0)
-      ) REF_CIN_1 (
-        .clock        (aclk),
-        .resetn       (aresetn),
-        .data_in      (s_cin_1),
-        .clock_enable (en_ref     [i]),
-        .data_out     (ref_1_cin  [i])
-      );
-      register #(
-        .WORD_WIDTH   (BITS_IM_COLS), 
-        .RESET_VALUE  (0)
-      ) REF_COLS_1 (
-        .clock        (aclk),
-        .resetn       (aresetn),
-        .data_in      (s_cols_1),
-        .clock_enable (en_ref     [i]),
-        .data_out     (ref_1_cols [i])
-      );
-      register #(
-        .WORD_WIDTH   (BITS_IM_BLOCKS), 
-        .RESET_VALUE  (0)
-      ) REF_BLOCKS_1 (
-        .clock        (aclk),
-        .resetn       (aresetn),
-        .data_in      (s_blocks_1),
-        .clock_enable (en_ref       [i]),
-        .data_out     (ref_1_blocks [i])
-      );
-      /*
-        Address Max, Min registers:
-      */
-      register #(
-        .WORD_WIDTH   (BITS_ADDR), 
-        .RESET_VALUE  (0)
-      ) R_ADDR_MIN (
-        .clock        (aclk),
-        .clock_enable (en_ref     [i]),
-        .resetn       (aresetn),
-        .data_in      (s_addr_min),
-        .data_out     (r_addr_min [i])
-      );
-      register #(
-        .WORD_WIDTH   (BITS_ADDR), 
-        .RESET_VALUE  (0)
-      ) ADDR_MAX (
-        .clock        (aclk),
-        .clock_enable (en_ref   [i]),
-        .resetn       (aresetn),
-        .data_in      (s_addr_max),
-        .data_out     (addr_max [i])
-      );
-
+      // Reference Registers
+      always_ff @(posedge aclk)
+        if (en_ref[i]) begin
+          ref_kw2      [i] <= s_kw2     ;
+          ref_kh2      [i] <= s_kh2     ;
+          ref_1_sw     [i] <= s_sw_1    ;
+          ref_1_cin    [i] <= s_cin_1   ;
+          ref_1_cols   [i] <= s_cols_1  ;
+          ref_1_blocks [i] <= s_blocks_1;
+          r_addr_min   [i] <= s_addr_min;
+          addr_max     [i] <= s_addr_max;
+        end
     end
   endgenerate
 
@@ -565,19 +353,6 @@ module axis_weight_rotator #(
     .m_axis_tvalid(bram_reg_m_valid),
     .m_axis_tready(bram_m_ready[i_read])
   );
-
-  // axis_pipeline_register #(
-  //   .WIDTH   (BRAM_WIDTH),
-  //   .DEPTH   (LATENCY_BRAM)
-  // ) REG_PIPE (
-  //   .aclk    (aclk),
-  //   .aresetn (aresetn & bram_reg_resetn),
-  //   .s_data  (bram_m_data [i_read]),
-  //   .s_valid (bram_m_valid),
-  //   .m_data  (m_axis_tdata ),
-  //   .m_valid (bram_reg_m_valid),
-  //   .m_ready (bram_m_ready[i_read])
-  // );
 
   /*
     COUNTER REGISTERS
