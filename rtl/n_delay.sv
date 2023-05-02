@@ -1,45 +1,22 @@
 `timescale 1ns/1ps
 module n_delay #(
-    parameter N = 1,
-    parameter WORD_WIDTH = 8,
-    parameter LOCAL = 0
+  parameter N = 1,
+            W = 8
 )(
-    clk,
-    resetn,
-    clken,
-    data_in,
-    data_out
+  input  wire     c, e, rn,
+  input  wire [W-1 : 0]  i,
+  output wire [W-1 : 0]  o
 );
 
-    input  wire                     clk;
-    input  wire                     clken;
-    input  wire                     resetn;
-    input  wire [WORD_WIDTH-1 : 0]  data_in;
-    output wire [WORD_WIDTH-1 : 0]  data_out;
+  logic [W-1 : 0] data [(N+1)-1:0];
 
-    wire        [WORD_WIDTH-1 : 0]  data        [(N+1)-1:   0];
+  assign data [0] = i;
+  assign o        = data[(N+1)-1];
 
-    assign data     [0] = data_in;
-    assign data_out     = data[(N+1)-1];
-
-    genvar i;
-    generate
-        for (i=0 ; i < N; i++) begin: delay_reg_gen
-            register
-            #(
-                .WORD_WIDTH     (WORD_WIDTH),
-                .RESET_VALUE    (0),
-                .LOCAL          (LOCAL)
-            )
-            m_data_reg
-            (
-                .clock          (clk),
-                .clock_enable   (clken),
-                .resetn         (resetn),
-                .data_in        (data[i]),
-                .data_out       (data[i+1])
-            );
-        end
-    endgenerate
+  genvar n;
+  for (n=0 ; n < N; n++)
+    always_ff @(posedge c)
+      if (!rn)    data [n+1] <= 0;
+      else if (e) data [n+1] <= data [n];
 
 endmodule
