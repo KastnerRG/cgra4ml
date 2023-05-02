@@ -312,7 +312,6 @@ module axis_weight_rotator #(
   assign m_axis_tuser.is_w_first_clk   = f_cols && f_cin && f_kw;
   assign m_axis_tuser.is_cin_last      = l_kw   && l_cin;
   assign m_axis_tuser.is_col_1_k2      = c_cols == ref_config [i_read].kw2; // i = cols-1-k/2 === [cols-1-i] = k/2
-  assign m_axis_tuser.is_col_valid     = 1; // if no stride, si=0 else si=1
   assign m_axis_tuser.is_sum_start     = 1; // if (7,2)    , si=1 else si=0
   assign m_axis_tuser.is_w_first_kw2   = (ref_config[i_read].cols_1 - c_cols) < ref_config[i_read].kw2;
   assign m_axis_tuser.is_w_last        = l_cols;

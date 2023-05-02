@@ -49,7 +49,6 @@ module axis_input_pipe
 
   wire pixels_m_ready;
   wire pixels_m_valid;
-  tuser_st pixels_m_user;
   
   wire weights_m_ready;
   wire weights_m_valid;
@@ -73,7 +72,6 @@ module axis_input_pipe
     .s_keep (s_axis_pixels_tkeep ),
     .m_valid(pixels_m_valid      ),
     .m_ready(pixels_m_ready      ),
-    .m_user (pixels_m_user       ),
     .m_data (m_axis_pixels_tdata )
   );
 
@@ -105,31 +103,6 @@ module axis_input_pipe
   */
   
   assign m_axis_tlast    = weights_m_last;
+  assign m_axis_tuser    = weights_m_user;
 
-  assign m_axis_tuser.is_not_max = pixels_m_user.is_not_max;
-  assign m_axis_tuser.is_max     = pixels_m_user.is_max    ;
-  assign m_axis_tuser.is_lrelu   = pixels_m_user.is_lrelu  ;
-
-  assign m_axis_tuser.kw2          = weights_m_user.kw2          ;
-  assign m_axis_tuser.sw_1         = weights_m_user.sw_1         ;
-  assign m_axis_tuser.is_top_block = weights_m_user.is_top_block  && m_axis_tvalid;
-  assign m_axis_tuser.is_bot_block = weights_m_user.is_bot_block  && m_axis_tvalid;
-  assign m_axis_tuser.is_col_1_k2  = weights_m_user.is_col_1_k2   && m_axis_tvalid;
-  assign m_axis_tuser.is_config    = weights_m_user.is_config    ;
-  assign m_axis_tuser.is_cin_last  = weights_m_user.is_cin_last   && m_axis_tvalid;
-  assign m_axis_tuser.is_w_first_clk   = weights_m_user.is_w_first_clk    && m_axis_tvalid;
-  assign m_axis_tuser.is_col_valid = weights_m_user.is_col_valid  && m_axis_tvalid;
-  assign m_axis_tuser.is_sum_start = weights_m_user.is_sum_start  && m_axis_tvalid;
-  assign m_axis_tuser.is_w_first_kw2 = weights_m_user.is_w_first_kw2;
-  assign m_axis_tuser.is_w_last      = weights_m_user.is_w_last     ;
-
-  /*
-    DATA
-
-    - Pixels  : two (C) streams of U
-    - Weights : one stream in CMG
-    - Conv engine is agnostic to M and G
-      - Assume weights are in MCG, then cores are CMG_flat
-    - Send out two streams of pixels and one of weights
-  */
 endmodule
