@@ -54,18 +54,7 @@ module proc_engine #(
 
   generate
     genvar u,m,b,kw2,sw_1;
-
-    n_delay #(
-      .N          (LATENCY_MULTIPLIER     ),
-      .WORD_WIDTH (TUSER_WIDTH + 2)
-    ) MUL_CONTROL(
-      .clk      (clk      ),
-      .resetn   (resetn   ),
-      .clken    (clken_mul),
-      .data_in  ({s_valid    , s_last    , s_user    }),
-      .data_out ({mul_m_valid, mul_m_last, mul_m_user})
-    );
-
+    n_delay #(.N(LATENCY_MULTIPLIER), .W(TUSER_WIDTH+2)) MUL_CONTROL (.c(clk), .rn(resetn), .e(clken_mul), .i({s_valid, s_last, s_user}), .o ({mul_m_valid, mul_m_last, mul_m_user}));
 
         for (u=0; u < ROWS ; u++)
           for (m=0; m < COLS   ; m++)
@@ -74,16 +63,10 @@ module proc_engine #(
 
     assign mux_sel_next = mul_m_valid && mul_m_user.is_cin_last && (mul_m_user.kw2 != 0);
 
-    register #(
-      .WORD_WIDTH     (1),
-      .RESET_VALUE    (0)
-    ) MUX_SEL (
-      .clock          (clk   ),
-      .resetn         (resetn),
-      .clock_enable   (en    ),
-      .data_in        (mux_sel_next),
-      .data_out       (mux_sel )
-    );
+    always_ff @(posedge clk)
+      if (!resetn) mux_sel <= 0;
+      else if (en) mux_sel <= mux_sel_next;
+
     assign clken_mul = en    && !mux_sel;
             
     for (m=0; m < COLS   ; m++) begin: Mb
@@ -101,16 +84,9 @@ module proc_engine #(
 
       assign bypass_sum_next [m] = mul_m_user.is_cin_last || mul_m_user.is_config;
 
-      register #(
-        .WORD_WIDTH     (1),
-        .RESET_VALUE    (0)
-      ) BYPASS_SUM (
-        .clock          (clk   ),
-        .resetn         (resetn),
-        .clock_enable   (en    && acc_s_valid [m]), // first PE of each elastic core gets bypass for 2 clocks
-        .data_in        (bypass_sum_next      [m]),
-        .data_out       (bypass_sum           [m])
-      );
+      always_ff @(posedge clk)
+        if (!resetn)                    bypass_sum [m] <= 0;
+        else if (en && acc_s_valid [m]) bypass_sum [m] <= bypass_sum_next [m];
 
       assign bypass    [m] = bypass_sum [m] || mul_m_user.is_w_first_clk; // clears all partial sums for every first col
       assign clken_acc [m] = en    && acc_s_valid [m];
@@ -138,29 +114,11 @@ module proc_engine #(
             );
     end end
 
-    n_delay #(
-      .N          (LATENCY_ACCUMULATOR),
-      .WORD_WIDTH (TUSER_WIDTH)
-    ) ACC_USER (
-      .clk      (clk         ),
-      .resetn   (resetn      ),
-      .clken    (en    & mul_m_valid),
-      .data_in  (mul_m_user  ),
-      .data_out (acc_m_user  )
-    );
+    n_delay #(.N(LATENCY_ACCUMULATOR), .W(TUSER_WIDTH)) ACC_USER (.c(clk), .rn(resetn), .e(en & mul_m_valid), .i(mul_m_user), .o(acc_m_user));
 
     assign acc_m_valid_next = !mux_sel && mul_m_valid && (mul_m_user.is_config || mul_m_user.is_cin_last);
     
-    n_delay #(
-      .N          (LATENCY_ACCUMULATOR),
-      .WORD_WIDTH (2)
-    ) ACC_VALID_LAST(
-      .clk      (clk   ),
-      .resetn   (resetn),
-      .clken    (en    ),
-      .data_in  ({acc_m_valid_next, mul_m_last}),
-      .data_out ({acc_m_valid     , acc_m_last})
-    );
+    n_delay #(.N(LATENCY_ACCUMULATOR), .W(2)) ACC_VALID_LAST(.c(clk), .rn(resetn), .e(en), .i({acc_m_valid_next, mul_m_last}), .o({acc_m_valid, acc_m_last}));
 
     // AXI Stream
 
@@ -171,17 +129,9 @@ module proc_engine #(
     logic valid_prev, i_ready;
     assign en = valid_prev | i_ready;
 
-    register #(
-      .WORD_WIDTH (1),
-      .RESET_VALUE(1),
-      .LOCAL      (0)
-    ) VALID_PREV (
-      .clock       (clk),
-      .clock_enable(1'b1),
-      .resetn      (resetn),
-      .data_in     (i_valid),
-      .data_out    (valid_prev)
-    );
+    always_ff @(posedge clk)
+      if (!resetn)  valid_prev <= 0;
+      else          valid_prev <= i_valid;
 
     skid_buffer #(
       .WIDTH   (COLS   *ROWS *WORD_WIDTH_OUT + TUSER_WIDTH + 1)

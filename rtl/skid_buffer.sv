@@ -1,17 +1,12 @@
 `timescale 1ns/1ps
 
-module skid_buffer #(
-  parameter WIDTH = 8
-)(
+module skid_buffer #( parameter WIDTH = 8)(
   input  logic aclk, aresetn, s_valid, m_ready,
   input  logic [WIDTH-1:0] s_data,
   output logic [WIDTH-1:0] m_data,
   output logic m_valid, s_ready
 );
-
-  logic state, state_next;
-  localparam FULL=1'b1, EMPTY=1'b0;
-
+  enum {FULL, EMPTY} state, state_next;
   always_comb begin
     state_next = state;
     case (state)
@@ -19,85 +14,31 @@ module skid_buffer #(
       FULL  : if(m_ready)                        state_next = EMPTY;
     endcase
   end
+  always_ff @(posedge aclk)
+    if      (!aresetn)              state <= EMPTY;
+    else if (m_ready || s_ready) state <= state_next;
 
-  wire state_en = m_ready || s_ready;
-
-  register #(
-    .WORD_WIDTH(1), 
-    .RESET_VALUE(EMPTY)
-  ) STATE (
-    .clock       (aclk),
-    .clock_enable(state_en),
-    .resetn      (aresetn),
-    .data_in     (state_next),
-    .data_out    (state)
-  );
-
-  wire s_ready_next = state_next == EMPTY;
-
-  register #(
-    .WORD_WIDTH (1), 
-    .RESET_VALUE(1)
-  ) S_READY (
-    .clock       (aclk),
-    .clock_enable(1'b1),
-    .resetn      (aresetn),
-    .data_in     (s_ready_next),
-    .data_out    (s_ready)
-  );
-
-  wire buffer_en = (state_next == FULL) && (state==EMPTY);
-
-  logic [WIDTH-1:0] b_data;
   logic b_valid;
+  logic [WIDTH-1:0] b_data;
+  wire  [WIDTH-1:0] m_data_next  = (state      == FULL) ? b_data  : s_data;
+  wire              m_valid_next = (state      == FULL) ? b_valid : s_valid;
+  wire              buffer_en    = (state_next == FULL) && (state==EMPTY);
+  wire              m_en         = m_valid_next & m_ready;
 
-  register #(
-    .WORD_WIDTH (1), 
-    .RESET_VALUE(0)
-  ) B_VALID (
-    .clock       (aclk),
-    .clock_enable(buffer_en ),
-    .resetn      (aresetn   ),
-    .data_in     (s_valid   ),
-    .data_out    (b_valid   )
-  );
-  register #(
-    .WORD_WIDTH (WIDTH), 
-    .RESET_VALUE(0)
-  ) B_DATA (
-    .clock       (aclk),
-    .clock_enable(buffer_en && s_valid),
-    .resetn      (aresetn   ),
-    .data_in     (s_data    ),
-    .data_out    (b_data    )
-  );
-  
-  wire [WIDTH-1:0] m_data_next  = (state == FULL) ? b_data  : s_data;
-  wire             m_valid_next = (state == FULL) ? b_valid : s_valid;
-  
-  wire m_en = m_valid_next & m_ready;
-
-  register #(
-    .WORD_WIDTH (1), 
-    .RESET_VALUE(0)
-  ) M_VALID (
-    .clock       (aclk),
-    .clock_enable(m_ready     ),
-    .resetn      (aresetn     ),
-    .data_in     (m_valid_next),
-    .data_out    (m_valid     )
-  );
-  register #(
-    .WORD_WIDTH (WIDTH), 
-    .RESET_VALUE(0)
-  ) M_DATA (
-    .clock       (aclk),
-    .clock_enable(m_en  ),
-    .resetn      (aresetn   ),
-    .data_in     (m_data_next),
-    .data_out    (m_data     )
-  );
-
+  always_ff @(posedge aclk)
+    if (!aresetn) begin
+      s_ready <= 1;
+      {m_valid, b_valid} <= '0;
+    end else begin
+      s_ready <= state_next == EMPTY;
+      if (buffer_en) b_valid <= s_valid;      
+      if (m_ready  ) m_valid <= m_valid_next;
+    end
+    
+  always_ff @(posedge aclk) begin
+    if (m_en)                 m_data <= m_data_next;
+    if (buffer_en && s_valid) b_data <= s_data;
+  end
 endmodule
 
 

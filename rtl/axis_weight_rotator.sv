@@ -265,16 +265,7 @@ module axis_weight_rotator #(
     end
   endgenerate
 
-  n_delay #(
-    .N         (LATENCY_BRAM),
-    .WORD_WIDTH (1)
-  ) BRAM_VALID (
-    .clk       (aclk),
-    .resetn    (aresetn & bram_reg_resetn),
-    .clken     (1'b1),
-    .data_in   (bram_m_ready[i_read]),
-    .data_out  (bram_m_valid)
-  );
+  n_delay #(.N(LATENCY_BRAM), .W(1)) BRAM_VALID (.c(aclk), .rn(aresetn & bram_reg_resetn), .e(1'b1), .i(bram_m_ready[i_read]), .o(bram_m_valid));
 
   axis_pipeline_register2 # (
     .DATA_WIDTH  (BRAM_WIDTH),
