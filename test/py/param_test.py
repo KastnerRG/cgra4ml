@@ -8,6 +8,14 @@ import pytest
 import itertools
 from collections import namedtuple
 
+def pack_bits(arr):
+    sum_width = 0
+    packed = 0
+    for val, width in arr:
+        packed |= val << sum_width
+        sum_width += width
+    return packed
+
 # Simulator: xsim on windows, icarus otherwise
 SIM = 'xsim' if os.name=='nt' else 'icarus'
 
@@ -43,6 +51,7 @@ def product_dict(**kwargs):
                                                 CI_MAX = [1024 ], 
                                                 XW_MAX = [384  ], 
                                                 XH_MAX = [256  ], 
+                                                XN_MAX = [8    ], 
                                                 IN_BITS= [64   ], 
                                                 BRAM_WEIGHTS_DEPTH = [1024 ], 
                                             )))
@@ -86,6 +95,7 @@ def compile(request):
     `define IM_ROWS_MAX         {c.XH_MAX}
     `define IM_CIN_MAX          {c.CI_MAX}      
     `define IM_COLS_MAX         {c.XW_MAX}     
+    `define XN_MAX              {c.XN_MAX}     
 
     `define LATENCY_ACCUMULATOR   1    
     `define LATENCY_MULTIPLIER    1     
@@ -116,14 +126,13 @@ def compile(request):
 @pytest.mark.parametrize("CO", [16])
 @pytest.mark.parametrize("XH", [12])
 @pytest.mark.parametrize("XW", [8])
-def test_dnn_engine(compile, KH, CI, CO, XH, XW):
+@pytest.mark.parametrize("XN", [2])
+def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     c= compile
 
     i_it = 0
-    i_n  = 0
     i_layers = 0
     KW = KH
-    N = 1
     assert KH <= c.KH_MAX
     assert KW <= c.KW_MAX
     assert CI <= c.CI_MAX
@@ -138,7 +147,7 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW):
     GOLDEN MODEL
     '''
     # torch.manual_seed(0)
-    x = torch.from_numpy(np.random.randint(-2**(c.X_BITS-1), 2**(c.X_BITS-1)-1 ,size=(N,CI,XH,XW)).astype(np.float32))
+    x = torch.from_numpy(np.random.randint(-2**(c.X_BITS-1), 2**(c.X_BITS-1)-1 ,size=(XN,CI,XH,XW)).astype(np.float32))
     w = torch.from_numpy(np.random.randint(-2**(c.K_BITS-1), 2**(c.K_BITS-1)-1 ,size=(CO,CI,KH,KW)).astype(np.float32))
     y = torch.nn.functional.conv2d(x, w, bias=None, stride=1, padding='same', dilation=1, groups=1)
 
@@ -191,6 +200,7 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW):
     BITS_CIN_MAX    = clog2(c.CI_MAX)
     BITS_COLS_MAX   = clog2(c.XW_MAX)
     BITS_BLOCKS_MAX = clog2( L_MAX)
+    BITS_XN_MAX     = clog2(c.XN_MAX)
     BITS_BRAM_WEIGHTS_ADDR = clog2(c.BRAM_WEIGHTS_DEPTH)
     BRAM_WEIGHTS_ADDR_MAX  = LRELU_BEATS + SW*KH*CI-1
 
@@ -253,12 +263,14 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW):
 
     '''Weights config'''
 
-    weights_config = 0
-    weights_config |= (KW//2)
-    weights_config |= (CI-1)                << BITS_KW2
-    weights_config |= (XW-1)                << (BITS_KW2 + BITS_CIN_MAX)
-    weights_config |= ( L-1)                << (BITS_KW2 + BITS_CIN_MAX + BITS_COLS_MAX)
-    weights_config |= BRAM_WEIGHTS_ADDR_MAX << (BITS_KW2 + BITS_CIN_MAX + BITS_COLS_MAX + BITS_BLOCKS_MAX)
+    weights_config = pack_bits([
+        (KW//2, BITS_KW2),
+        (CI-1 , BITS_CIN_MAX),
+        (XW-1 , BITS_COLS_MAX),
+        ( L-1 , BITS_BLOCKS_MAX),
+        (XN-1 , BITS_XN_MAX),
+        (BRAM_WEIGHTS_ADDR_MAX, BITS_BRAM_WEIGHTS_ADDR)
+    ])
 
     weights_config = format(weights_config, f'#0{c.IN_BITS}b')
     config_words = [int(weights_config[i:i+c.K_BITS], 2) for i in range(0, len(weights_config), c.K_BITS)]
@@ -300,21 +312,18 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW):
     x = zeros                  # (XN,L,c.ROWS+X_PAD,XW,CI)
     x = x.transpose(0,1,3,4,2) # (XN,L,XW,CI,c.ROWS+X_PAD)
 
-    x = x[i_n]
-    x = x.reshape((L*XW*CI*(c.ROWS+X_PAD)))  #! XN should be moved in
+    x = x.reshape((XN*L*XW*CI*(c.ROWS+X_PAD)))
 
     '''
     Config
     '''
-    is_max     = 0
-    is_not_max = 1
-    is_relu    = 0
 
-    config = 0
-    config |= (KH//2)
-    config |= (CI-1) << BITS_KW2
-    config |= (XW-1) << BITS_KW2 + BITS_CIN_MAX
-    config |= (L -1) << BITS_KW2 + BITS_CIN_MAX + BITS_COLS_MAX
+    config = pack_bits([
+        (KH//2, BITS_KH2),
+        (CI-1 , BITS_CIN_MAX),
+        (XW-1 , BITS_COLS_MAX),
+        (L -1 , BITS_BLOCKS_MAX),
+    ])
 
     assert c.IN_BITS >= BITS_KW2 + BITS_CIN_MAX + BITS_COLS_MAX + BITS_BLOCKS_MAX
     # config |= (c.ROWS+int(np.ceil(KH/SH)-1)) << 3 + BITS_KH2 + BITS_KW2 + BITS_SH
@@ -323,11 +332,11 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW):
     config_words = [int(config[i:i+c.X_BITS], 2) for i in range(0, len(config), c.X_BITS)]
     config_words.reverse()
     x = np.concatenate([np.array(config_words, dtype=np.uint8), x.flatten()])
-    assert x.shape == (c.IN_BITS/c.X_BITS + L*XW*CI*(c.ROWS+X_PAD),)
+    assert x.shape == (c.IN_BITS/c.X_BITS + XN*L*XW*CI*(c.ROWS+X_PAD),)
 
     path = f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_x.txt"
     np.savetxt(path, x.flatten(), fmt='%d')
-    print(f'input final (c.IN_BITS/c.X_BITS + L*XW*CI*c.ROWS+X_PAD)={x.shape} \nSaved as "{path}"')
+    print(f'input final (c.IN_BITS/c.X_BITS + XN*L*XW*CI*c.ROWS+X_PAD)={x.shape} \nSaved as "{path}"')
 
 
 
@@ -352,7 +361,7 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW):
     y = y.reshape(IT,XN,L,XW*CO_PRL,c.ROWS)
     y[:,:,:,-(KW//2+1)*CO_PRL:,:] = y_w_last
 
-    y = y[0,0]
+    y = y[i_it]
     path = f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_y_exp.txt"
     np.savetxt(path, y.flatten(), fmt='%d')
     print(f'output final (IT,XN,L,XW,CO_PRL,c.ROWS)={y.shape} \nSaved as "{path}"')

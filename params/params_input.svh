@@ -25,6 +25,7 @@
     `define IM_ROWS_MAX         256
     `define IM_CIN_MAX          1024      
     `define IM_COLS_MAX         384     
+    `define XN_MAX              8     
 
     `define LATENCY_ACCUMULATOR   1    
     `define LATENCY_MULTIPLIER    1     

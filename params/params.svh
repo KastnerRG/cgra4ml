@@ -19,4 +19,4 @@
     } tuser_st;
     `endif
     `endif
-    `define TUSER_WIDTH `BITS_KW2 + `BITS_SW + 13
+    `define TUSER_WIDTH `BITS_KW2 + `BITS_SW + 7
