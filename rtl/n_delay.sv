@@ -10,8 +10,8 @@ module n_delay #(
 
   logic [W-1 : 0] data [(N+1)-1:0];
 
-  assign data [0] = i;
-  assign o        = data[(N+1)-1];
+  always_comb data [0] = i;
+  assign o = data[(N+1)-1];
 
   genvar n;
   for (n=0 ; n < N; n++)
