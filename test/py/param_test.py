@@ -180,15 +180,7 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     LH    = c.ROWS*SH   # Block height
     L     = XH//LH    # Blocks
     L_MAX = c.XH_MAX//c.ROWS
-
-    '''LRELU BEATS'''
-    LRELU_BEATS = 1
-    # if KH == 1:
-    #   LRELU_BEATS = 5
-    # elif KH == 3:
-    #   LRELU_BEATS = 5
-    # else:
-    #   raise "Error, unsupported KH for lrelu beats"
+    CONFIG_BEATS = 1
 
     def clog2(x):
         return int(np.ceil(np.log2(x)))
@@ -202,7 +194,7 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     BITS_BLOCKS_MAX = clog2( L_MAX)
     BITS_XN_MAX     = clog2(c.XN_MAX)
     BITS_BRAM_WEIGHTS_ADDR = clog2(c.BRAM_WEIGHTS_DEPTH)
-    BRAM_WEIGHTS_ADDR_MAX  = LRELU_BEATS + SW*KH*CI-1
+    BRAM_WEIGHTS_ADDR_MAX  = CONFIG_BEATS + SW*KH*CI-1
 
     X_PAD = int(np.ceil(c.KH_MAX//2))
 
@@ -244,12 +236,6 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     w = np.pad(w, ((0,0),(0,0),(0,0),(0,CO_PAD-CO)))   # (KH, KW, CI, CO_PAD)
     w = w.reshape(KH, KW, CI, IT, CO_PRL)              # (KH, KW, CI, IT, CO_PRL)
     w = np.flip(w, axis=4)
-
-    # '''To fix DW bank issue'''
-    # RATIO = c.KW_MAX//KW
-    # w = w.reshape  (KH, KW, CI, IT, RATIO, CO_PRL//RATIO)
-    # w = w.transpose(0,1,2,3,5,4)                       # (KH, KW, CI, IT, CO_PRL//RATIO, RATIO)
-    # w = w.reshape  (KH, KW, CI, IT, CO_PRL)            # (KH, KW, CI, IT, CO_PRL)
     w = w.transpose(0,2,3,4,1)                         # (KH, CI, IT, CO_PRL, KW)
 
     '''Assume SW=1'''
@@ -258,8 +244,8 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     w = np.pad(w, ((0,0),(0,0),(0,0),(0,c.COLS-CO_PRL*KW))) # (KH, CI, IT, c.COLS)
     w = w.transpose(2,1,0,3)                              # (IT, CI, KH, c.COLS)
     w = w.reshape (IT, CI*KH, c.COLS)                       # (IT, CI*KH, c.COLS)
-    w = np.pad(w, ((0,0),(LRELU_BEATS,0),(0,0)))          # (IT, LRELU_BEATS+CI*KH, c.COLS)
-    w = w.reshape (IT, (CI*KH+LRELU_BEATS)*c.COLS)          # (IT, (CI*KH+LRELU_BEATS)*c.COLS)
+    w = np.pad(w, ((0,0),(CONFIG_BEATS,0),(0,0)))          # (IT, CONFIG_BEATS+CI*KH, c.COLS)
+    w = w.reshape (IT, (CI*KH+CONFIG_BEATS)*c.COLS)          # (IT, (CI*KH+CONFIG_BEATS)*c.COLS)
 
     '''Weights config'''
 
@@ -279,11 +265,11 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     config_words = np.repeat(config_words[np.newaxis,...],repeats=IT,axis=0)
     '''Final'''
     w = np.concatenate([config_words, w], axis=1) # (IT, 8 + CI*KH*c.COLS)
-    assert w.shape == (IT, c.IN_BITS/c.K_BITS + (CI*KH+LRELU_BEATS)*c.COLS)
+    assert w.shape == (IT, c.IN_BITS/c.K_BITS + (CI*KH+CONFIG_BEATS)*c.COLS)
 
     path = f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_w.txt"
     np.savetxt(path, w[i_it].flatten(), fmt='%d')
-    print(f'weights final (IT, 8 + (CI*KH+LRELU_BEATS)*c.COLS) = {w.shape} \nSaved as {path}')
+    print(f'weights final (IT, 8 + (CI*KH+CONFIG_BEATS)*c.COLS) = {w.shape} \nSaved as {path}')
 
 
 
@@ -317,16 +303,13 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     '''
     Config
     '''
-
     config = pack_bits([
         (KH//2, BITS_KH2),
         (CI-1 , BITS_CIN_MAX),
         (XW-1 , BITS_COLS_MAX),
         (L -1 , BITS_BLOCKS_MAX),
     ])
-
     assert c.IN_BITS >= BITS_KW2 + BITS_CIN_MAX + BITS_COLS_MAX + BITS_BLOCKS_MAX
-    # config |= (c.ROWS+int(np.ceil(KH/SH)-1)) << 3 + BITS_KH2 + BITS_KW2 + BITS_SH
 
     config = format(config, f'#0{c.IN_BITS}b')
     config_words = [int(config[i:i+c.X_BITS], 2) for i in range(0, len(config), c.X_BITS)]
