@@ -13,6 +13,7 @@ module axis_weight_rotator #(
     IM_CIN_MAX          = `IM_CIN_MAX               ,
     IM_COLS_MAX         = `IM_COLS_MAX              ,
     IM_ROWS_MAX         = `IM_ROWS_MAX              ,
+    XN_MAX              = `XN_MAX                   ,
     S_WEIGHTS_WIDTH_LF  = `S_WEIGHTS_WIDTH_LF       ,
     LATENCY_BRAM        = `LATENCY_BRAM             ,
     BRAM_WEIGHTS_DEPTH  = `BRAM_WEIGHTS_DEPTH       ,
@@ -24,6 +25,7 @@ module axis_weight_rotator #(
     BITS_IM_CIN         = $clog2(IM_CIN_MAX  )     ,
     BITS_IM_BLOCKS      = $clog2(IM_ROWS_MAX/`ROWS),
     BITS_IM_COLS        = $clog2(IM_COLS_MAX      ),
+    BITS_XN             = $clog2(XN_MAX           ),
 
     M_WIDTH             = WORD_WIDTH*COLS          ,
     BRAM_WIDTH          = M_WIDTH                  ,
@@ -59,9 +61,10 @@ module axis_weight_rotator #(
   logic [1:0][M_WIDTH-1:0] bram_m_data;
   logic [1:0] done_read_next, done_write_next, en_ref, done_read, done_write, bram_resetn, bram_wen, bram_w_full, bram_m_ready;
   logic       bram_reg_resetn, bram_m_valid, bram_reg_m_valid;
-  logic en_count_config, l_config, l_kw, l_cin, l_cols, l_blocks, f_kw, f_cin, f_cols, f_blocks, lc_config, lc_kw, lc_cin, lc_cols, lc_blocks;
+  logic en_count_config, l_config, l_kw, l_cin, l_cols, l_blocks, l_xn, f_kw, f_cin, f_cols, f_blocks, lc_config, lc_kw, lc_cin, lc_cols, lc_blocks, lc_xn;
   struct packed {
     logic [BITS_ADDR        -1:0] addr_max;
+    logic [BITS_XN          -1:0] xn_1;
     logic [BITS_IM_BLOCKS   -1:0] blocks_1;
     logic [BITS_IM_COLS     -1:0] cols_1;
     logic [BITS_IM_CIN      -1:0] cin_1;
@@ -119,7 +122,7 @@ module axis_weight_rotator #(
     else unique case (state_read)
       R_IDLE_S        : if (done_write [i_read]) state_read <= R_PASS_CONFIG_S;
       R_PASS_CONFIG_S : if (lc_config)           state_read <= R_READ_S;
-      R_READ_S        : if (lc_blocks)           state_read <= R_SWITCH_S;
+      R_READ_S        : if (lc_xn    )           state_read <= R_SWITCH_S;
       R_SWITCH_S      :                          state_read <= R_IDLE_S;
     endcase 
 
@@ -301,10 +304,11 @@ module axis_weight_rotator #(
   counter #(.W(BITS_IM_CIN      )) C_IM_CIN    (.clk(aclk), .reset(copy_config), .en(lc_kw          ), .max_in(ref_config   [i_read].cin_1   ), .last_clk(lc_cin   ), .last(l_cin   ), .first(f_cin   )                );
   counter #(.W(BITS_IM_COLS     )) C_IM_COLS   (.clk(aclk), .reset(copy_config), .en(lc_cin         ), .max_in(ref_config   [i_read].cols_1  ), .last_clk(lc_cols  ), .last(l_cols  ), .first(f_cols  ), .count(c_cols));
   counter #(.W(BITS_IM_BLOCKS   )) C_IM_BLOCKS (.clk(aclk), .reset(copy_config), .en(lc_cols        ), .max_in(ref_config   [i_read].blocks_1), .last_clk(lc_blocks), .last(l_blocks)                                  );
+  counter #(.W(BITS_XN          )) C_XN        (.clk(aclk), .reset(copy_config), .en(lc_blocks      ), .max_in(ref_config   [i_read].xn_1    ), .last_clk(lc_xn    ), .last(l_xn    )                                  );
 
   // Last & User
 
-  assign m_axis_tlast = lc_blocks;
+  assign m_axis_tlast = lc_xn;
 
   assign m_axis_tuser.is_config        = state_read  == R_PASS_CONFIG_S;
   assign m_axis_tuser.kw2              = ref_config  [i_read].kw2;
