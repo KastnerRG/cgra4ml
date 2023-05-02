@@ -31,8 +31,7 @@ module axis_pixels #(
 
     input  logic m_ready,
     output logic m_valid,
-    output logic [ROWS -1:0][WORD_WIDTH-1:0] m_data,
-    output tuser_st m_user
+    output logic [ROWS -1:0][WORD_WIDTH-1:0] m_data
   );
 
   logic dw_s_valid, dw_s_ready, dw_m_ready, dw_m_valid, dw_m_last, dw_m_last_r;
@@ -185,11 +184,6 @@ module axis_pixels #(
   always_comb
     for (int r=0; r<ROWS; r=r+1)
       m_data[r] = shift_reg[r + EDGE_WORDS-ref_kh2];
-
-  // m_user
-  assign m_user.is_not_max = 1;
-  assign m_user.is_max     = 0;
-  assign m_user.is_lrelu   = 0;
 
   // m_valid, m_last
 
