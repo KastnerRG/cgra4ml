@@ -113,7 +113,7 @@ def compile(request):
 
 @pytest.mark.parametrize("KH", [1,3])
 @pytest.mark.parametrize("CI", [8])
-@pytest.mark.parametrize("CO", [8])
+@pytest.mark.parametrize("CO", [16])
 @pytest.mark.parametrize("XH", [12])
 @pytest.mark.parametrize("XW", [8])
 def test_dnn_engine(compile, KH, CI, CO, XH, XW):
@@ -255,12 +255,10 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW):
 
     weights_config = 0
     weights_config |= (KW//2)
-    weights_config |= (KH//2)               << (BITS_KW2)
-    weights_config |= SW-1                  << (BITS_KW2 + BITS_KH2)
-    weights_config |= (CI-1)                << (BITS_KW2 + BITS_KH2 + BITS_SW)
-    weights_config |= (XW-1)                << (BITS_KW2 + BITS_KH2 + BITS_SW + BITS_CIN_MAX)
-    weights_config |= ( L-1)                << (BITS_KW2 + BITS_KH2 + BITS_SW + BITS_CIN_MAX + BITS_COLS_MAX)
-    weights_config |= BRAM_WEIGHTS_ADDR_MAX << (BITS_KW2 + BITS_KH2 + BITS_SW + BITS_CIN_MAX + BITS_COLS_MAX + BITS_BLOCKS_MAX)
+    weights_config |= (CI-1)                << BITS_KW2
+    weights_config |= (XW-1)                << (BITS_KW2 + BITS_CIN_MAX)
+    weights_config |= ( L-1)                << (BITS_KW2 + BITS_CIN_MAX + BITS_COLS_MAX)
+    weights_config |= BRAM_WEIGHTS_ADDR_MAX << (BITS_KW2 + BITS_CIN_MAX + BITS_COLS_MAX + BITS_BLOCKS_MAX)
 
     weights_config = format(weights_config, f'#0{c.IN_BITS}b')
     config_words = [int(weights_config[i:i+c.K_BITS], 2) for i in range(0, len(weights_config), c.K_BITS)]
