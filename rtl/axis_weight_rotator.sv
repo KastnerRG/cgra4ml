@@ -214,7 +214,7 @@ module axis_weight_rotator #(
             R_SWITCH_S      :   done_read_next [i] = 1;
           endcase 
       end
-      
+
       config_st ref_i;
       assign ref_i = ref_config[i];
       cyclic_bram #(
@@ -223,8 +223,6 @@ module axis_weight_rotator #(
         .W_DATA_WIDTH (BRAM_WIDTH),
         .LATENCY      (LATENCY_BRAM),
         .ABSORB       (0),
-        .USE_W_LAST   (1),
-        .USE_R_LAST   (0),
         .TYPE         (BRAM_TYPE)
       ) BRAM (
         .clk          (aclk),
