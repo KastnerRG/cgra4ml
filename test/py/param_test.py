@@ -105,6 +105,20 @@ def compile(request):
     `define S_PIXELS_WIDTH_LF   {c.IN_BITS}
     `define M_OUTPUT_WIDTH_LF   64
     ''')
+        
+    with open('../flow/fpga/vivado_config.tcl', 'w') as f:
+        f.write(f'''
+    # Written from param_tests.py
+    set BRAM_WEIGHTS_DEPTH {c.BRAM_WEIGHTS_DEPTH}
+    set COLS               {c.COLS}
+    set WORD_WIDTH         {c.X_BITS}
+    set LATENCY_BRAM       2
+    set RAM_EDGES_DEPTH    {c.RAM_EDGES_DEPTH}
+    set KH_MAX             {c.KH_MAX}
+    set S_WEIGHTS_WIDTH_LF  {c.IN_BITS}
+    set S_PIXELS_WIDTH_LF   {c.IN_BITS}
+    set M_OUTPUT_WIDTH_LF   64
+        ''')
 
     os.makedirs('xsim', exist_ok=True)
 
