@@ -133,13 +133,7 @@ module axis_pixels #(
     if (en_config || last_clk_w) ram_addr <= 0;
     else if (en_copy)            ram_addr <= ram_addr + 1;
 
-  bram_sdp_shell #(
-    .R_DEPTH      (RAM_EDGES_DEPTH),
-    .R_DATA_WIDTH (WORD_WIDTH*EDGE_WORDS),
-    .W_DATA_WIDTH (WORD_WIDTH*EDGE_WORDS),
-    .LATENCY      (1),
-    .TYPE         (SRAM_TYPE)
-    ) RAM (
+  ram_edges RAM (
     // Read
     .clkb  (aclk),   
     .enb   (en_copy && !first_l),     
