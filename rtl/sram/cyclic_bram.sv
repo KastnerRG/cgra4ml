@@ -32,13 +32,7 @@ module cyclic_bram #(
     if (!resetn)            r_addr <= 0;
     else if (clken && r_en) r_addr <= r_addr == r_addr_max ?  r_addr_min : r_addr + 1;
 
-  bram_sdp_shell #(
-    .R_DEPTH      (R_DEPTH     ),
-    .R_DATA_WIDTH (R_DATA_WIDTH),
-    .W_DATA_WIDTH (W_DATA_WIDTH),
-    .TYPE         (TYPE        ),
-    .LATENCY      (LATENCY     )
-  ) BRAM (
+  ram_weights BRAM (
     .clka   (clk),    
     .ena    (clken),     
     .wea    (w_en),     
