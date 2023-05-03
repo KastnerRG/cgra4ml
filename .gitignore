@@ -1,5 +1,5 @@
 old/
-flow/fpga
+flow/fpga/**/
 flow/asic/report
 flow/asic/tsmc
 __pycache__
