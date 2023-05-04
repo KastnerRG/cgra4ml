@@ -18,6 +18,7 @@ module axis_weight_rotator #(
     LATENCY_BRAM        = `LATENCY_BRAM             ,
     BRAM_WEIGHTS_DEPTH  = `BRAM_WEIGHTS_DEPTH       ,
     SRAM_TYPE           = `SRAM_TYPE                ,
+    CONFIG_BEATS        = `CONFIG_BEATS             ,
 
   localparam  
     BITS_KW2            = $clog2((KW_MAX+1)/2)     ,
@@ -32,8 +33,7 @@ module axis_weight_rotator #(
     BRAM_DEPTH          = BRAM_WEIGHTS_DEPTH       ,
     BITS_ADDR           = $clog2(BRAM_WEIGHTS_DEPTH),
     BRAM_TYPE           = SRAM_TYPE == "XILINX" ? "XILINX_WEIGHTS" : SRAM_TYPE,
-    CONFIG_COUNT        = 1                        ,// lrelu_beats
-    BITS_CONFIG_COUNT   = $clog2(CONFIG_COUNT+1)
+    BITS_CONFIG_BEATS   = $clog2(CONFIG_BEATS+1)
   )(
     
     input logic aclk,
@@ -232,7 +232,7 @@ module axis_weight_rotator #(
         .w_en         (bram_wen    [i]),
         .m_data       (bram_m_data [i]),
         .r_en         (bram_m_ready[i]),
-        .r_addr_min   (BITS_ADDR'(CONFIG_COUNT)),
+        .r_addr_min   (BITS_ADDR'(CONFIG_BEATS)),
         .w_last_in    (dw_m_last_handshake),
         .r_addr_max   (ref_i.addr_max )
       );
@@ -293,7 +293,7 @@ module axis_weight_rotator #(
   config_st ref_i_read;
   assign ref_i_read = ref_config[i_read]; 
 
-  counter #(.W(BITS_CONFIG_COUNT)) C_CONFIG    (.clk(aclk), .reset(copy_config), .en(en_count_config), .max_in(CONFIG_COUNT-1        ), .last_clk(lc_config), .last(l_config)                                  );
+  counter #(.W(BITS_CONFIG_BEATS)) C_CONFIG    (.clk(aclk), .reset(copy_config), .en(en_count_config), .max_in(CONFIG_BEATS-1        ), .last_clk(lc_config), .last(l_config)                                  );
   counter #(.W(BITS_KW          )) C_KW        (.clk(aclk), .reset(copy_config), .en(en_kw          ), .max_in(2*ref_i_read.kw2      ), .last_clk(lc_kw    ), .last(l_kw    ), .first(f_kw    )                );
   counter #(.W(BITS_IM_CIN      )) C_IM_CIN    (.clk(aclk), .reset(copy_config), .en(lc_kw          ), .max_in(  ref_i_read.cin_1    ), .last_clk(lc_cin   ), .last(l_cin   ), .first(f_cin   )                );
   counter #(.W(BITS_IM_COLS     )) C_IM_COLS   (.clk(aclk), .reset(copy_config), .en(lc_cin         ), .max_in(  ref_i_read.cols_1   ), .last_clk(lc_cols  ), .last(l_cols  ), .first(f_cols  ), .count(c_cols));
@@ -314,4 +314,15 @@ module axis_weight_rotator #(
   assign m_axis_tuser.is_w_first_kw2   = (ref_i_read.cols_1 - c_cols) < ref_i_read.kw2;
   assign m_axis_tuser.is_w_last        = l_cols;
 
+endmodule
+
+
+module axis_sync (
+  input logic weights_m_valid, pixels_m_valid, m_axis_tready,
+  input tuser_st weights_m_user,
+  output logic m_axis_tvalid, weights_m_ready, pixels_m_ready
+);
+  assign m_axis_tvalid   = weights_m_valid && (pixels_m_valid || weights_m_user.is_config);
+  assign weights_m_ready = m_axis_tready   && (pixels_m_valid || weights_m_user.is_config);
+  assign pixels_m_ready  = m_axis_tready   && weights_m_valid && !weights_m_user.is_config;
 endmodule

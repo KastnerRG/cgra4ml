@@ -60,7 +60,8 @@ def compile(request):
 
 
     d = { 'KH_MAX':c.KW_MAX, 'SH_MAX':c.SW_MAX, 'K_BITS':c.X_BITS,
-            'RAM_EDGES_DEPTH': 8*8*4 # max(CI * XW * (XH/ROWS-1))
+            'RAM_EDGES_DEPTH': 8*8*4, # max(CI * XW * (XH/ROWS-1))
+            'CONFIG_BEATS': 1,
          }
     n = namedtuple('Compile', d)(**d)
     c = namedtuple("Compile", c._fields + n._fields)(*(c + n))
@@ -96,6 +97,7 @@ def compile(request):
     `define IM_CIN_MAX          {c.CI_MAX}      
     `define IM_COLS_MAX         {c.XW_MAX}     
     `define XN_MAX              {c.XN_MAX}     
+    `define CONFIG_BEATS        {c.CONFIG_BEATS}     
 
     `define LATENCY_ACCUMULATOR   1    
     `define LATENCY_MULTIPLIER    1     
@@ -194,7 +196,6 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     LH    = c.ROWS*SH   # Block height
     L     = XH//LH    # Blocks
     L_MAX = c.XH_MAX//c.ROWS
-    CONFIG_BEATS = 1
 
     def clog2(x):
         return int(np.ceil(np.log2(x)))
@@ -208,7 +209,7 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     BITS_BLOCKS_MAX = clog2( L_MAX)
     BITS_XN_MAX     = clog2(c.XN_MAX)
     BITS_BRAM_WEIGHTS_ADDR = clog2(c.BRAM_WEIGHTS_DEPTH)
-    BRAM_WEIGHTS_ADDR_MAX  = CONFIG_BEATS + SW*KH*CI-1
+    BRAM_WEIGHTS_ADDR_MAX  = c.CONFIG_BEATS + SW*KH*CI-1
 
     X_PAD = int(np.ceil(c.KH_MAX//2))
 
@@ -258,8 +259,8 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     w = np.pad(w, ((0,0),(0,0),(0,0),(0,c.COLS-CO_PRL*KW))) # (KH, CI, IT, c.COLS)
     w = w.transpose(2,1,0,3)                              # (IT, CI, KH, c.COLS)
     w = w.reshape (IT, CI*KH, c.COLS)                       # (IT, CI*KH, c.COLS)
-    w = np.pad(w, ((0,0),(CONFIG_BEATS,0),(0,0)))          # (IT, CONFIG_BEATS+CI*KH, c.COLS)
-    w = w.reshape (IT, (CI*KH+CONFIG_BEATS)*c.COLS)          # (IT, (CI*KH+CONFIG_BEATS)*c.COLS)
+    w = np.pad(w, ((0,0),(c.CONFIG_BEATS,0),(0,0)))          # (IT, c.CONFIG_BEATS+CI*KH, c.COLS)
+    w = w.reshape (IT, (CI*KH+c.CONFIG_BEATS)*c.COLS)          # (IT, (CI*KH+c.CONFIG_BEATS)*c.COLS)
 
     '''Weights config'''
 
@@ -279,11 +280,11 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     config_words = np.repeat(config_words[np.newaxis,...],repeats=IT,axis=0)
     '''Final'''
     w = np.concatenate([config_words, w], axis=1) # (IT, 8 + CI*KH*c.COLS)
-    assert w.shape == (IT, c.IN_BITS/c.K_BITS + (CI*KH+CONFIG_BEATS)*c.COLS)
+    assert w.shape == (IT, c.IN_BITS/c.K_BITS + (CI*KH+c.CONFIG_BEATS)*c.COLS)
 
     path = f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_w.txt"
     np.savetxt(path, w[i_it].flatten(), fmt='%d')
-    print(f'weights final (IT, 8 + (CI*KH+CONFIG_BEATS)*c.COLS) = {w.shape} \nSaved as {path}')
+    print(f'weights final (IT, 8 + (CI*KH+c.CONFIG_BEATS)*c.COLS) = {w.shape} \nSaved as {path}')
 
 
 
