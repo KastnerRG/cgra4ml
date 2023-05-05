@@ -233,7 +233,6 @@ module axis_weight_rotator #(
         .m_data       (bram_m_data [i]),
         .r_en         (bram_m_ready[i]),
         .r_addr_min   (BITS_ADDR'(CONFIG_BEATS)),
-        .w_last_in    (dw_m_last_handshake),
         .r_addr_max   (ref_i.addr_max )
       );
 

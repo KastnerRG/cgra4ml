@@ -16,7 +16,6 @@ module cyclic_bram #(
     input  logic [W_DATA_WIDTH-1:0] s_data,
     output logic [R_DATA_WIDTH-1:0] m_data,
     output logic m_valid,
-    input  logic r_last_in, w_last_in,
     input  logic [R_ADDR_WIDTH-1:0] r_addr_max, r_addr_min,
     input  logic [W_ADDR_WIDTH-1:0] w_addr_max
   );
@@ -35,13 +34,10 @@ module cyclic_bram #(
   ram_weights BRAM (
     .clka   (clk),    
     .ena    (clken),     
-    .wea    (w_en),     
-    .addra  (w_addr),  
+    .wea    (w_en),  
+    .addra  (w_en ? w_addr : r_addr),  
     .dina   (s_data),   
-    .clkb   (clk),   
-    .enb    (clken),     
-    .addrb  (r_addr),  
-    .doutb  (m_data)  
+    .douta  (m_data)  
   );
 
 endmodule

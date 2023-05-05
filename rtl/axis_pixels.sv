@@ -126,32 +126,41 @@ module axis_pixels #(
   counter #(.W(BITS_IM_BLOCKS)) C_L  (.clk(aclk), .reset(en_config), .en(last_clk_w ), .max_in(ref_l_in     ), .last    (last_l      ), .first(first_l));
 
   // RAM
-  logic [$clog2(RAM_EDGES_DEPTH) -1:0] ram_addr, ram_addr_r;
-  logic [EDGE_WORDS-1:0][WORD_WIDTH-1:0] ram_dout_r, edge_top_r, edge_bot_r;
+  logic [$clog2(RAM_EDGES_DEPTH) -1:0] ram_addr, ram_addr_r, ram_addr_in;
+  logic [EDGE_WORDS-1:0][WORD_WIDTH-1:0] ram_dout, ram_dout_hold, ram_dout_r, edge_top_r, edge_bot_r;
 
   always_ff @(posedge aclk)
     if (en_config || last_clk_w) ram_addr <= 0;
     else if (en_copy)            ram_addr <= ram_addr + 1;
 
-  ram_edges RAM (
-    // Read
-    .clkb  (aclk),   
-    .enb   (en_copy && !first_l),     
-    .addrb (ram_addr),
-
   // ------------------ PIPELINE STAGE: (_R), to match RAM Read Latency = 1;
 
-    .doutb (ram_dout_r),
-    // Write
+  wire ram_ren = en_copy   && !first_l;
+  wire ram_wen = en_copy_r && !last_l_r;
+  assign ram_addr_in = ram_wen ? ram_addr_r : ram_addr;
+
+  ram_edges RAM (
     .clka  (aclk),    
-    .ena   (en_copy_r),     
-    .wea   (en_copy_r && !last_l_r),     
-    .addra (ram_addr_r),  
-    .dina  (edge_bot_r)
+    .ena   (ram_ren || ram_wen),     
+    .wea   (ram_wen),     
+    .addra (ram_addr_in),  
+    .dina  (edge_bot_r),
+    .douta (ram_dout)
   );
 
+  // When ram_wen, read value is lost. This is used to hold that
+  logic ram_ren_reg;
+  always_ff @(posedge aclk) begin
+    ram_ren_reg <= ram_ren;
+    if (ram_ren_reg) ram_dout_hold <= ram_dout;
+  end
+  assign ram_dout_r = ram_ren_reg ? ram_dout : ram_dout_hold;
+
+
   always_ff @(posedge aclk)
-    if (en_shift) begin // m_ready
+    if (!aresetn)
+      {first_l_r,last_l_r,last_clk_kh_r,en_copy_r,ram_addr_r,dw_m_data_r,dw_m_last_r} <= '0;
+    else if (en_shift) begin // m_ready
       first_l_r     <= first_l;
       last_l_r      <= last_l;
       last_clk_kh_r <= last_clk_kh;
@@ -159,8 +168,7 @@ module axis_pixels #(
       ram_addr_r    <= ram_addr;
       dw_m_data_r   <= dw_m_data;
       dw_m_last_r   <= dw_m_last;
-    end
-
+    end 
   assign edge_top_r = first_l_r ? '0 : ram_dout_r;
   assign edge_bot_r = dw_m_data_r[ROWS-1: ROWS-EDGE_WORDS];
 
