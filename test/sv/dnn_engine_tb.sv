@@ -14,8 +14,6 @@ parameter
   DIR_PATH   = "D:/dnn-engine/test/vectors/",
 `endif
 
-  // MODEL      = "vgg16_quant",
-  // IDX        = "5"
   MODEL      = "test",
   IDX        = "0"
 );
@@ -41,6 +39,7 @@ parameter
               M_OUTPUT_WIDTH_LF          = `M_OUTPUT_WIDTH_LF         ,
               S_WEIGHTS_WIDTH_LF         = `S_WEIGHTS_WIDTH_LF        ,
               S_PIXELS_WIDTH_LF          = `S_PIXELS_WIDTH_LF         ,
+              M_DATA_WIDTH_HF_CONV_DW    = ROWS  * WORD_WIDTH_ACC     ,
               WORD_WIDTH_OUT             = WORD_WIDTH_ACC             ; 
 
   logic aresetn, hf_aresetn;
@@ -58,7 +57,12 @@ parameter
 
   assign hf_aresetn = aresetn;
 
-  dnn_engine pipe (.*);
+  dnn_engine #(
+    .S_PIXELS_KEEP_WIDTH  (S_PIXELS_WIDTH_LF      /WORD_WIDTH    ),
+    .S_WEIGHTS_KEEP_WIDTH (S_WEIGHTS_WIDTH_LF     /WORD_WIDTH    ),
+    .M_KEEP_WIDTH         (M_OUTPUT_WIDTH_LF      /WORD_WIDTH_OUT),
+    .DW_IN_KEEP_WIDTH     (M_DATA_WIDTH_HF_CONV_DW/WORD_WIDTH_ACC)
+  ) pipe (.*);
 
   // SOURCEs & SINKS
 
