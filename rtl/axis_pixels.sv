@@ -9,7 +9,6 @@ module axis_pixels #(
               IM_ROWS_MAX        = `IM_ROWS_MAX             ,
               WORD_WIDTH         = `WORD_WIDTH              ,
               RAM_EDGES_DEPTH    = `RAM_EDGES_DEPTH         , 
-              SRAM_TYPE          = `SRAM_TYPE               ,
               S_PIXELS_WIDTH_LF  = `S_PIXELS_WIDTH_LF       ,
 
   localparam  EDGE_WORDS         =  KH_MAX/2                ,

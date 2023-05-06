@@ -17,7 +17,6 @@ module axis_weight_rotator #(
     S_WEIGHTS_WIDTH_LF  = `S_WEIGHTS_WIDTH_LF       ,
     LATENCY_BRAM        = `LATENCY_BRAM             ,
     BRAM_WEIGHTS_DEPTH  = `BRAM_WEIGHTS_DEPTH       ,
-    SRAM_TYPE           = `SRAM_TYPE                ,
     CONFIG_BEATS        = `CONFIG_BEATS             ,
 
   localparam  
@@ -32,7 +31,6 @@ module axis_weight_rotator #(
     BRAM_WIDTH          = M_WIDTH                  ,
     BRAM_DEPTH          = BRAM_WEIGHTS_DEPTH       ,
     BITS_ADDR           = $clog2(BRAM_WEIGHTS_DEPTH),
-    BRAM_TYPE           = SRAM_TYPE == "XILINX" ? "XILINX_WEIGHTS" : SRAM_TYPE,
     BITS_CONFIG_BEATS   = $clog2(CONFIG_BEATS+1)
   )(
     
@@ -222,8 +220,7 @@ module axis_weight_rotator #(
         .R_DATA_WIDTH (BRAM_WIDTH),
         .W_DATA_WIDTH (BRAM_WIDTH),
         .LATENCY      (LATENCY_BRAM),
-        .ABSORB       (0),
-        .TYPE         (BRAM_TYPE)
+        .ABSORB       (0)
       ) BRAM (
         .clk          (aclk),
         .clken        (1'b1),
