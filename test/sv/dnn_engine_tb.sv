@@ -20,8 +20,8 @@ parameter
 
   // CLOCK GENERATION
 
-  localparam  FREQ_HIGH = `FREQ_HIGH, 
-              FREQ_RATIO = `FREQ_RATIO,
+  localparam  FREQ_HIGH = 200, 
+              FREQ_RATIO = 1,
               CLK_PERIOD_HF = 1000/FREQ_HIGH, 
               CLK_PERIOD_LF = FREQ_RATIO*CLK_PERIOD_HF;
   

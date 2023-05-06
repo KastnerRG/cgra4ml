@@ -1,20 +1,10 @@
 
     // Written from param_tests.py
 
-    `define SRAM_TYPE   "RAW"  
-    `define MAC_TYPE    "RAW"  
-
     `define ROWS     4  
     `define COLS     24
-    `define DW_FACTOR_1 3
-    `define OUTPUT_MODE "CONV"
-    `define KSM_COMBS_EXPR 1
-    `define KS_COMBS_EXPR 1
     `define BRAM_WEIGHTS_DEPTH  1024
     `define RAM_EDGES_DEPTH     256
-
-    `define FREQ_HIGH     200
-    `define FREQ_RATIO    1
 
     `define WORD_WIDTH          8         
     `define WORD_WIDTH_ACC      32    

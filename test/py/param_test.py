@@ -72,20 +72,10 @@ def compile(request):
         f.write(f'''
     // Written from param_tests.py
 
-    `define SRAM_TYPE   "RAW"  
-    `define MAC_TYPE    "RAW"  
-
     `define ROWS     {c.ROWS}  
     `define COLS     {c.COLS}
-    `define DW_FACTOR_1 3
-    `define OUTPUT_MODE "CONV"
-    `define KSM_COMBS_EXPR 1
-    `define KS_COMBS_EXPR 1
     `define BRAM_WEIGHTS_DEPTH  {c.BRAM_WEIGHTS_DEPTH}
     `define RAM_EDGES_DEPTH     {c.RAM_EDGES_DEPTH}
-
-    `define FREQ_HIGH     200
-    `define FREQ_RATIO    1
 
     `define WORD_WIDTH          {c.X_BITS}         
     `define WORD_WIDTH_ACC      32    
