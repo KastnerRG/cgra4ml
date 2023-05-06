@@ -72,30 +72,30 @@ def compile(request):
         f.write(f'''
     // Written from param_tests.py
 
-    `define ROWS     {c.ROWS}  
-    `define COLS     {c.COLS}
-    `define BRAM_WEIGHTS_DEPTH  {c.BRAM_WEIGHTS_DEPTH}
-    `define RAM_EDGES_DEPTH     {c.RAM_EDGES_DEPTH}
+    `define ROWS                {c.ROWS}                 \t// PE rows, constrained by resources
+    `define COLS                {c.COLS}                 \t// PE cols, constrained by resources
+    `define WORD_WIDTH          {c.X_BITS}               \t// Bits per word in input
+    `define WORD_WIDTH_ACC      32                       \t// Bits per word in output of conv
 
-    `define WORD_WIDTH          {c.X_BITS}         
-    `define WORD_WIDTH_ACC      32    
-    `define KH_MAX              {c.KH_MAX}            
-    `define KW_MAX              {c.KW_MAX}            
-    `define SH_MAX              {c.SH_MAX}            
-    `define SW_MAX              {c.SW_MAX}            
-    `define IM_ROWS_MAX         {c.XH_MAX}
-    `define IM_CIN_MAX          {c.CI_MAX}      
-    `define IM_COLS_MAX         {c.XW_MAX}     
-    `define XN_MAX              {c.XN_MAX}     
-    `define CONFIG_BEATS        {c.CONFIG_BEATS}     
+    `define KH_MAX              {c.KH_MAX}               \t// max of kernel height, across layers
+    `define KW_MAX              {c.KW_MAX}               \t// max of kernel width, across layers
+    `define SH_MAX              {c.SH_MAX}               \t// max of stride height, across layers
+    `define SW_MAX              {c.SW_MAX}               \t// max of stride width, across layers
+    `define XH_MAX              {c.XH_MAX}               \t// max of input image height, across layers
+    `define XW_MAX              {c.XW_MAX}               \t// max of input image width, across layers
+    `define XN_MAX              {c.XN_MAX}               \t// max of input batch size, across layers
+    `define CI_MAX              {c.CI_MAX}               \t// max of input channels, across layers
+    `define CONFIG_BEATS        {c.CONFIG_BEATS}         \t// constant, for now
+    `define BRAM_WEIGHTS_DEPTH  {c.BRAM_WEIGHTS_DEPTH}   \t// CONFIG_BEATS + max(KW * CI), across layers
+    `define RAM_EDGES_DEPTH     {c.RAM_EDGES_DEPTH}      \t// max (KW * CI * XW), across layers when KW != 1
 
-    `define LATENCY_ACCUMULATOR   1    
-    `define LATENCY_MULTIPLIER    1     
-    `define LATENCY_BRAM          2     
+    `define LATENCY_ACCUMULATOR   1                      \t// constant, for now
+    `define LATENCY_MULTIPLIER    1                      \t// constant, for now 
+    `define LATENCY_BRAM          2                      \t// constant, for now 
 
-    `define S_WEIGHTS_WIDTH_LF  {c.IN_BITS}
-    `define S_PIXELS_WIDTH_LF   {c.IN_BITS}
-    `define M_OUTPUT_WIDTH_LF   64
+    `define S_WEIGHTS_WIDTH_LF  {c.IN_BITS}              \t// constant (64), for now
+    `define S_PIXELS_WIDTH_LF   {c.IN_BITS}              \t// constant (64), for now
+    `define M_OUTPUT_WIDTH_LF   64                       \t// constant (64), for now
     ''')
         
     with open('../flow/fpga/vivado_config.tcl', 'w') as f:

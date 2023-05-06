@@ -2,23 +2,23 @@
 `include "../params/params.svh"
 
 module axis_pixels #(
-  parameter   ROWS               = `ROWS                    ,
-              KH_MAX             = `KH_MAX                  ,
-              IM_CIN_MAX         = `IM_CIN_MAX              ,
-              IM_COLS_MAX        = `IM_COLS_MAX             ,
-              IM_ROWS_MAX        = `IM_ROWS_MAX             ,
-              WORD_WIDTH         = `WORD_WIDTH              ,
-              RAM_EDGES_DEPTH    = `RAM_EDGES_DEPTH         , 
-              S_PIXELS_WIDTH_LF  = `S_PIXELS_WIDTH_LF       ,
+  parameter   ROWS               = `ROWS               ,
+              KH_MAX             = `KH_MAX             ,
+              CI_MAX             = `CI_MAX             ,
+              XW_MAX             = `XW_MAX             ,
+              XH_MAX             = `XH_MAX             ,
+              WORD_WIDTH         = `WORD_WIDTH         ,
+              RAM_EDGES_DEPTH    = `RAM_EDGES_DEPTH    , 
+              S_PIXELS_WIDTH_LF  = `S_PIXELS_WIDTH_LF  ,
 
-  localparam  EDGE_WORDS         =  KH_MAX/2                ,
-              IM_SHIFT_REGS      =  ROWS + KH_MAX-1         ,
-              BITS_IM_PASS       = $clog2(IM_SHIFT_REGS+1)  ,
-              BITS_KH            = $clog2(KH_MAX          ) ,
-              BITS_KH2           = $clog2((KH_MAX+1)/2    ) ,
-              BITS_IM_CIN        = $clog2(IM_CIN_MAX      ) ,
-              BITS_IM_COLS       = $clog2(IM_COLS_MAX     ) ,
-              BITS_IM_BLOCKS     = $clog2(IM_ROWS_MAX/ROWS) 
+  localparam  EDGE_WORDS         =  KH_MAX/2              ,
+              IM_SHIFT_REGS      =  ROWS + KH_MAX-1       ,
+              BITS_IM_PASS       = $clog2(IM_SHIFT_REGS+1),
+              BITS_KH            = $clog2(KH_MAX         ),
+              BITS_KH2           = $clog2((KH_MAX+1)/2   ),
+              BITS_CI            = $clog2(CI_MAX)         ,
+              BITS_XW            = $clog2(XW_MAX)         ,
+              BITS_IM_BLOCKS     = $clog2(XH_MAX/ROWS) 
   )(
     input logic aclk, aresetn,
 
@@ -65,8 +65,8 @@ module axis_pixels #(
 
   logic en_config, en_shift, en_copy, en_copy_r, last_clk_kh, last_clk_kh_r, last_clk_ci, last_clk_w, last_l, last_l_r, m_last_reg, m_last, first_l, first_l_r;
   logic [BITS_KH2      -1:0] ref_kh2, ref_kh2_in;
-  logic [BITS_IM_CIN   -1:0] ref_ci_in;
-  logic [BITS_IM_COLS  -1:0] ref_w_in ;
+  logic [BITS_CI   -1:0] ref_ci_in;
+  logic [BITS_XW  -1:0] ref_w_in ;
   logic [BITS_IM_BLOCKS-1:0] ref_l_in ;
 
   assign {ref_l_in, ref_w_in, ref_ci_in, ref_kh2_in} = s_data;
@@ -120,8 +120,8 @@ module axis_pixels #(
 
   // Counters: KH, CI, W, Blocks
   counter #(.W(BITS_KH)       ) C_KH (.clk(aclk), .reset(en_config), .en(en_shift   ), .max_in(ref_kh2_in*2 ), .last_clk(last_clk_kh ));
-  counter #(.W(BITS_IM_CIN)   ) C_CI (.clk(aclk), .reset(en_config), .en(last_clk_kh), .max_in(ref_ci_in    ), .last_clk(last_clk_ci ));
-  counter #(.W(BITS_IM_COLS)  ) C_W  (.clk(aclk), .reset(en_config), .en(last_clk_ci), .max_in(ref_w_in     ), .last_clk(last_clk_w  ));
+  counter #(.W(BITS_CI)   ) C_CI (.clk(aclk), .reset(en_config), .en(last_clk_kh), .max_in(ref_ci_in    ), .last_clk(last_clk_ci ));
+  counter #(.W(BITS_XW)  ) C_W  (.clk(aclk), .reset(en_config), .en(last_clk_ci), .max_in(ref_w_in     ), .last_clk(last_clk_w  ));
   counter #(.W(BITS_IM_BLOCKS)) C_L  (.clk(aclk), .reset(en_config), .en(last_clk_w ), .max_in(ref_l_in     ), .last    (last_l      ), .first(first_l));
 
   // RAM
