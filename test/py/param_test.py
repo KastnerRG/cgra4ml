@@ -23,7 +23,7 @@ DATA_DIR   = 'vectors'
 os.makedirs(DATA_DIR, exist_ok=True)
 MODEL_NAME = 'test'
 # SIM = sys.argv[1] if len(sys.argv) == 2 else "xsim" # icarus
-SOURCES = glob.glob('../params/*') + glob.glob('sv/*') + glob.glob("../rtl/**/*.v", recursive=True) + glob.glob("../rtl/**/*.sv", recursive=True)
+SOURCES = glob.glob('../rtl/include/*') + glob.glob('sv/*') + glob.glob("../rtl/**/*.v", recursive=True) + glob.glob("../rtl/**/*.sv", recursive=True)
 print(SOURCES)
 
 TB_MODULE = "dnn_engine_tb"
@@ -68,7 +68,7 @@ def compile(request):
 
     print(f"\n\n---------- {SIM}:{c} ----------\n\n")
 
-    with open('../params/params_input.svh', 'w') as f:
+    with open('../rtl/include/params_input.svh', 'w') as f:
         f.write(f'''
     // Written from param_tests.py
 
@@ -98,7 +98,7 @@ def compile(request):
     `define M_OUTPUT_WIDTH_LF   64                       \t// constant (64), for now
     ''')
         
-    with open('../fpga/vivado_config.tcl', 'w') as f:
+    with open('../fpga/scripts/vivado_config.tcl', 'w') as f:
         f.write(f'''
     # Written from param_tests.py
     set BRAM_WEIGHTS_DEPTH {c.BRAM_WEIGHTS_DEPTH}

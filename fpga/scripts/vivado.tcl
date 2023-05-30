@@ -1,7 +1,7 @@
 set project_name sys
 set rtl_dir ../rtl
-set params_dir ../params
-source vivado_config.tcl
+set params_dir ../rtl/include
+source ./scripts/vivado_config.tcl
 
 create_project project_1 ${project_name}_vivado_accelerator -part xc7z020clg400-1 -force
 # set_property board_part xilinx.com:zcu104:part0:1.1 [current_project]

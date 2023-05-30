@@ -1,7 +1,7 @@
 set TOP dnn_engine
 set FREQ_MHZ 600
 set clock_cycle [expr $FREQ_MHZ/1000]
-set io_delay [expr $clock_cycle/5] 
+set io_delay [expr $clock_cycle/5]
 
 #--------- CONFIG
 set REPORT_DIR ../reports/
@@ -14,8 +14,8 @@ set_db lef_library { ../pdk/tsmc65gp/lef/tsmc_cln65_a10_4X2Z_tech.lef ../pdk/tsm
 set_db qrc_tech_file ../pdk/tsmc65gp/qrc/icecaps.tch
 
 #--------- READ
-read_hdl -language sv ../../params/params_input.svh
-read_hdl -language sv ../../params/params.svh
+read_hdl -language sv ../../rtl/include/params_input.svh
+read_hdl -language sv ../../rtl/include/params.svh
 read_hdl -language v2001 [glob ../../rtl/ext/*.v]
 read_hdl -language sv [glob ../../rtl/ext/*.sv]
 read_hdl -language sv [glob ../../rtl/*.sv]
