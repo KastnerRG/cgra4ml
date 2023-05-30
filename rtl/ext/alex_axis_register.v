@@ -92,21 +92,21 @@ if (REG_TYPE > 1) begin
     // datapath registers
     reg                  s_axis_tready_reg = 1'b0;
 
-    reg [DATA_WIDTH-1:0] m_axis_tdata_reg  = {DATA_WIDTH{1'b0}};
-    reg [KEEP_WIDTH-1:0] m_axis_tkeep_reg  = {KEEP_WIDTH{1'b0}};
-    reg                  m_axis_tvalid_reg = 1'b0, m_axis_tvalid_next;
-    reg                  m_axis_tlast_reg  = 1'b0;
-    reg [ID_WIDTH-1:0]   m_axis_tid_reg    = {ID_WIDTH{1'b0}};
-    reg [DEST_WIDTH-1:0] m_axis_tdest_reg  = {DEST_WIDTH{1'b0}};
-    reg [USER_WIDTH-1:0] m_axis_tuser_reg  = {USER_WIDTH{1'b0}};
+    reg [DATA_WIDTH-1:0] m_axis_tdata_reg;
+    reg [KEEP_WIDTH-1:0] m_axis_tkeep_reg;
+    reg                  m_axis_tvalid_reg, m_axis_tvalid_next;
+    reg                  m_axis_tlast_reg;
+    reg [ID_WIDTH-1:0]   m_axis_tid_reg;
+    reg [DEST_WIDTH-1:0] m_axis_tdest_reg;
+    reg [USER_WIDTH-1:0] m_axis_tuser_reg;
 
-    reg [DATA_WIDTH-1:0] temp_m_axis_tdata_reg  = {DATA_WIDTH{1'b0}};
-    reg [KEEP_WIDTH-1:0] temp_m_axis_tkeep_reg  = {KEEP_WIDTH{1'b0}};
-    reg                  temp_m_axis_tvalid_reg = 1'b0, temp_m_axis_tvalid_next;
-    reg                  temp_m_axis_tlast_reg  = 1'b0;
-    reg [ID_WIDTH-1:0]   temp_m_axis_tid_reg    = {ID_WIDTH{1'b0}};
-    reg [DEST_WIDTH-1:0] temp_m_axis_tdest_reg  = {DEST_WIDTH{1'b0}};
-    reg [USER_WIDTH-1:0] temp_m_axis_tuser_reg  = {USER_WIDTH{1'b0}};
+    reg [DATA_WIDTH-1:0] temp_m_axis_tdata_reg;
+    reg [KEEP_WIDTH-1:0] temp_m_axis_tkeep_reg;
+    reg                  temp_m_axis_tvalid_reg, temp_m_axis_tvalid_next;
+    reg                  temp_m_axis_tlast_reg;
+    reg [ID_WIDTH-1:0]   temp_m_axis_tid_reg;
+    reg [DEST_WIDTH-1:0] temp_m_axis_tdest_reg;
+    reg [USER_WIDTH-1:0] temp_m_axis_tuser_reg;
 
     // datapath control
     reg store_axis_input_to_output;
@@ -196,15 +196,15 @@ end else if (REG_TYPE == 1) begin
     // simple register, inserts bubble cycles
 
     // datapath registers
-    reg                  s_axis_tready_reg = 1'b0;
+    reg                  s_axis_tready_reg;
 
-    reg [DATA_WIDTH-1:0] m_axis_tdata_reg  = {DATA_WIDTH{1'b0}};
-    reg [KEEP_WIDTH-1:0] m_axis_tkeep_reg  = {KEEP_WIDTH{1'b0}};
-    reg                  m_axis_tvalid_reg = 1'b0, m_axis_tvalid_next;
-    reg                  m_axis_tlast_reg  = 1'b0;
-    reg [ID_WIDTH-1:0]   m_axis_tid_reg    = {ID_WIDTH{1'b0}};
-    reg [DEST_WIDTH-1:0] m_axis_tdest_reg  = {DEST_WIDTH{1'b0}};
-    reg [USER_WIDTH-1:0] m_axis_tuser_reg  = {USER_WIDTH{1'b0}};
+    reg [DATA_WIDTH-1:0] m_axis_tdata_reg;
+    reg [KEEP_WIDTH-1:0] m_axis_tkeep_reg;
+    reg                  m_axis_tvalid_reg, m_axis_tvalid_next;
+    reg                  m_axis_tlast_reg;
+    reg [ID_WIDTH-1:0]   m_axis_tid_reg;
+    reg [DEST_WIDTH-1:0] m_axis_tdest_reg;
+    reg [USER_WIDTH-1:0] m_axis_tuser_reg;
 
     // datapath control
     reg store_axis_input_to_output;

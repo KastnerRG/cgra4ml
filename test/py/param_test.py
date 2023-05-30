@@ -98,7 +98,7 @@ def compile(request):
     `define M_OUTPUT_WIDTH_LF   64                       \t// constant (64), for now
     ''')
         
-    with open('../flow/fpga/vivado_config.tcl', 'w') as f:
+    with open('../fpga/vivado_config.tcl', 'w') as f:
         f.write(f'''
     # Written from param_tests.py
     set BRAM_WEIGHTS_DEPTH {c.BRAM_WEIGHTS_DEPTH}
