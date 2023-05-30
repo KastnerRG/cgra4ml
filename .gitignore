@@ -1,13 +1,16 @@
 old/
-flow/fpga/**/
-flow/asic/report
-flow/asic/tsmc
 __pycache__
+
+fpga/*
+!fpga/scripts
+
+asic/*
+!asic/scripts
+!asic/reports
 
 *.pickle
 test/vectors
 test/xsim
-test/wave
 
 docs/Calc Pattern.xlsx
 docs/file_hierrarchy.txt
