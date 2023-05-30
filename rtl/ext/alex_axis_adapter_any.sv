@@ -36,9 +36,15 @@ module alex_axis_adapter_any #(
 );
 
   function integer lcm (input integer x, input integer y);
-    lcm = x > y ? x : y;
-    while(!((lcm % x == 0) & (lcm % y == 0)))
-        lcm += 1;
+    logic found = 0;
+    int max = x > y ? x : y;
+    int min = x > y ? y : x;
+
+    for (int i=max; i <= x*y; i=i+max)
+      if ( !found && (lcm % min == 0)) begin
+        lcm = i;
+        found = 1;
+      end
   endfunction
 
   localparam I_DATA_WIDTH  = lcm(S_DATA_WIDTH, M_DATA_WIDTH);
