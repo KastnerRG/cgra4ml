@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`include "../params/params.svh"
+`include "../rtl/include/params.svh"
 
 module axis_pixels #(
   parameter   ROWS               = `ROWS               ,

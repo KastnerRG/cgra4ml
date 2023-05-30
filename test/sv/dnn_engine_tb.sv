@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-`include "../../params/params.svh"
+`include "../../rtl/include/params.svh"
 
 
 module dnn_engine_tb #( 

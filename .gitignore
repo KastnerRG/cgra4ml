@@ -11,6 +11,8 @@ asic/*
 *.pickle
 test/vectors
 test/xsim
+test/c
+test/py/*.ipynb
 
 docs/Calc Pattern.xlsx
 docs/file_hierrarchy.txt
