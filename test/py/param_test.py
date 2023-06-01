@@ -7,6 +7,7 @@ import os.path
 import pytest
 import itertools
 from collections import namedtuple
+import pickle
 
 def pack_bits(arr):
     sum_width = 0
@@ -56,15 +57,39 @@ def product_dict(**kwargs):
                                                 BRAM_WEIGHTS_DEPTH = [1024 ], 
                                             )))
 def compile(request):
+
     c = request.param
 
+    def clog2(x):
+        return int(np.ceil(np.log2(x)))
+    
+    d = { 
+        'KH_MAX'                :c.KW_MAX, 
+        'SH_MAX'                :c.SW_MAX, 
+        'K_BITS'                :c.X_BITS,
+        'L_MAX'                 : int(np.ceil(c.XH_MAX//c.ROWS)),
+    }
+    n = namedtuple('Compile', d)(**d)
+    c = namedtuple("Compile", c._fields + n._fields)(*(c + n))
 
-    d = { 'KH_MAX':c.KW_MAX, 'SH_MAX':c.SW_MAX, 'K_BITS':c.X_BITS,
-            'RAM_EDGES_DEPTH': 8*8*4, # max(CI * XW * (XH/ROWS-1))
-            'CONFIG_BEATS': 1,
+    d = { 
+        'RAM_EDGES_DEPTH'       : 8*8*4, # max(CI * XW * (XH/ROWS-1))
+        'CONFIG_BEATS'          : 1,
+        'X_PAD'                 : int(np.ceil(c.KH_MAX//2)),
+        'BITS_KW2'              :clog2((c.KW_MAX+1)/2),
+        'BITS_KH2'              :clog2((c.KH_MAX+1)/2),
+        'BITS_SW'               :clog2(c.SW_MAX),
+        'BITS_SH'               :clog2(c.SH_MAX),
+        'BITS_CIN_MAX'          :clog2(c.CI_MAX),
+        'BITS_COLS_MAX'         :clog2(c.XW_MAX),
+        'BITS_BLOCKS_MAX'       :clog2( c.L_MAX),
+        'BITS_XN_MAX'           :clog2(c.XN_MAX),
+        'BITS_BRAM_WEIGHTS_ADDR': clog2(c.BRAM_WEIGHTS_DEPTH),
          }
     n = namedtuple('Compile', d)(**d)
     c = namedtuple("Compile", c._fields + n._fields)(*(c + n))
+    with open('compile.pickle', 'wb') as f:
+        pickle.dump(c._asdict(), f)
 
     print(f"\n\n---------- {SIM}:{c} ----------\n\n")
 
@@ -185,26 +210,7 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
 
     LH    = c.ROWS*SH   # Block height
     L     = XH//LH    # Blocks
-    L_MAX = c.XH_MAX//c.ROWS
-
-    def clog2(x):
-        return int(np.ceil(np.log2(x)))
-
-    BITS_KW2        = clog2((c.KW_MAX+1)/2)
-    BITS_KH2        = clog2((c.KH_MAX+1)/2)
-    BITS_SW         = clog2(c.SW_MAX)
-    BITS_SH         = clog2(c.SH_MAX)
-    BITS_CIN_MAX    = clog2(c.CI_MAX)
-    BITS_COLS_MAX   = clog2(c.XW_MAX)
-    BITS_BLOCKS_MAX = clog2( L_MAX)
-    BITS_XN_MAX     = clog2(c.XN_MAX)
-    BITS_BRAM_WEIGHTS_ADDR = clog2(c.BRAM_WEIGHTS_DEPTH)
     BRAM_WEIGHTS_ADDR_MAX  = c.CONFIG_BEATS + SW*KH*CI-1
-
-    X_PAD = int(np.ceil(c.KH_MAX//2))
-
-
-
 
     '''
     CHECK SPARSITY
@@ -255,12 +261,12 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     '''Weights config'''
 
     weights_config = pack_bits([
-        (KW//2, BITS_KW2),
-        (CI-1 , BITS_CIN_MAX),
-        (XW-1 , BITS_COLS_MAX),
-        ( L-1 , BITS_BLOCKS_MAX),
-        (XN-1 , BITS_XN_MAX),
-        (BRAM_WEIGHTS_ADDR_MAX, BITS_BRAM_WEIGHTS_ADDR)
+        (KW//2, c.BITS_KW2),
+        (CI-1 , c.BITS_CIN_MAX),
+        (XW-1 , c.BITS_COLS_MAX),
+        ( L-1 , c.BITS_BLOCKS_MAX),
+        (XN-1 , c.BITS_XN_MAX),
+        (BRAM_WEIGHTS_ADDR_MAX, c.BITS_BRAM_WEIGHTS_ADDR)
     ])
 
     weights_config = format(weights_config, f'#0{c.IN_BITS}b')
@@ -288,39 +294,39 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     x = np.pad(x, ((0,0),(0,LH*L-XH),(0,0),(0,0)))   # (XN, L*HL , XW, CI)
     x = x.reshape  (XN, L, LH, XW, CI)               # (XN, L, HL, XW, CI)
 
-    zeros = np.zeros((XN,L,c.ROWS+X_PAD,XW,CI),x.dtype)  # (XN,L,c.ROWS+X_PAD,XW,CI)
+    zeros = np.zeros((XN,L,c.ROWS+c.X_PAD,XW,CI),x.dtype)  # (XN,L,c.ROWS+X_PAD,XW,CI)
 
     zeros[:,:,:c.ROWS,:,:] = x
 
     for l in range(L):
         ''' Fill bot rows from next '''
         if l == L-1:
-            zeros[:,l, c.ROWS: ,:,:] = np.zeros((XN,X_PAD,XW,CI),x.dtype)
+            zeros[:,l, c.ROWS: ,:,:] = np.zeros((XN,c.X_PAD,XW,CI),x.dtype)
         else:
-            zeros[:,l, c.ROWS: ,:,:] = x[:,l+1,:X_PAD,:,:]
+            zeros[:,l, c.ROWS: ,:,:] = x[:,l+1,:c.X_PAD,:,:]
 
 
     x = zeros                  # (XN,L,c.ROWS+X_PAD,XW,CI)
     x = x.transpose(0,1,3,4,2) # (XN,L,XW,CI,c.ROWS+X_PAD)
 
-    x = x.reshape((XN*L*XW*CI*(c.ROWS+X_PAD)))
+    x = x.reshape((XN*L*XW*CI*(c.ROWS+c.X_PAD)))
 
     '''
     Config
     '''
     config = pack_bits([
-        (KH//2, BITS_KH2),
-        (CI-1 , BITS_CIN_MAX),
-        (XW-1 , BITS_COLS_MAX),
-        (L -1 , BITS_BLOCKS_MAX),
+        (KH//2, c.BITS_KH2),
+        (CI-1 , c.BITS_CIN_MAX),
+        (XW-1 , c.BITS_COLS_MAX),
+        (L -1 , c.BITS_BLOCKS_MAX),
     ])
-    assert c.IN_BITS >= BITS_KW2 + BITS_CIN_MAX + BITS_COLS_MAX + BITS_BLOCKS_MAX
+    assert c.IN_BITS >= c.BITS_KW2 + c.BITS_CIN_MAX + c.BITS_COLS_MAX + c.BITS_BLOCKS_MAX
 
     config = format(config, f'#0{c.IN_BITS}b')
     config_words = [int(config[i:i+c.X_BITS], 2) for i in range(0, len(config), c.X_BITS)]
     config_words.reverse()
     x = np.concatenate([np.array(config_words, dtype=np.uint8), x.flatten()])
-    assert x.shape == (c.IN_BITS/c.X_BITS + XN*L*XW*CI*(c.ROWS+X_PAD),)
+    assert x.shape == (c.IN_BITS/c.X_BITS + XN*L*XW*CI*(c.ROWS+c.X_PAD),)
 
     path = f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_x.txt"
     np.savetxt(path, x.flatten(), fmt='%d')
