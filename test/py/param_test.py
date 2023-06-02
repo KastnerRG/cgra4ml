@@ -10,6 +10,7 @@ import pytest
 import itertools
 from collections import namedtuple
 import pickle
+from bundle import Bundle
 
 def pack_bits(arr):
     sum_width = 0
@@ -179,196 +180,28 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     '''
     GOLDEN MODEL
     '''
-
-    # Torch
-    # torch.manual_seed(0)
-    # x = torch.from_numpy(np.random.randint(-2**(c.X_BITS-1), 2**(c.X_BITS-1)-1 ,size=(XN,CI,XH,XW)).astype(np.float32))
-    # w = torch.from_numpy(np.random.randint(-2**(c.K_BITS-1), 2**(c.K_BITS-1)-1 ,size=(CO,CI,KH,KW)).astype(np.float32))
-    # y = torch.nn.functional.conv2d(x, w, bias=None, stride=1, padding='same', dilation=1, groups=1)
-    # LAYER = {'w':w.numpy().transpose(2,3,1,0), 'x':x.numpy().transpose(0,2,3,1), 'y':y.numpy().transpose(0,2,3,1)}
-
-    # Keras
     tf.keras.utils.set_random_seed(0)
     x = tf.convert_to_tensor(np.random.randint(-2**(c.X_BITS-1), 2**(c.X_BITS-1)-1 ,size=(XN,XH,XW,CI)).astype(np.float32))
     w = tf.convert_to_tensor(np.random.randint(-2**(c.K_BITS-1), 2**(c.K_BITS-1)-1 ,size=(KH,KW,CI,CO)).astype(np.float32))
     y = tf.keras.backend.conv2d(x, w, strides=(1,1), padding='same')
-    LAYER = {'w':w.numpy(), 'x':x.numpy(), 'y':y.numpy()}
+
+    bundle = Bundle(c=c, type='conv', x=x.numpy(), w=w.numpy(), y=y.numpy(), a=None)
 
     '''
-    CALCULATE TILING PARAMS
+    Save as text
     '''
-
-    w = LAYER['w']
-    x = LAYER['x']
-
-    SW = 1
-    SH = 1
-
-    KH, KW, CI, CO = w.shape
-    CO_PRL         = c.COLS * SW // KW                        # SW cols are processed in parallel
-    EG             = int(np.floor( c.COLS / (KW + SW - 1)))   # elastic groups
-    IT             = int(np.ceil( CO / (SW*EG)))            # iterations needed
-    CO_PAD         = IT * CO_PRL                            # output cols padded
-
-    print(f'{KH=}, {KW=}, {CI=}, {CO=}, {CO_PRL=}, {EG=}, {IT=}, {CO_PAD}')
-    print('weights initial (KH, KW, CI, CO) =', w.shape)
-
-    XN, XH, XW, CI = LAYER['x'].shape
-    print('initial (XN, XH, XW, CI)=', x.shape)
-
-    LH    = c.ROWS*SH   # Block height
-    L     = XH//LH    # Blocks
-    BRAM_WEIGHTS_ADDR_MAX  = c.CONFIG_BEATS + SW*KH*CI-1
-
-    '''
-    CHECK SPARSITY
-    '''
-
-    w_sparse = (w==0).sum()/w.size
-    x_sparse = (x==0).sum()/x.size
-
-    p_both_zero = x_sparse * w_sparse
-    p_only_one_zero = (1-x_sparse) * w_sparse  +  (1-w_sparse) * x_sparse
-    p_neither_zero = (1-x_sparse) * (1-w_sparse)
-    zero_result = 1-p_neither_zero
-
-    print(f'''
-    w_sparsity   : {w_sparse*100:.2f}%
-    x_sparsity   : {x_sparse*100:.2f}%
-
-    both_zero    : {p_both_zero*100:.2f}%
-    only_one_zero: {p_only_one_zero*100:.2f}%
-    neither_zero : {p_neither_zero*100:.2f}%
-    zero_result  : {zero_result*100:.2f}%
-    ''')
-
-
-
-
-    '''
-    TILE WEIGHTS
-    '''
-
-    w = LAYER['w']
-    print('weights initial (KH, KW, CI, CO) =', w.shape)
-
-    w = np.pad(w, ((0,0),(0,0),(0,0),(0,CO_PAD-CO)))   # (KH, KW, CI, CO_PAD)
-    w = w.reshape(KH, KW, CI, IT, CO_PRL)              # (KH, KW, CI, IT, CO_PRL)
-    w = np.flip(w, axis=4)
-    w = w.transpose(0,2,3,4,1)                         # (KH, CI, IT, CO_PRL, KW)
-
-    '''Assume SW=1'''
-    CO_PRL    = c.COLS // KW
-    w = w.reshape  (KH, CI, IT, CO_PRL*KW)                # (KH, CI, IT, CO_PRL*KW)
-    w = np.pad(w, ((0,0),(0,0),(0,0),(0,c.COLS-CO_PRL*KW))) # (KH, CI, IT, c.COLS)
-    w = w.transpose(2,1,0,3)                              # (IT, CI, KH, c.COLS)
-    w = w.reshape (IT, CI*KH, c.COLS)                       # (IT, CI*KH, c.COLS)
-    w = np.pad(w, ((0,0),(c.CONFIG_BEATS,0),(0,0)))          # (IT, c.CONFIG_BEATS+CI*KH, c.COLS)
-    w = w.reshape (IT, (CI*KH+c.CONFIG_BEATS)*c.COLS)          # (IT, (CI*KH+c.CONFIG_BEATS)*c.COLS)
-
-    '''Weights config'''
-
-    weights_config = pack_bits([
-        (KW//2, c.BITS_KW2),
-        (CI-1 , c.BITS_CIN_MAX),
-        (XW-1 , c.BITS_COLS_MAX),
-        ( L-1 , c.BITS_BLOCKS_MAX),
-        (XN-1 , c.BITS_XN_MAX),
-        (BRAM_WEIGHTS_ADDR_MAX, c.BITS_BRAM_WEIGHTS_ADDR)
-    ])
-
-    weights_config = format(weights_config, f'#0{c.IN_BITS}b')
-    config_words = [int(weights_config[i:i+c.K_BITS], 2) for i in range(0, len(weights_config), c.K_BITS)]
-    config_words.reverse()
-    config_words = np.array(config_words,dtype=np.int8)
-    config_words = np.repeat(config_words[np.newaxis,...],repeats=IT,axis=0)
-    '''Final'''
-    w = np.concatenate([config_words, w], axis=1) # (IT, 8 + CI*KH*c.COLS)
-    assert w.shape == (IT, c.IN_BITS/c.K_BITS + (CI*KH+c.CONFIG_BEATS)*c.COLS)
-
     path = f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_w.txt"
-    np.savetxt(path, w[i_it].flatten(), fmt='%d')
-    print(f'weights final (IT, 8 + (CI*KH+c.CONFIG_BEATS)*c.COLS) = {w.shape} \nSaved as {path}')
-
-
-
-    '''
-    Tile Input
-    '''
-
-    x = LAYER['x']
-    print('input initial (XN, XH, XW, CI)=', x.shape)
-
-    x = np.pad(x, ((0,0),(0,LH*L-XH),(0,0),(0,0)))   # (XN, L*HL , XW, CI)
-    x = x.reshape  (XN, L, LH, XW, CI)               # (XN, L, HL, XW, CI)
-
-    zeros = np.zeros((XN,L,c.ROWS+c.X_PAD,XW,CI),x.dtype)  # (XN,L,c.ROWS+X_PAD,XW,CI)
-
-    zeros[:,:,:c.ROWS,:,:] = x
-
-    for l in range(L):
-        ''' Fill bot rows from next '''
-        if l == L-1:
-            zeros[:,l, c.ROWS: ,:,:] = np.zeros((XN,c.X_PAD,XW,CI),x.dtype)
-        else:
-            zeros[:,l, c.ROWS: ,:,:] = x[:,l+1,:c.X_PAD,:,:]
-
-
-    x = zeros                  # (XN,L,c.ROWS+X_PAD,XW,CI)
-    x = x.transpose(0,1,3,4,2) # (XN,L,XW,CI,c.ROWS+X_PAD)
-
-    x = x.reshape((XN*L*XW*CI*(c.ROWS+c.X_PAD)))
-
-    '''
-    Config
-    '''
-    config = pack_bits([
-        (KH//2, c.BITS_KH2),
-        (CI-1 , c.BITS_CIN_MAX),
-        (XW-1 , c.BITS_COLS_MAX),
-        (L -1 , c.BITS_BLOCKS_MAX),
-    ])
-    assert c.IN_BITS >= c.BITS_KW2 + c.BITS_CIN_MAX + c.BITS_COLS_MAX + c.BITS_BLOCKS_MAX
-
-    config = format(config, f'#0{c.IN_BITS}b')
-    config_words = [int(config[i:i+c.X_BITS], 2) for i in range(0, len(config), c.X_BITS)]
-    config_words.reverse()
-    x = np.concatenate([np.array(config_words, dtype=np.uint8), x.flatten()])
-    assert x.shape == (c.IN_BITS/c.X_BITS + XN*L*XW*CI*(c.ROWS+c.X_PAD),)
+    np.savetxt(path, bundle.w_engine[i_it].flatten(), fmt='%d')
+    print(f'weights final (IT, 8 + (CI*KH+c.CONFIG_BEATS)*c.COLS) = {bundle.w.shape} \nSaved as {path}')
 
     path = f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_x.txt"
-    np.savetxt(path, x.flatten(), fmt='%d')
-    print(f'input final (c.IN_BITS/c.X_BITS + XN*L*XW*CI*c.ROWS+X_PAD)={x.shape} \nSaved as "{path}"')
+    np.savetxt(path, bundle.x_engine.flatten(), fmt='%d')
+    print(f'input final (c.IN_BITS/c.X_BITS + XN*L*XW*CI*c.ROWS+X_PAD)={bundle.x_engine.shape} \nSaved as "{path}"')
 
-
-
-
-    '''
-    TILE OUTPUTS
-    '''
-
-    y = LAYER['y']      # (XN, XH , XW, CO)
-    print('output initial (XN, XH , XW, CO) =', y.shape)
-
-    y = np.pad(y, ((0,0),(0,LH*L-XH),(0,0),(0,CO_PAD-CO)))   # (XN, L*HL , XW, CO_PAD)
-    y = y.reshape((XN, L, c.ROWS, XW, CO_PAD))                 # (XN,L,c.ROWS,XW,CO_PAD)
-    y = y.reshape((XN, L, c.ROWS, XW, IT, CO_PRL))             # (XN,L,c.ROWS,XW,IT,CO_PRL)
-    y = y.transpose(4,0,1,3,5,2)                             # (IT,XN,L,XW,CO_PRL,c.ROWS)
-
-    assert y.shape == (IT,XN,L,XW,CO_PRL,c.ROWS)
-
-    y_w_last = y[:,:,:,-(KW//2+1):,:,:]
-    y_w_last = y_w_last.transpose(0,1,2,4,3,5).reshape(IT,XN,L,(KW//2+1)*CO_PRL,c.ROWS)
-
-    y = y.reshape(IT,XN,L,XW*CO_PRL,c.ROWS)
-    y[:,:,:,-(KW//2+1)*CO_PRL:,:] = y_w_last
-
-    y = y[i_it]
+    y_it = bundle.y_engine[i_it]
     path = f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_y_exp.txt"
-    np.savetxt(path, y.flatten(), fmt='%d')
-    print(f'output final (IT,XN,L,XW,CO_PRL,c.ROWS)={y.shape} \nSaved as "{path}"')
-
-
+    np.savetxt(path, y_it.flatten(), fmt='%d')
+    print(f'output final (IT,XN,L,XW,CO_PRL,c.ROWS)={y_it.shape} \nSaved as "{path}"')
 
 
     '''
@@ -387,13 +220,11 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
         subprocess.run(["vvp", "xsim/a.out"])
 
 
-
-
     '''
     CHECK ERROR
     '''
     y_sim = np.loadtxt(f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_y_sim.txt",np.int32)
-    error = np.sum(np.abs(y_sim.reshape(y.shape) - y))
+    error = np.sum(np.abs(y_sim.reshape(y_it.shape) - y_it))
 
     print("Error: ", error)
     assert error == 0
