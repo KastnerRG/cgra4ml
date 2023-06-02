@@ -291,8 +291,8 @@ module axis_weight_rotator #(
 
   counter #(.W(BITS_CONFIG_BEATS)) C_CONFIG    (.clk(aclk), .reset(copy_config), .en(en_count_config), .max_in(CONFIG_BEATS-1        ), .last_clk(lc_config), .last(l_config)                                  );
   counter #(.W(BITS_KW          )) C_KW        (.clk(aclk), .reset(copy_config), .en(en_kw          ), .max_in(2*ref_i_read.kw2      ), .last_clk(lc_kw    ), .last(l_kw    ), .first(f_kw    )                );
-  counter #(.W(BITS_CI      )) C_CI    (.clk(aclk), .reset(copy_config), .en(lc_kw          ), .max_in(  ref_i_read.cin_1    ), .last_clk(lc_cin   ), .last(l_cin   ), .first(f_cin   )                );
-  counter #(.W(BITS_XW     )) C_XW   (.clk(aclk), .reset(copy_config), .en(lc_cin         ), .max_in(  ref_i_read.cols_1   ), .last_clk(lc_cols  ), .last(l_cols  ), .first(f_cols  ), .count(c_cols));
+  counter #(.W(BITS_CI          )) C_CI        (.clk(aclk), .reset(copy_config), .en(lc_kw          ), .max_in(  ref_i_read.cin_1    ), .last_clk(lc_cin   ), .last(l_cin   ), .first(f_cin   )                );
+  counter #(.W(BITS_XW          )) C_XW        (.clk(aclk), .reset(copy_config), .en(lc_cin         ), .max_in(  ref_i_read.cols_1   ), .last_clk(lc_cols  ), .last(l_cols  ), .first(f_cols  ), .count(c_cols));
   counter #(.W(BITS_IM_BLOCKS   )) C_IM_BLOCKS (.clk(aclk), .reset(copy_config), .en(lc_cols        ), .max_in(  ref_i_read.blocks_1 ), .last_clk(lc_blocks), .last(l_blocks)                                  );
   counter #(.W(BITS_XN          )) C_XN        (.clk(aclk), .reset(copy_config), .en(lc_blocks      ), .max_in(  ref_i_read.xn_1     ), .last_clk(lc_xn    ), .last(l_xn    )                                  );
 

@@ -16,7 +16,7 @@
     `define CI_MAX              1024               	// max of input channels, across layers
     `define CONFIG_BEATS        1         	// constant, for now
     `define BRAM_WEIGHTS_DEPTH  1024   	// CONFIG_BEATS + max(KW * CI), across layers
-    `define RAM_EDGES_DEPTH     256      	// max (KW * CI * XW), across layers when KW != 1
+    `define RAM_EDGES_DEPTH     1344      	// max (KW * CI * XW), across layers when KW != 1
 
     `define LATENCY_ACCUMULATOR   1                      	// constant, for now
     `define LATENCY_MULTIPLIER    1                      	// constant, for now 

@@ -1,12 +1,11 @@
 import numpy as np
-from qkeras import QConv2D
 from collections import namedtuple
 
 class Bundle:
-    def __init__( self, c, **kwargs): #(conv/dense, act, max)
+    def __init__( self, c, type, **kwargs): #(conv/dense, act, max)
         
         self.c = c
-        self.type = kwargs['type']
+        self.type = type
         self.x = kwargs['x']
         self.w = kwargs['w']
         self.y = kwargs['y']
@@ -22,12 +21,14 @@ class Bundle:
         self.x_engine = self.reorder_x_q2e_conv(self.x, self.c, self.r)
         self.y_engine = self.reorder_y_q2e_conv(self.y, self.c, self.r)
 
+        self.r = self.r._asdict()
+        self.c = self.c._asdict()
+
 
     @staticmethod
-    def from_qkeras(self, cd, act, max):
+    def from_qkeras(cd, act, max):
 
         return {
-            'type': 'conv' if isinstance(cd, QConv2D) else 'dense',
             'x': cd.prev.y_int,
             'w': cd.k_int,
             'y': cd.y_int,
