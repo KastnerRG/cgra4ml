@@ -10,10 +10,23 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Cache modules
+      id: cache-verify
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-verify
+      with:
+        path: ~/.verify
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
     - name: Install Icarus & Pytorch
       run: |
         sudo apt install -y --no-install-recommends iverilog
-        pip install pytest numpy torch==1.12.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        pip install pytest numpy tensorflow qkeras
 
     - name: Verify Full Design
       run: |

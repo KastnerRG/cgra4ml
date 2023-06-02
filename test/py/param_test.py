@@ -1,6 +1,8 @@
 import numpy as np
 import os
-import torch
+# import torch
+import tensorflow as tf
+from qkeras import QConv2D
 import subprocess
 import glob
 import os.path
@@ -177,14 +179,20 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     '''
     GOLDEN MODEL
     '''
+
+    # Torch
     # torch.manual_seed(0)
-    x = torch.from_numpy(np.random.randint(-2**(c.X_BITS-1), 2**(c.X_BITS-1)-1 ,size=(XN,CI,XH,XW)).astype(np.float32))
-    w = torch.from_numpy(np.random.randint(-2**(c.K_BITS-1), 2**(c.K_BITS-1)-1 ,size=(CO,CI,KH,KW)).astype(np.float32))
-    y = torch.nn.functional.conv2d(x, w, bias=None, stride=1, padding='same', dilation=1, groups=1)
+    # x = torch.from_numpy(np.random.randint(-2**(c.X_BITS-1), 2**(c.X_BITS-1)-1 ,size=(XN,CI,XH,XW)).astype(np.float32))
+    # w = torch.from_numpy(np.random.randint(-2**(c.K_BITS-1), 2**(c.K_BITS-1)-1 ,size=(CO,CI,KH,KW)).astype(np.float32))
+    # y = torch.nn.functional.conv2d(x, w, bias=None, stride=1, padding='same', dilation=1, groups=1)
+    # LAYER = {'w':w.numpy().transpose(2,3,1,0), 'x':x.numpy().transpose(0,2,3,1), 'y':y.numpy().transpose(0,2,3,1)}
 
-    LAYER = {'w':w.numpy().transpose(2,3,1,0), 'x':x.numpy().transpose(0,2,3,1), 'y':y.numpy().transpose(0,2,3,1)}
-
-
+    # Keras
+    tf.keras.utils.set_random_seed(0)
+    x = tf.convert_to_tensor(np.random.randint(-2**(c.X_BITS-1), 2**(c.X_BITS-1)-1 ,size=(XN,XH,XW,CI)).astype(np.float32))
+    w = tf.convert_to_tensor(np.random.randint(-2**(c.K_BITS-1), 2**(c.K_BITS-1)-1 ,size=(KH,KW,CI,CO)).astype(np.float32))
+    y = tf.keras.backend.conv2d(x, w, strides=(1,1), padding='same')
+    LAYER = {'w':w.numpy(), 'x':x.numpy(), 'y':y.numpy()}
 
     '''
     CALCULATE TILING PARAMS
