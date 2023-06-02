@@ -58,7 +58,9 @@ def product_dict(**kwargs):
                                                 XN_MAX = [8    ], 
                                                 IN_BITS= [64   ], 
                                                 BRAM_WEIGHTS_DEPTH = [1024 ], 
+                                                RAM_EDGES_DEPTH    = [8*28*6], # max(CI * XW * (XH/ROWS-1))
                                             )))
+
 def compile(request):
 
     c = request.param
@@ -76,7 +78,6 @@ def compile(request):
     c = namedtuple("Compile", c._fields + n._fields)(*(c + n))
 
     d = { 
-        'RAM_EDGES_DEPTH'       : 8*8*4, # max(CI * XW * (XH/ROWS-1))
         'CONFIG_BEATS'          : 1,
         'X_PAD'                 : int(np.ceil(c.KH_MAX//2)),
         'BITS_KW2'              :clog2((c.KW_MAX+1)/2),
@@ -155,12 +156,12 @@ def compile(request):
     return c
 
 
-@pytest.mark.parametrize("KH", [1,3])
-@pytest.mark.parametrize("CI", [8])
-@pytest.mark.parametrize("CO", [16])
-@pytest.mark.parametrize("XH", [12])
-@pytest.mark.parametrize("XW", [8])
-@pytest.mark.parametrize("XN", [2])
+@pytest.mark.parametrize("KH", [1])
+@pytest.mark.parametrize("CI", [3])
+@pytest.mark.parametrize("CO", [32])
+@pytest.mark.parametrize("XH", [28])
+@pytest.mark.parametrize("XW", [28])
+@pytest.mark.parametrize("XN", [4])
 def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     c= compile
 
@@ -172,6 +173,7 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     assert CI <= c.CI_MAX
     assert XH <= c.XH_MAX
     assert XW <= c.XW_MAX
+    assert XN <= c.XN_MAX
     assert CI * XW * int(np.ceil(XH/c.ROWS)-1) <= c.RAM_EDGES_DEPTH
 
     for file in os.scandir(DATA_DIR):
