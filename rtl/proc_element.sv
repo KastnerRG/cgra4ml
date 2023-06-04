@@ -1,4 +1,4 @@
-module proc_element #(
+(* use_dsp = "yes" *) module proc_element #(
   parameter
   WORD_WIDTH_IN  = 8,
   WORD_WIDTH_OUT = 24

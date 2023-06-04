@@ -53,12 +53,12 @@ def product_dict(**kwargs):
                                                 KW_MAX = [3    ], 
                                                 SW_MAX = [2    ], 
                                                 CI_MAX = [1024 ], 
-                                                XW_MAX = [384  ], 
-                                                XH_MAX = [256  ], 
-                                                XN_MAX = [8    ], 
+                                                XW_MAX = [32   ], 
+                                                XH_MAX = [32   ], 
+                                                XN_MAX = [4    ], 
                                                 IN_BITS= [64   ], 
-                                                BRAM_WEIGHTS_DEPTH = [1024 ], 
-                                                RAM_EDGES_DEPTH    = [8*28*6], # max(CI * XW * (XH/ROWS-1))
+                                                BRAM_WEIGHTS_DEPTH = [2049],  # KH*CI + Config beats
+                                                RAM_EDGES_DEPTH    = [672 ], # max(CI * XW * (XH/ROWS-1))
                                             )))
 
 def compile(request):
@@ -156,11 +156,11 @@ def compile(request):
     return c
 
 
-@pytest.mark.parametrize("KH", [1])
+@pytest.mark.parametrize("KH", [1,3])
 @pytest.mark.parametrize("CI", [3])
-@pytest.mark.parametrize("CO", [32])
-@pytest.mark.parametrize("XH", [28])
-@pytest.mark.parametrize("XW", [28])
+@pytest.mark.parametrize("CO", [64])
+@pytest.mark.parametrize("XH", [32])
+@pytest.mark.parametrize("XW", [32])
 @pytest.mark.parametrize("XN", [4])
 def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     c= compile
