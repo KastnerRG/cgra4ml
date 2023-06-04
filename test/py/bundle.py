@@ -92,7 +92,7 @@ class Bundle:
         w_config = format(w_config, f'#0{c.IN_BITS}b')
         w_config_words = [int(w_config[i:i+c.K_BITS], 2) for i in range(0, len(w_config), c.K_BITS)]
         w_config_words.reverse()
-        w_config_words = np.array(w_config_words,dtype=np.int8)
+        w_config_words = np.array(w_config_words,dtype=np.uint8).astype(np.int8)
         w_config_words = np.repeat(w_config_words[np.newaxis,...],repeats=r.IT,axis=0)
 
         '''Input Config'''

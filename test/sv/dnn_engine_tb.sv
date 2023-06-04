@@ -5,8 +5,8 @@
 
 module dnn_engine_tb #( 
 parameter
-  VALID_PROB = 1,
-  READY_PROB = 1,
+  VALID_PROB = 50,
+  READY_PROB = 50,
 
 `ifdef ICARUS
   DIR_PATH   = "vectors/",
