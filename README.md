@@ -1,5 +1,4 @@
-# AXI-Stream Universal DNN Engine
-### with Novel Dataflow enabling 70.7 Gops/mm2 on TSMC 65nm GP for 8-bit VGG16
+# AXI-Stream Universal DNN Engine (with Novel Dataflow enabling 70.7 Gops/mm2 on TSMC 65nm GP for 8-bit VGG16)
 
 ## Table of Contents
 - [Overview](#overview)
@@ -146,13 +145,15 @@ Performance Efficiency (PE utilization across space & time) and number of DRAM a
 
 ## <a name="documents"></a> Project Documents
 
-For more details of the project, follow the wiki: <add link>
+For more details of the project, follow the [wiki](https://github.com/abarajithan11/dnn-engine/wiki/Project-Overview)
+
 Refer to the documents below for more updates:
 
 - Project Overview:
-- Milestone Report:
-- Project progress:
-- Final Presentation:
+- Project Specifications: [docs](https://docs.google.com/document/d/1SLFzM2F2xkEAeCaVlXb_mL__qlsh00V4NdrKU_GPpx8/edit?usp=sharing)
+- Oral Project Update: [slides](https://docs.google.com/presentation/d/1nxLmAPG2kUTwhhrXPJDYdC7C3mT9WKun33MIMbAssnw/edit?usp=sharing)
+- Milestone Report: [docs](https://docs.google.com/document/d/14m7N75ihOHTkv0wHUQPQmOVXP5_-LvZ2R20ssSd6q7A/edit?usp=sharing)
+- Final Presentation: [slides](https://docs.google.com/presentation/d/1tAmeuLDXFYc_SYJKE8qdVKhcpzAkpnsUiwGj5PQBH5M/edit#slide=id.g24f18bc2da0_0_0)
 - Final Report:
 
 ## <a name="references"></a> References
