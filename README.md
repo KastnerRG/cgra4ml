@@ -145,7 +145,7 @@ Performance Efficiency (PE utilization across space & time) and number of DRAM a
 
 ## <a name="documents"></a> Project Documents
 
-For more details of the project, follow the [wiki](https://github.com/abarajithan11/dnn-engine/wiki/Project-Overview)
+For more details of the project, follow the [wiki](https://github.com/abarajithan11/dnn-engine/wiki)
 
 Refer to the documents below for more updates:
 
