@@ -48,6 +48,8 @@ def product_dict(**kwargs):
 
 @pytest.fixture(scope="module", params=list(product_dict(
                                                 X_BITS = [8    ], 
+                                                K_BITS = [4    ], 
+                                                Y_BITS = [32   ], 
                                                 ROWS   = [4    ], 
                                                 COLS   = [24   ], 
                                                 KW_MAX = [3    ], 
@@ -71,7 +73,6 @@ def compile(request):
     d = { 
         'KH_MAX'                :c.KW_MAX, 
         'SH_MAX'                :c.SW_MAX, 
-        'K_BITS'                :c.X_BITS,
         'L_MAX'                 : int(np.ceil(c.XH_MAX//c.ROWS)),
     }
     n = namedtuple('Compile', d)(**d)
@@ -103,8 +104,9 @@ def compile(request):
 
     `define ROWS                {c.ROWS}                 \t// PE rows, constrained by resources
     `define COLS                {c.COLS}                 \t// PE cols, constrained by resources
-    `define WORD_WIDTH          {c.X_BITS}               \t// Bits per word in input
-    `define WORD_WIDTH_ACC      32                       \t// Bits per word in output of conv
+    `define X_BITS              {c.X_BITS}               \t// Bits per word in input
+    `define K_BITS              {c.K_BITS}               \t// Bits per word in input
+    `define Y_BITS              {c.Y_BITS}               \t// Bits per word in output of conv
 
     `define KH_MAX              {c.KH_MAX}               \t// max of kernel height, across layers
     `define KW_MAX              {c.KW_MAX}               \t// max of kernel width, across layers
@@ -119,7 +121,7 @@ def compile(request):
     `define RAM_EDGES_DEPTH     {c.RAM_EDGES_DEPTH}      \t// max (KW * CI * XW), across layers when KW != 1
 
     `define LATENCY_ACCUMULATOR   1                      \t// constant, for now
-    `define LATENCY_MULTIPLIER    1                      \t// constant, for now 
+    `define LATENCY_MULTIPLIER    2                      \t// constant, for now 
     `define LATENCY_BRAM          2                      \t// constant, for now 
 
     `define S_WEIGHTS_WIDTH_LF  {c.IN_BITS}              \t// constant (64), for now
@@ -132,7 +134,8 @@ def compile(request):
     # Written from param_tests.py
     set BRAM_WEIGHTS_DEPTH {c.BRAM_WEIGHTS_DEPTH}
     set COLS               {c.COLS}
-    set WORD_WIDTH         {c.X_BITS}
+    set X_BITS             {c.X_BITS}
+    set K_BITS             {c.K_BITS}
     set LATENCY_BRAM       2
     set RAM_EDGES_DEPTH    {c.RAM_EDGES_DEPTH}
     set KH_MAX             {c.KH_MAX}
@@ -158,10 +161,10 @@ def compile(request):
 
 @pytest.mark.parametrize("KH", [1,3])
 @pytest.mark.parametrize("CI", [3])
-@pytest.mark.parametrize("CO", [64])
-@pytest.mark.parametrize("XH", [32])
-@pytest.mark.parametrize("XW", [32])
-@pytest.mark.parametrize("XN", [4])
+@pytest.mark.parametrize("CO", [8])
+@pytest.mark.parametrize("XH", [4])
+@pytest.mark.parametrize("XW", [4])
+@pytest.mark.parametrize("XN", [2])
 def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     c= compile
 

@@ -8,7 +8,7 @@ Design Name: AXIS Weight Rotator
 module axis_weight_rotator #(
   parameter 
     COLS                = `COLS                ,
-    WORD_WIDTH          = `WORD_WIDTH          , 
+    WORD_WIDTH          = `K_BITS              , 
     KW_MAX              = `KW_MAX              ,   // odd number
     CI_MAX              = `CI_MAX              ,
     XW_MAX              = `XW_MAX              ,

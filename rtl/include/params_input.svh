@@ -3,8 +3,9 @@
 
     `define ROWS                4                 	// PE rows, constrained by resources
     `define COLS                24                 	// PE cols, constrained by resources
-    `define WORD_WIDTH          8               	// Bits per word in input
-    `define WORD_WIDTH_ACC      32                       	// Bits per word in output of conv
+    `define X_BITS              8               	// Bits per word in input
+    `define K_BITS              4               	// Bits per word in input
+    `define Y_BITS              32               	// Bits per word in output of conv
 
     `define KH_MAX              3               	// max of kernel height, across layers
     `define KW_MAX              3               	// max of kernel width, across layers

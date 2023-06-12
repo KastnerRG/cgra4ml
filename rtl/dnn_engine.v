@@ -10,10 +10,11 @@ module dnn_engine #(
 
                 ROWS                    = `ROWS               ,
                 COLS                    = `COLS               ,
-                WORD_WIDTH              = `WORD_WIDTH         , 
-                WORD_WIDTH_ACC          = `WORD_WIDTH_ACC     ,
-                M_DATA_WIDTH_HF_CONV    = COLS  * ROWS  * WORD_WIDTH_ACC,
-                M_DATA_WIDTH_HF_CONV_DW = ROWS  * WORD_WIDTH_ACC,
+                X_BITS                  = `X_BITS             , 
+                K_BITS                  = `K_BITS             , 
+                Y_BITS                  = `Y_BITS             ,
+                M_DATA_WIDTH_HF_CONV    = COLS  * ROWS  * Y_BITS,
+                M_DATA_WIDTH_HF_CONV_DW = ROWS  * Y_BITS,
                 DW_IN_KEEP_WIDTH        = M_DATA_WIDTH_HF_CONV_DW/8,
 
                 S_PIXELS_WIDTH_LF       = `S_PIXELS_WIDTH_LF  ,
@@ -49,9 +50,9 @@ module dnn_engine #(
   wire pixels_m_valid, pixels_m_ready;
   wire weights_m_valid, weights_m_ready, weights_m_last;
   wire conv_s_valid, conv_s_ready;
-  wire [WORD_WIDTH*ROWS    -1:0] pixels_m_data;
-  wire [WORD_WIDTH*COLS    -1:0] weights_m_data;
-  wire [TUSER_WIDTH        -1:0] weights_m_user;
+  wire [X_BITS*ROWS -1:0] pixels_m_data;
+  wire [K_BITS*COLS -1:0] weights_m_data;
+  wire [TUSER_WIDTH -1:0] weights_m_user;
 
   wire conv_m_axis_tready, conv_m_axis_tvalid, conv_m_axis_tlast ;
   wire [TUSER_WIDTH          -1:0] conv_m_axis_tuser;

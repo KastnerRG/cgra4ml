@@ -5,8 +5,8 @@
 
 module dnn_engine_tb #( 
 parameter
-  VALID_PROB = 1,
-  READY_PROB = 1,
+  VALID_PROB = 50,
+  READY_PROB = 50,
 
 `ifdef ICARUS
   DIR_PATH   = "vectors/",
@@ -32,43 +32,43 @@ parameter
 
   // SIGNALS
 
-  localparam  ROWS                       = `ROWS                      ,
-              COLS                       = `COLS                      ,
-              WORD_WIDTH                 = `WORD_WIDTH                , 
-              WORD_WIDTH_ACC             = `WORD_WIDTH_ACC            ,
-              M_OUTPUT_WIDTH_LF          = `M_OUTPUT_WIDTH_LF         ,
-              S_WEIGHTS_WIDTH_LF         = `S_WEIGHTS_WIDTH_LF        ,
-              S_PIXELS_WIDTH_LF          = `S_PIXELS_WIDTH_LF         ,
-              M_DATA_WIDTH_HF_CONV_DW    = ROWS  * WORD_WIDTH_ACC     ,
-              WORD_WIDTH_OUT             = WORD_WIDTH_ACC             ; 
+  localparam  ROWS                       = `ROWS    ,
+              COLS                       = `COLS    ,
+              Y_BITS                     = `Y_BITS  ,
+              X_BITS                     = `X_BITS  ,
+              K_BITS                     = `K_BITS  ,
+              M_OUTPUT_WIDTH_LF          = `M_OUTPUT_WIDTH_LF ,
+              S_WEIGHTS_WIDTH_LF         = `S_WEIGHTS_WIDTH_LF,
+              S_PIXELS_WIDTH_LF          = `S_PIXELS_WIDTH_LF ,
+              M_DATA_WIDTH_HF_CONV_DW    = ROWS  * Y_BITS     ; 
 
   logic aresetn, hf_aresetn;
   logic s_axis_pixels_tready, s_axis_pixels_tvalid, s_axis_pixels_tlast;
-  logic [S_PIXELS_WIDTH_LF/WORD_WIDTH -1:0][WORD_WIDTH-1:0] s_axis_pixels_tdata;
-  logic [S_PIXELS_WIDTH_LF/WORD_WIDTH -1:0] s_axis_pixels_tkeep;
+  logic [S_PIXELS_WIDTH_LF/X_BITS -1:0][X_BITS-1:0] s_axis_pixels_tdata;
+  logic [S_PIXELS_WIDTH_LF/X_BITS -1:0] s_axis_pixels_tkeep;
 
   logic s_axis_weights_tready, s_axis_weights_tvalid, s_axis_weights_tlast;
-  logic [S_WEIGHTS_WIDTH_LF/WORD_WIDTH-1:0][WORD_WIDTH-1:0] s_axis_weights_tdata;
-  logic [S_WEIGHTS_WIDTH_LF/WORD_WIDTH-1:0] s_axis_weights_tkeep;
+  logic [S_WEIGHTS_WIDTH_LF/K_BITS-1:0][K_BITS-1:0] s_axis_weights_tdata;
+  logic [S_WEIGHTS_WIDTH_LF/K_BITS-1:0] s_axis_weights_tkeep;
 
   logic m_axis_tvalid, m_axis_tready, m_axis_tlast;
-  logic [M_OUTPUT_WIDTH_LF/WORD_WIDTH_OUT-1:0][WORD_WIDTH_OUT-1:0] m_axis_tdata;
-  logic [M_OUTPUT_WIDTH_LF/WORD_WIDTH_OUT-1:0] m_axis_tkeep;
+  logic [M_OUTPUT_WIDTH_LF/Y_BITS-1:0][Y_BITS-1:0] m_axis_tdata;
+  logic [M_OUTPUT_WIDTH_LF/Y_BITS-1:0] m_axis_tkeep;
 
   assign hf_aresetn = aresetn;
 
   dnn_engine #(
-    .S_PIXELS_KEEP_WIDTH  (S_PIXELS_WIDTH_LF      /WORD_WIDTH    ),
-    .S_WEIGHTS_KEEP_WIDTH (S_WEIGHTS_WIDTH_LF     /WORD_WIDTH    ),
-    .M_KEEP_WIDTH         (M_OUTPUT_WIDTH_LF      /WORD_WIDTH_OUT),
-    .DW_IN_KEEP_WIDTH     (M_DATA_WIDTH_HF_CONV_DW/WORD_WIDTH_ACC)
+    .S_PIXELS_KEEP_WIDTH  (S_PIXELS_WIDTH_LF      /X_BITS),
+    .S_WEIGHTS_KEEP_WIDTH (S_WEIGHTS_WIDTH_LF     /K_BITS),
+    .M_KEEP_WIDTH         (M_OUTPUT_WIDTH_LF      /Y_BITS),
+    .DW_IN_KEEP_WIDTH     (M_DATA_WIDTH_HF_CONV_DW/Y_BITS)
   ) pipe (.*);
 
   // SOURCEs & SINKS
 
-  AXIS_Source #(WORD_WIDTH    , S_PIXELS_WIDTH_LF , VALID_PROB, {DIR_PATH, MODEL, "_conv_", IDX, "_x.txt"    }) source_x (aclk, aresetn, s_axis_pixels_tready , s_axis_pixels_tvalid , s_axis_pixels_tlast , s_axis_pixels_tdata , s_axis_pixels_tkeep );
-  AXIS_Source #(WORD_WIDTH    , S_WEIGHTS_WIDTH_LF, VALID_PROB, {DIR_PATH, MODEL, "_conv_", IDX, "_w.txt"    }) source_k (aclk, aresetn, s_axis_weights_tready, s_axis_weights_tvalid, s_axis_weights_tlast, s_axis_weights_tdata, s_axis_weights_tkeep);
-  AXIS_Sink   #(WORD_WIDTH_OUT, M_OUTPUT_WIDTH_LF , READY_PROB, {DIR_PATH, MODEL, "_conv_", IDX, "_y_sim.txt"}) sink_y   (aclk, aresetn, m_axis_tready        , m_axis_tvalid        , m_axis_tlast        , m_axis_tdata        , m_axis_tkeep        );
+  AXIS_Source #(X_BITS, S_PIXELS_WIDTH_LF , VALID_PROB, {DIR_PATH, MODEL, "_conv_", IDX, "_x.txt"    }) source_x (aclk, aresetn, s_axis_pixels_tready , s_axis_pixels_tvalid , s_axis_pixels_tlast , s_axis_pixels_tdata , s_axis_pixels_tkeep );
+  AXIS_Source #(K_BITS, S_WEIGHTS_WIDTH_LF, VALID_PROB, {DIR_PATH, MODEL, "_conv_", IDX, "_w.txt"    }) source_k (aclk, aresetn, s_axis_weights_tready, s_axis_weights_tvalid, s_axis_weights_tlast, s_axis_weights_tdata, s_axis_weights_tkeep);
+  AXIS_Sink   #(Y_BITS, M_OUTPUT_WIDTH_LF , READY_PROB, {DIR_PATH, MODEL, "_conv_", IDX, "_y_sim.txt"}) sink_y   (aclk, aresetn, m_axis_tready        , m_axis_tvalid        , m_axis_tlast        , m_axis_tdata        , m_axis_tkeep        );
 
   initial source_x.axis_push;
   initial source_k.axis_push;

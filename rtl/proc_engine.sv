@@ -14,29 +14,31 @@ Additional Comments:
 module proc_engine #(
   localparam  COLS                = `COLS                ,
               ROWS                = `ROWS                ,
-              WORD_WIDTH_IN       = `WORD_WIDTH          ,
-              WORD_WIDTH_OUT      = `WORD_WIDTH_ACC      ,
+              X_BITS              = `X_BITS              ,
+              K_BITS              = `K_BITS              ,
+              Y_BITS              = `Y_BITS              ,
               LATENCY_ACCUMULATOR = `LATENCY_ACCUMULATOR ,
               LATENCY_MULTIPLIER  = `LATENCY_MULTIPLIER  ,
               KW_MAX              = `KW_MAX              ,
               SW_MAX              = `SW_MAX              ,
-              TUSER_WIDTH         = `TUSER_WIDTH         
+              TUSER_WIDTH         = `TUSER_WIDTH         ,
+              M_BITS              = X_BITS + K_BITS
 )(
   input  logic clk, resetn,
 
   output logic s_ready,
   input  logic s_valid, s_last,
-  input  logic [ROWS-1:0][WORD_WIDTH_IN-1:0] s_data_pixels,
-  input  logic [COLS-1:0][WORD_WIDTH_IN-1:0] s_data_weights,                                                                        
+  input  logic [ROWS-1:0][X_BITS-1:0] s_data_pixels,
+  input  logic [COLS-1:0][K_BITS-1:0] s_data_weights,                                                                        
   input  tuser_st s_user,
 
   input  logic m_ready,
   output logic m_valid, m_last,
-  output logic [COLS-1:0][ROWS-1:0][WORD_WIDTH_OUT-1:0] m_data,
+  output logic [COLS-1:0][ROWS-1:0][Y_BITS-1:0] m_data,
   output tuser_st m_user
 );
   logic en, i_valid, i_last;
-  logic [COLS-1:0][ROWS -1:0][WORD_WIDTH_OUT-1:0] i_data;
+  logic [COLS-1:0][ROWS -1:0][Y_BITS-1:0] i_data;
   tuser_st i_user;
 
   logic clken_mul, sel_shift_next, sel_shift, mul_m_valid, acc_m_valid_next, acc_m_valid, mul_m_last, acc_m_last;
@@ -46,8 +48,8 @@ module proc_engine #(
 
   logic [COLS    -1:0] lut_sum_start [KW_MAX/2:0][SW_MAX -1:0];
 
-  logic [WORD_WIDTH_IN*2-1:0] mul_m_data  [COLS   -1:0][ROWS -1:0];
-  logic [WORD_WIDTH_OUT -1:0] shift_data  [COLS   -1:0][ROWS -1:0];
+  logic [M_BITS -1:0] mul_m_data  [COLS   -1:0][ROWS -1:0];
+  logic [Y_BITS -1:0] shift_data  [COLS   -1:0][ROWS -1:0];
 
   assign s_ready = clken_mul;
 
@@ -91,8 +93,9 @@ module proc_engine #(
       for (c=0; c < COLS   ; c++) begin: Ma
         assign shift_data [c][r] = c==0 ? 0 : i_data [c-1][r];
         proc_element #(
-          .WORD_WIDTH_IN (WORD_WIDTH_IN ),
-          .WORD_WIDTH_OUT(WORD_WIDTH_OUT)
+          .X_BITS (X_BITS),
+          .K_BITS (K_BITS),
+          .Y_BITS (Y_BITS)
           ) PE (
           .clk           (clk           ),
           .clken         (en            ),
@@ -129,7 +132,7 @@ module proc_engine #(
       else          valid_prev <= i_valid;
 
     skid_buffer #(
-      .WIDTH   (COLS   *ROWS *WORD_WIDTH_OUT + TUSER_WIDTH + 1)
+      .WIDTH   (COLS*ROWS*Y_BITS + TUSER_WIDTH + 1)
     ) AXIS_REG (
       .aclk    (clk),
       .aresetn (resetn),

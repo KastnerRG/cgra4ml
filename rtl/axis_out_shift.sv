@@ -4,7 +4,7 @@ module axis_out_shift #(
   localparam ROWS                 = `ROWS                 ,
              COLS                 = `COLS                 ,
              KW_MAX               = `KW_MAX               ,
-             WORD_WIDTH           = `WORD_WIDTH_ACC       
+             WORD_WIDTH           = `Y_BITS       
 
 )(
   input logic aclk, aresetn,
