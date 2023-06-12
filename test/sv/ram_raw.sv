@@ -34,9 +34,9 @@ module ram_raw #(
 endmodule
 
 module ram_weights #(
-  parameter   DEPTH   = `BRAM_WEIGHTS_DEPTH,
+  parameter   DEPTH   = `RAM_WEIGHTS_DEPTH,
               WIDTH   = `COLS * `K_BITS,
-              LATENCY = `LATENCY_BRAM
+              LATENCY = `DELAY_W_RAM
 )(
   input  logic clka ,
   input  logic ena  ,

@@ -17,10 +17,9 @@ module proc_engine #(
               X_BITS              = `X_BITS              ,
               K_BITS              = `K_BITS              ,
               Y_BITS              = `Y_BITS              ,
-              LATENCY_ACCUMULATOR = `LATENCY_ACCUMULATOR ,
-              LATENCY_MULTIPLIER  = `LATENCY_MULTIPLIER  ,
+              DELAY_ACC           = `DELAY_ACC           ,
+              DELAY_MUL           = `DELAY_MUL           ,
               KW_MAX              = `KW_MAX              ,
-              SW_MAX              = `SW_MAX              ,
               TUSER_WIDTH         = `TUSER_WIDTH         ,
               M_BITS              = X_BITS + K_BITS
 )(
@@ -46,7 +45,7 @@ module proc_engine #(
   logic [COLS   -1: 0] acc_m_sum_start, acc_s_valid, acc_m_keep;
   tuser_st mul_m_user, acc_s_user, mux_s2_user, acc_m_user;
 
-  logic [COLS    -1:0] lut_sum_start [KW_MAX/2:0][SW_MAX -1:0];
+  logic [COLS    -1:0] lut_sum_start [KW_MAX/2:0];
 
   logic [M_BITS -1:0] mul_m_data  [COLS   -1:0][ROWS -1:0];
   logic [Y_BITS -1:0] shift_data  [COLS   -1:0][ROWS -1:0];
@@ -55,7 +54,7 @@ module proc_engine #(
 
   generate
     genvar r,c,kw2,sw_1;
-    n_delay #(.N(LATENCY_MULTIPLIER), .W(TUSER_WIDTH+2)) MUL_CONTROL (.c(clk), .rn(resetn), .e(clken_mul), .i({s_valid, s_last, s_user}), .o ({mul_m_valid, mul_m_last, mul_m_user}));
+    n_delay #(.N(DELAY_MUL), .W(TUSER_WIDTH+2)) MUL_CONTROL (.c(clk), .rn(resetn), .e(clken_mul), .i({s_valid, s_last, s_user}), .o ({mul_m_valid, mul_m_last, mul_m_user}));
 
     assign sel_shift_next = mul_m_valid && mul_m_user.is_cin_last && (mul_m_user.kw2 != 0);
 
@@ -65,17 +64,11 @@ module proc_engine #(
 
     assign clken_mul = en  && !sel_shift;
             
-    for (c=0; c < COLS   ; c++) begin: Mb
+    for (c=0; c < COLS; c++) begin: Mb
       for (kw2=0; kw2 <= KW_MAX/2; kw2++)
-        for (sw_1=0; sw_1 < SW_MAX; sw_1++) begin
-          localparam k = kw2*2 + 1;
-          localparam s = sw_1 + 1;
-          localparam j = k + s -1;
-
-          assign lut_sum_start[kw2][sw_1][c] = c % j < s; // c % 3 < 1 : 0,1
-        end
+        assign lut_sum_start[kw2][c] = c % (kw2*2+1) == 0; // c % 3 < 1 : 0,1
       
-      assign acc_m_sum_start [c] = lut_sum_start[acc_m_user.kw2][acc_m_user.sw_1][c];
+      assign acc_m_sum_start [c] = lut_sum_start[acc_m_user.kw2][c];
       assign acc_s_valid     [c] = sel_shift ? ~acc_m_sum_start [c] : mul_m_valid;
       assign clken_acc       [c] = en    && acc_s_valid [c];
 
@@ -112,11 +105,11 @@ module proc_engine #(
         );
     end end
 
-    n_delay #(.N(LATENCY_ACCUMULATOR), .W(TUSER_WIDTH)) ACC_USER (.c(clk), .rn(resetn), .e(en & mul_m_valid), .i(mul_m_user), .o(acc_m_user));
+    n_delay #(.N(DELAY_ACC), .W(TUSER_WIDTH)) ACC_USER (.c(clk), .rn(resetn), .e(en & mul_m_valid), .i(mul_m_user), .o(acc_m_user));
 
     assign acc_m_valid_next = !sel_shift && mul_m_valid && (mul_m_user.is_config || mul_m_user.is_cin_last);
     
-    n_delay #(.N(LATENCY_ACCUMULATOR), .W(2)) ACC_VALID_LAST(.c(clk), .rn(resetn), .e(en), .i({acc_m_valid_next, mul_m_last}), .o({acc_m_valid, acc_m_last}));
+    n_delay #(.N(DELAY_ACC), .W(2)) ACC_VALID_LAST(.c(clk), .rn(resetn), .e(en), .i({acc_m_valid_next, mul_m_last}), .o({acc_m_valid, acc_m_last}));
 
     // AXI Stream
 

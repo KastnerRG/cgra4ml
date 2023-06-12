@@ -20,7 +20,7 @@
   //   if (clken_mul) mul_m_data2 <= mul_m_data_d;
 
   wire signed [M_BITS-1:0] mul_m_data_d = s_data_pixels * s_data_weights;
-  n_delay #(.N(`LATENCY_MULTIPLIER), .W(M_BITS)) MUL (.c(clk), .rn(1'b1), .e(clken_mul), .i(mul_m_data_d), .o(mul_m_data));
+  n_delay #(.N(`DELAY_MUL), .W(M_BITS)) MUL (.c(clk), .rn(1'b1), .e(clken_mul), .i(mul_m_data_d), .o(mul_m_data));
   
   wire signed [Y_BITS -1:0] add_in_1 = sel_shift ? shift_data : Y_BITS'($signed(mul_m_data));
   wire signed [Y_BITS -1:0] add_in_2 = bypass    ? 0          : m_data;

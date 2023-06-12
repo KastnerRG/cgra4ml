@@ -118,10 +118,10 @@ module axis_pixels #(
     endcase
 
   // Counters: KH, CI, W, Blocks
-  counter #(.W(BITS_KH)       ) C_KH (.clk(aclk), .reset(en_config), .en(en_shift   ), .max_in(ref_kh2_in*2 ), .last_clk(last_clk_kh ));
-  counter #(.W(BITS_CI)   ) C_CI (.clk(aclk), .reset(en_config), .en(last_clk_kh), .max_in(ref_ci_in    ), .last_clk(last_clk_ci ));
-  counter #(.W(BITS_XW)  ) C_W  (.clk(aclk), .reset(en_config), .en(last_clk_ci), .max_in(ref_w_in     ), .last_clk(last_clk_w  ));
-  counter #(.W(BITS_IM_BLOCKS)) C_L  (.clk(aclk), .reset(en_config), .en(last_clk_w ), .max_in(ref_l_in     ), .last    (last_l      ), .first(first_l));
+  counter #(.W(BITS_KH)       ) C_KH (.clk(aclk), .reset(en_config), .en(en_shift   ), .max_in(BITS_KH'(ref_kh2_in*2)), .last_clk(last_clk_kh ));
+  counter #(.W(BITS_CI)       ) C_CI (.clk(aclk), .reset(en_config), .en(last_clk_kh), .max_in(ref_ci_in             ), .last_clk(last_clk_ci ));
+  counter #(.W(BITS_XW)       ) C_W  (.clk(aclk), .reset(en_config), .en(last_clk_ci), .max_in(ref_w_in              ), .last_clk(last_clk_w  ));
+  counter #(.W(BITS_IM_BLOCKS)) C_L  (.clk(aclk), .reset(en_config), .en(last_clk_w ), .max_in(ref_l_in              ), .last    (last_l      ), .first(first_l));
 
   // RAM
   logic [$clog2(RAM_EDGES_DEPTH) -1:0] ram_addr, ram_addr_r, ram_addr_in;
