@@ -19,7 +19,7 @@
     `define RAM_EDGES_DEPTH     672      	// max (KW * CI * XW), across layers when KW != 1
 
     `define LATENCY_ACCUMULATOR   1                      	// constant, for now
-    `define LATENCY_MULTIPLIER    1                      	// constant, for now 
+    `define LATENCY_MULTIPLIER    2                      	// constant, for now 
     `define LATENCY_BRAM          2                      	// constant, for now 
 
     `define S_WEIGHTS_WIDTH_LF  64              	// constant (64), for now

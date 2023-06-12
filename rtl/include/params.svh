@@ -13,7 +13,6 @@
         logic                 is_col_1_k2;
         logic                 is_cin_last;
         logic                 is_w_first_clk;
-        logic                 is_sum_start;
         logic                 is_w_first_kw2;
         logic                 is_w_last;
     } tuser_st;
