@@ -1,6 +1,6 @@
 set TOP dnn_engine
-set FREQ_MHZ 600
-set clock_cycle [expr $FREQ_MHZ/1000]
+set FREQ_MHZ 1000
+set clock_cycle [expr 1000/$FREQ_MHZ]
 set io_delay [expr $clock_cycle/5]
 
 #--------- CONFIG
@@ -31,11 +31,11 @@ uniquify $TOP
 read_sdc ../constraints/$TOP.sdc
 
 #--------- RETIME OPTIONS
-# set_db retime_async_reset true
-# set_db design:${TOP} .retime true
+set_db retime_async_reset true
+set_db design:${TOP} .retime true
 
 #--------- SYNTHESIZE
-set_db syn_global_effort low
+set_db syn_global_effort high
 syn_generic
 syn_map
 syn_opt
