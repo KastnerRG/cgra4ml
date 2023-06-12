@@ -49,7 +49,7 @@ def product_dict(**kwargs):
 @pytest.fixture(scope="module", params=list(product_dict(
                                                 X_BITS = [8    ], 
                                                 K_BITS = [4    ], 
-                                                Y_BITS = [32   ], 
+                                                Y_BITS = [24   ], 
                                                 ROWS   = [4    ], 
                                                 COLS   = [24   ], 
                                                 KW_MAX = [3    ], 
@@ -59,6 +59,7 @@ def product_dict(**kwargs):
                                                 XH_MAX = [32   ], 
                                                 XN_MAX = [4    ], 
                                                 IN_BITS= [64   ], 
+                                                OUT_BITS= [48   ], 
                                                 BRAM_WEIGHTS_DEPTH = [2049],  # KH*CI + Config beats
                                                 RAM_EDGES_DEPTH    = [672 ], # max(CI * XW * (XH/ROWS-1))
                                             )))
@@ -126,7 +127,7 @@ def compile(request):
 
     `define S_WEIGHTS_WIDTH_LF  {c.IN_BITS}              \t// constant (64), for now
     `define S_PIXELS_WIDTH_LF   {c.IN_BITS}              \t// constant (64), for now
-    `define M_OUTPUT_WIDTH_LF   64                       \t// constant (64), for now
+    `define M_OUTPUT_WIDTH_LF   {c.OUT_BITS}             \t// constant (64), for now
     ''')
         
     with open('../fpga/scripts/vivado_config.tcl', 'w') as f:
@@ -141,7 +142,7 @@ def compile(request):
     set KH_MAX             {c.KH_MAX}
     set S_WEIGHTS_WIDTH_LF  {c.IN_BITS}
     set S_PIXELS_WIDTH_LF   {c.IN_BITS}
-    set M_OUTPUT_WIDTH_LF   64
+    set M_OUTPUT_WIDTH_LF   {c.OUT_BITS}
         ''')
 
     os.makedirs('xsim', exist_ok=True)
