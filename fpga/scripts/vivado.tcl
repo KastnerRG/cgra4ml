@@ -10,7 +10,7 @@ create_project project_1 ${project_name}_vivado_accelerator -part xc7z020clg400-
 #**** CREATE RAM IPs
 
 set WIDTH [expr "$COLS * $K_BITS"]
-set DEPTH [expr "$BRAM_WEIGHTS_DEPTH"]
+set DEPTH [expr "$RAM_WEIGHTS_DEPTH "]
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name ram_weights
 set_property -dict [list CONFIG.Write_Width_A $WIDTH CONFIG.Write_Depth_A $DEPTH CONFIG.Read_Width_A $WIDTH CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Write_Width_B $WIDTH CONFIG.Read_Width_B $WIDTH CONFIG.Register_PortA_Output_of_Memory_Primitives {true}] [get_ips ram_weights]
 

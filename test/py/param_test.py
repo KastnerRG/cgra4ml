@@ -53,14 +53,13 @@ def product_dict(**kwargs):
                                                 ROWS   = [4    ], 
                                                 COLS   = [24   ], 
                                                 KW_MAX = [3    ], 
-                                                SW_MAX = [2    ], 
                                                 CI_MAX = [1024 ], 
                                                 XW_MAX = [32   ], 
                                                 XH_MAX = [32   ], 
                                                 XN_MAX = [4    ], 
                                                 IN_BITS= [64   ], 
                                                 OUT_BITS= [48   ], 
-                                                BRAM_WEIGHTS_DEPTH = [2049],  # KH*CI + Config beats
+                                                RAM_WEIGHTS_DEPTH = [2049],  # KH*CI + Config beats
                                                 RAM_EDGES_DEPTH    = [672 ], # max(CI * XW * (XH/ROWS-1))
                                             )))
 
@@ -73,7 +72,6 @@ def compile(request):
     
     d = { 
         'KH_MAX'                :c.KW_MAX, 
-        'SH_MAX'                :c.SW_MAX, 
         'L_MAX'                 : int(np.ceil(c.XH_MAX//c.ROWS)),
     }
     n = namedtuple('Compile', d)(**d)
@@ -84,13 +82,11 @@ def compile(request):
         'X_PAD'                 : int(np.ceil(c.KH_MAX//2)),
         'BITS_KW2'              :clog2((c.KW_MAX+1)/2),
         'BITS_KH2'              :clog2((c.KH_MAX+1)/2),
-        'BITS_SW'               :clog2(c.SW_MAX),
-        'BITS_SH'               :clog2(c.SH_MAX),
         'BITS_CIN_MAX'          :clog2(c.CI_MAX),
         'BITS_COLS_MAX'         :clog2(c.XW_MAX),
         'BITS_BLOCKS_MAX'       :clog2( c.L_MAX),
         'BITS_XN_MAX'           :clog2(c.XN_MAX),
-        'BITS_BRAM_WEIGHTS_ADDR': clog2(c.BRAM_WEIGHTS_DEPTH),
+        'BITS_BRAM_WEIGHTS_ADDR': clog2(c.RAM_WEIGHTS_DEPTH),
          }
     n = namedtuple('Compile', d)(**d)
     c = namedtuple("Compile", c._fields + n._fields)(*(c + n))
@@ -111,19 +107,17 @@ def compile(request):
 
     `define KH_MAX              {c.KH_MAX}               \t// max of kernel height, across layers
     `define KW_MAX              {c.KW_MAX}               \t// max of kernel width, across layers
-    `define SH_MAX              {c.SH_MAX}               \t// max of stride height, across layers
-    `define SW_MAX              {c.SW_MAX}               \t// max of stride width, across layers
     `define XH_MAX              {c.XH_MAX}               \t// max of input image height, across layers
     `define XW_MAX              {c.XW_MAX}               \t// max of input image width, across layers
     `define XN_MAX              {c.XN_MAX}               \t// max of input batch size, across layers
     `define CI_MAX              {c.CI_MAX}               \t// max of input channels, across layers
     `define CONFIG_BEATS        {c.CONFIG_BEATS}         \t// constant, for now
-    `define BRAM_WEIGHTS_DEPTH  {c.BRAM_WEIGHTS_DEPTH}   \t// CONFIG_BEATS + max(KW * CI), across layers
+    `define RAM_WEIGHTS_DEPTH  {c.RAM_WEIGHTS_DEPTH}   \t// CONFIG_BEATS + max(KW * CI), across layers
     `define RAM_EDGES_DEPTH     {c.RAM_EDGES_DEPTH}      \t// max (KW * CI * XW), across layers when KW != 1
 
-    `define LATENCY_ACCUMULATOR   1                      \t// constant, for now
-    `define LATENCY_MULTIPLIER    2                      \t// constant, for now 
-    `define LATENCY_BRAM          2                      \t// constant, for now 
+    `define DELAY_ACC    1                               \t// constant, for now
+    `define DELAY_MUL    2                               \t// constant, for now 
+    `define DELAY_W_RAM  2                               \t// constant, for now 
 
     `define S_WEIGHTS_WIDTH_LF  {c.IN_BITS}              \t// constant (64), for now
     `define S_PIXELS_WIDTH_LF   {c.IN_BITS}              \t// constant (64), for now
@@ -133,11 +127,11 @@ def compile(request):
     with open('../fpga/scripts/vivado_config.tcl', 'w') as f:
         f.write(f'''
     # Written from param_tests.py
-    set BRAM_WEIGHTS_DEPTH {c.BRAM_WEIGHTS_DEPTH}
+    set RAM_WEIGHTS_DEPTH {c.RAM_WEIGHTS_DEPTH}
     set COLS               {c.COLS}
     set X_BITS             {c.X_BITS}
     set K_BITS             {c.K_BITS}
-    set LATENCY_BRAM       2
+    set DELAY_W_RAM        2
     set RAM_EDGES_DEPTH    {c.RAM_EDGES_DEPTH}
     set KH_MAX             {c.KH_MAX}
     set S_WEIGHTS_WIDTH_LF  {c.IN_BITS}

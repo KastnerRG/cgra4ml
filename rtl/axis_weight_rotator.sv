@@ -15,8 +15,8 @@ module axis_weight_rotator #(
     XH_MAX              = `XH_MAX              ,
     XN_MAX              = `XN_MAX              ,
     S_WEIGHTS_WIDTH_LF  = `S_WEIGHTS_WIDTH_LF  ,
-    LATENCY_BRAM        = `LATENCY_BRAM        ,
-    BRAM_WEIGHTS_DEPTH  = `BRAM_WEIGHTS_DEPTH  ,
+    DELAY_W_RAM         = `DELAY_W_RAM         ,
+    RAM_WEIGHTS_DEPTH   = `RAM_WEIGHTS_DEPTH   ,
     CONFIG_BEATS        = `CONFIG_BEATS        ,
 
   localparam  
@@ -29,8 +29,8 @@ module axis_weight_rotator #(
 
     M_WIDTH             = WORD_WIDTH*COLS          ,
     BRAM_WIDTH          = M_WIDTH                  ,
-    BRAM_DEPTH          = BRAM_WEIGHTS_DEPTH       ,
-    BITS_ADDR           = $clog2(BRAM_WEIGHTS_DEPTH),
+    BRAM_DEPTH          = RAM_WEIGHTS_DEPTH        ,
+    BITS_ADDR           = $clog2(RAM_WEIGHTS_DEPTH ),
     BITS_CONFIG_BEATS   = $clog2(CONFIG_BEATS+1)
   )(
     
@@ -219,7 +219,7 @@ module axis_weight_rotator #(
         .R_DEPTH      (BRAM_DEPTH),
         .R_DATA_WIDTH (BRAM_WIDTH),
         .W_DATA_WIDTH (BRAM_WIDTH),
-        .LATENCY      (LATENCY_BRAM),
+        .LATENCY      (DELAY_W_RAM ),
         .ABSORB       (0)
       ) BRAM (
         .clk          (aclk),
@@ -261,7 +261,7 @@ module axis_weight_rotator #(
     end
   endgenerate
 
-  n_delay #(.N(LATENCY_BRAM), .W(1)) BRAM_VALID (.c(aclk), .rn(aresetn & bram_reg_resetn), .e(1'b1), .i(bram_m_ready[i_read]), .o(bram_m_valid));
+  n_delay #(.N(DELAY_W_RAM ), .W(1)) BRAM_VALID (.c(aclk), .rn(aresetn & bram_reg_resetn), .e(1'b1), .i(bram_m_ready[i_read]), .o(bram_m_valid));
 
   axis_pipeline_register2 # (
     .DATA_WIDTH  (BRAM_WIDTH),
@@ -271,7 +271,7 @@ module axis_weight_rotator #(
     .DEST_ENABLE (0),
     .USER_ENABLE (0),
     .REG_TYPE    (2), // skid buffer
-    .LENGTH      (LATENCY_BRAM)
+    .LENGTH      (DELAY_W_RAM )
   ) REG_PIPE (
     .clk          (aclk),
     .rst          (~(aresetn & bram_reg_resetn)),
@@ -289,12 +289,12 @@ module axis_weight_rotator #(
   config_st ref_i_read;
   assign ref_i_read = ref_config[i_read]; 
 
-  counter #(.W(BITS_CONFIG_BEATS)) C_CONFIG    (.clk(aclk), .reset(copy_config), .en(en_count_config), .max_in(CONFIG_BEATS-1        ), .last_clk(lc_config), .last(l_config)                                  );
-  counter #(.W(BITS_KW          )) C_KW        (.clk(aclk), .reset(copy_config), .en(en_kw          ), .max_in(2*ref_i_read.kw2      ), .last_clk(lc_kw    ), .last(l_kw    ), .first(f_kw    )                );
-  counter #(.W(BITS_CI          )) C_CI        (.clk(aclk), .reset(copy_config), .en(lc_kw          ), .max_in(  ref_i_read.cin_1    ), .last_clk(lc_cin   ), .last(l_cin   ), .first(f_cin   )                );
-  counter #(.W(BITS_XW          )) C_XW        (.clk(aclk), .reset(copy_config), .en(lc_cin         ), .max_in(  ref_i_read.cols_1   ), .last_clk(lc_cols  ), .last(l_cols  ), .first(f_cols  ), .count(c_cols));
-  counter #(.W(BITS_IM_BLOCKS   )) C_IM_BLOCKS (.clk(aclk), .reset(copy_config), .en(lc_cols        ), .max_in(  ref_i_read.blocks_1 ), .last_clk(lc_blocks), .last(l_blocks)                                  );
-  counter #(.W(BITS_XN          )) C_XN        (.clk(aclk), .reset(copy_config), .en(lc_blocks      ), .max_in(  ref_i_read.xn_1     ), .last_clk(lc_xn    ), .last(l_xn    )                                  );
+  counter #(.W(BITS_CONFIG_BEATS)) C_CONFIG    (.clk(aclk), .reset(copy_config), .en(en_count_config), .max_in(BITS_CONFIG_BEATS'( CONFIG_BEATS-1       )), .last_clk(lc_config), .last(l_config)                                  );
+  counter #(.W(BITS_KW          )) C_KW        (.clk(aclk), .reset(copy_config), .en(en_kw          ), .max_in(BITS_KW          '( 2*ref_i_read.kw2     )), .last_clk(lc_kw    ), .last(l_kw    ), .first(f_kw    )                );
+  counter #(.W(BITS_CI          )) C_CI        (.clk(aclk), .reset(copy_config), .en(lc_kw          ), .max_in(BITS_CI          '(   ref_i_read.cin_1   )), .last_clk(lc_cin   ), .last(l_cin   ), .first(f_cin   )                );
+  counter #(.W(BITS_XW          )) C_XW        (.clk(aclk), .reset(copy_config), .en(lc_cin         ), .max_in(BITS_XW          '(   ref_i_read.cols_1  )), .last_clk(lc_cols  ), .last(l_cols  ), .first(f_cols  ), .count(c_cols));
+  counter #(.W(BITS_IM_BLOCKS   )) C_IM_BLOCKS (.clk(aclk), .reset(copy_config), .en(lc_cols        ), .max_in(BITS_IM_BLOCKS   '(   ref_i_read.blocks_1)), .last_clk(lc_blocks), .last(l_blocks)                                  );
+  counter #(.W(BITS_XN          )) C_XN        (.clk(aclk), .reset(copy_config), .en(lc_blocks      ), .max_in(BITS_XN          '(   ref_i_read.xn_1    )), .last_clk(lc_xn    ), .last(l_xn    )                                  );
 
   // Last & User
 
@@ -302,10 +302,8 @@ module axis_weight_rotator #(
 
   assign m_axis_tuser.is_config        = state_read  == R_PASS_CONFIG_S;
   assign m_axis_tuser.kw2              = ref_i_read.kw2;
-  assign m_axis_tuser.sw_1             = 0;
   assign m_axis_tuser.is_w_first_clk   = f_cols && f_cin && f_kw;
   assign m_axis_tuser.is_cin_last      = l_kw   && l_cin;
-  assign m_axis_tuser.is_col_1_k2      = c_cols == ref_i_read.kw2; // i = cols-1-k/2 === [cols-1-i] = k/2
   assign m_axis_tuser.is_w_first_kw2   = (ref_i_read.cols_1 - c_cols) < ref_i_read.kw2;
   assign m_axis_tuser.is_w_last        = l_cols;
 
