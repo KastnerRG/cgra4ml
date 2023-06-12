@@ -35,7 +35,7 @@ endmodule
 
 module ram_weights #(
   parameter   DEPTH   = `BRAM_WEIGHTS_DEPTH,
-              WIDTH   = `COLS * `WORD_WIDTH,
+              WIDTH   = `COLS * `K_BITS,
               LATENCY = `LATENCY_BRAM
 )(
   input  logic clka ,
@@ -56,7 +56,7 @@ endmodule
 
 module ram_edges #(
   parameter   DEPTH   = `RAM_EDGES_DEPTH,
-              WIDTH   = `WORD_WIDTH * (`KH_MAX/2),
+              WIDTH   = `X_BITS * (`KH_MAX/2),
               LATENCY  = 1
 )(
   input  logic clka ,
