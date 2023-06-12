@@ -47,7 +47,6 @@ module proc_engine #(
   logic [COLS    -1:0] lut_sum_start [KW_MAX/2:0][SW_MAX -1:0];
 
   logic [WORD_WIDTH_IN*2-1:0] mul_m_data  [COLS   -1:0][ROWS -1:0];
-  logic [WORD_WIDTH_OUT -1:0] acc_s_data  [COLS   -1:0][ROWS -1:0];
   logic [WORD_WIDTH_OUT -1:0] mux_s2_data [COLS   -1:0][ROWS -1:0];
 
   assign s_ready = clken_mul;
@@ -109,7 +108,6 @@ module proc_engine #(
               .mux_s2_data   (mux_s2_data   [m][u]),
               .bypass        (bypass        [m]),
               .clken_acc     (clken_acc     [m]),
-              .acc_s_data    (acc_s_data    [m][u]),
               .m_data        (i_data        [m][u])
             );
     end end
