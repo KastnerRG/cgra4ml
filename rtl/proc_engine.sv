@@ -131,18 +131,27 @@ module proc_engine #(
       if (!resetn)  valid_prev <= 0;
       else          valid_prev <= i_valid;
 
-    skid_buffer #(
-      .WIDTH   (COLS*ROWS*Y_BITS + TUSER_WIDTH + 1)
-    ) AXIS_REG (
-      .aclk    (clk),
-      .aresetn (resetn),
-      .s_ready (i_ready),
-      .s_valid (i_valid),
-      .s_data  ({i_data, i_user, i_last}),
-      .m_data  ({m_data, m_user, m_last}),
-      .m_valid (m_valid),
-      .m_ready (m_ready)
-    );
+  axis_register # (
+    .DATA_WIDTH  (COLS*ROWS*Y_BITS),
+    .KEEP_ENABLE (0),
+    .LAST_ENABLE (1),
+    .USER_ENABLE (1),
+    .USER_WIDTH  (TUSER_WIDTH),
+    .REG_TYPE    (2)  // skid reg
+  ) AXIS_REG  (
+    .clk          (clk),
+    .rst          (!resetn),
+    .s_axis_tdata (i_data ),
+    .s_axis_tvalid(i_valid),
+    .s_axis_tready(i_ready),
+    .s_axis_tlast (i_last ),
+    .s_axis_tuser (i_user ),
+    .m_axis_tdata (m_data ),
+    .m_axis_tvalid(m_valid),
+    .m_axis_tready(m_ready),
+    .m_axis_tlast (m_last ),
+    .m_axis_tuser (m_user )
+  );
 
   endgenerate
 endmodule
