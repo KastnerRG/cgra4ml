@@ -50,9 +50,9 @@ def product_dict(**kwargs):
                                                 X_BITS = [8    ], 
                                                 K_BITS = [4    ], 
                                                 Y_BITS = [24   ], 
-                                                ROWS   = [4    ], 
-                                                COLS   = [24   ], 
-                                                KW_MAX = [3    ], 
+                                                ROWS   = [8    ], 
+                                                COLS   = [25   ], 
+                                                KW_MAX = [11   ], 
                                                 CI_MAX = [1024 ], 
                                                 XW_MAX = [32   ], 
                                                 XH_MAX = [32   ], 
@@ -66,6 +66,7 @@ def product_dict(**kwargs):
 def compile(request):
 
     c = request.param
+    assert c.ROWS >= c.KW_MAX//2 # to capture the bottom pixels
 
     def clog2(x):
         return int(np.ceil(np.log2(x)))
@@ -154,11 +155,11 @@ def compile(request):
     return c
 
 
-@pytest.mark.parametrize("KH", [1,3])
+@pytest.mark.parametrize("KH", [1,3,5,7,9,11])
 @pytest.mark.parametrize("CI", [3])
-@pytest.mark.parametrize("CO", [8])
-@pytest.mark.parametrize("XH", [4])
-@pytest.mark.parametrize("XW", [4])
+@pytest.mark.parametrize("CO", [32])
+@pytest.mark.parametrize("XH", [8])
+@pytest.mark.parametrize("XW", [6])
 @pytest.mark.parametrize("XN", [2])
 def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     c= compile
@@ -173,6 +174,7 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     assert XW <= c.XW_MAX
     assert XN <= c.XN_MAX
     assert CI * XW * int(np.ceil(XH/c.ROWS)-1) <= c.RAM_EDGES_DEPTH
+    assert XW >= KH//2
 
     for file in os.scandir(DATA_DIR):
         os.remove(file.path)
