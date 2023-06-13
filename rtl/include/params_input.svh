@@ -1,10 +1,10 @@
 
     // Written from param_tests.py
 
-    `define ROWS                8                 	// PE rows, constrained by resources
-    `define COLS                25                 	// PE cols, constrained by resources
+    `define ROWS                7                 	// PE rows, constrained by resources
+    `define COLS                96                 	// PE cols, constrained by resources
     `define X_BITS              8               	// Bits per word in input
-    `define K_BITS              4               	// Bits per word in input
+    `define K_BITS              8               	// Bits per word in input
     `define Y_BITS              24               	// Bits per word in output of conv
 
     `define KH_MAX              11               	// max of kernel height, across layers
