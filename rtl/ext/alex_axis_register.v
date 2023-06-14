@@ -90,7 +90,7 @@ if (REG_TYPE > 1) begin
     // skid buffer, no bubble cycles
 
     // datapath registers
-    reg                  s_axis_tready_reg = 1'b0;
+    reg                  s_axis_tready_reg;
 
     reg [DATA_WIDTH-1:0] m_axis_tdata_reg;
     reg [KEEP_WIDTH-1:0] m_axis_tkeep_reg;

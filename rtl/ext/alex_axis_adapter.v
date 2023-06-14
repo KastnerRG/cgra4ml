@@ -157,7 +157,7 @@ reg  [DEST_WIDTH-1:0]   m_axis_tdest_int;
 reg  [USER_WIDTH-1:0]   m_axis_tuser_int;
 wire                    m_axis_tready_int_early;
 
-reg s_axis_tready_reg = 1'b0, s_axis_tready_next;
+reg s_axis_tready_reg, s_axis_tready_next;
 
 assign s_axis_tready = s_axis_tready_reg;
 

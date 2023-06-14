@@ -1,4 +1,4 @@
-set TOP dnn_engine
+set TOP proc_engine_out
 set FREQ_MHZ 1000
 set clock_cycle [expr 1000/$FREQ_MHZ]
 set io_delay [expr $clock_cycle/5]
@@ -35,7 +35,7 @@ set_db retime_async_reset true
 set_db design:${TOP} .retime true
 
 #--------- SYNTHESIZE
-set_db syn_global_effort high
+set_db syn_global_effort medium
 syn_generic
 syn_map
 syn_opt
@@ -45,13 +45,13 @@ write -mapped > ../outputs/${TOP}.out.v
 write_sdc > ../outputs/${TOP}.out.sdc
 
 #--------- REPORTS
-report_area > ${REPORT_DIR}/area.rpt
-report_gates > ${REPORT_DIR}/gates.rpt
-report_timing  -nworst 10 > ${REPORT_DIR}/timing.rpt
-report_congestion > ${REPORT_DIR}/congestion.rpt
-report_messages > ${REPORT_DIR}/messages.rpt
-report_hierarchy > ${REPORT_DIR}/hierarchy.rpt
-report_clock_gating > ${REPORT_DIR}/clock_gating.rpt
+report_area -detail -gates > ${REPORT_DIR}/syn_${TOP}_${FREQ_MHZ}_area.rpt
+report_gates > ${REPORT_DIR}/syn_${TOP}_${FREQ_MHZ}_gates.rpt
+report_timing  -nworst 100 > ${REPORT_DIR}/syn_${TOP}_${FREQ_MHZ}_timing.rpt
+report_congestion > ${REPORT_DIR}/syn_${TOP}_${FREQ_MHZ}_congestion.rpt
+report_messages > ${REPORT_DIR}/syn_${TOP}_${FREQ_MHZ}_messages.rpt
+report_hierarchy > ${REPORT_DIR}/syn_${TOP}_${FREQ_MHZ}_hierarchy.rpt
+report_clock_gating > ${REPORT_DIR}/syn_${TOP}_${FREQ_MHZ}_clock_gating.rpt
 
 build_rtl_power_models -clean_up_netlist
 report_power > ${REPORT_DIR}/power.rpt
