@@ -145,13 +145,13 @@ module proc_engine_out #(
     input wire aclk          ,
     input wire aresetn       ,
     input wire s_valid       ,
-    input wire s_ready       ,
+    output wire s_ready       ,
     input wire s_last        ,
     input wire [`TUSER_WIDTH  -1:0] s_user        ,
     input wire [`X_BITS*`ROWS -1:0] s_data_pixels ,
     input wire [`K_BITS*`COLS -1:0] s_data_weights,
 
-    output wire m_ready,
+    input wire m_ready,
     output wire m_valid,
     output wire [M_DATA_WIDTH_HF_CONV_DW-1:0] m_data,
     output wire m_last 
