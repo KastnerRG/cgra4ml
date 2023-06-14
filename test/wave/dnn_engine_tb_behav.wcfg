@@ -741,13 +741,13 @@
          <wvobject fp_name="group302" type="group">
             <obj_property name="label">Conv_slave</obj_property>
             <obj_property name="DisplayName">label</obj_property>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/s_data_pixels" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/s_data_pixels" type="array">
                <obj_property name="ElementShortName">s_data_pixels[3:0][7:0]</obj_property>
                <obj_property name="ObjectShortName">s_data_pixels[3:0][7:0]</obj_property>
                <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                <obj_property name="isExpanded"></obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/s_data_weights" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/s_data_weights" type="array">
                <obj_property name="ElementShortName">s_data_weights[23:0][7:0]</obj_property>
                <obj_property name="ObjectShortName">s_data_weights[23:0][7:0]</obj_property>
                <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
@@ -763,32 +763,32 @@
                <obj_property name="isExpanded"></obj_property>
             </wvobject>
          </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/s_valid" type="logic">
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/s_valid" type="logic">
             <obj_property name="ElementShortName">s_valid</obj_property>
             <obj_property name="ObjectShortName">s_valid</obj_property>
          </wvobject>
          <wvobject fp_name="group315" type="group">
             <obj_property name="label">Multiplier</obj_property>
             <obj_property name="DisplayName">label</obj_property>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/clken_mul" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/clken_mul" type="logic">
                <obj_property name="ElementShortName">clken_mul</obj_property>
                <obj_property name="ObjectShortName">clken_mul</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/mul_m_data" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/mul_m_data" type="array">
                <obj_property name="ElementShortName">mul_m_data[23:0][3:0][15:0]</obj_property>
                <obj_property name="ObjectShortName">mul_m_data[23:0][3:0][15:0]</obj_property>
                <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                <obj_property name="isExpanded"></obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/mul_m_valid" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/mul_m_valid" type="logic">
                <obj_property name="ElementShortName">mul_m_valid</obj_property>
                <obj_property name="ObjectShortName">mul_m_valid</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/mul_m_last" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/mul_m_last" type="logic">
                <obj_property name="ElementShortName">mul_m_last</obj_property>
                <obj_property name="ObjectShortName">mul_m_last</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/mul_m_user" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/mul_m_user" type="array">
                <obj_property name="ElementShortName">mul_m_user</obj_property>
                <obj_property name="ObjectShortName">mul_m_user</obj_property>
             </wvobject>
@@ -801,27 +801,27 @@
          <wvobject fp_name="group379" type="group">
             <obj_property name="label">Switch</obj_property>
             <obj_property name="DisplayName">label</obj_property>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/mux_sel" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/mux_sel" type="logic">
                <obj_property name="ElementShortName">mux_sel</obj_property>
                <obj_property name="ObjectShortName">mux_sel</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/mul_m_valid" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/mul_m_valid" type="logic">
                <obj_property name="ElementShortName">mul_m_valid</obj_property>
                <obj_property name="ObjectShortName">mul_m_valid</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/acc_m_valid" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/acc_m_valid" type="logic">
                <obj_property name="ElementShortName">acc_m_valid</obj_property>
                <obj_property name="ObjectShortName">acc_m_valid</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/mux_sel" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/mux_sel" type="logic">
                <obj_property name="ElementShortName">mux_sel</obj_property>
                <obj_property name="ObjectShortName">mux_sel</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/clken_mul" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/clken_mul" type="logic">
                <obj_property name="ElementShortName">clken_mul</obj_property>
                <obj_property name="ObjectShortName">clken_mul</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/clken_acc" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/clken_acc" type="array">
                <obj_property name="ElementShortName">clken_acc[23:0]</obj_property>
                <obj_property name="ObjectShortName">clken_acc[23:0]</obj_property>
                <obj_property name="Radix">BINARYRADIX</obj_property>
@@ -830,11 +830,11 @@
          <wvobject fp_name="group335" type="group">
             <obj_property name="label">Mux</obj_property>
             <obj_property name="DisplayName">label</obj_property>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/mux_sel" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/mux_sel" type="logic">
                <obj_property name="ElementShortName">mux_sel</obj_property>
                <obj_property name="ObjectShortName">mux_sel</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/mux_s2_user" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/mux_s2_user" type="array">
                <obj_property name="ElementShortName">mux_s2_user</obj_property>
                <obj_property name="ObjectShortName">mux_s2_user</obj_property>
                <obj_property name="Radix">BINARYRADIX</obj_property>
@@ -843,71 +843,71 @@
          <wvobject fp_name="group324" type="group">
             <obj_property name="label">Accumulator</obj_property>
             <obj_property name="DisplayName">label</obj_property>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/clk" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/clk" type="logic">
                <obj_property name="ElementShortName">clk</obj_property>
                <obj_property name="ObjectShortName">clk</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/clken_mul" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/clken_mul" type="logic">
                <obj_property name="ElementShortName">clken_mul</obj_property>
                <obj_property name="ObjectShortName">clken_mul</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/clken_acc" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/clken_acc" type="array">
                <obj_property name="ElementShortName">clken_acc[23:0]</obj_property>
                <obj_property name="ObjectShortName">clken_acc[23:0]</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/clken_acc" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/clken_acc" type="array">
                <obj_property name="ElementShortName">clken_acc[23:0]</obj_property>
                <obj_property name="ObjectShortName">clken_acc[23:0]</obj_property>
                <obj_property name="Radix">BINARYRADIX</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/mux_sel" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/mux_sel" type="logic">
                <obj_property name="ElementShortName">mux_sel</obj_property>
                <obj_property name="ObjectShortName">mux_sel</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/lut_sum_start" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/lut_sum_start" type="array">
                <obj_property name="ElementShortName">lut_sum_start[1:0][1:0][23:0]</obj_property>
                <obj_property name="ObjectShortName">lut_sum_start[1:0][1:0][23:0]</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/bypass_sum" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/bypass_sum" type="array">
                <obj_property name="ElementShortName">bypass_sum[23:0]</obj_property>
                <obj_property name="ObjectShortName">bypass_sum[23:0]</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/bypass_sum_next" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/bypass_sum_next" type="array">
                <obj_property name="ElementShortName">bypass_sum_next[23:0]</obj_property>
                <obj_property name="ObjectShortName">bypass_sum_next[23:0]</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/bypass" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/bypass" type="array">
                <obj_property name="ElementShortName">bypass[23:0]</obj_property>
                <obj_property name="ObjectShortName">bypass[23:0]</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/acc_s_valid" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/acc_s_valid" type="array">
                <obj_property name="ElementShortName">acc_s_valid[23:0]</obj_property>
                <obj_property name="ObjectShortName">acc_s_valid[23:0]</obj_property>
                <obj_property name="Radix">BINARYRADIX</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/acc_s_data" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/acc_s_data" type="array">
                <obj_property name="ElementShortName">acc_s_data[23:0][3:0][31:0]</obj_property>
                <obj_property name="ObjectShortName">acc_s_data[23:0][3:0][31:0]</obj_property>
                <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/bypass" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/bypass" type="array">
                <obj_property name="ElementShortName">bypass[23:0]</obj_property>
                <obj_property name="ObjectShortName">bypass[23:0]</obj_property>
                <obj_property name="Radix">BINARYRADIX</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/acc_m_valid_next" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/acc_m_valid_next" type="logic">
                <obj_property name="ElementShortName">acc_m_valid_next</obj_property>
                <obj_property name="ObjectShortName">acc_m_valid_next</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/acc_m_valid" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/acc_m_valid" type="logic">
                <obj_property name="ElementShortName">acc_m_valid</obj_property>
                <obj_property name="ObjectShortName">acc_m_valid</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/acc_m_last" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/acc_m_last" type="logic">
                <obj_property name="ElementShortName">acc_m_last</obj_property>
                <obj_property name="ObjectShortName">acc_m_last</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/acc_m_user" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/acc_m_user" type="array">
                <obj_property name="ElementShortName">acc_m_user</obj_property>
                <obj_property name="ObjectShortName">acc_m_user</obj_property>
             </wvobject>
@@ -929,32 +929,32 @@
          <wvobject fp_name="group356" type="group">
             <obj_property name="label">Conv-Master</obj_property>
             <obj_property name="DisplayName">label</obj_property>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/clk" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/clk" type="logic">
                <obj_property name="ElementShortName">clk</obj_property>
                <obj_property name="ObjectShortName">clk</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/m_valid" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/m_valid" type="logic">
                <obj_property name="ElementShortName">m_valid</obj_property>
                <obj_property name="ObjectShortName">m_valid</obj_property>
                <obj_property name="CustomSignalColor">#FF00FF</obj_property>
                <obj_property name="UseCustomSignalColor">true</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/m_data" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/m_data" type="array">
                <obj_property name="ElementShortName">m_data[23:0][3:0][31:0]</obj_property>
                <obj_property name="ObjectShortName">m_data[23:0][3:0][31:0]</obj_property>
                <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/m_valid" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/m_valid" type="logic">
                <obj_property name="ElementShortName">m_valid</obj_property>
                <obj_property name="ObjectShortName">m_valid</obj_property>
                <obj_property name="CustomSignalColor">#FF00FF</obj_property>
                <obj_property name="UseCustomSignalColor">true</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/m_last" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/m_last" type="logic">
                <obj_property name="ElementShortName">m_last</obj_property>
                <obj_property name="ObjectShortName">m_last</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/m_user" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/m_user" type="array">
                <obj_property name="ElementShortName">m_user</obj_property>
                <obj_property name="ObjectShortName">m_user</obj_property>
             </wvobject>
@@ -962,63 +962,63 @@
          <wvobject fp_name="group509" type="group">
             <obj_property name="label">Slice</obj_property>
             <obj_property name="DisplayName">label</obj_property>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/AXIS_REG/aclk" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/AXIS_REG/aclk" type="logic">
                <obj_property name="ElementShortName">aclk</obj_property>
                <obj_property name="ObjectShortName">aclk</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/AXIS_REG/aresetn" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/AXIS_REG/aresetn" type="logic">
                <obj_property name="ElementShortName">aresetn</obj_property>
                <obj_property name="ObjectShortName">aresetn</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/AXIS_REG/s_valid" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/AXIS_REG/s_valid" type="logic">
                <obj_property name="ElementShortName">s_valid</obj_property>
                <obj_property name="ObjectShortName">s_valid</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/AXIS_REG/m_ready" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/AXIS_REG/m_ready" type="logic">
                <obj_property name="ElementShortName">m_ready</obj_property>
                <obj_property name="ObjectShortName">m_ready</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/AXIS_REG/s_data" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/AXIS_REG/s_data" type="array">
                <obj_property name="ElementShortName">s_data[3081:0]</obj_property>
                <obj_property name="ObjectShortName">s_data[3081:0]</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/AXIS_REG/m_data" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/AXIS_REG/m_data" type="array">
                <obj_property name="ElementShortName">m_data[3081:0]</obj_property>
                <obj_property name="ObjectShortName">m_data[3081:0]</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/AXIS_REG/m_valid" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/AXIS_REG/m_valid" type="logic">
                <obj_property name="ElementShortName">m_valid</obj_property>
                <obj_property name="ObjectShortName">m_valid</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/AXIS_REG/s_ready" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/AXIS_REG/s_ready" type="logic">
                <obj_property name="ElementShortName">s_ready</obj_property>
                <obj_property name="ObjectShortName">s_ready</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/AXIS_REG/state" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/AXIS_REG/state" type="array">
                <obj_property name="ElementShortName">state[31:0]</obj_property>
                <obj_property name="ObjectShortName">state[31:0]</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/AXIS_REG/state_next" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/AXIS_REG/state_next" type="array">
                <obj_property name="ElementShortName">state_next[31:0]</obj_property>
                <obj_property name="ObjectShortName">state_next[31:0]</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/AXIS_REG/buffer_en" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/AXIS_REG/buffer_en" type="logic">
                <obj_property name="ElementShortName">buffer_en</obj_property>
                <obj_property name="ObjectShortName">buffer_en</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/AXIS_REG/b_data" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/AXIS_REG/b_data" type="array">
                <obj_property name="ElementShortName">b_data[3081:0]</obj_property>
                <obj_property name="ObjectShortName">b_data[3081:0]</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/AXIS_REG/b_valid" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/AXIS_REG/b_valid" type="logic">
                <obj_property name="ElementShortName">b_valid</obj_property>
                <obj_property name="ObjectShortName">b_valid</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/AXIS_REG/m_data_next" type="array">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/AXIS_REG/m_data_next" type="array">
                <obj_property name="ElementShortName">m_data_next[3081:0]</obj_property>
                <obj_property name="ObjectShortName">m_data_next[3081:0]</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_ENGINE/AXIS_REG/m_en" type="logic">
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/AXIS_REG/m_en" type="logic">
                <obj_property name="ElementShortName">m_en</obj_property>
                <obj_property name="ObjectShortName">m_en</obj_property>
             </wvobject>
@@ -1028,71 +1028,71 @@
          <obj_property name="label">DW</obj_property>
          <obj_property name="DisplayName">label</obj_property>
          <obj_property name="isExpanded"></obj_property>
-         <wvobject fp_name="/dnn_engine_tb/pipe/OUT/aclk" type="logic">
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/aclk" type="logic">
             <obj_property name="ElementShortName">aclk</obj_property>
             <obj_property name="ObjectShortName">aclk</obj_property>
          </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/OUT/aresetn" type="logic">
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/aresetn" type="logic">
             <obj_property name="ElementShortName">aresetn</obj_property>
             <obj_property name="ObjectShortName">aresetn</obj_property>
          </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/OUT/s_valid" type="logic">
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/s_valid" type="logic">
             <obj_property name="ElementShortName">s_valid</obj_property>
             <obj_property name="ObjectShortName">s_valid</obj_property>
          </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/OUT/s_last" type="logic">
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/s_last" type="logic">
             <obj_property name="ElementShortName">s_last</obj_property>
             <obj_property name="ObjectShortName">s_last</obj_property>
          </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/OUT/s_ready" type="logic">
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/s_ready" type="logic">
             <obj_property name="ElementShortName">s_ready</obj_property>
             <obj_property name="ObjectShortName">s_ready</obj_property>
          </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/OUT/s_user" type="array">
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/s_user" type="array">
             <obj_property name="ElementShortName">s_user</obj_property>
             <obj_property name="ObjectShortName">s_user</obj_property>
          </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/OUT/s_data" type="array">
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/s_data" type="array">
             <obj_property name="ElementShortName">s_data[23:0][3:0][31:0]</obj_property>
             <obj_property name="ObjectShortName">s_data[23:0][3:0][31:0]</obj_property>
             <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
          </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/OUT/shift_last" type="array">
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/shift_last" type="array">
             <obj_property name="ElementShortName">shift_last[23:0]</obj_property>
             <obj_property name="ObjectShortName">shift_last[23:0]</obj_property>
          </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/OUT/shift_valid" type="array">
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/shift_valid" type="array">
             <obj_property name="ElementShortName">shift_valid[23:0]</obj_property>
             <obj_property name="ObjectShortName">shift_valid[23:0]</obj_property>
          </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/OUT/m_ready" type="logic">
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/m_ready" type="logic">
             <obj_property name="ElementShortName">m_ready</obj_property>
             <obj_property name="ObjectShortName">m_ready</obj_property>
          </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/OUT/m_data" type="array">
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/m_data" type="array">
             <obj_property name="ElementShortName">m_data[3:0][31:0]</obj_property>
             <obj_property name="ObjectShortName">m_data[3:0][31:0]</obj_property>
             <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
             <obj_property name="isExpanded"></obj_property>
          </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/OUT/m_user" type="array">
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/m_user" type="array">
             <obj_property name="ElementShortName">m_user</obj_property>
             <obj_property name="ObjectShortName">m_user</obj_property>
          </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/OUT/m_valid" type="logic">
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/m_valid" type="logic">
             <obj_property name="ElementShortName">m_valid</obj_property>
             <obj_property name="ObjectShortName">m_valid</obj_property>
          </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/OUT/m_last" type="logic">
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/m_last" type="logic">
             <obj_property name="ElementShortName">m_last</obj_property>
             <obj_property name="ObjectShortName">m_last</obj_property>
          </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/OUT/counter" type="array">
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/counter" type="array">
             <obj_property name="ElementShortName">counter[4:0]</obj_property>
             <obj_property name="ObjectShortName">counter[4:0]</obj_property>
             <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
          </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/OUT/state" type="array">
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/state" type="array">
             <obj_property name="ElementShortName">state[31:0]</obj_property>
             <obj_property name="ObjectShortName">state[31:0]</obj_property>
          </wvobject>

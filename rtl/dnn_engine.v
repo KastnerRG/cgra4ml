@@ -54,12 +54,7 @@ module dnn_engine #(
   wire [K_BITS*COLS -1:0] weights_m_data;
   wire [TUSER_WIDTH -1:0] weights_m_user;
 
-  wire conv_m_axis_tready, conv_m_axis_tvalid, conv_m_axis_tlast ;
-  wire [TUSER_WIDTH          -1:0] conv_m_axis_tuser;
-  wire [M_DATA_WIDTH_HF_CONV -1:0] conv_m_axis_tdata; // cgmu
-
   wire dw_s_axis_tready, dw_s_axis_tvalid, dw_s_axis_tlast ;
-  wire [TUSER_WIDTH    -1:0] dw_s_axis_tuser ;
   wire [M_DATA_WIDTH_HF_CONV_DW -1:0] dw_s_axis_tdata ;
 
   axis_pixels PIXELS (
@@ -100,33 +95,18 @@ module dnn_engine #(
     .pixels_m_ready  (pixels_m_ready ) 
   );
 
-  proc_engine PROC_ENGINE (
-    .clk            (aclk    ),
-    .resetn         (aresetn ),
+  proc_engine_out PROC_OUT (
+    .aclk           (aclk    ),
+    .aresetn        (aresetn ),
     .s_valid        (conv_s_valid               ),
     .s_ready        (conv_s_ready               ),
     .s_last         (weights_m_last             ),
     .s_user         (weights_m_user             ),
     .s_data_pixels  (pixels_m_data              ),
     .s_data_weights (weights_m_data             ),
-    .m_valid        (conv_m_axis_tvalid         ),
-    .m_ready        (conv_m_axis_tready         ),
-    .m_data         (conv_m_axis_tdata          ),
-    .m_last         (conv_m_axis_tlast          ),
-    .m_user         (conv_m_axis_tuser          )
-    );
-  axis_out_shift OUT (
-    .aclk    (aclk   ),
-    .aresetn (aresetn),
-    .s_ready (conv_m_axis_tready    ),
-    .s_valid (conv_m_axis_tvalid    ),
-    .s_data  (conv_m_axis_tdata     ),
-    .s_user  (conv_m_axis_tuser     ),
-    .s_last  (conv_m_axis_tlast     ),
     .m_ready (dw_s_axis_tready),
     .m_valid (dw_s_axis_tvalid),
     .m_data  (dw_s_axis_tdata ),
-    .m_user  (dw_s_axis_tuser ),
     .m_last  (dw_s_axis_tlast )
   );
 
@@ -154,4 +134,60 @@ module dnn_engine #(
     .m_axis_tkeep  (m_axis_tkeep ),
     .m_axis_tlast  (m_axis_tlast )
   );
+endmodule
+
+
+module proc_engine_out #(
+  parameter 
+    M_DATA_WIDTH_HF_CONV = `COLS  * `ROWS  * `Y_BITS,
+    M_DATA_WIDTH_HF_CONV_DW = `ROWS  * `Y_BITS
+)(
+    input wire aclk          ,
+    input wire aresetn       ,
+    input wire s_valid       ,
+    input wire s_ready       ,
+    input wire s_last        ,
+    input wire [`TUSER_WIDTH  -1:0] s_user        ,
+    input wire [`X_BITS*`ROWS -1:0] s_data_pixels ,
+    input wire [`K_BITS*`COLS -1:0] s_data_weights,
+
+    output wire m_ready,
+    output wire m_valid,
+    output wire [M_DATA_WIDTH_HF_CONV_DW-1:0] m_data,
+    output wire m_last 
+  );
+
+  wire conv_m_axis_tready, conv_m_axis_tvalid, conv_m_axis_tlast ;
+  wire [`TUSER_WIDTH         -1:0] conv_m_axis_tuser;
+  wire [M_DATA_WIDTH_HF_CONV -1:0] conv_m_axis_tdata; // cgmu
+
+  proc_engine PROC_ENGINE (
+    .clk            (aclk    ),
+    .resetn         (aresetn ),
+    .s_valid        (s_valid                    ),
+    .s_ready        (s_ready                    ),
+    .s_last         (s_last                     ),
+    .s_user         (s_user                     ),
+    .s_data_pixels  (s_data_pixels              ),
+    .s_data_weights (s_data_weights             ),
+    .m_valid        (conv_m_axis_tvalid         ),
+    .m_ready        (conv_m_axis_tready         ),
+    .m_data         (conv_m_axis_tdata          ),
+    .m_last         (conv_m_axis_tlast          ),
+    .m_user         (conv_m_axis_tuser          )
+  );
+  axis_out_shift OUT (
+    .aclk    (aclk   ),
+    .aresetn (aresetn),
+    .s_ready (conv_m_axis_tready    ),
+    .s_valid (conv_m_axis_tvalid    ),
+    .s_data  (conv_m_axis_tdata     ),
+    .s_user  (conv_m_axis_tuser     ),
+    .s_last  (conv_m_axis_tlast     ),
+    .m_ready (m_ready               ),
+    .m_valid (m_valid               ),
+    .m_data  (m_data                ),
+    .m_last  (m_last                )
+  );
+
 endmodule
