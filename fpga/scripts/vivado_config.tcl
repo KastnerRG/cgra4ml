@@ -9,5 +9,4 @@
     set KH_MAX             11
     set S_WEIGHTS_WIDTH_LF  64
     set S_PIXELS_WIDTH_LF   64
-    set M_OUTPUT_WIDTH_LF   48
-        
+    set M_OUTPUT_WIDTH_LF   64
