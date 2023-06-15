@@ -1,6 +1,7 @@
+set BOARD pynq_z2
 set FREQ  99
 
-create_project project_1 ${project_name} -part xc7z020clg400-1 -force
+create_project ${PROJECT_NAME} ${PROJECT_NAME} -part xc7z020clg400-1 -force
 # set_property board_part xilinx.com:zcu104:part0:1.1 [current_project]
 
 create_bd_design "design_1"
