@@ -4,7 +4,7 @@ verifyGeometry
 verifyConnectivity
 
 # Timing report
-report_timing -max_paths 5 > ../reports/${design}.post_route.timing.rpt
+report_timing -max_paths 100 > ../reports/${design}.post_route.timing.rpt
 
 # Power report
 report_power -outfile ../reports/${design}.post_route.power.rpt

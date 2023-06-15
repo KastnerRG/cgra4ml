@@ -1,11 +1,12 @@
 # Load design
-set libdir 		"../pdk/tsmc65gp"
-set design 		"model_baseline"
-set netlist     "../outputs/$design.out.v"
-set sdc 		"../constraints/$design.sdc"
+set design     "proc_engine_out"
+
+set libdir            "../pdk/tsmc65gp"
+set netlist           "../outputs/$design.out.v"
+set sdc               "../outputs/$design.out.sdc"
 set best_timing_lib 	"$libdir/lib/scadv10_cln65gp_lvt_ff_1p1v_m40c.lib"
 set worst_timing_lib 	"$libdir/lib/scadv10_cln65gp_lvt_ss_0p9v_125c.lib"
-set lef 		{ ../pdk/tsmc65gp/lef/tsmc_cln65_a10_4X2Z_tech.lef ../pdk/tsmc65gp/lef/tsmc65_lvt_sc_adv10_macro.lef}
+set lef 		           { ../pdk/tsmc65gp/lef/tsmc_cln65_a10_4X2Z_tech.lef ../pdk/tsmc65gp/lef/tsmc65_lvt_sc_adv10_macro.lef}
 # set best_captbl 	"$libdir/captbl/cln65g+_1p08m+alrdl_top2_cbest.captable"
 # set worst_captbl 	"$libdir/captbl/cln65g+_1p08m+alrdl_top2_cworst.captable"
 

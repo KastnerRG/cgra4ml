@@ -7,5 +7,5 @@ ccopt_design
 set_propagated_clock [all_clocks]
 
 # Post-CTS timing optimization
-# optDesign -postCTS -hold
-# saveDesign cts.enc
+optDesign -postCTS -hold
+saveDesign cts.enc
