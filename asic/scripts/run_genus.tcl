@@ -45,7 +45,7 @@ write -mapped > ../outputs/${TOP}.out.v
 write_sdc > ../outputs/${TOP}.out.sdc
 
 #--------- REPORTS
-report_area -detail -gates > ${REPORT_DIR}/syn_${TOP}_${FREQ_MHZ}_area.rpt
+report_area -detail > ${REPORT_DIR}/syn_${TOP}_${FREQ_MHZ}_area.rpt
 report_gates > ${REPORT_DIR}/syn_${TOP}_${FREQ_MHZ}_gates.rpt
 report_timing  -nworst 100 > ${REPORT_DIR}/syn_${TOP}_${FREQ_MHZ}_timing.rpt
 report_congestion > ${REPORT_DIR}/syn_${TOP}_${FREQ_MHZ}_congestion.rpt

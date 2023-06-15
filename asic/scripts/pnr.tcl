@@ -7,6 +7,7 @@ source ../scripts/placement.tcl
 source ../scripts/clock.tcl
 source ../scripts/route.tcl
 source ../scripts/reportDesign.tcl
-# source ../scripts/outputGen.tcl
+source ../scripts/outputGen.tcl
 
 saveDesign route.enc
+dumpToGIF ../../docs/pnr.gif
