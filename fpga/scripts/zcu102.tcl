@@ -11,4 +11,4 @@ set_property -dict [list CONFIG.PSU__USE__M_AXI_HPM0_LPD {0} CONFIG.PSU__USE__M_
 set PS_IRQ        "zynq_ultra_ps_e_0/pl_ps_irq0"
 set PS_M_AXI_LITE "/zynq_ultra_ps_e_0/M_AXI_HPM0_LPD"
 set PS_S_AXI      "/zynq_ultra_ps_e_0/S_AXI_HPC0_FPD"
-set PS_CLK        "/zynq_ultra_ps_e_0/pl_clk0 ($FREQ MHz)"
+set PS_CLK        "/zynq_ultra_ps_e_0/pl_clk0"
