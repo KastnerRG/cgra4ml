@@ -50,9 +50,9 @@ def product_dict(**kwargs):
                                                 X_BITS = [8    ], 
                                                 K_BITS = [8    ], 
                                                 Y_BITS = [24   ], 
-                                                ROWS   = [7    ], 
-                                                COLS   = [96   ], 
-                                                KW_MAX = [11   ], 
+                                                ROWS   = [8    ], 
+                                                COLS   = [24   ], 
+                                                KW_MAX = [5    ], 
                                                 CI_MAX = [1024 ], 
                                                 XW_MAX = [32   ], 
                                                 XH_MAX = [32   ], 
@@ -155,7 +155,7 @@ def compile(request):
     return c
 
 
-@pytest.mark.parametrize("KH", [3])
+@pytest.mark.parametrize("KH", [1,3])
 @pytest.mark.parametrize("CI", [3])
 @pytest.mark.parametrize("CO", [32])
 @pytest.mark.parametrize("XH", [8])
