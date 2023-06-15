@@ -1,10 +1,11 @@
-set project_name sys_accl
-set rtl_dir ../../rtl
-source ../scripts/vivado_config.tcl
+set PROJECT_NAME sys_accl
+set RTL_DIR ../../rtl
+set SCRIPTS_DIR ../scripts
+source $SCRIPTS_DIR/vivado_config.tcl
 
 #Board specific
-source ../scripts/pynq_z2.tcl
-# source ../scripts/zcu102.tcl
+# source $SCRIPTS_DIR/pynq_z2.tcl
+source $SCRIPTS_DIR/zcu102.tcl
 
 
 # CREATE IPs
@@ -47,7 +48,7 @@ apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config "Clk_master {Auto} Clk
 
 
 # Engine
-add_files -norecurse -scan_for_includes [glob $rtl_dir/*]
+add_files -norecurse -scan_for_includes [glob $RTL_DIR/*]
 set_property top dnn_engine [current_fileset]
 
 create_bd_cell -type module -reference dnn_engine dnn_engine_0
@@ -59,9 +60,9 @@ connect_bd_net [get_bd_pins dnn_engine_0/aresetn] [get_bd_pins axi_smc/aresetn]
 
 validate_bd_design
 
-generate_target all [get_files ./${project_name}/project_1.srcs/sources_1/bd/design_1/design_1.bd]
-make_wrapper -files [get_files ./${project_name}/project_1.srcs/sources_1/bd/design_1/design_1.bd] -top
-add_files -norecurse ./${project_name}/project_1.srcs/sources_1/bd/design_1/hdl/design_1_wrapper.v
+generate_target all [get_files ./${PROJECT_NAME}/${PROJECT_NAME}.srcs/sources_1/bd/design_1/design_1.bd]
+make_wrapper -files [get_files ./${PROJECT_NAME}/${PROJECT_NAME}.srcs/sources_1/bd/design_1/design_1.bd] -top
+add_files -norecurse ./${PROJECT_NAME}/${PROJECT_NAME}.srcs/sources_1/bd/design_1/hdl/design_1_wrapper.v
 set_property top design_1_wrapper [current_fileset]
 save_bd_design
 
@@ -75,7 +76,7 @@ write_hw_platform -fixed -include_bit -force -file design_1_wrapper.xsa
 # Reports
 open_run impl_1
 if {![file exists ../reports]} {exec mkdir ../reports}
-report_timing_summary -delay_type min_max -report_unconstrained -check_timing_verbose -max_paths 100 -input_pins -routable_nets -name timing_1 -file ../reports/${project_name}_timing_report.txt
-report_utilization -file ../reports/${project_name}_utilization_report.txt -name utilization_1
-report_power -file ../reports/${project_name}_power_1.txt -name {power_1}
-report_drc -name drc_1 -file ../reports/${project_name}_drc_1.txt -ruledecks {default opt_checks placer_checks router_checks bitstream_checks incr_eco_checks eco_checks abs_checks}
+report_timing_summary -delay_type min_max -report_unconstrained -check_timing_verbose -max_paths 100 -input_pins -routable_nets -name timing_1 -file ../reports/${PROJECT_NAME}_${BOARD}_${FREQ}_timing_report.txt
+report_utilization -file ../reports/${PROJECT_NAME}_${BOARD}_${FREQ}_utilization_report.txt -name utilization_1
+report_power -file ../reports/${PROJECT_NAME}_${BOARD}_${FREQ}_power_1.txt -name {power_1}
+report_drc -name drc_1 -file ../reports/${PROJECT_NAME}_${BOARD}_${FREQ}_drc_1.txt -ruledecks {default opt_checks placer_checks router_checks bitstream_checks incr_eco_checks eco_checks abs_checks}

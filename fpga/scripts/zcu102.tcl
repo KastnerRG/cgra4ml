@@ -1,6 +1,7 @@
+set BOARD zcu102
 set FREQ  249
 
-create_project project_1 ${project_name}_vivado_accelerator -part xczu9eg-ffvb1156-2-e -force
+create_project ${PROJECT_NAME} ${PROJECT_NAME} -part xczu9eg-ffvb1156-2-e -force
 set_property board_part xilinx.com:zcu102:part0:3.4 [current_project]
 
 create_bd_design "design_1"
