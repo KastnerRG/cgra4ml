@@ -25,25 +25,24 @@ python -m pytest -s py/param_test.py
 3. FPGA implementation:
 Open Xilinx Vivado, cd into the project root, and type the following in TCL console
 ```
-cd fpga
-source scripts/vivado.tcl
+mkdir fpga/work
+cd fpga/work
+source ../scripts/vivado.tcl
 ```
 
 4. ASIC implementation with Cadence Genus & Innovus:
 
-4.1. Add your PDK to `asic/pdk` and change paths in the scripts
+* Add your PDK to `asic/pdk` and change paths in the scripts
 
-4.2. Synthesis
+* Synthesis, Place & Route
 ```
 mkdir asic/work
 cd asic/work
-genus ../scripts/run_genus.tcl
-```
 
-4.3. Place & Route
-```
-cd asic/work
-genus ../scripts/run_pnr.tcl
+genus -f ../scripts/run_genus.tcl
+
+innovus
+source ../scripts/pnr.tcl
 ```
 
 ## Overall Workflow
