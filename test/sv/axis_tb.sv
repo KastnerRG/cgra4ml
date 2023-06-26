@@ -44,7 +44,7 @@ module AXIS_Sink #(
       end
 
       #10ps // delay before writing
-      m_ready = $urandom_range(0,99) < PROB_READY;
+      m_ready = $urandom_range(0,999) < PROB_READY;
 
     end
   endtask
@@ -96,7 +96,7 @@ module AXIS_Source #(
           s_last_val = $feof(file); // need to check one extra time to catch eof
         end
       end
-      s_valid = $urandom_range(0,99) < PROB_VALID;      // randomize s_valid
+      s_valid = $urandom_range(0,999) < PROB_VALID;      // randomize s_valid
       
       // scrable data signals on every cycle if !valid to catch slave reading it at wrong time
       s_data = s_valid ? s_data_val : 'x;
