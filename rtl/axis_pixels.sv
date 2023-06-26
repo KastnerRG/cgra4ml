@@ -32,7 +32,7 @@ module axis_pixels #(
     output logic [ROWS -1:0][WORD_WIDTH-1:0] m_data
   );
 
-  logic dw_s_valid, dw_s_ready, dw_m_ready, dw_m_valid, dw_m_last, dw_m_last_r;
+  logic dw_s_valid, dw_s_ready, dw_m_ready, dw_m_valid, dw_m_valid_r, dw_m_last, dw_m_last_r;
   logic [ROWS+EDGE_WORDS-1:0][WORD_WIDTH-1:0] dw_m_data, dw_m_data_r;
 
   alex_axis_adapter_any #(
@@ -62,7 +62,7 @@ module axis_pixels #(
   // State machine
   enum {SET, PASS , BLOCK} state;
 
-  logic en_config, en_shift, en_copy, en_copy_r, last_clk_kh, last_clk_kh_r, last_clk_ci, last_clk_w, last_l, last_l_r, m_last_reg, m_last, first_l, first_l_r;
+  logic en_config, en_shift, en_copy, en_kh, en_copy_r, last_kh, last_kh_r, last_clk_kh, last_clk_kh_r, last_clk_ci, last_clk_w, last_l, last_l_r, m_last_reg, m_last, first_l, first_l_r;
   logic [BITS_KH2      -1:0] ref_kh2, ref_kh2_in;
   logic [BITS_CI   -1:0] ref_ci_in;
   logic [BITS_XW  -1:0] ref_w_in ;
@@ -86,10 +86,17 @@ module axis_pixels #(
       BLOCK : if (m_last_beat)         state <= SET;
     endcase
 
-  always_comb 
+  always_comb begin
+
+    en_config    = 0;
+    en_shift     = m_ready;
+    en_kh        = m_ready && (last_kh ? dw_m_valid : 1);
+    en_copy      = dw_m_valid && last_clk_kh && m_ready;
+    
     unique case (state)
       SET  :  begin
                 en_config    = 1;
+                en_kh        = 0;
                 en_shift     = 0;
                 en_copy      = 0;
 
@@ -98,27 +105,20 @@ module axis_pixels #(
                 dw_m_ready   = 0;
               end
       PASS  : begin
-                en_config    = 0;
-                en_shift     = m_ready;
-                en_copy      = dw_m_valid && last_clk_kh && m_ready;
-
                 s_ready      = dw_s_ready;
                 dw_s_valid   = s_valid;
                 dw_m_ready   = en_copy;
               end
       BLOCK : begin
-                en_config    = 0;
-                en_shift     = m_ready;
-                en_copy      = dw_m_valid && last_clk_kh && m_ready;
-
                 s_ready      = 0;
                 dw_s_valid   = 0;
                 dw_m_ready   = en_copy;
             end
     endcase
+  end
 
   // Counters: KH, CI, W, Blocks
-  counter #(.W(BITS_KH)       ) C_KH (.clk(aclk), .reset(en_config), .en(en_shift   ), .max_in(BITS_KH'(ref_kh2_in*2)), .last_clk(last_clk_kh ));
+  counter #(.W(BITS_KH)       ) C_KH (.clk(aclk), .reset(en_config), .en(en_kh      ), .max_in(BITS_KH'(ref_kh2_in*2)), .last_clk(last_clk_kh ), .last(last_kh));
   counter #(.W(BITS_CI)       ) C_CI (.clk(aclk), .reset(en_config), .en(last_clk_kh), .max_in(ref_ci_in             ), .last_clk(last_clk_ci ));
   counter #(.W(BITS_XW)       ) C_W  (.clk(aclk), .reset(en_config), .en(last_clk_ci), .max_in(ref_w_in              ), .last_clk(last_clk_w  ));
   counter #(.W(BITS_IM_BLOCKS)) C_L  (.clk(aclk), .reset(en_config), .en(last_clk_w ), .max_in(ref_l_in              ), .last    (last_l      ), .first(first_l));
@@ -162,10 +162,12 @@ module axis_pixels #(
       first_l_r     <= first_l;
       last_l_r      <= last_l;
       last_clk_kh_r <= last_clk_kh;
+      last_kh_r     <= last_kh;
       en_copy_r     <= en_copy;
       ram_addr_r    <= ram_addr;
       dw_m_data_r   <= dw_m_data;
       dw_m_last_r   <= dw_m_last;
+      dw_m_valid_r  <= dw_m_valid;
     end 
   assign edge_top_r = first_l_r ? '0 : ram_dout_r;
   assign edge_bot_r = dw_m_data_r[ROWS-1: ROWS-EDGE_WORDS];
@@ -189,7 +191,10 @@ module axis_pixels #(
 
   always_ff @(posedge aclk)
     if (!aresetn || m_last_beat)       {m_valid, m_last_reg} <= '0;
-    else if (en_copy_r && en_shift)    {m_valid, m_last_reg} <= {1'b1, dw_m_last_r};
+    else begin 
+      if (en_copy_r && en_shift) m_last_reg <= dw_m_last_r;
+      if (last_kh_r)             m_valid    <= dw_m_valid_r;
+    end
   
   assign m_last = m_last_reg && last_clk_kh_r;
 

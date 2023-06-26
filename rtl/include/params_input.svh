@@ -1,11 +1,11 @@
 
     // Written from param_tests.py
 
-    `define ROWS                8                 	// PE rows, constrained by resources
-    `define COLS                24                 	// PE cols, constrained by resources
+    `define ROWS                4                 	// PE rows, constrained by resources
+    `define COLS                6                 	// PE cols, constrained by resources
     `define X_BITS              8               	// Bits per word in input
     `define K_BITS              8               	// Bits per word in input
-    `define Y_BITS              24               	// Bits per word in output of conv
+    `define Y_BITS              32               	// Bits per word in output of conv
 
     `define KH_MAX              5               	// max of kernel height, across layers
     `define KW_MAX              5               	// max of kernel width, across layers
@@ -23,5 +23,5 @@
 
     `define S_WEIGHTS_WIDTH_LF  64              	// constant (64), for now
     `define S_PIXELS_WIDTH_LF   64              	// constant (64), for now
-    `define M_OUTPUT_WIDTH_LF   48             	// constant (64), for now
+    `define M_OUTPUT_WIDTH_LF   64             	// constant (64), for now
     
