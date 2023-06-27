@@ -154,6 +154,7 @@ class Bundle:
 
         w = np.concatenate([r.w_config_words, w], axis=1)             # (IT, 8 + CI*KH*c.COLS)
         assert w.shape == (r.IT, c.IN_BITS/c.K_BITS + (r.CI*r.KH+c.CONFIG_BEATS)*c.COLS)
+        print(f'--------- weights final: (r.IT, c.IN_BITS/c.K_BITS + (r.CI*r.KH+c.CONFIG_BEATS)*c.COLS) = ({r.IT}, {c.IN_BITS}/{c.K_BITS} + ({r.CI}*{r.KH}+{c.CONFIG_BEATS})*{c.COLS}) = {w.shape}')
         return w
 
 
@@ -180,6 +181,7 @@ class Bundle:
         x = x.reshape((r.XN*r.L*r.XW*r.CI*(c.ROWS+c.X_PAD)))
         x = np.concatenate([np.array(r.x_config_words, dtype=np.uint8), x.flatten()])
         assert x.shape == (c.IN_BITS/c.X_BITS + r.XN*r.L*r.XW*r.CI*(c.ROWS+c.X_PAD),)
+        print(f'--------- input final: (c.IN_BITS/c.X_BITS + r.XN*r.L*r.XW*r.CI*(c.ROWS+c.X_PAD),) = ({c.IN_BITS}/{c.X_BITS} + {r.XN}*{r.L}*{r.XW}*{r.CI}*({c.ROWS}+{c.X_PAD}),) = {x.shape}')
         return x
 
 
@@ -203,4 +205,7 @@ class Bundle:
 
         y = y.reshape(r.IT,r.XN,r.L,r.XW*r.CO_PRL,c.ROWS)
         y[:,:,:,-(r.KW//2+1)*r.CO_PRL:,:] = y_w_last
+
+        assert y.shape == (r.IT,r.XN,r.L,r.XW*r.CO_PRL,c.ROWS)
+        print(f'--------- output final (r.IT,r.XN,r.L,r.XW*r.CO_PRL,c.ROWS) = ({r.IT},{r.XN},{r.L},{r.XW}*{r.CO_PRL},{c.ROWS}) = {y.shape}')
         return y
