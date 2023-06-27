@@ -28,9 +28,9 @@ module axis_out_shift #(
   for (k2=0; k2 <= KW_MAX/2; k2++)
     for (c_1=0; c_1 <  COLS; c_1++) begin
       localparam k = k2*2+1,  c = c_1 + 1;
-      assign lut_valid      [k2][c_1] = c % k == 0;
-      assign lut_valid_last [k2][c_1] = c % k > k2 || lut_valid[k2][c_1];
-      assign lut_last       [k2][c_1] = c == k2+1;
+      assign lut_valid      [k2][c_1] = (c % k == 0);
+      assign lut_valid_last [k2][c_1] = ((c % k > k2) || (c % k == 0)) && (c <= (COLS/k)*k);
+      assign lut_last       [k2][c_1] = (c == k2+1);
     end
 
   wire valid_mask = !s_user.is_w_first_kw2 && !s_user.is_config;

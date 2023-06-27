@@ -50,9 +50,9 @@ def product_dict(**kwargs):
                                                 X_BITS = [8    ], 
                                                 K_BITS = [8    ], 
                                                 Y_BITS = [32   ], 
-                                                ROWS   = [4    ], 
-                                                COLS   = [6   ], 
-                                                KW_MAX = [5    ], 
+                                                ROWS   = [8    ], 
+                                                COLS   = [24   ], 
+                                                KW_MAX = [11   ], 
                                                 CI_MAX = [1024 ], 
                                                 XW_MAX = [32   ], 
                                                 XH_MAX = [32   ], 
@@ -155,12 +155,12 @@ def compile(request):
     return c
 
 
-@pytest.mark.parametrize("KH", [3])
-@pytest.mark.parametrize("CI", [8])
-@pytest.mark.parametrize("CO", [2])
-@pytest.mark.parametrize("XH", [8])
-@pytest.mark.parametrize("XW", [4])
-@pytest.mark.parametrize("XN", [1])
+@pytest.mark.parametrize("KH", [1,3,5,7,9,11])
+@pytest.mark.parametrize("CI", [3])
+@pytest.mark.parametrize("CO", [8])
+@pytest.mark.parametrize("XH", [16])
+@pytest.mark.parametrize("XW", [16])
+@pytest.mark.parametrize("XN", [2])
 def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     c= compile
 
@@ -194,16 +194,16 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     '''
     path = f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_w.txt"
     np.savetxt(path, bundle.w_engine[i_it].flatten(), fmt='%d')
-    print(f'weights final (IT, 8 + (CI*KH+c.CONFIG_BEATS)*c.COLS) = {bundle.w.shape} \nSaved as {path}')
+    print(f'Weights saved as {path}')
 
     path = f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_x.txt"
     np.savetxt(path, bundle.x_engine.flatten(), fmt='%d')
-    print(f'input final (c.IN_BITS/c.X_BITS + XN*L*XW*CI*c.ROWS+X_PAD)={bundle.x_engine.shape} \nSaved as "{path}"')
+    print(f'input saved as "{path}"')
 
     y_it = bundle.y_engine[i_it]
     path = f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_y_exp.txt"
     np.savetxt(path, y_it.flatten(), fmt='%d')
-    print(f'output final (IT,XN,L,XW,CO_PRL,c.ROWS)={y_it.shape} \nSaved as "{path}"')
+    print(f'output saved as "{path}"')
 
 
     '''
