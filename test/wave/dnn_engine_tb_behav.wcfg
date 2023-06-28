@@ -12,18 +12,19 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="526.200 ns"></ZoomStartTime>
-      <ZoomEndTime time="660.001 ns"></ZoomEndTime>
-      <Cursor1Time time="622.000 ns"></Cursor1Time>
+      <ZoomStartTime time="23,831,145.990 ns"></ZoomStartTime>
+      <ZoomEndTime time="23,831,175.171 ns"></ZoomEndTime>
+      <Cursor1Time time="23,831,162.000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="578"></NameColumnWidth>
-      <ValueColumnWidth column_width="424"></ValueColumnWidth>
+      <NameColumnWidth column_width="368"></NameColumnWidth>
+      <ValueColumnWidth column_width="392"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="3" />
+   <WVObjectSize size="2" />
    <wave_markers>
       <marker time="19270034" label="" />
       <marker time="466000" label="" />
+      <marker time="25249190000" label="" />
    </wave_markers>
    <wvobject fp_name="group533" type="group">
       <obj_property name="label">All</obj_property>
@@ -336,7 +337,6 @@
          <wvobject fp_name="group792" type="group">
             <obj_property name="label">RAM</obj_property>
             <obj_property name="DisplayName">label</obj_property>
-            <obj_property name="isExpanded"></obj_property>
             <wvobject fp_name="/dnn_engine_tb/pipe/PIXELS/RAM/clka" type="logic">
                <obj_property name="ElementShortName">clka</obj_property>
                <obj_property name="ObjectShortName">clka</obj_property>
@@ -435,6 +435,78 @@
             <obj_property name="CustomSignalColor">#FF00FF</obj_property>
             <obj_property name="UseCustomSignalColor">true</obj_property>
             <obj_property name="isExpanded"></obj_property>
+            <wvobject fp_name="/dnn_engine_tb/pipe/PIXELS/m_data[7]" type="array">
+               <obj_property name="ElementShortName">[7][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[7][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/dnn_engine_tb/pipe/PIXELS/m_data[6]" type="array">
+               <obj_property name="ElementShortName">[6][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[6][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/dnn_engine_tb/pipe/PIXELS/m_data[5]" type="array">
+               <obj_property name="ElementShortName">[5][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[5][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/dnn_engine_tb/pipe/PIXELS/m_data[4]" type="array">
+               <obj_property name="ElementShortName">[4][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[4][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/dnn_engine_tb/pipe/PIXELS/m_data[3]" type="array">
+               <obj_property name="ElementShortName">[3][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/dnn_engine_tb/pipe/PIXELS/m_data[2]" type="array">
+               <obj_property name="ElementShortName">[2][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/dnn_engine_tb/pipe/PIXELS/m_data[1]" type="array">
+               <obj_property name="ElementShortName">[1][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/dnn_engine_tb/pipe/PIXELS/m_data[0]" type="array">
+               <obj_property name="ElementShortName">[0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            </wvobject>
+            <wvobject fp_name="/dnn_engine_tb/pipe/PIXELS/m_data[7]" type="array">
+               <obj_property name="ElementShortName">[7][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[7][7:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/dnn_engine_tb/pipe/PIXELS/m_data[6]" type="array">
+               <obj_property name="ElementShortName">[6][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[6][7:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/dnn_engine_tb/pipe/PIXELS/m_data[5]" type="array">
+               <obj_property name="ElementShortName">[5][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[5][7:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/dnn_engine_tb/pipe/PIXELS/m_data[4]" type="array">
+               <obj_property name="ElementShortName">[4][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[4][7:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/dnn_engine_tb/pipe/PIXELS/m_data[3]" type="array">
+               <obj_property name="ElementShortName">[3][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[3][7:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/dnn_engine_tb/pipe/PIXELS/m_data[2]" type="array">
+               <obj_property name="ElementShortName">[2][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[2][7:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/dnn_engine_tb/pipe/PIXELS/m_data[1]" type="array">
+               <obj_property name="ElementShortName">[1][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[1][7:0]</obj_property>
+            </wvobject>
+            <wvobject fp_name="/dnn_engine_tb/pipe/PIXELS/m_data[0]" type="array">
+               <obj_property name="ElementShortName">[0][7:0]</obj_property>
+               <obj_property name="ObjectShortName">[0][7:0]</obj_property>
+            </wvobject>
          </wvobject>
       </wvobject>
       <wvobject fp_name="group289" type="group">
@@ -460,6 +532,7 @@
       <wvobject fp_name="group1249" type="group">
          <obj_property name="label">Weight Rot</obj_property>
          <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
          <wvobject fp_name="/dnn_engine_tb/pipe/WEIGHTS_ROTATOR/aresetn" type="logic">
             <obj_property name="ElementShortName">aresetn</obj_property>
             <obj_property name="ObjectShortName">aresetn</obj_property>
@@ -487,6 +560,7 @@
          <wvobject fp_name="group2738" type="group">
             <obj_property name="label">DW</obj_property>
             <obj_property name="DisplayName">label</obj_property>
+            <obj_property name="isExpanded"></obj_property>
             <wvobject fp_name="/dnn_engine_tb/pipe/WEIGHTS_ROTATOR/dw_m_ready" type="logic">
                <obj_property name="ElementShortName">dw_m_ready</obj_property>
                <obj_property name="ObjectShortName">dw_m_ready</obj_property>
@@ -686,6 +760,7 @@
          <wvobject fp_name="group2742" type="group">
             <obj_property name="label">MASTER</obj_property>
             <obj_property name="DisplayName">label</obj_property>
+            <obj_property name="isExpanded"></obj_property>
             <wvobject fp_name="/dnn_engine_tb/pipe/WEIGHTS_ROTATOR/m_axis_tvalid" type="logic">
                <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
                <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
@@ -717,23 +792,6 @@
             </wvobject>
          </wvobject>
       </wvobject>
-      <wvobject fp_name="group406" type="group">
-         <obj_property name="label">Master</obj_property>
-         <obj_property name="DisplayName">label</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-         <wvobject fp_name="/dnn_engine_tb/pipe/m_axis_tready" type="logic">
-            <obj_property name="ElementShortName">m_axis_tready</obj_property>
-            <obj_property name="ObjectShortName">m_axis_tready</obj_property>
-         </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/m_axis_tvalid" type="logic">
-            <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
-            <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
-         </wvobject>
-         <wvobject fp_name="/dnn_engine_tb/pipe/m_axis_tlast" type="logic">
-            <obj_property name="ElementShortName">m_axis_tlast</obj_property>
-            <obj_property name="ObjectShortName">m_axis_tlast</obj_property>
-         </wvobject>
-      </wvobject>
       <wvobject type="divider" fp_name="divider293">
          <obj_property name="label">PROC</obj_property>
          <obj_property name="DisplayName">label</obj_property>
@@ -763,6 +821,10 @@
             <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/s_valid" type="logic">
                <obj_property name="ElementShortName">s_valid</obj_property>
                <obj_property name="ObjectShortName">s_valid</obj_property>
+            </wvobject>
+            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/s_ready" type="logic">
+               <obj_property name="ElementShortName">s_ready</obj_property>
+               <obj_property name="ObjectShortName">s_ready</obj_property>
             </wvobject>
          </wvobject>
          <wvobject fp_name="group315" type="group">
@@ -961,206 +1023,77 @@
                   <obj_property name="ElementShortName">add_in_2[31:0]</obj_property>
                   <obj_property name="ObjectShortName">add_in_2[31:0]</obj_property>
                </wvobject>
-               <wvobject fp_name="group306" type="group">
-                  <obj_property name="label">Slice</obj_property>
-                  <obj_property name="DisplayName">label</obj_property>
-                  <obj_property name="isExpanded"></obj_property>
-                  <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_valid" type="logic">
-                     <obj_property name="ElementShortName">i_valid</obj_property>
-                     <obj_property name="ObjectShortName">i_valid</obj_property>
-                  </wvobject>
-                  <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_user" type="array">
-                     <obj_property name="ElementShortName">i_user</obj_property>
-                     <obj_property name="ObjectShortName">i_user</obj_property>
-                  </wvobject>
-                  <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_ready" type="logic">
-                     <obj_property name="ElementShortName">i_ready</obj_property>
-                     <obj_property name="ObjectShortName">i_ready</obj_property>
-                  </wvobject>
-                  <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_last" type="logic">
-                     <obj_property name="ElementShortName">i_last</obj_property>
-                     <obj_property name="ObjectShortName">i_last</obj_property>
-                  </wvobject>
-                  <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data" type="array">
-                     <obj_property name="ElementShortName">i_data[23:0][7:0][31:0]</obj_property>
-                     <obj_property name="ObjectShortName">i_data[23:0][7:0][31:0]</obj_property>
-                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     <obj_property name="isExpanded"></obj_property>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[23]" type="array">
-                        <obj_property name="ElementShortName">[23][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[23][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[22]" type="array">
-                        <obj_property name="ElementShortName">[22][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[22][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[21]" type="array">
-                        <obj_property name="ElementShortName">[21][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[21][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[20]" type="array">
-                        <obj_property name="ElementShortName">[20][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[20][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[19]" type="array">
-                        <obj_property name="ElementShortName">[19][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[19][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                        <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-                        <obj_property name="UseCustomSignalColor">true</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[18]" type="array">
-                        <obj_property name="ElementShortName">[18][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[18][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[17]" type="array">
-                        <obj_property name="ElementShortName">[17][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[17][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[16]" type="array">
-                        <obj_property name="ElementShortName">[16][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[16][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[15]" type="array">
-                        <obj_property name="ElementShortName">[15][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[15][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[14]" type="array">
-                        <obj_property name="ElementShortName">[14][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[14][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                        <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-                        <obj_property name="UseCustomSignalColor">true</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[13]" type="array">
-                        <obj_property name="ElementShortName">[13][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[13][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[12]" type="array">
-                        <obj_property name="ElementShortName">[12][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[12][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[11]" type="array">
-                        <obj_property name="ElementShortName">[11][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[11][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[10]" type="array">
-                        <obj_property name="ElementShortName">[10][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[10][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[9]" type="array">
-                        <obj_property name="ElementShortName">[9][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[9][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                        <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-                        <obj_property name="UseCustomSignalColor">true</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[8]" type="array">
-                        <obj_property name="ElementShortName">[8][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[8][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[7]" type="array">
-                        <obj_property name="ElementShortName">[7][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[7][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[6]" type="array">
-                        <obj_property name="ElementShortName">[6][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[6][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[5]" type="array">
-                        <obj_property name="ElementShortName">[5][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[5][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[4]" type="array">
-                        <obj_property name="ElementShortName">[4][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[4][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                        <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-                        <obj_property name="UseCustomSignalColor">true</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[3]" type="array">
-                        <obj_property name="ElementShortName">[3][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[3][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[2]" type="array">
-                        <obj_property name="ElementShortName">[2][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[2][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[1]" type="array">
-                        <obj_property name="ElementShortName">[1][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[1][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                     <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data[0]" type="array">
-                        <obj_property name="ElementShortName">[0][7:0][31:0]</obj_property>
-                        <obj_property name="ObjectShortName">[0][7:0][31:0]</obj_property>
-                        <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                     </wvobject>
-                  </wvobject>
-               </wvobject>
-               <wvobject fp_name="group356" type="group">
-                  <obj_property name="label">proc_master</obj_property>
-                  <obj_property name="DisplayName">label</obj_property>
-                  <obj_property name="isExpanded"></obj_property>
-                  <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/clk" type="logic">
-                     <obj_property name="ElementShortName">clk</obj_property>
-                     <obj_property name="ObjectShortName">clk</obj_property>
-                  </wvobject>
-                  <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/m_valid" type="logic">
-                     <obj_property name="ElementShortName">m_valid</obj_property>
-                     <obj_property name="ObjectShortName">m_valid</obj_property>
-                     <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-                     <obj_property name="UseCustomSignalColor">true</obj_property>
-                  </wvobject>
-                  <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/m_ready" type="logic">
-                     <obj_property name="ElementShortName">m_ready</obj_property>
-                     <obj_property name="ObjectShortName">m_ready</obj_property>
-                  </wvobject>
-                  <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/m_data" type="array">
-                     <obj_property name="ElementShortName">m_data[23:0][7:0][31:0]</obj_property>
-                     <obj_property name="ObjectShortName">m_data[23:0][7:0][31:0]</obj_property>
-                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                  </wvobject>
-                  <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/m_valid" type="logic">
-                     <obj_property name="ElementShortName">m_valid</obj_property>
-                     <obj_property name="ObjectShortName">m_valid</obj_property>
-                     <obj_property name="CustomSignalColor">#FF00FF</obj_property>
-                     <obj_property name="UseCustomSignalColor">true</obj_property>
-                  </wvobject>
-                  <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/m_last" type="logic">
-                     <obj_property name="ElementShortName">m_last</obj_property>
-                     <obj_property name="ObjectShortName">m_last</obj_property>
-                  </wvobject>
-                  <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/m_user" type="array">
-                     <obj_property name="ElementShortName">m_user</obj_property>
-                     <obj_property name="ObjectShortName">m_user</obj_property>
-                  </wvobject>
-               </wvobject>
             </wvobject>
+         </wvobject>
+      </wvobject>
+      <wvobject fp_name="group306" type="group">
+         <obj_property name="label">Slice</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_valid" type="logic">
+            <obj_property name="ElementShortName">i_valid</obj_property>
+            <obj_property name="ObjectShortName">i_valid</obj_property>
+         </wvobject>
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_user" type="array">
+            <obj_property name="ElementShortName">i_user</obj_property>
+            <obj_property name="ObjectShortName">i_user</obj_property>
+         </wvobject>
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_ready" type="logic">
+            <obj_property name="ElementShortName">i_ready</obj_property>
+            <obj_property name="ObjectShortName">i_ready</obj_property>
+         </wvobject>
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_last" type="logic">
+            <obj_property name="ElementShortName">i_last</obj_property>
+            <obj_property name="ObjectShortName">i_last</obj_property>
+         </wvobject>
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/i_data" type="array">
+            <obj_property name="ElementShortName">i_data[23:0][7:0][31:0]</obj_property>
+            <obj_property name="ObjectShortName">i_data[23:0][7:0][31:0]</obj_property>
+            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+            <obj_property name="isExpanded"></obj_property>
+         </wvobject>
+      </wvobject>
+      <wvobject fp_name="group356" type="group">
+         <obj_property name="label">proc_master</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/clk" type="logic">
+            <obj_property name="ElementShortName">clk</obj_property>
+            <obj_property name="ObjectShortName">clk</obj_property>
+         </wvobject>
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/m_valid" type="logic">
+            <obj_property name="ElementShortName">m_valid</obj_property>
+            <obj_property name="ObjectShortName">m_valid</obj_property>
+            <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+            <obj_property name="UseCustomSignalColor">true</obj_property>
+         </wvobject>
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/m_ready" type="logic">
+            <obj_property name="ElementShortName">m_ready</obj_property>
+            <obj_property name="ObjectShortName">m_ready</obj_property>
+         </wvobject>
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/m_data" type="array">
+            <obj_property name="ElementShortName">m_data[23:0][7:0][31:0]</obj_property>
+            <obj_property name="ObjectShortName">m_data[23:0][7:0][31:0]</obj_property>
+            <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+         </wvobject>
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/m_valid" type="logic">
+            <obj_property name="ElementShortName">m_valid</obj_property>
+            <obj_property name="ObjectShortName">m_valid</obj_property>
+            <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+            <obj_property name="UseCustomSignalColor">true</obj_property>
+         </wvobject>
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/m_last" type="logic">
+            <obj_property name="ElementShortName">m_last</obj_property>
+            <obj_property name="ObjectShortName">m_last</obj_property>
+         </wvobject>
+         <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/PROC_ENGINE/m_user" type="array">
+            <obj_property name="ElementShortName">m_user</obj_property>
+            <obj_property name="ObjectShortName">m_user</obj_property>
          </wvobject>
       </wvobject>
       <wvobject fp_name="group751" type="group">
          <obj_property name="label">Output pipe</obj_property>
          <obj_property name="DisplayName">label</obj_property>
-         <obj_property name="isExpanded"></obj_property>
          <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/aclk" type="logic">
             <obj_property name="ElementShortName">aclk</obj_property>
             <obj_property name="ObjectShortName">aclk</obj_property>
@@ -1184,7 +1117,6 @@
          <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/s_user" type="array">
             <obj_property name="ElementShortName">s_user</obj_property>
             <obj_property name="ObjectShortName">s_user</obj_property>
-            <obj_property name="isExpanded"></obj_property>
          </wvobject>
          <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/s_data" type="array">
             <obj_property name="ElementShortName">s_data[23:0][7:0][31:0]</obj_property>
@@ -1213,46 +1145,6 @@
             <obj_property name="ObjectShortName">m_data[7:0][31:0]</obj_property>
             <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
             <obj_property name="isExpanded"></obj_property>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/m_data[7]" type="array">
-               <obj_property name="ElementShortName">[7][31:0]</obj_property>
-               <obj_property name="ObjectShortName">[7][31:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/m_data[6]" type="array">
-               <obj_property name="ElementShortName">[6][31:0]</obj_property>
-               <obj_property name="ObjectShortName">[6][31:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/m_data[5]" type="array">
-               <obj_property name="ElementShortName">[5][31:0]</obj_property>
-               <obj_property name="ObjectShortName">[5][31:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/m_data[4]" type="array">
-               <obj_property name="ElementShortName">[4][31:0]</obj_property>
-               <obj_property name="ObjectShortName">[4][31:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/m_data[3]" type="array">
-               <obj_property name="ElementShortName">[3][31:0]</obj_property>
-               <obj_property name="ObjectShortName">[3][31:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/m_data[2]" type="array">
-               <obj_property name="ElementShortName">[2][31:0]</obj_property>
-               <obj_property name="ObjectShortName">[2][31:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/m_data[1]" type="array">
-               <obj_property name="ElementShortName">[1][31:0]</obj_property>
-               <obj_property name="ObjectShortName">[1][31:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/m_data[0]" type="array">
-               <obj_property name="ElementShortName">[0][31:0]</obj_property>
-               <obj_property name="ObjectShortName">[0][31:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            </wvobject>
          </wvobject>
          <wvobject fp_name="/dnn_engine_tb/pipe/PROC_OUT/OUT/m_user" type="array">
             <obj_property name="ElementShortName">m_user</obj_property>
@@ -1276,7 +1168,23 @@
    <wvobject fp_name="group532" type="group">
       <obj_property name="label">Output</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="group406" type="group">
+         <obj_property name="label">Master</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/dnn_engine_tb/pipe/m_axis_tready" type="logic">
+            <obj_property name="ElementShortName">m_axis_tready</obj_property>
+            <obj_property name="ObjectShortName">m_axis_tready</obj_property>
+         </wvobject>
+         <wvobject fp_name="/dnn_engine_tb/pipe/m_axis_tvalid" type="logic">
+            <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
+            <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
+         </wvobject>
+         <wvobject fp_name="/dnn_engine_tb/pipe/m_axis_tlast" type="logic">
+            <obj_property name="ElementShortName">m_axis_tlast</obj_property>
+            <obj_property name="ObjectShortName">m_axis_tlast</obj_property>
+         </wvobject>
+      </wvobject>
       <wvobject fp_name="/dnn_engine_tb/m_axis_tvalid" type="logic">
          <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
          <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
@@ -1297,55 +1205,6 @@
       <wvobject fp_name="/dnn_engine_tb/m_axis_tkeep" type="array">
          <obj_property name="ElementShortName">m_axis_tkeep[1:0]</obj_property>
          <obj_property name="ObjectShortName">m_axis_tkeep[1:0]</obj_property>
-      </wvobject>
-   </wvobject>
-   <wvobject fp_name="group3289" type="group">
-      <obj_property name="label">Input</obj_property>
-      <obj_property name="DisplayName">label</obj_property>
-      <wvobject fp_name="/dnn_engine_tb/aclk" type="logic">
-         <obj_property name="ElementShortName">aclk</obj_property>
-         <obj_property name="ObjectShortName">aclk</obj_property>
-      </wvobject>
-      <wvobject fp_name="/dnn_engine_tb/s_axis_pixels_tready" type="logic">
-         <obj_property name="ElementShortName">s_axis_pixels_tready</obj_property>
-         <obj_property name="ObjectShortName">s_axis_pixels_tready</obj_property>
-      </wvobject>
-      <wvobject fp_name="/dnn_engine_tb/s_axis_pixels_tvalid" type="logic">
-         <obj_property name="ElementShortName">s_axis_pixels_tvalid</obj_property>
-         <obj_property name="ObjectShortName">s_axis_pixels_tvalid</obj_property>
-      </wvobject>
-      <wvobject fp_name="/dnn_engine_tb/s_axis_pixels_tlast" type="logic">
-         <obj_property name="ElementShortName">s_axis_pixels_tlast</obj_property>
-         <obj_property name="ObjectShortName">s_axis_pixels_tlast</obj_property>
-      </wvobject>
-      <wvobject fp_name="/dnn_engine_tb/s_axis_pixels_tdata" type="array">
-         <obj_property name="ElementShortName">s_axis_pixels_tdata[7:0][7:0]</obj_property>
-         <obj_property name="ObjectShortName">s_axis_pixels_tdata[7:0][7:0]</obj_property>
-         <obj_property name="isExpanded"></obj_property>
-      </wvobject>
-      <wvobject fp_name="/dnn_engine_tb/s_axis_pixels_tkeep" type="array">
-         <obj_property name="ElementShortName">s_axis_pixels_tkeep[7:0]</obj_property>
-         <obj_property name="ObjectShortName">s_axis_pixels_tkeep[7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/dnn_engine_tb/s_axis_weights_tready" type="logic">
-         <obj_property name="ElementShortName">s_axis_weights_tready</obj_property>
-         <obj_property name="ObjectShortName">s_axis_weights_tready</obj_property>
-      </wvobject>
-      <wvobject fp_name="/dnn_engine_tb/s_axis_weights_tvalid" type="logic">
-         <obj_property name="ElementShortName">s_axis_weights_tvalid</obj_property>
-         <obj_property name="ObjectShortName">s_axis_weights_tvalid</obj_property>
-      </wvobject>
-      <wvobject fp_name="/dnn_engine_tb/s_axis_weights_tlast" type="logic">
-         <obj_property name="ElementShortName">s_axis_weights_tlast</obj_property>
-         <obj_property name="ObjectShortName">s_axis_weights_tlast</obj_property>
-      </wvobject>
-      <wvobject fp_name="/dnn_engine_tb/s_axis_weights_tdata" type="array">
-         <obj_property name="ElementShortName">s_axis_weights_tdata[7:0][7:0]</obj_property>
-         <obj_property name="ObjectShortName">s_axis_weights_tdata[7:0][7:0]</obj_property>
-      </wvobject>
-      <wvobject fp_name="/dnn_engine_tb/s_axis_weights_tkeep" type="array">
-         <obj_property name="ElementShortName">s_axis_weights_tkeep[7:0]</obj_property>
-         <obj_property name="ObjectShortName">s_axis_weights_tkeep[7:0]</obj_property>
       </wvobject>
    </wvobject>
 </wave_config>

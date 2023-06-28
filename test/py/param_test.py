@@ -156,7 +156,7 @@ def compile(request):
 
 
 @pytest.mark.parametrize("KH", [1,3,5,7,9,11])
-@pytest.mark.parametrize("CI", [3])
+@pytest.mark.parametrize("CI", [1])
 @pytest.mark.parametrize("CO", [8])
 @pytest.mark.parametrize("XH", [16])
 @pytest.mark.parametrize("XW", [16])
