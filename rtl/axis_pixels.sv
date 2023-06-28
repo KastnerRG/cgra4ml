@@ -63,9 +63,9 @@ module axis_pixels #(
   enum {SET, PASS , BLOCK} state;
 
   logic en_config, en_shift, en_copy, en_kh, en_copy_r, last_kh, last_kh_r, last_clk_kh, last_clk_kh_r, last_clk_ci, last_clk_w, last_l, last_l_r, m_last_reg, m_last, first_l, first_l_r;
-  logic [BITS_KH2      -1:0] ref_kh2, ref_kh2_in;
-  logic [BITS_CI   -1:0] ref_ci_in;
-  logic [BITS_XW  -1:0] ref_w_in ;
+  logic [BITS_KH2-1:0] ref_kh2, ref_kh2_in;
+  logic [BITS_CI -1:0] ref_ci_in;
+  logic [BITS_XW -1:0] ref_w_in ;
   logic [BITS_IM_BLOCKS-1:0] ref_l_in ;
 
   assign {ref_l_in, ref_w_in, ref_ci_in, ref_kh2_in} = s_data;
@@ -193,7 +193,7 @@ module axis_pixels #(
     if (!aresetn || m_last_beat)       {m_valid, m_last_reg} <= '0;
     else begin 
       if (en_copy_r && en_shift) m_last_reg <= dw_m_last_r;
-      if (last_kh_r)             m_valid    <= dw_m_valid_r;
+      if (last_kh_r && en_shift) m_valid    <= dw_m_valid_r;
     end
   
   assign m_last = m_last_reg && last_clk_kh_r;

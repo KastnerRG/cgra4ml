@@ -1,13 +1,3 @@
-/*//////////////////////////////////////////////////////////////////////////////////
-Engineer: Abarajithan G.
-Create Date: 26/07/2020
-Design Name: Convolution Engine
-Tool Versions: Vivado 2018.2
-Dependencies: 
-Revision:
-Revision 0.01 - File Created
-Additional Comments: 
-//////////////////////////////////////////////////////////////////////////////////*/
 `timescale 1ns/1ps
 `include "../rtl/include/params.svh"
 
@@ -36,19 +26,13 @@ module proc_engine #(
   output logic [COLS-1:0][ROWS-1:0][Y_BITS-1:0] m_data,
   output tuser_st m_user
 );
-  logic en, i_valid, i_last;
-  logic [COLS-1:0][ROWS -1:0][Y_BITS-1:0] i_data;
-  tuser_st i_user;
 
-  logic clken_mul, sel_shift_next, sel_shift, mul_m_valid, acc_m_valid_next, acc_m_valid, mul_m_last, acc_m_last;
-  logic [COLS   -1: 0] clken_acc, bypass_sum, bypass_sum_next, bypass;
-  logic [COLS   -1: 0] acc_m_sum_start, acc_s_valid, acc_m_keep;
+  logic en, clken_mul, sel_shift_next, sel_shift, mul_m_valid, acc_m_valid_next, acc_m_valid, mul_m_last, acc_m_last;
   tuser_st mul_m_user, acc_s_user, mux_s2_user, acc_m_user;
-
-  logic [COLS    -1:0] lut_sum_start [KW_MAX/2:0];
-
-  logic [M_BITS -1:0] mul_m_data  [COLS   -1:0][ROWS -1:0];
-  logic [Y_BITS -1:0] shift_data  [COLS   -1:0][ROWS -1:0];
+  logic [COLS-1:0] clken_acc, bypass_sum, bypass_sum_next, bypass, acc_m_sum_start, acc_s_valid, acc_m_keep;
+  logic [COLS-1:0] lut_sum_start [KW_MAX/2:0];
+  logic [COLS-1:0][ROWS-1:0][M_BITS -1:0] mul_m_data;
+  logic [COLS-1:0][ROWS-1:0][Y_BITS -1:0] shift_data, acc_m_data;
 
   assign s_ready = clken_mul;
 
@@ -84,7 +68,7 @@ module proc_engine #(
 
     for (r=0; r < ROWS ; r++) begin: Ua
       for (c=0; c < COLS   ; c++) begin: Ma
-        assign shift_data [c][r] = c==0 ? 0 : i_data [c-1][r];
+        assign shift_data [c][r] = c==0 ? 0 : m_data [c-1][r];
         proc_element #(
           .X_BITS (X_BITS),
           .K_BITS (K_BITS),
@@ -101,7 +85,7 @@ module proc_engine #(
           .shift_data    (shift_data    [c][r]),
           .bypass        (bypass        [c]),
           .clken_acc     (clken_acc     [c]),
-          .m_data        (i_data        [c][r])
+          .m_data        (acc_m_data    [c][r])
         );
     end end
 
@@ -112,39 +96,8 @@ module proc_engine #(
     n_delay #(.N(DELAY_ACC), .W(2)) ACC_VALID_LAST(.c(clk), .rn(resetn), .e(en), .i({acc_m_valid_next, mul_m_last}), .o({acc_m_valid, acc_m_last}));
 
     // AXI Stream
-
-    assign i_user  = acc_m_user;
-    assign i_last  = acc_m_last;
-    assign i_valid = acc_m_valid;
-
-    logic valid_prev, i_ready;
-    assign en = valid_prev | i_ready;
-
-    always_ff @(posedge clk)
-      if (!resetn)  valid_prev <= 0;
-      else          valid_prev <= i_valid;
-
-  axis_register # (
-    .DATA_WIDTH  (COLS*ROWS*Y_BITS),
-    .KEEP_ENABLE (0),
-    .LAST_ENABLE (1),
-    .USER_ENABLE (1),
-    .USER_WIDTH  (TUSER_WIDTH),
-    .REG_TYPE    (2)  // skid reg
-  ) AXIS_REG  (
-    .clk          (clk),
-    .rst          (!resetn),
-    .s_axis_tdata (i_data ),
-    .s_axis_tvalid(i_valid),
-    .s_axis_tready(i_ready),
-    .s_axis_tlast (i_last ),
-    .s_axis_tuser (i_user ),
-    .m_axis_tdata (m_data ),
-    .m_axis_tvalid(m_valid),
-    .m_axis_tready(m_ready),
-    .m_axis_tlast (m_last ),
-    .m_axis_tuser (m_user )
-  );
+    assign en = m_valid ? m_ready : 1;
+    assign {m_data, m_valid, m_last, m_user} = {acc_m_data, acc_m_valid, acc_m_last, acc_m_user};
 
   endgenerate
 endmodule
