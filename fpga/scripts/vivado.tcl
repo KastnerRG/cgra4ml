@@ -5,7 +5,8 @@ source $SCRIPTS_DIR/vivado_config.tcl
 
 #Board specific
 # source $SCRIPTS_DIR/pynq_z2.tcl
-source $SCRIPTS_DIR/zcu102.tcl
+# source $SCRIPTS_DIR/zcu102.tcl
+source $SCRIPTS_DIR/zcu104.tcl
 
 
 # CREATE IPs
