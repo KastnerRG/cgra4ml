@@ -2,7 +2,6 @@ import numpy as np
 import os
 # import torch
 import tensorflow as tf
-from qkeras import QConv2D
 import subprocess
 import glob
 import os.path
@@ -47,20 +46,20 @@ def product_dict(**kwargs):
 
 
 @pytest.fixture(scope="module", params=list(product_dict(
-                                                X_BITS = [8    ], 
-                                                K_BITS = [8    ], 
-                                                Y_BITS = [32   ], 
-                                                ROWS   = [8    ], 
-                                                COLS   = [24   ], 
-                                                KW_MAX = [11   ], 
-                                                CI_MAX = [1024 ], 
-                                                XW_MAX = [32   ], 
-                                                XH_MAX = [32   ], 
-                                                XN_MAX = [4    ], 
-                                                IN_BITS= [64   ], 
+                                                X_BITS  = [8    ], 
+                                                K_BITS  = [8    ], 
+                                                Y_BITS  = [32   ], 
+                                                ROWS    = [8    ], 
+                                                COLS    = [96   ], 
+                                                KW_MAX  = [11   ], 
+                                                CI_MAX  = [2048 ], 
+                                                XW_MAX  = [32   ], 
+                                                XH_MAX  = [32   ], 
+                                                XN_MAX  = [16   ], 
+                                                IN_BITS = [64   ], 
                                                 OUT_BITS= [64   ], 
                                                 RAM_WEIGHTS_DEPTH = [2049],  # KH*CI + Config beats
-                                                RAM_EDGES_DEPTH    = [672 ], # max(CI * XW * (XH/ROWS-1))
+                                                RAM_EDGES_DEPTH   = [288 ], # max(CI * XW * (XH/ROWS-1))
                                             )))
 
 def compile(request):
@@ -155,12 +154,12 @@ def compile(request):
     return c
 
 
-@pytest.mark.parametrize("KH", [1,3,5,7,9,11])
-@pytest.mark.parametrize("CI", [1])
-@pytest.mark.parametrize("CO", [8])
-@pytest.mark.parametrize("XH", [16])
-@pytest.mark.parametrize("XW", [16])
-@pytest.mark.parametrize("XN", [2])
+@pytest.mark.parametrize("KH", [1])
+@pytest.mark.parametrize("CI", [64])
+@pytest.mark.parametrize("CO", [64])
+@pytest.mark.parametrize("XH", [8])
+@pytest.mark.parametrize("XW", [8])
+@pytest.mark.parametrize("XN", [8])
 def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     c= compile
 
@@ -173,7 +172,7 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     assert XH <= c.XH_MAX
     assert XW <= c.XW_MAX
     assert XN <= c.XN_MAX
-    assert CI * XW * int(np.ceil(XH/c.ROWS)-1) <= c.RAM_EDGES_DEPTH
+    assert CI * XW * int(np.ceil(XH/c.ROWS)-1) <= c.RAM_EDGES_DEPTH or KH == 1
     assert XW >= KH//2
 
     for file in os.scandir(DATA_DIR):

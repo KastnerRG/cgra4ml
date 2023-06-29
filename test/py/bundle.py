@@ -91,8 +91,9 @@ class Bundle:
         ])
         w_config = format(w_config, f'#0{c.IN_BITS}b')
         w_config_words = [int(w_config[i:i+c.K_BITS], 2) for i in range(0, len(w_config), c.K_BITS)]
+        w_config_words = [word if word < 2**(c.K_BITS-1) else word-2**c.K_BITS  for word in w_config_words]
         w_config_words.reverse()
-        w_config_words = np.array(w_config_words,dtype=np.uint8).astype(np.int8)
+        w_config_words = np.array(w_config_words,dtype=np.int8).astype(np.int8)
         w_config_words = np.repeat(w_config_words[np.newaxis,...],repeats=r.IT,axis=0)
 
         '''Input Config'''
@@ -106,6 +107,7 @@ class Bundle:
 
         x_config = format(x_config, f'#0{c.IN_BITS}b')
         x_config_words = [int(x_config[i:i+c.X_BITS], 2) for i in range(0, len(x_config), c.X_BITS)]
+        x_config_words = [word if word < 2**(c.X_BITS-1) else word-2**c.X_BITS  for word in x_config_words]
         x_config_words.reverse()
 
         d = {'w_config':w_config, 'w_config_words':w_config_words, 'x_config':x_config, 'x_config_words': x_config_words}
@@ -179,7 +181,7 @@ class Bundle:
         x = x.transpose(0,1,3,4,2) # (XN,L,XW,CI,c.ROWS+X_PAD)
 
         x = x.reshape((r.XN*r.L*r.XW*r.CI*(c.ROWS+c.X_PAD)))
-        x = np.concatenate([np.array(r.x_config_words, dtype=np.uint8), x.flatten()])
+        x = np.concatenate([np.array(r.x_config_words, dtype=np.int8), x.flatten()])
         assert x.shape == (c.IN_BITS/c.X_BITS + r.XN*r.L*r.XW*r.CI*(c.ROWS+c.X_PAD),)
         print(f'--------- input final: (c.IN_BITS/c.X_BITS + r.XN*r.L*r.XW*r.CI*(c.ROWS+c.X_PAD),) = ({c.IN_BITS}/{c.X_BITS} + {r.XN}*{r.L}*{r.XW}*{r.CI}*({c.ROWS}+{c.X_PAD}),) = {x.shape}')
         return x
