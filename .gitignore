@@ -13,5 +13,6 @@ test/vectors
 test/xsim
 test/c
 
-docs/Calc Pattern.xlsx
-docs/file_hierrarchy.txt
+test/py/*
+
+docs/*

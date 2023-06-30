@@ -2,7 +2,7 @@
     // Written from param_tests.py
 
     `define ROWS                8                 	// PE rows, constrained by resources
-    `define COLS                96                 	// PE cols, constrained by resources
+    `define COLS                24                 	// PE cols, constrained by resources
     `define X_BITS              8               	// Bits per word in input
     `define K_BITS              8               	// Bits per word in input
     `define Y_BITS              32               	// Bits per word in output of conv

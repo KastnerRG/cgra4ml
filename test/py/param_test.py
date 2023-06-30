@@ -50,7 +50,7 @@ def product_dict(**kwargs):
                                                 K_BITS  = [8    ], 
                                                 Y_BITS  = [32   ], 
                                                 ROWS    = [8    ], 
-                                                COLS    = [96   ], 
+                                                COLS    = [24   ], 
                                                 KW_MAX  = [11   ], 
                                                 CI_MAX  = [2048 ], 
                                                 XW_MAX  = [32   ], 
