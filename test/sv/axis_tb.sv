@@ -4,7 +4,7 @@
 `timescale 1ns/1ps
 
 module AXIS_Sink #(
-  parameter  WORD_WIDTH=8, BUS_WIDTH=8, PROB_READY=20, FILE_PATH="",
+  parameter  WORD_WIDTH=8, BUS_WIDTH=8, PROB_READY=20,
   parameter  WORDS_PER_BEAT = BUS_WIDTH/WORD_WIDTH
 )(
     input  logic aclk, aresetn,
@@ -15,8 +15,9 @@ module AXIS_Sink #(
 );
 
   int i_words = 0, file;
+  bit done = 0;
 
-  task axis_pull;
+  task axis_pull (input string FILE_PATH);
     // clear the file
     file = $fopen(FILE_PATH, "w");
     $fclose(file);
@@ -26,7 +27,7 @@ module AXIS_Sink #(
     m_ready = 0;
     wait(aresetn);
     
-    while (1) begin
+    while (!done) begin
 
       @(posedge aclk)
       if (m_ready && m_valid) begin  // read at posedge
@@ -41,6 +42,7 @@ module AXIS_Sink #(
             i_words  += 1;
           end
         $fclose(file);
+        if (m_last) done <= 1;
       end
 
       #10ps // delay before writing
@@ -52,7 +54,7 @@ endmodule
 
 
 module AXIS_Source #(
-  parameter WORD_WIDTH=8, BUS_WIDTH=8, PROB_VALID=20, FILE_PATH="",
+  parameter WORD_WIDTH=8, BUS_WIDTH=8, PROB_VALID=20,
   parameter WORDS_PER_BEAT = BUS_WIDTH/WORD_WIDTH
 )(
     input  logic aclk, aresetn, s_ready, 
@@ -66,10 +68,10 @@ module AXIS_Source #(
   logic [WORDS_PER_BEAT-1:0] s_keep_val;
 
   int status, i_words=0, file, val;
-  logic prev_handshake=1; // data is released first
-  logic prev_slast=0;
+  bit prev_handshake=1; // data is released first
+  bit prev_slast=0;
 
-  task axis_push;
+  task axis_push (input string FILE_PATH);
     {s_valid, s_data, s_last, s_keep} = '0;
 
     file = $fopen(FILE_PATH, "r");

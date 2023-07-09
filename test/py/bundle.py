@@ -78,10 +78,10 @@ class Bundle:
             for val, width in arr:
                 packed |= val << sum_width
                 sum_width += width
-            return packed
+            return packed, sum_width
         
         ''' Weights Config'''
-        w_config = pack_bits([
+        w_config, w_config_bits = pack_bits([
             (r.KW//2, c.BITS_KW2),
             (r.CI-1 , c.BITS_CIN_MAX),
             (r.XW-1 , c.BITS_COLS_MAX),
@@ -89,6 +89,7 @@ class Bundle:
             (r.XN-1 , c.BITS_XN_MAX),
             (r.BRAM_WEIGHTS_ADDR_MAX, c.BITS_BRAM_WEIGHTS_ADDR)
         ])
+        assert w_config_bits <= c.IN_BITS
         w_config = format(w_config, f'#0{c.IN_BITS}b')
         w_config_words = [int(w_config[i:i+c.K_BITS], 2) for i in range(0, len(w_config), c.K_BITS)]
         w_config_words = [word if word < 2**(c.K_BITS-1) else word-2**c.K_BITS  for word in w_config_words]
@@ -97,13 +98,13 @@ class Bundle:
         w_config_words = np.repeat(w_config_words[np.newaxis,...],repeats=r.IT,axis=0)
 
         '''Input Config'''
-        x_config = pack_bits([
+        x_config, x_config_bits = pack_bits([
             (r.KH//2, c.BITS_KH2),
             (r.CI-1 , c.BITS_CIN_MAX),
             (r.XW-1 , c.BITS_COLS_MAX),
             (r.L -1 , c.BITS_BLOCKS_MAX),
         ])
-        assert c.IN_BITS >= c.BITS_KW2 + c.BITS_CIN_MAX + c.BITS_COLS_MAX + c.BITS_BLOCKS_MAX
+        assert x_config_bits <= c.IN_BITS
 
         x_config = format(x_config, f'#0{c.IN_BITS}b')
         x_config_words = [int(x_config[i:i+c.X_BITS], 2) for i in range(0, len(x_config), c.X_BITS)]

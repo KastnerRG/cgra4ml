@@ -26,7 +26,7 @@ DATA_DIR   = 'vectors'
 os.makedirs(DATA_DIR, exist_ok=True)
 MODEL_NAME = 'test'
 # SIM = sys.argv[1] if len(sys.argv) == 2 else "xsim" # icarus
-SOURCES = glob.glob('../rtl/include/*') + glob.glob('sv/*') + glob.glob("../rtl/**/*.v", recursive=True) + glob.glob("../rtl/**/*.sv", recursive=True)
+SOURCES = glob.glob('../rtl/include/*') + glob.glob('sv/*') + glob.glob("../rtl/**/*.v", recursive=True) + glob.glob("../rtl/**/*.sv", recursive=True) + ['./xsim/sim_params.svh']
 print(SOURCES)
 
 TB_MODULE = "dnn_engine_tb"
@@ -45,26 +45,8 @@ def product_dict(**kwargs):
         yield namedtuple('Compile', d)(**d)
 
 
-@pytest.fixture(scope="module", params=list(product_dict(
-                                                X_BITS  = [8    ], 
-                                                K_BITS  = [8    ], 
-                                                Y_BITS  = [32   ], 
-                                                ROWS    = [8    ], 
-                                                COLS    = [24   ], 
-                                                KW_MAX  = [11   ], 
-                                                CI_MAX  = [2048 ], 
-                                                XW_MAX  = [32   ], 
-                                                XH_MAX  = [32   ], 
-                                                XN_MAX  = [16   ], 
-                                                IN_BITS = [64   ], 
-                                                OUT_BITS= [64   ], 
-                                                RAM_WEIGHTS_DEPTH = [2049],  # KH*CI + Config beats
-                                                RAM_EDGES_DEPTH   = [288 ], # max(CI * XW * (XH/ROWS-1))
-                                            )))
+def make_compile_params(c):
 
-def compile(request):
-
-    c = request.param
     assert c.ROWS >= c.KW_MAX//2 # to capture the bottom pixels
 
     def clog2(x):
@@ -94,6 +76,11 @@ def compile(request):
         pickle.dump(c._asdict(), f)
 
     print(f"\n\n---------- {SIM}:{c} ----------\n\n")
+
+    return c
+
+
+def compile(c):
 
     with open('../rtl/include/params_input.svh', 'w') as f:
         f.write(f'''
@@ -140,31 +127,61 @@ def compile(request):
         ''')
 
     os.makedirs('xsim', exist_ok=True)
+    sim_params = [f'VALID_PROB {c.VALID_PROB}', f'READY_PROB {c.READY_PROB}']
 
     if SIM == 'xsim':
+        sim_params += [f'DIR_PATH "D:/dnn-engine/test/{DATA_DIR}/"']
+        with open('xsim/sim_params.svh', 'w') as f:
+            for param in sim_params:
+                f.write(f'`define {param}\n')
+
         SOURCES_STR = " ".join([os.path.normpath('../' + s) for s in SOURCES]) # since called from subdir
-        assert subprocess.run(fr'{XIL_PATH}\xvlog -sv {SOURCES_STR}', cwd="xsim", shell=True).returncode == 0
-        assert subprocess.run(fr'{XIL_PATH}\xelab {TB_MODULE} --snapshot {TB_MODULE} -log elaborate.log --debug typical', cwd="xsim", shell=True).returncode == 0
+        xvlog_cmd = fr'{XIL_PATH}\xvlog -sv {SOURCES_STR}'
+        xelab_cmd = fr'{XIL_PATH}\xelab {TB_MODULE} --snapshot {TB_MODULE} -log elaborate.log --debug typical'
+        assert subprocess.run(xvlog_cmd, cwd="xsim", shell=True).returncode == 0
+        assert subprocess.run(xelab_cmd, cwd="xsim", shell=True).returncode == 0
 
     if SIM == 'icarus':
-        cmd = [ "iverilog", "-v", "-g2012", "-DICARUS", "-o", "xsim/a.out", "-I", "sv", "-I", "../rtl/include", "-s", TB_MODULE] + SOURCES
+        sim_params += [f'DIR_PATH "{DATA_DIR}/"']
+        with open('xsim/sim_params.svh', 'w') as f:
+            for param in sim_params:
+                f.write(f'`define {param}\n')
+
+        cmd = [ "iverilog", "-v", "-g2012", "-o", "xsim/a.out", "-I", "sv", "-I", "../rtl/include", "-s", TB_MODULE] + SOURCES
         print(" ".join(cmd))
         assert subprocess.run(cmd).returncode == 0
 
     return c
 
 
-@pytest.mark.parametrize("KH", [1])
-@pytest.mark.parametrize("CI", [64])
-@pytest.mark.parametrize("CO", [64])
+@pytest.mark.parametrize("KH", [3])
+@pytest.mark.parametrize("CI", [8])
+@pytest.mark.parametrize("CO", [16])
 @pytest.mark.parametrize("XH", [8])
-@pytest.mark.parametrize("XW", [8])
-@pytest.mark.parametrize("XN", [8])
-def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
-    c= compile
+@pytest.mark.parametrize("XW", [4])
+@pytest.mark.parametrize("XN", [2])
+@pytest.mark.parametrize("COMPILE", list(product_dict(
+                                                X_BITS     = [8    ], 
+                                                K_BITS     = [8    ], 
+                                                Y_BITS     = [32   ], 
+                                                ROWS       = [8    ], 
+                                                COLS       = [24   ], 
+                                                KW_MAX     = [11   ], 
+                                                CI_MAX     = [2048 ], 
+                                                XW_MAX     = [32   ], 
+                                                XH_MAX     = [32   ], 
+                                                XN_MAX     = [16   ], 
+                                                IN_BITS    = [64   ], 
+                                                OUT_BITS   = [64   ],
+                                                RAM_WEIGHTS_DEPTH = [2049],  # KH*CI + Config beats
+                                                RAM_EDGES_DEPTH   = [288 ], # max(CI * XW * (XH/ROWS-1))
 
-    i_it = 0
-    i_layers = 0
+                                                VALID_PROB = [1000],
+                                                READY_PROB = [1000],
+                                            )))
+def test_dnn_engine(KH, CI, CO, XH, XW, XN, COMPILE):
+    c = make_compile_params(COMPILE)
+
     KW = KH
     assert KH <= c.KH_MAX
     assert KW <= c.KW_MAX
@@ -178,6 +195,8 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     for file in os.scandir(DATA_DIR):
         os.remove(file.path)
 
+    y_it_all = []
+
     '''
     GOLDEN MODEL
     '''
@@ -188,22 +207,30 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
 
     bundle = Bundle(c=c, type='conv', x=x.numpy(), w=w.numpy(), y=y.numpy(), a=None)
 
-    '''
-    Save as text
-    '''
-    path = f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_w.txt"
-    np.savetxt(path, bundle.w_engine[i_it].flatten(), fmt='%d')
-    print(f'Weights saved as {path}')
+    num_it = bundle.w_engine.shape[0]
 
-    path = f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_x.txt"
-    np.savetxt(path, bundle.x_engine.flatten(), fmt='%d')
-    print(f'input saved as "{path}"')
+    for i_it in range(num_it):
 
-    y_it = bundle.y_engine[i_it]
-    path = f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_y_exp.txt"
-    np.savetxt(path, y_it.flatten(), fmt='%d')
-    print(f'output saved as "{path}"')
+        idx = i_it
 
+        '''
+        Save as text
+        '''
+        path = f"{DATA_DIR}/{idx}_w.txt"
+        np.savetxt(path, bundle.w_engine[i_it].flatten(), fmt='%d')
+        print(f'Weights saved as {path}')
+
+        path = f"{DATA_DIR}/{idx}_x.txt"
+        np.savetxt(path, bundle.x_engine.flatten(), fmt='%d')
+        print(f'input saved as "{path}"')
+
+        y_it = bundle.y_engine[i_it]
+        y_it_all += [y_it]
+        path = f"{DATA_DIR}/{idx}_y_exp.txt"
+        np.savetxt(path, y_it.flatten(), fmt='%d')
+        print(f'output saved as "{path}"')
+
+    compile(c)
 
     '''
     RUN SIMULATION
@@ -224,13 +251,17 @@ def test_dnn_engine(compile, KH, CI, CO, XH, XW, XN):
     '''
     CHECK ERROR
     '''
-    y_sim = np.loadtxt(f"{DATA_DIR}/{MODEL_NAME}_conv_{i_layers}_y_sim.txt",np.int32)
-    error = np.sum(np.abs(y_sim.reshape(y_it.shape) - y_it))
+    for i_it in range(1):
 
-    print("Error: ", error)
-    assert error == 0
+        idx = i_it
+        y_it = y_it_all[i_it]
+        y_sim = np.loadtxt(f"{DATA_DIR}/{idx}_y_sim.txt",np.int32)
+        error = np.sum(np.abs(y_sim.reshape(y_it.shape) - y_it))
 
-    if error != 0 and SIM=='xsim':
-        print(fr'''Non zero error. Open waveform with:
+        print("Error: ", error)
+        assert error == 0
+        if error != 0 and SIM=='xsim':
+            print(fr'''Non zero error. Open waveform with:
+
 
     call {XIL_PATH}\xsim --gui {TB_MODULE}.wdb -view ..\wave\{WAVEFORM}''')
