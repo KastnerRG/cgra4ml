@@ -47,8 +47,9 @@ module AXIS_Sink #(
 
       #10ps // delay before writing
       m_ready = $urandom_range(0,999) < PROB_READY;
-
     end
+    {done, i_words} = 0;
+    @(posedge aclk);
   endtask
 endmodule
 
@@ -114,10 +115,11 @@ module AXIS_Source #(
     end
 
     // Reset & close packet after done
-    {s_valid, s_data, s_keep, s_last} = '0;
     $display("Closing file '%s' at i_words=%d \n", FILE_PATH, i_words);
     $fclose(file);
-
+    {s_valid, s_data, s_keep, s_last, prev_slast, i_words} = '0;
+    prev_handshake = 1;
+    @(posedge aclk);
   endtask
 endmodule
 

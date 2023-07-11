@@ -8,7 +8,8 @@ module dnn_engine_tb;
 
   localparam  DIR_PATH   = `DIR_PATH;
   localparam  VALID_PROB = `VALID_PROB,
-              READY_PROB = `READY_PROB;
+              READY_PROB = `READY_PROB,
+              NUM_IT     = `NUM_IT;
 
   // CLOCK GENERATION
 
@@ -63,21 +64,26 @@ module dnn_engine_tb;
   AXIS_Sink   #(Y_BITS, M_OUTPUT_WIDTH_LF , READY_PROB) sink_y   (aclk, aresetn, m_axis_tready        , m_axis_tvalid        , m_axis_tlast        , m_axis_tdata        , m_axis_tkeep        );
 
   bit done_y = 0;
-  string idx = "0";
+  string w_path, x_path, y_path;
 
-  initial begin
-    source_k.axis_push ({DIR_PATH, idx, "_w.txt"    });
-    $display("done k");
+  initial for (int i=0; i<NUM_IT; i++) begin
+    $sformat(w_path, "%s%0d_w.txt", DIR_PATH, i);
+    source_k.axis_push (w_path);
+    $display("done w %d", i);
   end
 
-  initial begin
-    source_x.axis_push ({DIR_PATH, idx, "_x.txt"    });
-    $display("done x");
+  initial for (int i=0; i<NUM_IT; i++) begin
+    $sformat(x_path, "%s%0d_x.txt", DIR_PATH, i);
+    source_x.axis_push (x_path);
+    $display("done x %d", i);
   end
 
-  initial begin
-    sink_y  .axis_pull ({DIR_PATH, idx, "_y_sim.txt"});
-    $display("done y");
+  initial  begin 
+    for (int i=0; i<NUM_IT; i++) begin
+      $sformat(y_path, "%s%0d_y_sim.txt", DIR_PATH, i);
+      sink_y.axis_pull (y_path);
+      $display("done y %d", i);
+    end
     done_y = 1;
   end
 
