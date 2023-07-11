@@ -80,7 +80,7 @@ def make_compile_params(c):
     return c
 
 
-def compile(c):
+def compile(c, num_it):
 
     with open('../rtl/include/params_input.svh', 'w') as f:
         f.write(f'''
@@ -127,7 +127,7 @@ def compile(c):
         ''')
 
     os.makedirs('xsim', exist_ok=True)
-    sim_params = [f'VALID_PROB {c.VALID_PROB}', f'READY_PROB {c.READY_PROB}']
+    sim_params = [f'VALID_PROB {c.VALID_PROB}', f'READY_PROB {c.READY_PROB}', f'NUM_IT {num_it}']
 
     if SIM == 'xsim':
         sim_params += [f'DIR_PATH "D:/dnn-engine/test/{DATA_DIR}/"']
@@ -156,7 +156,7 @@ def compile(c):
 
 @pytest.mark.parametrize("KH", [3])
 @pytest.mark.parametrize("CI", [8])
-@pytest.mark.parametrize("CO", [16])
+@pytest.mark.parametrize("CO", [24])
 @pytest.mark.parametrize("XH", [8])
 @pytest.mark.parametrize("XW", [4])
 @pytest.mark.parametrize("XN", [2])
@@ -176,8 +176,8 @@ def compile(c):
                                                 RAM_WEIGHTS_DEPTH = [2049],  # KH*CI + Config beats
                                                 RAM_EDGES_DEPTH   = [288 ], # max(CI * XW * (XH/ROWS-1))
 
-                                                VALID_PROB = [1000],
-                                                READY_PROB = [1000],
+                                                VALID_PROB = [100],
+                                                READY_PROB = [1],
                                             )))
 def test_dnn_engine(KH, CI, CO, XH, XW, XN, COMPILE):
     c = make_compile_params(COMPILE)
@@ -230,7 +230,7 @@ def test_dnn_engine(KH, CI, CO, XH, XW, XN, COMPILE):
         np.savetxt(path, y_it.flatten(), fmt='%d')
         print(f'output saved as "{path}"')
 
-    compile(c)
+    compile(c, num_it)
 
     '''
     RUN SIMULATION
@@ -251,7 +251,7 @@ def test_dnn_engine(KH, CI, CO, XH, XW, XN, COMPILE):
     '''
     CHECK ERROR
     '''
-    for i_it in range(1):
+    for i_it in range(num_it):
 
         idx = i_it
         y_it = y_it_all[i_it]

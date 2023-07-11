@@ -198,7 +198,6 @@ module axis_weight_rotator #(
                             en_ref          [i] = s_handshake && (state_dw == DW_BLOCK_S);
                           end
             W_WRITE_S   :   bram_wen        [i] = dw_m_valid;
-            W_FILL_1_S  :   bram_m_ready    [i] = 1;
             W_SWITCH_S  :   done_write_next [i] = 1;
           endcase 
 
