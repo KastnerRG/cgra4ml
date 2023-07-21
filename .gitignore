@@ -12,6 +12,7 @@ asic/*
 test/vectors
 test/xsim
 test/c
+test/obj_dir
 
 test/py/*
 

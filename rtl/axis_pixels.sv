@@ -90,7 +90,7 @@ module axis_pixels #(
 
     en_config    = 0;
     en_shift     = m_ready;
-    en_kh        = m_ready && (last_kh ? (dw_m_valid | m_last_reg) : 1);
+    en_kh        = m_ready && (last_kh ? (dw_m_valid | m_last_reg | dw_m_last_r) : 1);
     en_copy      = dw_m_valid && last_clk_kh && m_ready;
     
     unique case (state)
