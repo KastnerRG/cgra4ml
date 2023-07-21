@@ -37,9 +37,14 @@ module alex_axis_adapter_any #(
 
   function integer lcm (input integer x, input integer y);
     logic found = 0;
-    integer max = x > y ? x : y;
-    integer min = x > y ? y : x;
-    integer i;
+    integer max, min, i;
+    if (x > y) begin
+      max = x;
+      min = y;
+    end else begin
+      max = y;
+      min = x;
+    end
 
     for (i=max; i <= x*y; i=i+max)
       if ( !found && (i % min == 0)) begin

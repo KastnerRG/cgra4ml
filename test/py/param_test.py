@@ -154,11 +154,11 @@ def compile(c, num_it):
     return c
 
 
-@pytest.mark.parametrize("KH", [3])
+@pytest.mark.parametrize("KH", [1,3,5,7,11])
 @pytest.mark.parametrize("CI", [8])
 @pytest.mark.parametrize("CO", [24])
-@pytest.mark.parametrize("XH", [8])
-@pytest.mark.parametrize("XW", [4])
+@pytest.mark.parametrize("XH", [16])
+@pytest.mark.parametrize("XW", [8])
 @pytest.mark.parametrize("XN", [2])
 @pytest.mark.parametrize("COMPILE", list(product_dict(
                                                 X_BITS     = [8    ], 
