@@ -47,7 +47,7 @@ class Bundle:
         IT             = int(np.ceil( CO / (SW*EG)))              # iterations needed
         CO_PAD         = IT * CO_PRL                              # output cols padded
 
-        print(f'{KH=}, {KW=}, {CI=}, {CO=}, {CO_PRL=}, {EG=}, {IT=}, {CO_PAD}')
+        print(f'KH={KH}, KW={KW}, CI={CI}, CO={CO}, CO_PRL={CO_PRL}, EG={EG}, IT={IT}, CO_PAD={CO_PAD}')
 
         XN, XH, XW, CI = x.shape
         print('initial (XN, XH, XW, CI)=', x.shape)

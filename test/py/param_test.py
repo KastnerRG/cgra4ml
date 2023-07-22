@@ -20,7 +20,7 @@ def pack_bits(arr):
     return packed
 
 # Simulator: xsim on windows, icarus otherwise
-SIM = 'xsim' if os.name=='nt' else 'icarus'
+SIM = 'xsim' if os.name=='nt' else 'verilator' #'icarus'
 
 DATA_DIR   = 'vectors'
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -151,6 +151,17 @@ def compile(c, num_it):
         print(" ".join(cmd))
         assert subprocess.run(cmd).returncode == 0
 
+    if SIM == "verilator":
+        sim_params += [f'DIR_PATH "{DATA_DIR}/"']
+        with open('xsim/sim_params.svh', 'w') as f:
+            for param in sim_params:
+                f.write(f'`define {param}\n')
+        
+        cmd = f"verilator --binary -j 0 -Wno-fatal --relative-includes --top {TB_MODULE} " + " ".join(SOURCES)
+        print(cmd)
+        assert subprocess.run(cmd.split(' ')).returncode == 0
+
+
     return c
 
 
@@ -200,7 +211,7 @@ def test_dnn_engine(KH, CI, CO, XH, XW, XN, COMPILE):
     '''
     GOLDEN MODEL
     '''
-    tf.keras.utils.set_random_seed(0)
+    # tf.keras.utils.set_random_seed(0)
     x = tf.convert_to_tensor(np.random.randint(-2**(c.X_BITS-1), 2**(c.X_BITS-1)-1 ,size=(XN,XH,XW,CI)).astype(np.float32))
     w = tf.convert_to_tensor(np.random.randint(-2**(c.K_BITS-1), 2**(c.K_BITS-1)-1 ,size=(KH,KW,CI,CO)).astype(np.float32))
     y = tf.keras.backend.conv2d(x, w, strides=(1,1), padding='same')
@@ -246,6 +257,9 @@ def test_dnn_engine(KH, CI, CO, XH, XW, XN, COMPILE):
 
     if SIM == 'icarus':
         subprocess.run(["vvp", "xsim/a.out"])
+    
+    if SIM == 'verilator':
+        subprocess.run([f"./obj_dir/V{TB_MODULE}"])
 
 
     '''
