@@ -81,3 +81,7 @@ report_timing_summary -delay_type min_max -report_unconstrained -check_timing_ve
 report_utilization -file ../reports/${PROJECT_NAME}_${BOARD}_${FREQ}_utilization_report.txt -name utilization_1
 report_power -file ../reports/${PROJECT_NAME}_${BOARD}_${FREQ}_power_1.txt -name {power_1}
 report_drc -name drc_1 -file ../reports/${PROJECT_NAME}_${BOARD}_${FREQ}_drc_1.txt -ruledecks {default opt_checks placer_checks router_checks bitstream_checks incr_eco_checks eco_checks abs_checks}
+
+exec mkdir -p ../output
+exec cp "$PROJECT_NAME/$PROJECT_NAME.gen/sources_1/bd/design_1/hw_handoff/design_1.hwh" ../output/
+exec cp "$PROJECT_NAME/$PROJECT_NAME.runs/impl_1/design_1_wrapper.bit" ../output/design_1.bit
