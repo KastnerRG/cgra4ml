@@ -31,16 +31,9 @@ jobs:
         sudo apt-get install libfl-dev  # Ubuntu only (ignore if gives error)
         # sudo apt-get install zlibc zlib1g zlib1g-dev  # Ubuntu only (ignore if gives error)
 
-        git clone https://github.com/verilator/verilator   # Only first time
-
-        cd verilator
-        git pull         # Make sure git repository is up-to-date
-        git checkout stable      # Use most recent stable release
-
-        autoconf         # Create ./configure script
-        ./configure      # Configure and create Makefile
-        make -j `nproc`  # Build Verilator itself (if error, try just 'make')
-        sudo make install
+        git clone https://github.com/abarajithan11/verilator-compiled
+        cd verilator-compiled
+        tar -C ${HOME} -xzf verilator.tar.gz
 
     - name: Install Tensorflow
       run: |
@@ -48,5 +41,10 @@ jobs:
 
     - name: Verify Full Design
       run: |
+        export VERILATOR_ROOT=${HOME}/verilator
+        export PATH=${VERILATOR_ROOT}/bin:${PATH}
+        export PYMTL_VERILATOR_INCLUDE_DIR=${VERILATOR_ROOT}/share/verilator/include
+        verilator --version
+        
         cd test
         python -m pytest -s py/param_test.py
