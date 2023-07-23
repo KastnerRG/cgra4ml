@@ -7,8 +7,8 @@ import glob
 import os.path
 import pytest
 import itertools
-from collections import namedtuple
 import pickle
+from collections import namedtuple
 from bundle import Bundle
 
 def pack_bits(arr):
@@ -22,7 +22,7 @@ def pack_bits(arr):
 # Simulator: xsim on windows, icarus otherwise
 SIM = 'xsim' if os.name=='nt' else 'verilator' #'icarus'
 
-DATA_DIR   = 'vectors'
+DATA_DIR   = 'D:/dnn-engine/test/vectors' if SIM == 'xsim' else  'vectors'
 os.makedirs(DATA_DIR, exist_ok=True)
 MODEL_NAME = 'test'
 # SIM = sys.argv[1] if len(sys.argv) == 2 else "xsim" # icarus
@@ -53,7 +53,7 @@ def make_compile_params(c):
         return int(np.ceil(np.log2(x)))
     
     d = { 
-        'KH_MAX'                :c.KW_MAX, 
+        'KH_MAX'                : c.KW_MAX, 
         'L_MAX'                 : int(np.ceil(c.XH_MAX//c.ROWS)),
     }
     n = namedtuple('Compile', d)(**d)
@@ -62,12 +62,12 @@ def make_compile_params(c):
     d = { 
         'CONFIG_BEATS'          : 1,
         'X_PAD'                 : int(np.ceil(c.KH_MAX//2)),
-        'BITS_KW2'              :clog2((c.KW_MAX+1)/2),
-        'BITS_KH2'              :clog2((c.KH_MAX+1)/2),
-        'BITS_CIN_MAX'          :clog2(c.CI_MAX),
-        'BITS_COLS_MAX'         :clog2(c.XW_MAX),
-        'BITS_BLOCKS_MAX'       :clog2( c.L_MAX),
-        'BITS_XN_MAX'           :clog2(c.XN_MAX),
+        'BITS_KW2'              : clog2((c.KW_MAX+1)/2),
+        'BITS_KH2'              : clog2((c.KH_MAX+1)/2),
+        'BITS_CIN_MAX'          : clog2(c.CI_MAX),
+        'BITS_COLS_MAX'         : clog2(c.XW_MAX),
+        'BITS_BLOCKS_MAX'       : clog2(c.L_MAX),
+        'BITS_XN_MAX'           : clog2(c.XN_MAX),
         'BITS_BRAM_WEIGHTS_ADDR': clog2(c.RAM_WEIGHTS_DEPTH),
          }
     n = namedtuple('Compile', d)(**d)
@@ -76,7 +76,6 @@ def make_compile_params(c):
         pickle.dump(c._asdict(), f)
 
     print(f"\n\n---------- {SIM}:{c} ----------\n\n")
-
     return c
 
 
@@ -99,7 +98,7 @@ def compile(c, num_it):
     `define XN_MAX              {c.XN_MAX}               \t// max of input batch size, across layers
     `define CI_MAX              {c.CI_MAX}               \t// max of input channels, across layers
     `define CONFIG_BEATS        {c.CONFIG_BEATS}         \t// constant, for now
-    `define RAM_WEIGHTS_DEPTH  {c.RAM_WEIGHTS_DEPTH}   \t// CONFIG_BEATS + max(KW * CI), across layers
+    `define RAM_WEIGHTS_DEPTH   {c.RAM_WEIGHTS_DEPTH}    \t// CONFIG_BEATS + max(KW * CI), across layers
     `define RAM_EDGES_DEPTH     {c.RAM_EDGES_DEPTH}      \t// max (KW * CI * XW), across layers when KW != 1
 
     `define DELAY_ACC    1                               \t// constant, for now
@@ -127,14 +126,13 @@ def compile(c, num_it):
         ''')
 
     os.makedirs('xsim', exist_ok=True)
-    sim_params = [f'VALID_PROB {c.VALID_PROB}', f'READY_PROB {c.READY_PROB}', f'NUM_IT {num_it}']
+    sim_params = [f'VALID_PROB {c.VALID_PROB}', f'READY_PROB {c.READY_PROB}', f'NUM_IT {num_it}', f'DIR_PATH "{DATA_DIR}/"']
+    
+    with open('xsim/sim_params.svh', 'w') as f:
+        for param in sim_params:
+            f.write(f'`define {param}\n')
 
     if SIM == 'xsim':
-        sim_params += [f'DIR_PATH "D:/dnn-engine/test/{DATA_DIR}/"']
-        with open('xsim/sim_params.svh', 'w') as f:
-            for param in sim_params:
-                f.write(f'`define {param}\n')
-
         SOURCES_STR = " ".join([os.path.normpath('../' + s) for s in SOURCES]) # since called from subdir
         xvlog_cmd = fr'{XIL_PATH}\xvlog -sv {SOURCES_STR}'
         xelab_cmd = fr'{XIL_PATH}\xelab {TB_MODULE} --snapshot {TB_MODULE} -log elaborate.log --debug typical'
@@ -142,25 +140,14 @@ def compile(c, num_it):
         assert subprocess.run(xelab_cmd, cwd="xsim", shell=True).returncode == 0
 
     if SIM == 'icarus':
-        sim_params += [f'DIR_PATH "{DATA_DIR}/"']
-        with open('xsim/sim_params.svh', 'w') as f:
-            for param in sim_params:
-                f.write(f'`define {param}\n')
-
         cmd = [ "iverilog", "-v", "-g2012", "-o", "xsim/a.out", "-I", "sv", "-I", "../rtl/include", "-s", TB_MODULE] + SOURCES
         print(" ".join(cmd))
         assert subprocess.run(cmd).returncode == 0
 
-    if SIM == "verilator":
-        sim_params += [f'DIR_PATH "{DATA_DIR}/"']
-        with open('xsim/sim_params.svh', 'w') as f:
-            for param in sim_params:
-                f.write(f'`define {param}\n')
-        
+    if SIM == "verilator":        
         cmd = f"verilator --binary -j 0 -Wno-fatal --relative-includes --top {TB_MODULE} " + " ".join(SOURCES)
         print(cmd)
         assert subprocess.run(cmd.split(' ')).returncode == 0
-
 
     return c
 
@@ -217,16 +204,14 @@ def test_dnn_engine(KH, CI, CO, XH, XW, XN, COMPILE):
     y = tf.keras.backend.conv2d(x, w, strides=(1,1), padding='same')
 
     bundle = Bundle(c=c, type='conv', x=x.numpy(), w=w.numpy(), y=y.numpy(), a=None)
-
     num_it = bundle.w_engine.shape[0]
 
+    '''
+    FLATTEN & SAVE AS TEXT
+    '''
     for i_it in range(num_it):
-
         idx = i_it
 
-        '''
-        Save as text
-        '''
         path = f"{DATA_DIR}/{idx}_w.txt"
         np.savetxt(path, bundle.w_engine[i_it].flatten(), fmt='%d')
         print(f'Weights saved as {path}')
@@ -276,6 +261,4 @@ def test_dnn_engine(KH, CI, CO, XH, XW, XN, COMPILE):
         assert error == 0
         if error != 0 and SIM=='xsim':
             print(fr'''Non zero error. Open waveform with:
-
-
-    call {XIL_PATH}\xsim --gui {TB_MODULE}.wdb -view ..\wave\{WAVEFORM}''')
+                        call {XIL_PATH}\xsim --gui {TB_MODULE}.wdb -view ..\wave\{WAVEFORM}''')
