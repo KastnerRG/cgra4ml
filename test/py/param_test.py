@@ -2,6 +2,7 @@ import numpy as np
 import os
 # import torch
 import tensorflow as tf
+from tensorflow.keras.layers import Input
 import subprocess
 import glob
 import os.path
@@ -10,6 +11,8 @@ import itertools
 import pickle
 from collections import namedtuple
 from bundle import Bundle
+from qkeras import *
+from tensorflow.keras.layers import Input
 
 def pack_bits(arr):
     sum_width = 0
@@ -79,7 +82,7 @@ def make_compile_params(c):
     return c
 
 
-def compile(c, num_it):
+def compile(c, num_t):
 
     with open('../rtl/include/params_input.svh', 'w') as f:
         f.write(f'''
@@ -126,7 +129,7 @@ def compile(c, num_it):
         ''')
 
     os.makedirs('xsim', exist_ok=True)
-    sim_params = [f'VALID_PROB {c.VALID_PROB}', f'READY_PROB {c.READY_PROB}', f'NUM_IT {num_it}', f'DIR_PATH "{DATA_DIR}/"']
+    sim_params = [f'VALID_PROB {c.VALID_PROB}', f'READY_PROB {c.READY_PROB}', f'NUM_IT {num_t}', f'DIR_PATH "{DATA_DIR}/"']
     
     with open('xsim/sim_params.svh', 'w') as f:
         for param in sim_params:
@@ -196,69 +199,89 @@ def test_dnn_engine(KH, CI, CO, XH, XW, XN, COMPILE):
     y_it_all = []
 
     '''
-    GOLDEN MODEL
+    Build Model
     '''
-    # tf.keras.utils.set_random_seed(0)
-    x = tf.convert_to_tensor(np.random.randint(-2**(c.X_BITS-1), 2**(c.X_BITS-1)-1 ,size=(XN,XH,XW,CI)).astype(np.float32))
-    w = tf.convert_to_tensor(np.random.randint(-2**(c.K_BITS-1), 2**(c.K_BITS-1)-1 ,size=(KH,KW,CI,CO)).astype(np.float32))
-    y = tf.keras.backend.conv2d(x, w, strides=(1,1), padding='same')
+    q = 'quantized_bits(8,0,False,True,1)'
 
-    bundle = Bundle(c=c, type='conv', x=x.numpy(), w=w.numpy(), y=y.numpy(), a=None)
-    num_it = bundle.w_engine.shape[0]
-
-    '''
-    FLATTEN & SAVE AS TEXT
-    '''
-    for i_it in range(num_it):
-        idx = i_it
-
-        path = f"{DATA_DIR}/{idx}_w.txt"
-        np.savetxt(path, bundle.w_engine[i_it].flatten(), fmt='%d')
-        print(f'Weights saved as {path}')
-
-        path = f"{DATA_DIR}/{idx}_x.txt"
-        np.savetxt(path, bundle.x_engine.flatten(), fmt='%d')
-        print(f'input saved as "{path}"')
-
-        y_it = bundle.y_engine[i_it]
-        y_it_all += [y_it]
-        path = f"{DATA_DIR}/{idx}_y_exp.txt"
-        np.savetxt(path, y_it.flatten(), fmt='%d')
-        print(f'output saved as "{path}"')
-
-    compile(c, num_it)
-
-    '''
-    RUN SIMULATION
-    '''
-
-    os.makedirs('xsim', exist_ok=True)
-    print("SIMULATING...")
-
-    if SIM == 'xsim':
-        with open('xsim/xsim_cfg.tcl', 'w') as f:
-            f.write('''log_wave -recursive * \nrun all \nexit''')
-        assert subprocess.run(fr'{XIL_PATH}\xsim {TB_MODULE} --tclbatch xsim_cfg.tcl', cwd="xsim", shell=True).returncode == 0
-
-    if SIM == 'icarus':
-        subprocess.run(["vvp", "xsim/a.out"])
-    
-    if SIM == 'verilator':
-        subprocess.run([f"./obj_dir/V{TB_MODULE}"])
+    x = x_in = Input((XH,XW,CI), name='input')
+    x = QActivation(q)(x)
+    x = Bundle(
+        core= {'type':'conv', 'filters':CO, 'kernel_size':(KH,KW), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':q, 'bias_quantizer':q, 'use_bias':False, 'act_str':'quantized_relu(8,0,negative_slope=0.125)'},
+    )(x)
+    model = Model(inputs=x_in, outputs=x)
 
 
     '''
-    CHECK ERROR
+    Pass Floating Point & Fixed Point Input
     '''
-    for i_it in range(num_it):
+    x = np.random.randn(XN, *model.input.shape[1:])
+    x = np.clip(x, -1.0, 1.0)
+    y = model(x)
 
-        idx = i_it
-        y_it = y_it_all[i_it]
-        y_sim = np.loadtxt(f"{DATA_DIR}/{idx}_y_sim.txt",np.int32)
-        error = np.sum(np.abs(y_sim.reshape(y_it.shape) - y_it))
+    inp_act_model = Model(inputs=model.input, outputs=model.layers[1].output)
+    inp ={ 'tensor': inp_act_model(x, training=False), 'bits':8, 'frac':7}
+    inp['int'] = inp['tensor'].numpy() * 2**inp['frac']
 
-        print("Error: ", error)
-        assert error == 0
-        if error != 0 and SIM=='xsim':
-            print(fr'''Non zero error. Open waveform with:
-                        call {XIL_PATH}\xsim --gui {TB_MODULE}.wdb -view ..\wave\{WAVEFORM}''')
+    model.layers[2].process(inp)
+
+    bundles = model.layers[2:]
+    for bundle in bundles:
+        print(f'-----------------{bundle.idx}-----------------------')
+        bundle.export(c)
+
+        '''
+        FLATTEN & SAVE AS TEXT
+        '''
+        for i_it in range(bundle.num_t):
+            idx = i_it
+
+            path = f"{DATA_DIR}/{idx}_w.txt"
+            np.savetxt(path, bundle.we[i_it].flatten(), fmt='%d')
+            print(f'Weights saved as {path}')
+
+            path = f"{DATA_DIR}/{idx}_x.txt"
+            np.savetxt(path, bundle.xe.flatten(), fmt='%d')
+            print(f'input saved as "{path}"')
+
+            y_it = bundle.ye_exp[i_it]
+            y_it_all += [y_it]
+            path = f"{DATA_DIR}/{idx}_y_exp.txt"
+            np.savetxt(path, y_it.flatten(), fmt='%d')
+            print(f'output saved as "{path}"')
+
+        compile(c, bundle.num_t)
+
+        '''
+        RUN SIMULATION
+        '''
+
+        os.makedirs('xsim', exist_ok=True)
+        print("SIMULATING...")
+
+        if SIM == 'xsim':
+            with open('xsim/xsim_cfg.tcl', 'w') as f:
+                f.write('''log_wave -recursive * \nrun all \nexit''')
+            assert subprocess.run(fr'{XIL_PATH}\xsim {TB_MODULE} --tclbatch xsim_cfg.tcl', cwd="xsim", shell=True).returncode == 0
+
+        if SIM == 'icarus':
+            subprocess.run(["vvp", "xsim/a.out"])
+        
+        if SIM == 'verilator':
+            subprocess.run([f"./obj_dir/V{TB_MODULE}"])
+
+
+        '''
+        CHECK ERROR
+        '''
+        for i_it in range(bundle.num_t):
+
+            idx = i_it
+            y_it = y_it_all[i_it]
+            y_sim = np.loadtxt(f"{DATA_DIR}/{idx}_y_sim.txt",np.int32)
+            error = np.sum(np.abs(y_sim.reshape(y_it.shape) - y_it))
+
+            print("Error: ", error)
+            assert error == 0
+            if error != 0 and SIM=='xsim':
+                print(fr'''Non zero error. Open waveform with:
+                            call {XIL_PATH}\xsim --gui {TB_MODULE}.wdb -view ..\wave\{WAVEFORM}''')
