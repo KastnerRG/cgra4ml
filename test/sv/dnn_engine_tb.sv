@@ -9,7 +9,7 @@ module dnn_engine_tb;
   localparam  DIR_PATH   = `DIR_PATH;
   localparam  VALID_PROB = `VALID_PROB,
               READY_PROB = `READY_PROB,
-              NUM_IT     = `NUM_IT;
+              NUM_TP     = `NUM_TP;
 
   // CLOCK GENERATION
 
@@ -66,20 +66,20 @@ module dnn_engine_tb;
   bit done_y = 0;
   string w_path, x_path, y_path;
 
-  initial for (int i=0; i<NUM_IT; i++) begin
+  initial for (int i=0; i<NUM_TP; i++) begin
     $sformat(w_path, "%s%0d_w.txt", DIR_PATH, i);
     source_k.axis_push (w_path);
     $display("done w %d", i);
   end
 
-  initial for (int i=0; i<NUM_IT; i++) begin
+  initial for (int i=0; i<NUM_TP; i++) begin
     $sformat(x_path, "%s%0d_x.txt", DIR_PATH, i);
     source_x.axis_push (x_path);
     $display("done x %d", i);
   end
 
   initial  begin 
-    for (int i=0; i<NUM_IT; i++) begin
+    for (int i=0; i<NUM_TP; i++) begin
       $sformat(y_path, "%s%0d_y_sim.txt", DIR_PATH, i);
       sink_y.axis_pull (y_path);
       $display("done y %d", i);
