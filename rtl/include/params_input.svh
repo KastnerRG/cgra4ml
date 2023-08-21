@@ -14,7 +14,7 @@
     `define XN_MAX              16               	// max of input batch size, across layers
     `define CI_MAX              2048               	// max of input channels, across layers
     `define CONFIG_BEATS        1         	// constant, for now
-    `define RAM_WEIGHTS_DEPTH   2049    	// CONFIG_BEATS + max(KW * CI), across layers
+    `define RAM_WEIGHTS_DEPTH   16    	// CONFIG_BEATS + max(KW * CI), across layers
     `define RAM_EDGES_DEPTH     288      	// max (KW * CI * XW), across layers when KW != 1
 
     `define DELAY_ACC    1                               	// constant, for now

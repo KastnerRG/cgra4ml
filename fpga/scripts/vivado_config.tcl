@@ -1,6 +1,6 @@
 
     # Written from param_tests.py
-    set RAM_WEIGHTS_DEPTH 2049
+    set RAM_WEIGHTS_DEPTH 16
     set COLS               24
     set X_BITS             8
     set K_BITS             8

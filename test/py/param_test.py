@@ -71,7 +71,7 @@ def make_compile_params(c):
         'BITS_COLS_MAX'         : clog2(c.XW_MAX),
         'BITS_BLOCKS_MAX'       : clog2(c.L_MAX),
         'BITS_XN_MAX'           : clog2(c.XN_MAX),
-        'BITS_BRAM_WEIGHTS_ADDR': clog2(c.RAM_WEIGHTS_DEPTH),
+        'BITS_RAM_WEIGHTS_ADDR' : clog2(c.RAM_WEIGHTS_DEPTH),
          }
     n = namedtuple('Compile', d)(**d)
     c = namedtuple("Compile", c._fields + n._fields)(*(c + n))
@@ -82,7 +82,7 @@ def make_compile_params(c):
     return c
 
 
-def compile(c, num_t):
+def compile(c, num_tp):
 
     with open('../rtl/include/params_input.svh', 'w') as f:
         f.write(f'''
@@ -129,7 +129,7 @@ def compile(c, num_t):
         ''')
 
     os.makedirs('xsim', exist_ok=True)
-    sim_params = [f'VALID_PROB {c.VALID_PROB}', f'READY_PROB {c.READY_PROB}', f'NUM_IT {num_t}', f'DIR_PATH "{DATA_DIR}/"']
+    sim_params = [f'VALID_PROB {c.VALID_PROB}', f'READY_PROB {c.READY_PROB}', f'NUM_TP {num_tp}', f'DIR_PATH "{DATA_DIR}/"']
     
     with open('xsim/sim_params.svh', 'w') as f:
         for param in sim_params:
@@ -156,7 +156,7 @@ def compile(c, num_t):
 
 
 @pytest.mark.parametrize("KH", [1,3,5,7,11])
-@pytest.mark.parametrize("CI", [8])
+@pytest.mark.parametrize("CI", [16])
 @pytest.mark.parametrize("CO", [24])
 @pytest.mark.parametrize("XH", [16])
 @pytest.mark.parametrize("XW", [8])
@@ -174,7 +174,7 @@ def compile(c, num_t):
                                                 XN_MAX     = [16   ], 
                                                 IN_BITS    = [64   ], 
                                                 OUT_BITS   = [64   ],
-                                                RAM_WEIGHTS_DEPTH = [2049],  # KH*CI + Config beats
+                                                RAM_WEIGHTS_DEPTH = [16],  # KH*CI + Config beats
                                                 RAM_EDGES_DEPTH   = [288 ], # max(CI * XW * (XH/ROWS-1))
 
                                                 VALID_PROB = [100],
@@ -195,8 +195,6 @@ def test_dnn_engine(KH, CI, CO, XH, XW, XN, COMPILE):
 
     for file in os.scandir(DATA_DIR):
         os.remove(file.path)
-
-    y_it_all = []
 
     '''
     Build Model
@@ -232,24 +230,16 @@ def test_dnn_engine(KH, CI, CO, XH, XW, XN, COMPILE):
         '''
         FLATTEN & SAVE AS TEXT
         '''
-        for i_it in range(bundle.num_t):
-            idx = i_it
+        idx = -1
+        for i_cp in range(bundle.r.CP):
+            for i_it in range(bundle.r.IT):
+                idx += 1
+                np.savetxt(f"{DATA_DIR}/{idx}_w.txt", bundle.we[i_cp][i_it].flatten(), fmt='%d')
+                np.savetxt(f"{DATA_DIR}/{idx}_x.txt", bundle.xe[i_cp].flatten(), fmt='%d')
+                np.savetxt(f"{DATA_DIR}/{idx}_y_exp.txt", bundle.ye_exp_p[i_cp][i_it].flatten(), fmt='%d')
+                print(f'Weights, inputs, outputs saved to {DATA_DIR}/{idx}_*.txt')
 
-            path = f"{DATA_DIR}/{idx}_w.txt"
-            np.savetxt(path, bundle.we[i_it].flatten(), fmt='%d')
-            print(f'Weights saved as {path}')
-
-            path = f"{DATA_DIR}/{idx}_x.txt"
-            np.savetxt(path, bundle.xe.flatten(), fmt='%d')
-            print(f'input saved as "{path}"')
-
-            y_it = bundle.ye_exp[i_it]
-            y_it_all += [y_it]
-            path = f"{DATA_DIR}/{idx}_y_exp.txt"
-            np.savetxt(path, y_it.flatten(), fmt='%d')
-            print(f'output saved as "{path}"')
-
-        compile(c, bundle.num_t)
+        compile(c=c, num_tp=bundle.r.CP * bundle.r.IT)
 
         '''
         RUN SIMULATION
@@ -273,15 +263,17 @@ def test_dnn_engine(KH, CI, CO, XH, XW, XN, COMPILE):
         '''
         CHECK ERROR
         '''
-        for i_it in range(bundle.num_t):
+        idx = -1
+        y_sim = np.zeros((bundle.r.IT, bundle.r.XN*bundle.r.L*bundle.r.XW*bundle.r.CO_PRL*c.ROWS))
+        for i_cp in range(bundle.r.CP):
+            for i_it in range(bundle.r.IT):
+                idx += 1
+                y_sim[i_it] = y_sim[i_it] + np.loadtxt(f"{DATA_DIR}/{idx}_y_sim.txt",np.int32)
 
-            idx = i_it
-            y_it = y_it_all[i_it]
-            y_sim = np.loadtxt(f"{DATA_DIR}/{idx}_y_sim.txt",np.int32)
-            error = np.sum(np.abs(y_sim.reshape(y_it.shape) - y_it))
+        error = np.sum(np.abs(y_sim.reshape(bundle.ye_exp.shape) - bundle.ye_exp))
 
-            print("Error: ", error)
-            assert error == 0
-            if error != 0 and SIM=='xsim':
-                print(fr'''Non zero error. Open waveform with:
-                            call {XIL_PATH}\xsim --gui {TB_MODULE}.wdb -view ..\wave\{WAVEFORM}''')
+        print("Error: ", error)
+        assert error == 0
+        if error != 0 and SIM=='xsim':
+            print(fr'''Non zero error. Open waveform with:
+                        call {XIL_PATH}\xsim --gui {TB_MODULE}.wdb -view ..\wave\{WAVEFORM}''')
