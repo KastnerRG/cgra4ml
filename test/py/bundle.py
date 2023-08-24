@@ -364,6 +364,15 @@ class Bundle(tf.keras.Model):
         r = self.get_runtime_params(c, w_int.shape, x_int.shape, y_int.shape)
         r = self.create_headers(c, r)
 
+        assert r.KH <= c.KH_MAX
+        assert r.KW <= c.KW_MAX
+        assert r.CM <= c.CI_MAX
+        assert r.XH <= c.XH_MAX
+        assert r.XW <= c.XW_MAX
+        assert r.XN <= c.XN_MAX
+        assert r.CM * r.XW * int(np.ceil(r.XH/c.ROWS)-1) <= c.RAM_EDGES_DEPTH or r.KH == 1
+        assert r.XW >= r.KH//2
+
         print(r)
         self.check_sparsity(w_int, x_int)
 
