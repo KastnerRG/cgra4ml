@@ -10,6 +10,7 @@ import pytest
 import itertools
 import pickle
 from collections import namedtuple
+from dataclasses import dataclass
 from bundle import Bundle
 from qkeras import *
 from tensorflow.keras.layers import Input
@@ -29,7 +30,7 @@ DATA_DIR   = 'D:/dnn-engine/test/vectors' if SIM == 'xsim' else  'vectors'
 os.makedirs(DATA_DIR, exist_ok=True)
 MODEL_NAME = 'test'
 # SIM = sys.argv[1] if len(sys.argv) == 2 else "xsim" # icarus
-SOURCES = glob.glob('../rtl/include/*') + glob.glob('sv/*') + glob.glob("../rtl/**/*.v", recursive=True) + glob.glob("../rtl/**/*.sv", recursive=True) + ['./xsim/sim_params.svh']
+SOURCES = glob.glob('../rtl/include/*') + glob.glob('sv/*.sv') + glob.glob("../rtl/**/*.v", recursive=True) + glob.glob("../rtl/**/*.sv", recursive=True) + ['./xsim/sim_params.svh']
 print(SOURCES)
 
 TB_MODULE = "dnn_engine_tb"
@@ -82,7 +83,7 @@ def make_compile_params(c):
     return c
 
 
-def compile(c, num_tp):
+def compile(c):
 
     with open('../rtl/include/params_input.svh', 'w') as f:
         f.write(f'''
@@ -129,8 +130,7 @@ def compile(c, num_tp):
         ''')
 
     os.makedirs('xsim', exist_ok=True)
-    sim_params = [f'VALID_PROB {c.VALID_PROB}', f'READY_PROB {c.READY_PROB}', f'NUM_TP {num_tp}', f'DIR_PATH "{DATA_DIR}/"']
-    
+    sim_params = [f'VALID_PROB {c.VALID_PROB}', f'READY_PROB {c.READY_PROB}', f'DIR_PATH "{DATA_DIR}/"']
     with open('xsim/sim_params.svh', 'w') as f:
         for param in sim_params:
             f.write(f'`define {param}\n')
@@ -155,12 +155,14 @@ def compile(c, num_tp):
     return c
 
 
-@pytest.mark.parametrize("KH", [1,3,5,7,11])
-@pytest.mark.parametrize("CI", [16])
-@pytest.mark.parametrize("CO", [24])
-@pytest.mark.parametrize("XH", [16])
-@pytest.mark.parametrize("XW", [8])
-@pytest.mark.parametrize("XN", [2])
+@dataclass
+class Config:
+    K : int
+    CO: int
+    flatten: bool = False
+    dense: bool = False
+
+
 @pytest.mark.parametrize("COMPILE", list(product_dict(
                                                 X_BITS     = [8    ], 
                                                 K_BITS     = [8    ], 
@@ -180,97 +182,104 @@ def compile(c, num_tp):
                                                 VALID_PROB = [100],
                                                 READY_PROB = [1],
                                             )))
-def test_dnn_engine(KH, CI, CO, XH, XW, XN, COMPILE):
-    c = make_compile_params(COMPILE)
+def test_dnn_engine(COMPILE):
 
-    KW = KH
-    assert KH <= c.KH_MAX
-    assert KW <= c.KW_MAX
-    assert CI <= c.CI_MAX
-    assert XH <= c.XH_MAX
-    assert XW <= c.XW_MAX
-    assert XN <= c.XN_MAX
-    assert CI * XW * int(np.ceil(XH/c.ROWS)-1) <= c.RAM_EDGES_DEPTH or KH == 1
-    assert XW >= KH//2
-
-    for file in os.scandir(DATA_DIR):
-        os.remove(file.path)
+    input_shape = (2,16,8,3) # (XN, XH, XW, CI)
+    model_config = [
+        Config(11, 16),
+        Config(7, 16),
+        Config(5, 16),
+        Config(3, 24),
+        Config(1, 50, flatten=True),
+        Config(1, 10, dense= True),
+    ]
 
     '''
     Build Model
     '''
     q = 'quantized_bits(8,0,False,True,1)'
 
-    x = x_in = Input((XH,XW,CI), name='input')
+    x = x_in = Input(input_shape[1:], name='input')
     x = QActivation(q)(x)
-    x = Bundle(
-        core= {'type':'conv', 'filters':CO, 'kernel_size':(KH,KW), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':q, 'bias_quantizer':q, 'use_bias':False, 'act_str':'quantized_relu(8,0,negative_slope=0.125)'},
-    )(x)
-    model = Model(inputs=x_in, outputs=x)
 
+    for i, g in enumerate(model_config):
+        if g.dense:
+            d = {'core': {'type':'dense', 'units':g.CO, 'kernel_quantizer':q, 'bias_quantizer':q, 'use_bias':False, 'act_str':'quantized_relu(8,0,negative_slope=0.125)'}}
+        else:
+            d = {'core': {'type':'conv', 'filters':g.CO, 'kernel_size':(g.K,g.K), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':q, 'bias_quantizer':q, 'use_bias':False, 'act_str':'quantized_relu(8,0,negative_slope=0.125)'}, 'flatten':g.flatten,}
+        x = Bundle(**d)(x)
+
+    model = Model(inputs=x_in, outputs=x)
 
     '''
     Pass Floating Point & Fixed Point Input
     '''
-    x = np.random.randn(XN, *model.input.shape[1:])
-    x = np.clip(x, -1.0, 1.0)
+    x = np.clip(np.random.randn(*input_shape), -1.0, 1.0)
     y = model(x)
 
     inp_act_model = Model(inputs=model.input, outputs=model.layers[1].output)
     inp ={ 'tensor': inp_act_model(x, training=False), 'bits':8, 'frac':7}
     inp['int'] = inp['tensor'].numpy() * 2**inp['frac']
 
-    model.layers[2].process(inp)
+
+    for file in os.scandir(DATA_DIR):
+        os.remove(file.path)
+    c = make_compile_params(COMPILE)
 
     bundles = model.layers[2:]
-    for bundle in bundles:
-        print(f'-----------------{bundle.idx}-----------------------')
-        bundle.export(c)
-
-        '''
-        FLATTEN & SAVE AS TEXT
-        '''
-        idx = -1
-        for i_cp in range(bundle.r.CP):
-            for i_it in range(bundle.r.IT):
-                idx += 1
-                np.savetxt(f"{DATA_DIR}/{idx}_w.txt", bundle.we[i_cp][i_it].flatten(), fmt='%d')
-                np.savetxt(f"{DATA_DIR}/{idx}_x.txt", bundle.xe[i_cp].flatten(), fmt='%d')
-                np.savetxt(f"{DATA_DIR}/{idx}_y_exp.txt", bundle.ye_exp_p[i_cp][i_it].flatten(), fmt='%d')
-                print(f'Weights, inputs, outputs saved to {DATA_DIR}/{idx}_*.txt')
-
-        compile(c=c, num_tp=bundle.r.CP * bundle.r.IT)
-
-        '''
-        RUN SIMULATION
-        '''
-
-        os.makedirs('xsim', exist_ok=True)
-        print("SIMULATING...")
-
-        if SIM == 'xsim':
-            with open('xsim/xsim_cfg.tcl', 'w') as f:
-                f.write('''log_wave -recursive * \nrun all \nexit''')
-            assert subprocess.run(fr'{XIL_PATH}\xsim {TB_MODULE} --tclbatch xsim_cfg.tcl', cwd="xsim", shell=True).returncode == 0
-
-        if SIM == 'icarus':
-            subprocess.run(["vvp", "xsim/a.out"])
+    with open('sv/model.svh', 'w') as f:
+        f.write(f"localparam N_BUNDLES = {len(bundles)};\n\n")
+        f.write(f"Bundle_t bundles [N_BUNDLES] = '{{\n")
         
-        if SIM == 'verilator':
-            subprocess.run([f"./obj_dir/V{TB_MODULE}"])
+        for b in bundles:
+            print(f'-----------------{b.idx}-----------------------')
+            b.process(inp if b.idx==0 else None)
+            b.export(c)
+
+            '''FLATTEN & SAVE AS TEXT'''
+            for i_cp in range(b.r.CP):
+                np.savetxt(f"{DATA_DIR}/{b.idx}_{i_cp}_x.txt", b.xe[i_cp].flatten(), fmt='%d')
+                for i_it in range(b.r.IT):
+                    np.savetxt(f"{DATA_DIR}/{b.idx}_{i_cp}_{i_it}_w.txt", b.we[i_cp][i_it].flatten(), fmt='%d')
+                    np.savetxt(f"{DATA_DIR}/{b.idx}_{i_cp}_{i_it}_y_exp.txt", b.ye_exp_p[i_cp][i_it].flatten(), fmt='%d')
+            print(f'Weights, inputs, outputs saved to {DATA_DIR}/ib_ip_it_*.txt')
+
+            y_wpt = b.r.CO_PRL*b.c.ROWS
+            y_wpt_last = b.r.CO_PRL*b.c.ROWS*(b.r.KW//2+1)
+            f.write(f"  '{{w_wpt:{b.we[-1].size}, w_wpt_p0:{b.we[0].size}, x_wpt:{b.xe[-1].size}, x_wpt_p0:{b.xe[0].size}, y_wpt:{y_wpt}, y_wpt_last:{y_wpt_last}, n_it:{b.r.IT}, n_p:{b.r.CP} }}")
+            if b.idx != len(bundles)-1:
+                f.write(',\n')
+        f.write(f"\n}};")
 
 
+    '''
+    RUN SIMULATION
+    '''
+
+    compile(c=c)
+    os.makedirs('xsim', exist_ok=True)
+    print("SIMULATING...")
+
+    if SIM == 'xsim':
+        with open('xsim/xsim_cfg.tcl', 'w') as f:
+            f.write('''log_wave -recursive * \nrun all \nexit''')
+        assert subprocess.run(fr'{XIL_PATH}\xsim {TB_MODULE} --tclbatch xsim_cfg.tcl', cwd="xsim", shell=True).returncode == 0
+    if SIM == 'icarus':
+        subprocess.run(["vvp", "xsim/a.out"])
+    if SIM == 'verilator':
+        subprocess.run([f"./obj_dir/V{TB_MODULE}"])
+
+
+    for b in bundles:
         '''
         CHECK ERROR
         '''
-        idx = -1
-        y_sim = np.zeros((bundle.r.IT, bundle.r.XN*bundle.r.L*bundle.r.XW*bundle.r.CO_PRL*c.ROWS))
-        for i_cp in range(bundle.r.CP):
-            for i_it in range(bundle.r.IT):
-                idx += 1
-                y_sim[i_it] = y_sim[i_it] + np.loadtxt(f"{DATA_DIR}/{idx}_y_sim.txt",np.int32)
+        y_sim = np.zeros((b.r.IT, b.r.XN*b.r.L*b.r.XW*b.r.CO_PRL*c.ROWS))
+        for i_cp in range(b.r.CP):
+            for i_it in range(b.r.IT):
+                y_sim[i_it] = y_sim[i_it] + np.loadtxt(f"{DATA_DIR}/{b.idx}_{i_cp}_{i_it}_y_sim.txt",np.int32)
 
-        error = np.sum(np.abs(y_sim.reshape(bundle.ye_exp.shape) - bundle.ye_exp))
+        error = np.sum(np.abs(y_sim.reshape(b.ye_exp.shape) - b.ye_exp))
 
         print("Error: ", error)
         assert error == 0

@@ -3,13 +3,20 @@
 `include "../../rtl/include/params.svh"
 `include "../xsim/sim_params.svh"
 
+typedef struct packed {
+  int w_wpt, w_wpt_p0; // words per transfer
+  int x_wpt, x_wpt_p0;
+  int y_wpt, y_wpt_last;
+  int n_it, n_p;
+} Bundle_t;
+
 
 module dnn_engine_tb;
 
+  `include "model.svh"
   localparam  DIR_PATH   = `DIR_PATH;
   localparam  VALID_PROB = `VALID_PROB,
-              READY_PROB = `READY_PROB,
-              NUM_TP     = `NUM_TP;
+              READY_PROB = `READY_PROB;
 
   // CLOCK GENERATION
 
@@ -66,24 +73,32 @@ module dnn_engine_tb;
   bit done_y = 0;
   string w_path, x_path, y_path;
 
-  initial for (int i=0; i<NUM_TP; i++) begin
-    $sformat(w_path, "%s%0d_w.txt", DIR_PATH, i);
-    source_k.axis_push (w_path);
-    $display("done w %d", i);
-  end
+  initial 
+    for (int ib=0; ib < N_BUNDLES; ib++)
+      for (int ip=0; ip < bundles[ib].n_p; ip++)
+        for (int it=0; it < bundles[ib].n_it; it++) begin
+            $sformat(w_path, "%s%0d_%0d_%0d_w.txt", DIR_PATH, ib, ip, it);
+            source_k.axis_push (w_path);
+            $display("done w: %0d_%0d_%0d_w.txt", ib, ip, it);
+          end
 
-  initial for (int i=0; i<NUM_TP; i++) begin
-    $sformat(x_path, "%s%0d_x.txt", DIR_PATH, i);
-    source_x.axis_push (x_path);
-    $display("done x %d", i);
-  end
+  initial
+    for (int ib=0; ib < N_BUNDLES; ib++)
+      for (int ip=0; ip < bundles[ib].n_p; ip++)
+        for (int it=0; it < bundles[ib].n_it; it++) begin
+          $sformat(x_path, "%s%0d_%0d_x.txt", DIR_PATH, ib, ip);
+          source_x.axis_push (x_path);
+          $display("done x: %0d_%0d_x.txt", ib, ip);
+        end
 
   initial  begin 
-    for (int i=0; i<NUM_TP; i++) begin
-      $sformat(y_path, "%s%0d_y_sim.txt", DIR_PATH, i);
-      sink_y.axis_pull (y_path);
-      $display("done y %d", i);
-    end
+    for (int ib=0; ib < N_BUNDLES; ib++)
+      for (int ip=0; ip < bundles[ib].n_p; ip++)
+        for (int it=0; it < bundles[ib].n_it; it++) begin
+          $sformat(y_path, "%s%0d_%0d_%0d_y_sim.txt", DIR_PATH, ib, ip, it);
+          sink_y.axis_pull (y_path);
+          $display("done y: %0d_%0d_%0d_y_sim.txt", ib, ip, it);
+        end
     done_y = 1;
   end
 
