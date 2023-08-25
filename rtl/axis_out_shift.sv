@@ -17,12 +17,12 @@ module axis_out_shift #(
   input  logic m_ready,
   output logic [ROWS -1:0][WORD_WIDTH  -1:0] m_data,
   output tuser_st m_user,
-  output logic m_valid, m_last
+  output logic m_valid, m_last, m_last_pkt
 );
 
   logic [COLS-1:0][ROWS -1:0][WORD_WIDTH-1:0] shift_data;
-  logic [KW_MAX/2:0][COLS-1:0] lut_valid, lut_valid_last, lut_last; 
-  logic [COLS-1:0] shift_last, shift_valid;
+  logic [KW_MAX/2:0][COLS-1:0] lut_valid, lut_valid_last, lut_last_pkt, lut_last; 
+  logic [COLS-1:0] shift_last, shift_last_pkt, shift_valid;
 
   genvar k2, c_1;
   for (k2=0; k2 <= KW_MAX/2; k2++)
@@ -30,11 +30,13 @@ module axis_out_shift #(
       localparam k = k2*2+1,  c = c_1 + 1;
       assign lut_valid      [k2][c_1] = (c % k == 0);
       assign lut_valid_last [k2][c_1] = ((c % k > k2) || (c % k == 0)) && (c <= (COLS/k)*k);
-      assign lut_last       [k2][c_1] = (c == k2+1);
+      assign lut_last       [k2][c_1] = (c == k);
+      assign lut_last_pkt   [k2][c_1] = (c == k2+1);
     end
 
   wire valid_mask = !s_user.is_w_first_kw2 && !s_user.is_config;
   wire [COLS-1:0] s_valid_cols_sel = s_user.is_w_last ? lut_valid_last[s_user.kw2] : lut_valid[s_user.kw2];
+  wire [COLS-1:0] s_last_cols_sel  = s_user.is_w_last ? lut_last_pkt  [s_user.kw2] : lut_last [s_user.kw2];
 
 
   logic [$clog2(COLS+1)-1:0] counter;
@@ -44,7 +46,7 @@ module axis_out_shift #(
     if (!aresetn) begin 
       state   <= IDLE;
       s_ready <= 1;
-      {shift_valid, shift_last} <= '0;
+      {shift_valid, shift_last_pkt, shift_last} <= '0;
     end else case (state)
       IDLE  : if (s_valid && valid_mask) begin 
                 state   <= SHIFT;
@@ -52,13 +54,15 @@ module axis_out_shift #(
 
                 shift_data  <= s_data;
                 shift_valid <= s_valid_cols_sel & {COLS{valid_mask}};
-                shift_last  <= {COLS{s_last}} & lut_last[s_user.kw2];
+                shift_last  <= s_last_cols_sel;
+                shift_last_pkt <= {COLS{s_last}} & lut_last_pkt[s_user.kw2];
               end
       SHIFT : if (m_ready) begin
 
                 shift_data  <= shift_data  << (ROWS * WORD_WIDTH);
                 shift_valid <= shift_valid << 1;
                 shift_last  <= shift_last  << 1;
+                shift_last_pkt  <= shift_last_pkt  << 1;
 
                 if (counter == 1) begin
                   state   <= IDLE;
@@ -75,9 +79,6 @@ module axis_out_shift #(
   assign m_data   = shift_data [COLS-1];
   assign m_valid  = shift_valid[COLS-1];
   assign m_last   = shift_last [COLS-1];
-
-  // assign last_kw = last &&  ((COLS-(COLS+1-counter)) < kw);
-  // assign m_valid = state == SHIFT && (counter % kw == 0 || (last && (counter % kw > kw/2)));
-  // assign m_last  = m_valid && last_kw && (counter == kw/2+1);
+  assign m_last_pkt = shift_last_pkt [COLS-1];
 
 endmodule
