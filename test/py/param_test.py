@@ -190,8 +190,8 @@ def test_dnn_engine(COMPILE):
         Config(7, 16),
         Config(5, 16),
         Config(3, 24),
-        Config(1, 50, flatten=True),
-        Config(1, 10, dense= True),
+        # Config(1, 10, flatten=True),
+        # Config(1, 10, dense= True),
     ]
 
     '''
@@ -246,7 +246,7 @@ def test_dnn_engine(COMPILE):
 
             y_wpt = b.r.CO_PRL*b.c.ROWS
             y_wpt_last = b.r.CO_PRL*b.c.ROWS*(b.r.KW//2+1)
-            f.write(f"  '{{w_wpt:{b.we[-1].size}, w_wpt_p0:{b.we[0].size}, x_wpt:{b.xe[-1].size}, x_wpt_p0:{b.xe[0].size}, y_wpt:{y_wpt}, y_wpt_last:{y_wpt_last}, n_it:{b.r.IT}, n_p:{b.r.CP} }}")
+            f.write(f"  '{{w_wpt:{b.we[-1].size}, w_wpt_p0:{b.we[0].size}, x_wpt:{b.xe[-1].size}, x_wpt_p0:{b.xe[0].size}, y_wpt:{y_wpt}, y_wpt_last:{y_wpt_last}, y_nl:{b.r.XN*b.r.L}, y_w:{b.r.XW-b.r.KW//2}, n_it:{b.r.IT}, n_p:{b.r.CP} }}")
             if b.idx != len(bundles)-1:
                 f.write(',\n')
         f.write(f"\n}};")

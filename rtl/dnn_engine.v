@@ -15,11 +15,12 @@ module dnn_engine #(
                 Y_BITS                  = `Y_BITS             ,
                 M_DATA_WIDTH_HF_CONV    = COLS  * ROWS  * Y_BITS,
                 M_DATA_WIDTH_HF_CONV_DW = ROWS  * Y_BITS,
-                DW_IN_KEEP_WIDTH        = M_DATA_WIDTH_HF_CONV_DW/8,
 
                 S_PIXELS_WIDTH_LF       = `S_PIXELS_WIDTH_LF  ,
                 S_WEIGHTS_WIDTH_LF      = `S_WEIGHTS_WIDTH_LF ,
-                M_OUTPUT_WIDTH_LF       = `M_OUTPUT_WIDTH_LF      
+
+                OUT_ADDR_WIDTH          = 10,
+                OUT_BITS                = 32
   )(
     input  wire aclk,
     input  wire aresetn,
@@ -36,11 +37,11 @@ module dnn_engine #(
     input  wire [S_WEIGHTS_WIDTH_LF -1:0]   s_axis_weights_tdata,
     input  wire [S_WEIGHTS_KEEP_WIDTH-1:0]  s_axis_weights_tkeep,
 
-    input  wire m_axis_tready,
-    output wire m_axis_tvalid,
-    output wire m_axis_tlast ,
-    output wire [M_OUTPUT_WIDTH_LF-1:0] m_axis_tdata,
-    output wire [M_KEEP_WIDTH     -1:0] m_axis_tkeep
+    input  wire [(OUT_ADDR_WIDTH+2)-1:0]     bram_addr_a,
+    output wire [ OUT_BITS         -1:0]     bram_rddata_a,
+    input  wire                              bram_en_a,
+    output wire done_fill,
+    input  wire done_firmware
   ); 
 
   localparam  TUSER_WIDTH = `TUSER_WIDTH;
@@ -54,8 +55,8 @@ module dnn_engine #(
   wire [K_BITS*COLS -1:0] weights_m_data;
   wire [TUSER_WIDTH -1:0] weights_m_user;
 
-  wire dw_s_axis_tready, dw_s_axis_tvalid, dw_s_axis_tlast ;
-  wire [M_DATA_WIDTH_HF_CONV_DW -1:0] dw_s_axis_tdata ;
+  wire out_s_ready, out_s_valid, out_s_last;
+  wire [M_DATA_WIDTH_HF_CONV_DW -1:0] out_s_data;
 
   axis_pixels PIXELS (
     .aclk   (aclk   ),
@@ -104,35 +105,25 @@ module dnn_engine #(
     .s_user         (weights_m_user             ),
     .s_data_pixels  (pixels_m_data              ),
     .s_data_weights (weights_m_data             ),
-    .m_ready (dw_s_axis_tready),
-    .m_valid (dw_s_axis_tvalid),
-    .m_data  (dw_s_axis_tdata ),
-    .m_last  (dw_s_axis_tlast )
+    .m_ready        (out_s_ready                ),
+    .m_valid        (out_s_valid                ),
+    .m_data         (out_s_data                 ),
+    .m_last         (out_s_last                 )
   );
 
-  alex_axis_adapter_any #(
-    .S_DATA_WIDTH  (M_DATA_WIDTH_HF_CONV_DW),
-    .M_DATA_WIDTH  (M_OUTPUT_WIDTH_LF),
-    .S_KEEP_ENABLE (1),
-    .M_KEEP_ENABLE (1),
-    .S_KEEP_WIDTH  (DW_IN_KEEP_WIDTH),
-    .M_KEEP_WIDTH  (M_KEEP_WIDTH),
-    .ID_ENABLE     (0),
-    .DEST_ENABLE   (0),
-    .USER_ENABLE   (0)
-  ) DW_OUT (
-    .clk           (aclk    ),
-    .rst           (~aresetn),
-    .s_axis_tready (dw_s_axis_tready),
-    .s_axis_tvalid (dw_s_axis_tvalid),
-    .s_axis_tdata  (dw_s_axis_tdata ),
-    .s_axis_tkeep  ({DW_IN_KEEP_WIDTH{1'b1}}),
-    .s_axis_tlast  (dw_s_axis_tlast ),
-    .m_axis_tready (m_axis_tready),
-    .m_axis_tvalid (m_axis_tvalid),
-    .m_axis_tdata  (m_axis_tdata ),
-    .m_axis_tkeep  (m_axis_tkeep ),
-    .m_axis_tlast  (m_axis_tlast )
+  out_ram_switch OUT_RAM (
+    .clk          (aclk          ), 
+    .rstn         (aresetn       ),
+    .s_ready      (out_s_ready   ),
+    .s_valid      (out_s_valid   ), 
+    .s_data       (out_s_data    ),
+    .s_last       (out_s_last    ), 
+
+    .bram_addr_a  (bram_addr_a   ),
+    .bram_rddata_a(bram_rddata_a ),
+    .bram_en_a    (bram_en_a     ),
+    .done_fill    (done_fill     ),
+    .done_firmware(done_firmware )
   );
 endmodule
 
@@ -154,6 +145,7 @@ module proc_engine_out #(
     input wire m_ready,
     output wire m_valid,
     output wire [M_DATA_WIDTH_HF_CONV_DW-1:0] m_data,
+    output wire m_last_pkt,
     output wire m_last 
   );
 
@@ -187,6 +179,7 @@ module proc_engine_out #(
     .m_ready (m_ready               ),
     .m_valid (m_valid               ),
     .m_data  (m_data                ),
+    .m_last_pkt (m_last_pkt         ),
     .m_last  (m_last                )
   );
 

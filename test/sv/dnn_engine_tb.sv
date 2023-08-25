@@ -8,6 +8,7 @@ typedef struct packed {
   int x_wpt, x_wpt_p0;
   int y_wpt, y_wpt_last;
   int n_it, n_p;
+  int y_nl, y_w;
 } Bundle_t;
 
 
@@ -40,9 +41,10 @@ module dnn_engine_tb;
               M_OUTPUT_WIDTH_LF          = `M_OUTPUT_WIDTH_LF ,
               S_WEIGHTS_WIDTH_LF         = `S_WEIGHTS_WIDTH_LF,
               S_PIXELS_WIDTH_LF          = `S_PIXELS_WIDTH_LF ,
-              M_DATA_WIDTH_HF_CONV_DW    = ROWS  * Y_BITS     ; 
+              OUT_ADDR_WIDTH             = 10,
+              OUT_BITS                   = 32;
 
-  logic aresetn, hf_aresetn;
+  logic aresetn;
   logic s_axis_pixels_tready, s_axis_pixels_tvalid, s_axis_pixels_tlast;
   logic [S_PIXELS_WIDTH_LF/X_BITS -1:0][X_BITS-1:0] s_axis_pixels_tdata;
   logic [S_PIXELS_WIDTH_LF/X_BITS -1:0] s_axis_pixels_tkeep;
@@ -51,24 +53,20 @@ module dnn_engine_tb;
   logic [S_WEIGHTS_WIDTH_LF/K_BITS-1:0][K_BITS-1:0] s_axis_weights_tdata;
   logic [S_WEIGHTS_WIDTH_LF/K_BITS-1:0] s_axis_weights_tkeep;
 
-  logic m_axis_tvalid, m_axis_tready, m_axis_tlast;
-  logic [M_OUTPUT_WIDTH_LF/Y_BITS-1:0][Y_BITS-1:0] m_axis_tdata;
-  logic [M_OUTPUT_WIDTH_LF/Y_BITS-1:0] m_axis_tkeep;
-
-  assign hf_aresetn = aresetn;
+  logic bram_en_a, done_fill, done_firmware;
+  logic [(OUT_ADDR_WIDTH+2)-1:0]     bram_addr_a;
+  logic [ OUT_BITS         -1:0]     bram_rddata_a;
 
   dnn_engine #(
     .S_PIXELS_KEEP_WIDTH  (S_PIXELS_WIDTH_LF      /X_BITS),
     .S_WEIGHTS_KEEP_WIDTH (S_WEIGHTS_WIDTH_LF     /K_BITS),
-    .M_KEEP_WIDTH         (M_OUTPUT_WIDTH_LF      /Y_BITS),
-    .DW_IN_KEEP_WIDTH     (M_DATA_WIDTH_HF_CONV_DW/Y_BITS)
+    .M_KEEP_WIDTH         (M_OUTPUT_WIDTH_LF      /Y_BITS)
   ) pipe (.*);
 
   // SOURCEs & SINKS
 
   AXIS_Source #(X_BITS, S_PIXELS_WIDTH_LF , VALID_PROB) source_x (aclk, aresetn, s_axis_pixels_tready , s_axis_pixels_tvalid , s_axis_pixels_tlast , s_axis_pixels_tdata , s_axis_pixels_tkeep );
   AXIS_Source #(K_BITS, S_WEIGHTS_WIDTH_LF, VALID_PROB) source_k (aclk, aresetn, s_axis_weights_tready, s_axis_weights_tvalid, s_axis_weights_tlast, s_axis_weights_tdata, s_axis_weights_tkeep);
-  AXIS_Sink   #(Y_BITS, M_OUTPUT_WIDTH_LF , READY_PROB) sink_y   (aclk, aresetn, m_axis_tready        , m_axis_tvalid        , m_axis_tlast        , m_axis_tdata        , m_axis_tkeep        );
 
   bit done_y = 0;
   string w_path, x_path, y_path;
@@ -91,12 +89,42 @@ module dnn_engine_tb;
           $display("done x: %0d_%0d_x.txt", ib, ip);
         end
 
-  initial  begin 
+  `define RAND_DELAY //repeat($urandom_range(100))@(posedge aclk) #1;
+  
+  int file, y_wpt, dout;
+  initial  begin
+    {bram_addr_a, bram_en_a, done_firmware} = 0;
+    wait(aresetn);
+    repeat(2) @(posedge aclk);
+
     for (int ib=0; ib < N_BUNDLES; ib++)
       for (int ip=0; ip < bundles[ib].n_p; ip++)
         for (int it=0; it < bundles[ib].n_it; it++) begin
+
           $sformat(y_path, "%s%0d_%0d_%0d_y_sim.txt", DIR_PATH, ib, ip, it);
-          sink_y.axis_pull (y_path);
+          file = $fopen(y_path, "w");
+          $fclose(file);
+
+          `RAND_DELAY
+          for (int i_nl=0; i_nl < bundles[ib].y_nl; i_nl++)
+            for (int i_w=0; i_w < bundles[ib].y_w; i_w++) begin
+              wait (done_fill);
+              `RAND_DELAY
+              done_firmware <= 0;
+              file = $fopen(y_path, "a");
+
+              y_wpt = i_w==(bundles[ib].y_w-1) ? bundles[ib].y_wpt_last : bundles[ib].y_wpt;
+              for (int unsigned i_w=0; i_w < y_wpt; i_w++) begin
+                bram_addr_a <= i_w*(OUT_BITS/8); // 4 byte words
+                bram_en_a <= 1;
+                repeat(2) @(posedge aclk) #1ps;
+                $fdisplay(file, "%d", $signed(bram_rddata_a));
+              end
+              `RAND_DELAY
+              done_firmware <= 1;
+              $fclose(file);
+              `RAND_DELAY
+            end
           $display("done y: %0d_%0d_%0d_y_sim.txt", ib, ip, it);
         end
     done_y = 1;
@@ -106,13 +134,13 @@ module dnn_engine_tb;
 
   initial begin
     aresetn = 0;
-    repeat(2) @(posedge aclk);
+    repeat(2) @(posedge aclk) #1;
     aresetn = 1;
     $display("STARTING");
 
     wait(done_y);
     @(posedge aclk) 
-    $display("DONE. m_last accepted at sink_y.i_words=%d.", sink_y.i_words);
+    $display("DONE all");
     $finish();
   end
 

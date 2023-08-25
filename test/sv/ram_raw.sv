@@ -74,3 +74,24 @@ module ram_edges #(
   ) RAM (.*);
 
 endmodule
+
+module ram_output #(
+  parameter   DEPTH    = `COLS * `ROWS,
+              WIDTH    = `Y_BITS,
+              LATENCY  = 2
+)(
+  input  logic clka ,
+  input  logic ena  ,
+  input  logic wea  ,
+  input  logic [$clog2(DEPTH)-1:0] addra,
+  input  logic [WIDTH        -1:0] dina ,
+  output logic [WIDTH        -1:0] douta
+);
+
+  ram_raw #(
+    .DEPTH   (DEPTH  ),
+    .WIDTH   (WIDTH  ),
+    .LATENCY (LATENCY)
+  ) RAM (.*);
+
+endmodule
