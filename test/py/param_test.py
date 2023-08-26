@@ -138,7 +138,9 @@ def compile(c):
     if SIM == 'xsim':
         SOURCES_STR = " ".join([os.path.normpath('../' + s) for s in SOURCES]) # since called from subdir
         xvlog_cmd = fr'{XIL_PATH}\xvlog -sv {SOURCES_STR}'
-        xelab_cmd = fr'{XIL_PATH}\xelab {TB_MODULE} --snapshot {TB_MODULE} -log elaborate.log --debug typical'
+        xelab_cmd = fr'{XIL_PATH}\xelab {TB_MODULE} --snapshot {TB_MODULE} -log elaborate.log --debug typical -sv_lib dpi'
+        xsc_cmd   = fr'{XIL_PATH}\xsc ../../c/example.c'
+        assert subprocess.run(xsc_cmd, cwd="xsim", shell=True).returncode == 0
         assert subprocess.run(xvlog_cmd, cwd="xsim", shell=True).returncode == 0
         assert subprocess.run(xelab_cmd, cwd="xsim", shell=True).returncode == 0
 
@@ -148,7 +150,7 @@ def compile(c):
         assert subprocess.run(cmd).returncode == 0
 
     if SIM == "verilator":        
-        cmd = f"verilator --binary -j 0 -Wno-fatal --relative-includes --top {TB_MODULE} " + " ".join(SOURCES)
+        cmd = f"verilator --binary -j 0 -Wno-fatal --relative-includes --top {TB_MODULE} " + " ".join(SOURCES) + ' -CFLAGS -DVERILATOR ../c/example.c'
         print(cmd)
         assert subprocess.run(cmd.split(' ')).returncode == 0
 
@@ -227,9 +229,11 @@ def test_dnn_engine(COMPILE):
     c = make_compile_params(COMPILE)
 
     bundles = model.layers[2:]
-    with open('sv/model.svh', 'w') as f:
-        f.write(f"localparam N_BUNDLES = {len(bundles)};\n\n")
-        f.write(f"Bundle_t bundles [N_BUNDLES] = '{{\n")
+    with open('sv/model.svh', 'w') as vh, open ('../c/model.h', 'w') as ch:
+        vh.write(f"localparam N_BUNDLES = {len(bundles)};\n\n")
+        vh.write(f"Bundle_t bundles [N_BUNDLES] = '{{\n")
+        ch.write(f"const int N_BUNDLES = {len(bundles)};\n\n")
+        ch.write(f"Bundle_t bundles [] = {{\n")
         
         for b in bundles:
             print(f'-----------------{b.idx}-----------------------')
@@ -246,12 +250,13 @@ def test_dnn_engine(COMPILE):
 
             y_wpt = b.r.CO_PRL*b.c.ROWS
             y_wpt_last = b.r.CO_PRL*b.c.ROWS*(b.r.KW//2+1)
-            f.write(f"  '{{w_wpt:{b.we[-1].size}, w_wpt_p0:{b.we[0].size}, x_wpt:{b.xe[-1].size}, x_wpt_p0:{b.xe[0].size}, y_wpt:{y_wpt}, y_wpt_last:{y_wpt_last}, y_nl:{b.r.XN*b.r.L}, y_w:{b.r.XW-b.r.KW//2}, n_it:{b.r.IT}, n_p:{b.r.CP} }}")
+            vh.write(f"  '{{ w_wpt:{b.we[-1].size},  w_wpt_p0:{b.we[0].size},  x_wpt:{b.xe[-1].size},  x_wpt_p0:{b.xe[0].size},  y_wpt:{y_wpt},  y_wpt_last:{y_wpt_last},  y_nl:{b.r.XN*b.r.L},  y_w:{b.r.XW-b.r.KW//2},  n_it:{b.r.IT},  n_p:{b.r.CP} }}")
+            ch.write(f"   {{.w_wpt={b.we[-1].size}, .w_wpt_p0={b.we[0].size}, .x_wpt={b.xe[-1].size}, .x_wpt_p0={b.xe[0].size}, .y_wpt={y_wpt}, .y_wpt_last={y_wpt_last}, .y_nl={b.r.XN*b.r.L}, .y_w={b.r.XW-b.r.KW//2}, .n_it={b.r.IT}, .n_p={b.r.CP} }}")
             if b.idx != len(bundles)-1:
-                f.write(',\n')
-        f.write(f"\n}};")
-
-
+                vh.write(',\n')
+                ch.write(',\n')
+        vh.write(f"\n}};")
+        ch.write(f"\n}};")
     '''
     RUN SIMULATION
     '''

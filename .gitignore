@@ -11,7 +11,8 @@ asic/*
 *.pickle
 test/vectors
 test/xsim
-test/c
+test/oldc
+test/xsc*
 test/obj_dir
 test/models
 
