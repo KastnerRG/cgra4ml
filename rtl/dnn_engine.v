@@ -40,8 +40,8 @@ module dnn_engine #(
     input  wire [(OUT_ADDR_WIDTH+2)-1:0]     bram_addr_a,
     output wire [ OUT_BITS         -1:0]     bram_rddata_a,
     input  wire                              bram_en_a,
-    output wire done_fill,
-    input  wire done_firmware
+    output wire t_done_fill,
+    input  wire t_done_proc
   ); 
 
   localparam  TUSER_WIDTH = `TUSER_WIDTH;
@@ -122,8 +122,8 @@ module dnn_engine #(
     .bram_addr_a  (bram_addr_a   ),
     .bram_rddata_a(bram_rddata_a ),
     .bram_en_a    (bram_en_a     ),
-    .done_fill    (done_fill     ),
-    .done_firmware(done_firmware )
+    .t_done_fill  (t_done_fill   ),
+    .t_done_proc  (t_done_proc   )
   );
 endmodule
 
