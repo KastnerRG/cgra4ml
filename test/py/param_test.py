@@ -190,8 +190,8 @@ def test_dnn_engine(COMPILE):
         Config(7, 16),
         Config(5, 16),
         Config(3, 24),
-        # Config(1, 10, flatten=True),
-        # Config(1, 10, dense= True),
+        Config(1, 50, flatten=True),
+        Config(1, 10, dense= True),
     ]
 
     '''

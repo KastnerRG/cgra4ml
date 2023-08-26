@@ -53,7 +53,7 @@ module dnn_engine_tb;
   logic [S_WEIGHTS_WIDTH_LF/K_BITS-1:0][K_BITS-1:0] s_axis_weights_tdata;
   logic [S_WEIGHTS_WIDTH_LF/K_BITS-1:0] s_axis_weights_tkeep;
 
-  logic bram_en_a, done_fill, done_firmware;
+  logic bram_en_a, t_done_fill, t_done_proc;
   logic [(OUT_ADDR_WIDTH+2)-1:0]     bram_addr_a;
   logic [ OUT_BITS         -1:0]     bram_rddata_a;
 
@@ -89,13 +89,16 @@ module dnn_engine_tb;
           $display("done x: %0d_%0d_x.txt", ib, ip);
         end
 
-  `define RAND_DELAY //repeat($urandom_range(100))@(posedge aclk) #1;
+  `define RAND_DELAY repeat($urandom_range(1000/READY_PROB-1)) @(posedge aclk) #1;
   
   int file, y_wpt, dout;
+  bit done_fill_prev=0; // t_done_fill starts at 0
   initial  begin
-    {bram_addr_a, bram_en_a, done_firmware} = 0;
+    {bram_addr_a, bram_en_a, t_done_proc} = 0;
     wait(aresetn);
     repeat(2) @(posedge aclk);
+
+
 
     for (int ib=0; ib < N_BUNDLES; ib++)
       for (int ip=0; ip < bundles[ib].n_p; ip++)
@@ -105,12 +108,22 @@ module dnn_engine_tb;
           file = $fopen(y_path, "w");
           $fclose(file);
 
+
+          // 1. fw starts, waits for t_done_fill to toggle
+          // 2. mod toggles t_done_fill, moving to READ_S, waits for t_done_proc
+          // 3. fw continues, finishes processing, toggles t_done_proc
+          // 4. mod senses t_done_proc in READ_S, moves, waits for done_write, toggles t_done_fill
+          // 5. fw loops to beginning, waits for t_done_fill to toggle
+
+
           `RAND_DELAY
           for (int i_nl=0; i_nl < bundles[ib].y_nl; i_nl++)
             for (int i_w=0; i_w < bundles[ib].y_w; i_w++) begin
-              wait (done_fill);
+
+              wait (t_done_fill != done_fill_prev);
+              done_fill_prev = t_done_fill;
+
               `RAND_DELAY
-              done_firmware <= 0;
               file = $fopen(y_path, "a");
 
               y_wpt = i_w==(bundles[ib].y_w-1) ? bundles[ib].y_wpt_last : bundles[ib].y_wpt;
@@ -121,7 +134,7 @@ module dnn_engine_tb;
                 $fdisplay(file, "%d", $signed(bram_rddata_a));
               end
               `RAND_DELAY
-              done_firmware <= 1;
+              t_done_proc <= !t_done_proc;
               $fclose(file);
               `RAND_DELAY
             end

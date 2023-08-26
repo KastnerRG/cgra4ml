@@ -19,15 +19,15 @@ module out_ram_switch #(
   output logic [ WORD_WIDTH   -1:0]     bram_rddata_a,
   input  logic                          bram_en_a,
 
-  output logic done_fill,
-  input  logic done_firmware
+  output logic t_done_fill,
+  input  logic t_done_proc
 );
 
   localparam BITS_COLS = $clog2(COLS), BITS_ROWS = $clog2(ROWS);
   enum {W_IDLE_S, W_WRITE_S, W_FILL_S, W_SWITCH_S} state_write, state_write_next;
-  enum {R_IDLE_S, R_DONE_FILL, R_READ_S, R_WAIT_S, R_SWITCH_S} state_read, state_read_next;
+  enum {R_IDLE_S, R_DONE_FILL_S, R_READ_S, R_WAIT_S, R_SWITCH_S} state_read, state_read_next;
 
-  logic i_read, i_write, s_first, en_shift, last, df_was_high, lc_rows, l_rows;
+  logic i_read, i_write, s_first, en_shift, last, dp_prev, lc_rows, l_rows;
 
   logic [ADDR_WIDTH-1:0] ram_w_addr, ram_r_addr;
   logic [ROWS-1:0][Y_BITS -1:0] shift_reg;
@@ -91,34 +91,31 @@ module out_ram_switch #(
   // -----
   // READ
   // -----
+  // 1. fw starts, waits for t_done_fill to toggle
+  // 2. mod toggles t_done_fill, moving to READ_S, waits for t_done_proc
+  // 3. fw continues, finishes processing, toggles t_done_proc
+  // 4. mod senses t_done_proc in READ_S, moves, waits for done_write, toggles t_done_fill
+  // 5. fw loops to beginning, waits for t_done_fill to toggle
+
   always_comb
     unique case (state_read)
-      R_IDLE_S    : if (done_write [i_read])           state_read_next = R_DONE_FILL;
-      R_DONE_FILL :                                    state_read_next = R_READ_S;
-      R_READ_S    : if (!df_was_high && done_firmware) state_read_next = R_WAIT_S;
+      R_IDLE_S    : if (done_write [i_read])           state_read_next = R_DONE_FILL_S;
+      R_DONE_FILL_S:                                   state_read_next = R_READ_S;
+      R_READ_S    : if (dp_prev != t_done_proc)        state_read_next = R_WAIT_S;
       R_WAIT_S    :                                    state_read_next = R_SWITCH_S;
       R_SWITCH_S  :                                    state_read_next = R_IDLE_S;
     endcase 
 
   assign ram_r_addr    = bram_addr_a[(ADDR_WIDTH+2)-1:2];
   assign bram_rddata_a = WORD_WIDTH'(signed'(ram_dout[i_read])); // pad to 32
-  assign done_fill     = state_read == R_DONE_FILL; // one clock
 
-  // Done Firmware Was High
-  // To prevent the case: fsm waits READ, firmware raises df, fsm leaves READ, goes around WAIT, SWITCH, READ - df is still high, so, fsm moves to WAIT.
-  // with this, df being pulled down is recorded in df_was_high. fsm waits in READ until !df_was_high && done_firmware
   always_ff @(posedge clk)
-    if (!rstn)                                 df_was_high <= 0;
-    else if (done_firmware==0 && df_was_high)  df_was_high <= 0; // df is going to zero
-    else if (state_read == R_READ_S)
-      if (!df_was_high && done_firmware)       df_was_high <= 1; // df is going to high during READ_S
+    if (!rstn)                            t_done_fill <= 0;
+    else if (state_read == R_DONE_FILL_S) t_done_fill <= !t_done_fill;
 
-  // Wait for done firmware to fall before deasserting done_fill - to prevent the loop in firmware missing done_fill
-  // always_ff @(posedge clk)
-  //   if      (!rstn)                            done_fill <= 0; 
-  //   else if (state_read_next == R_DONE_FILL)   done_fill <= 1;
-  //   else if (df_was_high && !done_firmware )   done_fill <= 0;
-
+  always_ff @(posedge clk)
+    if (!rstn)                            dp_prev <= 0;              // t_done_proc starts at 0
+    else if (state_read_next == R_WAIT_S) dp_prev <= t_done_proc;  // sample dp_prev at end of reading
 
   // -----
   // PING PONG
@@ -135,7 +132,7 @@ module out_ram_switch #(
       always_ff @(posedge clk)
         if (!rstn)                              done_read [i] <= 1;
         else if (i==i_read) 
-            if (state_read_next == R_DONE_FILL) done_read [i] <= 0;
+            if (state_read_next == R_READ_S)    done_read [i] <= 0;
             else if (state_read == R_SWITCH_S)  done_read [i] <= 1;
       
       assign ram_wen  [i] =  i == i_write && en_shift && !s_first;
