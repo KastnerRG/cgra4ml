@@ -3,7 +3,7 @@
 `include "../../rtl/include/params.svh"
 `include "../xsim/sim_params.svh"
 
-typedef struct packed {
+typedef struct {
   int w_wpt, w_wpt_p0; // words per transfer
   int x_wpt, x_wpt_p0;
   int y_wpt, y_wpt_last;
@@ -70,24 +70,26 @@ module dnn_engine_tb;
 
   bit done_y = 0;
   string w_path, x_path, y_path;
+  int xib=0, xip=0, wib=0, wip=0, wit=0;
+  bit x_done, w_done;
+  import "DPI-C" function void load_x(inout bit x_done, inout int xib, xip);
+  import "DPI-C" function void load_w(inout bit w_done, inout int wib, wip, wit);
 
   initial 
-    for (int ib=0; ib < N_BUNDLES; ib++)
-      for (int ip=0; ip < bundles[ib].n_p; ip++)
-        for (int it=0; it < bundles[ib].n_it; it++) begin
-            $sformat(w_path, "%s%0d_%0d_%0d_w.txt", DIR_PATH, ib, ip, it);
-            source_k.axis_push (w_path);
-            $display("done w: %0d_%0d_%0d_w.txt", ib, ip, it);
-          end
+    while (1) begin
+      $sformat(w_path, "%s%0d_%0d_%0d_w.txt", DIR_PATH, wib, wip, wit);
+      source_k.axis_push(w_path);
+      load_w (w_done, wib, wip, wit);
+      if (w_done) break;
+    end
 
-  initial
-    for (int ib=0; ib < N_BUNDLES; ib++)
-      for (int ip=0; ip < bundles[ib].n_p; ip++)
-        for (int it=0; it < bundles[ib].n_it; it++) begin
-          $sformat(x_path, "%s%0d_%0d_x.txt", DIR_PATH, ib, ip);
-          source_x.axis_push (x_path);
-          $display("done x: %0d_%0d_x.txt", ib, ip);
-        end
+  initial 
+    while (1) begin
+      $sformat(x_path, "%s%0d_%0d_x.txt", DIR_PATH, xib, xip);
+      source_x.axis_push(x_path);
+      load_x (x_done, xib, xip);
+      if (x_done) break;
+    end
 
   `define RAND_DELAY repeat($urandom_range(1000/READY_PROB-1)) @(posedge aclk) #1;
   
