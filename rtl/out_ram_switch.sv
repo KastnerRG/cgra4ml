@@ -19,7 +19,7 @@ module out_ram_switch #(
   output logic [ WORD_WIDTH   -1:0]     bram_rddata_a,
   input  logic                          bram_en_a,
 
-  output logic t_done_fill,
+  output logic done_fill,
   input  logic t_done_proc
 );
 
@@ -108,10 +108,11 @@ module out_ram_switch #(
 
   assign ram_r_addr    = bram_addr_a[(ADDR_WIDTH+2)-1:2];
   assign bram_rddata_a = WORD_WIDTH'(signed'(ram_dout[i_read])); // pad to 32
+  assign done_fill     = state_read == R_DONE_FILL_S; // one clock for interrupt
 
-  always_ff @(posedge clk)
-    if (!rstn)                            t_done_fill <= 0;
-    else if (state_read == R_DONE_FILL_S) t_done_fill <= !t_done_fill;
+  // always_ff @(posedge clk)
+  //   if (!rstn)                            t_done_fill <= 0;
+  //   else if (state_read == R_DONE_FILL_S) t_done_fill <= !t_done_fill;
 
   always_ff @(posedge clk)
     if (!rstn)                            dp_prev <= 0;              // t_done_proc starts at 0

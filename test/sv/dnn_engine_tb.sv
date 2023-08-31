@@ -53,7 +53,7 @@ module dnn_engine_tb;
   logic [S_WEIGHTS_WIDTH_LF/K_BITS-1:0][K_BITS-1:0] s_axis_weights_tdata;
   logic [S_WEIGHTS_WIDTH_LF/K_BITS-1:0] s_axis_weights_tkeep;
 
-  logic bram_en_a, t_done_fill, t_done_proc;
+  logic bram_en_a, done_fill, t_done_proc;
   logic [(OUT_ADDR_WIDTH+2)-1:0]     bram_addr_a;
   logic [ OUT_BITS         -1:0]     bram_rddata_a;
 
@@ -94,7 +94,6 @@ module dnn_engine_tb;
   `define RAND_DELAY repeat($urandom_range(1000/READY_PROB-1)) @(posedge aclk) #1;
   
   int file, y_wpt, dout;
-  bit done_fill_prev=0; // t_done_fill starts at 0
   initial  begin
     {bram_addr_a, bram_en_a, t_done_proc} = 0;
     wait(aresetn);
@@ -118,12 +117,10 @@ module dnn_engine_tb;
           // 5. fw loops to beginning, waits for t_done_fill to toggle
 
 
-          `RAND_DELAY
           for (int i_nl=0; i_nl < bundles[ib].y_nl; i_nl++)
             for (int i_w=0; i_w < bundles[ib].y_w; i_w++) begin
 
-              wait (t_done_fill != done_fill_prev);
-              done_fill_prev = t_done_fill;
+              wait (done_fill);
 
               `RAND_DELAY
               file = $fopen(y_path, "a");
@@ -136,9 +133,8 @@ module dnn_engine_tb;
                 $fdisplay(file, "%d", $signed(bram_rddata_a));
               end
               `RAND_DELAY
-              t_done_proc <= !t_done_proc;
               $fclose(file);
-              `RAND_DELAY
+              t_done_proc <= !t_done_proc;
             end
           $display("done y: %0d_%0d_%0d_y_sim.txt", ib, ip, it);
         end
