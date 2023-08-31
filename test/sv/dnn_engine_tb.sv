@@ -53,9 +53,11 @@ module dnn_engine_tb;
   logic [S_WEIGHTS_WIDTH_LF/K_BITS-1:0][K_BITS-1:0] s_axis_weights_tdata;
   logic [S_WEIGHTS_WIDTH_LF/K_BITS-1:0] s_axis_weights_tkeep;
 
-  logic bram_en_a, done_fill, t_done_proc;
+  bit bram_en_a, done_fill, t_done_proc;
   logic [(OUT_ADDR_WIDTH+2)-1:0]     bram_addr_a;
   logic [ OUT_BITS         -1:0]     bram_rddata_a;
+
+  bit [31:0] y_sram [ROWS*COLS-1:0];
 
   dnn_engine #(
     .S_PIXELS_KEEP_WIDTH  (S_PIXELS_WIDTH_LF      /X_BITS),
@@ -68,12 +70,13 @@ module dnn_engine_tb;
   AXIS_Source #(X_BITS, S_PIXELS_WIDTH_LF , VALID_PROB) source_x (aclk, aresetn, s_axis_pixels_tready , s_axis_pixels_tvalid , s_axis_pixels_tlast , s_axis_pixels_tdata , s_axis_pixels_tkeep );
   AXIS_Source #(K_BITS, S_WEIGHTS_WIDTH_LF, VALID_PROB) source_k (aclk, aresetn, s_axis_weights_tready, s_axis_weights_tvalid, s_axis_weights_tlast, s_axis_weights_tdata, s_axis_weights_tkeep);
 
-  bit done_y = 0;
+  bit y_done = 0;
   string w_path, x_path, y_path;
   int xib=0, xip=0, wib=0, wip=0, wit=0;
   bit x_done, w_done;
   import "DPI-C" function void load_x(inout bit x_done, inout int xib, xip);
   import "DPI-C" function void load_w(inout bit w_done, inout int wib, wip, wit);
+  import "DPI-C" function void load_y(inout bit y_done, inout bit t_done_proc, inout bit [31:0] y_sram [ROWS*COLS-1:0]);
 
   initial 
     while (1) begin
@@ -99,46 +102,17 @@ module dnn_engine_tb;
     wait(aresetn);
     repeat(2) @(posedge aclk);
 
+    while (!y_done) begin
+      wait (done_fill); // callback trigger
 
-
-    for (int ib=0; ib < N_BUNDLES; ib++)
-      for (int ip=0; ip < bundles[ib].n_p; ip++)
-        for (int it=0; it < bundles[ib].n_it; it++) begin
-
-          $sformat(y_path, "%s%0d_%0d_%0d_y_sim.txt", DIR_PATH, ib, ip, it);
-          file = $fopen(y_path, "w");
-          $fclose(file);
-
-
-          // 1. fw starts, waits for t_done_fill to toggle
-          // 2. mod toggles t_done_fill, moving to READ_S, waits for t_done_proc
-          // 3. fw continues, finishes processing, toggles t_done_proc
-          // 4. mod senses t_done_proc in READ_S, moves, waits for done_write, toggles t_done_fill
-          // 5. fw loops to beginning, waits for t_done_fill to toggle
-
-
-          for (int i_nl=0; i_nl < bundles[ib].y_nl; i_nl++)
-            for (int i_w=0; i_w < bundles[ib].y_w; i_w++) begin
-
-              wait (done_fill);
-
-              `RAND_DELAY
-              file = $fopen(y_path, "a");
-
-              y_wpt = i_w==(bundles[ib].y_w-1) ? bundles[ib].y_wpt_last : bundles[ib].y_wpt;
-              for (int unsigned i_w=0; i_w < y_wpt; i_w++) begin
-                bram_addr_a <= i_w*(OUT_BITS/8); // 4 byte words
-                bram_en_a <= 1;
-                repeat(2) @(posedge aclk) #1ps;
-                $fdisplay(file, "%d", $signed(bram_rddata_a));
-              end
-              `RAND_DELAY
-              $fclose(file);
-              t_done_proc <= !t_done_proc;
-            end
-          $display("done y: %0d_%0d_%0d_y_sim.txt", ib, ip, it);
-        end
-    done_y = 1;
+      for (int unsigned ir=0; ir < ROWS*COLS; ir++) begin // DPI-C cannot consume time in verilator, so read in advance
+        bram_addr_a <= ir*(OUT_BITS/8); // 4 byte words
+        bram_en_a <= 1;
+        repeat(2) @(posedge aclk) #1ps;
+        y_sram[ir] = bram_rddata_a;
+      end
+      load_y(y_done, t_done_proc, y_sram);
+    end
   end
 
   // START SIM  
@@ -149,7 +123,7 @@ module dnn_engine_tb;
     aresetn = 1;
     $display("STARTING");
 
-    wait(done_y);
+    wait(y_done);
     @(posedge aclk) 
     $display("DONE all");
     $finish();

@@ -1,4 +1,5 @@
 const int N_BUNDLES = 6;
+const char DATA_DIR [] = "D:/dnn-engine/test/vectors";
 
 Bundle_t bundles [] = {
    {.w_wpt=2368, .w_wpt_p0=2368, .x_wpt=424, .x_wpt_p0=424, .y_wpt=16, .y_wpt_last=96, .y_nl=4, .y_w=3, .n_it=8, .n_p=3 },
