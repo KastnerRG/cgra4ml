@@ -12,13 +12,13 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="816.350 ns"></ZoomStartTime>
-      <ZoomEndTime time="1,032.751 ns"></ZoomEndTime>
-      <Cursor1Time time="906.000 ns"></Cursor1Time>
+      <ZoomStartTime time="0.000000 us"></ZoomStartTime>
+      <ZoomEndTime time="434.000001 us"></ZoomEndTime>
+      <Cursor1Time time="1.000000 us"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="476"></NameColumnWidth>
-      <ValueColumnWidth column_width="220"></ValueColumnWidth>
+      <ValueColumnWidth column_width="214"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="2" />
    <wave_markers>
@@ -1269,9 +1269,9 @@
                <obj_property name="ElementShortName">done_fill</obj_property>
                <obj_property name="ObjectShortName">done_fill</obj_property>
             </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/done_firmware" type="logic">
-               <obj_property name="ElementShortName">done_firmware</obj_property>
-               <obj_property name="ObjectShortName">done_firmware</obj_property>
+            <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/t_done_proc" type="logic">
+               <obj_property name="ElementShortName">t_done_proc</obj_property>
+               <obj_property name="ObjectShortName">t_done_proc</obj_property>
             </wvobject>
          </wvobject>
          <wvobject fp_name="group1755" type="group">
@@ -1330,46 +1330,6 @@
             <obj_property name="ObjectShortName">shift_reg[7:0][31:0]</obj_property>
             <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
             <obj_property name="isExpanded"></obj_property>
-            <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/shift_reg[7]" type="array">
-               <obj_property name="ElementShortName">[7][31:0]</obj_property>
-               <obj_property name="ObjectShortName">[7][31:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/shift_reg[6]" type="array">
-               <obj_property name="ElementShortName">[6][31:0]</obj_property>
-               <obj_property name="ObjectShortName">[6][31:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/shift_reg[5]" type="array">
-               <obj_property name="ElementShortName">[5][31:0]</obj_property>
-               <obj_property name="ObjectShortName">[5][31:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/shift_reg[4]" type="array">
-               <obj_property name="ElementShortName">[4][31:0]</obj_property>
-               <obj_property name="ObjectShortName">[4][31:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/shift_reg[3]" type="array">
-               <obj_property name="ElementShortName">[3][31:0]</obj_property>
-               <obj_property name="ObjectShortName">[3][31:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/shift_reg[2]" type="array">
-               <obj_property name="ElementShortName">[2][31:0]</obj_property>
-               <obj_property name="ObjectShortName">[2][31:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/shift_reg[1]" type="array">
-               <obj_property name="ElementShortName">[1][31:0]</obj_property>
-               <obj_property name="ObjectShortName">[1][31:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            </wvobject>
-            <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/shift_reg[0]" type="array">
-               <obj_property name="ElementShortName">[0][31:0]</obj_property>
-               <obj_property name="ObjectShortName">[0][31:0]</obj_property>
-               <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-            </wvobject>
          </wvobject>
          <wvobject fp_name="group1753" type="group">
             <obj_property name="label">RAMS</obj_property>
@@ -1399,24 +1359,6 @@
                <obj_property name="ObjectShortName">ram_addr[1:0][9:0]</obj_property>
                <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
                <obj_property name="isExpanded"></obj_property>
-               <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/ram_addr[1]" type="array">
-                  <obj_property name="ElementShortName">[1][9:0]</obj_property>
-                  <obj_property name="ObjectShortName">[1][9:0]</obj_property>
-                  <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/ram_addr[0]" type="array">
-                  <obj_property name="ElementShortName">[0][9:0]</obj_property>
-                  <obj_property name="ObjectShortName">[0][9:0]</obj_property>
-                  <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/ram_addr[1]" type="array">
-                  <obj_property name="ElementShortName">[1][9:0]</obj_property>
-                  <obj_property name="ObjectShortName">[1][9:0]</obj_property>
-               </wvobject>
-               <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/ram_addr[0]" type="array">
-                  <obj_property name="ElementShortName">[0][9:0]</obj_property>
-                  <obj_property name="ObjectShortName">[0][9:0]</obj_property>
-               </wvobject>
             </wvobject>
             <wvobject fp_name="group607" type="group">
                <obj_property name="label">ram0</obj_property>
@@ -1449,15 +1391,6 @@
                   <obj_property name="ObjectShortName">\genblk1.delay [0:0][31:0]</obj_property>
                   <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
                   <obj_property name="isExpanded"></obj_property>
-                  <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/\I[0].RAM /RAM/\genblk1.delay [0]" type="array">
-                     <obj_property name="ElementShortName">[0][31:0]</obj_property>
-                     <obj_property name="ObjectShortName">[0][31:0]</obj_property>
-                     <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-                  </wvobject>
-                  <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/\I[0].RAM /RAM/\genblk1.delay [0]" type="array">
-                     <obj_property name="ElementShortName">[0][31:0]</obj_property>
-                     <obj_property name="ObjectShortName">[0][31:0]</obj_property>
-                  </wvobject>
                </wvobject>
                <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/\I[0].RAM /RAM/douta" type="array">
                   <obj_property name="DisplayName">FullPathName</obj_property>
@@ -1471,24 +1404,6 @@
                <obj_property name="ObjectShortName">ram_dout[1:0][31:0]</obj_property>
                <obj_property name="isExpanded"></obj_property>
                <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/ram_dout[1]" type="array">
-                  <obj_property name="ElementShortName">[1][31:0]</obj_property>
-                  <obj_property name="ObjectShortName">[1][31:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/ram_dout[0]" type="array">
-                  <obj_property name="ElementShortName">[0][31:0]</obj_property>
-                  <obj_property name="ObjectShortName">[0][31:0]</obj_property>
-                  <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
-               </wvobject>
-               <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/ram_dout[1]" type="array">
-                  <obj_property name="ElementShortName">[1][31:0]</obj_property>
-                  <obj_property name="ObjectShortName">[1][31:0]</obj_property>
-               </wvobject>
-               <wvobject fp_name="/dnn_engine_tb/pipe/OUT_RAM/ram_dout[0]" type="array">
-                  <obj_property name="ElementShortName">[0][31:0]</obj_property>
-                  <obj_property name="ObjectShortName">[0][31:0]</obj_property>
-               </wvobject>
             </wvobject>
          </wvobject>
       </wvobject>
