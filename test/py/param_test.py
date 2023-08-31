@@ -232,7 +232,8 @@ def test_dnn_engine(COMPILE):
     with open('sv/model.svh', 'w') as vh, open ('../c/model.h', 'w') as ch:
         vh.write(f"localparam N_BUNDLES = {len(bundles)};\n\n")
         vh.write(f"Bundle_t bundles [N_BUNDLES] = '{{\n")
-        ch.write(f"const int N_BUNDLES = {len(bundles)};\n\n")
+        ch.write(f"const int N_BUNDLES = {len(bundles)};\n")
+        ch.write(f'const char DATA_DIR [] = "{DATA_DIR}";\n\n')
         ch.write(f"Bundle_t bundles [] = {{\n")
         
         for b in bundles:
