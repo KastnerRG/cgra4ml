@@ -166,9 +166,9 @@ class Config:
 
 
 @pytest.mark.parametrize("COMPILE", list(product_dict(
-                                                X_BITS     = [8    ], 
-                                                K_BITS     = [8    ], 
-                                                Y_BITS     = [32   ], 
+                                                X_BITS     = [4    ], 
+                                                K_BITS     = [4    ], 
+                                                Y_BITS     = [16   ], 
                                                 ROWS       = [8    ], 
                                                 COLS       = [24   ], 
                                                 KW_MAX     = [11   ], 
@@ -199,19 +199,21 @@ def test_dnn_engine(COMPILE):
     '''
     Build Model
     '''
-    q = 'quantized_bits(8,0,False,True,1)'
+    c = make_compile_params(COMPILE)
+    xq, kq, bq, aq = f'quantized_bits({c.X_BITS},0,False,True,1)', f'quantized_bits({c.K_BITS},0,False,True,1)', f'quantized_bits({c.K_BITS},0,False,True,1)', f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'
+    inp = {'bits':c.X_BITS, 'frac':c.X_BITS-1}
 
     x = x_in = Input(input_shape[1:], name='input')
-    x = QActivation(q)(x)
-
+    x = QActivation(xq)(x)
     for i, g in enumerate(model_config):
         if g.dense:
-            d = {'core': {'type':'dense', 'units':g.CO, 'kernel_quantizer':q, 'bias_quantizer':q, 'use_bias':False, 'act_str':'quantized_relu(8,0,negative_slope=0.125)'}}
+            d = {'core': {'type':'dense', 'units':g.CO, 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':False, 'act_str':aq}}
         else:
-            d = {'core': {'type':'conv', 'filters':g.CO, 'kernel_size':(g.K,g.K), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':q, 'bias_quantizer':q, 'use_bias':False, 'act_str':'quantized_relu(8,0,negative_slope=0.125)'}, 'flatten':g.flatten,}
+            d = {'core': {'type':'conv', 'filters':g.CO, 'kernel_size':(g.K,g.K), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':False, 'act_str':aq}, 'flatten':g.flatten,}
         x = Bundle(**d)(x)
 
     model = Model(inputs=x_in, outputs=x)
+
 
     '''
     Pass Floating Point & Fixed Point Input
@@ -220,15 +222,28 @@ def test_dnn_engine(COMPILE):
     y = model(x)
 
     inp_act_model = Model(inputs=model.input, outputs=model.layers[1].output)
-    inp ={ 'tensor': inp_act_model(x, training=False), 'bits':8, 'frac':7}
+    inp['tensor'] = inp_act_model(x, training=False)
     inp['int'] = inp['tensor'].numpy() * 2**inp['frac']
 
 
     for file in os.scandir(DATA_DIR):
         os.remove(file.path)
-    c = make_compile_params(COMPILE)
 
     bundles = model.layers[2:]
+
+
+    '''
+    Export
+    '''
+    for b in bundles:
+        print(f'-----------------{b.idx}-----------------------')
+        b.process(inp if b.idx==0 else None)
+        b.export(c)
+        
+
+    '''
+    Write Runtime Headers
+    '''
     with open('sv/model.svh', 'w') as vh, open ('../c/model.h', 'w') as ch:
         vh.write(f"localparam N_BUNDLES = {len(bundles)};\n\n")
         vh.write(f"Bundle_t bundles [N_BUNDLES] = '{{\n")
@@ -237,18 +252,6 @@ def test_dnn_engine(COMPILE):
         ch.write(f"Bundle_t bundles [] = {{\n")
         
         for b in bundles:
-            print(f'-----------------{b.idx}-----------------------')
-            b.process(inp if b.idx==0 else None)
-            b.export(c)
-
-            '''FLATTEN & SAVE AS TEXT'''
-            for i_cp in range(b.r.CP):
-                np.savetxt(f"{DATA_DIR}/{b.idx}_{i_cp}_x.txt", b.xe[i_cp].flatten(), fmt='%d')
-                for i_it in range(b.r.IT):
-                    np.savetxt(f"{DATA_DIR}/{b.idx}_{i_cp}_{i_it}_w.txt", b.we[i_cp][i_it].flatten(), fmt='%d')
-                    np.savetxt(f"{DATA_DIR}/{b.idx}_{i_cp}_{i_it}_y_exp.txt", b.ye_exp_p[i_cp][i_it].flatten(), fmt='%d')
-            print(f'Weights, inputs, outputs saved to {DATA_DIR}/ib_ip_it_*.txt')
-
             y_wpt = b.r.CO_PRL*b.c.ROWS
             y_wpt_last = b.r.CO_PRL*b.c.ROWS*(b.r.KW//2+1)
             vh.write(f"  '{{ w_wpt:{b.we[-1].size},  w_wpt_p0:{b.we[0].size},  x_wpt:{b.xe[-1].size},  x_wpt_p0:{b.xe[0].size},  y_wpt:{y_wpt},  y_wpt_last:{y_wpt_last},  y_nl:{b.r.XN*b.r.L},  y_w:{b.r.XW-b.r.KW//2},  n_it:{b.r.IT},  n_p:{b.r.CP} }}")
@@ -256,12 +259,48 @@ def test_dnn_engine(COMPILE):
             if b.idx != len(bundles)-1:
                 vh.write(',\n')
                 ch.write(',\n')
+        
         vh.write(f"\n}};")
         ch.write(f"\n}};")
+
+    '''
+    Write Text files of vectors
+    '''
+    for b in bundles:
+        for ip in range(b.r.CP):
+            CM_p = b.r.CM_0 if ip==0 else b.r.CM
+            x_config = b.r.x_header_i64_p[ip]
+            x_config = format(x_config, f'#0{c.IN_BITS}b')
+            x_config_words = [int(x_config[i:i+c.X_BITS], 2) for i in range(0, len(x_config), c.X_BITS)]
+            x_config_words.reverse()
+            x_config_words = np.array(x_config_words, dtype=np.int8)
+
+            xp = b.xe[ip].flatten()
+            xp = np.concatenate([x_config_words, xp], axis=0)
+            assert xp.shape == (c.IN_BITS/c.X_BITS +b.r.XN*b.r.L*b.r.XW*CM_p*(c.ROWS+c.X_PAD),)
+            np.savetxt(f"{DATA_DIR}/{b.idx}_{ip}_x.txt", xp, fmt='%d')
+
+
+            for i_it in range(b.r.IT):
+                
+                w_config = b.r.w_header_i64_p[ip]
+                w_config = format(w_config, f'#0{c.IN_BITS}b')
+                w_config_words = [int(w_config[i:i+c.K_BITS], 2) for i in range(0, len(w_config), c.K_BITS)]
+                w_config_words.reverse()
+                w_config_words = np.array(w_config_words,dtype=np.int8)
+
+                wp = b.we[ip][i_it].flatten()            
+                wp = np.concatenate([w_config_words, wp], axis=0)
+                assert wp.shape == (c.IN_BITS/c.K_BITS + (CM_p*b.r.KH+c.CONFIG_BEATS)*c.COLS,)
+                np.savetxt(f"{DATA_DIR}/{b.idx}_{ip}_{i_it}_w.txt", wp, fmt='%d')
+
+                np.savetxt(f"{DATA_DIR}/{b.idx}_{ip}_{i_it}_y_exp.txt", b.ye_exp_p[ip][i_it].flatten(), fmt='%d')
+    print(f'Weights, inputs, outputs saved to {DATA_DIR}/ib_ip_it_*.txt')
+
+
     '''
     RUN SIMULATION
     '''
-
     compile(c=c)
     os.makedirs('xsim', exist_ok=True)
     print("SIMULATING...")
@@ -276,14 +315,14 @@ def test_dnn_engine(COMPILE):
         subprocess.run([f"./obj_dir/V{TB_MODULE}"])
 
 
+    '''
+    CHECK ERROR
+    '''
     for b in bundles:
-        '''
-        CHECK ERROR
-        '''
         y_sim = np.zeros((b.r.IT, b.r.XN*b.r.L*b.r.XW*b.r.CO_PRL*c.ROWS))
-        for i_cp in range(b.r.CP):
+        for ip in range(b.r.CP):
             for i_it in range(b.r.IT):
-                y_sim[i_it] = y_sim[i_it] + np.loadtxt(f"{DATA_DIR}/{b.idx}_{i_cp}_{i_it}_y_sim.txt",np.int32)
+                y_sim[i_it] = y_sim[i_it] + np.loadtxt(f"{DATA_DIR}/{b.idx}_{ip}_{i_it}_y_sim.txt",np.int32)
 
         error = np.sum(np.abs(y_sim.reshape(b.ye_exp.shape) - b.ye_exp))
 

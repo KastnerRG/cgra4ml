@@ -442,51 +442,42 @@ class Bundle(tf.keras.Model):
         '''
         Create headers
         '''
-        def pack_bits(arr):
+        def pack_bits(arr, total):
             sum_width = 0
             packed = 0
             for val, width in arr:
                 packed |= val << sum_width
                 sum_width += width
+            assert sum_width <= total, f"Number of total packed bits {sum_width} is more than input DMA width {total}"
             return packed
         
-        w_config_words_p = []
-        x_config_words_p = []
+        d = {'w_header_i64_p':[], 'x_header_i64_p':[]}
 
         for ip in range(r.CP):
             CM_p = r.CM_0 if ip==0 else r.CM
             print(f'headers: ip={ip}, CM_p={CM_p}')
         
             ''' Weights Config'''
-            w_config = pack_bits([
+            w_header_i64 = pack_bits([
                 (r.KW//2, c.BITS_KW2),
                 (CM_p-1 , c.BITS_CIN_MAX),
                 (r.XW-1 , c.BITS_COLS_MAX),
                 (r.L -1 , c.BITS_BLOCKS_MAX),
                 (r.XN-1 , c.BITS_XN_MAX),
                 (c.CONFIG_BEATS + r.SW*r.KH*CM_p-1, c.BITS_RAM_WEIGHTS_ADDR)
-            ])
-            w_config = format(w_config, f'#0{c.IN_BITS}b')
-            w_config_words = [int(w_config[i:i+c.K_BITS], 2) for i in range(0, len(w_config), c.K_BITS)]
-            w_config_words.reverse()
-            w_config_words = np.array(w_config_words,dtype=np.int8)
-            w_config_words_p += [w_config_words]
+            ], c.IN_BITS-1)
+            d['w_header_i64_p'] += [w_header_i64]
 
             '''Input Config'''
-            x_config = pack_bits([
+            x_header_i64 = pack_bits([
                 (r.KH//2, c.BITS_KH2),
                 (CM_p-1 , c.BITS_CIN_MAX),
                 (r.XW-1 , c.BITS_COLS_MAX),
                 (r.L -1 , c.BITS_BLOCKS_MAX),
-            ])
-            assert c.IN_BITS >= c.BITS_KW2 + c.BITS_CIN_MAX + c.BITS_COLS_MAX + c.BITS_BLOCKS_MAX
+            ], c.IN_BITS-1)
+            d['x_header_i64_p'] += [x_header_i64]
 
-            x_config = format(x_config, f'#0{c.IN_BITS}b')
-            x_config_words = [int(x_config[i:i+c.X_BITS], 2) for i in range(0, len(x_config), c.X_BITS)]
-            x_config_words.reverse()
-            x_config_words_p += [x_config_words]
-
-        d = {'w_config_words_p':w_config_words_p, 'x_config_words_p': x_config_words_p}
+        
         n = namedtuple('Runtime', d)(**d)
         r = namedtuple("Runtime", r._fields + n._fields)(*(r + n))
         return r
@@ -533,19 +524,12 @@ class Bundle(tf.keras.Model):
             ic_right += CM_p
 
             wp = w[:, ic_left:ic_right, :,:]
-            assert wp.shape == (r.IT, CM_p, r.KH, c.COLS)
-            
             wp = wp.reshape (r.IT, CM_p*r.KH, c.COLS)                # (IT, CM*KH, c.COLS)
-            wp = np.pad(wp, ((0,0),(c.CONFIG_BEATS,0),(0,0)))          # (IT, c.CONFIG_BEATS+CM*KH, c.COLS)
-            wp = wp.reshape (r.IT, (CM_p*r.KH+c.CONFIG_BEATS)*c.COLS)  # (IT, (CM*KH+c.CONFIG_BEATS)*c.COLS)
-            
-            w_config_words = r.w_config_words_p[ip] [np.newaxis, ...]
-            w_config_words = np.repeat(w_config_words, repeats=r.IT,axis=0)
-            wp = np.concatenate([w_config_words, wp], axis=1)          # (IT, 8 + CM*KH*c.COLS)
-            assert wp.shape == (r.IT, c.IN_BITS/c.K_BITS + (CM_p*r.KH+c.CONFIG_BEATS)*c.COLS)
+            wp = np.pad(wp, ((0,0),(c.CONFIG_BEATS,0),(0,0)))        # (IT, c.CONFIG_BEATS+CM*KH, c.COLS)
+            assert wp.shape == (r.IT, CM_p*r.KH +c.CONFIG_BEATS, c.COLS)
+            w_list += [wp]
 
             ic_left = ic_right
-            w_list += [wp]
         return w_list
 
 
@@ -578,14 +562,9 @@ class Bundle(tf.keras.Model):
 
             xp = x[:,:,:, ic_left:ic_right, :]                              #(XN, L, XW, CM, (c.ROWS+c.X_PAD))
             assert xp.shape == (r.XN, r.L, r.XW, CM_p, (c.ROWS+c.X_PAD))
-            xp = xp.reshape(r.XN*r.L*r.XW*CM_p*(c.ROWS+c.X_PAD))
-            
-            x_config_words = np.array(r.x_config_words_p[ip], dtype=np.uint8)
-            xp = np.concatenate([x_config_words, xp], axis=0)
-            assert xp.shape == (c.IN_BITS/c.X_BITS +r.XN*r.L*r.XW*CM_p*(c.ROWS+c.X_PAD),)
+            x_list += [xp]
 
             ic_left = ic_right
-            x_list += [xp]
         return x_list
 
 
