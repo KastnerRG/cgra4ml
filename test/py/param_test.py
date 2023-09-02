@@ -141,7 +141,7 @@ def compile(c):
         assert subprocess.run(cmd).returncode == 0
 
     if SIM == "verilator":        
-        cmd = f"verilator --binary -j 0 -Wno-fatal --relative-includes --top {TB_MODULE} " + " ".join(SOURCES) + ' -CFLAGS -DVERILATOR ../c/example.c'
+        cmd = f"verilator --binary -j 0 -Wno-fatal --trace --relative-includes --top {TB_MODULE} " + " ".join(SOURCES) + ' -CFLAGS -DVERILATOR ../c/example.c'
         print(cmd)
         assert subprocess.run(cmd.split(' ')).returncode == 0
 
@@ -159,7 +159,7 @@ class Config:
 @pytest.mark.parametrize("COMPILE", list(product_dict(
                                                 X_BITS     = [8    ], 
                                                 K_BITS     = [8    ], 
-                                                Y_BITS     = [16   ], 
+                                                Y_BITS     = [24   ], 
                                                 ROWS       = [8    ], 
                                                 COLS       = [24   ], 
                                                 KW_MAX     = [11   ], 
@@ -369,7 +369,7 @@ def test_dnn_engine(COMPILE):
 
         error = np.sum(np.abs(y_sim.reshape(b.ye_exp.shape) - b.ye_exp))
 
-        print("Error: ", error)
+        print(f"Bundle {b.idx}, Error: {error}")
         assert error == 0
         if error != 0 and SIM=='xsim':
             print(fr'''Non zero error. Open waveform with:

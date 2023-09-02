@@ -44,8 +44,9 @@ module dnn_engine_tb;
               OUT_ADDR_WIDTH             = 10,
               OUT_BITS                   = 32;
 
-  bit [0:W_BYTES    -1][7:0] w_mem;
-  bit [0:X_BYTES_ALL-1][7:0] x_mem;
+  bit [7 :0] w_mem  [0:W_BYTES    -1];
+  bit [7 :0] x_mem  [0:X_BYTES_ALL-1];
+  bit [31:0] y_sram [ROWS*COLS-1:0];
 
   logic aresetn;
   logic s_axis_pixels_tready, s_axis_pixels_tvalid, s_axis_pixels_tlast;
@@ -60,7 +61,6 @@ module dnn_engine_tb;
   logic [(OUT_ADDR_WIDTH+2)-1:0]     bram_addr_a;
   logic [ OUT_BITS         -1:0]     bram_rddata_a;
 
-  bit [31:0] y_sram [ROWS*COLS-1:0];
 
   dnn_engine #(
     .S_PIXELS_KEEP_WIDTH  (S_PIXELS_WIDTH_LF/X_BITS)
@@ -95,7 +95,12 @@ module dnn_engine_tb;
       if (x_done) break;
     end
 
-  `define RAND_DELAY repeat($urandom_range(1000/READY_PROB-1)) @(posedge aclk) #1;
+  // initial begin
+  //   $dumpfile("dnn_engine_tb.vcd");
+  //   $dumpvars(0, dnn_engine_tb);
+  //   #600us;
+  //   $finish();
+  // end
   
   int file, y_wpt, dout;
   initial  begin
@@ -150,7 +155,7 @@ module dnn_engine_tb;
 
     wait(y_done);
     @(posedge aclk) 
-    $display("DONE all");
+    $display("Done all. time taken=%t", $time);
     $finish();
   end
 
