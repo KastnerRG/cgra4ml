@@ -3,27 +3,27 @@
 
 `timescale 1ns/1ps
 
-module AXIS_M2S #(
-  parameter WORD_WIDTH=8, BUS_WIDTH=8, PROB_VALID=20,
+module DMA_M2S #(
+  parameter BUS_WIDTH=8, PROB_VALID=20,
   parameter MEM_DEPTH=1,
-  parameter WORDS_PER_BEAT = BUS_WIDTH/WORD_WIDTH
+  parameter BYTES_PER_BEAT = BUS_WIDTH/8
 )(
     input  logic aclk, aresetn, s_ready, 
     output logic s_valid, s_last,
-    output logic [WORDS_PER_BEAT-1:0][WORD_WIDTH-1:0] s_data,
-    output logic [WORDS_PER_BEAT-1:0] s_keep,
-    ref    bit   [0:MEM_DEPTH-1][WORD_WIDTH-1:0] memory
+    output logic [BYTES_PER_BEAT-1:0][7:0] s_data,
+    output logic [BYTES_PER_BEAT-1:0] s_keep,
+    ref    bit   [0:MEM_DEPTH-1][7:0] memory
 ); 
 
   logic s_last_val;
-  logic [WORDS_PER_BEAT-1:0][WORD_WIDTH-1:0] s_data_val;
-  logic [WORDS_PER_BEAT-1:0] s_keep_val;
+  logic [BYTES_PER_BEAT-1:0][7:0] s_data_val;
+  logic [BYTES_PER_BEAT-1:0] s_keep_val;
 
-  int status, i_words=0;
+  int status, i_bytes=0;
   bit prev_handshake=1; // data is released first
   bit prev_slast=0;
 
-  task axis_push (input int START_ADDR, input int N_WORDS);
+  task axis_push (input int offset, input int bytes_per_transfer);
     {s_valid, s_data, s_last, s_keep} = '0;
 
     wait(aresetn); // wait for slave to begin
@@ -31,19 +31,19 @@ module AXIS_M2S #(
     // iverilog doesnt support break. so the loop is rolled to have break at top
     while (~prev_slast) begin    // loop goes from (aresetn & s_ready) to s_last
       if (prev_handshake) begin  // change data
-        for (int i=0; i < WORDS_PER_BEAT; i++) begin
-          if(i_words >= N_WORDS) begin
-            $display(1, "finished at i_words=%d\n", i_words); // End, fill rest with zeros
+        for (int i=0; i < BYTES_PER_BEAT; i++) begin
+          if(i_bytes >= bytes_per_transfer) begin
+            $display(1, "finished at i_bytes=%d\n", i_bytes); // End, fill rest with zeros
             s_data_val[i] = 0;
             s_keep_val[i] = 0;
           end
           else begin
-            s_data_val[i] = memory[START_ADDR + i_words];
-            // $display("DMA: start:%d, i_words:%d, val:%d", START_ADDR, i_words, $signed(s_data_val[i]));
+            s_data_val[i] = memory[offset + i_bytes];
+            // $display("DMA: start:%d, i_bytes:%d, val:%d", offset, i_bytes, $signed(s_data_val[i]));
             s_keep_val[i] = 1;
-            i_words  += 1;
+            i_bytes  += 1;
           end
-          s_last_val = i_words >= N_WORDS;
+          s_last_val = i_bytes >= bytes_per_transfer;
         end
       end
       s_valid = $urandom_range(0,999) < PROB_VALID;      // randomize s_valid
@@ -62,7 +62,7 @@ module AXIS_M2S #(
     end
 
     // Reset & close packet after done
-    {s_valid, s_data, s_keep, s_last, prev_slast, i_words} = '0;
+    {s_valid, s_data, s_keep, s_last, prev_slast, i_bytes} = '0;
     prev_handshake = 1;
     @(posedge aclk);
   endtask

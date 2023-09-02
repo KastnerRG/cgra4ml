@@ -449,16 +449,17 @@ class Bundle(tf.keras.Model):
                 packed |= val << sum_width
                 sum_width += width
             assert sum_width <= total, f"Number of total packed bits {sum_width} is more than input DMA width {total}"
-            return packed
+            packed_be = np.frombuffer(np.array([packed],dtype=np.uint64).tobytes(), dtype=np.dtype(np.uint64).newbyteorder('>'))[0]
+            return packed, packed_be
         
-        d = {'w_header_i64_p':[], 'x_header_i64_p':[]}
+        d = {'w_header_i64_p':[], 'x_header_i64_p':[], 'w_header_i64_be_p':[], 'x_header_i64_be_p':[]}
 
         for ip in range(r.CP):
             CM_p = r.CM_0 if ip==0 else r.CM
             print(f'headers: ip={ip}, CM_p={CM_p}')
         
             ''' Weights Config'''
-            w_header_i64 = pack_bits([
+            w_header_i64, w_header_i64_le = pack_bits([
                 (r.KW//2, c.BITS_KW2),
                 (CM_p-1 , c.BITS_CIN_MAX),
                 (r.XW-1 , c.BITS_COLS_MAX),
@@ -467,15 +468,17 @@ class Bundle(tf.keras.Model):
                 (c.CONFIG_BEATS + r.SW*r.KH*CM_p-1, c.BITS_RAM_WEIGHTS_ADDR)
             ], c.IN_BITS-1)
             d['w_header_i64_p'] += [w_header_i64]
+            d['w_header_i64_be_p'] += [w_header_i64_le]
 
             '''Input Config'''
-            x_header_i64 = pack_bits([
+            x_header_i64, x_header_i64_le = pack_bits([
                 (r.KH//2, c.BITS_KH2),
                 (CM_p-1 , c.BITS_CIN_MAX),
                 (r.XW-1 , c.BITS_COLS_MAX),
                 (r.L -1 , c.BITS_BLOCKS_MAX),
             ], c.IN_BITS-1)
             d['x_header_i64_p'] += [x_header_i64]
+            d['x_header_i64_be_p'] += [x_header_i64_le]
 
         
         n = namedtuple('Runtime', d)(**d)

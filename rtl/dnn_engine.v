@@ -6,7 +6,6 @@
 module dnn_engine #(
     parameter   S_PIXELS_KEEP_WIDTH     = `S_PIXELS_WIDTH_LF /8,
                 S_WEIGHTS_KEEP_WIDTH    = `S_WEIGHTS_WIDTH_LF/8,
-                M_KEEP_WIDTH            = `M_OUTPUT_WIDTH_LF /8,
 
                 ROWS                    = `ROWS               ,
                 COLS                    = `COLS               ,
