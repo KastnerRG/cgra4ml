@@ -12,7 +12,7 @@ module DMA_M2S #(
     output logic s_valid, s_last,
     output logic [BYTES_PER_BEAT-1:0][7:0] s_data,
     output logic [BYTES_PER_BEAT-1:0] s_keep,
-    ref    bit   [0:MEM_DEPTH-1][7:0] memory
+    input  bit   [7:0] memory [0:MEM_DEPTH-1]
 ); 
 
   logic s_last_val;
@@ -33,7 +33,7 @@ module DMA_M2S #(
       if (prev_handshake) begin  // change data
         for (int i=0; i < BYTES_PER_BEAT; i++) begin
           if(i_bytes >= bytes_per_transfer) begin
-            $display(1, "finished at i_bytes=%d\n", i_bytes); // End, fill rest with zeros
+            $display("finished at i_bytes=%d\n", i_bytes); // End, fill rest with zeros
             s_data_val[i] = 0;
             s_keep_val[i] = 0;
           end

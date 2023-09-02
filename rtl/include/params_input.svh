@@ -5,7 +5,7 @@
     `define COLS                24                 	// PE cols, constrained by resources
     `define X_BITS              8               	// Bits per word in input
     `define K_BITS              8               	// Bits per word in input
-    `define Y_BITS              16               	// Bits per word in output of conv
+    `define Y_BITS              24               	// Bits per word in output of conv
 
     `define KH_MAX              11               	// max of kernel height, across layers
     `define KW_MAX              11               	// max of kernel width, across layers
