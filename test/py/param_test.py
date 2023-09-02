@@ -14,28 +14,19 @@ from dataclasses import dataclass
 from bundle import Bundle
 from qkeras import *
 from tensorflow.keras.layers import Input
+from bitstring import BitArray
 
-def pack_bits(arr):
-    sum_width = 0
-    packed = 0
-    for val, width in arr:
-        packed |= val << sum_width
-        sum_width += width
-    return packed
-
-# Simulator: xsim on windows, icarus otherwise
+# Simulator: xsim on windows, verilator otherwise
 SIM = 'xsim' if os.name=='nt' else 'verilator' #'icarus'
+XIL_PATH = os.path.join("F:", "Xilinx", "Vivado", "2022.1", "bin")
 
 DATA_DIR   = 'D:/dnn-engine/test/vectors' if SIM == 'xsim' else  'vectors'
 os.makedirs(DATA_DIR, exist_ok=True)
-MODEL_NAME = 'test'
-# SIM = sys.argv[1] if len(sys.argv) == 2 else "xsim" # icarus
-SOURCES = glob.glob('../rtl/include/*') + glob.glob('sv/*.sv') + glob.glob("../rtl/**/*.v", recursive=True) + glob.glob("../rtl/**/*.sv", recursive=True) + ['./xsim/sim_params.svh']
-print(SOURCES)
 
 TB_MODULE = "dnn_engine_tb"
 WAVEFORM = "dnn_engine_tb_behav.wcfg"
-XIL_PATH = os.path.join("F:", "Xilinx", "Vivado", "2022.1", "bin")
+SOURCES = glob.glob('../rtl/include/*') + glob.glob('sv/*.sv') + glob.glob("../rtl/**/*.v", recursive=True) + glob.glob("../rtl/**/*.sv", recursive=True) + ['./xsim/sim_params.svh']
+print(SOURCES)
 
 
 '''
@@ -166,8 +157,8 @@ class Config:
 
 
 @pytest.mark.parametrize("COMPILE", list(product_dict(
-                                                X_BITS     = [4    ], 
-                                                K_BITS     = [4    ], 
+                                                X_BITS     = [8    ], 
+                                                K_BITS     = [8    ], 
                                                 Y_BITS     = [16   ], 
                                                 ROWS       = [8    ], 
                                                 COLS       = [24   ], 
@@ -200,6 +191,7 @@ def test_dnn_engine(COMPILE):
     Build Model
     '''
     c = make_compile_params(COMPILE)
+    assert c.X_BITS.bit_count()==1 and c.K_BITS.bit_count()==1, "X_BITS and K_BITS should be powers of 2"
     xq, kq, bq, aq = f'quantized_bits({c.X_BITS},0,False,True,1)', f'quantized_bits({c.K_BITS},0,False,True,1)', f'quantized_bits({c.K_BITS},0,False,True,1)', f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'
     inp = {'bits':c.X_BITS, 'frac':c.X_BITS-1}
 
@@ -241,27 +233,78 @@ def test_dnn_engine(COMPILE):
         b.export(c)
         
 
+
     '''
     Write Runtime Headers
     '''
-    with open('sv/model.svh', 'w') as vh, open ('../c/model.h', 'w') as ch:
-        vh.write(f"localparam N_BUNDLES = {len(bundles)};\n\n")
-        vh.write(f"Bundle_t bundles [N_BUNDLES] = '{{\n")
-        ch.write(f"const int N_BUNDLES = {len(bundles)};\n")
-        ch.write(f'const char DATA_DIR [] = "{DATA_DIR}";\n\n')
-        ch.write(f"Bundle_t bundles [] = {{\n")
+    x_bytes_all, x_bytes, w_bytes = 0, 0, 0
+    with open ('../c/model.h', 'w') as ch:
+
+        ch.write(f"#define N_BUNDLES {len(bundles)}\n")
+        ch.write(f"Bundle_t bundles [N_BUNDLES] = {{\n")
         
-        for b in bundles:
+        for ib, b in enumerate(bundles):
+            w_bpt    = (c.K_BITS*b.we[-1][0].size + c.IN_BITS)//8
+            w_bpt_p0 = (c.K_BITS*b.we[0][0].size + c.IN_BITS )//8
+            x_bpt    = (c.K_BITS*b.xe[-1].size + c.IN_BITS   )//8 
+            x_bpt_p0 = (c.K_BITS*b.xe[0].size + c.IN_BITS    )//8
+
+            w_bytes += (w_bpt_p0 + (b.r.CP-1)*w_bpt)*b.r.IT
+            x_bytes_all += (x_bpt_p0 + (b.r.CP-1)*x_bpt)
+
+            if ib == 0:
+                x_bytes = (x_bpt_p0 + (b.r.CP-1)*x_bpt)
+
             y_wpt = b.r.CO_PRL*b.c.ROWS
             y_wpt_last = b.r.CO_PRL*b.c.ROWS*(b.r.KW//2+1)
-            vh.write(f"  '{{ w_wpt:{b.we[-1].size},  w_wpt_p0:{b.we[0].size},  x_wpt:{b.xe[-1].size},  x_wpt_p0:{b.xe[0].size},  y_wpt:{y_wpt},  y_wpt_last:{y_wpt_last},  y_nl:{b.r.XN*b.r.L},  y_w:{b.r.XW-b.r.KW//2},  n_it:{b.r.IT},  n_p:{b.r.CP} }}")
-            ch.write(f"   {{.w_wpt={b.we[-1].size}, .w_wpt_p0={b.we[0].size}, .x_wpt={b.xe[-1].size}, .x_wpt_p0={b.xe[0].size}, .y_wpt={y_wpt}, .y_wpt_last={y_wpt_last}, .y_nl={b.r.XN*b.r.L}, .y_w={b.r.XW-b.r.KW//2}, .n_it={b.r.IT}, .n_p={b.r.CP} }}")
+
+            ch.write(f"   {{.w_bpt={w_bpt}, .w_bpt_p0={w_bpt_p0}, .x_bpt={x_bpt}, .x_bpt_p0={x_bpt_p0}, .y_wpt={y_wpt}, .y_wpt_last={y_wpt_last}, .y_nl={b.r.XN*b.r.L}, .y_w={b.r.XW-b.r.KW//2}, .n_it={b.r.IT}, .n_p={b.r.CP}, .x_header={b.r.x_header_i64_p[-1]}, .x_header_p0={b.r.x_header_i64_p[0]}, .w_header={b.r.w_header_i64_be_p[-1]}, .w_header_p0={b.r.x_header_i64_be_p[0]} }}")
             if b.idx != len(bundles)-1:
-                vh.write(',\n')
                 ch.write(',\n')
         
-        vh.write(f"\n}};")
-        ch.write(f"\n}};")
+        ch.write(f"\n}};\n\n")
+        ch.write(f"#define X_BITS      {c.X_BITS}\n")
+        ch.write(f"#define W_BITS      {c.K_BITS}\n")
+        ch.write(f"#define W_BYTES     {w_bytes}\n")
+        ch.write(f"#define X_BYTES     {x_bytes}\n")
+        ch.write(f"#define X_BYTES_ALL {x_bytes_all}\n")
+        ch.write(f'const char DATA_DIR [] = "{DATA_DIR}";\n\n')
+
+    with open('sv/model.svh', 'w') as vh:
+        vh.write(f"localparam W_BYTES = {w_bytes};\n")
+        vh.write(f"localparam X_BYTES = {x_bytes};\n")
+        vh.write(f"localparam X_BYTES_ALL = {x_bytes_all};\n")
+
+
+    '''
+    Write Binary Files
+    '''
+    w_bitarray = []
+    x_bitarray = []
+    w_words_per_byte = 8//c.K_BITS
+    for ib, b in enumerate(bundles):
+        for ip in range(b.r.CP):
+            x_bitarray += [BitArray().join(
+                    [BitArray(uint=b.r.x_header_i64_be_p[ip], length=c.IN_BITS)] + 
+                    [BitArray(int=x, length=c.X_BITS) for x in b.xe[ip].flatten()])]
+                
+            for it in range(b.r.IT):
+                we = b.we[ip][it].flatten()
+                we = we.reshape(we.size//w_words_per_byte, w_words_per_byte)
+                np.flip(we, axis=1)
+                w_bitarray += [BitArray().join(
+                        [BitArray(uint=b.r.w_header_i64_be_p[ip], length=c.IN_BITS)] + 
+                        [BitArray(int=x, length=c.K_BITS) for x in we.flatten()])]
+        if ib==0:
+            with open(f"{DATA_DIR}/x", 'wb') as f: 
+                f.write(BitArray().join(x_bitarray).tobytes())
+
+    with open(f"{DATA_DIR}/w", 'wb') as f: 
+        f.write(BitArray().join(w_bitarray).tobytes())
+
+    with open(f"{DATA_DIR}/x_all", 'wb') as f: 
+        f.write(BitArray().join(x_bitarray).tobytes())
+
 
     '''
     Write Text files of vectors
@@ -281,7 +324,7 @@ def test_dnn_engine(COMPILE):
             np.savetxt(f"{DATA_DIR}/{b.idx}_{ip}_x.txt", xp, fmt='%d')
 
 
-            for i_it in range(b.r.IT):
+            for it in range(b.r.IT):
                 
                 w_config = b.r.w_header_i64_p[ip]
                 w_config = format(w_config, f'#0{c.IN_BITS}b')
@@ -289,12 +332,12 @@ def test_dnn_engine(COMPILE):
                 w_config_words.reverse()
                 w_config_words = np.array(w_config_words,dtype=np.int8)
 
-                wp = b.we[ip][i_it].flatten()            
+                wp = b.we[ip][it].flatten()            
                 wp = np.concatenate([w_config_words, wp], axis=0)
                 assert wp.shape == (c.IN_BITS/c.K_BITS + (CM_p*b.r.KH+c.CONFIG_BEATS)*c.COLS,)
-                np.savetxt(f"{DATA_DIR}/{b.idx}_{ip}_{i_it}_w.txt", wp, fmt='%d')
+                np.savetxt(f"{DATA_DIR}/{b.idx}_{ip}_{it}_w.txt", wp, fmt='%d')
 
-                np.savetxt(f"{DATA_DIR}/{b.idx}_{ip}_{i_it}_y_exp.txt", b.ye_exp_p[ip][i_it].flatten(), fmt='%d')
+                np.savetxt(f"{DATA_DIR}/{b.idx}_{ip}_{it}_y_exp.txt", b.ye_exp_p[ip][it].flatten(), fmt='%d')
     print(f'Weights, inputs, outputs saved to {DATA_DIR}/ib_ip_it_*.txt')
 
 
@@ -321,8 +364,8 @@ def test_dnn_engine(COMPILE):
     for b in bundles:
         y_sim = np.zeros((b.r.IT, b.r.XN*b.r.L*b.r.XW*b.r.CO_PRL*c.ROWS))
         for ip in range(b.r.CP):
-            for i_it in range(b.r.IT):
-                y_sim[i_it] = y_sim[i_it] + np.loadtxt(f"{DATA_DIR}/{b.idx}_{ip}_{i_it}_y_sim.txt",np.int32)
+            for it in range(b.r.IT):
+                y_sim[it] = y_sim[it] + np.loadtxt(f"{DATA_DIR}/{b.idx}_{ip}_{it}_y_sim.txt",np.int32)
 
         error = np.sum(np.abs(y_sim.reshape(b.ye_exp.shape) - b.ye_exp))
 

@@ -2,8 +2,8 @@
     # Written from param_tests.py
     set RAM_WEIGHTS_DEPTH 16
     set COLS               24
-    set X_BITS             4
-    set K_BITS             4
+    set X_BITS             8
+    set K_BITS             8
     set DELAY_W_RAM        2
     set RAM_EDGES_DEPTH    288
     set KH_MAX             11
