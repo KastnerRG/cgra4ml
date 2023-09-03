@@ -449,17 +449,19 @@ class Bundle(tf.keras.Model):
                 packed |= val << sum_width
                 sum_width += width
             assert sum_width <= total, f"Number of total packed bits {sum_width} is more than input DMA width {total}"
-            packed_be = np.frombuffer(np.array([packed],dtype=np.uint64).tobytes(), dtype=np.dtype(np.uint64).newbyteorder('>'))[0]
-            return packed, packed_be
+            packed_le = np.array([packed],dtype=np.uint64)
+            packed_be = np.frombuffer(packed_le.tobytes(), dtype=np.dtype(np.uint64).newbyteorder('>'))
+            return packed_le, packed_be # np.arrays
         
-        d = {'w_header_i64_p':[], 'x_header_i64_p':[], 'w_header_i64_be_p':[], 'x_header_i64_be_p':[]}
+        d = {'w_header_le_p':[], 'x_header_le_p':[], 'w_header_be_p':[], 'x_header_be_p':[]}
 
-        for ip in range(r.CP):
+        for ip in range(min(2, r.CP)):
             CM_p = r.CM_0 if ip==0 else r.CM
             print(f'headers: ip={ip}, CM_p={CM_p}')
         
             ''' Weights Config'''
-            w_header_i64, w_header_i64_le = pack_bits([
+
+            w_header_le, w_header_be = pack_bits([
                 (r.KW//2, c.BITS_KW2),
                 (CM_p-1 , c.BITS_CIN_MAX),
                 (r.XW-1 , c.BITS_COLS_MAX),
@@ -467,18 +469,18 @@ class Bundle(tf.keras.Model):
                 (r.XN-1 , c.BITS_XN_MAX),
                 (c.CONFIG_BEATS + r.SW*r.KH*CM_p-1, c.BITS_RAM_WEIGHTS_ADDR)
             ], c.IN_BITS-1)
-            d['w_header_i64_p'] += [w_header_i64]
-            d['w_header_i64_be_p'] += [w_header_i64_le]
+            d['w_header_le_p'] += [w_header_le]
+            d['w_header_be_p'] += [w_header_be]
 
             '''Input Config'''
-            x_header_i64, x_header_i64_le = pack_bits([
+            x_header_le, x_header_be = pack_bits([
                 (r.KH//2, c.BITS_KH2),
                 (CM_p-1 , c.BITS_CIN_MAX),
                 (r.XW-1 , c.BITS_COLS_MAX),
                 (r.L -1 , c.BITS_BLOCKS_MAX),
             ], c.IN_BITS-1)
-            d['x_header_i64_p'] += [x_header_i64]
-            d['x_header_i64_be_p'] += [x_header_i64_le]
+            d['x_header_le_p'] += [x_header_le]
+            d['x_header_be_p'] += [x_header_be]
 
         
         n = namedtuple('Runtime', d)(**d)
@@ -611,3 +613,14 @@ class Bundle(tf.keras.Model):
         y = y[:,:r.XH,:,:r.CO]
 
         return y
+
+    @staticmethod
+    def pack_words_into_bytes (arr, bits):
+        assert 8 % bits == 0, f"Bits {bits} should be factor of 8 for packing"
+        w_words_per_byte = 8//bits
+        arr = np.frombuffer(arr.astype(np.int8).tobytes(), dtype=np.uint8)
+        arr = arr % 2**bits
+        arr = arr.reshape(arr.size//w_words_per_byte, w_words_per_byte)
+        for i_word in range(1, w_words_per_byte):
+            arr[:,0] += arr[:,i_word] << (i_word * bits) # pack multiple words into a byte
+        return arr[:,0] # packed byte

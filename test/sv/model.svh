@@ -1,3 +1,3 @@
-localparam W_BYTES = 206240;
-localparam X_BYTES = 1272;
-localparam X_BYTES_ALL = 201200;
+localparam W_BYTES = 105284;
+localparam X_BYTES = 648;
+localparam X_BYTES_ALL = 102400;
