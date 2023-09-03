@@ -12,6 +12,7 @@ asic/*
 test/vectors
 test/xsim
 test/oldc
+test/dnn_engine_tb.vcd
 test/xsc*
 test/obj_dir
 test/models

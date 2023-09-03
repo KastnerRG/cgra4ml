@@ -51,7 +51,7 @@ module dnn_engine_tb;
   logic aresetn;
   logic s_axis_pixels_tready, s_axis_pixels_tvalid, s_axis_pixels_tlast;
   logic [S_PIXELS_WIDTH_LF/X_BITS -1:0][X_BITS-1:0] s_axis_pixels_tdata;
-  logic [S_PIXELS_WIDTH_LF/X_BITS -1:0] s_axis_pixels_tkeep;
+  logic [S_PIXELS_WIDTH_LF/8 -1:0] s_axis_pixels_tkeep;
 
   logic s_axis_weights_tready, s_axis_weights_tvalid, s_axis_weights_tlast;
   logic [S_WEIGHTS_WIDTH_LF/K_BITS-1:0][K_BITS-1:0] s_axis_weights_tdata;
@@ -62,9 +62,7 @@ module dnn_engine_tb;
   logic [ OUT_BITS         -1:0]     bram_rddata_a;
 
 
-  dnn_engine #(
-    .S_PIXELS_KEEP_WIDTH  (S_PIXELS_WIDTH_LF/X_BITS)
-  ) pipe (.*);
+  dnn_engine pipe (.*);
 
   // SOURCEs & SINKS
 
@@ -99,6 +97,7 @@ module dnn_engine_tb;
   //   $dumpfile("dnn_engine_tb.vcd");
   //   $dumpvars(0, dnn_engine_tb);
   //   #600us;
+  //   $display("Finished early!");
   //   $finish();
   // end
   
