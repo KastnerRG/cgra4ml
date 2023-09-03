@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from bundle import Bundle
 from qkeras import *
 from tensorflow.keras.layers import Input
-from bitstring import BitArray
 
 # Simulator: xsim on windows, verilator otherwise
 SIM = 'xsim' if os.name=='nt' else 'verilator' #'icarus'
@@ -157,8 +156,8 @@ class Config:
 
 
 @pytest.mark.parametrize("COMPILE", list(product_dict(
-                                                X_BITS     = [8    ], 
-                                                K_BITS     = [8    ], 
+                                                X_BITS     = [4    ], 
+                                                K_BITS     = [4    ], 
                                                 Y_BITS     = [24   ], 
                                                 ROWS       = [8    ], 
                                                 COLS       = [24   ], 
@@ -191,7 +190,7 @@ def test_dnn_engine(COMPILE):
     Build Model
     '''
     c = make_compile_params(COMPILE)
-    assert c.X_BITS.bit_count()==1 and c.K_BITS.bit_count()==1, "X_BITS and K_BITS should be powers of 2"
+    assert c.X_BITS in [1,2,4,8] and c.K_BITS in [1,2,4,8], "X_BITS and K_BITS should be in [1,2,4,8]"
     xq, kq, bq, aq = f'quantized_bits({c.X_BITS},0,False,True,1)', f'quantized_bits({c.K_BITS},0,False,True,1)', f'quantized_bits({c.K_BITS},0,False,True,1)', f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'
     inp = {'bits':c.X_BITS, 'frac':c.X_BITS-1}
 
@@ -246,8 +245,8 @@ def test_dnn_engine(COMPILE):
         for ib, b in enumerate(bundles):
             w_bpt    = (c.K_BITS*b.we[-1][0].size + c.IN_BITS)//8
             w_bpt_p0 = (c.K_BITS*b.we[0][0].size + c.IN_BITS )//8
-            x_bpt    = (c.K_BITS*b.xe[-1].size + c.IN_BITS   )//8 
-            x_bpt_p0 = (c.K_BITS*b.xe[0].size + c.IN_BITS    )//8
+            x_bpt    = (c.X_BITS*b.xe[-1].size + c.IN_BITS   )//8 
+            x_bpt_p0 = (c.X_BITS*b.xe[0].size + c.IN_BITS    )//8
 
             w_bytes += (w_bpt_p0 + (b.r.CP-1)*w_bpt)*b.r.IT
             x_bytes_all += (x_bpt_p0 + (b.r.CP-1)*x_bpt)
@@ -258,7 +257,7 @@ def test_dnn_engine(COMPILE):
             y_wpt = b.r.CO_PRL*b.c.ROWS
             y_wpt_last = b.r.CO_PRL*b.c.ROWS*(b.r.KW//2+1)
 
-            ch.write(f"   {{.w_bpt={w_bpt}, .w_bpt_p0={w_bpt_p0}, .x_bpt={x_bpt}, .x_bpt_p0={x_bpt_p0}, .y_wpt={y_wpt}, .y_wpt_last={y_wpt_last}, .y_nl={b.r.XN*b.r.L}, .y_w={b.r.XW-b.r.KW//2}, .n_it={b.r.IT}, .n_p={b.r.CP}, .x_header={b.r.x_header_i64_p[-1]}, .x_header_p0={b.r.x_header_i64_p[0]}, .w_header={b.r.w_header_i64_be_p[-1]}, .w_header_p0={b.r.x_header_i64_be_p[0]} }}")
+            ch.write(f"   {{.w_bpt={w_bpt}, .w_bpt_p0={w_bpt_p0}, .x_bpt={x_bpt}, .x_bpt_p0={x_bpt_p0}, .y_wpt={y_wpt}, .y_wpt_last={y_wpt_last}, .y_nl={b.r.XN*b.r.L}, .y_w={b.r.XW-b.r.KW//2}, .n_it={b.r.IT}, .n_p={b.r.CP}, .x_header={b.r.x_header_be_p[-1][0]}, .x_header_p0={b.r.x_header_be_p[0][0]}, .w_header={b.r.w_header_be_p[-1][0]}, .w_header_p0={b.r.x_header_be_p[0][0]} }}")
             if b.idx != len(bundles)-1:
                 ch.write(',\n')
         
@@ -275,35 +274,28 @@ def test_dnn_engine(COMPILE):
         vh.write(f"localparam X_BYTES = {x_bytes};\n")
         vh.write(f"localparam X_BYTES_ALL = {x_bytes_all};\n")
 
-
     '''
     Write Binary Files
     '''
-    w_bitarray = []
-    x_bitarray = []
-    w_words_per_byte = 8//c.K_BITS
+    w_bitstring = b''
+    x_bitstring = b''
     for ib, b in enumerate(bundles):
         for ip in range(b.r.CP):
-            x_bitarray += [BitArray().join(
-                    [BitArray(uint=b.r.x_header_i64_be_p[ip], length=c.IN_BITS)] + 
-                    [BitArray(int=x, length=c.X_BITS) for x in b.xe[ip].flatten()])]
+            xe = Bundle.pack_words_into_bytes(arr=b.xe[ip].flatten(), bits=c.X_BITS)
+            x_bitstring += b.r.x_header_be_p[ip!=0].tobytes() + xe.tobytes()
                 
             for it in range(b.r.IT):
-                we = b.we[ip][it].flatten()
-                we = we.reshape(we.size//w_words_per_byte, w_words_per_byte)
-                np.flip(we, axis=1)
-                w_bitarray += [BitArray().join(
-                        [BitArray(uint=b.r.w_header_i64_be_p[ip], length=c.IN_BITS)] + 
-                        [BitArray(int=x, length=c.K_BITS) for x in we.flatten()])]
+                we = Bundle.pack_words_into_bytes(arr=b.we[ip][it].flatten(), bits=c.K_BITS)
+                w_bitstring += b.r.w_header_be_p[ip!=0].tobytes() + we.tobytes()
         if ib==0:
             with open(f"{DATA_DIR}/x", 'wb') as f: 
-                f.write(BitArray().join(x_bitarray).tobytes())
+                f.write(x_bitstring)
 
     with open(f"{DATA_DIR}/w", 'wb') as f: 
-        f.write(BitArray().join(w_bitarray).tobytes())
+        f.write(w_bitstring)
 
     with open(f"{DATA_DIR}/x_all", 'wb') as f: 
-        f.write(BitArray().join(x_bitarray).tobytes())
+        f.write(x_bitstring)
 
 
     '''
@@ -312,7 +304,7 @@ def test_dnn_engine(COMPILE):
     for b in bundles:
         for ip in range(b.r.CP):
             CM_p = b.r.CM_0 if ip==0 else b.r.CM
-            x_config = b.r.x_header_i64_p[ip]
+            x_config = b.r.x_header_le_p[ip!=0][0]
             x_config = format(x_config, f'#0{c.IN_BITS}b')
             x_config_words = [int(x_config[i:i+c.X_BITS], 2) for i in range(0, len(x_config), c.X_BITS)]
             x_config_words.reverse()
@@ -326,7 +318,7 @@ def test_dnn_engine(COMPILE):
 
             for it in range(b.r.IT):
                 
-                w_config = b.r.w_header_i64_p[ip]
+                w_config = b.r.w_header_le_p[ip!=0][0]
                 w_config = format(w_config, f'#0{c.IN_BITS}b')
                 w_config_words = [int(w_config[i:i+c.K_BITS], 2) for i in range(0, len(w_config), c.K_BITS)]
                 w_config_words.reverse()

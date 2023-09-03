@@ -37,7 +37,7 @@ jobs:
 
     - name: Install Tensorflow
       run: |
-        pip install pytest numpy tensorflow qkeras bitstring
+        pip install pytest numpy tensorflow qkeras
 
     - name: Verify Full Design
       run: |

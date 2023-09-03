@@ -135,8 +135,8 @@ module dnn_engine_tb;
     w_status = $fread(w_mem, w_file);
     $fclose(w_file);
 
-    for (int i=0; i<10; i++)
-      $display("weights: i:%d, w:%b", i, $signed(w_mem[i]));
+    for (int i=0; i<50; i++)
+      $display("weights: i:%d, w:%b", i, w_mem[i]);
 
     // load all inputs
     $sformat(x_path, "%sx_all", DIR_PATH);
