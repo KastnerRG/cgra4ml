@@ -33,7 +33,6 @@ module DMA_M2S #(
       if (prev_handshake) begin  // change data
         for (int i=0; i < BYTES_PER_BEAT; i++) begin
           if(i_bytes >= bytes_per_transfer) begin
-            $display("finished at i_bytes=%d\n", i_bytes); // End, fill rest with zeros
             s_data_val[i] = 0;
             s_keep_val[i] = 0;
           end

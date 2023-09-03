@@ -41,7 +41,7 @@ module axis_weight_rotator #(
     input  logic                                       s_axis_tvalid,
     input  logic                                       s_axis_tlast ,
     input  logic [S_WEIGHTS_WIDTH_LF            -1:0]  s_axis_tdata ,
-    input  logic [S_WEIGHTS_WIDTH_LF/8          -1:0]  s_axis_tkeep ,
+    input  logic [S_WEIGHTS_WIDTH_LF/WORD_WIDTH -1:0]  s_axis_tkeep ,
 
     input  logic               m_axis_tready,
     output logic               m_axis_tvalid,
@@ -81,6 +81,8 @@ module axis_weight_rotator #(
     .M_DATA_WIDTH  (M_WIDTH),
     .S_KEEP_ENABLE (1),
     .M_KEEP_ENABLE (1),
+    .S_KEEP_WIDTH  (S_WEIGHTS_WIDTH_LF/WORD_WIDTH),
+    .M_KEEP_WIDTH  (M_WIDTH/WORD_WIDTH),
     .ID_ENABLE     (0),
     .DEST_ENABLE   (0),
     .USER_ENABLE   (0)

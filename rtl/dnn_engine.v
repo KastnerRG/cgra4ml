@@ -4,10 +4,7 @@
 `undef  VERILOG
 
 module dnn_engine #(
-    parameter   S_PIXELS_KEEP_WIDTH     = `S_PIXELS_WIDTH_LF /8,
-                S_WEIGHTS_KEEP_WIDTH    = `S_WEIGHTS_WIDTH_LF/8,
-
-                ROWS                    = `ROWS               ,
+    parameter   ROWS                    = `ROWS               ,
                 COLS                    = `COLS               ,
                 X_BITS                  = `X_BITS             , 
                 K_BITS                  = `K_BITS             , 
@@ -28,13 +25,13 @@ module dnn_engine #(
     input  wire s_axis_pixels_tvalid,
     input  wire s_axis_pixels_tlast ,
     input  wire [S_PIXELS_WIDTH_LF  -1:0]   s_axis_pixels_tdata,
-    input  wire [S_PIXELS_KEEP_WIDTH-1:0]   s_axis_pixels_tkeep,
+    input  wire [S_PIXELS_WIDTH_LF/8-1:0]   s_axis_pixels_tkeep,
 
     output wire s_axis_weights_tready,
     input  wire s_axis_weights_tvalid,
     input  wire s_axis_weights_tlast ,
-    input  wire [S_WEIGHTS_WIDTH_LF -1:0]   s_axis_weights_tdata,
-    input  wire [S_WEIGHTS_KEEP_WIDTH-1:0]  s_axis_weights_tkeep,
+    input  wire [S_WEIGHTS_WIDTH_LF  -1:0]  s_axis_weights_tdata,
+    input  wire [S_WEIGHTS_WIDTH_LF/8-1:0]  s_axis_weights_tkeep,
 
     input  wire [(OUT_ADDR_WIDTH+2)-1:0]     bram_addr_a,
     output wire [ OUT_BITS         -1:0]     bram_rddata_a,
@@ -57,6 +54,22 @@ module dnn_engine #(
   wire out_s_ready, out_s_valid, out_s_last;
   wire [M_DATA_WIDTH_HF_CONV_DW -1:0] out_s_data;
 
+
+  // Unpack tkeep_bytes into tkeep_words
+  wire [S_PIXELS_WIDTH_LF /X_BITS-1:0]  s_axis_pixels_tkeep_words;
+  wire [S_WEIGHTS_WIDTH_LF/K_BITS-1:0]  s_axis_weights_tkeep_words;
+
+  genvar ik, ix;
+  generate
+    for (ix=0; ix<S_PIXELS_WIDTH_LF/X_BITS; ix=ix+1) begin
+      assign s_axis_pixels_tkeep_words[ix] = s_axis_pixels_tkeep[ix/(8/X_BITS)];
+    end
+
+    for (ik=0; ik<S_WEIGHTS_WIDTH_LF/K_BITS; ik=ik+1) begin
+      assign s_axis_weights_tkeep_words[ik] = s_axis_weights_tkeep[ik/(8/K_BITS)];
+    end
+  endgenerate
+
   axis_pixels PIXELS (
     .aclk   (aclk   ),
     .aresetn(aresetn),
@@ -64,7 +77,7 @@ module dnn_engine #(
     .s_valid(s_axis_pixels_tvalid),
     .s_last (s_axis_pixels_tlast ),
     .s_data (s_axis_pixels_tdata ),
-    .s_keep (s_axis_pixels_tkeep ),
+    .s_keep (s_axis_pixels_tkeep_words),
     .m_valid(pixels_m_valid      ),
     .m_ready(pixels_m_ready      ),
     .m_data (pixels_m_data       )
@@ -77,7 +90,7 @@ module dnn_engine #(
     .s_axis_tvalid (s_axis_weights_tvalid), 
     .s_axis_tlast  (s_axis_weights_tlast ), 
     .s_axis_tdata  (s_axis_weights_tdata ),
-    .s_axis_tkeep  (s_axis_weights_tkeep ),
+    .s_axis_tkeep  (s_axis_weights_tkeep_words),
     .m_axis_tready (weights_m_ready      ),      
     .m_axis_tvalid (weights_m_valid      ),   
     .m_axis_tdata  (weights_m_data       ),

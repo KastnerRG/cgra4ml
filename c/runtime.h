@@ -42,7 +42,6 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
   }
 
   fclose(fp);
-  *pt_done_proc = !(*pt_done_proc);
 
   // Nested for loop [for ib: for ip: for it: for inl: for it: {}] inverted to increment once per call
   ++ iw; if (iw >= bundles[ib].y_w) { iw = 0;
@@ -52,6 +51,7 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
           ++ ib; if (ib >= N_BUNDLES) { ib = 0;
             *p_done =1;
   }}}}}
+  *pt_done_proc = !(*pt_done_proc);
 }
 
 
