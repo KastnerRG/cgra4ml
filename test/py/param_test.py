@@ -108,9 +108,11 @@ def compile(c):
         f.write(f'''
     # Written from param_tests.py
     set RAM_WEIGHTS_DEPTH {c.RAM_WEIGHTS_DEPTH}
+    set ROWS               {c.ROWS}
     set COLS               {c.COLS}
     set X_BITS             {c.X_BITS}
     set K_BITS             {c.K_BITS}
+    set Y_BITS             {c.Y_BITS}
     set DELAY_W_RAM        2
     set RAM_EDGES_DEPTH    {c.RAM_EDGES_DEPTH}
     set KH_MAX             {c.KH_MAX}
