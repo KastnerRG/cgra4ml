@@ -4,9 +4,9 @@ set SCRIPTS_DIR ../scripts
 source $SCRIPTS_DIR/vivado_config.tcl
 
 #Board specific
-source $SCRIPTS_DIR/pynq_z2.tcl
+# source $SCRIPTS_DIR/pynq_z2.tcl
 # source $SCRIPTS_DIR/zcu102.tcl
-# source $SCRIPTS_DIR/zcu104.tcl
+source $SCRIPTS_DIR/zcu104.tcl
 
 
 # CREATE IPs
@@ -58,8 +58,8 @@ connect_bd_net [get_bd_pins xlconcat_0/dout] [get_bd_pins ${PS_IRQ}]
 # AXI Lite
 apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config "Clk_master {Auto} Clk_slave {Auto} Clk_xbar {Auto} Master $PS_M_AXI_LITE Slave {/dma_pixels/S_AXI_LITE} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}"       [get_bd_intf_pins dma_pixels/S_AXI_LITE]
 apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config "Clk_master {Auto} Clk_slave {Auto} Clk_xbar {Auto} Master $PS_M_AXI_LITE Slave {/dma_weights/S_AXI_LITE} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}"  [get_bd_intf_pins dma_weights/S_AXI_LITE]
-apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config " Clk_master {Auto} Clk_slave {Auto} Clk_xbar {Auto} Master $PS_M_AXI_BRAM Slave {/axi_bram_ctrl/S_AXI} ddr_seg {Auto} intc_ip {New AXI SmartConnect} master_apm {0}"  [get_bd_intf_pins axi_bram_ctrl/S_AXI]
-apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config " Clk_master {Auto} Clk_slave {Auto} Clk_xbar {Auto} Master $PS_M_AXI_BRAM Slave {/axi_gpio_out/S_AXI} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}"  [get_bd_intf_pins axi_gpio_out/S_AXI]
+apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config " Clk_master {Auto} Clk_slave {Auto} Clk_xbar {Auto} Master $PS_M_AXI_BRAM Slave {/axi_bram_ctrl/S_AXI} ddr_seg {Auto} intc_ip {Auto} master_apm {0}"  [get_bd_intf_pins axi_bram_ctrl/S_AXI]
+apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config " Clk_master {Auto} Clk_slave {Auto} Clk_xbar {Auto} Master $PS_M_AXI_BRAM Slave {/axi_gpio_out/S_AXI} ddr_seg {Auto} intc_ip {Auto} master_apm {0}"  [get_bd_intf_pins axi_gpio_out/S_AXI]
 
 # AXI Full
 apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config "Clk_master {Auto} Clk_slave {Auto} Clk_xbar {Auto} Master {/dma_pixels/M_AXI_MM2S} Slave $PS_S_AXI ddr_seg {Auto} intc_ip {New AXI SmartConnect} master_apm {0}"            [get_bd_intf_pins ${PS_S_AXI}]
