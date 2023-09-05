@@ -1,13 +1,7 @@
 typedef struct {
-  const int w_bpt, w_bpt_p0; // words per transfer
-  const int x_bpt, x_bpt_p0;
-  const int y_wpt, y_wpt_last;
-  const int y_nl, y_w;
-  const int n_it, n_p;
-  const unsigned long long x_header   ; // 64 bits (at least)
-  const unsigned long long x_header_p0; // 64 bits (at least)
-  const unsigned long long w_header   ; // 64 bits (at least)
-  const unsigned long long w_header_p0; // 64 bits (at least)
+  const int n, l, kw, coe, coe_tl, r_ll, h, w, w_kw2, t, p, cm, cm_p0;
+  const int w_bpt, w_bpt_p0, x_bpt, x_bpt_p0; // bytes per transfer
+  const unsigned long long x_header, x_header_p0, w_header, w_header_p0; // 64 bits (at least)
 } Bundle_t;
 
 #include "model.h"
@@ -24,33 +18,40 @@ typedef struct {
 
 extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  const unsigned int *p_sram_u32) {
 
-  static int ib=0, ip=0, it=0, inl=0, iw=0;
+  static int ib=0, ip=0, it=0, in=0, il=0, iw=0;
   const int *p_sram = (const int *)p_sram_u32;
 
   static FILE *fp;
   static char path [1000]; // make sure full path is shorter than 1000
-  if (inl==0 && iw == 0) {
+  if (in==0 && il==0 && iw == 0) {
     sprintf(path, "%s/%0d_%0d_%0d_y_sim.txt", DATA_DIR, ib, ip, it);
     fp = fopen(path, "w"); 
     fclose(fp);
   }
   fp = fopen(path, "a"); 
 
-  int y_wpt = (iw == (bundles[ib].y_w-1)) ? bundles[ib].y_wpt_last : bundles[ib].y_wpt;
-  for (int ir=0; ir < y_wpt; ir++) {
-    fprintf(fp,"%d\n", p_sram[ir]);
-  }
+  int w_last = iw == bundles[ib].w_kw2-1 ? bundles[ib].kw/2+1 : 1;
+  int sram_addr=0;
+  for (int icoe=0; icoe<bundles[ib].coe; icoe++)
+    for (int iw_last=0; iw_last<w_last; iw_last++)
+      for (int ir=0; ir<PE_ROWS; ir++) {
+
+        fprintf(fp,"%d\n", p_sram[sram_addr]);
+
+        sram_addr += 1;
+      }
 
   fclose(fp);
 
-  // Nested for loop [for ib: for ip: for it: for inl: for it: {}] inverted to increment once per call
-  ++ iw; if (iw >= bundles[ib].y_w) { iw = 0;
-    ++ inl; if (inl >= bundles[ib].y_nl) { inl = 0;
-      ++ it; if (it >= bundles[ib].n_it) { it = 0;
-        ++ ip; if (ip >= bundles[ib].n_p) { ip = 0;
-          ++ ib; if (ib >= N_BUNDLES) { ib = 0;
-            *p_done =1;
-  }}}}}
+  // Nested for loop [for(ib) for(ip) for(it) for(il) for(in) for(iw) {}] inverted to increment once per call
+  ++ iw; if (iw >= bundles[ib].w_kw2) { iw = 0;
+    ++ in; if (in >= bundles[ib].n) { in = 0;
+      ++ il; if (il >= bundles[ib].l) { il = 0;
+        ++ it; if (it >= bundles[ib].t) { it = 0;
+          ++ ip; if (ip >= bundles[ib].p) { ip = 0;
+            ++ ib; if (ib >= N_BUNDLES) { ib = 0;
+              *p_done =1;
+  }}}}}}
   *pt_done_proc = !(*pt_done_proc);
 }
 
@@ -65,8 +66,8 @@ extern EXT_C void load_x (unsigned char *p_done, int *p_offset, int *p_bpt) {
   *p_bpt = bpt;
 
   // Nested for loop [for ib: for ip: for it: {}] inverted to increment once per call
-  ++ it; if (it >= bundles[ib].n_it) { it = 0;
-    ++ ip; if (ip >= bundles[ib].n_p) { ip = 0;
+  ++ it; if (it >= bundles[ib].t) { it = 0;
+    ++ ip; if (ip >= bundles[ib].p) { ip = 0;
       ++ ib; if (ib >= N_BUNDLES) { ib = 0;
         *p_done =1;
         offset_next = 0;
@@ -87,8 +88,8 @@ extern EXT_C void load_w (unsigned char *p_done, int *p_offset, int *p_bpt) {
   *p_bpt = bpt;
 
   // Nested for loop [for ib: for ip: for it: {}] inverted to increment once per call
-  ++ it; if (it >= bundles[ib].n_it) { it = 0;
-    ++ ip; if (ip >= bundles[ib].n_p) { ip = 0;
+  ++ it; if (it >= bundles[ib].t) { it = 0;
+    ++ ip; if (ip >= bundles[ib].p) { ip = 0;
       ++ ib; if (ib >= N_BUNDLES) { ib = 0;
         *p_done =1;
         offset_next = 0;

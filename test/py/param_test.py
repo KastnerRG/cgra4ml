@@ -256,20 +256,24 @@ def test_dnn_engine(COMPILE):
             if ib == 0:
                 x_bytes = (x_bpt_p0 + (b.r.CP-1)*x_bpt)
 
-            y_wpt = b.r.CO_PRL*b.c.ROWS
-            y_wpt_last = b.r.CO_PRL*b.c.ROWS*(b.r.KW//2+1)
+            y_coe = b.r.CO_PRL
+            y_coe_tl = b.r.CO_PRL if (b.r.CO==b.r.IT*b.r.CO_PRL) else b.r.CO%b.r.IT
+            y_r_ll = c.ROWS if b.r.XH==b.r.L*c.ROWS else  b.r.XH % c.ROWS
 
-            ch.write(f"   {{.w_bpt={w_bpt}, .w_bpt_p0={w_bpt_p0}, .x_bpt={x_bpt}, .x_bpt_p0={x_bpt_p0}, .y_wpt={y_wpt}, .y_wpt_last={y_wpt_last}, .y_nl={b.r.XN*b.r.L}, .y_w={b.r.XW-b.r.KW//2}, .n_it={b.r.IT}, .n_p={b.r.CP}, .x_header={b.r.x_header_be_p[-1][0]}, .x_header_p0={b.r.x_header_be_p[0][0]}, .w_header={b.r.w_header_be_p[-1][0]}, .w_header_p0={b.r.x_header_be_p[0][0]} }}")
+            ch.write(f"   {{.n={b.r.XN}, .l={b.r.L}, .kw={b.r.KW}, .coe={y_coe}, .coe_tl={y_coe_tl}, .r_ll={y_r_ll}, .h={b.r.XH}, .w={b.r.XW}, .w_kw2={b.r.XW-b.r.KW//2}, .t={b.r.IT}, .p={b.r.CP}, .cm={b.r.CM}, .cm_p0={b.r.CM_0}, .w_bpt={w_bpt}, .w_bpt_p0={w_bpt_p0}, .x_bpt={x_bpt}, .x_bpt_p0={x_bpt_p0}, .x_header={b.r.x_header_be_p[-1][0]}, .x_header_p0={b.r.x_header_be_p[0][0]}, .w_header={b.r.w_header_be_p[-1][0]}, .w_header_p0={b.r.x_header_be_p[0][0]} }}")
             if b.idx != len(bundles)-1:
                 ch.write(',\n')
         
         ch.write(f"\n}};\n\n")
-        ch.write(f"#define X_BITS      {c.X_BITS}\n")
-        ch.write(f"#define W_BITS      {c.K_BITS}\n")
+        ch.write(f"#define X_BITS_L2   {int(np.log2(c.X_BITS))}\n")
+        ch.write(f"#define W_BITS_L2   {int(np.log2(c.K_BITS))}\n")
+        ch.write(f"#define PE_ROWS     {c.ROWS}\n")
+        ch.write(f"#define PE_COLS     {c.COLS}\n\n")
+
         ch.write(f"#define W_BYTES     {w_bytes}\n")
         ch.write(f"#define X_BYTES     {x_bytes}\n")
         ch.write(f"#define X_BYTES_ALL {x_bytes_all}\n")
-        ch.write(f'const char DATA_DIR [] = "{DATA_DIR}";\n\n')
+        ch.write(f'#define DATA_DIR   "{DATA_DIR}"\n\n')
 
     with open('sv/model.svh', 'w') as vh:
         vh.write(f"localparam W_BYTES = {w_bytes};\n")
