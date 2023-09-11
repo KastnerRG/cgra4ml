@@ -238,7 +238,7 @@ def test_dnn_engine(COMPILE):
     '''
     Write Runtime Headers
     '''
-    x_bytes_all, x_bytes, w_bytes = 0, 0, 0
+    x_bytes_all, x_bytes, w_bytes, x_bytes_max, y_bytes_max = 0, 0, 0, 0, 0
     with open ('../c/model.h', 'w') as ch:
 
         ch.write(f"#define N_BUNDLES {len(bundles)}\n")
@@ -250,8 +250,14 @@ def test_dnn_engine(COMPILE):
             x_bpt    = (c.X_BITS*b.xe[-1].size + c.IN_BITS   )//8 
             x_bpt_p0 = (c.X_BITS*b.xe[0].size + c.IN_BITS    )//8
 
-            w_bytes += (w_bpt_p0 + (b.r.CP-1)*w_bpt)*b.r.IT
-            x_bytes_all += (x_bpt_p0 + (b.r.CP-1)*x_bpt)
+            w_bytes_b = (w_bpt_p0 + (b.r.CP-1)*w_bpt)*b.r.IT
+            x_bytes_b = (x_bpt_p0 + (b.r.CP-1)*x_bpt)
+            y_bytes_b = (c.Y_BITS*b.ye_exp.size + c.IN_BITS   )//8
+
+            x_bytes_max = max(x_bytes_max, x_bytes_b)
+            y_bytes_max = max(x_bytes_max, y_bytes_b)
+            w_bytes += w_bytes_b
+            x_bytes_all += x_bytes_b
 
             if ib == 0:
                 x_bytes = (x_bpt_p0 + (b.r.CP-1)*x_bpt)
@@ -273,11 +279,13 @@ def test_dnn_engine(COMPILE):
         ch.write(f"#define W_BYTES     {w_bytes}\n")
         ch.write(f"#define X_BYTES     {x_bytes}\n")
         ch.write(f"#define X_BYTES_ALL {x_bytes_all}\n")
+        ch.write(f"#define Y_BYTES     {y_bytes_max}\n")
         ch.write(f'#define DATA_DIR   "{DATA_DIR}"\n\n')
 
     with open('sv/model.svh', 'w') as vh:
         vh.write(f"localparam W_BYTES = {w_bytes};\n")
         vh.write(f"localparam X_BYTES = {x_bytes};\n")
+        vh.write(f"localparam Y_BYTES = {y_bytes_max};\n")
         vh.write(f"localparam X_BYTES_ALL = {x_bytes_all};\n")
 
     '''
