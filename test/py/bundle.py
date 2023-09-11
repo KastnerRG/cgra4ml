@@ -6,6 +6,39 @@ import math
 import copy
 import tensorflow as tf
 
+'''
+Bundle (current):
+
++ Conv/Dense
+- Add Bias
+- Relu + Quantization
+- Add Bundle
+- Relu + Quantization
+- Max / Avg Pooling
+- Relu + Quantization
+- Softmax
+- Tiling (Flatten)
+
+
+Bundle (next)
+
++ Conv/Dense
+- Add Bias
+- Add Bundle
+- Pooling
+    - Max
+    - Avg
+- Activation
+    - Relu
+    - Softmax
+    - GeLU
+- Quantization
+- Tiling
+    - Conv2dense (flatten)
+    - x2w (transformer)
+    - concat_matrix (transformer)
+'''
+
 class Bundle(tf.keras.Model):
     def __init__(self, 
                  core,             # dict, Mandaroty: parameters for conv/dense layer, act can be quantization or relu
@@ -205,6 +238,8 @@ class Bundle(tf.keras.Model):
 
         if self.b is not None:
             self.proc['int'] += self.b['int'] * 2** (self.proc['frac'] - self.b['frac'])
+        self.b_frac_shift = self.proc['frac'] - self.b['frac'] if self.b else None
+        self.y_int_b = self.proc['int'] if self.b else None
 
 
         if 'strides' in self.core and self.core['strides'] != (1,1):
@@ -376,6 +411,7 @@ class Bundle(tf.keras.Model):
         print(r)
         self.check_sparsity(w_int, x_int)
 
+        self.be =  self.reorder_b_q2e_conv(self.b, c, r) if self.b else None
         self.we = self.reorder_w_q2e_conv(w_int, c, r)
         self.ye_exp_shape = (r.IT, r.XN, r.L, r.XW*r.CO_PRL, c.ROWS)
         self.ye_hw = np.zeros(self.ye_exp_shape)
@@ -510,10 +546,17 @@ class Bundle(tf.keras.Model):
 
 
     @staticmethod
+    def reorder_b_q2e_conv(b, c, r):
+        b = np.pad(b, ((0,r.CO_PAD-r.CO)))
+        b = b.reshape(r.IT, r.CO_PRL)
+        b = np.flip(b, axis=1)
+        return b
+    
+
+    @staticmethod
     def reorder_w_q2e_conv(w, c, r):
 
         w = np.pad(w, ((0,0),(0,0),(0,0),(0,r.CO_PAD-r.CO)))        # (KH, KW, CI, CO_PAD)
-        print(w.shape, (r.KH, r.KW, r.CI, r.IT, r.CO_PRL))
         w = w.reshape(r.KH, r.KW, r.CI, r.IT, r.CO_PRL)             # (KH, KW, CI, IT, CO_PRL)
         w = np.flip(w, axis=4)                                      # cuz we shift outputs towards right in PE array and read from high col
 

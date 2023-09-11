@@ -46,6 +46,7 @@ module dnn_engine_tb;
 
   bit [7 :0] w_mem  [0:W_BYTES    -1];
   bit [7 :0] x_mem  [0:X_BYTES_ALL-1];
+  bit [7 :0] y_mem  [0:Y_BYTES    -1];
   bit [31:0] y_sram [ROWS*COLS-1:0];
 
   logic aresetn;
@@ -76,6 +77,25 @@ module dnn_engine_tb;
   import "DPI-C" function void load_x(inout bit x_done, inout int x_offset, x_bpt);
   import "DPI-C" function void load_w(inout bit w_done, inout int w_offset, w_bpt);
   import "DPI-C" function void load_y(inout bit y_done, inout bit t_done_proc, inout bit [31:0] y_sram [ROWS*COLS-1:0]);
+
+  export "DPI-C" function write_y;
+  export "DPI-C" function read_y;
+
+  int addr_8;
+  logic signed [3:0][7:0] data_8;
+
+  function void write_y (input int addr, input int data);
+    data_8 = data;
+    for (int i=0; i<4; i++) 
+      y_mem[addr + i] = data_8[i];
+  endfunction
+
+  function int read_y (input int addr);
+    for (int i=0; i<4; i++) 
+      data_8[i] = y_mem[addr + i];
+    read_y = data_8;
+  endfunction
+
 
   initial 
     while (1) begin
