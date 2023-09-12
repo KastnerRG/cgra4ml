@@ -252,10 +252,10 @@ def test_dnn_engine(COMPILE):
 
             w_bytes_b = (w_bpt_p0 + (b.r.CP-1)*w_bpt)*b.r.IT
             x_bytes_b = (x_bpt_p0 + (b.r.CP-1)*x_bpt)
-            y_bytes_b = (c.Y_BITS*b.ye_exp.size + c.IN_BITS   )//8
+            y_bytes_b = (32*b.ye_exp.size + c.IN_BITS)//8
 
             x_bytes_max = max(x_bytes_max, x_bytes_b)
-            y_bytes_max = max(x_bytes_max, y_bytes_b)
+            y_bytes_max = max(y_bytes_max, y_bytes_b)
             w_bytes += w_bytes_b
             x_bytes_all += x_bytes_b
 
@@ -316,6 +316,7 @@ def test_dnn_engine(COMPILE):
     Write Text files of vectors
     '''
     for b in bundles:
+        np.savetxt(f"{DATA_DIR}/{b.idx}_y_exp.txt", b.ye_exp.flatten(), fmt='%d')
         for ip in range(b.r.CP):
             CM_p = b.r.CM_0 if ip==0 else b.r.CM
             x_config = b.r.x_header_le_p[ip!=0][0]
@@ -368,11 +369,7 @@ def test_dnn_engine(COMPILE):
     CHECK ERROR
     '''
     for b in bundles:
-        y_sim = np.zeros((b.r.IT, b.r.XN*b.r.L*b.r.XW*b.r.CO_PRL*c.ROWS))
-        for ip in range(b.r.CP):
-            for it in range(b.r.IT):
-                y_sim[it] = y_sim[it] + np.loadtxt(f"{DATA_DIR}/{b.idx}_{ip}_{it}_y_sim.txt",np.int32)
-
+        y_sim = np.loadtxt(f"{DATA_DIR}/{b.idx}_y_sim.txt",np.int32).reshape((b.r.IT, b.r.XN*b.r.L*b.r.XW*b.r.CO_PRL*c.ROWS))
         error = np.sum(np.abs(y_sim.reshape(b.ye_exp.shape) - b.ye_exp))
 
         print(f"Bundle {b.idx}, Error: {error}")

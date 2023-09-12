@@ -15,6 +15,7 @@ test/dnn_engine_tb.vcd
 test/xsc*
 test/obj_dir
 test/models
+test/temp
 
 test/py/*
 
