@@ -16,6 +16,6 @@ Bundle_t bundles [N_BUNDLES] = {
 #define W_BYTES     105284
 #define X_BYTES     648
 #define X_BYTES_ALL 102400
-#define Y_BYTES     86616
+#define Y_BYTES     73736
 #define DATA_DIR   "D:/dnn-engine/test/vectors"
 
