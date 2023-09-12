@@ -35,20 +35,14 @@ extern EXT_C int  read_y  (int *addr);
 
 static inline void process_y(int val, int *p_y, int ib, int ip, int it, int in, int il, int iw, int icoe, int iw_last, int ir){
 
-  if (bundles[ib].p == 1){
-    // only p  : proceed with value
-  }
-  else if (ip == 0) {
-    // first p : overwrite memory, return
+  if (bundles[ib].p == 1) {}          // only p  : proceed with value
+  else if (ip == bundles[ib].p-1)     // last p  : read, add, proceed
+    val += read_y(p_y);
+  else if (ip == 0) {                 // first p : overwrite memory, return
     write_y(p_y, val);
     return;
   }
-  else if (ip == bundles[ib].p-1) {
-    // last p  : read, add, proceed
-    val += read_y(p_y);
-  }
-  else {
-    // middle p: read, add, store, return
+  else {                              // middle p: read, add, store, return
     write_y(p_y, val + read_y(p_y));
     return;
   }
