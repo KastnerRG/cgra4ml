@@ -170,7 +170,7 @@ class Config:
                                                 XN_MAX     = [16   ], 
                                                 IN_BITS    = [64   ], 
                                                 OUT_BITS   = [64   ],
-                                                RAM_WEIGHTS_DEPTH = [16],  # KH*CI + Config beats
+                                                RAM_WEIGHTS_DEPTH = [20  ],  # KH*CI + Config beats
                                                 RAM_EDGES_DEPTH   = [288 ], # max(CI * XW * (XH/ROWS-1))
 
                                                 VALID_PROB = [100],
@@ -181,6 +181,7 @@ def test_dnn_engine(COMPILE):
     input_shape = (2,16,8,3) # (XN, XH, XW, CI)
     model_config = [
         Config(11, 16),
+        Config(1, 16),
         Config(7, 16),
         Config(5, 16),
         Config(3, 24),
