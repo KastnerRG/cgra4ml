@@ -5,56 +5,60 @@ typedef struct {
 } Bundle_t;
 
 #include "model.h"
+
+typedef struct {
+  char w  [W_BYTES     ];
+  char x  [X_BYTES_ALL ];
+  int  y  [Y_BYTES/4   ];
+} Memory_st;
+Memory_st mem;
+
 #include <svdpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #ifdef VERILATOR
   #define EXT_C "C"
-  // svSetScope (svGetScopeFromName ("dnn_engine_tb.sv"));
 #else
   #define EXT_C
 #endif
-/*
-Bundle (current):
-
-+ Conv/Dense
-- Add Bias
-- Relu + Quantization
-- Add Bundle
-- Relu + Quantization
-- Max / Avg Pooling
-- Relu + Quantization
-- Softmax
-- Tiling (Flatten)
-*/
-
-extern EXT_C void write_y (int *addr, int data);
-extern EXT_C int  read_y  (int *addr);
 
 
-static inline void process_y(int val, int *p_y, int ib, int ip, int it, int in, int il, int iw, int icoe, int iw_last, int ir){
+static inline void process_y(int val, int p_y, int ib, int ip, int it, int in, int il, int iw, int icoe, int iw_last, int ir){
+
+  // ------ ADD P PASSES ------ 
 
   if (bundles[ib].p == 1) {}          // only p  : proceed with value
   else if (ip == bundles[ib].p-1)     // last p  : read, add, proceed
-    val += read_y(p_y);
+    val += mem.y[p_y];
   else if (ip == 0) {                 // first p : overwrite memory, return
-    write_y(p_y, val);
+    mem.y[p_y] = val;
     return;
   }
   else {                              // middle p: read, add, store, return
-    write_y(p_y, val + read_y(p_y));
+    mem.y[p_y] += val;
     return;
   }
 
+  // ------ ADD BIAS ------ 
+  
+  // ------ RELU + QUANT ------
 
-  write_y(p_y, val);
+  // ------ MAX/AVG POOL ------
+
+  // ------ RELU + QUANT ------
+
+  // ------ SOFTMAX ------
+
+  // ------ TILING ------
+
+  mem.y[p_y] = val;
 }
 
 
 extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  const unsigned int *p_sram_u32) {
 
-  static int *p_y=0;
+  static int p_y=0;
   static int ib=0, ip=0, it=0, in=0, il=0, iw=0;
   const int *p_sram = (const int *)p_sram_u32;
 
@@ -74,14 +78,14 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
 
         process_y(val, p_y, ib, ip, it, in, il, iw, icoe, iw_last, ir);
         
-        p_y += 1; // increments by 4 (ptr arithmetic)
+        p_y += 1;
         sram_addr += 1;
       }
   
   fclose(fp);
 
 
-  int *p_y_prev;
+  int p_y_prev;
   // Nested for loop [for(ib) for(ip) for(it) for(il) for(in) for(iw) {}] inverted to increment once per call
   ++ iw; if (iw >= bundles[ib].w_kw2) { iw = 0;
     ++ in; if (in >= bundles[ib].n) { in = 0;
@@ -100,8 +104,8 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
             // Write to file at every it_done
             sprintf(path, "%s/%0d_y_sim.txt", DATA_DIR, ib);
             fp = fopen(path, "w"); 
-            for (int *ip_y=0; ip_y < p_y_prev; ip_y++)  // increments by 4 (ptr arithmetic)
-              fprintf(fp,"%d\n", read_y(ip_y));
+            for (int ip_y=0; ip_y < p_y_prev; ip_y++)
+              fprintf(fp,"%d\n", mem.y[ip_y]);
             fclose(fp);
 
             ++ ib; if (ib >= N_BUNDLES) { ib = 0;
@@ -150,4 +154,34 @@ extern EXT_C void load_w (unsigned char *p_done, int *p_offset, int *p_bpt) {
         offset_next = 0;
   }}}
   offset_next += bpt;
+}
+
+
+extern EXT_C void fill_memory (){
+  FILE *fp;
+  char path [1000];
+
+  sprintf(path, "%s/w.bin", DATA_DIR);
+  fp = fopen(path, "rb");
+  if(!fp) {
+    printf("ABORT! File not found: %s \n", path);
+    exit(1);
+  }
+  fread(mem.w, 1, W_BYTES, fp);
+  fclose(fp);
+
+  sprintf(path, "%s/x_all.bin", DATA_DIR);
+  fp = fopen(path, "rb");
+  if(!fp) {
+    printf("ABORT! File not found: %s \n", path);
+    exit(1);
+  }
+  fread(mem.x, 1, X_BYTES_ALL, fp);
+  fclose(fp);
+}
+
+
+extern EXT_C char get_byte_wx (int addr, int mode){
+  if      (mode==0) return mem.w[addr];
+  else if (mode==1) return mem.x[addr];
 }

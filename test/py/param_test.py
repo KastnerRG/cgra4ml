@@ -283,12 +283,6 @@ def test_dnn_engine(COMPILE):
         ch.write(f"#define Y_BYTES     {y_bytes_max}\n")
         ch.write(f'#define DATA_DIR   "{DATA_DIR}"\n\n')
 
-    with open('sv/model.svh', 'w') as vh:
-        vh.write(f"localparam W_BYTES = {w_bytes};\n")
-        vh.write(f"localparam X_BYTES = {x_bytes};\n")
-        vh.write(f"localparam Y_BYTES = {y_bytes_max};\n")
-        vh.write(f"localparam X_BYTES_ALL = {x_bytes_all};\n")
-
     '''
     Write Binary Files
     '''
@@ -303,13 +297,13 @@ def test_dnn_engine(COMPILE):
                 we = Bundle.pack_words_into_bytes(arr=b.we[ip][it].flatten(), bits=c.K_BITS)
                 w_bitstring += b.r.w_header_be_p[ip!=0].tobytes() + we.tobytes()
         if ib==0:
-            with open(f"{DATA_DIR}/x", 'wb') as f: 
+            with open(f"{DATA_DIR}/x.bin", 'wb') as f: 
                 f.write(x_bitstring)
 
-    with open(f"{DATA_DIR}/w", 'wb') as f: 
+    with open(f"{DATA_DIR}/w.bin", 'wb') as f: 
         f.write(w_bitstring)
 
-    with open(f"{DATA_DIR}/x_all", 'wb') as f: 
+    with open(f"{DATA_DIR}/x_all.bin", 'wb') as f: 
         f.write(x_bitstring)
 
 

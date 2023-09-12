@@ -5,14 +5,13 @@
 
 module DMA_M2S #(
   parameter BUS_WIDTH=8, PROB_VALID=20,
-  parameter MEM_DEPTH=1,
+  parameter MODE=0,
   parameter BYTES_PER_BEAT = BUS_WIDTH/8
 )(
     input  logic aclk, aresetn, s_ready, 
     output logic s_valid, s_last,
     output logic [BYTES_PER_BEAT-1:0][7:0] s_data,
-    output logic [BYTES_PER_BEAT-1:0] s_keep,
-    input  bit   [7:0] memory [0:MEM_DEPTH-1]
+    output logic [BYTES_PER_BEAT-1:0] s_keep
 ); 
 
   logic s_last_val;
@@ -22,6 +21,8 @@ module DMA_M2S #(
   int status, i_bytes=0;
   bit prev_handshake=1; // data is released first
   bit prev_slast=0;
+
+  import "DPI-C" function byte get_byte_wx (int addr, int mode);
 
   task axis_push (input int offset, input int bytes_per_transfer);
     {s_valid, s_data, s_last, s_keep} = '0;
@@ -37,7 +38,7 @@ module DMA_M2S #(
             s_keep_val[i] = 0;
           end
           else begin
-            s_data_val[i] = memory[offset + i_bytes];
+            s_data_val[i] = get_byte_wx(offset + i_bytes, MODE);
             // $display("DMA: start:%d, i_bytes:%d, val:%d", offset, i_bytes, $signed(s_data_val[i]));
             s_keep_val[i] = 1;
             i_bytes  += 1;
