@@ -3,33 +3,16 @@
 `include "../../rtl/include/params.svh"
 `include "../xsim/sim_params.svh"
 
-typedef struct {
-  int w_bpt, w_bpt_p0; // words per transfer
-  int x_bpt, x_bpt_p0;
-  int y_wpt, y_wpt_last;
-  int n_it, n_p;
-  int y_nl, y_w;
-} Bundle_t;
-
-
 module dnn_engine_tb;
 
-  `include "model.svh"
   localparam  DIR_PATH   = `DIR_PATH;
   localparam  VALID_PROB = `VALID_PROB,
               READY_PROB = `READY_PROB;
 
   // CLOCK GENERATION
-
-  localparam  FREQ_HIGH = 200, 
-              FREQ_RATIO = 1,
-              CLK_PERIOD_HF = 1000/FREQ_HIGH, 
-              CLK_PERIOD_LF = FREQ_RATIO*CLK_PERIOD_HF;
-  
-  logic aclk = 0, hf_aclk = 0;
-  initial forever #(CLK_PERIOD_LF/2) aclk    <= ~aclk;
-  initial forever #(CLK_PERIOD_HF/2) hf_aclk <= ~hf_aclk;
-
+  logic aclk = 0;
+  localparam  CLK_PERIOD = 10ns;
+  initial forever #(CLK_PERIOD/2) aclk    <= ~aclk;
 
   // SIGNALS
 
@@ -44,9 +27,6 @@ module dnn_engine_tb;
               OUT_ADDR_WIDTH             = 10,
               OUT_BITS                   = 32;
 
-  bit [7 :0] w_mem  [0:W_BYTES    -1];
-  bit [7 :0] x_mem  [0:X_BYTES_ALL-1];
-  bit [7 :0] y_mem  [0:Y_BYTES    -1];
   bit [31:0] y_sram [ROWS*COLS-1:0];
 
   logic aresetn;
@@ -67,8 +47,8 @@ module dnn_engine_tb;
 
   // SOURCEs & SINKS
 
-  DMA_M2S #(S_PIXELS_WIDTH_LF , VALID_PROB, X_BYTES_ALL) source_x (aclk, aresetn, s_axis_pixels_tready , s_axis_pixels_tvalid , s_axis_pixels_tlast , s_axis_pixels_tdata , s_axis_pixels_tkeep , x_mem);
-  DMA_M2S #(S_WEIGHTS_WIDTH_LF, VALID_PROB, W_BYTES    ) source_k (aclk, aresetn, s_axis_weights_tready, s_axis_weights_tvalid, s_axis_weights_tlast, s_axis_weights_tdata, s_axis_weights_tkeep, w_mem);
+  DMA_M2S #(S_PIXELS_WIDTH_LF , VALID_PROB, 1) source_x (aclk, aresetn, s_axis_pixels_tready , s_axis_pixels_tvalid , s_axis_pixels_tlast , s_axis_pixels_tdata , s_axis_pixels_tkeep );
+  DMA_M2S #(S_WEIGHTS_WIDTH_LF, VALID_PROB, 0) source_k (aclk, aresetn, s_axis_weights_tready, s_axis_weights_tvalid, s_axis_weights_tlast, s_axis_weights_tdata, s_axis_weights_tkeep);
 
   bit y_done=0, x_done=0, w_done=0;
   string w_path, x_path;
@@ -77,26 +57,11 @@ module dnn_engine_tb;
   import "DPI-C" function void load_x(inout bit x_done, inout int x_offset, x_bpt);
   import "DPI-C" function void load_w(inout bit w_done, inout int w_offset, w_bpt);
   import "DPI-C" function void load_y(inout bit y_done, inout bit t_done_proc, inout bit [31:0] y_sram [ROWS*COLS-1:0]);
-
-  export "DPI-C" function write_y;
-  export "DPI-C" function read_y;
-
-  int addr_8;
-  logic signed [3:0][7:0] data_8;
-
-  function void write_y (input int addr, input int data);
-    data_8 = data;
-    for (int i=0; i<4; i++) 
-      y_mem[addr + i] = data_8[i];
-  endfunction
-
-  function int read_y (input int addr);
-    for (int i=0; i<4; i++) 
-      data_8[i] = y_mem[addr + i];
-    read_y = data_8;
-  endfunction
+  import "DPI-C" function void fill_memory();
+  import "DPI-C" function byte get_byte_wx (int addr, int mode);
 
 
+  // W DMA
   initial 
     while (1) begin
       load_w (w_done, w_offset, w_bpt);
@@ -105,6 +70,7 @@ module dnn_engine_tb;
       if (w_done) break;
     end
 
+  // X DMA
   initial 
     while (1) begin
       load_x (x_done, x_offset, x_bpt);
@@ -113,14 +79,7 @@ module dnn_engine_tb;
       if (x_done) break;
     end
 
-  // initial begin
-  //   $dumpfile("dnn_engine_tb.vcd");
-  //   $dumpvars(0, dnn_engine_tb);
-  //   #600us;
-  //   $display("Finished early!");
-  //   $finish();
-  // end
-  
+  // Y_SRAM
   int file, y_wpt, dout;
   initial  begin
     {bram_addr_a, bram_en_a, t_done_proc} = 0;
@@ -140,33 +99,24 @@ module dnn_engine_tb;
     end
   end
 
+  // initial begin
+  //   $dumpfile("dnn_engine_tb.vcd");
+  //   $dumpvars(0, dnn_engine_tb);
+  //   #600us;
+  //   $display("Finished early!");
+  //   $finish();
+  // end
+
   // START SIM  
-
-  int w_file, w_status, x_file, x_status;
-
   initial begin
     aresetn = 0;
 
-    // load weights
-    $sformat(w_path, "%sw", DIR_PATH);
-    w_file = $fopen(w_path, "rb");
-    if (w_file == 0) $fatal(1, "File '%s' does not exist\n", w_path);
-    w_status = $fread(w_mem, w_file);
-    $fclose(w_file);
+    fill_memory();
 
     for (int i=0; i<50; i++)
-      $display("weights: i:%d, w:%b", i, w_mem[i]);
-
-    // load all inputs
-    $sformat(x_path, "%sx_all", DIR_PATH);
-    x_file = $fopen(x_path, "rb");
-    if (x_file == 0) $fatal(1, "File '%s' does not exist\n", x_path);
-    x_status = $fread(x_mem, x_file);
-    $fclose(x_file);
-
+      $display("weights: i:%d, w:%b", i, get_byte_wx(i, 0));
     for (int i=0; i<10; i++)
-      $display("inputs: i:%d, w:%b", i, $signed(x_mem[i]));
-
+      $display("inputs: i:%d, w:%b", i, get_byte_wx(i,1));
     
     repeat(2) @(posedge aclk) #1;
     aresetn = 1;
