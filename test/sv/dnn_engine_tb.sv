@@ -5,7 +5,6 @@
 
 module dnn_engine_tb;
 
-  localparam  DIR_PATH   = `DIR_PATH;
   localparam  VALID_PROB = `VALID_PROB,
               READY_PROB = `READY_PROB;
 
@@ -38,9 +37,9 @@ module dnn_engine_tb;
   logic [S_WEIGHTS_WIDTH_LF/K_BITS-1:0][K_BITS-1:0] s_axis_weights_tdata;
   logic [S_WEIGHTS_WIDTH_LF/8-1:0] s_axis_weights_tkeep;
 
-  bit bram_en_a, done_fill, t_done_proc;
-  logic [(OUT_ADDR_WIDTH+2)-1:0]     bram_addr_a;
-  logic [ OUT_BITS         -1:0]     bram_rddata_a;
+  bit m_ram_en_a, m_done_fill, m_t_done_proc;
+  logic [(OUT_ADDR_WIDTH+2)-1:0]  m_ram_addr_a;
+  logic [ OUT_BITS         -1:0]  m_ram_rddata_a;
 
 
   dnn_engine pipe (.*);
@@ -51,12 +50,11 @@ module dnn_engine_tb;
   DMA_M2S #(S_WEIGHTS_WIDTH_LF, VALID_PROB, 0) source_k (aclk, aresetn, s_axis_weights_tready, s_axis_weights_tvalid, s_axis_weights_tlast, s_axis_weights_tdata, s_axis_weights_tkeep);
 
   bit y_done=0, x_done=0, w_done=0;
-  string w_path, x_path;
   int w_offset=0, w_bpt=0, x_offset=0, x_bpt=0;
   
   import "DPI-C" function void load_x(inout bit x_done, inout int x_offset, x_bpt);
   import "DPI-C" function void load_w(inout bit w_done, inout int w_offset, w_bpt);
-  import "DPI-C" function void load_y(inout bit y_done, inout bit t_done_proc, inout bit [31:0] y_sram [ROWS*COLS-1:0]);
+  import "DPI-C" function void load_y(inout bit y_done, inout bit m_t_done_proc, inout bit [31:0] y_sram [ROWS*COLS-1:0]);
   import "DPI-C" function void fill_memory();
   import "DPI-C" function byte get_byte_wx (int addr, int mode);
 
@@ -82,20 +80,20 @@ module dnn_engine_tb;
   // Y_SRAM
   int file, y_wpt, dout;
   initial  begin
-    {bram_addr_a, bram_en_a, t_done_proc} = 0;
+    {m_ram_addr_a, m_ram_en_a, m_t_done_proc} = 0;
     wait(aresetn);
     repeat(2) @(posedge aclk);
 
     while (!y_done) begin
-      wait (done_fill); // callback trigger
+      wait (m_done_fill); // callback trigger
 
       for (int unsigned ir=0; ir < ROWS*COLS; ir++) begin // DPI-C cannot consume time in verilator, so read in advance
-        bram_addr_a <= ir*(OUT_BITS/8); // 4 byte words
-        bram_en_a <= 1;
+        m_ram_addr_a <= ir*(OUT_BITS/8); // 4 byte words
+        m_ram_en_a <= 1;
         repeat(2) @(posedge aclk) #1ps;
-        y_sram[ir] = bram_rddata_a;
+        y_sram[ir] = m_ram_rddata_a;
       end
-      load_y(y_done, t_done_proc, y_sram);
+      load_y(y_done, m_t_done_proc, y_sram);
     end
   end
 

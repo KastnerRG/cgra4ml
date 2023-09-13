@@ -15,12 +15,12 @@ module out_ram_switch #(
   input  logic [ROWS -1:0][Y_BITS -1:0] s_data,
   input  logic                          s_valid, s_last,
 
-  input  logic [(ADDR_WIDTH+2)-1:0]     bram_addr_a,
-  output logic [ WORD_WIDTH   -1:0]     bram_rddata_a,
-  input  logic                          bram_en_a,
+  input  logic [(ADDR_WIDTH+2)-1:0]     m_ram_addr_a,
+  output logic [ WORD_WIDTH   -1:0]     m_ram_rddata_a,
+  input  logic                          m_ram_en_a,
 
-  output logic done_fill,
-  input  logic t_done_proc
+  output logic m_done_fill,
+  input  logic m_t_done_proc
 );
 
   localparam BITS_COLS = $clog2(COLS), BITS_ROWS = $clog2(ROWS);
@@ -91,32 +91,32 @@ module out_ram_switch #(
   // -----
   // READ
   // -----
-  // 1. fw starts, waits for t_done_fill to toggle
-  // 2. mod toggles t_done_fill, moving to READ_S, waits for t_done_proc
-  // 3. fw continues, finishes processing, toggles t_done_proc
-  // 4. mod senses t_done_proc in READ_S, moves, waits for done_write, toggles t_done_fill
-  // 5. fw loops to beginning, waits for t_done_fill to toggle
+  // 1. fw starts, waits for t_m_done_fill to toggle
+  // 2. mod toggles t_m_done_fill, moving to READ_S, waits for m_t_done_proc
+  // 3. fw continues, finishes processing, toggles m_t_done_proc
+  // 4. mod senses m_t_done_proc in READ_S, moves, waits for done_write, toggles t_m_done_fill
+  // 5. fw loops to beginning, waits for t_m_done_fill to toggle
 
   always_comb
     unique case (state_read)
       R_IDLE_S    : if (done_write [i_read])           state_read_next = R_DONE_FILL_S;
       R_DONE_FILL_S:                                   state_read_next = R_READ_S;
-      R_READ_S    : if (dp_prev != t_done_proc)        state_read_next = R_WAIT_S;
+      R_READ_S    : if (dp_prev != m_t_done_proc)      state_read_next = R_WAIT_S;
       R_WAIT_S    :                                    state_read_next = R_SWITCH_S;
       R_SWITCH_S  :                                    state_read_next = R_IDLE_S;
     endcase 
 
-  assign ram_r_addr    = bram_addr_a[(ADDR_WIDTH+2)-1:2];
-  assign bram_rddata_a = WORD_WIDTH'(signed'(ram_dout[i_read])); // pad to 32
-  assign done_fill     = state_read == R_DONE_FILL_S; // one clock for interrupt
+  assign ram_r_addr      = m_ram_addr_a[(ADDR_WIDTH+2)-1:2];
+  assign m_ram_rddata_a  = WORD_WIDTH'(signed'(ram_dout[i_read])); // pad to 32
+  assign m_done_fill     = state_read == R_DONE_FILL_S; // one clock for interrupt
 
   // always_ff @(posedge clk)
-  //   if (!rstn)                            t_done_fill <= 0;
-  //   else if (state_read == R_DONE_FILL_S) t_done_fill <= !t_done_fill;
+  //   if (!rstn)                            t_m_done_fill <= 0;
+  //   else if (state_read == R_DONE_FILL_S) t_m_done_fill <= !t_m_done_fill;
 
   always_ff @(posedge clk)
-    if (!rstn)                            dp_prev <= 0;              // t_done_proc starts at 0
-    else if (state_read_next == R_WAIT_S) dp_prev <= t_done_proc;  // sample dp_prev at end of reading
+    if (!rstn)                            dp_prev <= 0;              // m_t_done_proc starts at 0
+    else if (state_read_next == R_WAIT_S) dp_prev <= m_t_done_proc;  // sample dp_prev at end of reading
 
   // -----
   // PING PONG
@@ -140,11 +140,7 @@ module out_ram_switch #(
       assign ram_addr [i] = (i == i_write && state_write == W_WRITE_S) ? ram_w_addr : ram_r_addr;
 
       localparam RAM_ADDR_BITS = $clog2(COLS*ROWS);
-      ram_output #(
-        .DEPTH    (COLS * ROWS),
-        .WIDTH    (Y_BITS     ),
-        .LATENCY  (RAM_LATENCY)
-      ) RAM (
+      ram_output RAM (
         .clka  (clk),
         .ena   (1'b1),
         .wea   (ram_wen [i] ),

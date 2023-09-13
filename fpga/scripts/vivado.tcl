@@ -4,9 +4,9 @@ set SCRIPTS_DIR ../scripts
 source $SCRIPTS_DIR/vivado_config.tcl
 
 #Board specific
-# source $SCRIPTS_DIR/pynq_z2.tcl
+source $SCRIPTS_DIR/pynq_z2.tcl
 # source $SCRIPTS_DIR/zcu102.tcl
-source $SCRIPTS_DIR/zcu104.tcl
+# source $SCRIPTS_DIR/zcu104.tcl
 
 
 # CREATE IPs
@@ -75,11 +75,11 @@ connect_bd_net [get_bd_pins $PS_CLK] [get_bd_pins dnn_engine_0/aclk]
 connect_bd_intf_net [get_bd_intf_pins dma_pixels/M_AXIS_MM2S] [get_bd_intf_pins dnn_engine_0/s_axis_pixels]
 connect_bd_intf_net [get_bd_intf_pins dma_weights/M_AXIS_MM2S] [get_bd_intf_pins dnn_engine_0/s_axis_weights]
 connect_bd_net [get_bd_pins dnn_engine_0/aresetn] [get_bd_pins axi_smc/aresetn]
-connect_bd_net [get_bd_pins dnn_engine_0/done_fill] [get_bd_pins xlconcat_0/In2]
-connect_bd_net [get_bd_pins axi_bram_ctrl/bram_addr_a] [get_bd_pins dnn_engine_0/bram_addr_a]
-connect_bd_net [get_bd_pins axi_bram_ctrl/bram_rddata_a] [get_bd_pins dnn_engine_0/bram_rddata_a]
-connect_bd_net [get_bd_pins axi_bram_ctrl/bram_en_a] [get_bd_pins dnn_engine_0/bram_en_a]
-connect_bd_net [get_bd_pins axi_gpio_out/gpio_io_o] [get_bd_pins dnn_engine_0/t_done_proc]
+connect_bd_net [get_bd_pins dnn_engine_0/m_done_fill] [get_bd_pins xlconcat_0/In2]
+connect_bd_net [get_bd_pins axi_bram_ctrl/bram_addr_a] [get_bd_pins dnn_engine_0/m_ram_addr_a]
+connect_bd_net [get_bd_pins axi_bram_ctrl/bram_rddata_a] [get_bd_pins dnn_engine_0/m_ram_rddata_a]
+connect_bd_net [get_bd_pins axi_bram_ctrl/bram_en_a] [get_bd_pins dnn_engine_0/m_ram_en_a]
+connect_bd_net [get_bd_pins axi_gpio_out/gpio_io_o] [get_bd_pins dnn_engine_0/m_t_done_proc]
 
 validate_bd_design
 
