@@ -1,5 +1,5 @@
 # Floorplan
-floorPlan -r 0.4 0.85 10.0 10.0 10.0 10.0
+floorPlan -r 0.33 0.85 10.0 10.0 10.0 10.0
 
 timeDesign -preplace -prefix preplace
 

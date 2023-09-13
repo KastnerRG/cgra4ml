@@ -33,11 +33,11 @@ module dnn_engine #(
     input  wire [S_WEIGHTS_WIDTH_LF  -1:0]  s_axis_weights_tdata,
     input  wire [S_WEIGHTS_WIDTH_LF/8-1:0]  s_axis_weights_tkeep,
 
-    input  wire [(OUT_ADDR_WIDTH+2)-1:0]     bram_addr_a,
-    output wire [ OUT_BITS         -1:0]     bram_rddata_a,
-    input  wire                              bram_en_a,
-    output wire done_fill,
-    input  wire t_done_proc
+    input  wire [(OUT_ADDR_WIDTH+2)-1:0]    m_ram_addr_a,
+    output wire [ OUT_BITS         -1:0]    m_ram_rddata_a,
+    input  wire                             m_ram_en_a,
+    output wire m_done_fill,
+    input  wire m_t_done_proc
   ); 
 
   localparam  TUSER_WIDTH = `TUSER_WIDTH;
@@ -131,11 +131,11 @@ module dnn_engine #(
     .s_data       (out_s_data    ),
     .s_last       (out_s_last    ), 
 
-    .bram_addr_a  (bram_addr_a   ),
-    .bram_rddata_a(bram_rddata_a ),
-    .bram_en_a    (bram_en_a     ),
-    .done_fill    (done_fill     ),
-    .t_done_proc  (t_done_proc   )
+    .m_ram_addr_a   (m_ram_addr_a  ),
+    .m_ram_rddata_a (m_ram_rddata_a),
+    .m_ram_en_a     (m_ram_en_a    ),
+    .m_done_fill    (m_done_fill   ),
+    .m_t_done_proc  (m_t_done_proc )
   );
 endmodule
 
