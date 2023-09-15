@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from bundle import Bundle
 from qkeras import *
 from tensorflow.keras.layers import Input
+# keras.utils.set_random_seed(0)
+
 
 # Simulator: xsim on windows, verilator otherwise
 SIM = 'xsim' if os.name=='nt' else 'verilator' #'icarus'
@@ -27,6 +29,10 @@ WAVEFORM = "dnn_engine_tb_behav.wcfg"
 SOURCES = glob.glob('../rtl/include/*') + glob.glob('sv/*.sv') + glob.glob("../rtl/**/*.v", recursive=True) + glob.glob("../rtl/**/*.sv", recursive=True) + ['./xsim/sim_params.svh']
 print(SOURCES)
 
+type_d = {
+    'np': {8: np.int8, 16: np.int16, 32: np.int32, 64: np.int64},
+    'c' : {8: 'signed char', 16: 'signed short', 32: 'signed int', 64: 'signed long long'}
+}
 
 '''
 Synthesis Parameters
@@ -160,7 +166,9 @@ class Config:
 @pytest.mark.parametrize("COMPILE", list(product_dict(
                                                 X_BITS     = [4    ], 
                                                 K_BITS     = [4    ], 
+                                                B_BITS     = [16   ], 
                                                 Y_BITS     = [24   ], 
+                                                INT_BITS   = [32   ], # size of integer in target CPU
                                                 ROWS       = [8    ], 
                                                 COLS       = [24   ], 
                                                 KW_MAX     = [11   ], 
@@ -178,7 +186,7 @@ class Config:
                                             )))
 def test_dnn_engine(COMPILE):
 
-    input_shape = (2,16,8,3) # (XN, XH, XW, CI)
+    input_shape = (8,16,8,3) # (XN, XH, XW, CI)
     model_config = [
         Config(11, 16),
         Config(1, 16),
@@ -186,7 +194,7 @@ def test_dnn_engine(COMPILE):
         Config(5, 16),
         Config(3, 24),
         Config(1, 50, flatten=True),
-        Config(1, 10, dense= True),
+        # Config(1, 10, dense= True),
     ]
 
     '''
@@ -194,16 +202,17 @@ def test_dnn_engine(COMPILE):
     '''
     c = make_compile_params(COMPILE)
     assert c.X_BITS in [1,2,4,8] and c.K_BITS in [1,2,4,8], "X_BITS and K_BITS should be in [1,2,4,8]"
-    xq, kq, bq, aq = f'quantized_bits({c.X_BITS},0,False,True,1)', f'quantized_bits({c.K_BITS},0,False,True,1)', f'quantized_bits({c.K_BITS},0,False,True,1)', f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'
+    assert c.B_BITS in [8,16,32], "B_BITS should be in [8,16,32]"
+    xq, kq, bq, aq = f'quantized_bits({c.X_BITS},0,False,True,1)', f'quantized_bits({c.K_BITS},0,False,True,1)', f'quantized_bits({c.B_BITS},0,False,True,1)', f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'
     inp = {'bits':c.X_BITS, 'frac':c.X_BITS-1}
 
     x = x_in = Input(input_shape[1:], name='input')
     x = QActivation(xq)(x)
     for i, g in enumerate(model_config):
         if g.dense:
-            d = {'core': {'type':'dense', 'units':g.CO, 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':False, 'act_str':aq}}
+            d = {'core': {'type':'dense', 'units':g.CO, 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True, 'act_str':aq}}
         else:
-            d = {'core': {'type':'conv', 'filters':g.CO, 'kernel_size':(g.K,g.K), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':False, 'act_str':aq}, 'flatten':g.flatten,}
+            d = {'core': {'type':'conv', 'filters':g.CO, 'kernel_size':(g.K,g.K), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True, 'act_str':aq}, 'flatten':g.flatten,}
         x = Bundle(**d)(x)
 
     model = Model(inputs=x_in, outputs=x)
@@ -231,7 +240,7 @@ def test_dnn_engine(COMPILE):
     '''
     for b in bundles:
         print(f'-----------------{b.idx}-----------------------')
-        b.process(inp if b.idx==0 else None)
+        b.process(inp if b.idx==0 else None, c)
         b.export(c)
         
 
@@ -239,7 +248,7 @@ def test_dnn_engine(COMPILE):
     '''
     Write Runtime Headers
     '''
-    x_bytes_all, x_bytes, w_bytes, x_bytes_max, y_bytes_max = 0, 0, 0, 0, 0
+    x_bytes_all, x_bytes, w_bytes, b_words, x_bytes_max, y_bytes_max = 0, 0, 0, 0, 0, 0
     with open ('../c/model.h', 'w') as ch:
 
         ch.write(f"#define N_BUNDLES {len(bundles)}\n")
@@ -267,7 +276,9 @@ def test_dnn_engine(COMPILE):
             y_coe_tl = b.r.CO_PRL if (b.r.CO==b.r.IT*b.r.CO_PRL) else b.r.CO%b.r.IT
             y_r_ll = c.ROWS if b.r.XH==b.r.L*c.ROWS else  b.r.XH % c.ROWS
 
-            ch.write(f"   {{.n={b.r.XN}, .l={b.r.L}, .kw={b.r.KW}, .coe={y_coe}, .coe_tl={y_coe_tl}, .r_ll={y_r_ll}, .h={b.r.XH}, .w={b.r.XW}, .w_kw2={b.r.XW-b.r.KW//2}, .t={b.r.IT}, .p={b.r.CP}, .cm={b.r.CM}, .cm_p0={b.r.CM_0}, .w_bpt={w_bpt}, .w_bpt_p0={w_bpt_p0}, .x_bpt={x_bpt}, .x_bpt_p0={x_bpt_p0}, .x_header={b.r.x_header_be_p[-1][0]}, .x_header_p0={b.r.x_header_be_p[0][0]}, .w_header={b.r.w_header_be_p[-1][0]}, .w_header_p0={b.r.x_header_be_p[0][0]} }}")
+            ch.write(f"   {{.n={b.r.XN}, .l={b.r.L}, .kw={b.r.KW}, .coe={y_coe}, .coe_tl={y_coe_tl}, .r_ll={y_r_ll}, .h={b.r.XH}, .w={b.r.XW}, .w_kw2={b.r.XW-b.r.KW//2}, .t={b.r.IT}, .p={b.r.CP}, .cm={b.r.CM}, .cm_p0={b.r.CM_0}, .w_bpt={w_bpt}, .w_bpt_p0={w_bpt_p0}, .x_bpt={x_bpt}, .x_bpt_p0={x_bpt_p0}, .is_bias={1*(b.b is not None)}, .b_offset={b_words}, .b_val_shift={b.bias_val_shift}, .b_bias_shift={b.bias_b_shift}, .x_header={b.r.x_header_be_p[-1][0]}, .x_header_p0={b.r.x_header_be_p[0][0]}, .w_header={b.r.w_header_be_p[-1][0]}, .w_header_p0={b.r.x_header_be_p[0][0]} }}")
+            
+            b_words += b.be.size if b.b else 0
             if b.idx != len(bundles)-1:
                 ch.write(',\n')
         
@@ -277,10 +288,13 @@ def test_dnn_engine(COMPILE):
         ch.write(f"#define PE_ROWS     {c.ROWS}\n")
         ch.write(f"#define PE_COLS     {c.COLS}\n\n")
 
+        ch.write(f"#define WB_BYTES    {w_bytes + (b_words*c.B_BITS)//8}\n")
         ch.write(f"#define W_BYTES     {w_bytes}\n")
         ch.write(f"#define X_BYTES     {x_bytes}\n")
         ch.write(f"#define X_BYTES_ALL {x_bytes_all}\n")
         ch.write(f"#define Y_BYTES     {y_bytes_max}\n")
+        ch.write(f"#define B_TYPE      {type_d['c'][c.B_BITS]}\n")
+        ch.write(f"#define B_WORDS     {b_words}\n")
         ch.write(f'#define DATA_DIR   "{DATA_DIR}"\n\n')
 
     '''
@@ -288,7 +302,10 @@ def test_dnn_engine(COMPILE):
     '''
     w_bitstring = b''
     x_bitstring = b''
+    b_bitstring = b''
     for ib, b in enumerate(bundles):
+        if b.b:
+            b_bitstring += b.be.astype(type_d['np'][c.B_BITS]).tobytes()
         for ip in range(b.r.CP):
             xe = Bundle.pack_words_into_bytes(arr=b.xe[ip].flatten(), bits=c.X_BITS)
             x_bitstring += b.r.x_header_be_p[ip!=0].tobytes() + xe.tobytes()
@@ -301,7 +318,7 @@ def test_dnn_engine(COMPILE):
                 f.write(x_bitstring)
 
     with open(f"{DATA_DIR}/w.bin", 'wb') as f: 
-        f.write(w_bitstring)
+        f.write(w_bitstring + b_bitstring)
 
     with open(f"{DATA_DIR}/x_all.bin", 'wb') as f: 
         f.write(x_bitstring)
@@ -311,7 +328,7 @@ def test_dnn_engine(COMPILE):
     Write Text files of vectors
     '''
     for b in bundles:
-        np.savetxt(f"{DATA_DIR}/{b.idx}_y_exp.txt", b.ye_exp.flatten(), fmt='%d')
+        np.savetxt(f"{DATA_DIR}/{b.idx}_y_exp.txt", b.pe_exp.flatten(), fmt='%d')
         for ip in range(b.r.CP):
             CM_p = b.r.CM_0 if ip==0 else b.r.CM
             x_config = b.r.x_header_le_p[ip!=0][0]
@@ -365,7 +382,7 @@ def test_dnn_engine(COMPILE):
     '''
     for b in bundles:
         y_sim = np.loadtxt(f"{DATA_DIR}/{b.idx}_y_sim.txt",np.int32).reshape((b.r.IT, b.r.XN*b.r.L*b.r.XW*b.r.CO_PRL*c.ROWS))
-        error = np.sum(np.abs(y_sim.reshape(b.ye_exp.shape) - b.ye_exp))
+        error = np.sum(np.abs(y_sim.reshape(b.pe_exp.shape) - b.pe_exp))
 
         print(f"Bundle {b.idx}, Error: {error}")
         assert error == 0

@@ -1,15 +1,18 @@
 typedef struct {
   const int n, l, kw, coe, coe_tl, r_ll, h, w, w_kw2, t, p, cm, cm_p0;
   const int w_bpt, w_bpt_p0, x_bpt, x_bpt_p0; // bytes per transfer
+  const char is_bias;
+  const int b_offset, b_val_shift, b_bias_shift;
   const unsigned long long x_header, x_header_p0, w_header, w_header_p0; // 64 bits (at least)
 } Bundle_t;
 
 #include "model.h"
 
 typedef struct {
-  char w  [W_BYTES     ];
-  char x  [X_BYTES_ALL ];
-  int  y  [Y_BYTES/4   ];
+  char   w  [W_BYTES     ];
+  B_TYPE b  [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
+  char   x  [X_BYTES_ALL ];
+  int    y  [Y_BYTES/4   ];
 } Memory_st;
 Memory_st mem;
 
@@ -24,23 +27,23 @@ Memory_st mem;
 #endif
 
 
-static inline void process_y(int val, int p_y, int ib, int ip, int it, int in, int il, int iw, int icoe, int iw_last, int ir){
+static inline void process_y(int val, int p_y, Bundle_t *p_bundle, int ib, int ip, int it, int in, int il, int iw, int icoe, int iw_last, int ir){
 
   // ------ ADD P PASSES ------ 
-
-  if (bundles[ib].p == 1) {}          // only p  : proceed with value
-  else if (ip == bundles[ib].p-1)     // last p  : read, add, proceed
+  if (p_bundle->p == 1) {          // only p  : proceed with value
+  } else if (ip == p_bundle->p-1) {// last p  : read, add, proceed
     val += mem.y[p_y];
-  else if (ip == 0) {                 // first p : overwrite memory, return
+  } else if (ip == 0) {            // first p : overwrite memory, return
     mem.y[p_y] = val;
     return;
-  }
-  else {                              // middle p: read, add, store, return
+  } else {                         // middle p: read, add, store, return
     mem.y[p_y] += val;
     return;
   }
 
   // ------ ADD BIAS ------ 
+  if (p_bundle->is_bias)
+    val = (val << p_bundle->b_val_shift) + (mem.b[p_bundle->b_offset + p_bundle->coe*it + icoe] << p_bundle-> b_bias_shift);
   
   // ------ RELU + QUANT ------
 
@@ -58,6 +61,7 @@ static inline void process_y(int val, int p_y, int ib, int ip, int it, int in, i
 
 extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  const unsigned int *p_sram_u32) {
 
+  static Bundle_t *p_bundle = &bundles[0];
   static int p_y=0;
   static int ib=0, ip=0, it=0, in=0, il=0, iw=0;
   const int *p_sram = (const int *)p_sram_u32;
@@ -67,16 +71,16 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
   sprintf(path, "%s/%0d_%0d_%0d_y_sim.txt", DATA_DIR, ib, ip, it);
   fp = fopen(path, "a"); 
 
-  int w_last = iw == bundles[ib].w_kw2-1 ? bundles[ib].kw/2+1 : 1;
+  int w_last = iw == p_bundle->w_kw2-1 ? p_bundle->kw/2+1 : 1;
   int sram_addr=0;
-  for (int icoe=0; icoe<bundles[ib].coe; icoe++)
+  for (int icoe=0; icoe<p_bundle->coe; icoe++)
     for (int iw_last=0; iw_last<w_last; iw_last++)
       for (int ir=0; ir<PE_ROWS; ir++) {
         
         int val = p_sram[sram_addr];
         fprintf(fp,"%d\n", val);
 
-        process_y(val, p_y, ib, ip, it, in, il, iw, icoe, iw_last, ir);
+        process_y(val, p_y, p_bundle, ib, ip, it, in, il, iw, icoe, iw_last, ir);
         
         p_y += 1;
         sram_addr += 1;
@@ -87,20 +91,20 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
 
   int p_y_prev;
   // Nested for loop [for(ib) for(ip) for(it) for(il) for(in) for(iw) {}] inverted to increment once per call
-  ++ iw; if (iw >= bundles[ib].w_kw2) { iw = 0;
-    ++ in; if (in >= bundles[ib].n) { in = 0;
-      ++ il; if (il >= bundles[ib].l) { il = 0;
-        ++ it; if (it >= bundles[ib].t) { it = 0;
+  ++ iw; if (iw >= p_bundle->w_kw2) { iw = 0;
+    ++ in; if (in >= p_bundle->n) { in = 0;
+      ++ il; if (il >= p_bundle->l) { il = 0;
+        ++ it; if (it >= p_bundle->t) { it = 0;
       
           // After each p
           printf("done p!! iw:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw, in, il, it, ip, ib);
           p_y_prev = p_y;
           p_y=0;
 
-          ++ ip; if (ip >= bundles[ib].p) { ip = 0;
+          ++ ip; if (ip >= p_bundle->p) { ip = 0;
 
-            // After each bundle
-            printf("done bundle!! iw:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw, in, il, it, ip, ib);
+            // After each p_bundle
+            printf("done p_bundle!! iw:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw, in, il, it, ip, ib);
             // Write to file at every it_done
             sprintf(path, "%s/%0d_y_sim.txt", DATA_DIR, ib);
             fp = fopen(path, "w"); 
@@ -110,7 +114,9 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
 
             ++ ib; if (ib >= N_BUNDLES) { ib = 0;
               *p_done =1;
-  }}}}}}
+            }
+            p_bundle = &bundles[ib];
+  }}}}}
   *pt_done_proc = !(*pt_done_proc);
 }
 
@@ -167,7 +173,7 @@ extern EXT_C void fill_memory (){
     printf("ABORT! File not found: %s \n", path);
     exit(1);
   }
-  fread(mem.w, 1, W_BYTES, fp);
+  fread(mem.w, 1, WB_BYTES, fp);
   fclose(fp);
 
   sprintf(path, "%s/x_all.bin", DATA_DIR);
@@ -178,6 +184,9 @@ extern EXT_C void fill_memory (){
   }
   fread(mem.x, 1, X_BYTES_ALL, fp);
   fclose(fp);
+
+  for (int i=0; i<B_WORDS; i++)
+    printf("i:%d, bias:%d\n", i, mem.b[i]);
 }
 
 
