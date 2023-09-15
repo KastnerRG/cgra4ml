@@ -89,7 +89,7 @@ class Bundle(tf.keras.Model):
             self.core['layer'] = QConv2DBatchnorm(
                 filters=self.core['filters'], kernel_size=self.core['kernel_size'], strides=self.core['strides'],
                 padding=self.core['padding'], kernel_quantizer=self.core['kernel_quantizer'], 
-                bias_quantizer=self.core['bias_quantizer'], use_bias=self.core['use_bias'])
+                bias_quantizer=self.core['bias_quantizer'], use_bias=self.core['use_bias'], bias_initializer='glorot_uniform')
         
         else:
             for i in ['units', 'kernel_quantizer', 'bias_quantizer', 'use_bias', 'act_str']:
@@ -97,7 +97,7 @@ class Bundle(tf.keras.Model):
             
             self.core['layer'] = QDense(
                 units=self.core['units'], kernel_quantizer=self.core['kernel_quantizer'],
-                bias_quantizer=self.core['bias_quantizer'], use_bias=self.core['use_bias'])
+                bias_quantizer=self.core['bias_quantizer'], use_bias=self.core['use_bias'], bias_initializer='glorot_uniform')
 
         '''
         CORE ACT LAYER
@@ -201,7 +201,7 @@ class Bundle(tf.keras.Model):
             self.b = {'tensor':b_tensor, 'int':b_int, 'bits':b_config['bits'], 'frac':b_frac}
 
 
-    def process(self, inp = None):
+    def process(self, inp, c):
         
         ''' Integer test for output '''
         self.out['int'] = self.out['tensor'].numpy() * 2**self.out['frac']
@@ -227,19 +227,40 @@ class Bundle(tf.keras.Model):
 
         self.y = copy.deepcopy(self.proc)
 
-        self.post_process()
+        self.post_process(c)
 
 
-    def post_process(self):
+    def post_process(self, c):
+
+        def add (p, p_frac, p_bits, q, q_frac, q_bits):
+            '''
+            Add p,q while preserving precision
+            '''
+            p_intb, q_intb = p_bits-p_frac, q_bits-q_frac
+
+            r_frac = max(p_frac,q_frac)
+            r_intb = max(p_intb,q_intb)
+            r_bits = 1 + r_intb + r_frac # +1 to allow overflow
+
+            p_shift = r_frac-p_frac
+            q_shift = r_frac-q_frac
+
+            r = (p << p_shift) + (q << q_shift)
+            return (r, r_frac, r_bits), (p_shift, q_shift)
         
         clog2_add = int(np.ceil(np.log2(np.prod(self.w['int'].shape[:-1]))))
         self.proc['bits'] = self.inp['bits'] + self.w['bits'] + clog2_add
         self.proc['frac'] = self.inp['frac'] + self.w['frac']
 
         if self.b is not None:
-            self.proc['int'] += self.b['int'] * 2** (self.proc['frac'] - self.b['frac'])
-        self.b_frac_shift = self.proc['frac'] - self.b['frac'] if self.b else None
-        self.y_int_b = self.proc['int'] if self.b else None
+            (self.proc['int'], self.proc['frac'], self.proc['bits']), (self.bias_val_shift, self.bias_b_shift) = add(
+                self.proc['int'], self.proc['frac'], self.proc['bits'],
+                self.b   ['int'], self.b   ['frac'], self.b   ['bits']
+            )
+            assert self.proc['bits'] <= c.INT_BITS, f"After bias addition, resulting bits {self.proc['bits']} are more than bits for integer in CPU {c.INT_BITS}. Reduce bits or increase integer bits of bias to continue"
+        else:
+            self.bias_val_shift, self.bias_b_shift = 0, 0
+        self.y_int_b = self.proc['int']
 
 
         if 'strides' in self.core and self.core['strides'] != (1,1):
@@ -394,6 +415,7 @@ class Bundle(tf.keras.Model):
             y_int = self.y['int'].reshape(XN,1,1,CO) # (XN,CI) -> (XN, XH, XW, CI)
         else:
             y_int = self.y['int']
+            p_int = self.y_int_b
             w_int, x_int = self.w['int'], self.inp['int']
         
         r = self.get_runtime_params(c, w_int.shape, x_int.shape, y_int.shape)
@@ -411,13 +433,15 @@ class Bundle(tf.keras.Model):
         print(r)
         self.check_sparsity(w_int, x_int)
 
-        self.be =  self.reorder_b_q2e_conv(self.b, c, r) if self.b else None
+        self.be =  self.reorder_b_q2e_conv(self.b['int'], c, r) if self.b else None
         self.we = self.reorder_w_q2e_conv(w_int, c, r)
         self.ye_exp_shape = (r.IT, r.XN, r.L, r.XW*r.CO_PRL, c.ROWS)
         self.ye_hw = np.zeros(self.ye_exp_shape)
 
         self.xe = self.reorder_x_q2e_conv(x_int, c, r)
         self.ye_exp = self.reorder_y_q2e_conv(y_int, c, r)
+        self.pe_exp = self.reorder_y_q2e_conv(p_int, c, r)
+        print(f"x reshape: [int]:{self.inp['int'].shape}, int:{x_int.shape}. xe:{self.xe[0].shape}")
 
         '''
         Prepare expected outputs for each pass
@@ -549,7 +573,6 @@ class Bundle(tf.keras.Model):
     def reorder_b_q2e_conv(b, c, r):
         b = np.pad(b, ((0,r.CO_PAD-r.CO)))
         b = b.reshape(r.IT, r.CO_PRL)
-        b = np.flip(b, axis=1)
         return b
     
 
