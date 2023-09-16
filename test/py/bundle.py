@@ -410,9 +410,10 @@ class Bundle(tf.keras.Model):
             print('Conv -> Dense Reshape')
             CI, CO = self.w['int'].shape
             XN, _ = self.inp['int'].shape
-            w_int = self.w['int'].reshape(1,1,CI,CO) # (CI,CO) -> (KH,KW,CI,CO)
-            x_int = self.inp['int'].reshape(XN,1,1,CI) # (XN,CI) -> (XN, XH, XW, CI)
-            y_int = self.y['int'].reshape(XN,1,1,CO) # (XN,CI) -> (XN, XH, XW, CI)
+            w_int = self.w  ['int'].reshape(1,1,CI,CO) # (CI,CO) -> (KH,KW,CI,CO)
+            x_int = self.inp['int'].reshape(1,XN,1,CI) # (XN,CI) -> (XN, XH, XW, CI)
+            y_int = self.y  ['int'].reshape(1,XN,1,CO) # (XN,CI) -> (XN, XH, XW, CI)
+            p_int = self.y_int_b.   reshape(1,XN,1,CO)
         else:
             y_int = self.y['int']
             p_int = self.y_int_b
