@@ -73,10 +73,18 @@ class Bundle(tf.keras.Model):
             frac = d['bits']-int_bit-sign_bit
 
             if isinstance(ilayer.quantizer, quantized_bits):
-                return { 'layer':ilayer, 'type':'quant', 'bits':d['bits'], 'frac':frac}
+                return { 'layer':ilayer, 'type':'quant', 'bits':d['bits'], 'frac':frac, 'plog_slope': 0, 'non_zero':1}
             elif 'relu' in str(ilayer.quantizer.__class__) and ilayer.quantizer.negative_slope != 0:
-                return { 'layer':ilayer, 'type':'relu', 'slope':ilayer.quantizer.negative_slope, 'bits':d['bits'], 'frac':frac}
+                slope = ilayer.quantizer.negative_slope
+                if slope == 0:
+                    assert ilayer.quantizer.bits != 1, "Error: Cannot use bits=1 with Relu. Use leaky_relu. Reason: Qkeras keeps relu signed"
+                    ilayer.quantizer.bits -= 1
+                non_zero = 1*(slope != 0)
+                log_slope = np.log2(slope) if non_zero else 0
+                assert int(log_slope) == log_slope and log_slope <= 0, f"Error: negative_slope:{slope} of leaky_relu has to be a negative power of two. eg.0.125"
+                return { 'layer':ilayer, 'type':'relu', 'bits':d['bits'], 'frac':frac, 'slope':ilayer.quantizer.negative_slope, 'plog_slope':-int(log_slope), 'non_zero':non_zero}
             else:
+                # TODO: support relu (slope=0). Qkeras uses different range for relu
                 raise Exception("Only leaky_relu (relu with negative_slope > 0) is suppported!")
 
         '''
@@ -282,25 +290,15 @@ class Bundle(tf.keras.Model):
             return (n + (d//2) - (~(d|n//d) &1)) // d
 
         def apply_act(act_dict):
+            assert act_dict['type'] in ['quant', 'relu'], 'Error: Only quant & relu are supported yet'
+
             x = self.proc['int'].astype(np.int32)
-            frac, bits = act_dict['frac'], act_dict['bits']
+            frac, bits, plog_slope, non_zero = act_dict['frac'], act_dict['bits'], act_dict['plog_slope'], act_dict['non_zero']
+            shift_bits = plog_slope + self.proc['frac']-frac
 
-            if act_dict['type'] == 'quant':
-                shift_bits = self.proc['frac']-frac
-                
-                x = shift_round(x, shift_bits) # = np.around(x/2**shift_bits)
-                x = np.clip(x, -2**(bits-1), 2**(bits-1)-1).astype(int)
-
-            elif act_dict['type'] == 'relu':
-                log_act = -int(np.log2(act_dict['slope']))
-                assert log_act == -np.log2(act_dict['slope']), f"Leaky Relu slope: {act_dict['slope']} should be a power of two (eg:0.125)"
-                shift_bits = log_act + self.proc['frac']-frac
-
-                x = (x<0)*x + (((x>0)*x) << log_act)
-                x = shift_round(x, shift_bits) # = np.around(x/2**shift_bits)
-                x = np.clip(x, -2**(bits-log_act-1), 2**(bits-1)-1).astype(int)
-            else:
-                raise Exception('Only relu is supported yet')
+            x = ((x<0)*x)*non_zero + (((x>0)*x) << plog_slope)
+            x = shift_round(x, shift_bits) # = np.around(x/2**shift_bits)
+            x = np.clip(x, -2**(bits-plog_slope-1), 2**(bits-1)-1).astype(int)
 
             self.proc['int'], self.proc['bits'], self.proc['frac'] = x, bits, frac
 
