@@ -270,21 +270,35 @@ class Bundle(tf.keras.Model):
             self.proc['int'] = self.proc['int'].reshape(N, YH, SH, YW, SW, C)
             ind = -1 if self.w['int'].shape[0] > 1 else 0
             self.proc['int'] = self.proc['int'][:,:,ind,:,ind,:]
+        
+        def shift_round(n,s):
+            '''Performs integer division with round-to-nearest-even. 
+               Eq: np.around(n/2**s).astype(int)'''
+            return (n + (1<<(s-1)) - (~(n>>s)&1) ) >> s
+        
+        def div_round(n,d):
+            '''Performs integer division with round-to-nearest-even for d>0. 
+               Eq: np.around(n/d).astype(int)'''
+            return (n + (d//2) - (~(d|n//d) &1)) // d
 
         def apply_act(act_dict):
-            x = self.proc['int'].astype(np.float32)
+            x = self.proc['int'].astype(np.int32)
             frac, bits = act_dict['frac'], act_dict['bits']
 
             if act_dict['type'] == 'quant':
-                x *= 2**(frac-self.proc['frac'])
-                x = np.around(x)
+                shift_bits = self.proc['frac']-frac
+                x = shift_round(x, shift_bits) # = np.around(x/2**shift_bits)
                 x = np.clip(x, -2**(bits-1), 2**(bits-1)-1).astype(int)
 
             elif act_dict['type'] == 'relu':
-                x *= 2**(frac-self.proc['frac'])
-                x = np.clip(x, -2**(bits-1), 2**(bits-1)-1)
-                x = np.maximum(x * act_dict['slope'], x)
-                x = np.around(x)
+                nlog_act_dict = -int(np.log2(act_dict['slope']))
+                assert nlog_act_dict == -np.log2(act_dict['slope']), f"Leaky Relu slope: {act_dict['slope']} should be a power of two (eg:0.125)"
+                clip_bits = bits + self.proc['frac']-frac
+                shift_bits = nlog_act_dict + self.proc['frac']-frac
+
+                x = np.clip(x, -2**(clip_bits-1), 2**(clip_bits-1)-1)
+                x = (x<0)*x + (x>0)*x *(2**nlog_act_dict)
+                x = shift_round(x, shift_bits) # = np.around(x/2**shift_bits)
                 x = np.clip(x,-2**(bits-1), 2**(bits-1)-1).astype(int)
             else:
                 raise Exception('Only relu is supported yet')
