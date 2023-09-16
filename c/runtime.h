@@ -16,9 +16,7 @@ typedef struct {
 } Memory_st;
 Memory_st mem;
 
-#include <svdpi.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #ifdef VERILATOR
   #define EXT_C "C"
@@ -27,23 +25,23 @@ Memory_st mem;
 #endif
 
 
-static inline void process_y(int val, int p_y, Bundle_t *p_bundle, int ib, int ip, int it, int in, int il, int iw, int icoe, int iw_last, int ir){
+static inline void process_y(int val, int i_py, Bundle_t *p_bundle, int ip, int it_bias){
 
   // ------ ADD P PASSES ------ 
   if (p_bundle->p == 1) {          // only p  : proceed with value
   } else if (ip == p_bundle->p-1) {// last p  : read, add, proceed
-    val += mem.y[p_y];
+    val += mem.y[i_py];
   } else if (ip == 0) {            // first p : overwrite memory, return
-    mem.y[p_y] = val;
+    mem.y[i_py] = val;
     return;
   } else {                         // middle p: read, add, store, return
-    mem.y[p_y] += val;
+    mem.y[i_py] += val;
     return;
   }
 
   // ------ ADD BIAS ------ 
   if (p_bundle->is_bias)
-    val = (val << p_bundle->b_val_shift) + (mem.b[p_bundle->b_offset + p_bundle->coe*it + icoe] << p_bundle-> b_bias_shift);
+    val = (val << p_bundle->b_val_shift) + (mem.b[it_bias] << p_bundle->b_bias_shift);
   
   // ------ RELU + QUANT ------
 
@@ -55,68 +53,79 @@ static inline void process_y(int val, int p_y, Bundle_t *p_bundle, int ib, int i
 
   // ------ TILING ------
 
-  mem.y[p_y] = val;
+  mem.y[i_py] = val;
 }
 
 
 extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  const unsigned int *p_sram_u32) {
 
   static Bundle_t *p_bundle = &bundles[0];
-  static int p_y=0;
+  static int i_py=0, it_bias=0;
   static int ib=0, ip=0, it=0, in=0, il=0, iw=0;
   const int *p_sram = (const int *)p_sram_u32;
-
   FILE *fp;
   char path [1000]; // make sure full path is shorter than 1000
-  sprintf(path, "%s/%0d_%0d_%0d_y_sim.txt", DATA_DIR, ib, ip, it);
-  fp = fopen(path, "a"); 
 
-  int w_last = iw == p_bundle->w_kw2-1 ? p_bundle->kw/2+1 : 1;
-  int sram_addr=0;
-  for (int icoe=0; icoe<p_bundle->coe; icoe++)
-    for (int iw_last=0; iw_last<w_last; iw_last++)
-      for (int ir=0; ir<PE_ROWS; ir++) {
-        
-        int val = p_sram[sram_addr];
-        fprintf(fp,"%d\n", val);
+  {//New iw:
+    sprintf(path, "%s/%0d_%0d_%0d_y_sim.txt", DATA_DIR, ib, ip, it);
+    fp = fopen(path, "a"); 
 
-        process_y(val, p_y, p_bundle, ib, ip, it, in, il, iw, icoe, iw_last, ir);
-        
-        p_y += 1;
-        sram_addr += 1;
+    int w_last = iw == p_bundle->w_kw2-1 ? p_bundle->kw/2+1 : 1;
+    int sram_addr=0;
+    for (int icoe=0; icoe<p_bundle->coe; icoe++) {
+
+      int i_bias = it_bias + icoe;
+
+      for (int iw_last=0; iw_last<w_last; iw_last++) {
+        for (int ir=0; ir<PE_ROWS; ir++) {
+          // Index: [b, p, t, l, n, w | coe, w_last, r]
+
+          int val = p_sram[sram_addr];
+          fprintf(fp,"%d\n", val);
+
+          process_y(val, i_py, p_bundle, ip, i_bias);
+          
+          i_py += 1;
+          sram_addr += 1;
+        }
       }
-  
-  fclose(fp);
+    }
+    fclose(fp);
+  }
 
-
-  int p_y_prev;
-  // Nested for loop [for(ib) for(ip) for(it) for(il) for(in) for(iw) {}] inverted to increment once per call
-  ++ iw; if (iw >= p_bundle->w_kw2) { iw = 0;
-    ++ in; if (in >= p_bundle->n) { in = 0;
-      ++ il; if (il >= p_bundle->l) { il = 0;
-        ++ it; if (it >= p_bundle->t) { it = 0;
-      
-          // After each p
+  //Nested for loop [for(ib) for(ip) for(it) for(il) for(in) for(iw) {}] 
+  //  inverted to increment once per call
+  ++iw; if (iw >= p_bundle->w_kw2) { iw = 0;
+    //after_each(in) = after_all(iw):
+    ++in; if (in >= p_bundle->n) { in = 0;
+      //after_each(il) = after_all(in):
+      ++il; if (il >= p_bundle->l) { il = 0;
+        //after_each(it) = after_all(il):
+        ++it; if (it >= p_bundle->t) { it = 0;
+          //after_each(ip) = after_all(it):
           printf("done p!! iw:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw, in, il, it, ip, ib);
-          p_y_prev = p_y;
-          p_y=0;
-
-          ++ ip; if (ip >= p_bundle->p) { ip = 0;
-
-            // After each p_bundle
-            printf("done p_bundle!! iw:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw, in, il, it, ip, ib);
-            // Write to file at every it_done
+          ++ip; if (ip >= p_bundle->p) { ip = 0;
+            //after_each(ib) = after_all(ip):
+            
+            printf("done bundle!! iw:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw, in, il, it, ip, ib);
             sprintf(path, "%s/%0d_y_sim.txt", DATA_DIR, ib);
             fp = fopen(path, "w"); 
-            for (int ip_y=0; ip_y < p_y_prev; ip_y++)
-              fprintf(fp,"%d\n", mem.y[ip_y]);
+            for (int i=0; i<i_py; i++)
+              fprintf(fp,"%d\n", mem.y[i]);
             fclose(fp);
 
-            ++ ib; if (ib >= N_BUNDLES) { ib = 0;
-              *p_done =1;
-            }
+            ++ib; if (ib >= N_BUNDLES) { ib = 0;
+              // after_all(ib):
+              *p_done = 1;
+            }//new(ib):
             p_bundle = &bundles[ib];
-  }}}}}
+          }//new(ip):
+          i_py = 0;
+        }//new(it):
+        it_bias = p_bundle->b_offset + p_bundle->coe*it;
+      }//new(il):
+    }//new(in):
+  }//new(iw):
   *pt_done_proc = !(*pt_done_proc);
 }
 
@@ -169,19 +178,15 @@ extern EXT_C void fill_memory (){
 
   sprintf(path, "%s/w.bin", DATA_DIR);
   fp = fopen(path, "rb");
-  if(!fp) {
-    printf("ABORT! File not found: %s \n", path);
-    exit(1);
-  }
+  if(!fp)
+    printf("ERROR! File not found: %s \n", path);
   fread(mem.w, 1, WB_BYTES, fp);
   fclose(fp);
 
   sprintf(path, "%s/x_all.bin", DATA_DIR);
   fp = fopen(path, "rb");
-  if(!fp) {
-    printf("ABORT! File not found: %s \n", path);
-    exit(1);
-  }
+  if(!fp)
+    printf("ERROR! File not found: %s \n", path);
   fread(mem.x, 1, X_BYTES_ALL, fp);
   fclose(fp);
 
