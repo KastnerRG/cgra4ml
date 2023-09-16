@@ -1,12 +1,22 @@
+#include <stdio.h>
+
+#ifdef VERILATOR
+  #define EXT_C "C"
+#else
+  #define EXT_C
+#endif
+
 typedef struct {
   const int n, l, kw, coe, coe_tl, r_ll, h, w, w_kw2, t, p, cm, cm_p0;
   const int w_bpt, w_bpt_p0, x_bpt, x_bpt_p0; // bytes per transfer
   const char is_bias;
   const int b_offset, b_val_shift, b_bias_shift;
+  const signed char ca_nzero, ca_shift, ca_pl_scale;
   const unsigned long long x_header, x_header_p0, w_header, w_header_p0; // 64 bits (at least)
 } Bundle_t;
 
 #include "model.h"
+#define X_BITS (1<<X_BITS_L2)
 
 typedef struct {
   char   w  [W_BYTES     ];
@@ -16,13 +26,16 @@ typedef struct {
 } Memory_st;
 Memory_st mem;
 
-#include <stdio.h>
+#define clip(x, min, max) ((x < min) ? min : (x > max) ? max : x)
+#define shift_round(n, s) ((n + (1<<(s-1)) - (~(n>>s)&1) ) >> s) // === np.around(n/2**s).astype(int)
 
-#ifdef VERILATOR
-  #define EXT_C "C"
-#else
-  #define EXT_C
-#endif
+
+static inline int quant_lrelu(int x, signed char nzero, signed char shift, signed char pl_scale){
+  x = ((x<0)*x)*nzero + (((x>0)*x) << pl_scale);
+  x = shift_round(x, shift);
+  x = clip(x, -(1<<(X_BITS-pl_scale-1)), (1<<(X_BITS-1))-1);
+  return x;
+}
 
 
 static inline void process_y(int val, int i_py, Bundle_t *p_bundle, int ip, int it_bias){
@@ -43,7 +56,9 @@ static inline void process_y(int val, int i_py, Bundle_t *p_bundle, int ip, int 
   if (p_bundle->is_bias)
     val = (val << p_bundle->b_val_shift) + (mem.b[it_bias] << p_bundle->b_bias_shift);
   
-  // ------ RELU + QUANT ------
+  // ------ CORE ACT ------
+  val = quant_lrelu(val, p_bundle->ca_nzero, p_bundle->ca_shift, p_bundle->ca_pl_scale);
+
 
   // ------ MAX/AVG POOL ------
 

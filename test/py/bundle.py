@@ -268,7 +268,6 @@ class Bundle(tf.keras.Model):
             assert self.proc['bits'] <= c.INT_BITS, f"After bias addition, resulting bits {self.proc['bits']} are more than bits for integer in CPU {c.INT_BITS}. Reduce bits or increase integer bits of bias to continue"
         else:
             self.bias_val_shift, self.bias_b_shift = 0, 0
-        self.y_int_b = self.proc['int']
 
 
         if 'strides' in self.core and self.core['strides'] != (1,1):
@@ -300,11 +299,14 @@ class Bundle(tf.keras.Model):
             x = shift_round(x, shift_bits) # = np.around(x/2**shift_bits)
             x = np.clip(x, -2**(bits-plog_slope-1), 2**(bits-1)-1).astype(int)
 
+            act_dict['shift_bits'] = shift_bits
             self.proc['int'], self.proc['bits'], self.proc['frac'] = x, bits, frac
+            print(f'----------------------- shift:{shift_bits}, plog:{plog_slope}, nzero:{non_zero}')
 
         apply_act(self.core['act'])
         assert np.all(self.proc['int'] == self.core['tensor'].numpy() * 2**self.proc['frac']), f"Core + act output of bundle {self.idx} is not fixed point"
 
+        self.o_exp = self.proc['int']
 
         if self.add is not None:
             a = self.add['bundle']
@@ -424,10 +426,10 @@ class Bundle(tf.keras.Model):
             w_int = self.w  ['int'].reshape(1,1,CI,CO) # (CI,CO) -> (KH,KW,CI,CO)
             x_int = self.inp['int'].reshape(1,XN,1,CI) # (XN,CI) -> (XN, XH, XW, CI)
             y_int = self.y  ['int'].reshape(1,XN,1,CO) # (XN,CI) -> (XN, XH, XW, CI)
-            p_int = self.y_int_b.   reshape(1,XN,1,CO)
+            o_int = self.o_exp.     reshape(1,XN,1,CO)
         else:
             y_int = self.y['int']
-            p_int = self.y_int_b
+            o_int = self.o_exp
             w_int, x_int = self.w['int'], self.inp['int']
         
         r = self.get_runtime_params(c, w_int.shape, x_int.shape, y_int.shape)
@@ -452,7 +454,7 @@ class Bundle(tf.keras.Model):
 
         self.xe = self.reorder_x_q2e_conv(x_int, c, r)
         self.ye_exp = self.reorder_y_q2e_conv(y_int, c, r)
-        self.pe_exp = self.reorder_y_q2e_conv(p_int, c, r)
+        self.oe_exp = self.reorder_y_q2e_conv(o_int, c, r)
         print(f"x reshape: [int]:{self.inp['int'].shape}, int:{x_int.shape}. xe:{self.xe[0].shape}")
 
         '''
