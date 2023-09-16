@@ -14,7 +14,6 @@ module cyclic_bram #(
     input  logic w_en, r_en,
     input  logic [W_DATA_WIDTH-1:0] s_data,
     output logic [R_DATA_WIDTH-1:0] m_data,
-    output logic m_valid,
     input  logic [R_ADDR_WIDTH-1:0] r_addr_max, r_addr_min
   );
 

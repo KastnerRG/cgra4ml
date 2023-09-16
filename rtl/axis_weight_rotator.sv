@@ -120,7 +120,7 @@ module axis_weight_rotator #(
   always_ff @(posedge aclk)
     if (!aresetn)                                state_read <= R_IDLE_S;
     else unique case (state_read)
-      R_IDLE_S        : if (done_write [i_read]) state_read <= R_PASS_CONFIG_S;
+      R_IDLE_S        : if (done_write [i_read]) state_read <= CONFIG_BEATS==0 ? R_READ_S : R_PASS_CONFIG_S;
       R_PASS_CONFIG_S : if (lc_config)           state_read <= R_READ_S;
       R_READ_S        : if (lc_xn    )           state_read <= R_SWITCH_S;
       R_SWITCH_S      :                          state_read <= R_IDLE_S;
@@ -201,15 +201,18 @@ module axis_weight_rotator #(
             W_SWITCH_S  :   done_write_next [i] = 1;
           endcase 
 
-        if (i==i_read)
+        if (i==i_read) begin
+
+          if (CONFIG_BEATS==0 ? (state_read==R_IDLE_S && done_write [i_read]) : (state_read==R_PASS_CONFIG_S)) begin
+            done_read_next [i] = 0;
+            bram_m_ready   [i] = 1;
+          end
+
           case (state_read)
-            R_PASS_CONFIG_S : begin
-                                done_read_next [i] = 0;
-                                bram_m_ready   [i] = m_axis_tready;
-                              end
-            R_READ_S        :   bram_m_ready   [i] = m_axis_tready;
-            R_SWITCH_S      :   done_read_next [i] = 1;
+            R_PASS_CONFIG_S, R_READ_S :   bram_m_ready   [i] = m_axis_tready;
+            R_SWITCH_S                :   done_read_next [i] = 1;
           endcase 
+        end
       end
 
       config_st ref_i;
@@ -288,7 +291,8 @@ module axis_weight_rotator #(
   config_st ref_i_read;
   assign ref_i_read = ref_config[i_read]; 
 
-  counter #(.W(BITS_CONFIG_BEATS)) C_CONFIG    (.clk(aclk), .reset(copy_config), .en(en_count_config), .max_in(BITS_CONFIG_BEATS'( CONFIG_BEATS-1       )), .last_clk(lc_config), .last(l_config)                                  );
+  wire [BITS_CONFIG_BEATS-1:0] config_beats_const = CONFIG_BEATS-1;
+  counter #(.W(BITS_CONFIG_BEATS)) C_CONFIG    (.clk(aclk), .reset(copy_config), .en(en_count_config), .max_in(                      config_beats_const  ), .last_clk(lc_config), .last(l_config)                                  );
   counter #(.W(BITS_KW          )) C_KW        (.clk(aclk), .reset(copy_config), .en(en_kw          ), .max_in(BITS_KW          '( 2*ref_i_read.kw2     )), .last_clk(lc_kw    ), .last(l_kw    ), .first(f_kw    )                );
   counter #(.W(BITS_CI          )) C_CI        (.clk(aclk), .reset(copy_config), .en(lc_kw          ), .max_in(BITS_CI          '(   ref_i_read.cin_1   )), .last_clk(lc_cin   ), .last(l_cin   ), .first(f_cin   )                );
   counter #(.W(BITS_XW          )) C_XW        (.clk(aclk), .reset(copy_config), .en(lc_cin         ), .max_in(BITS_XW          '(   ref_i_read.cols_1  )), .last_clk(lc_cols  ), .last(l_cols  ), .first(f_cols  ), .count(c_cols));

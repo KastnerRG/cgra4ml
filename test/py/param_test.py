@@ -60,7 +60,7 @@ def make_compile_params(c):
     c = namedtuple("Compile", c._fields + n._fields)(*(c + n))
 
     d = { 
-        'CONFIG_BEATS'          : 1,
+        'CONFIG_BEATS'          : 0,
         'X_PAD'                 : int(np.ceil(c.KH_MAX//2)),
         'BITS_KW2'              : clog2((c.KW_MAX+1)/2),
         'BITS_KH2'              : clog2((c.KH_MAX+1)/2),
@@ -194,7 +194,7 @@ def test_dnn_engine(COMPILE):
         Config(5, 16),
         Config(3, 24),
         Config(1, 50, flatten=True),
-        # Config(1, 10, dense= True),
+        Config(1, 10, dense= True),
     ]
 
     '''
