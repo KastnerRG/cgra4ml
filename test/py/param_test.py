@@ -159,6 +159,8 @@ def compile(c):
 class Config:
     K : int
     CO: int
+    is_bias: bool
+    act_q: str
     flatten: bool = False
     dense: bool = False
 
@@ -185,34 +187,34 @@ class Config:
                                                 READY_PROB = [1],
                                             )))
 def test_dnn_engine(COMPILE):
+    c = make_compile_params(COMPILE)
 
     input_shape = (8,16,8,3) # (XN, XH, XW, CI)
     model_config = [
-        Config(11, 16),
-        Config(1, 16),
-        Config(7, 16),
-        Config(5, 16),
-        Config(3, 24),
-        Config(1, 50, flatten=True),
-        Config(1, 10, dense= True),
+        Config(11, 16, True , f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'),
+        Config(1 , 16, False, f'quantized_bits({c.K_BITS},0,False,True,1)'),
+        Config(7 , 16, True , f'quantized_bits({c.K_BITS},0,False,True,1)'),
+        Config(5 , 16, False, f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'),
+        Config(3 , 24, True , f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'),
+        Config(1 , 50, False, f'quantized_relu({c.X_BITS},0,negative_slope=0.125)', flatten=True),
+        Config(1 , 10, True , f'quantized_relu({c.X_BITS},0,negative_slope=0.125)', dense= True),
     ]
 
     '''
     Build Model
     '''
-    c = make_compile_params(COMPILE)
     assert c.X_BITS in [1,2,4,8] and c.K_BITS in [1,2,4,8], "X_BITS and K_BITS should be in [1,2,4,8]"
     assert c.B_BITS in [8,16,32], "B_BITS should be in [8,16,32]"
-    xq, kq, bq, aq = f'quantized_bits({c.X_BITS},0,False,True,1)', f'quantized_bits({c.K_BITS},0,False,True,1)', f'quantized_bits({c.B_BITS},0,False,True,1)', f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'
+    xq, kq, bq = f'quantized_bits({c.X_BITS},0,False,True,1)', f'quantized_bits({c.K_BITS},0,False,True,1)', f'quantized_bits({c.B_BITS},0,False,True,1)'
     inp = {'bits':c.X_BITS, 'frac':c.X_BITS-1}
 
     x = x_in = Input(input_shape[1:], name='input')
     x = QActivation(xq)(x)
     for i, g in enumerate(model_config):
         if g.dense:
-            d = {'core': {'type':'dense', 'units':g.CO, 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True, 'act_str':aq}}
+            d = {'core': {'type':'dense', 'units':g.CO, 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':g.is_bias, 'act_str':g.act_q}}
         else:
-            d = {'core': {'type':'conv', 'filters':g.CO, 'kernel_size':(g.K,g.K), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True, 'act_str':aq}, 'flatten':g.flatten,}
+            d = {'core': {'type':'conv', 'filters':g.CO, 'kernel_size':(g.K,g.K), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':g.is_bias, 'act_str':g.act_q}, 'flatten':g.flatten,}
         x = Bundle(**d)(x)
 
     model = Model(inputs=x_in, outputs=x)
