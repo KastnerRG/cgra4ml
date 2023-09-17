@@ -68,17 +68,21 @@ class Bundle(tf.keras.Model):
         def extract_act(signature):
             ilayer = QActivation(signature)
             d = ilayer.quantizer.get_config()
-            sign_bit = d['keep_negative'] if 'keep_negative' in d else (d['negative_slope'] !=0 if 'negative_slope' in d else (0))
+            sign_bit = 1 # We always use signed integers
             int_bit = d['integer'] if 'integer' in d else 0
             frac = d['bits']-int_bit-sign_bit
 
             if isinstance(ilayer.quantizer, quantized_bits):
+                if not d['keep_negative']:
+                    d['keep_negative'] = True
+                    ilayer.quantizer.keep_negative = True
+                    print("Note: Only signed integers are allowed. Therefore, keep_negative is changed to True")
                 return { 'layer':ilayer, 'type':'quant', 'bits':d['bits'], 'frac':frac, 'plog_slope': 0, 'non_zero':1}
-            elif 'relu' in str(ilayer.quantizer.__class__) and ilayer.quantizer.negative_slope != 0:
+            elif 'relu' in str(ilayer.quantizer.__class__):
                 slope = ilayer.quantizer.negative_slope
                 if slope == 0:
                     assert ilayer.quantizer.bits != 1, "Error: Cannot use bits=1 with Relu. Use leaky_relu. Reason: Qkeras keeps relu signed"
-                    ilayer.quantizer.bits -= 1
+                    ilayer.quantizer.bits = ilayer.quantizer.bits-1
                 non_zero = 1*(slope != 0)
                 log_slope = np.log2(slope) if non_zero else 0
                 assert int(log_slope) == log_slope and log_slope <= 0, f"Error: negative_slope:{slope} of leaky_relu has to be a negative power of two. eg.0.125"
@@ -301,11 +305,9 @@ class Bundle(tf.keras.Model):
 
             act_dict['shift_bits'] = shift_bits
             self.proc['int'], self.proc['bits'], self.proc['frac'] = x, bits, frac
-            print(f'----------------------- shift:{shift_bits}, plog:{plog_slope}, nzero:{non_zero}')
 
         apply_act(self.core['act'])
         assert np.all(self.proc['int'] == self.core['tensor'].numpy() * 2**self.proc['frac']), f"Core + act output of bundle {self.idx} is not fixed point"
-
         self.o_exp = self.proc['int']
 
         if self.add is not None:
