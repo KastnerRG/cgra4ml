@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from bundle import Bundle
 from qkeras import *
 from tensorflow.keras.layers import Input
-# keras.utils.set_random_seed(0)
+keras.utils.set_random_seed(0)
 
 
 # Simulator: xsim on windows, verilator otherwise
@@ -191,11 +191,11 @@ def test_dnn_engine(COMPILE):
 
     input_shape = (8,16,8,3) # (XN, XH, XW, CI)
     model_config = [
-        Config(11, 16, True , f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'),
-        Config(1 , 16, False, f'quantized_bits({c.K_BITS},0,False,True,1)'),
+        Config(11, 16, True , f'quantized_relu({c.X_BITS},0,negative_slope=0)'),
+        Config(1 , 16, False, f'quantized_bits({c.K_BITS},0,False,False,1)'),
         Config(7 , 16, True , f'quantized_bits({c.K_BITS},0,False,True,1)'),
         Config(5 , 16, False, f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'),
-        Config(3 , 24, True , f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'),
+        Config(3 , 24, True , f'quantized_relu({c.X_BITS},0,negative_slope=0)'),
         Config(1 , 50, False, f'quantized_relu({c.X_BITS},0,negative_slope=0.125)', flatten=True),
         Config(1 , 10, True , f'quantized_relu({c.X_BITS},0,negative_slope=0.125)', dense= True),
     ]
