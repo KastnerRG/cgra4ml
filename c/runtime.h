@@ -7,7 +7,7 @@
 #endif
 
 typedef struct {
-  const int n, l, kw, coe, coe_tl, r_ll, h, w, w_kw2, t, p, cm, cm_p0;
+  const int n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0;
   const int w_bpt, w_bpt_p0, x_bpt, x_bpt_p0; // bytes per transfer
   const char is_bias;
   const int b_offset, b_val_shift, b_bias_shift;

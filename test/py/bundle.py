@@ -456,6 +456,7 @@ class Bundle(tf.keras.Model):
 
         self.xe = self.reorder_x_q2e_conv(x_int, c, r)
         self.ye_exp = self.reorder_y_q2e_conv(y_int, c, r)
+        self.o_int = o_int
         self.oe_exp = self.reorder_y_q2e_conv(o_int, c, r)
         print(f"x reshape: [int]:{self.inp['int'].shape}, int:{x_int.shape}. xe:{self.xe[0].shape}")
 
