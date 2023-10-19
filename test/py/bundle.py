@@ -706,4 +706,4 @@ class Bundle(tf.keras.Model):
         arr = arr.reshape(arr.size//w_words_per_byte, w_words_per_byte)
         for i_word in range(1, w_words_per_byte):
             arr[:,0] += arr[:,i_word] << (i_word * bits) # pack multiple words into a byte
-        return arr[:,0] # packed byte
+        return arr[:,0].astype(np.uint8) # packed byte
