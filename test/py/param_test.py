@@ -167,7 +167,7 @@ class Config:
 
 @pytest.mark.parametrize("COMPILE", list(product_dict(
                                                 X_BITS     = [4    ], 
-                                                K_BITS     = [4    ], 
+                                                K_BITS     = [8    ], 
                                                 B_BITS     = [16   ], 
                                                 Y_BITS     = [24   ], 
                                                 INT_BITS   = [32   ], # size of integer in target CPU
@@ -183,8 +183,8 @@ class Config:
                                                 RAM_WEIGHTS_DEPTH = [20  ],  # KH*CI + Config beats
                                                 RAM_EDGES_DEPTH   = [288 ], # max(CI * XW * (XH/ROWS-1))
 
-                                                VALID_PROB = [100],
-                                                READY_PROB = [1],
+                                                VALID_PROB = [1],
+                                                READY_PROB = [100],
                                             )))
 def test_dnn_engine(COMPILE):
     c = make_compile_params(COMPILE)
@@ -192,8 +192,8 @@ def test_dnn_engine(COMPILE):
     input_shape = (8,16,8,3) # (XN, XH, XW, CI)
     model_config = [
         Config(11, 16, True , f'quantized_relu({c.X_BITS},0,negative_slope=0)'),
-        Config(1 , 16, False, f'quantized_bits({c.K_BITS},0,False,False,1)'),
-        Config(7 , 16, True , f'quantized_bits({c.K_BITS},0,False,True,1)'),
+        Config(1 , 16, False, f'quantized_bits({c.X_BITS},0,False,False,1)'),
+        Config(7 , 16, True , f'quantized_bits({c.X_BITS},0,False,True,1)'),
         Config(5 , 16, False, f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'),
         Config(3 , 24, True , f'quantized_relu({c.X_BITS},0,negative_slope=0)'),
         Config(1 , 50, False, f'quantized_relu({c.X_BITS},0,negative_slope=0.125)', flatten=True),
