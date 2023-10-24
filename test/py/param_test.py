@@ -189,7 +189,7 @@ class Config:
 def test_dnn_engine(COMPILE):
     c = make_compile_params(COMPILE)
 
-    input_shape = (8,16,8,3) # (XN, XH, XW, CI)
+    input_shape = (8,10,8,3) # (XN, XH, XW, CI)
     model_config = [
         Config(11, 16, True , f'quantized_relu({c.X_BITS},0,negative_slope=0)'),
         Config(1 , 16, False, f'quantized_bits({c.X_BITS},0,False,False,1)'),
