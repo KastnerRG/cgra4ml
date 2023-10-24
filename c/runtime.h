@@ -23,6 +23,7 @@ typedef struct {
   B_TYPE b  [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
   char   x  [X_BYTES_ALL ];
   int    y  [Y_BYTES/4   ];
+  int p_sum [Y_BYTES/4   ];
 } Memory_st;
 Memory_st mem;
 
@@ -43,12 +44,12 @@ static inline void process_y(int val, int i_py, Bundle_t *p_bundle, int ip, int 
   // ------ ADD P PASSES ------ 
   if (p_bundle->p == 1) {          // only p  : proceed with value
   } else if (ip == p_bundle->p-1) {// last p  : read, add, proceed
-    val += mem.y[i_py];
+    val += mem.p_sum[i_py];
   } else if (ip == 0) {            // first p : overwrite memory, return
-    mem.y[i_py] = val;
+    mem.p_sum[i_py] = val;
     return;
   } else {                         // middle p: read, add, store, return
-    mem.y[i_py] += val;
+    mem.p_sum[i_py] += val;
     return;
   }
 
@@ -95,10 +96,17 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
         for (int ir=0; ir<PE_ROWS; ir++) {
           // Index: [b, p, t, l, n, w | coe, w_last, r]
 
-          int val = p_sram[sram_addr];
-          fprintf(fp,"%d\n", val);
 
-          process_y(val, i_py, p_bundle, ip, i_bias);
+          int i_yh = il*PE_ROWS + ir;
+
+          if (i_yh < p_bundle->h) {
+            int val = p_sram[sram_addr];
+            fprintf(fp,"%d\n", val);
+            process_y(val, i_py, p_bundle, ip, i_bias);
+          } else {
+            mem.y[i_py] = 0;
+            fprintf(fp,"%d\n", 0);
+          }
           
           i_py += 1;
           sram_addr += 1;
