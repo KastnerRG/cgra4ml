@@ -263,6 +263,7 @@ class Bundle(tf.keras.Model):
         clog2_add = int(np.ceil(np.log2(np.prod(self.w['int'].shape[:-1]))))
         self.proc['bits'] = self.inp['bits'] + self.w['bits'] + clog2_add
         self.proc['frac'] = self.inp['frac'] + self.w['frac']
+        # self.o_exp = self.proc['int']
 
         if self.b is not None:
             (self.proc['int'], self.proc['frac'], self.proc['bits']), (self.bias_val_shift, self.bias_b_shift) = add(

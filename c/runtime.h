@@ -120,10 +120,10 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
   //  inverted to increment once per call
   ++iw; if (iw >= p_bundle->w_kw2) { iw = 0;
     //after_each(in) = after_all(iw):
-    ++in; if (in >= p_bundle->n) { in = 0;
-      //after_each(il) = after_all(in):
-      ++il; if (il >= p_bundle->l) { il = 0;
-        //after_each(it) = after_all(il):
+    ++il; if (il >= p_bundle->l) { il = 0;
+      //after_each(in) = after_all(il):
+      ++in; if (in >= p_bundle->n) { in = 0;
+        //after_each(it) = after_all(in):
         ++it; if (it >= p_bundle->t) { it = 0;
           //after_each(ip) = after_all(it):
           printf("done p!! iw:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw, in, il, it, ip, ib);
@@ -146,8 +146,8 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
           i_py = 0;
         }//new(it):
         it_bias = p_bundle->b_offset + p_bundle->coe*it;
-      }//new(il):
-    }//new(in):
+      }//new(in):
+    }//new(il):
   }//new(iw):
   *pt_done_proc = !(*pt_done_proc);
 }
