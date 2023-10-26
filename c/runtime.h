@@ -46,12 +46,14 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
   static int ib=0, ip=0, it=0, in=0, il=0, iw=0;
   const int *p_sram = (const int *)p_sram_u32;
 
-  FILE *fp_raw, *fp_sum;
-  char f_path_raw [1000], f_path_sum [1000]; // make sure full f_path_raw is shorter than 1000
-  sprintf(f_path_raw, "%s/%0d_%0d_%0d_y_sim.txt", DATA_DIR, ib, ip, it);
+  FILE *fp_raw, *fp_out, *fp_sum;
+  char f_path_raw [1000], f_path_out [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
+  sprintf(f_path_raw, "%s/%0d_%0d_%0d_y_raw_sim.txt", DATA_DIR, ib, ip, it);
+  sprintf(f_path_sum, "%s/%0d_y_sum_sim.txt", DATA_DIR, ib);
+  sprintf(f_path_out, "%s/%0d_y_out_sim.txt", DATA_DIR, ib);
   fp_raw = fopen(f_path_raw, "a"); 
-  sprintf(f_path_sum, "%s/%0d_y_sim.txt", DATA_DIR, ib);
   fp_sum = fopen(f_path_sum, "a"); 
+  fp_out = fopen(f_path_out, "a"); 
 
   //New iw:
   int w_last = iw == p_bundle->w_kw2-1 ? p_bundle->kw/2+1 : 1;
@@ -61,10 +63,9 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
 
     for (int iw_last=0; iw_last<w_last; iw_last++) {
       for (int ir=0; ir<PE_ROWS; ir++) {
-        // Index: [b, p, t, l, n, w | coe, w_last, r]
+        // Indexing: [b, p, t, n, l, w | coe, w_last, r]
 
-        int raw_val = 0, out_val=0;
-
+        int raw_val=0, out_val=0;
         int i_yh = il*PE_ROWS + ir;
 
         if (i_yh < p_bundle->h){ // if within bounds
@@ -84,6 +85,7 @@ PROCESS_START:
             mem.p_sum[i_py] += out_val;
             goto PROCESS_AND_STORE_DONE;
           }
+          fprintf(fp_sum,"%d\n", out_val); // Save summed output
 
           // ------ ADD BIAS ------ 
           if (p_bundle->is_bias)
@@ -101,11 +103,14 @@ PROCESS_START:
 
           // ------ TILING ------
 
-        } else if (ip != p_bundle->p-1)  // out of bounds & not last p -> skip store
-            goto PROCESS_AND_STORE_DONE;
+          // ------ STORE  ------
+          fprintf(fp_out,"%d\n", out_val); // Save processed output
 
-        mem.y[i_py] = out_val;
-        fprintf(fp_sum,"%d\n", out_val); // Save processed output
+        } 
+        else if (ip == p_bundle->p-1) {    // (out of bounds & last p) -> write zeros
+          fprintf(fp_sum,"%d\n", 0);        // Save summed output
+          fprintf(fp_out,"%d\n", 0);        // Save processed output
+        }
 
 PROCESS_AND_STORE_DONE:
 
@@ -115,6 +120,7 @@ PROCESS_AND_STORE_DONE:
       }
     }
   }
+  fclose(fp_out);
   fclose(fp_sum);
   fclose(fp_raw);
 
