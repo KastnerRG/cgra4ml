@@ -189,7 +189,7 @@ class Config:
 def test_dnn_engine(COMPILE):
     c = make_compile_params(COMPILE)
 
-    input_shape = (8,10,8,3) # (XN, XH, XW, CI)
+    input_shape = (8,18,8,3) # (XN, XH, XW, CI)
     model_config = [
         Config(11, 16, True , f'quantized_relu({c.X_BITS},0,negative_slope=0)'),
         Config(1 , 16, False, f'quantized_bits({c.X_BITS},0,False,False,1)'),
@@ -240,10 +240,10 @@ def test_dnn_engine(COMPILE):
     '''
     Export
     '''
-    for b in bundles:
+    for ib, b in enumerate(bundles):
         print(f'-----------------{b.idx}-----------------------')
         b.process(inp if b.idx==0 else None, c)
-        b.export(c)
+        b.export(c, ib==len(bundles)-1)
         
 
 
@@ -280,7 +280,7 @@ def test_dnn_engine(COMPILE):
 
             ca_nzero, ca_shift, ca_pl_scale = b.core['act']['non_zero'], b.core['act']['shift_bits'], b.core['act']['plog_slope']
 
-            ch.write(f"   {{.n={b.r.XN}, .l={b.r.L}, .kw={b.r.KW}, .coe={y_coe}, .coe_tl={y_coe_tl}, .r_ll={y_r_ll}, .h={b.r.XH}, .w={b.r.XW}, .ci={b.r.CI}, .co={b.r.CO}, .w_kw2={b.r.XW-b.r.KW//2}, .t={b.r.IT}, .p={b.r.CP}, .cm={b.r.CM}, .cm_p0={b.r.CM_0}, .w_bpt={w_bpt}, .w_bpt_p0={w_bpt_p0}, .x_bpt={x_bpt}, .x_bpt_p0={x_bpt_p0}, .is_bias={1*(b.b is not None)}, .b_offset={b_words}, .b_val_shift={b.bias_val_shift}, .b_bias_shift={b.bias_b_shift}, .ca_nzero={ca_nzero}, .ca_shift={ca_shift}, .ca_pl_scale={ca_pl_scale}, .x_header={b.r.x_header_be_p[-1][0]}, .x_header_p0={b.r.x_header_be_p[0][0]}, .w_header={b.r.w_header_be_p[-1][0]}, .w_header_p0={b.r.x_header_be_p[0][0]} }}")
+            ch.write(f"   {{.n={b.r.XN}, .l={b.r.L}, .kw={b.r.KW}, .coe={y_coe}, .coe_tl={y_coe_tl}, .r_ll={y_r_ll}, .h={b.r.XH}, .w={b.r.XW}, .ci={b.r.CI}, .co={b.r.CO}, .w_kw2={b.r.XW-b.r.KW//2}, .t={b.r.IT}, .p={b.r.CP}, .cm={b.r.CM}, .cm_p0={b.r.CM_0}, .w_bpt={w_bpt}, .w_bpt_p0={w_bpt_p0}, .x_bpt={x_bpt}, .x_bpt_p0={x_bpt_p0}, .is_bias={1*(b.b is not None)}, .conv2dense={1*b.flatten}, .b_offset={b_words}, .b_val_shift={b.bias_val_shift}, .b_bias_shift={b.bias_b_shift}, .ca_nzero={ca_nzero}, .ca_shift={ca_shift}, .ca_pl_scale={ca_pl_scale}, .x_header={b.r.x_header_be_p[-1][0]}, .x_header_p0={b.r.x_header_be_p[0][0]}, .w_header={b.r.w_header_be_p[-1][0]}, .w_header_p0={b.r.x_header_be_p[0][0]} }}")
             
             b_words += b.be.size if b.b else 0
             if b.idx != len(bundles)-1:
