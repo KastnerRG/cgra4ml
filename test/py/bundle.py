@@ -263,7 +263,7 @@ class Bundle(tf.keras.Model):
         clog2_add = int(np.ceil(np.log2(np.prod(self.w['int'].shape[:-1]))))
         self.proc['bits'] = self.inp['bits'] + self.w['bits'] + clog2_add
         self.proc['frac'] = self.inp['frac'] + self.w['frac']
-        # self.o_exp = self.proc['int']
+        self.o_sum_exp = np.copy(self.proc['int'])
 
         if self.b is not None:
             (self.proc['int'], self.proc['frac'], self.proc['bits']), (self.bias_val_shift, self.bias_b_shift) = add(
@@ -429,9 +429,11 @@ class Bundle(tf.keras.Model):
             w_int = self.w  ['int'].reshape(1,1,CI,CO) # (CI,CO) -> (KH,KW,CI,CO)
             x_int = self.inp['int'].reshape(1,XN,1,CI) # (XN,CI) -> (XN, XH, XW, CI)
             y_int = self.y  ['int'].reshape(1,XN,1,CO) # (XN,CI) -> (XN, XH, XW, CI)
+            o_sum_int = self.o_sum_exp.reshape(1,XN,1,CO)
             o_int = self.o_exp.     reshape(1,XN,1,CO)
         else:
             y_int = self.y['int']
+            o_sum_int = self.o_sum_exp
             o_int = self.o_exp
             w_int, x_int = self.w['int'], self.inp['int']
         
@@ -458,6 +460,7 @@ class Bundle(tf.keras.Model):
         self.xe = self.reorder_x_q2e_conv(x_int, c, r)
         self.ye_exp = self.reorder_y_q2e_conv(y_int, c, r)
         self.o_int = o_int
+        self.oe_sum_exp = o_int if is_last else self.reorder_y_q2e_conv(o_sum_int, c, r)
         self.oe_exp = o_int if is_last else self.reorder_y_q2e_conv(o_int, c, r)
         print(f"x reshape: [int]:{self.inp['int'].shape}, int:{x_int.shape}. xe:{self.xe[0].shape}")
 

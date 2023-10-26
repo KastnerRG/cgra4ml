@@ -389,11 +389,23 @@ def test_dnn_engine(COMPILE):
     CHECK ERROR
     '''
     for b in bundles:
-        y_sim = np.loadtxt(f"{DATA_DIR}/{b.idx}_y_sim.txt",np.int32).reshape((b.r.IT, b.r.XN*b.r.L*b.r.XW*b.r.CO_PRL*c.ROWS))
-        error = np.sum(np.abs(y_sim.reshape(b.oe_exp.shape) - b.oe_exp))
+        
+        ''' Verify raw output '''
+        for ip in range(b.r.CP):
+            for it in range(b.r.IT):
+                y_raw_exp = b.ye_exp_p[ip][it]
+                y_raw_sim = np.loadtxt(f"{DATA_DIR}/{b.idx}_{ip}_{it}_y_raw_sim.txt", np.int32).reshape(y_raw_exp.shape)
+                error = np.sum(np.abs(y_raw_exp-y_raw_sim))
+                assert error == 0, f"Error={error}, for y_raw_sim at {b.idx=}_{ip=}_{it=}"
 
+        ''' Verify sum output '''
+        y_sum_exp = b.oe_sum_exp
+        y_sum_sim = np.loadtxt(f"{DATA_DIR}/{b.idx}_y_sum_sim.txt", np.int32).reshape(y_sum_exp.shape)
+        error = np.sum(np.abs(y_sum_exp-y_sum_sim))
+        assert error == 0, f"Error={error}, for y_sum_sim at {b.idx=}"
+
+        ''' Verify processed output '''
+        y_out_sim = np.loadtxt(f"{DATA_DIR}/{b.idx}_y_out_sim.txt",np.int32).reshape((b.r.IT, b.r.XN*b.r.L*b.r.XW*b.r.CO_PRL*c.ROWS))
+        error = np.sum(np.abs(y_out_sim.reshape(b.oe_exp.shape) - b.oe_exp))
         print(f"Bundle {b.idx}, Error: {error}")
         assert error == 0
-        if error != 0 and SIM=='xsim':
-            print(fr'''Non zero error. Open waveform with:
-                        call {XIL_PATH}\xsim --gui {TB_MODULE}.wdb -view ..\wave\{WAVEFORM}''')
