@@ -9,7 +9,7 @@
 typedef struct {
   const int n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0;
   const int w_bpt, w_bpt_p0, x_bpt, x_bpt_p0; // bytes per transfer
-  const char is_bias;
+  const char is_bias, conv2dense;
   const int b_offset, b_val_shift, b_bias_shift;
   const signed char ca_nzero, ca_shift, ca_pl_scale;
   const unsigned long long x_header, x_header_p0, w_header, w_header_p0; // 64 bits (at least)
