@@ -39,106 +39,97 @@ static inline int quant_lrelu(int x, signed char nzero, signed char shift, signe
 }
 
 
-static inline void process_y(int val, int i_py, Bundle_t *p_bundle, int ip, int it_bias){
-
-  // ------ ADD P PASSES ------ 
-  if (p_bundle->p == 1) {          // only p  : proceed with value
-  } else if (ip == p_bundle->p-1) {// last p  : read, add, proceed
-    val += mem.p_sum[i_py];
-  } else if (ip == 0) {            // first p : overwrite memory, return
-    mem.p_sum[i_py] = val;
-    return;
-  } else {                         // middle p: read, add, store, return
-    mem.p_sum[i_py] += val;
-    return;
-  }
-
-  // ------ ADD BIAS ------ 
-  if (p_bundle->is_bias)
-    val = (val << p_bundle->b_val_shift) + (mem.b[it_bias] << p_bundle->b_bias_shift);
-  
-  // ------ CORE ACT ------
-  val = quant_lrelu(val, p_bundle->ca_nzero, p_bundle->ca_shift, p_bundle->ca_pl_scale);
-
-
-  // ------ MAX/AVG POOL ------
-
-  // ------ RELU + QUANT ------
-
-  // ------ SOFTMAX ------
-
-  // ------ TILING ------
-
-  mem.y[i_py] = val;
-}
-
-
 extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  const unsigned int *p_sram_u32) {
 
   static Bundle_t *p_bundle = &bundles[0];
   static int i_py=0, it_bias=0;
   static int ib=0, ip=0, it=0, in=0, il=0, iw=0;
   const int *p_sram = (const int *)p_sram_u32;
-  FILE *fp;
-  char path [1000]; // make sure full path is shorter than 1000
 
-  {//New iw:
-    sprintf(path, "%s/%0d_%0d_%0d_y_sim.txt", DATA_DIR, ib, ip, it);
-    fp = fopen(path, "a"); 
+  FILE *fp_raw, *fp_sum;
+  char f_path_raw [1000], f_path_sum [1000]; // make sure full f_path_raw is shorter than 1000
+  sprintf(f_path_raw, "%s/%0d_%0d_%0d_y_sim.txt", DATA_DIR, ib, ip, it);
+  fp_raw = fopen(f_path_raw, "a"); 
+  sprintf(f_path_sum, "%s/%0d_y_sim.txt", DATA_DIR, ib);
+  fp_sum = fopen(f_path_sum, "a"); 
 
-    int w_last = iw == p_bundle->w_kw2-1 ? p_bundle->kw/2+1 : 1;
-    int sram_addr=0;
-    for (int icoe=0; icoe<p_bundle->coe; icoe++) {
+  //New iw:
+  int w_last = iw == p_bundle->w_kw2-1 ? p_bundle->kw/2+1 : 1;
+  int sram_addr=0;
+  for (int icoe=0; icoe<p_bundle->coe; icoe++) {
+    int i_bias = it_bias + icoe;
 
-      int i_bias = it_bias + icoe;
+    for (int iw_last=0; iw_last<w_last; iw_last++) {
+      for (int ir=0; ir<PE_ROWS; ir++) {
+        // Index: [b, p, t, l, n, w | coe, w_last, r]
 
-      for (int iw_last=0; iw_last<w_last; iw_last++) {
-        for (int ir=0; ir<PE_ROWS; ir++) {
-          // Index: [b, p, t, l, n, w | coe, w_last, r]
+        int raw_val = 0, out_val=0;
 
+        int i_yh = il*PE_ROWS + ir;
 
-          int i_yh = il*PE_ROWS + ir;
+        if (i_yh < p_bundle->h){ // if within bounds
+          raw_val = p_sram[sram_addr];
+          out_val = raw_val;
 
-          if (i_yh < p_bundle->h) {
-            int val = p_sram[sram_addr];
-            fprintf(fp,"%d\n", val);
-            process_y(val, i_py, p_bundle, ip, i_bias);
-          } else {
-            mem.y[i_py] = 0;
-            fprintf(fp,"%d\n", 0);
+PROCESS_START:
+
+          // ------ ADD P PASSES ------ 
+          if (p_bundle->p == 1) {          // only p  : proceed with value
+          } else if (ip == p_bundle->p-1) {// last p  : read, add, proceed
+            out_val += mem.p_sum[i_py];
+          } else if (ip == 0) {            // first p : overwrite memory, return
+            mem.p_sum[i_py] = out_val;
+            goto PROCESS_AND_STORE_DONE;
+          } else {                         // middle p: read, add, store, return
+            mem.p_sum[i_py] += out_val;
+            goto PROCESS_AND_STORE_DONE;
           }
+
+          // ------ ADD BIAS ------ 
+          if (p_bundle->is_bias)
+            out_val = (out_val << p_bundle->b_val_shift) + (mem.b[i_bias] << p_bundle->b_bias_shift);
           
-          i_py += 1;
-          sram_addr += 1;
-        }
+          // ------ CORE ACT ------
+          out_val = quant_lrelu(out_val, p_bundle->ca_nzero, p_bundle->ca_shift, p_bundle->ca_pl_scale);
+
+
+          // ------ MAX/AVG POOL ------
+
+          // ------ RELU + QUANT ------
+
+          // ------ SOFTMAX ------
+
+          // ------ TILING ------
+
+        } else if (ip != p_bundle->p-1)  // out of bounds & not last p -> skip store
+            goto PROCESS_AND_STORE_DONE;
+
+        mem.y[i_py] = out_val;
+        fprintf(fp_sum,"%d\n", out_val); // Save processed output
+
+PROCESS_AND_STORE_DONE:
+
+        fprintf(fp_raw,"%d\n", raw_val); // Save raw output
+        i_py += 1;
+        sram_addr += 1;
       }
     }
-    fclose(fp);
   }
+  fclose(fp_sum);
+  fclose(fp_raw);
+
 
   //Nested for loop [for(ib) for(ip) for(it) for(il) for(in) for(iw) {}] 
   //  inverted to increment once per call
-  ++iw; if (iw >= p_bundle->w_kw2) { iw = 0;
-    //after_each(in) = after_all(iw):
-    ++il; if (il >= p_bundle->l) { il = 0;
-      //after_each(in) = after_all(il):
-      ++in; if (in >= p_bundle->n) { in = 0;
-        //after_each(it) = after_all(in):
-        ++it; if (it >= p_bundle->t) { it = 0;
-          //after_each(ip) = after_all(it):
-          printf("done p!! iw:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw, in, il, it, ip, ib);
-          ++ip; if (ip >= p_bundle->p) { ip = 0;
-            //after_each(ib) = after_all(ip):
+  ++iw; if (iw >= p_bundle->w_kw2) { iw = 0;      //after_each(in) = after_all(iw):
+    ++il; if (il >= p_bundle->l) { il = 0;        //after_each(in) = after_all(il):
+      ++in; if (in >= p_bundle->n) { in = 0;      //after_each(it) = after_all(in):
+        ++it; if (it >= p_bundle->t) { it = 0;    //after_each(ip) = after_all(it):
+          ++ip; if (ip >= p_bundle->p) { ip = 0;  //after_each(ib) = after_all(ip):
             
             printf("done bundle!! iw:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw, in, il, it, ip, ib);
-            sprintf(path, "%s/%0d_y_sim.txt", DATA_DIR, ib);
-            fp = fopen(path, "w"); 
-            for (int i=0; i<i_py; i++)
-              fprintf(fp,"%d\n", mem.y[i]);
-            fclose(fp);
-
-            ++ib; if (ib >= N_BUNDLES) { ib = 0;
-              // after_all(ib):
+            
+            ++ib; if (ib >= N_BUNDLES) { ib = 0;  // after_all(ib):
               *p_done = 1;
             }//new(ib):
             p_bundle = &bundles[ib];
@@ -196,22 +187,22 @@ extern EXT_C void load_w (unsigned char *p_done, int *p_offset, int *p_bpt) {
 
 
 extern EXT_C void fill_memory (){
-  FILE *fp;
-  char path [1000];
+  FILE *fp_raw;
+  char f_path_raw [1000];
 
-  sprintf(path, "%s/w.bin", DATA_DIR);
-  fp = fopen(path, "rb");
-  if(!fp)
-    printf("ERROR! File not found: %s \n", path);
-  fread(mem.w, 1, WB_BYTES, fp);
-  fclose(fp);
+  sprintf(f_path_raw, "%s/w.bin", DATA_DIR);
+  fp_raw = fopen(f_path_raw, "rb");
+  if(!fp_raw)
+    printf("ERROR! File not found: %s \n", f_path_raw);
+  fread(mem.w, 1, WB_BYTES, fp_raw);
+  fclose(fp_raw);
 
-  sprintf(path, "%s/x_all.bin", DATA_DIR);
-  fp = fopen(path, "rb");
-  if(!fp)
-    printf("ERROR! File not found: %s \n", path);
-  fread(mem.x, 1, X_BYTES_ALL, fp);
-  fclose(fp);
+  sprintf(f_path_raw, "%s/x_all.bin", DATA_DIR);
+  fp_raw = fopen(f_path_raw, "rb");
+  if(!fp_raw)
+    printf("ERROR! File not found: %s \n", f_path_raw);
+  fread(mem.x, 1, X_BYTES_ALL, fp_raw);
+  fclose(fp_raw);
 
   for (int i=0; i<B_WORDS; i++)
     printf("i:%d, bias:%d\n", i, mem.b[i]);
