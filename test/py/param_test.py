@@ -243,7 +243,7 @@ def test_dnn_engine(COMPILE):
     for ib, b in enumerate(bundles):
         print(f'-----------------{b.idx}-----------------------')
         b.process(inp if b.idx==0 else None, c)
-        b.export(c, ib==len(bundles)-1)
+        b.export(c, False) #ib==len(bundles)-1
         
 
 
