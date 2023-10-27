@@ -166,8 +166,8 @@ class Config:
 
 
 @pytest.mark.parametrize("COMPILE", list(product_dict(
-                                                X_BITS     = [4    ], 
-                                                K_BITS     = [8    ], 
+                                                X_BITS     = [8    ], 
+                                                K_BITS     = [4    ], 
                                                 B_BITS     = [16   ], 
                                                 Y_BITS     = [24   ], 
                                                 INT_BITS   = [32   ], # size of integer in target CPU
@@ -250,7 +250,7 @@ def test_dnn_engine(COMPILE):
     '''
     Write Runtime Headers
     '''
-    x_bytes_all, x_bytes, w_bytes, b_words, x_bytes_max, y_bytes_max = 0, 0, 0, 0, 0, 0
+    x_bytes_all, x_bytes, w_bytes, b_words, x_bytes_max, y_bytes_max, o_bytes_max = 0, 0, 0, 0, 0, 0, 0
     with open ('../c/model.h', 'w') as ch:
 
         ch.write(f"#define N_BUNDLES {len(bundles)}\n")
@@ -261,6 +261,15 @@ def test_dnn_engine(COMPILE):
             w_bpt_p0 = (c.K_BITS*b.we[0][0].size + c.IN_BITS )//8
             x_bpt    = (c.X_BITS*b.xe[-1].size + c.IN_BITS   )//8 
             x_bpt_p0 = (c.X_BITS*b.xe[0].size + c.IN_BITS    )//8
+            
+            if ib == len(bundles)-1:
+                o_bytes_b = b.o_int.size # int or float
+                o_words = o_bytes_b
+            else:
+                b_next    = bundles[ib+1]
+                o_bpt     = b_next.xe[-1].size #(c.X_BITS*b_next.xe[-1].size + c.IN_BITS   )//8 
+                o_bpt_p0  = b_next.xe[0].size  #(c.X_BITS*b_next.xe[0].size + c.IN_BITS    )//8
+                o_bytes_b = o_bpt_p0 + (b_next.r.CP-1)*o_bpt
 
             w_bytes_b = (w_bpt_p0 + (b.r.CP-1)*w_bpt)*b.r.IT
             x_bytes_b = (x_bpt_p0 + (b.r.CP-1)*x_bpt)
@@ -268,6 +277,7 @@ def test_dnn_engine(COMPILE):
 
             x_bytes_max = max(x_bytes_max, x_bytes_b)
             y_bytes_max = max(y_bytes_max, y_bytes_b)
+            o_bytes_max = max(o_bytes_max, o_bytes_b)
             w_bytes += w_bytes_b
             x_bytes_all += x_bytes_b
 
@@ -280,7 +290,7 @@ def test_dnn_engine(COMPILE):
 
             ca_nzero, ca_shift, ca_pl_scale = b.core['act']['non_zero'], b.core['act']['shift_bits'], b.core['act']['plog_slope']
 
-            ch.write(f"   {{.n={b.r.XN}, .l={b.r.L}, .kw={b.r.KW}, .coe={y_coe}, .coe_tl={y_coe_tl}, .r_ll={y_r_ll}, .h={b.r.XH}, .w={b.r.XW}, .ci={b.r.CI}, .co={b.r.CO}, .w_kw2={b.r.XW-b.r.KW//2}, .t={b.r.IT}, .p={b.r.CP}, .cm={b.r.CM}, .cm_p0={b.r.CM_0}, .w_bpt={w_bpt}, .w_bpt_p0={w_bpt_p0}, .x_bpt={x_bpt}, .x_bpt_p0={x_bpt_p0}, .is_bias={1*(b.b is not None)}, .conv2dense={1*b.flatten}, .b_offset={b_words}, .b_val_shift={b.bias_val_shift}, .b_bias_shift={b.bias_b_shift}, .ca_nzero={ca_nzero}, .ca_shift={ca_shift}, .ca_pl_scale={ca_pl_scale}, .x_header={b.r.x_header_be_p[-1][0]}, .x_header_p0={b.r.x_header_be_p[0][0]}, .w_header={b.r.w_header_be_p[-1][0]}, .w_header_p0={b.r.x_header_be_p[0][0]} }}")
+            ch.write(f"   {{.n={b.r.XN}, .l={b.r.L}, .kw={b.r.KW}, .coe={y_coe}, .coe_tl={y_coe_tl}, .r_ll={y_r_ll}, .h={b.r.XH}, .w={b.r.XW}, .ci={b.r.CI}, .co={b.r.CO}, .w_kw2={b.r.XW-b.r.KW//2}, .t={b.r.IT}, .p={b.r.CP}, .cm={b.r.CM}, .cm_p0={b.r.CM_0}, .w_bpt={w_bpt}, .w_bpt_p0={w_bpt_p0}, .x_bpt={x_bpt}, .x_bpt_p0={x_bpt_p0}, .o_bytes={o_bytes_b}, .is_bias={1*(b.b is not None)}, .conv2dense={1*b.flatten}, .b_offset={b_words}, .b_val_shift={b.bias_val_shift}, .b_bias_shift={b.bias_b_shift}, .ca_nzero={ca_nzero}, .ca_shift={ca_shift}, .ca_pl_scale={ca_pl_scale}, .x_header={b.r.x_header_be_p[-1][0]}, .x_header_p0={b.r.x_header_be_p[0][0]}, .w_header={b.r.w_header_be_p[-1][0]}, .w_header_p0={b.r.x_header_be_p[0][0]} }}")
             
             b_words += b.be.size if b.b else 0
             if b.idx != len(bundles)-1:
@@ -297,6 +307,8 @@ def test_dnn_engine(COMPILE):
         ch.write(f"#define WB_BYTES    {w_bytes + (b_words*c.B_BITS)//8}\n")
         ch.write(f"#define W_BYTES     {w_bytes}\n")
         ch.write(f"#define X_BYTES     {x_bytes}\n")
+        ch.write(f"#define O_WORDS     {o_words}\n")
+        ch.write(f"#define O_BYTES_MAX {o_bytes_max}\n")
         ch.write(f"#define X_BYTES_ALL {x_bytes_all}\n")
         ch.write(f"#define Y_BYTES     {y_bytes_max}\n")
         ch.write(f"#define B_TYPE      {type_d['c'][c.B_BITS]}\n")

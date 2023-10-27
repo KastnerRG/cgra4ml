@@ -8,7 +8,7 @@
 
 typedef struct {
   const int n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0;
-  const int w_bpt, w_bpt_p0, x_bpt, x_bpt_p0; // bytes per transfer
+  const int w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_bytes; // bytes per transfer
   const char is_bias, conv2dense;
   const int b_offset, b_val_shift, b_bias_shift;
   const signed char ca_nzero, ca_shift, ca_pl_scale;
@@ -22,7 +22,8 @@ typedef struct {
   char   w  [W_BYTES     ];
   B_TYPE b  [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
   char   x  [X_BYTES_ALL ];
-  int    y  [Y_BYTES/4   ];
+  char   nx [O_BYTES_MAX ];
+  int    y  [O_WORDS     ];
   int p_sum [Y_BYTES/4   ];
 } Memory_st;
 Memory_st mem;
@@ -134,6 +135,13 @@ PROCESS_AND_STORE_DONE:
           ++ip; if (ip >= p_bundle->p) { ip = 0;  //after_each(ib) = after_all(ip):
             
             printf("done bundle!! iw:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw, in, il, it, ip, ib);
+
+            char f_path_tiled [1000];
+            sprintf(f_path_tiled, "%s/%0d_y_tiled_sim.txt", DATA_DIR, ib);
+            FILE *fp_tiled = fopen(f_path_tiled, "w");
+            for (int i=0; i<p_bundle->o_bytes; i++)
+              fprintf(fp_tiled,"%d\n", ib == N_BUNDLES-1 ? mem.y[i] : mem.nx[i]);
+            fclose(fp_tiled);
             
             ++ib; if (ib >= N_BUNDLES) { ib = 0;  // after_all(ib):
               *p_done = 1;
