@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 
 #ifdef VERILATOR
   #define EXT_C "C"
@@ -39,12 +40,32 @@ static inline int quant_lrelu(int x, signed char nzero, signed char shift, signe
   return x;
 }
 
+static inline void write_x(signed char val, int ib, int ixp, int ixn, int ixl, int ixw, int ixcm, int ixr, Bundle_t *p_bo, int X_CMP){
+
+    int idx_n2r =   ixn  * (p_bo->l * p_bo->w * X_CMP * (PE_ROWS+X_PAD))
+                  + ixl  * (          p_bo->w * X_CMP * (PE_ROWS+X_PAD))
+                  + ixw  * (                    X_CMP * (PE_ROWS+X_PAD))
+                  + ixcm * (                            (PE_ROWS+X_PAD))
+                  + ixr;
+    int idx = (ixp == 0) ? idx_n2r : (          p_bo->n * p_bo->l * p_bo->w * p_bo->cm_p0 * (PE_ROWS+X_PAD) 
+                                    + (ixp-1) * p_bo->n * p_bo->l * p_bo->w * p_bo->cm    * (PE_ROWS+X_PAD)
+                                    +  idx_n2r);
+    mem.nx[idx] = val;
+
+    if (!(ixr   < PE_ROWS+X_PAD)) assert(0*printf("%d >= %d --------- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d X_CMP:%d \n", ixr, PE_ROWS+X_PAD, ib,ixp,ixn,ixl,ixw,ixcm,ixr,X_CMP));
+    if (!(ixcm  < X_CMP        )) assert(0*printf("%d >= %d --------- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d X_CMP:%d \n", ixcm, X_CMP,        ib,ixp,ixn,ixl,ixw,ixcm,ixr,X_CMP));
+    if (!(ixw   < p_bo->w      )) assert(0*printf("%d >= %d --------- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d X_CMP:%d \n", ixw , p_bo->w,      ib,ixp,ixn,ixl,ixw,ixcm,ixr,X_CMP));
+    if (!(ixl   < p_bo->l      )) assert(0*printf("%d >= %d --------- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d X_CMP:%d \n", ixl , p_bo->l,      ib,ixp,ixn,ixl,ixw,ixcm,ixr,X_CMP));
+    if (!(ixn   < p_bo->n      )) assert(0*printf("%d >= %d --------- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d X_CMP:%d \n", ixn , p_bo->n,      ib,ixp,ixn,ixl,ixw,ixcm,ixr,X_CMP));
+    if (!(ixp   < p_bo->p      )) assert(0*printf("%d >= %d --------- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d X_CMP:%d \n", ixp , p_bo->p,      ib,ixp,ixn,ixl,ixw,ixcm,ixr,X_CMP)); 
+}
+
 
 extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  const unsigned int *p_sram_u32) {
 
   static Bundle_t *p_bundle = &bundles[0];
   static int i_py=0, it_bias=0;
-  static int ib=0, ip=0, it=0, in=0, il=0, iw=0;
+  static int ib=0, ip=0, it=0, in=0, il=0, iw_kw2=0;
   const int *p_sram = (const int *)p_sram_u32;
 
   FILE *fp_raw, *fp_out, *fp_sum;
@@ -56,8 +77,8 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
   fp_sum = fopen(f_path_sum, "a"); 
   fp_out = fopen(f_path_out, "a"); 
 
-  //New iw:
-  int w_last = iw == p_bundle->w_kw2-1 ? p_bundle->kw/2+1 : 1;
+  //New iw_kw2:
+  int w_last = iw_kw2 == p_bundle->w_kw2-1 ? p_bundle->kw/2+1 : 1;
   int sram_addr=0;
   for (int icoe=0; icoe<p_bundle->coe; icoe++) {
     int i_bias = it_bias + icoe;
@@ -67,9 +88,14 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
         // Indexing: [b, p, t, n, l, w | coe, w_last, r]
 
         int raw_val=0, out_val=0;
+        
+        // Caculate y_index
+        int i_yn = in;
         int i_yh = il*PE_ROWS + ir;
+        int i_yw = iw_kw2 + iw_last;
+        int i_yc = p_bundle->coe*it + icoe;
 
-        if (i_yh < p_bundle->h){ // if within bounds
+        if (i_yh < p_bundle->h && i_yc < p_bundle->co){ // if within bounds
           raw_val = p_sram[sram_addr];
           out_val = raw_val;
 
@@ -126,15 +152,15 @@ PROCESS_AND_STORE_DONE:
   fclose(fp_raw);
 
 
-  //Nested for loop [for(ib) for(ip) for(it) for(il) for(in) for(iw) {}] 
+  //Nested for loop [for(ib) for(ip) for(it) for(il) for(in) for(iw_kw2) {}] 
   //  inverted to increment once per call
-  ++iw; if (iw >= p_bundle->w_kw2) { iw = 0;      //after_each(in) = after_all(iw):
-    ++il; if (il >= p_bundle->l) { il = 0;        //after_each(in) = after_all(il):
-      ++in; if (in >= p_bundle->n) { in = 0;      //after_each(it) = after_all(in):
-        ++it; if (it >= p_bundle->t) { it = 0;    //after_each(ip) = after_all(it):
-          ++ip; if (ip >= p_bundle->p) { ip = 0;  //after_each(ib) = after_all(ip):
+  ++iw_kw2; if (iw_kw2 >= p_bundle->w_kw2) { iw_kw2 = 0; //after_each(in) = after_all(iw_kw2):
+    ++il; if (il >= p_bundle->l) { il = 0;               //after_each(in) = after_all(il):
+      ++in; if (in >= p_bundle->n) { in = 0;             //after_each(it) = after_all(in):
+        ++it; if (it >= p_bundle->t) { it = 0;           //after_each(ip) = after_all(it):
+          ++ip; if (ip >= p_bundle->p) { ip = 0;         //after_each(ib) = after_all(ip):
             
-            printf("done bundle!! iw:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw, in, il, it, ip, ib);
+            printf("done bundle!! iw_kw2:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw_kw2, in, il, it, ip, ib);
 
             char f_path_tiled [1000];
             sprintf(f_path_tiled, "%s/%0d_y_tiled_sim.txt", DATA_DIR, ib);
@@ -153,7 +179,7 @@ PROCESS_AND_STORE_DONE:
         it_bias = p_bundle->b_offset + p_bundle->coe*it;
       }//new(in):
     }//new(il):
-  }//new(iw):
+  }//new(iw_kw2):
   *pt_done_proc = !(*pt_done_proc);
 }
 
