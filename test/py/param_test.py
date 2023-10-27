@@ -400,7 +400,7 @@ def test_dnn_engine(COMPILE):
     '''
     CHECK ERROR
     '''
-    for b in bundles:
+    for ib, b in enumerate(bundles):
         
         ''' Verify raw output '''
         for ip in range(b.r.CP):
@@ -419,5 +419,12 @@ def test_dnn_engine(COMPILE):
         ''' Verify processed output '''
         y_out_sim = np.loadtxt(f"{DATA_DIR}/{b.idx}_y_out_sim.txt",np.int32).reshape((b.r.IT, b.r.XN*b.r.L*b.r.XW*b.r.CO_PRL*c.ROWS))
         error = np.sum(np.abs(y_out_sim.reshape(b.oe_exp.shape) - b.oe_exp))
-        print(f"Bundle {b.idx}, Error: {error}")
         assert error == 0
+
+        ''' Verify tiled output'''
+        y_tiled_exp = b.o_int if ib == len(bundles)-1 else np.concatenate([a.flatten() for a in bundles[ib+1].xe])
+        y_tiled_sim = np.loadtxt(f"{DATA_DIR}/{b.idx}_y_tiled_sim.txt", np.int32).reshape(y_tiled_exp.shape)
+        error = np.sum(np.abs(y_tiled_sim-y_tiled_exp))
+        assert error == 0, f"Error={error}, for y_tiled_sim at {b.idx=}"
+            
+        print(f"Bundle {b.idx}, Error: {error}")

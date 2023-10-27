@@ -130,7 +130,68 @@ PROCESS_START:
 
           // ------ TILING ------
 
+          if (ib == N_BUNDLES-1){           // Last bundle: save as nhwc in out buffer 
+
+            int idx = (p_bundle->h*p_bundle->w*p_bundle->co)* i_yn + (p_bundle->w*p_bundle->co)* i_yh + (p_bundle->co)* i_yw + i_yc;
+            mem.y[idx] = out_val;
+
+          } else {
+
+            // Calc x coordinates: [n,h,w,c]
+            int i_xn, i_xh, i_xw, i_xc;
+
+            if (p_bundle->conv2dense){
+              i_xn = 0   ;                                                               // N=1
+              i_xh = i_yn;                                                               // N -> H
+              i_xw = 0   ;                                                               // W=1
+              i_xc = (p_bundle->w*p_bundle->co)* i_yh + (p_bundle->co)* i_yw + i_yc;     // (H*W*C) -> C
+            } else {
+              i_xn = i_yn; 
+              i_xh = i_yh;
+              i_xw = i_yw; 
+              i_xc = i_yc;
+            }
+
+            // Calc x coordinates: [p, n, l, w,cmp, r+pad]
+            Bundle_t *p_bo = ib == N_BUNDLES-1 ? &bundles[ib] : &bundles[ib+1];
+
+            int i_xr = i_xh %  PE_ROWS;
+            int i_xl = i_xh / PE_ROWS;
+            int i_xp, i_xcm, X_CMP;
+
+            if (i_xc < p_bo->cm_p0) {       // first xp
+              i_xp  = 0;
+              i_xcm = i_xc;
+              X_CMP = p_bo->cm_p0;
+            } else {                        // following xps
+              i_xp  = (i_xc - p_bo->cm_p0) /  p_bo->cm + 1;
+              i_xcm = (i_xc - p_bo->cm_p0) %  p_bo->cm;
+              X_CMP = p_bo->cm;
+            }
+
           // ------ STORE  ------
+
+            write_x(out_val, ib, i_xp, i_xn, i_xl, i_xw, i_xcm, i_xr,   p_bo, X_CMP);
+
+            // --- PADDING: the [bottom X_PAD rows of previous block (l-1)] with [first X_PAD rows of this block (l)]
+            if (i_xr < X_PAD) {
+              int pad_val = (i_xl == 0) ? 0         : out_val;
+              int dest_xl = (i_xl == 0) ? p_bo->l-1 : i_xl-1;
+              write_x(pad_val, ib, i_xp, i_xn, dest_xl, i_xw, i_xcm, i_xr+PE_ROWS,   p_bo, X_CMP);
+            }
+            
+            // --- PADDING: L*PE_ROWS-H rows with zeros, and pad their other blocks accordingly
+            if ((i_xl == p_bo->l-1) && (i_xr == p_bo->r_ll-1)) {
+              for (int ir_hpad = p_bo->r_ll; ir_hpad < PE_ROWS; ir_hpad++){
+                write_x(0, ib, i_xp, i_xn, i_xl, i_xw, i_xcm, ir_hpad,   p_bo, X_CMP);
+
+                if (ir_hpad < X_PAD) {
+                    int dest_xl = (i_xl == 0) ? p_bo->l-1 : i_xl-1;
+                    write_x(0, ib, i_xp, i_xn, dest_xl, i_xw, i_xcm, ir_hpad+PE_ROWS,   p_bo, X_CMP);
+                }
+              }
+            }
+          }
           fprintf(fp_out,"%d\n", out_val); // Save processed output
 
         } 
