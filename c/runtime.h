@@ -64,6 +64,11 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
   static int ib=0, ip=0, it=0, in=0, il=0, iw_kw2=0;
   const int *p_sram = (const int *)p_sram_u32;
 
+  int i_xn, i_xh, i_xw, i_xc;
+  int i_xr, i_xl, i_xp, i_xcm, xcm;
+  Bundle_t *p_bo; 
+  char xp_first;
+
   FILE *fp_raw, *fp_out, *fp_sum;
   char f_path_raw [1000], f_path_out [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
   sprintf(f_path_raw, "%s/%0d_%0d_%0d_y_raw_sim.txt", DATA_DIR, ib, ip, it);
@@ -91,103 +96,124 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
         int i_yw = iw_kw2 + iw_last;
         int i_yc = p_bundle->coe*it + icoe;
 
-        if (i_yh < p_bundle->h && i_yc < p_bundle->co){ // if within bounds
-          raw_val = p_sram[sram_addr];
-          out_val = raw_val;
+        // if out of bounds, early return
+        if (i_yh >= p_bundle->h || i_yc >= p_bundle->co) { 
+          if (ip == p_bundle->p-1) {
+            fprintf(fp_sum,"%d\n", 0);        // Save summed output
+            fprintf(fp_out,"%d\n", 0);        // Save processed output
+          }
+          goto PROCESS_AND_STORE_DONE;
+        }
+
+        raw_val = p_sram[sram_addr];
+        out_val = raw_val;
 
 PROCESS_START:
 
-          // ------ ADD P PASSES ------ 
-          if (p_bundle->p == 1) {          // only p  : proceed with value
-          } else if (ip == p_bundle->p-1) {// last p  : read, add, proceed
-            out_val += mem.p_sum[i_py];
-          } else if (ip == 0) {            // first p : overwrite memory, return
-            mem.p_sum[i_py] = out_val;
-            goto PROCESS_AND_STORE_DONE;
-          } else {                         // middle p: read, add, store, return
-            mem.p_sum[i_py] += out_val;
-            goto PROCESS_AND_STORE_DONE;
+
+        // ------ ADD P PASSES ------ 
+
+        if (p_bundle->p == 1) {          // only p  : proceed with value
+        } else if (ip == p_bundle->p-1) {// last p  : read, add, proceed
+          out_val += mem.p_sum[i_py];
+        } else if (ip == 0) {            // first p : overwrite memory, return
+          mem.p_sum[i_py] = out_val;
+          goto PROCESS_AND_STORE_DONE;
+        } else {                         // middle p: read, add, store, return
+          mem.p_sum[i_py] += out_val;
+          goto PROCESS_AND_STORE_DONE;
+        }
+        fprintf(fp_sum,"%d\n", out_val); // Save summed output
+
+
+        // ------ ADD BIAS ------ 
+        if (p_bundle->is_bias)
+          out_val = (out_val << p_bundle->b_val_shift) + (mem.b[i_bias] << p_bundle->b_bias_shift);
+        
+
+        // ------ CORE ACT ------
+        out_val = quant_lrelu(out_val, p_bundle->ca_nzero, p_bundle->ca_shift, p_bundle->ca_pl_scale);
+
+
+
+        // ------ SOFTMAX ------
+
+
+        fprintf(fp_out,"%d\n", out_val); // Save processed output
+
+
+        // ------ TILING: Calculate X coordinates ------
+
+        // Calc: y [n,h,w,c] -> x [n,h,w,c]
+        if (p_bundle->conv2dense){
+          i_xn = 0   ;                                            // N=1
+          i_xh = i_yn;                                            // N -> H
+          i_xw = 0   ;                                            // W=1
+          i_xc = (i_yh*p_bundle->w +  i_yw)*p_bundle->co + i_yc;  // (H*W*C) -> C
+        } else {
+          i_xn = i_yn; 
+          i_xh = i_yh;
+          i_xw = i_yw; 
+          i_xc = i_yc;
+        }
+
+        // Calc: x [n,h,w,c] -> x[p, n, l, w,cmp, r+pad]
+
+        p_bo = ib == N_BUNDLES-1 ? &bundles[ib] : &bundles[ib+1];
+        xp_first  = i_xc < p_bo->cm_p0;
+
+        i_xr  = i_xh %  PE_ROWS;
+        i_xl  = i_xh / PE_ROWS;
+
+        i_xp  = xp_first ? 0           : (i_xc - p_bo->cm_p0) /  p_bo->cm + 1;
+        i_xcm = xp_first ? i_xc        : (i_xc - p_bo->cm_p0) %  p_bo->cm    ;
+        xcm   = xp_first ? p_bo->cm_p0 : p_bo->cm                            ;
+
+
+        // ------ MAX/AVG POOL ------
+
+        // ------ RELU + QUANT ------
+
+
+        // ------ STORE  ------
+
+        if (ib == N_BUNDLES-1) {  
+          // Last bundle: save as NHWC
+          // TODO: Last bundle does not support pool, stride...etc
+
+          int idx = ((i_yn*p_bundle->h + i_yh)*p_bundle->w +  i_yw)*p_bundle->co + i_yc;
+
+          if (!( i_yn  < p_bundle->n )) assert(0*printf("iyn : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_yn, p_bundle->n , ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
+          if (!( i_yh  < p_bundle->h )) assert(0*printf("iyn : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_yh, p_bundle->h , ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
+          if (!( i_yw  < p_bundle->w )) assert(0*printf("iyn : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_yw, p_bundle->w , ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
+          if (!( i_yc  < p_bundle->co)) assert(0*printf("iyn : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_yc, p_bundle->co, ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
+
+          mem.y[idx] = out_val;
+
+        } else {
+
+          // Other bundles: pad & save as tiled
+
+          write_x(out_val, ib, i_xp, i_xn, i_xl, i_xw, i_xcm, i_xr,   p_bo, xcm);
+
+          // --- PADDING: the [bottom X_PAD rows of previous block (l-1)] with [first X_PAD rows of this block (l)]
+          if (i_xr < X_PAD) {
+            int pad_val = (i_xl == 0) ? 0         : out_val;
+            int dest_xl = (i_xl == 0) ? p_bo->l-1 : i_xl-1;
+            write_x(pad_val, ib, i_xp, i_xn, dest_xl, i_xw, i_xcm, i_xr+PE_ROWS,   p_bo, xcm);
           }
-          fprintf(fp_sum,"%d\n", out_val); // Save summed output
-
-          // ------ ADD BIAS ------ 
-          if (p_bundle->is_bias)
-            out_val = (out_val << p_bundle->b_val_shift) + (mem.b[i_bias] << p_bundle->b_bias_shift);
           
-          // ------ CORE ACT ------
-          out_val = quant_lrelu(out_val, p_bundle->ca_nzero, p_bundle->ca_shift, p_bundle->ca_pl_scale);
+          // --- PADDING: L*PE_ROWS-H rows with zeros, and pad their other blocks accordingly
+          if ((i_xl == p_bo->l-1) && (i_xr == p_bo->r_ll-1)) {
+            for (int ir_hpad = p_bo->r_ll; ir_hpad < PE_ROWS; ir_hpad++){
+              write_x(0, ib, i_xp, i_xn, i_xl, i_xw, i_xcm, ir_hpad,   p_bo, xcm);
 
-
-          // ------ MAX/AVG POOL ------
-
-          // ------ RELU + QUANT ------
-
-          // ------ SOFTMAX ------
-
-          // ------ TILING ------
-
-          if (ib == N_BUNDLES-1){           // Last bundle: save as nhwc in out buffer 
-
-            int idx = ((i_yn*p_bundle->h + i_yh)*p_bundle->w +  i_yw)*p_bundle->co + i_yc;
-            mem.y[idx] = out_val;
-
-          } else {
-
-            // Calc x coordinates: [n,h,w,c]
-            int i_xn, i_xh, i_xw, i_xc;
-
-            if (p_bundle->conv2dense){
-              i_xn = 0   ;                                            // N=1
-              i_xh = i_yn;                                            // N -> H
-              i_xw = 0   ;                                            // W=1
-              i_xc = (i_yh*p_bundle->w +  i_yw)*p_bundle->co + i_yc;  // (H*W*C) -> C
-            } else {
-              i_xn = i_yn; 
-              i_xh = i_yh;
-              i_xw = i_yw; 
-              i_xc = i_yc;
-            }
-
-            // Calc x coordinates: [p, n, l, w,cmp, r+pad]
-            Bundle_t *p_bo = ib == N_BUNDLES-1 ? &bundles[ib] : &bundles[ib+1];
-            char xp_first = i_xc < p_bo->cm_p0;
-
-            int i_xr = i_xh %  PE_ROWS;
-            int i_xl = i_xh / PE_ROWS;
-
-            int i_xp  = xp_first ? 0           : (i_xc - p_bo->cm_p0) /  p_bo->cm + 1;
-            int i_xcm = xp_first ? i_xc        : (i_xc - p_bo->cm_p0) %  p_bo->cm    ;
-            int xcm   = xp_first ? p_bo->cm_p0 : p_bo->cm                            ;
-
-          // ------ STORE  ------
-
-            write_x(out_val, ib, i_xp, i_xn, i_xl, i_xw, i_xcm, i_xr,   p_bo, xcm);
-
-            // --- PADDING: the [bottom X_PAD rows of previous block (l-1)] with [first X_PAD rows of this block (l)]
-            if (i_xr < X_PAD) {
-              int pad_val = (i_xl == 0) ? 0         : out_val;
-              int dest_xl = (i_xl == 0) ? p_bo->l-1 : i_xl-1;
-              write_x(pad_val, ib, i_xp, i_xn, dest_xl, i_xw, i_xcm, i_xr+PE_ROWS,   p_bo, xcm);
-            }
-            
-            // --- PADDING: L*PE_ROWS-H rows with zeros, and pad their other blocks accordingly
-            if ((i_xl == p_bo->l-1) && (i_xr == p_bo->r_ll-1)) {
-              for (int ir_hpad = p_bo->r_ll; ir_hpad < PE_ROWS; ir_hpad++){
-                write_x(0, ib, i_xp, i_xn, i_xl, i_xw, i_xcm, ir_hpad,   p_bo, xcm);
-
-                if (ir_hpad < X_PAD) {
-                    int dest_xl = (i_xl == 0) ? p_bo->l-1 : i_xl-1;
-                    write_x(0, ib, i_xp, i_xn, dest_xl, i_xw, i_xcm, ir_hpad+PE_ROWS,   p_bo, xcm);
-                }
+              if (ir_hpad < X_PAD) {
+                  int dest_xl = (i_xl == 0) ? p_bo->l-1 : i_xl-1;
+                  write_x(0, ib, i_xp, i_xn, dest_xl, i_xw, i_xcm, ir_hpad+PE_ROWS,   p_bo, xcm);
               }
             }
           }
-          fprintf(fp_out,"%d\n", out_val); // Save processed output
-
-        } 
-        else if (ip == p_bundle->p-1) {    // (out of bounds & last p) -> write zeros
-          fprintf(fp_sum,"%d\n", 0);        // Save summed output
-          fprintf(fp_out,"%d\n", 0);        // Save processed output
         }
 
 PROCESS_AND_STORE_DONE:
