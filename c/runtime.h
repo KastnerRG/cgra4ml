@@ -14,7 +14,7 @@ typedef struct {
   const char is_bias, is_pool, is_flatten;
   const int b_offset, b_val_shift, b_bias_shift;
   const signed char ca_nzero, ca_shift, ca_pl_scale;
-  const int csh, ch, csh_shift, pkh, psh, ph, psh_shift, csw, cw, csw_shift, pkw, psw, pw, psw_shift, oh, ow, oc;
+  const int csh, ch, csh_shift, pkh, psh, ph, psh_shift, csw, cw, csw_shift, pkw, psw, pw, psw_shift, on, oh, ow, oc;
   const unsigned long long x_header, x_header_p0, w_header, w_header_p0; // 64 bits (at least)
   const int debug_nhwc_words;
 } Bundle_t;
@@ -165,10 +165,6 @@ PROCESS_START:
 
         // ------ RELU + QUANT ------
 
-        // Need to check hwc before flattening
-        if (!( yh == p_bundle->oh )) assert(0*printf("yh : %d != %d --------- ib:%d \n", yh, p_bundle->oh, ib)); 
-        if (!( yw == p_bundle->ow )) assert(0*printf("yw : %d != %d --------- ib:%d \n", yw, p_bundle->ow, ib)); 
-        if (!( yc == p_bundle->oc )) assert(0*printf("yw : %d != %d --------- ib:%d \n", yc, p_bundle->oc, ib)); 
 
 
         // ------ FLATTEN ------
@@ -184,6 +180,13 @@ PROCESS_START:
           yn = 1;
         }
 
+        // Check
+        if (!( yn == p_bundle->on )) assert(0*printf("yn : %d != %d --------- ib:%d \n", yn, p_bundle->on, ib)); 
+        if (!( yh == p_bundle->oh )) assert(0*printf("yh : %d != %d --------- ib:%d \n", yh, p_bundle->oh, ib)); 
+        if (!( yw == p_bundle->ow )) assert(0*printf("yw : %d != %d --------- ib:%d \n", yw, p_bundle->ow, ib)); 
+        if (!( yc == p_bundle->oc )) assert(0*printf("yw : %d != %d --------- ib:%d \n", yc, p_bundle->oc, ib)); 
+
+
         // ------ TILING: Calculate X coordinates ------
         // y [n,h,w,c] -> x[p, n, l, w,cmp, r+pad]
 
@@ -198,6 +201,7 @@ PROCESS_START:
         i_yp   = yp_first ? 0           : div_oc.quot + 1;
         i_ycm  = yp_first ? i_yc        : div_oc.rem;
         ycm    = yp_first ? p_bo->cm_p0 : p_bo->cm  ;
+
 
         // ------ STORE  ------
 

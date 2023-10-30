@@ -192,12 +192,12 @@ def test_dnn_engine(COMPILE):
 
     input_shape = (8,24,32,3) # (XN, XH, XW, CI)
     model_config = [
-        Config(11, 16, True , f'quantized_relu({c.X_BITS},0,negative_slope=0)', (2,3)),
-        Config(1 , 16, False, f'quantized_bits({c.X_BITS},0,False,False,1)'),
-        Config(7 , 16, True , f'quantized_bits({c.X_BITS},0,False,True,1)'),
-        Config(5 , 16, False, f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'),
+        Config(11, 8, True , f'quantized_relu({c.X_BITS},0,negative_slope=0)', (2,3)),
+        Config(1 , 8, False, f'quantized_bits({c.X_BITS},0,False,False,1)'),
+        Config(7 , 8, True , f'quantized_bits({c.X_BITS},0,False,True,1)'),
+        Config(5 , 8, False, f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'),
         Config(3 , 24, True , f'quantized_relu({c.X_BITS},0,negative_slope=0)'),
-        Config(1 , 50, False, f'quantized_relu({c.X_BITS},0,negative_slope=0.125)', flatten=True),
+        Config(1 , 5 , False, f'quantized_relu({c.X_BITS},0,negative_slope=0.125)', flatten=True),
         Config(1 , 10, True , f'quantized_relu({c.X_BITS},0,negative_slope=0.125)', dense= True),
     ]
 
@@ -296,7 +296,7 @@ def test_dnn_engine(COMPILE):
             ch.write(     f".is_bias={1*(b.b is not None)}, .is_flatten={1*b.flatten}, ")
             ch.write(     f".b_offset={b_words}, .b_val_shift={b.bias_val_shift}, .b_bias_shift={b.bias_b_shift}, ")
             ch.write(     f".ca_nzero={ca_nzero}, .ca_shift={ca_shift}, .ca_pl_scale={ca_pl_scale}, ")
-            ch.write(     f".csh={b.r.CSH}, .ch={b.r.CYH}, .csh_shift={b.r.CSH_SHIFT}, .pkh={b.r.PKH}, .psh={b.r.PSH}, .ph={b.r.PYH}, .psh_shift={b.r.PSH_SHIFT}, .csw={b.r.CSW}, .cw={b.r.CYW}, .csw_shift={b.r.CSW_SHIFT}, .pkw={b.r.PKW}, .psw={b.r.PSW}, .pw={b.r.PYW}, .psw_shift={b.r.PSW_SHIFT}, .oh={b.r.YH}, .ow={b.r.YW}, .oc={b.r.YC}, ")
+            ch.write(     f".csh={b.r.CSH}, .ch={b.r.CYH}, .csh_shift={b.r.CSH_SHIFT}, .pkh={b.r.PKH}, .psh={b.r.PSH}, .ph={b.r.PYH}, .psh_shift={b.r.PSH_SHIFT}, .csw={b.r.CSW}, .cw={b.r.CYW}, .csw_shift={b.r.CSW_SHIFT}, .pkw={b.r.PKW}, .psw={b.r.PSW}, .pw={b.r.PYW}, .psw_shift={b.r.PSW_SHIFT}, .on={b.r.ON}, .oh={b.r.OH}, .ow={b.r.OW}, .oc={b.r.OC}, ")
             ch.write(     f".x_header={b.r.x_header_be_p[-1][0]}, .x_header_p0={b.r.x_header_be_p[0][0]}, .w_header={b.r.w_header_be_p[-1][0]}, .w_header_p0={b.r.x_header_be_p[0][0]} , ")
             ch.write(     f".debug_nhwc_words={b.oe_exp_nhwc.size} }}")
             
