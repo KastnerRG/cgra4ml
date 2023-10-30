@@ -553,23 +553,26 @@ class Bundle(tf.keras.Model):
         '''
         Pooling
         '''
-        PKH = PKW = PSH = PSW = PYH = PYW = PSH_SHIFT = PSW_SHIFT = 0
+        PKH = PKW = PSH = PSW = 1
+        PSH_SHIFT = PSW_SHIFT = 0
+        PYH, PYW = YH, YW
+
         if pool_d is not None:
             PKH, PKW = pool_d['size']
             PSH, PSW = pool_d['strides']
-
+    
             if pool_d['padding']=="same":
                 PYH = (YH+PSH-1)//PSH
                 PYW = (YW+PSW-1)//PSW
                 PSH_SHIFT = max((PSH*(PYH-1)+PKH-YH)//2, 0)
                 PSW_SHIFT = max((PSW*(PYW-1)+PKW-YW)//2, 0)
+                print("pool mode: ", pool_d['padding'])
             else:
                 PYH = (YH-PKH+PSH)//PSH
                 PYW = (YW-PKW+PSW)//PSW
-                PSH_SHIFT, PSW_SHIFT = 0, 0
-
-            YH, YW = PYH, PYH
-            print(f"out after strides:{pool_d['strides']}, sizes:{pool_d['size']}, mode:{pool_d['padding']} POOLING: (XN, CYH, CYW, CO)={(XN, CYH, CYW, CO)}")
+        
+        YH, YW = PYH, PYW
+        print(f"out after (strides:{(PSH,PSW)}, sizes:{(PKH, PKW)}) POOLING: (XN, CYH, CYW, CO)={(XN, CYH, CYW, CO)}")
 
         YL  = int(np.ceil(YH/c.ROWS))    # Blocks
 
@@ -578,7 +581,7 @@ class Bundle(tf.keras.Model):
 
         
         if core_d['type'] == 'conv' and not flatten:
-            assert o_shape == (XN, YH, YW, CO), f"{o_shape=}"
+            assert o_shape == (XN, YH, YW, CO), f"{o_shape=}, {(XN, YH, YW, CO)=}"
         
         print('final output', o_shape)
 
