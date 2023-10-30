@@ -14,7 +14,7 @@ typedef struct {
   const char is_bias, is_pool, is_flatten;
   const int b_offset, b_val_shift, b_bias_shift;
   const signed char ca_nzero, ca_shift, ca_pl_scale;
-  const int csh, ch, csh_shift, pkh, psh, ph, psh_shift, csw, cw, csw_shift, pkw, psw, pw, psw_shift, oh, ow;
+  const int csh, ch, csh_shift, pkh, psh, ph, psh_shift, csw, cw, csw_shift, pkw, psw, pw, psw_shift, oh, ow, oc;
   const unsigned long long x_header, x_header_p0, w_header, w_header_p0; // 64 bits (at least)
   const int debug_nhwc_words;
 } Bundle_t;
@@ -187,7 +187,7 @@ PROCESS_START:
 
         // ------ STORE  ------
 
-        ix_nhwc = ((i_xn*p_bundle->oh + i_xh)*p_bundle->ow +  i_xw)*p_bundle->co + i_xc;
+        ix_nhwc = ((i_xn*p_bundle->oh + i_xh)*p_bundle->ow +  i_xw)*p_bundle->oc + i_xc;
         mem.debug_nhwc[ix_nhwc] = out_val;
 
         if (ib == N_BUNDLES-1) {  
