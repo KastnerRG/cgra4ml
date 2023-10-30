@@ -72,6 +72,7 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
   int i_xr, i_xl, i_xp, i_xcm, xcm;
   Bundle_t *p_bo; 
   char xp_first;
+  div_t div_ch, div_cw, div_xh, div_xc;
 
   char f_path_raw [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
   sprintf(f_path_raw, "%s/%0d_%0d_%0d_y_raw_sim.txt", DATA_DIR, ib, ip, it);
@@ -97,8 +98,6 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
         int i_yw = iw_kw2 + iw_last;
         int i_yc = p_bundle->coe*it + icoe;
         int iy_nhwc = ((i_yn*p_bundle->h + i_yh)*p_bundle->w +  i_yw)*p_bundle->co + i_yc;
-
-        div_t div_ch, div_cw;
 
         // if out of bounds, early return
         if (i_yh >= p_bundle->h || i_yc >= p_bundle->co) { 
@@ -170,12 +169,14 @@ PROCESS_START:
         p_bo = ib == N_BUNDLES-1 ? &bundles[ib] : &bundles[ib+1];
         xp_first  = i_xc < p_bo->cm_p0;
 
-        i_xr  = i_xh %  PE_ROWS;
-        i_xl  = i_xh / PE_ROWS;
+        div_xh = div(i_xh, PE_ROWS);
+        i_xr   = div_xh.rem;
+        i_xl   = div_xh.quot;
 
-        i_xp  = xp_first ? 0           : (i_xc - p_bo->cm_p0) /  p_bo->cm + 1;
-        i_xcm = xp_first ? i_xc        : (i_xc - p_bo->cm_p0) %  p_bo->cm    ;
-        xcm   = xp_first ? p_bo->cm_p0 : p_bo->cm                            ;
+        div_xc = div(i_xc-p_bo->cm_p0, p_bo->cm);
+        i_xp   = xp_first ? 0           : div_xc.quot + 1;
+        i_xcm  = xp_first ? i_xc        : div_xc.rem;
+        xcm    = xp_first ? p_bo->cm_p0 : p_bo->cm  ;
 
 
 
@@ -192,40 +193,28 @@ PROCESS_START:
 
         if (ib == N_BUNDLES-1) {  
           // Last bundle: save as NHWC
-          // TODO: Last bundle does not support pool, stride...etc
+          if (!( i_xn  < p_bundle->n )) assert(0*printf("ixn : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_xn, p_bundle->n , ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
+          if (!( i_xh  < p_bundle->oh)) assert(0*printf("ixh : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_xh, p_bundle->oh, ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
+          if (!( i_xw  < p_bundle->ow)) assert(0*printf("ixw : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_xw, p_bundle->ow, ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
+          if (!( i_xc  < p_bundle->oc)) assert(0*printf("ixc : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_xc, p_bundle->oc, ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
 
-          int idx = ((i_yn*p_bundle->h + i_yh)*p_bundle->w +  i_yw)*p_bundle->co + i_yc;
-
-          if (!( i_yn  < p_bundle->n )) assert(0*printf("iyn : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_yn, p_bundle->n , ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
-          if (!( i_yh  < p_bundle->h )) assert(0*printf("iyn : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_yh, p_bundle->h , ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
-          if (!( i_yw  < p_bundle->w )) assert(0*printf("iyn : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_yw, p_bundle->w , ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
-          if (!( i_yc  < p_bundle->co)) assert(0*printf("iyn : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_yc, p_bundle->co, ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
-
-          mem.y[idx] = out_val;
+          mem.y[ix_nhwc] = out_val;
 
         } else {
 
           // Other bundles: pad & save as tiled
+          int xr_sweep = (i_xh==p_bo->oh) ? PE_ROWS : i_xr + 1;
 
-          write_x(out_val, ib, i_xp, i_xn, i_xl, i_xw, i_xcm, i_xr,   p_bo, xcm);
+          for (int i_xr_dest = i_xr; i_xr_dest < xr_sweep; i_xr_dest++) {
+            write_x(out_val, ib, i_xp, i_xn, i_xl, i_xw, i_xcm, i_xr_dest,   p_bo, xcm);
 
-          // --- PADDING: the [bottom X_PAD rows of previous block (l-1)] with [first X_PAD rows of this block (l)]
-          if (i_xr < X_PAD) {
-            int pad_val = (i_xl == 0) ? 0         : out_val;
-            int dest_xl = (i_xl == 0) ? p_bo->l-1 : i_xl-1;
-            write_x(pad_val, ib, i_xp, i_xn, dest_xl, i_xw, i_xcm, i_xr+PE_ROWS,   p_bo, xcm);
-          }
-          
-          // --- PADDING: L*PE_ROWS-H rows with zeros, and pad their other blocks accordingly
-          if ((i_xl == p_bo->l-1) && (i_xr == p_bo->r_ll-1)) {
-            for (int ir_hpad = p_bo->r_ll; ir_hpad < PE_ROWS; ir_hpad++){
-              write_x(0, ib, i_xp, i_xn, i_xl, i_xw, i_xcm, ir_hpad,   p_bo, xcm);
-
-              if (ir_hpad < X_PAD) {
-                  int dest_xl = (i_xl == 0) ? p_bo->l-1 : i_xl-1;
-                  write_x(0, ib, i_xp, i_xn, dest_xl, i_xw, i_xcm, ir_hpad+PE_ROWS,   p_bo, xcm);
-              }
+            // --- PADDING: the [bottom X_PAD rows of previous block (l-1)] with [first X_PAD rows of this block (l)]
+            if (i_xr_dest < X_PAD) {
+              int pad_val = (i_xl == 0) ? 0         : out_val;
+              int dest_xl = (i_xl == 0) ? p_bo->l-1 : i_xl-1;
+              write_x(pad_val, ib, i_xp, i_xn, dest_xl, i_xw, i_xcm, i_xr_dest+PE_ROWS,   p_bo, xcm);
             }
+            out_val = 0;
           }
         }
 
