@@ -34,7 +34,7 @@ Bundle (next)
     - GeLU
 - Quantization
 - Tiling
-    - Conv2dense (flatten)
+    - is_flatten
     - x2w (transformer)
     - concat_matrix (transformer)
 '''
@@ -276,12 +276,26 @@ class Bundle(tf.keras.Model):
 
 
         if 'strides' in self.core and self.core['strides'] != (1,1):
-            SH, SW = self.core['strides']
-            N, XH, XW, C = self.proc['int'].shape
-            YH, YW = XH//SH, XW//SW
-            self.proc['int'] = self.proc['int'].reshape(N, YH, SH, YW, SW, C)
-            ind = -1 if self.w['int'].shape[0] > 1 else 0
-            self.proc['int'] = self.proc['int'][:,:,ind,:,ind,:]
+            KH, KW = self.core['kernel_size']
+            CSH, CSW = self.core['strides']
+            XN, XH, XW, YC = self.proc['int'].shape
+            CYH, CYW = math.ceil(XH/CSH), math.ceil(XW/CSW)
+            
+            pre_stride = self.proc['int']
+            post_stride = np.zeros((XN, CYH, CYW, YC)).astype(pre_stride.dtype)
+            
+            (h_shift, w_shift) = (0,0)
+            if self.core['padding']=="same":
+                h_shift = (KH-1)//2 - max((CSH*(CYH-1)+KH-XH)//2, 0)
+                w_shift = (KW-1)//2 - max((CSW*(CYW-1)+KW-XW)//2, 0)
+
+            for xh in range(XH):
+                for xw in range(XW):
+                    if (xh-h_shift)%CSH == 0 and (xw-w_shift)%CSW == 0:
+                        cyh = (xh-h_shift)//CSH
+                        cyw = (xw-w_shift)//CSW
+                        post_stride[:,cyh,cyw,:] = pre_stride[:,xh,xw,:]
+            self.proc['int'] = post_stride
         
         def shift_round(n,s):
             '''Performs integer division with round-to-nearest-even. 
@@ -512,25 +526,33 @@ class Bundle(tf.keras.Model):
         XL  = int(np.ceil(XH/c.ROWS))    # Blocks
         YH, YW = XH, XW
 
+
         '''
         Conv Striding
         '''
         if core_d['type'] == 'conv':
             CSH, CSW = core_d['strides']
-            CYH, CYW = int(np.ceil(XH/CSH)), int(np.ceil(XW/CSW))
-            
-            CSH_SHIFT, CSW_SHIFT = 0,0
+            assert XH > KH
+            assert XW > KW
+        else:
+            CSH, CSW = 1,1
+
+        CYH, CYW = int(np.ceil(XH/CSH)), int(np.ceil(XW/CSW))
+        
+        CSH_SHIFT, CSW_SHIFT = 0,0
+        if core_d['type'] == 'conv':
             if core_d['padding']=="same":
                 CSH_SHIFT = (KH-1)//2 - max((CSH*(CYH-1)+KH-XH)//2, 0)
                 CSW_SHIFT = (KW-1)//2 - max((CSW*(CYW-1)+KW-XW)//2, 0)
+            print(f"out after (strides:{CSH, CSW}, mode:{core_d['padding']}) CONV_STRIDING: (XN, CYH, CYW, CO)={(XN, CYH, CYW, CO)}")
 
             YH, YW = CYH, CYW
-            print(f"out after (strides:{CSH, CSW}, mode:{core_d['padding']}) CONV_STRIDING: (XN, CYH, CYW, CO)={(XN, CYH, CYW, CO)}")
 
 
         '''
         Pooling
         '''
+        PKH = PKW = PSH = PSW = PYH = PYW = PSH_SHIFT = PSW_SHIFT = 0
         if pool_d is not None:
             PKH, PKW = pool_d['size']
             PSH, PSW = pool_d['strides']
