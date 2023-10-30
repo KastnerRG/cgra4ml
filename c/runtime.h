@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #ifdef VERILATOR
   #define EXT_C "C"
@@ -10,9 +11,10 @@
 typedef struct {
   const int n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0;
   const int w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_bytes; // bytes per transfer
-  const char is_bias, conv2dense;
+  const char is_bias, is_pool, is_flatten;
   const int b_offset, b_val_shift, b_bias_shift;
   const signed char ca_nzero, ca_shift, ca_pl_scale;
+  const int csh, ch, csh_shift, pkh, psh, ph, psh_shift, csw, cw, csw_shift, pkw, psw, pw, psw_shift, oh, ow;
   const unsigned long long x_header, x_header_p0, w_header, w_header_p0; // 64 bits (at least)
   const int debug_nhwc_words;
 } Bundle_t;
@@ -66,7 +68,7 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
   static int ib=0, ip=0, it=0, in=0, il=0, iw_kw2=0;
   const int *p_sram = (const int *)p_sram_u32;
 
-  int i_xn, i_xh, i_xw, i_xc;
+  int i_xn, i_xh, i_xw, i_xc, ix_nhwc;
   int i_xr, i_xl, i_xp, i_xcm, xcm;
   Bundle_t *p_bo; 
   char xp_first;
@@ -96,6 +98,8 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
         int i_yc = p_bundle->coe*it + icoe;
         int iy_nhwc = ((i_yn*p_bundle->h + i_yh)*p_bundle->w +  i_yw)*p_bundle->co + i_yc;
 
+        div_t div_ch, div_cw;
+
         // if out of bounds, early return
         if (i_yh >= p_bundle->h || i_yc >= p_bundle->co) { 
           if (ip == p_bundle->p-1)
@@ -124,6 +128,14 @@ PROCESS_START:
         fprintf(fp_sum,"%d\n", out_val); // Save summed output
 
 
+        // ------ CONV STRIDING ------
+        div_ch = div(i_yh-p_bundle->csh_shift, p_bundle->csh);
+        div_cw = div(i_yw-p_bundle->csw_shift, p_bundle->csw);
+
+        if (div_ch.rem != 0 || div_cw.rem != 0)
+          goto PROCESS_AND_STORE_DONE;
+
+
         // ------ ADD BIAS ------ 
         if (p_bundle->is_bias)
           out_val = (out_val << p_bundle->b_val_shift) + (mem.b[i_bias] << p_bundle->b_bias_shift);
@@ -136,21 +148,20 @@ PROCESS_START:
 
         // ------ SOFTMAX ------
 
-        mem.debug_nhwc[iy_nhwc] = out_val;
 
 
         // ------ TILING: Calculate X coordinates ------
 
         // Calc: y [n,h,w,c] -> x [n,h,w,c]
-        if (p_bundle->conv2dense){
+        if (p_bundle->is_flatten){
           i_xn = 0   ;                                            // N=1
           i_xh = i_yn;                                            // N -> H
           i_xw = 0   ;                                            // W=1
           i_xc = (i_yh*p_bundle->w +  i_yw)*p_bundle->co + i_yc;  // (H*W*C) -> C
         } else {
           i_xn = i_yn; 
-          i_xh = i_yh;
-          i_xw = i_yw; 
+          i_xh = div_ch.quot;
+          i_xw = div_cw.quot; 
           i_xc = i_yc;
         }
 
@@ -167,12 +178,17 @@ PROCESS_START:
         xcm   = xp_first ? p_bo->cm_p0 : p_bo->cm                            ;
 
 
+
+
         // ------ MAX/AVG POOL ------
 
         // ------ RELU + QUANT ------
 
 
         // ------ STORE  ------
+
+        ix_nhwc = ((i_xn*p_bundle->oh + i_xh)*p_bundle->ow +  i_xw)*p_bundle->co + i_xc;
+        mem.debug_nhwc[ix_nhwc] = out_val;
 
         if (ib == N_BUNDLES-1) {  
           // Last bundle: save as NHWC
