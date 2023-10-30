@@ -203,7 +203,7 @@ PROCESS_START:
         } else {
 
           // Other bundles: pad & save as tiled
-          int xr_sweep = (i_xh==p_bo->oh) ? PE_ROWS : i_xr + 1;
+          int xr_sweep = i_xh==p_bundle->oh-1 ? PE_ROWS : i_xr + 1;
 
           for (int i_xr_dest = i_xr; i_xr_dest < xr_sweep; i_xr_dest++) {
             write_x(out_val, ib, i_xp, i_xn, i_xl, i_xw, i_xcm, i_xr_dest,   p_bo, xcm);
