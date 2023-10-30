@@ -33,6 +33,8 @@ typedef struct {
 } Memory_st;
 Memory_st mem;
 
+#define max(x, y) (x > y ? x : y)
+#define min(x, y) (x < y ? x : y)
 #define clip(x, min, max) ((x < min) ? min : (x > max) ? max : x)
 #define shift_round(n, s) ((n + (1<<(s-1)) - (~(n>>s)&1) ) >> s) // === np.around(n/2**s).astype(int)
 
@@ -68,11 +70,11 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
   static int ib=0, ip=0, it=0, in=0, il=0, iw_kw2=0;
   const int *p_sram = (const int *)p_sram_u32;
 
-  int i_xn, i_xh, i_xw, i_xc, ix_nhwc;
-  int i_xr, i_xl, i_xp, i_xcm, xcm;
+  int iy_nhwc;
+  int i_yr, i_yl, i_yp, i_ycm, ycm;
   Bundle_t *p_bo; 
-  char xp_first;
-  div_t div_ch, div_cw, div_xh, div_xc;
+  char yp_first;
+  div_t div_ch, div_cw, div_oh, div_oc;
 
   char f_path_raw [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
   sprintf(f_path_raw, "%s/%0d_%0d_%0d_y_raw_sim.txt", DATA_DIR, ib, ip, it);
@@ -97,7 +99,13 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
         int i_yh = il*PE_ROWS + ir;
         int i_yw = iw_kw2 + iw_last;
         int i_yc = p_bundle->coe*it + icoe;
-        int iy_nhwc = ((i_yn*p_bundle->h + i_yh)*p_bundle->w +  i_yw)*p_bundle->co + i_yc;
+
+        // Save y_dims
+        int yn = p_bundle->n;
+        int yh = p_bundle->h;
+        int yw = p_bundle->w;
+        int yc = p_bundle->co;
+
 
         // if out of bounds, early return
         if (i_yh >= p_bundle->h || i_yc >= p_bundle->co) { 
@@ -113,6 +121,7 @@ PROCESS_START:
 
 
         // ------ ADD P PASSES ------ 
+        iy_nhwc = ((i_yn*yh + i_yh)*yw +  i_yw)*yc + i_yc;
 
         if (p_bundle->p == 1) {          // only p  : proceed with value
         } else if (ip == p_bundle->p-1) {// last p  : read, add, proceed
@@ -134,6 +143,10 @@ PROCESS_START:
         if (div_ch.rem != 0 || div_cw.rem != 0)
           goto PROCESS_AND_STORE_DONE;
 
+        i_yh = div_ch.quot; // update indices and dimensions
+        i_yw = div_cw.quot;
+        yh = p_bundle->ch;
+        yw = p_bundle->cw;
 
         // ------ ADD BIAS ------ 
         if (p_bundle->is_bias)
@@ -148,71 +161,70 @@ PROCESS_START:
         // ------ SOFTMAX ------
 
 
-
-        // ------ TILING: Calculate X coordinates ------
-
-        // Calc: y [n,h,w,c] -> x [n,h,w,c]
-        if (p_bundle->is_flatten){
-          i_xn = 0   ;                                            // N=1
-          i_xh = i_yn;                                            // N -> H
-          i_xw = 0   ;                                            // W=1
-          i_xc = (i_yh*p_bundle->w +  i_yw)*p_bundle->co + i_yc;  // (H*W*C) -> C
-        } else {
-          i_xn = i_yn; 
-          i_xh = div_ch.quot;
-          i_xw = div_cw.quot; 
-          i_xc = i_yc;
-        }
-
-        // Calc: x [n,h,w,c] -> x[p, n, l, w,cmp, r+pad]
-
-        p_bo = ib == N_BUNDLES-1 ? &bundles[ib] : &bundles[ib+1];
-        xp_first  = i_xc < p_bo->cm_p0;
-
-        div_xh = div(i_xh, PE_ROWS);
-        i_xr   = div_xh.rem;
-        i_xl   = div_xh.quot;
-
-        div_xc = div(i_xc-p_bo->cm_p0, p_bo->cm);
-        i_xp   = xp_first ? 0           : div_xc.quot + 1;
-        i_xcm  = xp_first ? i_xc        : div_xc.rem;
-        xcm    = xp_first ? p_bo->cm_p0 : p_bo->cm  ;
-
-
-
-
         // ------ MAX/AVG POOL ------
 
         // ------ RELU + QUANT ------
 
 
+        // ------ FLATTEN ------
+        if (p_bundle->is_flatten) {
+          i_yc = (i_yh*yw + i_yw)*yc + i_yc;  // (H*W*C) -> C
+          i_yw = 0;                           // W=1
+          i_yh = i_yn;                        // N -> H
+          i_yn = 0;                           // N=1
+
+          yc = yh*yw*yc;
+          yw = 1;
+          yh = yn;
+          yn = 1;
+        }
+
+
+        // ------ TILING: Calculate X coordinates ------
+        // y [n,h,w,c] -> x[p, n, l, w,cmp, r+pad]
+
+        p_bo = ib == N_BUNDLES-1 ? &bundles[ib] : &bundles[ib+1];
+        yp_first  = i_yc < p_bo->cm_p0;
+
+        div_oh = div(i_yh, PE_ROWS);
+        i_yr   = div_oh.rem;
+        i_yl   = div_oh.quot;
+
+        div_oc  = div(i_yc-p_bo->cm_p0, p_bo->cm);
+        i_yp   = yp_first ? 0           : div_oc.quot + 1;
+        i_ycm  = yp_first ? i_yc        : div_oc.rem;
+        ycm    = yp_first ? p_bo->cm_p0 : p_bo->cm  ;
+
+        if (!( yh == p_bundle->oh )) assert(0*printf("yh : %d != %d --------- ib:%d \n", yh, p_bundle->oh, ib)); 
+        if (!( yw == p_bundle->ow )) assert(0*printf("yw : %d != %d --------- ib:%d \n", yw, p_bundle->ow, ib)); 
+        if (!( yc == p_bundle->oc )) assert(0*printf("yw : %d != %d --------- ib:%d \n", yc, p_bundle->oc, ib)); 
+
+
         // ------ STORE  ------
 
-        ix_nhwc = ((i_xn*p_bundle->oh + i_xh)*p_bundle->ow +  i_xw)*p_bundle->oc + i_xc;
-        mem.debug_nhwc[ix_nhwc] = out_val;
+        iy_nhwc = ((i_yn*yh + i_yh)*yw +  i_yw)*yc + i_yc;
+        mem.debug_nhwc[iy_nhwc] = out_val;
 
         if (ib == N_BUNDLES-1) {  
           // Last bundle: save as NHWC
-          if (!( i_xn  < p_bundle->n )) assert(0*printf("ixn : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_xn, p_bundle->n , ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
-          if (!( i_xh  < p_bundle->oh)) assert(0*printf("ixh : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_xh, p_bundle->oh, ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
-          if (!( i_xw  < p_bundle->ow)) assert(0*printf("ixw : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_xw, p_bundle->ow, ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
-          if (!( i_xc  < p_bundle->oc)) assert(0*printf("ixc : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_xc, p_bundle->oc, ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
-
-          mem.y[ix_nhwc] = out_val;
-
+          if (!( i_yn < yn)) assert(0*printf("iyn : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_yn, yn, ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
+          if (!( i_yh < yh)) assert(0*printf("iyh : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_yh, yh, ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
+          if (!( i_yw < yw)) assert(0*printf("iyw : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_yw, yw, ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
+          if (!( i_yc < yc)) assert(0*printf("iyc : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_yc, yc, ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
+          mem.y[iy_nhwc] = out_val;
         } else {
 
           // Other bundles: pad & save as tiled
-          int xr_sweep = i_xh==p_bundle->oh-1 ? PE_ROWS : i_xr + 1;
+          int yr_sweep = i_yh==yh-1 ? PE_ROWS : i_yr + 1;
 
-          for (int i_xr_dest = i_xr; i_xr_dest < xr_sweep; i_xr_dest++) {
-            write_x(out_val, ib, i_xp, i_xn, i_xl, i_xw, i_xcm, i_xr_dest,   p_bo, xcm);
+          for (int i_yr_dest = i_yr; i_yr_dest < yr_sweep; i_yr_dest++) {
+            write_x(out_val, ib, i_yp, i_yn, i_yl, i_yw, i_ycm, i_yr_dest,   p_bo, ycm);
 
             // --- PADDING: the [bottom X_PAD rows of previous block (l-1)] with [first X_PAD rows of this block (l)]
-            if (i_xr_dest < X_PAD) {
-              int pad_val = (i_xl == 0) ? 0         : out_val;
-              int dest_xl = (i_xl == 0) ? p_bo->l-1 : i_xl-1;
-              write_x(pad_val, ib, i_xp, i_xn, dest_xl, i_xw, i_xcm, i_xr_dest+PE_ROWS,   p_bo, xcm);
+            if (i_yr_dest < X_PAD) {
+              int pad_val = (i_yl == 0) ? 0         : out_val;
+              int dest_yl = (i_yl == 0) ? p_bo->l-1 : i_yl-1;
+              write_x(pad_val, ib, i_yp, i_yn, dest_yl, i_yw, i_ycm, i_yr_dest+PE_ROWS,   p_bo, ycm);
             }
             out_val = 0;
           }
@@ -311,22 +323,22 @@ extern EXT_C void load_w (unsigned char *p_done, int *p_offset, int *p_bpt) {
 
 
 extern EXT_C void fill_memory (){
-  FILE *fp_raw;
-  char f_path_raw [1000];
+  FILE *fp;
+  char f_path [1000];
 
-  sprintf(f_path_raw, "%s/w.bin", DATA_DIR);
-  fp_raw = fopen(f_path_raw, "rb");
-  if(!fp_raw)
-    printf("ERROR! File not found: %s \n", f_path_raw);
-  fread(mem.w, 1, WB_BYTES, fp_raw);
-  fclose(fp_raw);
+  sprintf(f_path, "%s/w.bin", DATA_DIR);
+  fp = fopen(f_path, "rb");
+  if(!fp)
+    printf("ERROR! File not found: %s \n", f_path);
+  fread(mem.w, 1, WB_BYTES, fp);
+  fclose(fp);
 
-  sprintf(f_path_raw, "%s/x_all.bin", DATA_DIR);
-  fp_raw = fopen(f_path_raw, "rb");
-  if(!fp_raw)
-    printf("ERROR! File not found: %s \n", f_path_raw);
-  fread(mem.x, 1, X_BYTES_ALL, fp_raw);
-  fclose(fp_raw);
+  sprintf(f_path, "%s/x_all.bin", DATA_DIR);
+  fp = fopen(f_path, "rb");
+  if(!fp)
+    printf("ERROR! File not found: %s \n", f_path);
+  fread(mem.x, 1, X_BYTES_ALL, fp);
+  fclose(fp);
 
   for (int i=0; i<B_WORDS; i++)
     printf("i:%d, bias:%d\n", i, mem.b[i]);
