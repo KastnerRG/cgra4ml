@@ -14,6 +14,7 @@ typedef struct {
   const int b_offset, b_val_shift, b_bias_shift;
   const signed char ca_nzero, ca_shift, ca_pl_scale;
   const unsigned long long x_header, x_header_p0, w_header, w_header_p0; // 64 bits (at least)
+  const int debug_nhwc_words;
 } Bundle_t;
 
 #include "model.h"
@@ -26,6 +27,7 @@ typedef struct {
   char   nx [O_BYTES_MAX ];
   int    y  [O_WORDS     ];
   int  nhwc [Y_BYTES/4   ];
+  int debug_nhwc [Y_BYTES/4];
 } Memory_st;
 Memory_st mem;
 
@@ -69,14 +71,11 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
   Bundle_t *p_bo; 
   char xp_first;
 
-  FILE *fp_raw, *fp_out, *fp_sum;
-  char f_path_raw [1000], f_path_out [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
+  char f_path_raw [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
   sprintf(f_path_raw, "%s/%0d_%0d_%0d_y_raw_sim.txt", DATA_DIR, ib, ip, it);
   sprintf(f_path_sum, "%s/%0d_y_sum_sim.txt", DATA_DIR, ib);
-  sprintf(f_path_out, "%s/%0d_y_out_sim.txt", DATA_DIR, ib);
-  fp_raw = fopen(f_path_raw, "a"); 
-  fp_sum = fopen(f_path_sum, "a"); 
-  fp_out = fopen(f_path_out, "a"); 
+  FILE *fp_raw = fopen(f_path_raw, "a"); 
+  FILE *fp_sum = fopen(f_path_sum, "a"); 
 
   //New iw_kw2:
   int w_last = iw_kw2 == p_bundle->w_kw2-1 ? p_bundle->kw/2+1 : 1;
@@ -95,14 +94,12 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
         int i_yh = il*PE_ROWS + ir;
         int i_yw = iw_kw2 + iw_last;
         int i_yc = p_bundle->coe*it + icoe;
-        int i_nhwc = ((i_yn*p_bundle->h + i_yh)*p_bundle->w +  i_yw)*p_bundle->co + i_yc;
+        int iy_nhwc = ((i_yn*p_bundle->h + i_yh)*p_bundle->w +  i_yw)*p_bundle->co + i_yc;
 
         // if out of bounds, early return
         if (i_yh >= p_bundle->h || i_yc >= p_bundle->co) { 
-          if (ip == p_bundle->p-1) {
+          if (ip == p_bundle->p-1)
             fprintf(fp_sum,"%d\n", 0);        // Save summed output
-            fprintf(fp_out,"%d\n", 0);        // Save processed output
-          }
           goto PROCESS_AND_STORE_DONE;
         }
 
@@ -116,12 +113,12 @@ PROCESS_START:
 
         if (p_bundle->p == 1) {          // only p  : proceed with value
         } else if (ip == p_bundle->p-1) {// last p  : read, add, proceed
-          out_val += mem.nhwc[i_nhwc];
+          out_val += mem.nhwc[iy_nhwc];
         } else if (ip == 0) {            // first p : overwrite memory, return
-          mem.nhwc[i_nhwc] = out_val;
+          mem.nhwc[iy_nhwc] = out_val;
           goto PROCESS_AND_STORE_DONE;
         } else {                         // middle p: read, add, store, return
-          mem.nhwc[i_nhwc] += out_val;
+          mem.nhwc[iy_nhwc] += out_val;
           goto PROCESS_AND_STORE_DONE;
         }
         fprintf(fp_sum,"%d\n", out_val); // Save summed output
@@ -139,8 +136,7 @@ PROCESS_START:
 
         // ------ SOFTMAX ------
 
-
-        fprintf(fp_out,"%d\n", out_val); // Save processed output
+        mem.debug_nhwc[iy_nhwc] = out_val;
 
 
         // ------ TILING: Calculate X coordinates ------
@@ -224,7 +220,6 @@ PROCESS_AND_STORE_DONE:
       }
     }
   }
-  fclose(fp_out);
   fclose(fp_sum);
   fclose(fp_raw);
 
@@ -245,6 +240,14 @@ PROCESS_AND_STORE_DONE:
             for (int i=0; i<p_bundle->o_bytes; i++)
               fprintf(fp_tiled,"%d\n", ib == N_BUNDLES-1 ? mem.y[i] : mem.nx[i]);
             fclose(fp_tiled);
+
+            char f_path_debug [1000];
+            sprintf(f_path_debug, "%s/%0d_y_nhwc_sim.txt", DATA_DIR, ib);
+            FILE *fp_debug = fopen(f_path_debug, "w");
+            for (int i=0; i<p_bundle->debug_nhwc_words; i++)
+              fprintf(fp_debug,"%d\n", mem.debug_nhwc[i]);
+            fclose(fp_debug);
+
             
             ++ib; if (ib >= N_BUNDLES) { ib = 0;  // after_all(ib):
               *p_done = 1;

@@ -161,6 +161,7 @@ class Config:
     CO: int
     is_bias: bool
     act_q: str
+    strides: (int,int) = (1,1)
     flatten: bool = False
     dense: bool = False
 
@@ -191,7 +192,7 @@ def test_dnn_engine(COMPILE):
 
     input_shape = (8,18,8,3) # (XN, XH, XW, CI)
     model_config = [
-        Config(11, 16, True , f'quantized_relu({c.X_BITS},0,negative_slope=0)'),
+        Config(11, 16, True , f'quantized_relu({c.X_BITS},0,negative_slope=0)', (1,1)),
         Config(1 , 16, False, f'quantized_bits({c.X_BITS},0,False,False,1)'),
         Config(7 , 16, True , f'quantized_bits({c.X_BITS},0,False,True,1)'),
         Config(5 , 16, False, f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'),
@@ -214,7 +215,7 @@ def test_dnn_engine(COMPILE):
         if g.dense:
             d = {'core': {'type':'dense', 'units':g.CO, 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':g.is_bias, 'act_str':g.act_q}}
         else:
-            d = {'core': {'type':'conv', 'filters':g.CO, 'kernel_size':(g.K,g.K), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':g.is_bias, 'act_str':g.act_q}, 'flatten':g.flatten,}
+            d = {'core': {'type':'conv', 'filters':g.CO, 'kernel_size':(g.K,g.K), 'strides':g.strides, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':g.is_bias, 'act_str':g.act_q}, 'flatten':g.flatten,}
         x = Bundle(**d)(x)
 
     model = Model(inputs=x_in, outputs=x)
@@ -286,11 +287,11 @@ def test_dnn_engine(COMPILE):
 
             y_coe = b.r.CO_PRL
             y_coe_tl = b.r.CO_PRL if (b.r.CO==b.r.IT*b.r.CO_PRL) else b.r.CO%b.r.IT
-            y_r_ll = c.ROWS if b.r.XH==b.r.L*c.ROWS else  b.r.XH % c.ROWS
+            y_r_ll = c.ROWS if b.r.XH==b.r.XL*c.ROWS else  b.r.XH % c.ROWS
 
             ca_nzero, ca_shift, ca_pl_scale = b.core['act']['non_zero'], b.core['act']['shift_bits'], b.core['act']['plog_slope']
 
-            ch.write(f"   {{.n={b.r.XN}, .l={b.r.L}, .kw={b.r.KW}, .coe={y_coe}, .coe_tl={y_coe_tl}, .r_ll={y_r_ll}, .h={b.r.XH}, .w={b.r.XW}, .ci={b.r.CI}, .co={b.r.CO}, .w_kw2={b.r.XW-b.r.KW//2}, .t={b.r.IT}, .p={b.r.CP}, .cm={b.r.CM}, .cm_p0={b.r.CM_0}, .w_bpt={w_bpt}, .w_bpt_p0={w_bpt_p0}, .x_bpt={x_bpt}, .x_bpt_p0={x_bpt_p0}, .o_bytes={o_bytes_b}, .is_bias={1*(b.b is not None)}, .conv2dense={1*b.flatten}, .b_offset={b_words}, .b_val_shift={b.bias_val_shift}, .b_bias_shift={b.bias_b_shift}, .ca_nzero={ca_nzero}, .ca_shift={ca_shift}, .ca_pl_scale={ca_pl_scale}, .x_header={b.r.x_header_be_p[-1][0]}, .x_header_p0={b.r.x_header_be_p[0][0]}, .w_header={b.r.w_header_be_p[-1][0]}, .w_header_p0={b.r.x_header_be_p[0][0]} }}")
+            ch.write(f"   {{.n={b.r.XN}, .l={b.r.XL}, .kw={b.r.KW}, .coe={y_coe}, .coe_tl={y_coe_tl}, .r_ll={y_r_ll}, .h={b.r.XH}, .w={b.r.XW}, .ci={b.r.CI}, .co={b.r.CO}, .w_kw2={b.r.XW-b.r.KW//2}, .t={b.r.IT}, .p={b.r.CP}, .cm={b.r.CM}, .cm_p0={b.r.CM_0}, .w_bpt={w_bpt}, .w_bpt_p0={w_bpt_p0}, .x_bpt={x_bpt}, .x_bpt_p0={x_bpt_p0}, .o_bytes={o_bytes_b}, .is_bias={1*(b.b is not None)}, .conv2dense={1*b.flatten}, .b_offset={b_words}, .b_val_shift={b.bias_val_shift}, .b_bias_shift={b.bias_b_shift}, .ca_nzero={ca_nzero}, .ca_shift={ca_shift}, .ca_pl_scale={ca_pl_scale}, .x_header={b.r.x_header_be_p[-1][0]}, .x_header_p0={b.r.x_header_be_p[0][0]}, .w_header={b.r.w_header_be_p[-1][0]}, .w_header_p0={b.r.x_header_be_p[0][0]} , .debug_nhwc_words={b.oe_exp_nhwc.size} }}")
             
             b_words += b.be.size if b.b else 0
             if b.idx != len(bundles)-1:
@@ -346,8 +347,7 @@ def test_dnn_engine(COMPILE):
     Write Text files of vectors
     '''
     for b in bundles:
-        np.savetxt(f"{DATA_DIR}/{b.idx}_y_exp.txt", b.oe_exp.flatten(), fmt='%d')
-        np.savetxt(f"{DATA_DIR}/{b.idx}_y_hwc.txt", b.o_int.flatten(), fmt='%d')
+        np.savetxt(f"{DATA_DIR}/{b.idx}_y_nhwc_exp.txt", b.oe_exp_nhwc.flatten(), fmt='%d')
         np.savetxt(f"{DATA_DIR}/{b.idx}_xe.txt", np.concatenate([a.flatten() for a in b.xe]), fmt='%d')
         for ip in range(b.r.CP):
             CM_p = b.r.CM_0 if ip==0 else b.r.CM
@@ -359,7 +359,7 @@ def test_dnn_engine(COMPILE):
 
             xp = b.xe[ip].flatten()
             xp = np.concatenate([x_config_words, xp], axis=0)
-            assert xp.shape == (c.IN_BITS/c.X_BITS +b.r.XN*b.r.L*b.r.XW*CM_p*(c.ROWS+c.X_PAD),)
+            assert xp.shape == (c.IN_BITS/c.X_BITS +b.r.XN*b.r.XL*b.r.XW*CM_p*(c.ROWS+c.X_PAD),)
             np.savetxt(f"{DATA_DIR}/{b.idx}_{ip}_x.txt", xp, fmt='%d')
 
 
@@ -416,9 +416,9 @@ def test_dnn_engine(COMPILE):
         error = np.sum(np.abs(y_sum_exp-y_sum_sim))
         assert error == 0, f"Error={error}, for y_sum_sim at {b.idx=}"
 
-        ''' Verify processed output '''
-        y_out_sim = np.loadtxt(f"{DATA_DIR}/{b.idx}_y_out_sim.txt",np.int32).reshape((b.r.IT, b.r.XN*b.r.L*b.r.XW*b.r.CO_PRL*c.ROWS))
-        error = np.sum(np.abs(y_out_sim.reshape(b.oe_exp.shape) - b.oe_exp))
+        ''' Verify processed output HWC'''
+        y_nhwc_sim = np.loadtxt(f"{DATA_DIR}/{b.idx}_y_nhwc_sim.txt",np.int32).reshape(b.oe_exp_nhwc.shape)
+        error = np.sum(np.abs(y_nhwc_sim.reshape(b.oe_exp_nhwc.shape) - b.oe_exp_nhwc))
         assert error == 0
 
         ''' Verify tiled output'''
