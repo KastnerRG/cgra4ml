@@ -437,7 +437,15 @@ class Bundle(tf.keras.Model):
             o_int = self.o_exp
             w_int, x_int = self.w['int'], self.inp['int']
         
-        r = self.get_runtime_params(c, w_int.shape, x_int.shape, y_int.shape)
+        r = self.get_runtime_params(
+            c=c, 
+            w_shape=w_int.shape, 
+            x_shape=x_int.shape, 
+            o_shape=self.o_exp.shape, 
+            core_d=self.core, 
+            pool_d=self.pool,
+            flatten = self.flatten,
+            )
         r = self.create_headers(c, r)
 
         assert r.KH <= c.KH_MAX
@@ -454,14 +462,14 @@ class Bundle(tf.keras.Model):
 
         self.be =  self.reorder_b_q2e_conv(self.b['int'], c, r) if self.b else None
         self.we = self.reorder_w_q2e_conv(w_int, c, r)
-        self.ye_exp_shape = (r.IT, r.XN, r.L, r.XW*r.CO_PRL, c.ROWS)
+        self.ye_exp_shape = (r.IT, r.XN, r.XL, r.XW*r.CO_PRL, c.ROWS)
         self.ye_hw = np.zeros(self.ye_exp_shape)
 
         self.xe = self.reorder_x_q2e_conv(x_int, c, r)
         self.ye_exp = self.reorder_y_q2e_conv(y_int, c, r)
         self.o_int = o_int
         self.oe_sum_exp = o_int if is_last else self.reorder_y_q2e_conv(o_sum_int, c, r)
-        self.oe_exp = o_int if is_last else self.reorder_y_q2e_conv(o_int, c, r)
+        self.oe_exp_nhwc = o_int
         print(f"x reshape: [int]:{self.inp['int'].shape}, int:{x_int.shape}. xe:{self.xe[0].shape}")
 
         '''
@@ -482,16 +490,15 @@ class Bundle(tf.keras.Model):
 
 
     @staticmethod
-    def get_runtime_params(c, w_shape, x_shape, y_shape):
+    def get_runtime_params(c, w_shape, x_shape, o_shape, core_d, pool_d, flatten):
 
-        SW = SH = 1 # for bundle
         KH, KW, CI, CO = w_shape
         print('weights initial (KH, KW, CI, CO) =', w_shape)
 
-        CO_PRL         = c.COLS * SW // KW                        # SW cols are processed in parallel
-        EG             = int(np.floor( c.COLS / (KW + SW - 1)))   # elastic groups
-        IT             = int(np.ceil( CO / (SW*EG)))              # iterations needed
-        CO_PAD         = IT * CO_PRL                              # output cols padded
+        CO_PRL         = c.COLS // KW                        # SW cols are processed in parallel
+        EG             = int(np.floor( c.COLS / KW))         # elastic groups
+        IT             = int(np.ceil( CO / EG))              # iterations needed
+        CO_PAD         = IT * CO_PRL                         # output cols padded
         
         CM             = (c.RAM_WEIGHTS_DEPTH - c.CONFIG_BEATS)//KH  # (available rows in weights ram)/KH
         CP             = int(np.ceil(CI / CM))                        # Number of passes required
@@ -501,18 +508,59 @@ class Bundle(tf.keras.Model):
 
         XN, XH, XW, CI = x_shape
         print('input initial (XN, XH, XW, CI)=', x_shape)
-        print('output initial', y_shape)
-        SH_OUT, SW_OUT = x_shape[1]//y_shape[1], x_shape[2]//y_shape[2]
 
-        LH     = c.ROWS*SH              # Block height
-        L      = int(np.ceil(XH/LH))    # Blocks
-        XH_PAD = LH*L
+        XL  = int(np.ceil(XH/c.ROWS))    # Blocks
+        YH, YW = XH, XW
+
+        '''
+        Conv Striding
+        '''
+        if core_d['type'] == 'conv':
+            CSH, CSW = core_d['strides']
+            CYH, CYW = int(np.ceil(XH/CSH)), int(np.ceil(XW/CSW))
+            
+            CSH_SHIFT, CSW_SHIFT = 0,0
+            if core_d['padding']=="same":
+                CSH_SHIFT = (KH-1)//2 - max((CSH*(CYH-1)+KH-XH)//2, 0)
+                CSW_SHIFT = (KW-1)//2 - max((CSW*(CYW-1)+KW-XW)//2, 0)
+
+            YH, YW = CYH, CYW
+            print(f"out after (strides:{CSH, CSW}, mode:{core_d['padding']}) CONV_STRIDING: (XN, CYH, CYW, CO)={(XN, CYH, CYW, CO)}")
+
+
+        '''
+        Pooling
+        '''
+        if pool_d is not None:
+            PKH, PKW = pool_d['size']
+            PSH, PSW = pool_d['strides']
+
+            if pool_d['padding']=="same":
+                PYH = (YH+PSH-1)//PSH
+                PYW = (YW+PSW-1)//PSW
+                PSH_SHIFT = max((PSH*(PYH-1)+PKH-YH)//2, 0)
+                PSW_SHIFT = max((PSW*(PYW-1)+PKW-YW)//2, 0)
+            else:
+                PYH = (YH-PKH+PSH)//PSH
+                PYW = (YW-PKW+PSW)//PSW
+                PSH_SHIFT, PSW_SHIFT = 0, 0
+
+            YH, YW = PYH, PYH
+            print(f"out after strides:{pool_d['strides']}, sizes:{pool_d['size']}, mode:{pool_d['padding']} POOLING: (XN, CYH, CYW, CO)={(XN, CYH, CYW, CO)}")
+
+        YL  = int(np.ceil(YH/c.ROWS))    # Blocks
+        
+        if core_d['type'] == 'conv':
+            assert o_shape == (XN, YH, YW, CO), f"{o_shape=}"
+        
+        print('final output', o_shape)
+
 
         '''
         Pack all local variables into a namedtuple
         '''
         params = locals()
-        params = {k:params[k] for k in params if not ('__' in k or k in ['w', 'x', 'y', 'c', 'params'])}
+        params = {k:params[k] for k in params if not ('__' in k or k in ['w', 'x', 'y', 'c', 'core_d', 'pool_d', 'params'])}
         print (params)
         r = namedtuple('Runtime', params)(**params)
         return r
@@ -546,9 +594,9 @@ class Bundle(tf.keras.Model):
                 (r.KW//2, c.BITS_KW2),
                 (CM_p-1 , c.BITS_CIN_MAX),
                 (r.XW-1 , c.BITS_COLS_MAX),
-                (r.L -1 , c.BITS_BLOCKS_MAX),
+                (r.XL-1 , c.BITS_BLOCKS_MAX),
                 (r.XN-1 , c.BITS_XN_MAX),
-                (c.CONFIG_BEATS + r.SW*r.KH*CM_p-1, c.BITS_RAM_WEIGHTS_ADDR)
+                (c.CONFIG_BEATS + r.KH*CM_p-1, c.BITS_RAM_WEIGHTS_ADDR)
             ], c.IN_BITS-1)
             d['w_header_le_p'] += [w_header_le]
             d['w_header_be_p'] += [w_header_be]
@@ -558,7 +606,7 @@ class Bundle(tf.keras.Model):
                 (r.KH//2, c.BITS_KH2),
                 (CM_p-1 , c.BITS_CIN_MAX),
                 (r.XW-1 , c.BITS_COLS_MAX),
-                (r.L -1 , c.BITS_BLOCKS_MAX),
+                (r.XL-1 , c.BITS_BLOCKS_MAX),
             ], c.IN_BITS-1)
             d['x_header_le_p'] += [x_header_le]
             d['x_header_be_p'] += [x_header_be]
@@ -629,22 +677,22 @@ class Bundle(tf.keras.Model):
     def reorder_x_q2e_conv(x, c, r):
         print('input initial (XN, XH, XW, CI)=', x.shape)
 
-        x = np.pad(x, ((0,0),(0,r.XH_PAD-r.XH),(0,0),(0,0)))   # (XN, L*HL , XW, CI)
-        x = x.reshape  (r.XN, r.L, r.LH, r.XW, r.CI)               # (XN, L, HL, XW, CI)
+        x = np.pad(x, ((0,0),(0,r.XL*c.ROWS-r.XH),(0,0),(0,0)))         # (XN, L*HL , XW, CI)
+        x = x.reshape  (r.XN, r.XL, c.ROWS, r.XW, r.CI)                   # (XN, XL, HL, XW, CI)
 
-        zeros = np.zeros((r.XN,r.L,c.ROWS+c.X_PAD,r.XW,r.CI),x.dtype)  # (XN,L,c.ROWS+X_PAD,XW,CI)
+        zeros = np.zeros((r.XN,r.XL,c.ROWS+c.X_PAD,r.XW,r.CI),x.dtype)  # (XN,XL,c.ROWS+X_PAD,XW,CI)
         zeros[:,:,:c.ROWS,:,:] = x
 
         ''' Fill bot rows from next '''
-        for l in range(r.L):
-            if l == r.L-1:
+        for l in range(r.XL):
+            if l == r.XL-1:
                 zeros[:,l, c.ROWS: ,:,:] = np.zeros((r.XN,c.X_PAD,r.XW,r.CI),x.dtype)
             else:
                 zeros[:,l, c.ROWS: ,:,:] = x[:,l+1,:c.X_PAD,:,:]
 
-        x = zeros                  # (XN,L,c.ROWS+X_PAD,XW,CI)
-        x = x.transpose(0,1,3,4,2) # (XN,L,XW,CI,c.ROWS+X_PAD)
-        x = x.reshape((r.XN, r.L, r.XW, r.CI, (c.ROWS+c.X_PAD)))
+        x = zeros                                                  # (XN,XL,c.ROWS+X_PAD,XW,CI)
+        x = x.transpose(0,1,3,4,2)                                 # (XN,XL,XW,CI,c.ROWS+X_PAD)
+        x = x.reshape((r.XN, r.XL, r.XW, r.CI, (c.ROWS+c.X_PAD)))
 
         x_list = []
         ic_left = ic_right = 0
@@ -652,8 +700,8 @@ class Bundle(tf.keras.Model):
             CM_p = r.CM_0 if ip==0 else r.CM
             ic_right += CM_p
 
-            xp = x[:,:,:, ic_left:ic_right, :]                              #(XN, L, XW, CM, (c.ROWS+c.X_PAD))
-            assert xp.shape == (r.XN, r.L, r.XW, CM_p, (c.ROWS+c.X_PAD))
+            xp = x[:,:,:, ic_left:ic_right, :]                              #(XN, XL, XW, CM, (c.ROWS+c.X_PAD))
+            assert xp.shape == (r.XN, r.XL, r.XW, CM_p, (c.ROWS+c.X_PAD))
             x_list += [xp]
 
             ic_left = ic_right
@@ -662,41 +710,42 @@ class Bundle(tf.keras.Model):
 
     @staticmethod
     def reorder_y_q2e_conv(y, c, r):
-        YH, YW = r.XH_PAD//r.SH_OUT, r.XW//r.SW_OUT
+        '''
+        This is engine output: no striding (H=H, L=XL), last W interchanged
+        '''
 
-        if r.SH_OUT != 1:
-            print("Striding not yet supported")
-            return None
+        y = np.pad(y, ((0,0),(0,c.ROWS*r.XL-r.XH),(0,0),(0,r.CO_PAD-r.CO)))  # (XN, XL*ROWS , XW, CO_PAD)
+        y = y.reshape((r.XN, r.XL, c.ROWS, r.XW, r.CO_PAD))                  # (XN,XL,c.ROWS,XW,CO_PAD)
+        y = y.reshape((r.XN, r.XL, c.ROWS, r.XW, r.IT, r.CO_PRL))            # (XN,XL,c.ROWS,XW,IT,CO_PRL)
+        y = y.transpose(4,0,1,3,5,2)                                         # (IT,XN,XL,XW,CO_PRL,c.ROWS)
 
-        y = np.pad(y, ((0,0),(0,r.LH*r.L-r.XH),(0,0),(0,r.CO_PAD-r.CO)))     # (XN, L*HL , XW, CO_PAD)
-        y = y.reshape((r.XN, r.L, c.ROWS, r.XW, r.CO_PAD))                   # (XN,L,c.ROWS,XW,CO_PAD)
-        y = y.reshape((r.XN, r.L, c.ROWS, r.XW, r.IT, r.CO_PRL))             # (XN,L,c.ROWS,XW,IT,CO_PRL)
-        y = y.transpose(4,0,1,3,5,2)                                         # (IT,XN,L,XW,CO_PRL,c.ROWS)
-
-        assert y.shape == (r.IT,r.XN,r.L,r.XW,r.CO_PRL,c.ROWS)
+        assert y.shape == (r.IT,r.XN,r.XL,r.XW,r.CO_PRL,c.ROWS)
 
         y_w_last = y[:,:,:,-(r.KW//2+1):,:,:]
-        y_w_last = y_w_last.transpose(0,1,2,4,3,5).reshape(r.IT,r.XN,r.L,(r.KW//2+1)*r.CO_PRL,c.ROWS)
+        y_w_last = y_w_last.transpose(0,1,2,4,3,5).reshape(r.IT,r.XN,r.XL,(r.KW//2+1)*r.CO_PRL,c.ROWS)
 
-        y = y.reshape(r.IT,r.XN,r.L,r.XW*r.CO_PRL,c.ROWS)
+        y = y.reshape(r.IT,r.XN,r.XL,r.XW*r.CO_PRL,c.ROWS)
         y[:,:,:,-(r.KW//2+1)*r.CO_PRL:,:] = y_w_last
         return y
     
     @staticmethod
     def reorder_y_e2q_conv(y, c, r):
-        y = y.reshape(r.IT,r.XN,r.L,r.XW*r.CO_PRL,c.ROWS)
+        '''
+        This is engine output: no striding (H=H, L=XL), last W interchanged
+        '''
+        y = y.reshape(r.IT,r.XN,r.XL,r.XW*r.CO_PRL,c.ROWS)
 
         y_w_last = y[:,:,:,-(r.KW//2+1)*r.CO_PRL:,:]
-        y_w_last = y_w_last.reshape(r.IT,r.XN,r.L,r.CO_PRL,(r.KW//2+1),c.ROWS)
-        y_w_last = y_w_last.transpose(0,1,2,4,3,5)   #(r.IT,r.XN,r.L,(r.KW//2+1),r.CO_PRL,c.ROWS)
-        y_w_last = y_w_last.reshape(r.IT,r.XN,r.L,(r.KW//2+1),r.CO_PRL,c.ROWS)
-        y_w_last = y_w_last.reshape(r.IT,r.XN,r.L,(r.KW//2+1)*r.CO_PRL,c.ROWS)
+        y_w_last = y_w_last.reshape(r.IT,r.XN,r.XL,r.CO_PRL,(r.KW//2+1),c.ROWS)
+        y_w_last = y_w_last.transpose(0,1,2,4,3,5)   #(r.IT,r.XN,r.XL,(r.KW//2+1),r.CO_PRL,c.ROWS)
+        y_w_last = y_w_last.reshape(r.IT,r.XN,r.XL,(r.KW//2+1),r.CO_PRL,c.ROWS)
+        y_w_last = y_w_last.reshape(r.IT,r.XN,r.XL,(r.KW//2+1)*r.CO_PRL,c.ROWS)
         
         y[:,:,:,-(r.KW//2+1)*r.CO_PRL:,:] = y_w_last
 
-        y = y.reshape(r.IT,r.XN,r.L,r.XW,r.CO_PRL,c.ROWS)
+        y = y.reshape(r.IT,r.XN,r.XL,r.XW,r.CO_PRL,c.ROWS)
         y = y.transpose(1,2,5,3,0,4)
-        y = y.reshape((r.XN, r.L*c.ROWS, r.XW, r.CO_PAD))
+        y = y.reshape((r.XN, r.XL*c.ROWS, r.XW, r.CO_PAD))
         y = y[:,:r.XH,:,:r.CO]
 
         return y
