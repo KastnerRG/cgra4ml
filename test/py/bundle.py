@@ -525,7 +525,7 @@ class Bundle(tf.keras.Model):
         print('input initial (XN, XH, XW, CI)=', x_shape)
 
         XL  = int(np.ceil(XH/c.ROWS))    # Blocks
-        YH, YW, YC = XH, XW, CO
+        YN, YH, YW, YC = XN, XH, XW, CO
 
 
         '''
@@ -575,9 +575,11 @@ class Bundle(tf.keras.Model):
         print(f"out after (strides:{(PSH,PSW)}, sizes:{(PKH, PKW)}) POOLING: (XN, CYH, CYW, CO)={(XN, CYH, CYW, CO)}")
 
         YL  = int(np.ceil(YH/c.ROWS))    # Blocks
+        ON, OH, OW, OC = YN, YH, YW, YC
 
         if flatten:
             YH, YW, YC = 1, 1, YH*YW*YC
+            ON, OH, OW, OC = 1, YN, YW, YC # Bundle flatten N,H -> 1,N
 
         
         if core_d['type'] == 'conv' and not flatten:
