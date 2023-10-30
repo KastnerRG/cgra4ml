@@ -323,7 +323,6 @@ class Bundle(tf.keras.Model):
 
         apply_act(self.core['act'])
         assert np.all(self.proc['int'] == self.core['tensor'].numpy() * 2**self.proc['frac']), f"Core + act output of bundle {self.idx} is not fixed point"
-        self.o_exp = self.proc['int']
 
         if self.add is not None:
             a = self.add['bundle']
@@ -387,6 +386,8 @@ class Bundle(tf.keras.Model):
 
         if self.flatten:
             self.proc['int'] = self.proc['int'].reshape(self.proc['int'].shape[0],-1)
+
+        self.o_exp = self.proc['int']
 
 
         if self.softmax:
@@ -524,7 +525,7 @@ class Bundle(tf.keras.Model):
         print('input initial (XN, XH, XW, CI)=', x_shape)
 
         XL  = int(np.ceil(XH/c.ROWS))    # Blocks
-        YH, YW = XH, XW
+        YH, YW, YC = XH, XW, CO
 
 
         '''
@@ -571,8 +572,12 @@ class Bundle(tf.keras.Model):
             print(f"out after strides:{pool_d['strides']}, sizes:{pool_d['size']}, mode:{pool_d['padding']} POOLING: (XN, CYH, CYW, CO)={(XN, CYH, CYW, CO)}")
 
         YL  = int(np.ceil(YH/c.ROWS))    # Blocks
+
+        if flatten:
+            YH, YW, YC = 1, 1, YH*YW*YC
+
         
-        if core_d['type'] == 'conv':
+        if core_d['type'] == 'conv' and not flatten:
             assert o_shape == (XN, YH, YW, CO), f"{o_shape=}"
         
         print('final output', o_shape)
