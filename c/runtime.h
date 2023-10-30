@@ -165,6 +165,11 @@ PROCESS_START:
 
         // ------ RELU + QUANT ------
 
+        // Need to check hwc before flattening
+        if (!( yh == p_bundle->oh )) assert(0*printf("yh : %d != %d --------- ib:%d \n", yh, p_bundle->oh, ib)); 
+        if (!( yw == p_bundle->ow )) assert(0*printf("yw : %d != %d --------- ib:%d \n", yw, p_bundle->ow, ib)); 
+        if (!( yc == p_bundle->oc )) assert(0*printf("yw : %d != %d --------- ib:%d \n", yc, p_bundle->oc, ib)); 
+
 
         // ------ FLATTEN ------
         if (p_bundle->is_flatten) {
@@ -178,7 +183,6 @@ PROCESS_START:
           yh = yn;
           yn = 1;
         }
-
 
         // ------ TILING: Calculate X coordinates ------
         // y [n,h,w,c] -> x[p, n, l, w,cmp, r+pad]
@@ -194,11 +198,6 @@ PROCESS_START:
         i_yp   = yp_first ? 0           : div_oc.quot + 1;
         i_ycm  = yp_first ? i_yc        : div_oc.rem;
         ycm    = yp_first ? p_bo->cm_p0 : p_bo->cm  ;
-
-        if (!( yh == p_bundle->oh )) assert(0*printf("yh : %d != %d --------- ib:%d \n", yh, p_bundle->oh, ib)); 
-        if (!( yw == p_bundle->ow )) assert(0*printf("yw : %d != %d --------- ib:%d \n", yw, p_bundle->ow, ib)); 
-        if (!( yc == p_bundle->oc )) assert(0*printf("yw : %d != %d --------- ib:%d \n", yc, p_bundle->oc, ib)); 
-
 
         // ------ STORE  ------
 
