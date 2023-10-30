@@ -533,8 +533,8 @@ class Bundle(tf.keras.Model):
         '''
         if core_d['type'] == 'conv':
             CSH, CSW = core_d['strides']
-            assert XH > KH
-            assert XW > KW
+            assert XH > KH//2
+            assert XW > KW//2
         else:
             CSH, CSW = 1,1
 
