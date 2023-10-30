@@ -25,7 +25,7 @@ typedef struct {
   char   x  [X_BYTES_ALL ];
   char   nx [O_BYTES_MAX ];
   int    y  [O_WORDS     ];
-  int p_sum [Y_BYTES/4   ];
+  int  nhwc [Y_BYTES/4   ];
 } Memory_st;
 Memory_st mem;
 
@@ -60,7 +60,7 @@ static inline void write_x(signed char val, int ib, int ixp, int ixn, int ixl, i
 extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  const unsigned int *p_sram_u32) {
 
   static Bundle_t *p_bundle = &bundles[0];
-  static int i_py=0, it_bias=0;
+  static int it_bias=0;
   static int ib=0, ip=0, it=0, in=0, il=0, iw_kw2=0;
   const int *p_sram = (const int *)p_sram_u32;
 
@@ -95,6 +95,7 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
         int i_yh = il*PE_ROWS + ir;
         int i_yw = iw_kw2 + iw_last;
         int i_yc = p_bundle->coe*it + icoe;
+        int i_nhwc = ((i_yn*p_bundle->h + i_yh)*p_bundle->w +  i_yw)*p_bundle->co + i_yc;
 
         // if out of bounds, early return
         if (i_yh >= p_bundle->h || i_yc >= p_bundle->co) { 
@@ -115,12 +116,12 @@ PROCESS_START:
 
         if (p_bundle->p == 1) {          // only p  : proceed with value
         } else if (ip == p_bundle->p-1) {// last p  : read, add, proceed
-          out_val += mem.p_sum[i_py];
+          out_val += mem.nhwc[i_nhwc];
         } else if (ip == 0) {            // first p : overwrite memory, return
-          mem.p_sum[i_py] = out_val;
+          mem.nhwc[i_nhwc] = out_val;
           goto PROCESS_AND_STORE_DONE;
         } else {                         // middle p: read, add, store, return
-          mem.p_sum[i_py] += out_val;
+          mem.nhwc[i_nhwc] += out_val;
           goto PROCESS_AND_STORE_DONE;
         }
         fprintf(fp_sum,"%d\n", out_val); // Save summed output
@@ -219,7 +220,6 @@ PROCESS_START:
 PROCESS_AND_STORE_DONE:
 
         fprintf(fp_raw,"%d\n", raw_val); // Save raw output
-        i_py += 1;
         sram_addr += 1;
       }
     }
@@ -251,7 +251,6 @@ PROCESS_AND_STORE_DONE:
             }//new(ib):
             p_bundle = &bundles[ib];
           }//new(ip):
-          i_py = 0;
         }//new(it):
         it_bias = p_bundle->b_offset + p_bundle->coe*it;
       }//new(in):
