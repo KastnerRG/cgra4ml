@@ -47,6 +47,7 @@ static inline int quant_lrelu(int x, signed char nzero, signed char shift, signe
   return x;
 }
 
+
 static inline void write_x(signed char val, int ib, int ixp, int ixn, int ixl, int ixw, int ixcm, int ixr, Bundle_t *p_bo, int xcm ){
 
 #define DBG "--- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n",ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm
@@ -63,6 +64,61 @@ static inline void write_x(signed char val, int ib, int ixp, int ixn, int ixl, i
 }
 
 
+static inline void tile_write( int out_val, int ib, Bundle_t *p_bundle, int i_yn, int i_yh, int i_yw, int i_yc, int yn, int yh, int yw, int yc ) {
+  // Check
+  assert_printf ("", yn == p_bundle->on, ": yn");
+  assert_printf ("", yh == p_bundle->oh, ": yh");
+  assert_printf ("", yw == p_bundle->ow, ": yw");
+  assert_printf ("", yc == p_bundle->oc, ": yc");
+
+  // ------ TILING: Calculate X coordinates ------
+  // y [n,h,w,c] -> x[p, n, l, w,cmp, r+pad]
+
+  Bundle_t* p_bo = ib == N_BUNDLES-1 ? &bundles[ib] : &bundles[ib+1];
+  char yp_first  = i_yc < p_bo->cm_p0;
+
+  div_t div_oh  = div(i_yh, PE_ROWS);
+  int i_yr      = div_oh.rem;
+  int i_yl      = div_oh.quot;
+
+  div_t div_oc  = div(i_yc-p_bo->cm_p0, p_bo->cm);
+  int i_yp      = yp_first ? 0           : div_oc.quot + 1;
+  int i_ycm     = yp_first ? i_yc        : div_oc.rem;
+  int ycm       = yp_first ? p_bo->cm_p0 : p_bo->cm  ;
+
+
+  // ------ STORE  ------
+
+  int iy_nhwc = ((i_yn*yh + i_yh)*yw +  i_yw)*yc + i_yc;
+  mem.debug_nhwc[iy_nhwc] = out_val;
+
+  if (ib == N_BUNDLES-1) {  
+    // Last bundle: save as NHWC
+    assert_printf ("", i_yn < yn, ": i_yn < yn");
+    assert_printf ("", i_yh < yh, ": i_yh < yh");
+    assert_printf ("", i_yw < yw, ": i_yw < yw");
+    assert_printf ("", i_yc < yc, ": i_yc < yc");
+    mem.y[iy_nhwc] = out_val;
+  } else {
+
+    // Other bundles: pad & save as tiled
+    int yr_sweep = i_yh==yh-1 ? PE_ROWS : i_yr + 1;
+
+    for (int i_yr_dest = i_yr; i_yr_dest < yr_sweep; i_yr_dest++) {
+      write_x(out_val, ib, i_yp, i_yn, i_yl, i_yw, i_ycm, i_yr_dest,   p_bo, ycm);
+
+      // --- PADDING: the [bottom X_PAD rows of previous block (l-1)] with [first X_PAD rows of this block (l)]
+      if (i_yr_dest < X_PAD) {
+        int pad_val = (i_yl == 0) ? 0         : out_val;
+        int dest_yl = (i_yl == 0) ? p_bo->l-1 : i_yl-1;
+        write_x(pad_val, ib, i_yp, i_yn, dest_yl, i_yw, i_ycm, i_yr_dest+PE_ROWS,   p_bo, ycm);
+      }
+      out_val = 0;
+    }
+  }
+}
+
+
 extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  const unsigned int *p_sram_u32) {
 
   static Bundle_t *p_bundle = &bundles[0];
@@ -71,10 +127,7 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
   const int *p_sram = (const int *)p_sram_u32;
 
   int iy_nhwc;
-  int i_yr, i_yl, i_yp, i_ycm, ycm;
-  Bundle_t *p_bo; 
-  char yp_first;
-  div_t div_ch, div_cw, div_oh, div_oc;
+  div_t div_ch, div_cw;
 
   char f_path_raw [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
   sprintf(f_path_raw, "%s/%0d_%0d_%0d_y_raw_sim.txt", DATA_DIR, ib, ip, it);
@@ -181,58 +234,7 @@ PROCESS_START:
           yh = yn;
           yn = 1;
         }
-
-        // Check
-        assert_printf (DBG, yn == p_bundle->on, ": yn");
-        assert_printf (DBG, yh == p_bundle->oh, ": yh");
-        assert_printf (DBG, yw == p_bundle->ow, ": yw");
-        assert_printf (DBG, yc == p_bundle->oc, ": yc");
-
-        // ------ TILING: Calculate X coordinates ------
-        // y [n,h,w,c] -> x[p, n, l, w,cmp, r+pad]
-
-        p_bo = ib == N_BUNDLES-1 ? &bundles[ib] : &bundles[ib+1];
-        yp_first  = i_yc < p_bo->cm_p0;
-
-        div_oh = div(i_yh, PE_ROWS);
-        i_yr   = div_oh.rem;
-        i_yl   = div_oh.quot;
-
-        div_oc  = div(i_yc-p_bo->cm_p0, p_bo->cm);
-        i_yp   = yp_first ? 0           : div_oc.quot + 1;
-        i_ycm  = yp_first ? i_yc        : div_oc.rem;
-        ycm    = yp_first ? p_bo->cm_p0 : p_bo->cm  ;
-
-
-        // ------ STORE  ------
-
-        iy_nhwc = ((i_yn*yh + i_yh)*yw +  i_yw)*yc + i_yc;
-        mem.debug_nhwc[iy_nhwc] = out_val;
-
-        if (ib == N_BUNDLES-1) {  
-          // Last bundle: save as NHWC
-          assert_printf (DBG, i_yn < yn, ": i_yn < yn");
-          assert_printf (DBG, i_yh < yh, ": i_yh < yh");
-          assert_printf (DBG, i_yw < yw, ": i_yw < yw");
-          assert_printf (DBG, i_yc < yc, ": i_yc < yc");
-          mem.y[iy_nhwc] = out_val;
-        } else {
-
-          // Other bundles: pad & save as tiled
-          int yr_sweep = i_yh==yh-1 ? PE_ROWS : i_yr + 1;
-
-          for (int i_yr_dest = i_yr; i_yr_dest < yr_sweep; i_yr_dest++) {
-            write_x(out_val, ib, i_yp, i_yn, i_yl, i_yw, i_ycm, i_yr_dest,   p_bo, ycm);
-
-            // --- PADDING: the [bottom X_PAD rows of previous block (l-1)] with [first X_PAD rows of this block (l)]
-            if (i_yr_dest < X_PAD) {
-              int pad_val = (i_yl == 0) ? 0         : out_val;
-              int dest_yl = (i_yl == 0) ? p_bo->l-1 : i_yl-1;
-              write_x(pad_val, ib, i_yp, i_yn, dest_yl, i_yw, i_ycm, i_yr_dest+PE_ROWS,   p_bo, ycm);
-            }
-            out_val = 0;
-          }
-        }
+        tile_write(out_val, ib, p_bundle, i_yn, i_yh, i_yw, i_yc, yn, yh, yw, yc);
 
 PROCESS_AND_STORE_DONE:
 
