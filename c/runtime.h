@@ -69,6 +69,20 @@ static inline void write_x(signed char val, int ib, int ixp, int ixn, int ixl, i
 
 
 static inline void tile_write( int out_val, int ib, Bundle_t *p_bundle, int i_yn, int i_yh, int i_yw, int i_yc, int yn, int yh, int yw, int yc ) {
+
+  // ------ FLATTEN ------
+  if (p_bundle->is_flatten) {
+    i_yc = (i_yh*yw + i_yw)*yc + i_yc;  // (H*W*C) -> C
+    i_yw = 0;                           // W=1
+    i_yh = i_yn;                        // N -> H
+    i_yn = 0;                           // N=1
+
+    yc = yh*yw*yc;
+    yw = 1;
+    yh = yn;
+    yn = 1;
+  }
+
   // Check
   assert_printf ("", yn == p_bundle->on, ": yn");
   assert_printf ("", yh == p_bundle->oh, ": yh");
@@ -169,7 +183,7 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
 
 
         // if out of bounds, early return
-        if (i_yh >= p_bundle->h || i_yc >= p_bundle->co) { 
+        if (i_yh >= yh || i_yc >= yc) { 
           if (ip == p_bundle->p-1)
             fprintf(fp_sum,"%d\n", 0);        // Save summed output
           goto PROCESS_AND_STORE_DONE;
@@ -222,23 +236,6 @@ PROCESS_START:
         // ------ SOFTMAX ------
 
 
-        // ------ FLATTEN ------
-        if (p_bundle->is_flatten) {
-          // Pool & flatten are not compatible with each other
-          assert_printf (DBG, p_bundle->p_type == POOL_NONE, ": p_bundle->p_type == POOL_NONE");
-
-          i_yc = (i_yh*yw + i_yw)*yc + i_yc;  // (H*W*C) -> C
-          i_yw = 0;                           // W=1
-          i_yh = i_yn;                        // N -> H
-          i_yn = 0;                           // N=1
-
-          yc = yh*yw*yc;
-          yw = 1;
-          yh = yn;
-          yn = 1;
-        }
-
-
         // ------ MAX/AVG POOL ---
 
         if (p_bundle->p_type == POOL_NONE) {
@@ -254,9 +251,6 @@ PROCESS_START:
         iy_nhwc = ((i_yn*yh + i_yh)*yw +  i_yw)*yc + i_yc; // store as nhwc for pooling
         mem.nhwc[iy_nhwc] = out_val;
 
-        ph_end = i_yh; // iy(h,w) is the bottom-right of pooling window -> All values in pooling window have been computed
-        pw_end = i_yw;
-
         div_ixh = div(i_yh+p_bundle->psh_shift-p_bundle->pkh+1, p_bundle->psh);
         div_ixw = div(i_yw+p_bundle->psw_shift-p_bundle->pkw+1, p_bundle->psw);
         ixh_beg = div_ixh.quot; // ix(hw) that corresponds to the pooling window
@@ -265,31 +259,27 @@ PROCESS_START:
         if (ixh_beg < 0 || ixw_beg < 0) // skip when target ix(h,w) < 0
           goto PROCESS_AND_STORE_DONE;
 
-        if (div_ixh.rem != 0) // invalid ixh
-          if (i_yh==yh-1)       //but last yh. start sweeping
-            ixh_beg += 1; 
-          else                  // not last yh. skip
-            goto PROCESS_AND_STORE_DONE;
-
+        if (div_ixh.rem != 0)                           // invalid ixh
+          if (i_yh==yh-1) ixh_beg += 1;                  //but last yh. start sweeping
+          else            goto PROCESS_AND_STORE_DONE;   // not last yh. skip
+        
         if (div_ixw.rem != 0)
-          if (i_yw==yw-1) 
-            ixw_beg += 1;
-          else
-            goto PROCESS_AND_STORE_DONE;
+          if (i_yw==yw-1) ixw_beg += 1;
+          else            goto PROCESS_AND_STORE_DONE;
 
+        ph_end       = i_yh; // iy(h,w) is the bottom-right of pooling window -> All values in pooling window have been computed
+        pw_end       = i_yw;
         ph_beg_const = max(p_bundle->psh*ixh_beg-p_bundle->psh_shift, 0)-1; // p(h,w)_beg is the index of top left corner of pooling window. If negative, set to zero
         pw_beg_const = max(p_bundle->psw*ixw_beg-p_bundle->psw_shift, 0)-1;
 
         xh_sweep = i_yh == yh-1 ? p_bundle->ph : ixh_beg+1; // ix(hw) is sweeped from ix(hw)_beg to x(h,w)_sweep. Normally sweep is 1.
         xw_sweep = i_yw == yw-1 ? p_bundle->pw : ixw_beg+1; // But when iy(h,w) is at its edges, need to compute remaining ix(hw) pixels by sweeping
 
-        ph_beg = ph_beg_const;
-        for (int ixh = ixh_beg; ixh < xh_sweep; ixh++){
+        // Sweep the pooling window
+        for (int ixh = ixh_beg, ph_beg = ph_beg_const;  ixh < xh_sweep;  ixh++, ph_beg += p_bundle->psh) {
+          for (int ixw = ixw_beg, pw_beg = pw_beg_const;  ixw < xw_sweep;  ixw++, pw_beg += p_bundle->psw) {
 
-          pw_beg = pw_beg_const; // move the pooling window back to start of sweep
-          for (int ixw = ixw_beg; ixw < xw_sweep; ixw++){
-            
-            // Traverse the pool window & perform pooling
+            // Traverse each pool window & perform pooling
             int result = p_bundle->p_type == POOL_MAX ? INT_MIN : 0;
             for (int ipyh = ph_end; ipyh > ph_beg; ipyh--){
               for (int ipyw = pw_end; ipyw > pw_beg; ipyw--){
@@ -308,10 +298,7 @@ PROCESS_START:
 
             // ------ POOL ACTIVATION ------
             tile_write(result, ib, p_bundle,   i_yn, ixh, ixw, i_yc,  yn, p_bundle->ph, p_bundle->pw, yc); // Write
-
-            pw_beg += p_bundle->psw; // move pooling window by stride
           }
-          ph_beg += p_bundle->psh; // move pooling window by stride
         }
         yh = p_bundle->ph;
         yw = p_bundle->pw;
