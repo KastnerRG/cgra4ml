@@ -38,6 +38,7 @@ Memory_st mem;
 #define clip(x, min, max) ((x < min) ? min : (x > max) ? max : x)
 #define shift_round(n, s) ((n + (1<<(s-1)) - (~(n>>s)&1) ) >> s) // === np.around(n/2**s).astype(int)
 
+#define assert_printf(debug_info, condition,...) ((condition) || (printf(#condition), printf(__VA_ARGS__), printf(debug_info), assert(condition), 0))
 
 static inline int quant_lrelu(int x, signed char nzero, signed char shift, signed char pl_scale){
   x = ((x<0)*x)*nzero + (((x>0)*x) << pl_scale);
@@ -48,17 +49,16 @@ static inline int quant_lrelu(int x, signed char nzero, signed char shift, signe
 
 static inline void write_x(signed char val, int ib, int ixp, int ixn, int ixl, int ixw, int ixcm, int ixr, Bundle_t *p_bo, int xcm ){
 
+#define DBG "--- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n",ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm
+    assert_printf(DBG, ixr  < PE_ROWS+X_PAD, "ixr  < PE_ROWS+X_PAD");
+    assert_printf(DBG, ixcm < xcm          , "ixcm < xcm          ");
+    assert_printf(DBG, ixw  < p_bo->w      , "ixw  < p_bo->w      ");
+    assert_printf(DBG, ixl  < p_bo->l      , "ixl  < p_bo->l      ");
+    assert_printf(DBG, ixn  < p_bo->n      , "ixn  < p_bo->n      ");
+    assert_printf(DBG, ixp  < p_bo->p      , "ixp  < p_bo->p      "); 
+
     int p_offset = (ixp == 0) ? 0 : (p_bo->cm_p0 + (ixp-1)*p_bo->cm) *p_bo->n*p_bo->l*p_bo->w*(PE_ROWS+X_PAD);
-
     int flat_index_n2r = (((ixn*p_bo->l + ixl)*p_bo->w + ixw)*xcm + ixcm)*(PE_ROWS+X_PAD) + ixr; // multidim_index -> flat_index [n,l,w,cm,r]
-
-    if (!( ixr  < PE_ROWS+X_PAD)) assert(0*printf("ixr : %d >= %d --------- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n", ixr, PE_ROWS+X_PAD, ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm ));
-    if (!( ixcm < xcm          )) assert(0*printf("ixcm: %d >= %d --------- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n", ixcm, xcm ,         ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm ));
-    if (!( ixw  < p_bo->w      )) assert(0*printf("ixw : %d >= %d --------- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n", ixw , p_bo->w,      ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm ));
-    if (!( ixl  < p_bo->l      )) assert(0*printf("ixl : %d >= %d --------- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n", ixl , p_bo->l,      ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm ));
-    if (!( ixn  < p_bo->n      )) assert(0*printf("ixn : %d >= %d --------- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n", ixn , p_bo->n,      ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm ));
-    if (!( ixp  < p_bo->p      )) assert(0*printf("ixp : %d >= %d --------- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n", ixp , p_bo->p,      ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm )); 
-    
     mem.nx[p_offset + flat_index_n2r] = val;
 }
 
@@ -91,6 +91,8 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
     for (int iw_last=0; iw_last<w_last; iw_last++) {
       for (int ir=0; ir<PE_ROWS; ir++) {
         // Indexing: [b, p, t, n, l, w | coe, w_last, r]
+
+#define DBG "--- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n",ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir
 
         int raw_val=0, out_val=0;
         
@@ -181,11 +183,10 @@ PROCESS_START:
         }
 
         // Check
-        if (!( yn == p_bundle->on )) assert(0*printf("yn : %d != %d --------- ib:%d \n", yn, p_bundle->on, ib)); 
-        if (!( yh == p_bundle->oh )) assert(0*printf("yh : %d != %d --------- ib:%d \n", yh, p_bundle->oh, ib)); 
-        if (!( yw == p_bundle->ow )) assert(0*printf("yw : %d != %d --------- ib:%d \n", yw, p_bundle->ow, ib)); 
-        if (!( yc == p_bundle->oc )) assert(0*printf("yw : %d != %d --------- ib:%d \n", yc, p_bundle->oc, ib)); 
-
+        assert_printf (DBG, yn == p_bundle->on, ": yn");
+        assert_printf (DBG, yh == p_bundle->oh, ": yh");
+        assert_printf (DBG, yw == p_bundle->ow, ": yw");
+        assert_printf (DBG, yc == p_bundle->oc, ": yc");
 
         // ------ TILING: Calculate X coordinates ------
         // y [n,h,w,c] -> x[p, n, l, w,cmp, r+pad]
@@ -210,10 +211,10 @@ PROCESS_START:
 
         if (ib == N_BUNDLES-1) {  
           // Last bundle: save as NHWC
-          if (!( i_yn < yn)) assert(0*printf("iyn : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_yn, yn, ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
-          if (!( i_yh < yh)) assert(0*printf("iyh : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_yh, yh, ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
-          if (!( i_yw < yw)) assert(0*printf("iyw : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_yw, yw, ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
-          if (!( i_yc < yc)) assert(0*printf("iyc : %d >= %d --------- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n", i_yc, yc, ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir)); 
+          assert_printf (DBG, i_yn < yn, ": i_yn < yn");
+          assert_printf (DBG, i_yh < yh, ": i_yh < yh");
+          assert_printf (DBG, i_yw < yw, ": i_yw < yw");
+          assert_printf (DBG, i_yc < yc, ": i_yc < yc");
           mem.y[iy_nhwc] = out_val;
         } else {
 
