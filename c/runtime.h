@@ -10,7 +10,7 @@
   #define EXT_C
 #endif
 
-typedef struct {
+typedef const struct {
   const int32_t n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0;
   const int32_t w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_bytes; // bytes per transfer
   const int8_t is_bias, is_pool, is_flatten;
@@ -27,13 +27,13 @@ typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 #define X_BITS (1<<X_BITS_L2)
 
 typedef struct {
-  int8_t   w  [W_BYTES     ];
-  B_TYPE b  [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
-  int8_t   x  [X_BYTES_ALL ];
-  int8_t   nx [O_BYTES_MAX ];
-  int32_t    y  [O_WORDS     ];
-  int32_t  nhwc [Y_BYTES/4   ];
-  int32_t debug_nhwc [Y_BYTES/4];
+  int8_t     w          [W_BYTES     ];
+  B_TYPE     b          [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
+  int8_t     x          [X_BYTES_ALL ];
+  int8_t     nx         [O_BYTES_MAX ];
+  int32_t    y          [O_WORDS     ];
+  int32_t    nhwc       [Y_BYTES/4   ];
+  int32_t    debug_nhwc [Y_BYTES/4   ];
 } Memory_st;
 Memory_st mem;
 
@@ -150,7 +150,7 @@ extern EXT_C void load_y (uint8_t *p_done, uint8_t *pt_done_proc,  const uint32_
   int32_t ph_end, ph_beg_const, ph_beg, ixh_beg, xh_sweep;
   int32_t pw_end, pw_beg_const, pw_beg, ixw_beg, xw_sweep;
 
-  int8_t f_path_raw [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
+  char f_path_raw [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
   sprintf(f_path_raw, "%s/%0d_%0d_%0d_y_raw_sim.txt", DATA_DIR, ib, ip, it);
   sprintf(f_path_sum, "%s/%0d_y_sum_sim.txt", DATA_DIR, ib);
   FILE *fp_raw = fopen(f_path_raw, "a"); 
@@ -315,14 +315,14 @@ PROCESS_AND_STORE_DONE:
             
             printf("done bundle!! iw_kw2:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw_kw2, in, il, it, ip, ib);
 
-            int8_t f_path_tiled [1000];
+            char f_path_tiled [1000];
             sprintf(f_path_tiled, "%s/%0d_y_tiled_sim.txt", DATA_DIR, ib);
             FILE *fp_tiled = fopen(f_path_tiled, "w");
             for (int32_t i=0; i<pb->o_bytes; i++)
               fprintf(fp_tiled,"%d\n", ib == N_BUNDLES-1 ? mem.y[i] : mem.nx[i]);
             fclose(fp_tiled);
 
-            int8_t f_path_debug [1000];
+            char f_path_debug [1000];
             sprintf(f_path_debug, "%s/%0d_y_nhwc_sim.txt", DATA_DIR, ib);
             FILE *fp_debug = fopen(f_path_debug, "w");
             for (int32_t i=0; i<pb->debug_nhwc_words; i++)
@@ -388,7 +388,7 @@ extern EXT_C void load_w (uint8_t *p_done, int32_t *p_offset, int32_t *p_bpt) {
 
 extern EXT_C void fill_memory (){
   FILE *fp;
-  int8_t f_path [1000];
+  char f_path [1000];
 
   sprintf(f_path, "%s/w.bin", DATA_DIR);
   fp = fopen(f_path, "rb");
