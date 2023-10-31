@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #ifdef VERILATOR
   #define EXT_C "C"
@@ -14,10 +15,12 @@ typedef struct {
   const char is_bias, is_pool, is_flatten;
   const int b_offset, b_val_shift, b_bias_shift;
   const signed char ca_nzero, ca_shift, ca_pl_scale;
-  const int csh, ch, csh_shift, pkh, psh, ph, psh_shift, csw, cw, csw_shift, pkw, psw, pw, psw_shift, on, oh, ow, oc;
+  const int csh, ch, csh_shift, pkh, psh, ph, psh_shift, csw, cw, csw_shift, pkw, psw, pw, psw_shift, p_type, on, oh, ow, oc;
   const unsigned long long x_header, x_header_p0, w_header, w_header_p0; // 64 bits (at least)
   const int debug_nhwc_words;
 } Bundle_t;
+
+typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 
 #include "model.h"
 #define X_BITS (1<<X_BITS_L2)
@@ -37,6 +40,7 @@ Memory_st mem;
 #define min(x, y) (x < y ? x : y)
 #define clip(x, min, max) ((x < min) ? min : (x > max) ? max : x)
 #define shift_round(n, s) ((n + (1<<(s-1)) - (~(n>>s)&1) ) >> s) // === np.around(n/2**s).astype(int)
+#define div_round(a, b) ((a+(b/2) - (~(b|a/b) &1))/b)
 
 #define assert_printf(debug_info, condition,...) ((condition) || (printf(#condition), printf(__VA_ARGS__), printf(debug_info), assert(condition), 0))
 
@@ -128,6 +132,8 @@ extern EXT_C void load_y (unsigned char *p_done, unsigned char *pt_done_proc,  c
 
   int iy_nhwc;
   div_t div_ch, div_cw;
+  int ph_end_const, ph_end, ph_beg_const, ph_beg, ixh_before_stride, ixh_beg, xh_sweep;
+  int pw_end_const, pw_end, pw_beg_const, pw_beg, ixw_before_stride, ixw_beg, xw_sweep;
 
   char f_path_raw [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
   sprintf(f_path_raw, "%s/%0d_%0d_%0d_y_raw_sim.txt", DATA_DIR, ib, ip, it);
@@ -216,14 +222,11 @@ PROCESS_START:
         // ------ SOFTMAX ------
 
 
-        // ------ MAX/AVG POOL ------
-
-        // ------ RELU + QUANT ------
-
-
-
         // ------ FLATTEN ------
         if (p_bundle->is_flatten) {
+          // Pool & flatten are not compatible with each other
+          assert_printf (DBG, p_bundle->p_type == POOL_NONE, ": p_bundle->p_type == POOL_NONE");
+
           i_yc = (i_yh*yw + i_yw)*yc + i_yc;  // (H*W*C) -> C
           i_yw = 0;                           // W=1
           i_yh = i_yn;                        // N -> H
@@ -234,7 +237,86 @@ PROCESS_START:
           yh = yn;
           yn = 1;
         }
-        tile_write(out_val, ib, p_bundle, i_yn, i_yh, i_yw, i_yc, yn, yh, yw, yc);
+
+
+        // ------ MAX/AVG POOL ---
+
+        if (p_bundle->p_type == POOL_NONE) {
+          tile_write(out_val, ib, p_bundle, i_yn, i_yh, i_yw, i_yc, yn, yh, yw, yc);
+          goto PROCESS_AND_STORE_DONE;
+        }
+
+        assert_printf ("write_temp", i_yn < yn, ": i_yn < yn");
+        assert_printf ("write_temp", i_yh < yh, ": i_yh < yh");
+        assert_printf ("write_temp", i_yw < yw, ": i_yw < yw");
+        assert_printf ("write_temp", i_yc < yc, ": i_yc < yc");
+
+        iy_nhwc = ((i_yn*yh + i_yh)*yw +  i_yw)*yc + i_yc; // store as nhwc for pooling
+        mem.nhwc[iy_nhwc] = out_val;
+
+        ph_end_const = i_yh; // iy(h,w) is the bottom-right of pooling window -> All values in pooling window have been computed
+        pw_end_const = i_yw;
+
+        ixh_before_stride = i_yh+p_bundle->psh_shift-p_bundle->pkh+1;
+        ixw_before_stride = i_yw+p_bundle->psw_shift-p_bundle->pkw+1;
+
+        ixh_beg = ixh_before_stride/p_bundle->psh; // ix(hw) that corresponds to the pooling window
+        ixw_beg = ixw_before_stride/p_bundle->psw;
+        if ((ixh_before_stride % p_bundle->psh != 0) || (ixw_before_stride % p_bundle->psw != 0)) // ix(hw) that corresponds to the window is skipped by pool striding
+          goto PROCESS_AND_STORE_DONE;
+
+        if (ixh_beg < 0 || ixw_beg < 0) // skip with target ix(h,w) < 0
+          goto PROCESS_AND_STORE_DONE;
+
+        ph_beg_const = max(p_bundle->psh*ixh_beg-p_bundle->psh_shift, 0)-1; // p(h,w)_beg is the index of top left corner of pooling window. If negative, set to zero
+        pw_beg_const = max(p_bundle->psw*ixw_beg-p_bundle->psw_shift, 0)-1;
+
+        xh_sweep = i_yh >= yh-p_bundle->psh ? p_bundle->ph : ixh_beg+1; // ix(hw) is sweeped from ix(hw)_beg to x(h,w)_sweep. Normally sweep is 1.
+        xw_sweep = i_yw >= yw-p_bundle->psw ? p_bundle->pw : ixw_beg+1; // But when iy(h,w) is at its edges, need to compute remaining ix(hw) pixels by sweeping
+
+        ph_end = ph_end_const; 
+        ph_beg = ph_beg_const;
+        for (int ixh = ixh_beg; ixh < xh_sweep; ixh++){
+
+          pw_end = pw_end_const; // move the pooling window back to start of sweep
+          pw_beg = pw_beg_const;
+          for (int ixw = ixw_beg; ixw < xw_sweep; ixw++){
+
+            if (ixw==3) printf("ixh:%d, ixw:%d, ph_beg:%d, ph_end:%d, pw_beg:%d, pw_end:%d, i_yh:%d, i_yw:%d\n", ixh, ixw, ph_beg, ph_end, pw_beg, pw_end, i_yh, i_yw);
+            
+            // Traverse the pool window & perform pooling
+            int result = p_bundle->p_type == POOL_MAX ? INT_MIN : 0;
+            for (int ipyh = ph_end; ipyh > ph_beg; ipyh--){
+              for (int ipyw = pw_end; ipyw > pw_beg; ipyw--){
+
+                assert_printf ("read", i_yn < yn, ": i_yn < yn");
+                assert_printf ("read", ipyh < yh, ": ipyh < yh");
+                assert_printf ("read", ipyw < yw, ": ipyw < yw");
+                assert_printf ("read", i_yc < yc, ": i_yc < yc");
+                
+                int read_val = mem.nhwc[((i_yn*yh + ipyh)*yw +  ipyw)*yc + i_yc];
+                result = p_bundle->p_type==POOL_MAX ? max(result, read_val) : (result + read_val);
+
+                if (ixw==3) printf("--ipyh:%d, ipyw:%d, read_val:%d, result:%d\n", ipyh, ipyw, read_val, result);
+
+              }
+            }
+            int count  = (ph_end-ph_beg)*(pw_end-pw_beg);
+            result = p_bundle->p_type==POOL_MAX ? result : div_round(result, count); 
+
+            // ------ POOL ACTIVATION ------
+
+            tile_write(result, ib, p_bundle,   i_yn, ixh, ixw, i_yc,  yn, p_bundle->ph, p_bundle->pw, yc); // Write
+
+            pw_beg += p_bundle->psw; // move pooling window by stride
+            pw_end = min(pw_end+p_bundle->psw, yw-1);
+          }
+          ph_beg += p_bundle->psh; // move pooling window by stride
+          ph_end = min(ph_end+p_bundle->psh, yh-1);
+        }
+        yh = p_bundle->ph;
+        yw = p_bundle->pw;
+        
 
 PROCESS_AND_STORE_DONE:
 

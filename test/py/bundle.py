@@ -338,50 +338,84 @@ class Bundle(tf.keras.Model):
             assert np.all(self.proc['int'] == self.add['tensor'].numpy() * 2**self.proc['frac']), f"Add + act output of bundle {self.idx} is not a fixed point"
 
         if self.pool_layer:
-            if self.pool['type'] == 'max':
-                pStride = self.pool['strides']
-                pSize = self.pool['size']
 
-                def findMax(InArray, p, q):
-                    results = np.zeros((InArray.shape[0], InArray.shape[3]))
-                    results -= math.inf
-                    for i in range(p, p+pSize[0]):
-                        for j in range(q, q+pSize[1]):
-                            if i >=0 and j>=0 and i < InArray.shape[1] and j < InArray.shape[2]:
-                                cand = InArray[:,i,j,:]
-                                results = np.maximum(results, cand)
-                    return results
+            self.before_pool = np.copy(self.proc['int'])
+          
+            assert self.pool['padding'] in {"same", "valid"}
+            assert self.pool['type'] in {"max", "avg"}
 
-                def HotFixMaxPool2D(InArray):
-                    if pStride[0]!=pStride[1] or pSize[0]!=pSize[1]:
-                        raise Exception('Only square stride and size is supported')
-                    if pSize[0]/2 == 0:
-                        raise Exception('Maxpool size should be odd')
+            in_arr = np.copy(self.proc['int'])
+            YN, YH, YW, YC = in_arr.shape
+            PKH, PKW = self.pool['size']
+            PSH, PSW = self.pool['strides']
 
-                    pad = (pSize[0]-1)//2
+            if self.pool['padding']=="same":
+                PXH = (YH+PSH-1)//PSH
+                PXW = (YW+PSW-1)//PSW
+            else:
+                PXH = (YH-PKH+PSH)//PSH
+                PXW = (YW-PKW+PSW)//PSW
 
-                    inShape = InArray.shape
-                    assert len(inShape) == 4
-                    OutArray = np.zeros((inShape[0], inShape[1]//pStride[0], inShape[2]//pStride[1], inShape[3]))
-                    # Start point, should include pad
-                    st_p, st_q = -pad, -pad
+            out_arr = np.zeros((YN, PXH, PXW, YC))
 
-                    for i in range(OutArray.shape[1]):
-                        for j in range(OutArray.shape[2]):
-                            p, q = st_p + i*pStride[0] + pStride[0]-1, st_q + j*pStride[1] + pStride[1]-1
-                            OutArray[:,i,j,:] = findMax(InArray, p, q)
+            p_st, q_st = 0, 0
+            if self.pool['padding'] == "same":
+                p_st = max((PSH*(PXH-1)+PKH-YH)//2, 0)
+                q_st = max((PSW*(PXW-1)+PKW-YW)//2, 0)
 
-                    return OutArray
+            for n in range(YN):
+                for c in range(YC):
+                    for iyh in range(YH):
+                        for iyw in range(YW):
 
-                self.proc['int'] = HotFixMaxPool2D(self.proc['int']).astype(int)
+                            ph_end_const = iyh # iy(h,w) is the bottom-right of pooling window -> All values in pooling window have been computed
+                            pw_end_const = iyw
 
-            elif self.pool['type'] == 'avg':
-                assert self.pool['size'] == self.pool['strides']
-                KH, KW = self.pool['size']
-                N, H, W, C = self.proc['int'].shape
-                self.proc['int'] = self.proc['int'].reshape(N, H//KH, KH, W//KW, KW, C).mean(axis=(2,4))
-                # NO need for clipping, as act_pool in place!
-                apply_act(self.pool['act'])
+                            ixh_before_stride = iyh+p_st-PKH+1
+                            ixw_before_stride = iyw+q_st-PKW+1
+
+                            ixh_beg = int(ixh_before_stride/PSH) # ix(hw) that corresponds to the pooling window
+                            ixw_beg = int(ixw_before_stride/PSW)
+                            if (ixh_before_stride % PSH != 0) or (ixw_before_stride % PSW != 0): # ix(hw) that corresponds to the window is skipped by pool striding
+                                continue
+
+                            if ixh_beg < 0 or ixw_beg <0: # skip with target ix(h,w) < 0
+                                continue
+
+                            ph_beg_const = max(PSH*ixh_beg-p_st, 0)-1 # p(h,w)_beg is the index of top left corner of pooling window. If negative, set to zero
+                            pw_beg_const = max(PSW*ixw_beg-q_st, 0)-1
+
+                            xh_sweep = PXH if iyh >= YH-PSH else ixh_beg+1 # ix(hw) is sweeped from ix(hw)_beg to x(h,w)_sweep. Normally sweep is 1.
+                            xw_sweep = PXW if iyw >= YW-PSW else ixw_beg+1 # But when iy(h,w) is at its edges, need to compute remaining ix(hw) pixels by sweeping
+
+                            ''' Handling edges '''
+                            ph_end, ph_beg = ph_end_const, ph_beg_const
+                            for ixh in range(ixh_beg, xh_sweep):
+                                pw_end, pw_beg = pw_end_const, pw_beg_const # move the pooling window back to start of sweep
+                                for ixw in range(ixw_beg, xw_sweep):
+                                    
+                                    ''' Pooling Window '''
+                                    result = -math.inf if self.pool['type'] == 'max' else 0
+                                    for ipyh in range(ph_end, ph_beg,-1):
+                                        for ipyw in range(pw_end, pw_beg,-1):
+                                            
+                                            if self.pool['type']=='max':
+                                                result = max(result, in_arr[n,ipyh,ipyw,c])
+                                            else:
+                                                result += in_arr[n,ipyh,ipyw,c]
+
+                                    count  = (ph_end-ph_beg)*(pw_end-pw_beg)
+                                    result = result if self.pool['type']=='max' else result/count
+                                    ''' Writing '''
+                                    out_arr[n,ixh,ixw,c] = result
+
+                                    pw_beg += PSW # move pooling window by stride
+                                    pw_end = min(pw_end+PSW, YW-1)
+                                ph_beg += PSH # move pooling window by stride
+                                ph_end = min(ph_end+PSH, YH-1)
+            
+            self.proc['int'] = out_arr
+            # apply_act(self.pool['act'])
             assert np.all(self.proc['int'] == self.pool['tensor'].numpy() * 2**self.proc['frac']), f"Pool + act output of bundle {self.idx} is not a fixed point"
 
         if self.flatten:
@@ -572,7 +606,7 @@ class Bundle(tf.keras.Model):
                 PYW = (YW-PKW+PSW)//PSW
         
         YH, YW = PYH, PYW
-        print(f"out after (strides:{(PSH,PSW)}, sizes:{(PKH, PKW)}) POOLING: (XN, CYH, CYW, CO)={(XN, CYH, CYW, CO)}")
+        print(f"out after (strides:{(PSH,PSW)}, sizes:{(PKH, PKW)}) POOLING: (XN, PYH, PYW, CO)={(XN, YH, YW, CO)}")
 
         YL  = int(np.ceil(YH/c.ROWS))    # Blocks
         ON, OH, OW, OC = YN, YH, YW, YC
