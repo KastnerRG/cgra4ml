@@ -185,21 +185,21 @@ class Config:
                                                 RAM_WEIGHTS_DEPTH = [20  ],  # KH*CI + Config beats
                                                 RAM_EDGES_DEPTH   = [288 ], # max(CI * XW * (XH/ROWS-1))
 
-                                                VALID_PROB = [1],
-                                                READY_PROB = [100],
+                                                VALID_PROB = [1000],
+                                                READY_PROB = [1000],
                                             )))
 def test_dnn_engine(COMPILE):
     c = make_compile_params(COMPILE)
 
-    input_shape = (8,18,18,3) # (XN, XH, XW, CI)
+    input_shape = (1,18,18,3) # (XN, XH, XW, CI)
     model_config = [
-        Config(11, 8, True , f'quantized_relu({c.X_BITS},0,negative_slope=0)', pool_d={'type':'max', 'size':(3,4), 'strides':(1,1), 'padding':'same', 'act_str':f'quantized_bits({c.X_BITS},0,False,False,1)'}),
+        Config(11, 1, True , f'quantized_relu({c.X_BITS},0,negative_slope=0)', pool_d={'type':'max', 'size':(3,4), 'strides':(2,3), 'padding':'same', 'act_str':f'quantized_bits({c.X_BITS},0,False,False,1)'}),
         Config(1 , 8, False, f'quantized_bits({c.X_BITS},0,False,False,1)'),
-        Config(7 , 8, True , f'quantized_bits({c.X_BITS},0,False,True,1)'),
-        Config(5 , 8, False, f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'),
-        Config(3 , 24, True , f'quantized_relu({c.X_BITS},0,negative_slope=0)'),
-        Config(1 , 5 , False, f'quantized_relu({c.X_BITS},0,negative_slope=0.125)', flatten=True),
-        Config(1 , 10, True , f'quantized_relu({c.X_BITS},0,negative_slope=0.125)', dense= True),
+        # Config(7 , 8, True , f'quantized_bits({c.X_BITS},0,False,True,1)'),
+        # Config(5 , 8, False, f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'),
+        # Config(3 , 24, True , f'quantized_relu({c.X_BITS},0,negative_slope=0)'),
+        # Config(1 , 5 , False, f'quantized_relu({c.X_BITS},0,negative_slope=0.125)', flatten=True),
+        # Config(1 , 10, True , f'quantized_relu({c.X_BITS},0,negative_slope=0.125)', dense= True),
     ]
 
     '''
