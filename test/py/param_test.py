@@ -30,8 +30,7 @@ SOURCES = glob.glob('../rtl/include/*') + glob.glob('sv/*.sv') + glob.glob("../r
 print(SOURCES)
 
 type_d = {
-    'np': {8: np.int8, 16: np.int16, 32: np.int32, 64: np.int64},
-    'c' : {8: 'signed char', 16: 'signed short', 32: 'signed int', 64: 'signed long long'}
+    'np': {8: np.int8, 16: np.int16, 32: np.int32, 64: np.int64}
 }
 
 '''
@@ -330,7 +329,7 @@ def test_dnn_engine(COMPILE):
         ch.write(f"#define O_BYTES_MAX {o_bytes_max}\n")
         ch.write(f"#define X_BYTES_ALL {x_bytes_all}\n")
         ch.write(f"#define Y_BYTES     {y_bytes_max}\n")
-        ch.write(f"#define B_TYPE      {type_d['c'][c.B_BITS]}\n")
+        ch.write(f"#define B_TYPE      int{c.B_BITS}_t\n")
         ch.write(f"#define B_WORDS     {b_words}\n")
         ch.write(f'#define DATA_DIR   "{DATA_DIR}"\n\n')
 
