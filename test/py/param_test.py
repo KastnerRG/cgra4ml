@@ -301,14 +301,14 @@ def test_dnn_engine(COMPILE):
             elif b.pool['type'] == 'avg':
                 pool_type = 'POOL_AVG'
 
-            ch.write(f"   {{.n={b.r.XN}, .l={b.r.XL}, .kw={b.r.KW}, .coe={y_coe}, .coe_tl={y_coe_tl}, .r_ll={y_r_ll}, .h={b.r.XH}, .w={b.r.XW}, .ci={b.r.CI}, .co={b.r.CO}, .w_kw2={b.r.XW-b.r.KW//2}, .t={b.r.IT}, .p={b.r.CP}, .cm={b.r.CM}, .cm_p0={b.r.CM_0}, ")
-            ch.write(     f".w_bpt={w_bpt}, .w_bpt_p0={w_bpt_p0}, .x_bpt={x_bpt}, .x_bpt_p0={x_bpt_p0}, .o_bytes={o_bytes_b}, ")
-            ch.write(     f".is_bias={1*(b.b is not None)}, .is_flatten={1*b.flatten}, ")
-            ch.write(     f".b_offset={b_words}, .b_val_shift={b.bias_val_shift}, .b_bias_shift={b.bias_b_shift}, ")
-            ch.write(     f".ca_nzero={ca_nzero}, .ca_shift={ca_shift}, .ca_pl_scale={ca_pl_scale}, ")
-            ch.write(     f".csh={b.r.CSH}, .ch={b.r.CYH}, .csh_shift={b.r.CSH_SHIFT}, .pkh={b.r.PKH}, .psh={b.r.PSH}, .ph={b.r.PYH}, .psh_shift={b.r.PSH_SHIFT}, .csw={b.r.CSW}, .cw={b.r.CYW}, .csw_shift={b.r.CSW_SHIFT}, .pkw={b.r.PKW}, .psw={b.r.PSW}, .pw={b.r.PYW}, .psw_shift={b.r.PSW_SHIFT}, .pool={pool_type}, .on={b.r.ON}, .oh={b.r.OH}, .ow={b.r.OW}, .oc={b.r.OC}, ")
-            ch.write(     f".x_header={b.r.x_header_be_p[-1][0]}u, .x_header_p0={b.r.x_header_be_p[0][0]}u, .w_header={b.r.w_header_be_p[-1][0]}u, .w_header_p0={b.r.x_header_be_p[0][0]}u , ")
-            ch.write(     f".debug_nhwc_words={b.oe_exp_nhwc.size} }}")
+            ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .coe_tl={y_coe_tl:<3}, .r_ll={y_r_ll:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<3}, .co={b.r.CO:<3}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, ")
+            ch.write(     f".w_bpt={w_bpt:<5}, .w_bpt_p0={w_bpt_p0:<5}, .x_bpt={x_bpt:<5}, .x_bpt_p0={x_bpt_p0:<5}, .o_bytes={o_bytes_b:<5}, ")
+            ch.write(     f".is_bias={1*(b.b is not None):<3}, .is_flatten={1*b.flatten:<3}, ")
+            ch.write(     f".b_offset={b_words:<3}, .b_val_shift={b.bias_val_shift:<3}, .b_bias_shift={b.bias_b_shift:<3}, ")
+            ch.write(     f".ca_nzero={ca_nzero:<3}, .ca_shift={ca_shift:<3}, .ca_pl_scale={ca_pl_scale:<3}, ")
+            ch.write(     f".csh={b.r.CSH:<3}, .ch={b.r.CYH:<3}, .csh_shift={b.r.CSH_SHIFT:<3}, .pkh={b.r.PKH:<3}, .psh={b.r.PSH:<3}, .ph={b.r.PYH:<3}, .psh_shift={b.r.PSH_SHIFT:<3}, .csw={b.r.CSW:<3}, .cw={b.r.CYW:<3}, .csw_shift={b.r.CSW_SHIFT:<3}, .pkw={b.r.PKW:<3}, .psw={b.r.PSW:<3}, .pw={b.r.PYW:<3}, .psw_shift={b.r.PSW_SHIFT:<3}, .pool={pool_type:<10}, .on={b.r.ON:<3}, .oh={b.r.OH:<3}, .ow={b.r.OW:<3}, .oc={b.r.OC:<3}, ")
+            ch.write(     f".x_header={b.r.x_header_be_p[-1][0]:>23}u, .x_header_p0={b.r.x_header_be_p[0][0]:>23}u, .w_header={b.r.w_header_be_p[-1][0]:>23}u, .w_header_p0={b.r.x_header_be_p[0][0]:>25}u , ")
+            ch.write(     f".debug_nhwc_words={b.oe_exp_nhwc.size:<5} }}")
             
             b_words += b.be.size if b.b else 0
             if b.idx != len(bundles)-1:
