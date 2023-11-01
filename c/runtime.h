@@ -11,14 +11,14 @@
 #endif
 
 typedef const struct {
-  const int32_t n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0;
-  const int32_t w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_bytes; // bytes per transfer
-  const int8_t is_bias, is_pool, is_flatten;
-  const int32_t b_offset, b_val_shift, b_bias_shift;
-  const int8_t ca_nzero, ca_shift, ca_pl_scale;
-  const int32_t csh, ch, csh_shift, pkh, psh, ph, psh_shift, csw, cw, csw_shift, pkw, psw, pw, psw_shift, pool, on, oh, ow, oc;
+  const int32_t  n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0;
+  const int32_t  w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_bytes; // bytes per transfer
+  const int8_t   is_bias, is_pool, is_flatten;
+  const int32_t  b_offset, b_val_shift, b_bias_shift;
+  const int8_t   ca_nzero, ca_shift, ca_pl_scale;
+  const int32_t  csh, ch, csh_shift, pkh, psh, ph, psh_shift, csw, cw, csw_shift, pkw, psw, pw, psw_shift, pool, on, oh, ow, oc;
   const uint64_t x_header, x_header_p0, w_header, w_header_p0; // 64 bits (at least)
-  const int32_t debug_nhwc_words;
+  const int32_t  debug_nhwc_words;
 } Bundle_t;
 
 typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
@@ -61,12 +61,13 @@ static inline int32_t quant_lrelu(int32_t x, int8_t nzero, int8_t shift, int8_t 
 
 static inline void write_x(int8_t val, int32_t ib, int32_t ixp, int32_t ixn, int32_t ixl, int32_t ixw, int32_t ixcm, int32_t ixr, Bundle_t *pb_out, int32_t xcm ){
 
-  assert_printf (ixr , <, PE_ROWS+X_PAD, "write_x", "--- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n",ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm);
-  assert_printf (ixcm, <, xcm          , "write_x", "--- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n",ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm);
-  assert_printf (ixw , <, pb_out->w    , "write_x", "--- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n",ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm);
-  assert_printf (ixl , <, pb_out->l    , "write_x", "--- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n",ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm);
-  assert_printf (ixn , <, pb_out->n    , "write_x", "--- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n",ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm);
-  assert_printf (ixp , <, pb_out->p    , "write_x", "--- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n",ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm);
+  #define WRITEX_DEBUG_INFO "--- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n",ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm
+  assert_printf (ixr , <, PE_ROWS+X_PAD, "write_x", WRITEX_DEBUG_INFO);
+  assert_printf (ixcm, <, xcm          , "write_x", WRITEX_DEBUG_INFO);
+  assert_printf (ixw , <, pb_out->w    , "write_x", WRITEX_DEBUG_INFO);
+  assert_printf (ixl , <, pb_out->l    , "write_x", WRITEX_DEBUG_INFO);
+  assert_printf (ixn , <, pb_out->n    , "write_x", WRITEX_DEBUG_INFO);
+  assert_printf (ixp , <, pb_out->p    , "write_x", WRITEX_DEBUG_INFO);
 
   int32_t p_offset = (ixp == 0) ? 0 : (pb_out->cm_p0 + (ixp-1)*pb_out->cm) *pb_out->n*pb_out->l*pb_out->w*(PE_ROWS+X_PAD);
   int32_t flat_index_n2r = (((ixn*pb_out->l + ixl)*pb_out->w + ixw)*xcm + ixcm)*(PE_ROWS+X_PAD) + ixr; // multidim_index -> flat_index [n,l,w,cm,r]
@@ -101,13 +102,13 @@ static inline void tile_write( int32_t out_val, int32_t ib, Bundle_t *pb, int32_
   Bundle_t* pb_out = ib == N_BUNDLES-1 ? &bundles[ib] : &bundles[ib+1];
   int8_t yp_first  = i_yc < pb_out->cm_p0;
 
-  div_t div_oh  = div(i_yh, PE_ROWS);
-  int32_t i_yr      = div_oh.rem;
-  int32_t i_yl      = div_oh.quot;
+  div_t   div_oh  = div(i_yh, PE_ROWS);
+  int32_t i_yr    = div_oh.rem;
+  int32_t i_yl    = div_oh.quot;
 
-  div_t div_oc  = div(i_yc-pb_out->cm_p0, pb_out->cm);
-  int32_t i_yp      = yp_first ? 0           : div_oc.quot + 1;
-  int32_t i_ycm     = yp_first ? i_yc        : div_oc.rem;
+  div_t   div_oc    = div(i_yc-pb_out->cm_p0, pb_out->cm);
+  int32_t i_yp      = yp_first ? 0             : div_oc.quot + 1;
+  int32_t i_ycm     = yp_first ? i_yc          : div_oc.rem;
   int32_t ycm       = yp_first ? pb_out->cm_p0 : pb_out->cm  ;
 
 
@@ -143,10 +144,10 @@ extern EXT_C void load_y (uint8_t *p_done, uint8_t *pt_done_proc,  const uint32_
   static Bundle_t *pb = &bundles[0];
   static int32_t it_bias=0;
   static int32_t ib=0, ip=0, it=0, in=0, il=0, iw_kw2=0;
-  const int32_t *p_sram = (const int32_t *)p_sram_u32;
+  const  int32_t *p_sram = (const int32_t *)p_sram_u32;
 
   int32_t iy_nhwc;
-  div_t div_ch, div_cw, div_ixh, div_ixw;
+  div_t   div_ch, div_cw, div_ixh, div_ixw;
   int32_t ph_end, ph_beg_const, ph_beg, ixh_beg, xh_sweep;
   int32_t pw_end, pw_beg_const, pw_beg, ixw_beg, xw_sweep;
 
