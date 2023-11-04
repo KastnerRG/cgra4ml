@@ -415,6 +415,7 @@ class Bundle(tf.keras.Model):
                                 ph_end = min(ph_end+PSH, YH-1)
             
             self.proc['int'] = out_arr
+            self.proc['bits'] += 4
             # apply_act(self.pool['act'])
             assert np.all(self.proc['int'] == self.pool['tensor'].numpy() * 2**self.proc['frac']), f"Pool + act output of bundle {self.idx} is not a fixed point"
 

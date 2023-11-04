@@ -11,8 +11,8 @@
 #endif
 
 typedef const struct {
-  const int32_t  n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0;
-  const int32_t  w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_bytes; // bytes per transfer
+  const int32_t  n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0, xp_words;
+  const int32_t  w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes; // bytes per transfer
   const int8_t   is_bias, is_pool, is_flatten;
   const int32_t  b_offset, b_val_shift, b_bias_shift;
   const int8_t   ca_nzero, ca_shift, ca_pl_scale;
@@ -24,16 +24,19 @@ typedef const struct {
 typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 
 #include "model.h"
-#define X_BITS (1<<X_BITS_L2)
+#define X_BITS            (1 << X_BITS_L2)
+#define X_WORDS_PER_BYTE  (8 / X_BITS)
+#define X_BITS_MASK       ((1 << X_BITS) -1)
 
 typedef struct {
-  int8_t     w          [W_BYTES     ];
-  B_TYPE     b          [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
-  int8_t     x          [X_BYTES_ALL ];
-  int8_t     nx         [O_BYTES_MAX ];
-  int32_t    y          [O_WORDS     ];
-  int32_t    nhwc       [Y_BYTES/4   ];
-  int32_t    debug_nhwc [Y_BYTES/4   ];
+  int8_t     w              [W_BYTES     ];
+  B_TYPE     b              [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
+  int8_t     x              [X_BYTES_ALL ];
+  int32_t    y              [O_WORDS     ];
+  int32_t    nhwc           [Y_BYTES/4   ];
+  int8_t     debug_tiled    [O_WORDS_MAX ];
+  uint8_t    debug_packed   [O_BYTES_MAX ];
+  int32_t    debug_nhwc     [Y_BYTES/4   ];
 } Memory_st;
 Memory_st mem;
 
@@ -69,9 +72,26 @@ static inline void write_x(int8_t val, int32_t ib, int32_t ixp, int32_t ixn, int
   assert_printf (ixn , <, pb_out->n    , "write_x", WRITEX_DEBUG_INFO);
   assert_printf (ixp , <, pb_out->p    , "write_x", WRITEX_DEBUG_INFO);
 
-  int32_t p_offset = (ixp == 0) ? 0 : (pb_out->cm_p0 + (ixp-1)*pb_out->cm) *pb_out->n*pb_out->l*pb_out->w*(PE_ROWS+X_PAD);
+  int32_t p_offset       = (ixp == 0) ? 0 : (pb_out->cm_p0 + (ixp-1)*pb_out->cm) * pb_out->xp_words;
   int32_t flat_index_n2r = (((ixn*pb_out->l + ixl)*pb_out->w + ixw)*xcm + ixcm)*(PE_ROWS+X_PAD) + ixr; // multidim_index -> flat_index [n,l,w,cm,r]
-  mem.nx[p_offset + flat_index_n2r] = val;
+
+  // Debug tiled output
+  int32_t flat_index     = p_offset + flat_index_n2r;
+  mem.debug_tiled[flat_index] = val;
+
+  // Pack bits and store
+  int32_t flat_index_with_header = p_offset + flat_index_n2r + (ixp+1)*64/X_BITS;
+  int32_t packed_index           = flat_index_with_header / X_WORDS_PER_BYTE;
+  uint8_t packed_position        = flat_index_with_header % X_WORDS_PER_BYTE; // 0,1,2,3
+
+  assert_printf (packed_index , <, bundles[ib].o_bytes, "write_x", WRITEX_DEBUG_INFO);
+
+  uint8_t packed_val             = ((uint8_t)val & X_BITS_MASK) << (packed_position * X_BITS);
+  uint8_t mem_val                = mem.debug_packed[packed_index];
+  uint8_t mem_val_cleaned        = X_POSITION_INVERTED_MASKS[packed_position] & mem_val;
+  mem.debug_packed[packed_index] = mem_val_cleaned | packed_val;
+
+  // if (ib==1 && packed_index >= 356) printf("index:%d, final_val:%d --- position:%d value:%d packed_val:%d, mem_val:%d, mem_val_cleaned:%d, clean_mask:%d, pos_mask:%d \n", packed_index, mem.debug_packed[packed_index], packed_position, val, packed_val, mem_val, mem_val_cleaned, X_BITS_MASK, X_POSITION_INVERTED_MASKS[packed_position]);
 }
 
 
@@ -156,6 +176,21 @@ extern EXT_C void load_y (uint8_t *p_done, uint8_t *pt_done_proc,  const uint32_
   sprintf(f_path_sum, "%s/%0d_y_sum_sim.txt", DATA_DIR, ib);
   FILE *fp_raw = fopen(f_path_raw, "a"); 
   FILE *fp_sum = fopen(f_path_sum, "a"); 
+
+  // Init - add headers to out buffer
+  static uint8_t write_x_header = 1;
+  if (write_x_header) { // enabled for each new bundle
+    Bundle_t *pb_out = &bundles[ib+1];
+
+    for (int ixp=0; ixp < pb_out->p; ixp++) {
+      int32_t offset_words   = (ixp == 0) ? 0 : (pb_out->cm_p0 + (ixp-1)*pb_out->cm)*pb_out->xp_words;
+      int32_t offset_bytes   = offset_words/X_WORDS_PER_BYTE + ixp*8;
+      uint64_t *ptr_x_header = (uint64_t*)&(mem.debug_packed[offset_bytes]);
+      *ptr_x_header          = ixp == 0 ? pb_out->x_header_p0 : pb_out->x_header;
+      // printf("--------ib:%d, ixp:%d offset_bytes:%d\n", ib, ixp, offset_bytes);
+    }
+    write_x_header = 0;
+  }
 
   //New iw_kw2:
   int32_t w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
@@ -316,12 +351,6 @@ PROCESS_AND_STORE_DONE:
             
             printf("done bundle!! iw_kw2:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw_kw2, in, il, it, ip, ib);
 
-            char f_path_tiled [1000];
-            sprintf(f_path_tiled, "%s/%0d_y_tiled_sim.txt", DATA_DIR, ib);
-            FILE *fp_tiled = fopen(f_path_tiled, "w");
-            for (int32_t i=0; i<pb->o_bytes; i++)
-              fprintf(fp_tiled,"%d\n", ib == N_BUNDLES-1 ? mem.y[i] : mem.nx[i]);
-            fclose(fp_tiled);
 
             char f_path_debug [1000];
             sprintf(f_path_debug, "%s/%0d_y_nhwc_sim.txt", DATA_DIR, ib);
@@ -330,11 +359,28 @@ PROCESS_AND_STORE_DONE:
               fprintf(fp_debug,"%d\n", mem.debug_nhwc[i]);
             fclose(fp_debug);
 
+            char f_path_tiled [1000];
+            sprintf(f_path_tiled, "%s/%0d_y_tiled_sim.txt", DATA_DIR, ib);
+            FILE *fp_tiled = fopen(f_path_tiled, "w");
+            for (int32_t i=0; i<pb->o_words; i++)
+              fprintf(fp_tiled,"%d\n", ib == N_BUNDLES-1 ? mem.y[i] : mem.debug_tiled[i]);
+            fclose(fp_tiled);
+
+            if (ib != N_BUNDLES-1){
+              char f_path_packed [1000];
+              sprintf(f_path_packed, "%s/%0d_y_packed_sim.bin", DATA_DIR, ib);
+              FILE *fp_packed = fopen(f_path_packed, "wb");
+              fwrite(&mem.debug_packed, 1, pb->o_bytes, fp_packed);
+              fclose(fp_packed);
+            }
             
             ++ib; if (ib >= N_BUNDLES) { ib = 0;  // after_all(ib):
               *p_done = 1;
             }//new(ib):
+
             pb = &bundles[ib];
+            if (ib != N_BUNDLES-1) write_x_header = 1; // Make write_x write new headers
+            
           }//new(ip):
         }//new(it):
         it_bias = pb->b_offset + pb->coe*it;

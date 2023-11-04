@@ -167,18 +167,18 @@ class Config:
 
 
 @pytest.mark.parametrize("COMPILE", list(product_dict(
-                                                X_BITS     = [8    ], 
-                                                K_BITS     = [8    ], 
+                                                X_BITS     = [4    ], 
+                                                K_BITS     = [4    ], 
                                                 B_BITS     = [16   ], 
                                                 Y_BITS     = [24   ], 
                                                 INT_BITS   = [32   ], # size of integer in target CPU
                                                 ROWS       = [8    ], 
                                                 COLS       = [24   ], 
-                                                KW_MAX     = [11   ], 
+                                                KW_MAX     = [13   ], 
                                                 CI_MAX     = [2048 ], 
-                                                XW_MAX     = [32   ], 
-                                                XH_MAX     = [32   ], 
-                                                XN_MAX     = [16   ], 
+                                                XW_MAX     = [512  ], 
+                                                XH_MAX     = [512  ], 
+                                                XN_MAX     = [64   ], 
                                                 IN_BITS    = [64   ], 
                                                 OUT_BITS   = [64   ],
                                                 RAM_WEIGHTS_DEPTH = [20  ],  # KH*CI + Config beats
@@ -254,7 +254,7 @@ def test_dnn_engine(COMPILE):
     '''
     Write Runtime Headers
     '''
-    x_bytes_all, x_bytes, w_bytes, b_words, x_bytes_max, y_bytes_max, o_bytes_max = 0, 0, 0, 0, 0, 0, 0
+    x_bytes_all = x_bytes = w_bytes = b_words = x_bytes_max = y_bytes_max = o_bytes_max = o_words_max = 0
     with open ('../c/model.h', 'w') as ch:
 
         ch.write(f"#define N_BUNDLES {len(bundles)}\n")
@@ -267,13 +267,20 @@ def test_dnn_engine(COMPILE):
             x_bpt_p0 = (c.X_BITS*b.xe[0].size + c.IN_BITS    )//8
             
             if ib == len(bundles)-1:
-                o_bytes_b = b.o_int.size # int or float
-                o_words = o_bytes_b
+                o_words_b = b.o_int.size
+                o_bytes_b = o_words_b*4 # int or float
+                o_words = o_words_b
             else:
                 b_next    = bundles[ib+1]
-                o_bpt     = b_next.xe[-1].size #(c.X_BITS*b_next.xe[-1].size + c.IN_BITS   )//8 
-                o_bpt_p0  = b_next.xe[0].size  #(c.X_BITS*b_next.xe[0].size + c.IN_BITS    )//8
+                o_wpt     = b_next.xe[-1].size
+                o_wpt_p0  = b_next.xe[0].size
+                o_words_b = o_wpt_p0 + (b_next.r.CP-1)*o_wpt
+
+                o_bpt = (c.X_BITS*b_next.xe[-1].size + c.IN_BITS)//8
+                o_bpt_p0 = (c.X_BITS*b_next.xe[0].size + c.IN_BITS)//8
                 o_bytes_b = o_bpt_p0 + (b_next.r.CP-1)*o_bpt
+
+            xp_words  = b.r.XN * b.r.XL * b.r.XW * (c.ROWS+c.X_PAD)
 
             w_bytes_b = (w_bpt_p0 + (b.r.CP-1)*w_bpt)*b.r.IT
             x_bytes_b = (x_bpt_p0 + (b.r.CP-1)*x_bpt)
@@ -282,6 +289,7 @@ def test_dnn_engine(COMPILE):
             x_bytes_max = max(x_bytes_max, x_bytes_b)
             y_bytes_max = max(y_bytes_max, y_bytes_b)
             o_bytes_max = max(o_bytes_max, o_bytes_b)
+            o_words_max = max(o_words_max, o_words_b)
             w_bytes += w_bytes_b
             x_bytes_all += x_bytes_b
 
@@ -301,19 +309,22 @@ def test_dnn_engine(COMPILE):
             elif b.pool['type'] == 'avg':
                 pool_type = 'POOL_AVG'
 
-            ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .coe_tl={y_coe_tl:<3}, .r_ll={y_r_ll:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<3}, .co={b.r.CO:<3}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, ")
-            ch.write(     f".w_bpt={w_bpt:<5}, .w_bpt_p0={w_bpt_p0:<5}, .x_bpt={x_bpt:<5}, .x_bpt_p0={x_bpt_p0:<5}, .o_bytes={o_bytes_b:<5}, ")
+            ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .coe_tl={y_coe_tl:<3}, .r_ll={y_r_ll:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<3}, .co={b.r.CO:<3}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, .xp_words={xp_words:<3}, ")
+            ch.write(     f".w_bpt={w_bpt:<5}, .w_bpt_p0={w_bpt_p0:<5}, .x_bpt={x_bpt:<5}, .x_bpt_p0={x_bpt_p0:<5}, .o_words={o_words_b:<5}, .o_bytes={o_bytes_b:<5}, ")
             ch.write(     f".is_bias={1*(b.b is not None):<3}, .is_flatten={1*b.flatten:<3}, ")
             ch.write(     f".b_offset={b_words:<3}, .b_val_shift={b.bias_val_shift:<3}, .b_bias_shift={b.bias_b_shift:<3}, ")
             ch.write(     f".ca_nzero={ca_nzero:<3}, .ca_shift={ca_shift:<3}, .ca_pl_scale={ca_pl_scale:<3}, ")
             ch.write(     f".csh={b.r.CSH:<3}, .ch={b.r.CYH:<3}, .csh_shift={b.r.CSH_SHIFT:<3}, .pkh={b.r.PKH:<3}, .psh={b.r.PSH:<3}, .ph={b.r.PYH:<3}, .psh_shift={b.r.PSH_SHIFT:<3}, .csw={b.r.CSW:<3}, .cw={b.r.CYW:<3}, .csw_shift={b.r.CSW_SHIFT:<3}, .pkw={b.r.PKW:<3}, .psw={b.r.PSW:<3}, .pw={b.r.PYW:<3}, .psw_shift={b.r.PSW_SHIFT:<3}, .pool={pool_type:<10}, .on={b.r.ON:<3}, .oh={b.r.OH:<3}, .ow={b.r.OW:<3}, .oc={b.r.OC:<3}, ")
-            ch.write(     f".x_header={b.r.x_header_be_p[-1][0]:>23}u, .x_header_p0={b.r.x_header_be_p[0][0]:>23}u, .w_header={b.r.w_header_be_p[-1][0]:>23}u, .w_header_p0={b.r.x_header_be_p[0][0]:>25}u , ")
+            ch.write(     f".x_header={b.r.x_header_le_p[-1][0]:>23}u, .x_header_p0={b.r.x_header_le_p[0][0]:>23}u, .w_header={b.r.w_header_le_p[-1][0]:>23}u, .w_header_p0={b.r.x_header_le_p[0][0]:>25}u , ")
             ch.write(     f".debug_nhwc_words={b.oe_exp_nhwc.size:<5} }}")
             
             b_words += b.be.size if b.b else 0
             if b.idx != len(bundles)-1:
                 ch.write(',\n')
         
+        ''' Bit masks for X_BITS '''
+
+
         ch.write(f"\n}};\n\n")
         ch.write(f"#define X_BITS_L2   {int(np.log2(c.X_BITS))}\n")
         ch.write(f"#define W_BITS_L2   {int(np.log2(c.K_BITS))}\n")
@@ -326,12 +337,17 @@ def test_dnn_engine(COMPILE):
         ch.write(f"#define W_BYTES     {w_bytes}\n")
         ch.write(f"#define X_BYTES     {x_bytes}\n")
         ch.write(f"#define O_WORDS     {o_words}\n")
+        ch.write(f"#define O_WORDS_MAX {o_words_max}\n")
         ch.write(f"#define O_BYTES_MAX {o_bytes_max}\n")
         ch.write(f"#define X_BYTES_ALL {x_bytes_all}\n")
         ch.write(f"#define Y_BYTES     {y_bytes_max}\n")
         ch.write(f"#define B_TYPE      int{c.B_BITS}_t\n")
         ch.write(f"#define B_WORDS     {b_words}\n")
         ch.write(f'#define DATA_DIR   "{DATA_DIR}"\n\n')
+
+        mask_nums = [(2**c.X_BITS-1) << (p*c.X_BITS)  for p in range(8//c.X_BITS)]
+        mask_nums = ~np.array(mask_nums, dtype=np.uint8)
+        ch.write(f"static const uint8_t X_POSITION_INVERTED_MASKS [] = {{ {', '.join([str(n) for n in mask_nums])} }};\n")
 
     '''
     Write Binary Files
@@ -340,18 +356,22 @@ def test_dnn_engine(COMPILE):
     x_bitstring = b''
     b_bitstring = b''
     for ib, b in enumerate(bundles):
+        x_bitstring_b = b''
         if b.b:
             b_bitstring += b.be.astype(type_d['np'][c.B_BITS]).tobytes()
         for ip in range(b.r.CP):
             xe = Bundle.pack_words_into_bytes(arr=b.xe[ip].flatten(), bits=c.X_BITS)
-            x_bitstring += b.r.x_header_be_p[ip!=0].tobytes() + xe.tobytes()
+            x_bitstring_b += b.r.x_header_be_p[ip!=0].tobytes() + xe.tobytes()
                 
             for it in range(b.r.IT):
                 we = Bundle.pack_words_into_bytes(arr=b.we[ip][it].flatten(), bits=c.K_BITS)
                 w_bitstring += b.r.w_header_be_p[ip!=0].tobytes() + we.tobytes()
+        x_bitstring += x_bitstring_b
+        with open(f"{DATA_DIR}/{ib}_x_sim.bin", 'wb') as f: 
+            f.write(x_bitstring_b)
         if ib==0:
             with open(f"{DATA_DIR}/x.bin", 'wb') as f: 
-                f.write(x_bitstring)
+                f.write(x_bitstring_b)
 
     with open(f"{DATA_DIR}/w.bin", 'wb') as f: 
         f.write(w_bitstring + b_bitstring)
@@ -443,5 +463,13 @@ def test_dnn_engine(COMPILE):
         y_tiled_sim = np.loadtxt(f"{DATA_DIR}/{b.idx}_y_tiled_sim.txt", np.int32).reshape(y_tiled_exp.shape)
         error = np.sum(np.abs(y_tiled_sim-y_tiled_exp))
         assert error == 0, f"Error={error}, for y_tiled_sim at {b.idx=}"
+
+        ''' Verify packed output'''
+        if ib != len(bundles)-1:
+            with open(f'{DATA_DIR}/{ib}_y_packed_sim.bin', 'rb') as f_sim, open(f'{DATA_DIR}/{ib+1}_x_sim.bin', 'rb') as f_exp:
+                y_packed_sim = np.frombuffer(f_sim.read(), dtype=np.uint8)
+                y_packed_exp = np.frombuffer(f_exp.read(), dtype=np.uint8)
+            error = np.sum(np.abs(y_packed_sim-y_packed_exp))
+            assert error == 0, f"Error={error}, for y_packed_sim at {b.idx=}, y_packed_sim=\n{y_packed_sim[:100]} \n y_packed_exp=\n{y_packed_exp[:100]}\n"
             
         print(f"Bundle {b.idx}, Error: {error}")
