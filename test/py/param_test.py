@@ -9,6 +9,7 @@ import os.path
 import pytest
 import itertools
 import pickle
+from copy import deepcopy
 from collections import namedtuple
 from dataclasses import dataclass
 from bundle import Bundle
@@ -244,11 +245,41 @@ def test_dnn_engine(COMPILE):
     '''
     Export
     '''
+    buffer_map = []
     for ib, b in enumerate(bundles):
         print(f'-----------------{b.idx}-----------------------')
         b.process(inp if b.idx==0 else None, c)
         b.export(c, False) #ib==len(bundles)-1
         
+        '''
+        Buffer allocation
+        '''
+        if ib == len(bundles)-1:
+            b.buffer_idx = -1
+            continue
+
+        print(f'input_map:{buffer_map}')
+
+        '''Find and assign a free buffer. If not, add new buffer'''
+        for im in range(len(buffer_map)):
+            if buffer_map[im] is None:
+                buffer_map[im] = {'in':ib, 'out':b.out_tensor_dest}
+                b.buffer_idx = im
+                break
+        else: #m if break is not hit
+            b.buffer_idx = len(buffer_map)
+            buffer_map += [{'in':ib, 'out':b.out_tensor_dest}]
+        
+        print('buffer_idx:', b.buffer_idx)
+
+        '''Free the buffers whose last destination is current bundle'''
+        for im in range(len(buffer_map)):
+            buf = buffer_map[im]
+            if buf is not None:
+                if buf['out'][-1] == ib:
+                    buffer_map[im] = None
+
+        print(f'output_map:{buffer_map}')
 
 
     '''
@@ -309,7 +340,7 @@ def test_dnn_engine(COMPILE):
             elif b.pool['type'] == 'avg':
                 pool_type = 'POOL_AVG'
 
-            ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .coe_tl={y_coe_tl:<3}, .r_ll={y_r_ll:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<3}, .co={b.r.CO:<3}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, .xp_words={xp_words:<3}, ")
+            ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .coe_tl={y_coe_tl:<3}, .r_ll={y_r_ll:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<4}, .co={b.r.CO:<3}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, .xp_words={xp_words:<3}, .out_buffer_idx={b.buffer_idx:<2}, ")
             ch.write(     f".w_bpt={w_bpt:<5}, .w_bpt_p0={w_bpt_p0:<5}, .x_bpt={x_bpt:<5}, .x_bpt_p0={x_bpt_p0:<5}, .o_words={o_words_b:<5}, .o_bytes={o_bytes_b:<5}, ")
             ch.write(     f".is_bias={1*(b.b is not None):<3}, .is_flatten={1*b.flatten:<3}, ")
             ch.write(     f".b_offset={b_words:<3}, .b_val_shift={b.bias_val_shift:<3}, .b_bias_shift={b.bias_b_shift:<3}, ")
@@ -333,6 +364,7 @@ def test_dnn_engine(COMPILE):
         ch.write(f"#define PE_ROWS     {c.ROWS}\n")
         ch.write(f"#define PE_COLS     {c.COLS}\n\n")
 
+        ch.write(f"#define N_BUF       {len(buffer_map)}\n")
         ch.write(f"#define WB_BYTES    {w_bytes + (b_words*c.B_BITS)//8}\n")
         ch.write(f"#define W_BYTES     {w_bytes}\n")
         ch.write(f"#define X_BYTES     {x_bytes}\n")

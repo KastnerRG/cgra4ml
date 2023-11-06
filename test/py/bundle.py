@@ -64,6 +64,8 @@ class Bundle(tf.keras.Model):
         # Store reference to bundle object here, not just a idx number
         self.prev_bundle = None
         self.add_bundle = None
+        self.out_tensor_dest = []
+        self.buffer_idx = None
 
         def extract_act(signature):
             ilayer = QActivation(signature)
@@ -159,6 +161,7 @@ class Bundle(tf.keras.Model):
         if hasattr(x, "bundle"):
             self.prev_bundle = x.bundle
             self.idx = self.prev_bundle.idx + 1
+            self.prev_bundle.out_tensor_dest += [self.idx]
         else:
             self.prev_bundle = None
             self.idx = 0
@@ -172,6 +175,7 @@ class Bundle(tf.keras.Model):
         if x_1 is not None:
             if hasattr(x_1, "bundle"):
                 self.add['bundle'] = x_1.bundle
+                self.x_1.out_tensor_dest += [self.idx]
             else:
                 self.add['bundle'] = None
             x = Add()([x, x_1])
@@ -621,7 +625,6 @@ class Bundle(tf.keras.Model):
             assert o_shape == (XN, YH, YW, CO), f"{o_shape=}, {(XN, YH, YW, CO)=}"
         
         print('final output', o_shape)
-
 
         '''
         Pack all local variables into a namedtuple
