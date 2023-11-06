@@ -11,7 +11,7 @@
 #endif
 
 typedef const struct {
-  const int32_t  n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0, xp_words;
+  const int32_t  n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0, xp_words, out_buffer_idx;
   const int32_t  w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes; // bytes per transfer
   const int8_t   is_bias, is_pool, is_flatten;
   const int32_t  b_offset, b_val_shift, b_bias_shift;
@@ -31,15 +31,17 @@ typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 typedef struct {
   int8_t     w              [W_BYTES     ];
   B_TYPE     b              [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
+  int8_t     buffers [N_BUF][O_BYTES_MAX ];
   int8_t     x              [X_BYTES_ALL ];
   int32_t    y              [O_WORDS     ];
   int32_t    nhwc           [Y_BYTES/4   ];
   int8_t     debug_tiled    [O_WORDS_MAX ];
-  uint8_t    debug_packed   [O_BYTES_MAX ];
   int32_t    debug_nhwc     [Y_BYTES/4   ];
 } Memory_st;
 Memory_st mem;
 
+int8_t *p_in_buffer = (int8_t*)&mem.x;
+volatile char is_bundle_write_done = 1;
 
 #define assert_printf(v1, op, v2, optional_debug_info,...) ((v1  op v2) || (printf("ASSERT FAILED: \n CONDITION: "), printf("( " #v1 " " #op " " #v2 " )"), printf(", VALUES: ( %d %s %d ), ", v1, #op, v2), printf("DEBUG_INFO: " optional_debug_info), printf(" " __VA_ARGS__), printf("\n\n"), assert(v1 op v2), 0))
 
@@ -62,7 +64,7 @@ static inline int32_t quant_lrelu(int32_t x, int8_t nzero, int8_t shift, int8_t 
 }
 
 
-static inline void write_x(int8_t val, int32_t ib, int32_t ixp, int32_t ixn, int32_t ixl, int32_t ixw, int32_t ixcm, int32_t ixr, Bundle_t *pb_out, int32_t xcm ){
+static inline void write_x(int8_t val, int8_t *p_out_buffer, int32_t ib, int32_t ixp, int32_t ixn, int32_t ixl, int32_t ixw, int32_t ixcm, int32_t ixr, Bundle_t *pb_out, int32_t xcm ){
 
   #define WRITEX_DEBUG_INFO "--- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n",ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm
   assert_printf (ixr , <, PE_ROWS+X_PAD, "write_x", WRITEX_DEBUG_INFO);
@@ -87,15 +89,15 @@ static inline void write_x(int8_t val, int32_t ib, int32_t ixp, int32_t ixn, int
   assert_printf (packed_index , <, bundles[ib].o_bytes, "write_x", WRITEX_DEBUG_INFO);
 
   uint8_t packed_val             = ((uint8_t)val & X_BITS_MASK) << (packed_position * X_BITS);
-  uint8_t mem_val                = mem.debug_packed[packed_index];
+  uint8_t mem_val                = p_out_buffer[packed_index];
   uint8_t mem_val_cleaned        = X_POSITION_INVERTED_MASKS[packed_position] & mem_val;
-  mem.debug_packed[packed_index] = mem_val_cleaned | packed_val;
+  p_out_buffer[packed_index]     = mem_val_cleaned | packed_val;
 
   // if (ib==1 && packed_index >= 356) printf("index:%d, final_val:%d --- position:%d value:%d packed_val:%d, mem_val:%d, mem_val_cleaned:%d, clean_mask:%d, pos_mask:%d \n", packed_index, mem.debug_packed[packed_index], packed_position, val, packed_val, mem_val, mem_val_cleaned, X_BITS_MASK, X_POSITION_INVERTED_MASKS[packed_position]);
 }
 
 
-static inline void tile_write( int32_t out_val, int32_t ib, Bundle_t *pb, int32_t i_yn, int32_t i_yh, int32_t i_yw, int32_t i_yc, int32_t yn, int32_t yh, int32_t yw, int32_t yc ) {
+static inline void tile_write( int32_t out_val, int8_t *p_out_buffer, int32_t ib, Bundle_t *pb, int32_t i_yn, int32_t i_yh, int32_t i_yw, int32_t i_yc, int32_t yn, int32_t yh, int32_t yw, int32_t yc ) {
 
   // ------ FLATTEN ------
   if (pb->is_flatten) {
@@ -145,13 +147,13 @@ static inline void tile_write( int32_t out_val, int32_t ib, Bundle_t *pb, int32_
     int32_t yr_sweep = i_yh==yh-1 ? PE_ROWS : i_yr + 1;
 
     for (int32_t i_yr_dest = i_yr; i_yr_dest < yr_sweep; i_yr_dest++) {
-      write_x(out_val, ib, i_yp, i_yn, i_yl, i_yw, i_ycm, i_yr_dest,   pb_out, ycm);
+      write_x(out_val, p_out_buffer, ib, i_yp, i_yn, i_yl, i_yw, i_ycm, i_yr_dest,   pb_out, ycm);
 
       // --- PADDING: the [bottom X_PAD rows of previous block (l-1)] with [first X_PAD rows of this block (l)]
       if (i_yr_dest < X_PAD) {
         int32_t pad_val = (i_yl == 0) ? 0         : out_val;
         int32_t dest_yl = (i_yl == 0) ? pb_out->l-1 : i_yl-1;
-        write_x(pad_val, ib, i_yp, i_yn, dest_yl, i_yw, i_ycm, i_yr_dest+PE_ROWS,   pb_out, ycm);
+        write_x(pad_val, p_out_buffer, ib, i_yp, i_yn, dest_yl, i_yw, i_ycm, i_yr_dest+PE_ROWS,   pb_out, ycm);
       }
       out_val = 0;
     }
@@ -164,6 +166,7 @@ extern EXT_C void load_y (uint8_t *p_done, uint8_t *pt_done_proc,  const uint32_
   static Bundle_t *pb = &bundles[0];
   static int32_t it_bias=0;
   static int32_t ib=0, ip=0, it=0, in=0, il=0, iw_kw2=0;
+  static int8_t  *p_out_buffer = (int8_t*)&mem.buffers[0];
   const  int32_t *p_sram = (const int32_t *)p_sram_u32;
 
   int32_t iy_nhwc;
@@ -185,8 +188,8 @@ extern EXT_C void load_y (uint8_t *p_done, uint8_t *pt_done_proc,  const uint32_
     for (int ixp=0; ixp < pb_out->p; ixp++) {
       int32_t offset_words   = (ixp == 0) ? 0 : (pb_out->cm_p0 + (ixp-1)*pb_out->cm)*pb_out->xp_words;
       int32_t offset_bytes   = offset_words/X_WORDS_PER_BYTE + ixp*8;
-      uint64_t *ptr_x_header = (uint64_t*)&(mem.debug_packed[offset_bytes]);
-      *ptr_x_header          = ixp == 0 ? pb_out->x_header_p0 : pb_out->x_header;
+
+      *(uint64_t*)&(p_out_buffer[offset_bytes])     = ixp == 0 ? pb_out->x_header_p0 : pb_out->x_header;
       // printf("--------ib:%d, ixp:%d offset_bytes:%d\n", ib, ixp, offset_bytes);
     }
     write_x_header = 0;
@@ -273,7 +276,7 @@ PROCESS_START:
         // ------ MAX/AVG POOL ---
 
         if (pb->pool == POOL_NONE) {
-          tile_write(out_val, ib, pb, i_yn, i_yh, i_yw, i_yc, yn, yh, yw, yc);
+          tile_write(out_val, p_out_buffer, ib, pb, i_yn, i_yh, i_yw, i_yc, yn, yh, yw, yc);
           goto PROCESS_AND_STORE_DONE;
         }
 
@@ -323,7 +326,7 @@ PROCESS_START:
             result = pb->pool==POOL_MAX ? result : div_round(result, count); 
 
             // ------ POOL ACTIVATION ------
-            tile_write(result, ib, pb,   i_yn, ixh, ixw, i_yc,  yn, pb->ph, pb->pw, yc); // Write
+            tile_write(result, p_out_buffer, ib, pb,   i_yn, ixh, ixw, i_yc,  yn, pb->ph, pb->pw, yc); // Write
           }
         }
         yh = pb->ph;
@@ -350,6 +353,7 @@ PROCESS_AND_STORE_DONE:
           ++ip; if (ip >= pb->p) { ip = 0;         //after_each(ib) = after_all(ip):
             
             printf("done bundle!! iw_kw2:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw_kw2, in, il, it, ip, ib);
+            is_bundle_write_done = 1;
 
 
             char f_path_debug [1000];
@@ -370,7 +374,7 @@ PROCESS_AND_STORE_DONE:
               char f_path_packed [1000];
               sprintf(f_path_packed, "%s/%0d_y_packed_sim.bin", DATA_DIR, ib);
               FILE *fp_packed = fopen(f_path_packed, "wb");
-              fwrite(&mem.debug_packed, 1, pb->o_bytes, fp_packed);
+              fwrite(p_out_buffer, 1, pb->o_bytes, fp_packed);
               fclose(fp_packed);
             }
             
@@ -379,6 +383,7 @@ PROCESS_AND_STORE_DONE:
             }//new(ib):
 
             pb = &bundles[ib];
+            p_out_buffer = (int8_t*)&mem.buffers[pb->out_buffer_idx];
             if (ib != N_BUNDLES-1) write_x_header = 1; // Make write_x write new headers
             
           }//new(ip):
@@ -391,24 +396,30 @@ PROCESS_AND_STORE_DONE:
 }
 
 
-extern EXT_C void load_x (uint8_t *p_done, int32_t *p_offset, int32_t *p_bpt) {
+extern EXT_C void load_x (uint8_t *p_done, uint8_t *bundle_read_done, int32_t *p_offset, int32_t *p_bpt) {
 
   static int32_t ib=0, ip=0, it=0, offset_next=0;
+  static char bundle_read_done_next = 0;
   int32_t offset = offset_next;
   int32_t bpt = ip == 0 ? bundles[ib].x_bpt_p0 : bundles[ib].x_bpt;
 
   *p_offset = offset;
   *p_bpt = bpt;
+  *bundle_read_done = bundle_read_done_next;
 
+  bundle_read_done_next = 0;
   // Nested for loop [for ib: for ip: for it: {}] inverted to increment once per call
   ++ it; if (it >= bundles[ib].t) { it = 0;
+    offset_next += bpt;
     ++ ip; if (ip >= bundles[ib].p) { ip = 0;
+
+      bundle_read_done_next = 1;
+      is_bundle_write_done = 0;
+
       ++ ib; if (ib >= N_BUNDLES) { ib = 0;
         *p_done =1;
         offset_next = 0;
-    }}
-    offset_next += bpt;
-  }
+  }}}
 }
 
 
@@ -455,8 +466,11 @@ extern EXT_C void fill_memory (){
     printf("i:%d, bias:%d\n", i, mem.b[i]);
 }
 
-
 extern EXT_C int8_t get_byte_wx (int32_t addr, int32_t mode){
   if      (mode==0) return mem.w[addr];
   else if (mode==1) return mem.x[addr];
+}
+
+extern EXT_C char get_is_bundle_write_done(){
+  return is_bundle_write_done;
 }

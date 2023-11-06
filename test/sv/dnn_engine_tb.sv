@@ -49,14 +49,15 @@ module dnn_engine_tb;
   DMA_M2S #(S_PIXELS_WIDTH_LF , VALID_PROB, 1) source_x (aclk, aresetn, s_axis_pixels_tready , s_axis_pixels_tvalid , s_axis_pixels_tlast , s_axis_pixels_tdata , s_axis_pixels_tkeep );
   DMA_M2S #(S_WEIGHTS_WIDTH_LF, VALID_PROB, 0) source_k (aclk, aresetn, s_axis_weights_tready, s_axis_weights_tvalid, s_axis_weights_tlast, s_axis_weights_tdata, s_axis_weights_tkeep);
 
-  bit y_done=0, x_done=0, w_done=0;
+  bit y_done=0, x_done=0, w_done=0, bundle_read_done=0, bundle_write_done=0;
   int w_offset=0, w_bpt=0, x_offset=0, x_bpt=0;
   
-  import "DPI-C" function void load_x(inout bit x_done, inout int x_offset, x_bpt);
+  import "DPI-C" function void load_x(inout bit x_done, bundle_read_done, inout int x_offset, x_bpt);
   import "DPI-C" function void load_w(inout bit w_done, inout int w_offset, w_bpt);
   import "DPI-C" function void load_y(inout bit y_done, inout bit m_t_done_proc, inout bit [31:0] y_sram [ROWS*COLS-1:0]);
   import "DPI-C" function void fill_memory();
   import "DPI-C" function byte get_byte_wx (int addr, int mode);
+  import "DPI-C" function byte get_is_bundle_write_done();
 
 
   // W DMA
@@ -71,8 +72,9 @@ module dnn_engine_tb;
   // X DMA
   initial 
     while (1) begin
-      load_x (x_done, x_offset, x_bpt);
+      load_x (x_done, bundle_read_done, x_offset, x_bpt);
       source_x.axis_push(x_offset, x_bpt);
+      while(bundle_read_done && !get_is_bundle_write_done()) #10ps;
       $display("Done input dma at offset=%d, bpt=%d \n", x_offset, x_bpt);
       if (x_done) break;
     end
