@@ -399,24 +399,23 @@ PROCESS_AND_STORE_DONE:
 extern EXT_C void load_x (uint8_t *p_done, uint8_t *bundle_read_done, uint64_t *p_base_addr, int32_t *p_bpt) {
 
   static int32_t ib=0, ip=0, it=0, offset_next=0;
-  static char bundle_read_done_next = 0;
 
-  *p_base_addr = (uint64_t)&mem.x + offset_next;
+  int8_t *p_buffer_base = (ib==0) ? mem.x : mem.buffers[bundles[ib-1].out_buffer_idx];
+
+  *p_base_addr = (uint64_t)p_buffer_base + offset_next;
   *p_bpt = ip == 0 ? bundles[ib].x_bpt_p0 : bundles[ib].x_bpt;
-  *bundle_read_done = bundle_read_done_next;
+  *bundle_read_done = (it == bundles[ib].t-1) && (ip==bundles[ib].p-1);
 
-  bundle_read_done_next = 0;
   // Nested for loop [for ib: for ip: for it: {}] inverted to increment once per call
   ++ it; if (it >= bundles[ib].t) { it = 0;
     offset_next += *p_bpt;
     ++ ip; if (ip >= bundles[ib].p) { ip = 0;
 
-      bundle_read_done_next = 1;
+      offset_next = 0;
       is_bundle_write_done = 0;
 
       ++ ib; if (ib >= N_BUNDLES) { ib = 0;
         *p_done =1;
-        offset_next = 0;
   }}}
 }
 
