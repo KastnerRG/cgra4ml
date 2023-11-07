@@ -50,32 +50,34 @@ module dnn_engine_tb;
   DMA_M2S #(S_WEIGHTS_WIDTH_LF, VALID_PROB, 0) source_k (aclk, aresetn, s_axis_weights_tready, s_axis_weights_tvalid, s_axis_weights_tlast, s_axis_weights_tdata, s_axis_weights_tkeep);
 
   bit y_done=0, x_done=0, w_done=0, bundle_read_done=0, bundle_write_done=0;
-  int w_offset=0, w_bpt=0, x_offset=0, x_bpt=0;
+  longint unsigned w_base=0, x_base=0;
+  int w_bpt=0, x_bpt=0;
   
-  import "DPI-C" function void load_x(inout bit x_done, bundle_read_done, inout int x_offset, x_bpt);
-  import "DPI-C" function void load_w(inout bit w_done, inout int w_offset, w_bpt);
+  import "DPI-C" function void load_x(inout bit x_done, bundle_read_done, inout longint unsigned x_base, inout int x_bpt);
+  import "DPI-C" function void load_w(inout bit w_done, inout longint unsigned w_base, inout int w_bpt);
   import "DPI-C" function void load_y(inout bit y_done, inout bit m_t_done_proc, inout bit [31:0] y_sram [ROWS*COLS-1:0]);
-  import "DPI-C" function void fill_memory();
-  import "DPI-C" function byte get_byte_wx (int addr, int mode);
+  import "DPI-C" function void fill_memory(inout longint unsigned w_base, x_base);
+  import "DPI-C" function byte get_byte (longint unsigned addr);
   import "DPI-C" function byte get_is_bundle_write_done();
+  import "DPI-C" function void set_is_bundle_write_done(input bit val);
 
 
   // W DMA
   initial 
     while (1) begin
-      load_w (w_done, w_offset, w_bpt);
-      source_k.axis_push(w_offset, w_bpt);
-      $display("Done weights dma at offset=%d, bpt=%d \n", w_offset, w_bpt);
+      load_w (w_done, w_base, w_bpt);
+      source_k.axis_push(w_base, w_bpt);
+      $display("Done weights dma at offset=%h, bpt=%d \n", w_base, w_bpt);
       if (w_done) break;
     end
 
   // X DMA
   initial 
     while (1) begin
-      load_x (x_done, bundle_read_done, x_offset, x_bpt);
-      source_x.axis_push(x_offset, x_bpt);
+      load_x (x_done, bundle_read_done, x_base, x_bpt);
+      source_x.axis_push(x_base, x_bpt);
       while(bundle_read_done && !get_is_bundle_write_done()) #10ps;
-      $display("Done input dma at offset=%d, bpt=%d \n", x_offset, x_bpt);
+      $display("Done input dma at offset=%h, bpt=%d \n", x_base, x_bpt);
       if (x_done) break;
     end
 
@@ -111,12 +113,12 @@ module dnn_engine_tb;
   initial begin
     aresetn = 0;
 
-    fill_memory();
+    fill_memory(w_base, x_base);
 
     for (int i=0; i<50; i++)
-      $display("weights: i:%d, w:%b", i, get_byte_wx(i, 0));
+      $display("weights: i:%h, w:%b", i, get_byte(w_base + i));
     for (int i=0; i<10; i++)
-      $display("inputs: i:%d, w:%b", i, get_byte_wx(i,1));
+      $display("inputs : i:%h, w:%b", i, get_byte(x_base + i));
     
     repeat(2) @(posedge aclk) #1;
     aresetn = 1;
