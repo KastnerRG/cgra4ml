@@ -18,13 +18,14 @@ module DMA_M2S #(
   logic [BYTES_PER_BEAT-1:0][7:0] s_data_val;
   logic [BYTES_PER_BEAT-1:0] s_keep_val;
 
-  int status, i_bytes=0;
+  int status;
+  longint unsigned i_bytes=0;
   bit prev_handshake=1; // data is released first
   bit prev_slast=0;
 
-  import "DPI-C" function byte get_byte_wx (int addr, int mode);
+  import "DPI-C" function byte get_byte (longint unsigned addr);
 
-  task axis_push (input int offset, input int bytes_per_transfer);
+  task axis_push (input longint unsigned base_addr, input int bytes_per_transfer);
     {s_valid, s_data, s_last, s_keep} = '0;
 
     wait(aresetn); // wait for slave to begin
@@ -38,7 +39,7 @@ module DMA_M2S #(
             s_keep_val[i] = 0;
           end
           else begin
-            s_data_val[i] = get_byte_wx(offset + i_bytes, MODE);
+            s_data_val[i] = get_byte(base_addr + i_bytes);
             // $display("DMA: start:%d, i_bytes:%d, val:%d", offset, i_bytes, $signed(s_data_val[i]));
             s_keep_val[i] = 1;
             i_bytes  += 1;

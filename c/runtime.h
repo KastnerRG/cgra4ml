@@ -396,21 +396,19 @@ PROCESS_AND_STORE_DONE:
 }
 
 
-extern EXT_C void load_x (uint8_t *p_done, uint8_t *bundle_read_done, int32_t *p_offset, int32_t *p_bpt) {
+extern EXT_C void load_x (uint8_t *p_done, uint8_t *bundle_read_done, uint64_t *p_base_addr, int32_t *p_bpt) {
 
   static int32_t ib=0, ip=0, it=0, offset_next=0;
   static char bundle_read_done_next = 0;
-  int32_t offset = offset_next;
-  int32_t bpt = ip == 0 ? bundles[ib].x_bpt_p0 : bundles[ib].x_bpt;
 
-  *p_offset = offset;
-  *p_bpt = bpt;
+  *p_base_addr = (uint64_t)&mem.x + offset_next;
+  *p_bpt = ip == 0 ? bundles[ib].x_bpt_p0 : bundles[ib].x_bpt;
   *bundle_read_done = bundle_read_done_next;
 
   bundle_read_done_next = 0;
   // Nested for loop [for ib: for ip: for it: {}] inverted to increment once per call
   ++ it; if (it >= bundles[ib].t) { it = 0;
-    offset_next += bpt;
+    offset_next += *p_bpt;
     ++ ip; if (ip >= bundles[ib].p) { ip = 0;
 
       bundle_read_done_next = 1;
@@ -423,14 +421,14 @@ extern EXT_C void load_x (uint8_t *p_done, uint8_t *bundle_read_done, int32_t *p
 }
 
 
-extern EXT_C void load_w (uint8_t *p_done, int32_t *p_offset, int32_t *p_bpt) {
+extern EXT_C void load_w (uint8_t *p_done, uint64_t *p_base_addr, int32_t *p_bpt) {
 
   static int32_t ib=0, ip=0, it=0, offset_next=0;
 
   int32_t offset = offset_next;
   int32_t bpt = ip == 0 ? bundles[ib].w_bpt_p0 : bundles[ib].w_bpt;
 
-  *p_offset = offset;
+  *p_base_addr = (uint64_t)&mem.w + offset;
   *p_bpt = bpt;
 
   // Nested for loop [for ib: for ip: for it: {}] inverted to increment once per call
@@ -444,7 +442,7 @@ extern EXT_C void load_w (uint8_t *p_done, int32_t *p_offset, int32_t *p_bpt) {
 }
 
 
-extern EXT_C void fill_memory (){
+extern EXT_C void fill_memory (uint64_t *p_w_base, uint64_t *p_x_base){
   FILE *fp;
   char f_path [1000];
 
@@ -464,13 +462,18 @@ extern EXT_C void fill_memory (){
 
   for (int32_t i=0; i<B_WORDS; i++)
     printf("i:%d, bias:%d\n", i, mem.b[i]);
+
+  *p_w_base = (uint64_t)&mem.w;
+  *p_x_base = (uint64_t)&mem.x;
 }
 
-extern EXT_C int8_t get_byte_wx (int32_t addr, int32_t mode){
-  if      (mode==0) return mem.w[addr];
-  else if (mode==1) return mem.x[addr];
+extern EXT_C int8_t get_byte (uint64_t addr){
+  return *(int8_t*)addr;
 }
 
 extern EXT_C char get_is_bundle_write_done(){
   return is_bundle_write_done;
+}
+extern EXT_C void set_is_bundle_write_done(uint8_t val){
+  is_bundle_write_done = val;
 }
