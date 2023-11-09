@@ -1,40 +1,90 @@
 # DeepSoCFlow: DNNs to FPGA/ASIC SoCs in minutes ![status](https://github.com/abarajithan11/dnn-engine/actions/workflows/verify.yml/badge.svg) 
 
-Research groups around the world keep developing quantized DNNs to be accelerated on FPGAs or custom silicon, for new & exciting domain specific applications.
+DeepSoCFlow is a Python library that helps researchers build, train, and implement their own deep ML models, such as ResNet CNNs, Autoencoders, and Transformers on FPGAs and custom ASIC.
 
-However, implementing your Deep Neural Networks on FPGA/ASIC and getting it working takes several painful months of 
-- Building and training the model,
-- Frontend software development to parse the model, 
-- RTL design & verification of an accelerator, and 
-- System-on-chip design & firmware development to optimally move data in & out of the accelerator.
+It takes several months of work to get such deep models running correctly on edge platforms, at their promised maximal performance. This painful work includes:
 
-We present a fully automated flow to do all this within minutes!
+- Designing an optimal dataflow
+- Building & verifying an accelerator, optimizing for high-frequency
+- Building the System-on-Chip, verifying and optimizing data bottlenecks
+- Writing C firmware to control the accelerator, verifying, optimizing
+
+Often, after all that work, the models do not meet their expected performance due to memory bottlenecks and sub-optimal hardware implementation.
+
+We present a highly flexible, high performance accelerator system that can be adjusted to your needs through a simple Python API. The implementation is maintained as open source and bare-bones, allowing the user to modify the processing element to do floating point, binarized calculations...etc.  
 
 ![System](docs/overall.png)
 
-## Our Unified Flow
+## User API (WIP)
 
-**1. Software**
-- Build your model using our `Bundle` class, which contains Conv2D, Dense, Maxpool, Avgpool, Flatten layers
-- Train your model with SOTA training algorithms
+```py
+from deepsocflow import Hardware, Bundle, QInput, BundleModel, QConvCore, QDenseCore, QAdd, QPool, Softmax, QLeakyReLu
 
-**2. Hardware**
-- Specify your FPGA type or desired silicon area, and one or more models that you'd like to implement. This generates:
-  - `hw.json` - hardware parameters
-  - `params.svh` - SystemVerilog header to parameterize the accelerator
-  - `config.tcl` - TCL header to parameterize Vivado project or ASIC flow
-- FPGA: Run `vivado.tcl` to generate project, connect IPs, run implementation and generate bitstream
-- ASIC: Connect PDKs and run `syn.tcl` and `pnr.tcl` to generate GDSII
+'''
+0. Specify Hardware
+'''
+hw = Hardware (
+        processing_elements = (8, 96),
+        frequency           = 1000,
+        bits_input          = 8,
+        bits_weights        = 4,
+        bits_sum            = 24,
+        bits_bias           = 16,
+        max_kernel_size     = (13, 13),
+        max_channels_in     = 512,
+        max_channels_out    = 512,
+        max_image_size      = (32,32),
+     )
+hw.export() # Generates: config_hw.svh, config_hw.tcl, config_hw.json
+# Alternatively: hw = Hardware.from_json('config_hw.json')
 
-**3. Firmware**
-- `model.export(hw)`
-  - Performs inference using integers and validates the model
-  - Exports weights & biases as binary files
-  - `model.h` - C header for the runtime firmware
-  - Runs our randomized SV testbench to test your entire model through the hardware & C firmware
-- FPGA Implementation:
-  - Baremetal: Add our C files & `model.h` to Vitis project, compile & execute
-  - PYNQ/Linux: Run our python runtime
+'''
+1. Build Model 
+'''
+x = QInput( input_shape= (8,32,32,3), hw= hw, input_frac_bits= 4)
+
+x = Bundle( core= QConvCore(filters= 32, kernel_size= (7,7), strides= (2,2), padding= 'same', weights_frac_bits= 4, bias_frac_bits= 8, activation= QLeakyReLu(negative_slope=0.125, frac_bits= 4 )),
+            pool= QPool(type= 'max', size= (3,3), strides= (1,1), padding= 'same', frac_bits= 4)
+            )(x)
+x_skip = x
+x = Bundle( core= QConvCore(filters= 64, kernel_size= (3,3), weights_frac_bits= 4, bias_frac_bits= 8, activation= QLeakyReLu(negative_slope=0, frac_bits= 4)),
+            pool= QAdd(x_skip), # Residual addition
+            flatten= True,
+            )(x)
+x = Bundle( dense= QDenseCore(outputs= 10, weights_frac_bits= 4, bias_frac_bits= 8, activation= Softmax()),
+            )(x)
+model = BundleModel(inputs=x_in, outputs=x)
+# Alternatively: model = BundleModel.from_json('config_model.json')
+
+'''
+2. TRAIN (using qkeras)
+'''
+model.compile(...)
+model.fit(...)
+model.export() # Generates: savedmodel, config_model.json
+
+'''
+3. EXPORT FOR INFERENCE
+
+- Runs forward pass in float32, records intermediate tensors
+- Runs forward pass in integer, comparing with float32 pass for zero error
+- Runs SystemVerilog testbench with the model & weights, randomizing handshakes, testing with actual C firmware in simulation
+- Prints performance estimate (time, latency)
+- Generates 
+      - config_firmware.h
+      - weights.bin
+      - expected.bin
+'''
+model.export_inference(x=model.random_input) # -> config_firmware.h, weights.bin
+
+'''
+4. IMPLEMENTATION
+
+a. FPGA: Run vivado.tcl
+b. ASIC: Set PDK paths, run syn.tcl & pnr.tcl
+c. Compile C firmware with generated header (model.h) and run on device
+'''
+```
 
 ## Motivation
 
