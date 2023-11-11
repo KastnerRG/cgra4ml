@@ -190,13 +190,13 @@ def test_dnn_engine(COMPILE):
     x = x_in = Input(input_shape[1:], name='input')
     x = QActivation(xq)(x)
 
-    x = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':(11,11), 'strides':(2,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0)'    }, pool= {'type':'max', 'size':(3,4), 'strides':(2,3), 'padding':'same', 'act_str':f'quantized_bits({c.X_BITS},0,False,False,1)'})(x)
-    x = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_bits({c.X_BITS},0,False,False,1)'       },)(x)
-    x = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 7, 7), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':False, 'act_str':f'quantized_bits({c.X_BITS},0,False,True,1)'        },)(x)
-    x = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 5, 5), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'},)(x)
-    x = Bundle( core= {'type':'conv' , 'filters':24, 'kernel_size':( 3, 3), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0)'    },)(x)
-    x = Bundle( core= {'type':'conv' , 'filters':10, 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'}, flatten= True)(x)
-    x = Bundle( core= {'type':'dense', 'units'  :10,                                                           'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'})(x)
+    x = x_skip = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':(11,11), 'strides':(2,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0)'    }, pool= {'type':'avg', 'size':(3,4), 'strides':(2,3), 'padding':'same', 'act_str':f'quantized_bits({c.X_BITS},0,False,False,1)'})(x)
+    x =          Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_bits({c.X_BITS},0,False,False,1)'       },)(x)
+    x =          Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 7, 7), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':False, 'act_str':f'quantized_bits({c.X_BITS},0,False,True,1)'        },)(x) # add = {'act_str':f'quantized_bits({c.X_BITS},0,False,True,1)'})(x, x_skip)
+    x =          Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 5, 5), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'},)(x)
+    x =          Bundle( core= {'type':'conv' , 'filters':24, 'kernel_size':( 3, 3), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0)'    },)(x)
+    x =          Bundle( core= {'type':'conv' , 'filters':10, 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'}, flatten= True)(x)
+    x =          Bundle( core= {'type':'dense', 'units'  :10,                                                           'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'})(x)
 
     model = Model(inputs=x_in, outputs=x)
 
@@ -309,18 +309,22 @@ def test_dnn_engine(COMPILE):
 
             ca_nzero, ca_shift, ca_pl_scale = b.core['act']['non_zero'], b.core['act']['shift_bits'], b.core['act']['plog_slope']
 
+            add_act_shift = b.add['act']['shift_bits'] if b.add is not None else 0
+            add_buffer_idx = b.add['bundle'].idx if b.add is not None else -1
+
             if b.pool is None:
                 pool_type = 'POOL_NONE'
             elif b.pool['type'] == 'max':
                 pool_type = 'POOL_MAX'
             elif b.pool['type'] == 'avg':
                 pool_type = 'POOL_AVG'
+            pool_act_shift = b.pool['act']['shift_bits'] if b.pool is not None else 0
 
-            ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .coe_tl={y_coe_tl:<3}, .r_ll={y_r_ll:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<4}, .co={b.r.CO:<3}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, .xp_words={xp_words:<3}, .out_buffer_idx={b.buffer_idx:<2}, ")
+            ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .coe_tl={y_coe_tl:<3}, .r_ll={y_r_ll:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<4}, .co={b.r.CO:<3}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, .xp_words={xp_words:<3}, .out_buffer_idx={b.buffer_idx:<2}, .add_buffer_idx={add_buffer_idx:<2}, ")
             ch.write(     f".w_bpt={w_bpt:<5}, .w_bpt_p0={w_bpt_p0:<5}, .x_bpt={x_bpt:<5}, .x_bpt_p0={x_bpt_p0:<5}, .o_words={o_words_b:<5}, .o_bytes={o_bytes_b:<5}, ")
             ch.write(     f".is_bias={1*(b.b is not None):<3}, .is_flatten={1*b.flatten:<3}, ")
             ch.write(     f".b_offset={b_words:<3}, .b_val_shift={b.bias_val_shift:<3}, .b_bias_shift={b.bias_b_shift:<3}, ")
-            ch.write(     f".ca_nzero={ca_nzero:<3}, .ca_shift={ca_shift:<3}, .ca_pl_scale={ca_pl_scale:<3}, ")
+            ch.write(     f".ca_nzero={ca_nzero:<3}, .ca_shift={ca_shift:<3}, .ca_pl_scale={ca_pl_scale:<3}, .add_act_shift={add_act_shift:<3}, .pool_act_shift={pool_act_shift:<3}, ")
             ch.write(     f".csh={b.r.CSH:<3}, .ch={b.r.CYH:<3}, .csh_shift={b.r.CSH_SHIFT:<3}, .pkh={b.r.PKH:<3}, .psh={b.r.PSH:<3}, .ph={b.r.PYH:<3}, .psh_shift={b.r.PSH_SHIFT:<3}, .csw={b.r.CSW:<3}, .cw={b.r.CYW:<3}, .csw_shift={b.r.CSW_SHIFT:<3}, .pkw={b.r.PKW:<3}, .psw={b.r.PSW:<3}, .pw={b.r.PYW:<3}, .psw_shift={b.r.PSW_SHIFT:<3}, .pool={pool_type:<10}, .on={b.r.ON:<3}, .oh={b.r.OH:<3}, .ow={b.r.OW:<3}, .oc={b.r.OC:<3}, ")
             ch.write(     f".x_header={b.r.x_header_le_p[-1][0]:>23}u, .x_header_p0={b.r.x_header_le_p[0][0]:>23}u, .w_header={b.r.w_header_le_p[-1][0]:>23}u, .w_header_p0={b.r.x_header_le_p[0][0]:>25}u , ")
             ch.write(     f".debug_nhwc_words={b.oe_exp_nhwc.size:<5} }}")
