@@ -175,7 +175,7 @@ class Bundle(tf.keras.Model):
         if x_1 is not None:
             if hasattr(x_1, "bundle"):
                 self.add['bundle'] = x_1.bundle
-                self.x_1.out_tensor_dest += [self.idx]
+                x_1.bundle.out_tensor_dest += [self.idx]
             else:
                 self.add['bundle'] = None
             x = Add()([x, x_1])
@@ -304,7 +304,8 @@ class Bundle(tf.keras.Model):
         def shift_round(n,s):
             '''Performs integer division with round-to-nearest-even. 
                Eq: np.around(n/2**s).astype(int)'''
-            return (n + (1<<(s-1)) - (~(n>>s)&1) ) >> s
+            half_b = 1<<(s-1) if s>0 else 0
+            return (n + half_b - (s>0)*(~(n>>s)&1) ) >> s
         
         def div_round(n,d):
             '''Performs integer division with round-to-nearest-even for d>0. 
@@ -330,16 +331,16 @@ class Bundle(tf.keras.Model):
 
         if self.add is not None:
             a = self.add['bundle']
-            out_frac_add, out_bits_add = max(self.proc['frac'], a.out['frac']), max(self.proc['bits'], a.out['bits'])
 
-            a_arr_cast = a.out['int'] * 2** (out_frac_add - a.out['frac'])
-            out_arr_cast = self.proc['int'] * 2 **(out_frac_add - self.proc['frac'])
-
-            self.proc['int'] = out_arr_cast.astype(np.int64) + a_arr_cast.astype(np.int64)
-            self.proc['bits'], self.proc['frac'] = out_bits_add, out_frac_add
+            (self.proc['int'], self.proc['frac'], self.proc['bits']), (self.add_val_shift, self.add_a_shift) = add(
+                self.proc['int']            , self.proc['frac'], self.proc['bits'],
+                a.out    ['int'].astype(int), a.out    ['frac'], a.out    ['bits']
+            )
+            assert self.proc['bits'] <= c.INT_BITS, f"After residual addition, resulting bits {self.proc['bits']} are more than bits for integer in CPU {c.INT_BITS}. Reduce bits or increase integer bits of bias to continue"
             apply_act(self.add['act'])
-
             assert np.all(self.proc['int'] == self.add['tensor'].numpy() * 2**self.proc['frac']), f"Add + act output of bundle {self.idx} is not a fixed point"
+        else:
+            self.add_val_shift, self.add_a_shift = 0, 0
 
         if self.pool_layer:
 
@@ -368,7 +369,7 @@ class Bundle(tf.keras.Model):
                 q_st = max((PSW*(PXW-1)+PKW-YW)//2, 0)
 
             for n in range(YN):
-                for c in range(YC):
+                for ic in range(YC):
                     for iyh in range(YH):
                         for iyw in range(YW):
 
@@ -404,14 +405,14 @@ class Bundle(tf.keras.Model):
                                         for ipyw in range(pw_end, pw_beg,-1):
                                             
                                             if self.pool['type']=='max':
-                                                result = max(result, in_arr[n,ipyh,ipyw,c])
+                                                result = max(result, in_arr[n,ipyh,ipyw,ic])
                                             else:
-                                                result += in_arr[n,ipyh,ipyw,c]
+                                                result += in_arr[n,ipyh,ipyw,ic]
 
                                     count  = (ph_end-ph_beg)*(pw_end-pw_beg)
-                                    result = result if self.pool['type']=='max' else result/count
+                                    result = result if self.pool['type']=='max' else div_round(result, count)
                                     ''' Writing '''
-                                    out_arr[n,ixh,ixw,c] = result
+                                    out_arr[n,ixh,ixw,ic] = result
 
                                     pw_beg += PSW # move pooling window by stride
                                     pw_end = min(pw_end+PSW, YW-1)
@@ -419,8 +420,10 @@ class Bundle(tf.keras.Model):
                                 ph_end = min(ph_end+PSH, YH-1)
             
             self.proc['int'] = out_arr
-            self.proc['bits'] += 4
-            # apply_act(self.pool['act'])
+            if self.pool['type'] == 'avg':
+                self.proc['bits'] += int(np.ceil(np.log2(PKH*PKW)))
+                assert self.proc['bits'] <= c.INT_BITS, f"When summing avg pool, resulting bits {self.proc['bits']} are more than bits for integer in CPU {c.INT_BITS}. Reduce bits or increase integer bits of bias to continue"
+            apply_act(self.pool['act'])
             assert np.all(self.proc['int'] == self.pool['tensor'].numpy() * 2**self.proc['frac']), f"Pool + act output of bundle {self.idx} is not a fixed point"
 
         if self.flatten:

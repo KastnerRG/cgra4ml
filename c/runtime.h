@@ -11,11 +11,11 @@
 #endif
 
 typedef const struct {
-  const int32_t  n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0, xp_words, out_buffer_idx;
+  const int32_t  n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0, xp_words, out_buffer_idx, add_buffer_idx;
   const int32_t  w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes; // bytes per transfer
   const int8_t   is_bias, is_pool, is_flatten;
   const int32_t  b_offset, b_val_shift, b_bias_shift;
-  const int8_t   ca_nzero, ca_shift, ca_pl_scale;
+  const int8_t   ca_nzero, ca_shift, ca_pl_scale, add_act_shift, pool_act_shift;
   const int32_t  csh, ch, csh_shift, pkh, psh, ph, psh_shift, csw, cw, csw_shift, pkw, psw, pw, psw_shift, pool, on, oh, ow, oc;
   const uint64_t x_header, x_header_p0, w_header, w_header_p0; // 64 bits (at least)
   const int32_t  debug_nhwc_words;
@@ -52,7 +52,7 @@ volatile char is_bundle_write_done = 1;
 #define max(x, y) ((x) > (y) ? (x) : (y))
 #define min(x, y) ((x) < (y) ? (x) : (y))
 #define clip(x, xmin, xmax) (((x) < (xmin)) ? (xmin) : ((x) > (xmax)) ? (xmax) : (x))
-#define shift_round(n, s) (((n) + (1<<((s)-1)) - (~((n)>>(s))&1) ) >> s) // === np.around(n/2**s).astype(int32_t)
+#define shift_round(n, s) (((n) + ((s)>0 ? (1<<((s)-1)) - (~((n)>>(s))&1) : 0)) >> s) // === np.around(n/2**s).astype(int32_t)
 #define div_round(a, b) (((a)+((b)/2) - (~((b)|(a)/(b)) &1))/(b))
 
 
@@ -87,6 +87,14 @@ static inline void write_x(int8_t val, int8_t *p_out_buffer, int32_t ib, int32_t
   uint8_t packed_position        = flat_index_with_header % X_WORDS_PER_BYTE; // 0,1,2,3
 
   assert_printf (packed_index , <, bundles[ib].o_bytes, "write_x", WRITEX_DEBUG_INFO);
+
+  // // ------ RESIDUAL ADD ----
+  // if (bundles[ib].add_buffer_idx != -1){
+  //   uint8_t add_byte          = mem.buffers[bundles[ib].add_buffer_idx][packed_index];
+  //   uint8_t add_byte_cleaned  = X_POSITION_INVERTED_MASKS[packed_position] & add_byte;
+  //   uint8_t add_byte_unpacked = (add_byte_cleaned >> (packed_position * X_BITS)) & X_BITS_MASK;
+  //   int8_t  add_val           = add_byte_unpacked | ~X_BITS_MASK); 
+  // }
 
   uint8_t packed_val             = ((uint8_t)val & X_BITS_MASK) << (packed_position * X_BITS);
   uint8_t mem_val                = p_out_buffer[packed_index];
@@ -322,10 +330,15 @@ PROCESS_START:
                 result = pb->pool==POOL_MAX ? max(result, read_val) : (result + read_val);
               }
             }
-            int32_t count  = (ph_end-ph_beg)*(pw_end-pw_beg);
-            result = pb->pool==POOL_MAX ? result : div_round(result, count); 
 
-            // ------ POOL ACTIVATION ------
+            // ------ AVG POOL: Divide & Activation ------
+            if (pb->pool == POOL_AVG) {
+              int32_t count  = (ph_end-ph_beg)*(pw_end-pw_beg);
+              result = div_round(result, count);
+              result = shift_round(result, pb->pool_act_shift);
+              result = clip(result, -(1<<(X_BITS-1)), (1<<(X_BITS-1))-1);
+            }
+
             tile_write(result, p_out_buffer, ib, pb,   i_yn, ixh, ixw, i_yc,  yn, pb->ph, pb->pw, yc); // Write
           }
         }
