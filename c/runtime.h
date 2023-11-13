@@ -187,7 +187,7 @@ extern EXT_C void load_y (uint8_t *p_done, uint8_t *pt_done_proc,  const uint32_
   FILE *fp_sum = fopen(f_path_sum, "a"); 
 
   // Init - add headers to out buffer
-  static uint8_t write_x_header = 1;
+  static uint8_t write_x_header = N_BUNDLES == 1 ? 0 : 1;
   if (write_x_header) { // enabled for each new bundle
     Bundle_t *pb_out = &bundles[ib+1];
 
