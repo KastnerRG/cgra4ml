@@ -11,8 +11,9 @@
 #endif
 
 typedef const struct {
-  const int32_t  n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0, xp_words, out_buffer_idx, add_buffer_idx;
+  const int32_t  n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0, xp_words;
   const int32_t  w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes; // bytes per transfer
+  const int8_t  out_buffer_idx, add_out_buffer_idx, add_in_buffer_idx;
   const int8_t   is_bias, is_pool, is_flatten;
   const int32_t  b_offset, b_val_shift, b_bias_shift;
   const int8_t   ca_nzero, ca_shift, ca_pl_scale, add_act_shift, pool_act_shift;
@@ -31,12 +32,13 @@ typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 typedef struct {
   int8_t     w              [W_BYTES     ];
   B_TYPE     b              [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
-  int8_t     buffers [N_BUF][O_BYTES_MAX ];
   int8_t     x              [X_BYTES_ALL ];
   int32_t    y              [O_WORDS     ];
-  int32_t    nhwc           [Y_BYTES/4   ];
+  int32_t    nhwc           [NHWC_WORDS  ];
   int8_t     debug_tiled    [O_WORDS_MAX ];
-  int32_t    debug_nhwc     [Y_BYTES/4   ];
+  int32_t    debug_nhwc     [NHWC_WORDS  ];
+  int8_t     out_buffers    [2           ][O_BYTES_MAX ];
+  int8_t     add_buffers    [N_ADD_BUF   ][NHWC_WORDS  ];
 } Memory_st;
 Memory_st mem;
 
@@ -47,7 +49,7 @@ volatile char is_bundle_write_done = 1;
 
 #define flatten_nhwc(in,ih,iw,ic, N,H,W,C, optional_debug_info,...)\
   ((in*H + ih)*W + iw)*C + ic;\
-  assert_printf (in, <, N, optional_debug_info,__VA_ARGS__); assert_printf (ih, <, H, optional_debug_info,__VA_ARGS__); assert_printf (iw, <, W, optional_debug_info,__VA_ARGS__); assert_printf (ic, <, C, optional_debug_info,__VA_ARGS__);
+  assert_printf (in, <, N, optional_debug_info,__VA_ARGS__); assert_printf (ih, <, H, optional_debug_info,__VA_ARGS__); assert_printf (iw, <, W, optional_debug_info,__VA_ARGS__); assert_printf (ic, <, C, optional_debug_info,__VA_ARGS__); assert_printf ((((in*H + ih)*W + iw)*C + ic), <, NHWC_WORDS, optional_debug_info,__VA_ARGS__);
 
 #define max(x, y) ((x) > (y) ? (x) : (y))
 #define min(x, y) ((x) < (y) ? (x) : (y))
@@ -87,14 +89,6 @@ static inline void write_x(int8_t val, int8_t *p_out_buffer, int32_t ib, int32_t
   uint8_t packed_position        = flat_index_with_header % X_WORDS_PER_BYTE; // 0,1,2,3
 
   assert_printf (packed_index , <, bundles[ib].o_bytes, "write_x", WRITEX_DEBUG_INFO);
-
-  // // ------ RESIDUAL ADD ----
-  // if (bundles[ib].add_buffer_idx != -1){
-  //   uint8_t add_byte          = mem.buffers[bundles[ib].add_buffer_idx][packed_index];
-  //   uint8_t add_byte_cleaned  = X_POSITION_INVERTED_MASKS[packed_position] & add_byte;
-  //   uint8_t add_byte_unpacked = (add_byte_cleaned >> (packed_position * X_BITS)) & X_BITS_MASK;
-  //   int8_t  add_val           = add_byte_unpacked | ~X_BITS_MASK); 
-  // }
 
   uint8_t packed_val             = ((uint8_t)val & X_BITS_MASK) << (packed_position * X_BITS);
   uint8_t mem_val                = p_out_buffer[packed_index];
@@ -147,6 +141,10 @@ static inline void tile_write( int32_t out_val, int8_t *p_out_buffer, int32_t ib
   int32_t iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc,,);
   mem.debug_nhwc[iy_nhwc] = out_val;
 
+  // Store for residual add
+  if (pb->add_out_buffer_idx != -1)
+    mem.add_buffers[pb->add_out_buffer_idx][iy_nhwc] = (int8_t)out_val;
+
   if (ib == N_BUNDLES-1)
     mem.y[iy_nhwc] = out_val; // Last bundle: save as NHWC
   else {
@@ -174,7 +172,7 @@ extern EXT_C void load_y (uint8_t *p_done, uint8_t *pt_done_proc,  const uint32_
   static Bundle_t *pb = &bundles[0];
   static int32_t it_bias=0;
   static int32_t ib=0, ip=0, it=0, in=0, il=0, iw_kw2=0;
-  static int8_t  *p_out_buffer = (int8_t*)&mem.buffers[0];
+  static int8_t  *p_out_buffer = (int8_t*)&mem.out_buffers[0];
   const  int32_t *p_sram = (const int32_t *)p_sram_u32;
 
   int32_t iy_nhwc;
@@ -280,6 +278,16 @@ PROCESS_START:
 
         // ------ SOFTMAX ------
 
+
+        // ------ RESIDUAL ADD ---
+
+        if (pb->add_in_buffer_idx != -1) {
+          iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc, "Before add", DEBUG_INFO);// store as nhwc for pooling
+          out_val += mem.add_buffers[pb->add_in_buffer_idx][iy_nhwc];
+          out_val = shift_round(out_val, pb->add_act_shift);
+          out_val = clip(out_val, -(1<<(X_BITS-1)), (1<<(X_BITS-1))-1);
+        }
+        
 
         // ------ MAX/AVG POOL ---
 
@@ -396,7 +404,7 @@ PROCESS_AND_STORE_DONE:
             }//new(ib):
 
             pb = &bundles[ib];
-            p_out_buffer = (int8_t*)&mem.buffers[pb->out_buffer_idx];
+            p_out_buffer = (int8_t*)&mem.out_buffers[pb->out_buffer_idx];
             if (ib != N_BUNDLES-1) write_x_header = 1; // Make write_x write new headers
             
           }//new(ip):
@@ -413,7 +421,7 @@ extern EXT_C void load_x (uint8_t *p_done, uint8_t *bundle_read_done, uint64_t *
 
   static int32_t ib=0, ip=0, it=0, offset_next=0;
 
-  int8_t *p_buffer_base = (ib==0) ? mem.x : mem.buffers[bundles[ib-1].out_buffer_idx];
+  int8_t *p_buffer_base = (ib==0) ? mem.x : mem.out_buffers[bundles[ib-1].out_buffer_idx];
 
   *p_base_addr = (uint64_t)p_buffer_base + offset_next;
   *p_bpt = ip == 0 ? bundles[ib].x_bpt_p0 : bundles[ib].x_bpt;
