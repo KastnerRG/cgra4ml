@@ -192,7 +192,7 @@ def test_dnn_engine(COMPILE):
 
     x = x_skip = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':(11,11), 'strides':(2,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0)'    }, pool= {'type':'avg', 'size':(3,4), 'strides':(2,3), 'padding':'same', 'act_str':f'quantized_bits({c.X_BITS},0,False,False,1)'})(x)
     x =          Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_bits({c.X_BITS},0,False,False,1)'       },)(x)
-    x =          Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 7, 7), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':False, 'act_str':f'quantized_bits({c.X_BITS},0,False,True,1)'        },)(x) # add = {'act_str':f'quantized_bits({c.X_BITS},0,False,True,1)'})(x, x_skip)
+    x =          Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 7, 7), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':False, 'act_str':f'quantized_bits({c.X_BITS},0,False,True,1)'        }, add = {'act_str':f'quantized_bits({c.X_BITS},0,False,True,1)'})(x, x_skip)
     x =          Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 5, 5), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'},)(x)
     x =          Bundle( core= {'type':'conv' , 'filters':24, 'kernel_size':( 3, 3), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0)'    },)(x)
     x =          Bundle( core= {'type':'conv' , 'filters':10, 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'}, flatten= True)(x)
@@ -228,25 +228,23 @@ def test_dnn_engine(COMPILE):
         b.export(c, False) #ib==len(bundles)-1
         
         '''
-        Buffer allocation
+        Buffer allocation for add bundle
         '''
-        if ib == len(bundles)-1:
-            b.buffer_idx = -1
-            continue
-
         print(f'input_map:{buffer_map}')
 
         '''Find and assign a free buffer. If not, add new buffer'''
-        for im in range(len(buffer_map)):
-            if buffer_map[im] is None:
-                buffer_map[im] = {'in':ib, 'out':b.out_tensor_dest}
-                b.buffer_idx = im
-                break
-        else: #m if break is not hit
-            b.buffer_idx = len(buffer_map)
-            buffer_map += [{'in':ib, 'out':b.out_tensor_dest}]
+        b.add_out_buffer_idx = -1
+        if len(b.add_tensor_dest) != 0:
+            for im in range(len(buffer_map)):
+                if buffer_map[im] is None:
+                    buffer_map[im] = {'in':ib, 'out':b.add_tensor_dest}
+                    b.add_out_buffer_idx = im
+                    break
+            else: #m if break is not hit
+                b.add_out_buffer_idx = len(buffer_map)
+                buffer_map += [{'in':ib, 'out':b.add_tensor_dest}]
         
-        print('buffer_idx:', b.buffer_idx)
+        print('add_out_buffer_idx:', b.add_out_buffer_idx)
 
         '''Free the buffers whose last destination is current bundle'''
         for im in range(len(buffer_map)):
@@ -261,7 +259,8 @@ def test_dnn_engine(COMPILE):
     '''
     Write Runtime Headers
     '''
-    x_bytes_all = x_bytes = w_bytes = b_words = x_bytes_max = y_bytes_max = o_bytes_max = o_words_max = 0
+    x_bytes_all = x_bytes = w_bytes = b_words = x_bytes_max = nhwc_words_max = o_bytes_max = o_words_max = 0
+    out_buffer_idx = 1
     with open ('../c/model.h', 'w') as ch:
 
         ch.write(f"#define N_BUNDLES {len(bundles)}\n")
@@ -291,10 +290,10 @@ def test_dnn_engine(COMPILE):
 
             w_bytes_b = (w_bpt_p0 + (b.r.CP-1)*w_bpt)*b.r.IT
             x_bytes_b = (x_bpt_p0 + (b.r.CP-1)*x_bpt)
-            y_bytes_b = (32*b.ye_exp.size + c.IN_BITS)//8
+            nhwc_words_b = b.r.XN * b.r.XH * b.r.XW * b.r.CO
 
             x_bytes_max = max(x_bytes_max, x_bytes_b)
-            y_bytes_max = max(y_bytes_max, y_bytes_b)
+            nhwc_words_max = max(nhwc_words_max, nhwc_words_b)
             o_bytes_max = max(o_bytes_max, o_bytes_b)
             o_words_max = max(o_words_max, o_words_b)
             w_bytes += w_bytes_b
@@ -310,7 +309,8 @@ def test_dnn_engine(COMPILE):
             ca_nzero, ca_shift, ca_pl_scale = b.core['act']['non_zero'], b.core['act']['shift_bits'], b.core['act']['plog_slope']
 
             add_act_shift = b.add['act']['shift_bits'] if b.add is not None else 0
-            add_buffer_idx = b.add['bundle'].idx if b.add is not None else -1
+            add_out_buffer_idx = b.add_out_buffer_idx
+            add_in_buffer_idx = b.add['bundle'].add_out_buffer_idx if b.add is not None else -1
 
             if b.pool is None:
                 pool_type = 'POOL_NONE'
@@ -320,8 +320,11 @@ def test_dnn_engine(COMPILE):
                 pool_type = 'POOL_AVG'
             pool_act_shift = b.pool['act']['shift_bits'] if b.pool is not None else 0
 
-            ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .coe_tl={y_coe_tl:<3}, .r_ll={y_r_ll:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<4}, .co={b.r.CO:<3}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, .xp_words={xp_words:<3}, .out_buffer_idx={b.buffer_idx:<2}, .add_buffer_idx={add_buffer_idx:<2}, ")
+            out_buffer_idx = 1*(not out_buffer_idx) if ib != len(bundles)-1 else -1 # alternate between 0 and 1
+
+            ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .coe_tl={y_coe_tl:<3}, .r_ll={y_r_ll:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<4}, .co={b.r.CO:<3}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, .xp_words={xp_words:<3}, ")
             ch.write(     f".w_bpt={w_bpt:<5}, .w_bpt_p0={w_bpt_p0:<5}, .x_bpt={x_bpt:<5}, .x_bpt_p0={x_bpt_p0:<5}, .o_words={o_words_b:<5}, .o_bytes={o_bytes_b:<5}, ")
+            ch.write(     f".out_buffer_idx={out_buffer_idx:<2}, .add_out_buffer_idx={add_out_buffer_idx:<2}, .add_in_buffer_idx={add_in_buffer_idx:<2}, ")
             ch.write(     f".is_bias={1*(b.b is not None):<3}, .is_flatten={1*b.flatten:<3}, ")
             ch.write(     f".b_offset={b_words:<3}, .b_val_shift={b.bias_val_shift:<3}, .b_bias_shift={b.bias_b_shift:<3}, ")
             ch.write(     f".ca_nzero={ca_nzero:<3}, .ca_shift={ca_shift:<3}, .ca_pl_scale={ca_pl_scale:<3}, .add_act_shift={add_act_shift:<3}, .pool_act_shift={pool_act_shift:<3}, ")
@@ -344,7 +347,7 @@ def test_dnn_engine(COMPILE):
         ch.write(f"#define PE_ROWS     {c.ROWS}\n")
         ch.write(f"#define PE_COLS     {c.COLS}\n\n")
 
-        ch.write(f"#define N_BUF       {len(buffer_map)}\n")
+        ch.write(f"#define N_ADD_BUF   {len(buffer_map) if len(buffer_map) > 0 else ''}\n")
         ch.write(f"#define WB_BYTES    {w_bytes + (b_words*c.B_BITS)//8}\n")
         ch.write(f"#define W_BYTES     {w_bytes}\n")
         ch.write(f"#define X_BYTES     {x_bytes}\n")
@@ -352,7 +355,7 @@ def test_dnn_engine(COMPILE):
         ch.write(f"#define O_WORDS_MAX {o_words_max}\n")
         ch.write(f"#define O_BYTES_MAX {o_bytes_max}\n")
         ch.write(f"#define X_BYTES_ALL {x_bytes_all}\n")
-        ch.write(f"#define Y_BYTES     {y_bytes_max}\n")
+        ch.write(f"#define NHWC_WORDS  {nhwc_words_max}\n")
         ch.write(f"#define B_TYPE      int{c.B_BITS}_t\n")
         ch.write(f"#define B_WORDS     {b_words}\n")
         ch.write(f'#define DATA_DIR   "{DATA_DIR}"\n\n')
@@ -468,7 +471,7 @@ def test_dnn_engine(COMPILE):
         ''' Verify processed output HWC'''
         y_nhwc_sim = np.loadtxt(f"{DATA_DIR}/{b.idx}_y_nhwc_sim.txt",np.int32).reshape(b.oe_exp_nhwc.shape)
         error = np.sum(np.abs(y_nhwc_sim - b.oe_exp_nhwc))
-        assert error == 0, f"sim:\n{y_nhwc_sim[0,:,:,0]}\n exp:\n{b.oe_exp_nhwc[0,:,:,0]}\n input:\n{b.before_pool[0,:,:,0]}"
+        assert error == 0, f"sim:\n{y_nhwc_sim[0,:,:,0]}\n exp:\n{b.oe_exp_nhwc[0,:,:,0]}\n input:\n{b.before_pool[0,:,:,0] if b.pool else None}"
 
         ''' Verify tiled output'''
         y_tiled_exp = b.o_int if ib == len(bundles)-1 else np.concatenate([a.flatten() for a in bundles[ib+1].xe])
