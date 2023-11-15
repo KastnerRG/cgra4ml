@@ -1,0 +1,18 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "deepsocflow"
+authors = [{name = "Abarajithan G", email = "abarajithan07@gmail.com"}]
+version = "0.0.1"
+description = "Your DNNs to FPGA/ASIC SoCs in minutes!"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+readme = "README.md"
+repository = "https://github.com/abarajithan11/deepsocflow"
+classifiers=[
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3.10",
+    "Operating System :: OS Independent",
+]
