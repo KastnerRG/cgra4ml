@@ -1,1 +1,2 @@
-from deepsocflow.hardware import Hardware, example_function
+from deepsocflow.py.hardware import *
+from deepsocflow.py.utils import *

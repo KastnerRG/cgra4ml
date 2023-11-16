@@ -10,7 +10,9 @@ Welcome to deepsocflow's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   modules
+   hardware
+   model
+   layers
 
 Indices and tables
 ==================
