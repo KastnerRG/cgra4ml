@@ -49,4 +49,7 @@ MANIFEST
 *.spec
 
 # Sphinx documentation
-docs/_build/
+docs/**
+!docs/source/conf.py
+!docs/source/index.rst
+!docs/source/modules.rst

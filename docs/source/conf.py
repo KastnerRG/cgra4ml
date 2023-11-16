@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('../../'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'deepsocflow'
+project = 'deepsocflow.py'
 copyright = '2023, Abarajithan G, Zhenghua Ma'
 author = 'Abarajithan G, Zhenghua Ma'
 
@@ -36,6 +36,15 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
 ]
+napoleon_google_docstring = True
+
+autodoc_default_options = {
+    'members': True,
+    'member-order': 'bysource',
+    'special-members': '__init__',
+    'undoc-members': False,
+    'exclude-members': '__weakref__'
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

@@ -2,12 +2,13 @@
 import numpy as np
 from abc import ABC, abstractmethod
 import json
-from deepsocflow.utils import *
+from deepsocflow.py.utils import *
 
 
 class Hardware:
-    """_summary_
-    """    
+    """
+    Class to store static (pre-synthesis) parameters of the accelerator and export them to SystemVerilog and TCL scripts.
+    """
     def __init__(
             self, 
             processing_elements: (int, int) = (8,24), 
@@ -24,13 +25,27 @@ class Hardware:
             weights_cache_kbytes: int =384, 
             edge_cache_kbytes: int|None = None
             ):
+        """
+        Args:
+            processing_elements (int, int, optional): _description_. Defaults to (8,24).
+            frequency_mhz (int, optional): _description_. Defaults to 250.
+            bits_input (int, optional): _description_. Defaults to 4.
+            bits_weights (int, optional): _description_. Defaults to 4.
+            bits_sum (int, optional): _description_. Defaults to 16.
+            bits_bias (int, optional): _description_. Defaults to 16.
+            max_batch_size (int, optional): _description_. Defaults to 512.
+            max_channels_in (int, optional): _description_. Defaults to 512.
+            max_channels_out (int, optional): _description_. Defaults to 512.
+            max_kernel_size (int, optional): _description_. Defaults to 13.
+            max_image_size (int, optional): _description_. Defaults to 32.
+            weights_cache_kbytes (int, optional): _description_. Defaults to 384.
+            edge_cache_kbytes (int | None, optional): _description_. Defaults to None.
+        """
         
         self.params = locals()
         self.params = {k:self.params[k] for k in self.params if not k == 'self'}
         
-        '''
-        Validation
-        '''
+        # Validation
         assert bits_input in [1,2,4,8] and bits_weights in [1,2,4,8]
         assert bits_bias  in [8,16,32]
         
@@ -46,16 +61,18 @@ class Hardware:
         self.KH_MAX, self.KW_MAX = max_kernel_size if (type(max_kernel_size) == tuple) else (max_kernel_size, max_kernel_size)
         self.XH_MAX, self.XW_MAX = max_image_size if (type(max_image_size) == tuple) else (max_image_size, max_image_size)
 
-        '''
-        Width of weights RAM   = K_BITS * COLS
-        Number of weights RAMs = 2
-        '''
         self.RAM_WEIGHTS_DEPTH     = int((weights_cache_kbytes*1024)/(self.K_BITS*self.COLS*2))
+        '''
+        | Width of weights RAM   = K_BITS * COLS
+        | Number of weights RAMs = 2
+        '''
 
-        '''
-        Depth of RAM needed for edge padding = k != 1 ? ci*xw*(blocks-1) : 0
-        '''
         self.RAM_EDGES_DEPTH       = edge_cache_kbytes if edge_cache_kbytes is not None else int(self.CI_MAX * self.XW_MAX * np.ceil(self.XH_MAX/self.ROWS)-1)
+        '''
+        | Depth of RAM needed for edge padding.
+        |     if k == 1 -> 0
+        |     else ci*xw*(blocks-1) 
+        '''
 
         self.L_MAX                 = int(np.ceil(self.XH_MAX//self.ROWS))
         self.CONFIG_BEATS          = 0
@@ -72,18 +89,29 @@ class Hardware:
 
 
     def export_json(self, path='./hardware.json'):
+        '''
+        Exports the hardware parameters to a JSON file.
+        '''
+        
         with open(path, 'w') as f:
             json.dump(self.params, f, indent=4)
 
 
     @staticmethod
     def from_json(path='./hardware.json'):
+        '''
+        Creates the Hardware object from an exported JSON file.
+        '''
+        
         with open(path, 'r') as f:
             hw = Hardware(**json.load(f))
         return hw
 
 
     def export(self):
+        '''
+        Exports the hardware parameters to SystemVerilog and TCL scripts.
+        '''
 
         with open('rtl/include/config_hw.svh', 'w') as f:
             f.write(f'''
@@ -132,7 +160,3 @@ set S_WEIGHTS_WIDTH_LF {self.IN_BITS}
 set S_PIXELS_WIDTH_LF  {self.IN_BITS}
 set M_OUTPUT_WIDTH_LF  {self.OUT_BITS}
 ''')
-
-
-def example_function():
-    print("Hello World!")
