@@ -12,23 +12,23 @@ import pickle
 from copy import deepcopy
 from collections import namedtuple
 from dataclasses import dataclass
-from bundle import Bundle
+import deepsocflow
+from deepsocflow import Bundle
 from qkeras import *
 from tensorflow.keras.layers import Input
 keras.utils.set_random_seed(0)
-
 
 # Simulator: xsim on windows, verilator otherwise
 SIM = 'xsim' if os.name=='nt' else 'verilator' #'icarus'
 XIL_PATH = os.path.join("F:", "Xilinx", "Vivado", "2022.1", "bin")
 
-DATA_DIR   = 'D:/dnn-engine/test/vectors' if SIM == 'xsim' else  'vectors'
+DATA_DIR   = 'vectors'
 os.makedirs(DATA_DIR, exist_ok=True)
+DATA_DIR_SIM = f'../{DATA_DIR}'
+MODULE_DIR = deepsocflow.__file__.replace('\\', '/').replace("/__init__.py", "")
 
 TB_MODULE = "dnn_engine_tb"
 WAVEFORM = "dnn_engine_tb_behav.wcfg"
-SOURCES = glob.glob('../rtl/include/*') + glob.glob('sv/*.sv') + glob.glob("../rtl/**/*.v", recursive=True) + glob.glob("../rtl/**/*.sv", recursive=True) + ['./xsim/sim_params.svh']
-print(SOURCES)
 
 type_d = {
     'np': {8: np.int8, 16: np.int16, 32: np.int32, 64: np.int64}
@@ -72,8 +72,6 @@ def make_compile_params(c):
          }
     n = namedtuple('Compile', d)(**d)
     c = namedtuple("Compile", c._fields + n._fields)(*(c + n))
-    with open('compile.pickle', 'wb') as f:
-        pickle.dump(c._asdict(), f)
 
     print(f"\n\n---------- {SIM}:{c} ----------\n\n")
     return c
@@ -81,7 +79,7 @@ def make_compile_params(c):
 
 def compile(c):
 
-    with open('../rtl/include/params_input.svh', 'w') as f:
+    with open(f'./config_hw.svh', 'w') as f:
         f.write(f'''
     // Written from param_tests.py
 
@@ -110,7 +108,7 @@ def compile(c):
     `define M_OUTPUT_WIDTH_LF   {c.OUT_BITS}             \t// constant (64), for now
     ''')
         
-    with open('../fpga/scripts/vivado_config.tcl', 'w') as f:
+    with open(f'./config_hw.tcl', 'w') as f:
         f.write(f'''
     # Written from param_tests.py
     set RAM_WEIGHTS_DEPTH {c.RAM_WEIGHTS_DEPTH}
@@ -127,30 +125,30 @@ def compile(c):
     set M_OUTPUT_WIDTH_LF   {c.OUT_BITS}
         ''')
 
-    os.makedirs('xsim', exist_ok=True)
-    sim_params = [f'VALID_PROB {c.VALID_PROB}', f'READY_PROB {c.READY_PROB}', f'DIR_PATH "{DATA_DIR}/"']
-    with open('xsim/sim_params.svh', 'w') as f:
-        for param in sim_params:
-            f.write(f'`define {param}\n')
+    os.makedirs('build', exist_ok=True)
+    with open('./config_tb.svh', 'w') as f:
+        f.write(f'`define VALID_PROB {c.VALID_PROB} \n`define READY_PROB {c.READY_PROB}')
+
+
+    SOURCES = glob.glob(f'{MODULE_DIR}/test/sv/*.sv') + glob.glob(f"{MODULE_DIR}/rtl/**/*.v", recursive=True) + glob.glob(f"{MODULE_DIR}/rtl/**/*.sv", recursive=True) + glob.glob(f"{os.getcwd()}/*.svh")
+    print(SOURCES)
+    with open('sources.txt', 'w') as f:
+        f.write("\n".join([os.path.normpath(s) for s in SOURCES]))
 
     if SIM == 'xsim':
-        SOURCES_STR = " ".join([os.path.normpath('../' + s) for s in SOURCES]) # since called from subdir
-        xvlog_cmd = fr'{XIL_PATH}\xvlog -sv {SOURCES_STR}'
-        xelab_cmd = fr'{XIL_PATH}\xelab {TB_MODULE} --snapshot {TB_MODULE} -log elaborate.log --debug typical -sv_lib dpi'
-        xsc_cmd   = fr'{XIL_PATH}\xsc ../../c/example.c'
-        assert subprocess.run(xsc_cmd, cwd="xsim", shell=True).returncode == 0
-        assert subprocess.run(xvlog_cmd, cwd="xsim", shell=True).returncode == 0
-        assert subprocess.run(xelab_cmd, cwd="xsim", shell=True).returncode == 0
+        assert subprocess.run(cwd="build", shell=True, args=fr'{XIL_PATH}\xsc {MODULE_DIR}/c/example.c --gcc_compile_options -I../').returncode == 0
+        assert subprocess.run(cwd="build", shell=True, args=fr'{XIL_PATH}\xvlog -sv -f ../sources.txt -i ../').returncode == 0
+        assert subprocess.run(cwd="build", shell=True, args=fr'{XIL_PATH}\xelab {TB_MODULE} --snapshot {TB_MODULE} -log elaborate.log --debug typical -sv_lib dpi').returncode == 0
 
     if SIM == 'icarus':
-        cmd = [ "iverilog", "-v", "-g2012", "-o", "xsim/a.out", "-I", "sv", "-I", "../rtl/include", "-s", TB_MODULE] + SOURCES
+        cmd = [ "iverilog", "-v", "-g2012", "-o", "build/a.out", "-I", "sv", "-s", TB_MODULE] + SOURCES
         print(" ".join(cmd))
         assert subprocess.run(cmd).returncode == 0
 
-    if SIM == "verilator":        
-        cmd = f"verilator --binary -j 0 -Wno-fatal --trace --relative-includes --top {TB_MODULE} " + " ".join(SOURCES) + ' -CFLAGS -DVERILATOR ../c/example.c'
+    if SIM == "verilator":
+        cmd = f'verilator --binary -j 0 -Wno-fatal --trace --relative-includes --top {TB_MODULE} -I../ -F ../sources.txt -CFLAGS -DVERILATOR -CFLAGS -I../ {MODULE_DIR}/c/example.c --Mdir ./'
         print(cmd)
-        assert subprocess.run(cmd.split(' ')).returncode == 0
+        assert subprocess.run(cmd.split(' '), cwd='build').returncode == 0
 
     return c
 
@@ -261,7 +259,7 @@ def test_dnn_engine(COMPILE):
     '''
     x_bytes_all = x_bytes = w_bytes = b_words = x_bytes_max = nhwc_words_max = o_bytes_max = o_words_max = 0
     out_buffer_idx = 1
-    with open ('../c/model.h', 'w') as ch:
+    with open (f'./config_fw.h', 'w') as ch:
 
         ch.write(f"#define N_BUNDLES {len(bundles)}\n")
         ch.write(f"Bundle_t bundles [N_BUNDLES] = {{\n")
@@ -358,7 +356,7 @@ def test_dnn_engine(COMPILE):
         ch.write(f"#define NHWC_WORDS  {nhwc_words_max}\n")
         ch.write(f"#define B_TYPE      int{c.B_BITS}_t\n")
         ch.write(f"#define B_WORDS     {b_words}\n")
-        ch.write(f'#define DATA_DIR   "{DATA_DIR}"\n\n')
+        ch.write(f'#define DATA_DIR   "{DATA_DIR_SIM}"\n\n')
 
         mask_nums = [(2**c.X_BITS-1) << (p*c.X_BITS)  for p in range(8//c.X_BITS)]
         mask_nums = ~np.array(mask_nums, dtype=np.uint8)
@@ -436,17 +434,16 @@ def test_dnn_engine(COMPILE):
     RUN SIMULATION
     '''
     compile(c=c)
-    os.makedirs('xsim', exist_ok=True)
     print("SIMULATING...")
 
     if SIM == 'xsim':
-        with open('xsim/xsim_cfg.tcl', 'w') as f:
+        with open('build/xsim_cfg.tcl', 'w') as f:
             f.write('''log_wave -recursive * \nrun all \nexit''')
-        assert subprocess.run(fr'{XIL_PATH}\xsim {TB_MODULE} --tclbatch xsim_cfg.tcl', cwd="xsim", shell=True).returncode == 0
+        assert subprocess.run(fr'{XIL_PATH}\xsim {TB_MODULE} --tclbatch xsim_cfg.tcl', cwd="build", shell=True).returncode == 0
     if SIM == 'icarus':
-        subprocess.run(["vvp", "xsim/a.out"])
+        subprocess.run(["vvp", "build/a.out"])
     if SIM == 'verilator':
-        subprocess.run([f"./obj_dir/V{TB_MODULE}"])
+        subprocess.run([f"./V{TB_MODULE}"], cwd="build")
 
 
     '''

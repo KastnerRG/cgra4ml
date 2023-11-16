@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "deepsocflow"
-authors = [{name = "Abarajithan G", email = "abarajithan07@gmail.com"}]
+authors = [{name = "Abarajithan G", email = "abarajithan07@gmail.com"}, {name = "Zhenghua Ma", email = "zhm007@ucsd.edu"}]
 version = "0.0.1"
 description = "Your DNNs to FPGA/ASIC SoCs in minutes!"
 requires-python = ">=3.10"

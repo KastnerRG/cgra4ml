@@ -1,4 +1,4 @@
-`include "../rtl/include/params.svh"
+`include "defines.svh"
 
 module axis_out_shift #(
   localparam ROWS                 = `ROWS                 ,

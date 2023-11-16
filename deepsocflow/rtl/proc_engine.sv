@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`include "../rtl/include/params.svh"
+`include "defines.svh"
 
 module proc_engine #(
   localparam  COLS                = `COLS                ,

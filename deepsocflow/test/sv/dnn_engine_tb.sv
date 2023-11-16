@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 
-`include "../../rtl/include/params.svh"
-`include "../xsim/sim_params.svh"
+`include "../../rtl/defines.svh"
+`include "config_tb.svh"
 
 module dnn_engine_tb;
 

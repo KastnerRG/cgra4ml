@@ -27,6 +27,6 @@ Bundle_t bundles [N_BUNDLES] = {
 #define NHWC_WORDS  20736
 #define B_TYPE      int16_t
 #define B_WORDS     112
-#define DATA_DIR   "D:/dnn-engine/test/vectors"
+#define DATA_DIR   "../vectors"
 
 static const uint8_t X_POSITION_INVERTED_MASKS [] = { 240, 15 };

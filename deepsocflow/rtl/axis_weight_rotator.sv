@@ -3,7 +3,7 @@ Engineer: Abarajithan G.
 Design Name: AXIS Weight Rotator    
 */
 `timescale 1ns/1ps
-`include "../rtl/include/params.svh"
+`include "defines.svh"
 
 module axis_weight_rotator #(
   parameter 
