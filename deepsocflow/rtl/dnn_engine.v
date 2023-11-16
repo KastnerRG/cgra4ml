@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 `define VERILOG
-`include "../rtl/include/params.svh"
+`include "defines.svh"
 `undef  VERILOG
 
 module dnn_engine #(

@@ -1,4 +1,4 @@
-    `include "params_input.svh"
+    `include "config_hw.svh"
 
     `define BITS_KW2  $clog2((`KW_MAX+1)/2)
     

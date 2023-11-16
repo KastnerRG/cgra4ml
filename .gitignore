@@ -1,25 +1,26 @@
 old/
 __pycache__
 
-fpga/*
-!fpga/scripts
+run/fpga/*
 
-asic/*
-!asic/scripts
-!asic/reports
+run/asic/*
+!deepsocflow/asic/reports
 
 *.pickle
-test/vectors
-test/xsim
-test/dnn_engine_tb.vcd
-test/xsc*
-test/obj_dir
-test/models
-test/temp
+deepsocflow/test/vectors
+deepsocflow/test/xsim
+deepsocflow/test/dnn_engine_tb.vcd
+deepsocflow/test/xsc*
+deepsocflow/test/obj_dir
+deepsocflow/test/models
+deepsocflow/test/temp
 
-test/py/*
+deepsocflow/test/py/*
 
 .svls.toml
+
+run/work/vectors/*
+run/work/build/*
 
 
 # Distribution / packaging
@@ -50,6 +51,11 @@ MANIFEST
 
 # Sphinx documentation
 docs/**
+!docs/source
+docs/source/**
 !docs/source/conf.py
-!docs/source/index.rst
-!docs/source/modules.rst
+!docs/source/*.rst
+
+# VSCode
+settings.json
+.vscode

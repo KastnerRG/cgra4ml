@@ -58,8 +58,8 @@ class Hardware:
         self.XN_MAX = max_batch_size
         self.CI_MAX = max_channels_in
         self.CO_MAX = max_channels_out
-        self.KH_MAX, self.KW_MAX = max_kernel_size if (type(max_kernel_size) == tuple) else (max_kernel_size, max_kernel_size)
-        self.XH_MAX, self.XW_MAX = max_image_size if (type(max_image_size) == tuple) else (max_image_size, max_image_size)
+        self.KH_MAX, self.KW_MAX = tuple(max_kernel_size) if (type(max_kernel_size) in [tuple, list]) else (max_kernel_size, max_kernel_size)
+        self.XH_MAX, self.XW_MAX = tuple(max_image_size ) if (type(max_image_size ) in [tuple, list]) else (max_image_size , max_image_size )
 
         self.RAM_WEIGHTS_DEPTH     = int((weights_cache_kbytes*1024)/(self.K_BITS*self.COLS*2))
         '''

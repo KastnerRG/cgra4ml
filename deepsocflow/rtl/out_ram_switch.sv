@@ -1,4 +1,4 @@
-`include "../rtl/include/params.svh"
+`include "defines.svh"
 
 module out_ram_switch #(
   localparam ROWS                 = `ROWS   ,

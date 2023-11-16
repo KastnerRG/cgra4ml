@@ -1,2 +1,2 @@
-from deepsocflow.py.hardware import *
-from deepsocflow.py.utils import *
+from . import py
+from .py import *

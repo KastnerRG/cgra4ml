@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`include "../../rtl/include/params.svh"
+`include "../../rtl/defines.svh"
 
 module ram_raw #(
   parameter   DEPTH   = 1,
