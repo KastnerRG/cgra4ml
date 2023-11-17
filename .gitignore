@@ -18,6 +18,7 @@ deepsocflow/test/temp
 deepsocflow/test/py/*
 
 .svls.toml
+.svlint.toml
 
 run/work/vectors/*
 run/work/build/*
