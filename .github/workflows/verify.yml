@@ -35,9 +35,9 @@ jobs:
         cd verilator-compiled
         tar -C ${HOME} -xzf verilator.tar.gz
 
-    - name: Install Tensorflow
+    - name: Install DeepSoCFlow
       run: |
-        pip install pytest numpy tensorflow qkeras
+        pip install .
 
     - name: Verify Full Design
       run: |
@@ -46,7 +46,6 @@ jobs:
         export PYMTL_VERILATOR_INCLUDE_DIR=${VERILATOR_ROOT}/share/verilator/include
         verilator --version
 
-        pip install .
         mkdir -p run/work
         cd run/work
         python -m pytest -s ../param_test.py

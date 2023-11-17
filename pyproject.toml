@@ -16,3 +16,10 @@ classifiers=[
     "Programming Language :: Python :: 3.10",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+    'numpy >= 1.26.2',
+    'pyparsing >= 3.0.9',
+    'pytest >= 7.4.0',
+    'QKeras >= 0.9.0',
+    'tensorflow >= 2.15.0',
+]
