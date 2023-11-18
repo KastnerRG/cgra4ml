@@ -1,2 +1,2 @@
-`define VALID_PROB 1 
+`define VALID_PROB 100 
 `define READY_PROB 100

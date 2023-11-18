@@ -1,185 +1,56 @@
 import numpy as np
 import os
-# import torch
-import tensorflow as tf
-from tensorflow.keras.layers import Input
-import subprocess
-import glob
-import os.path
-import pytest
-import itertools
-import pickle
-from copy import deepcopy
-from collections import namedtuple
-from dataclasses import dataclass
-import deepsocflow
-from deepsocflow import Bundle
 from qkeras import *
 from tensorflow.keras.layers import Input
-keras.utils.set_random_seed(0)
+import sys
+sys.path.append("../../")
+import deepsocflow
+from deepsocflow import Bundle, Hardware
+
 
 # Simulator: xsim on windows, verilator otherwise
-SIM = 'xsim' if os.name=='nt' else 'verilator' #'icarus'
-XIL_PATH = os.path.join("F:", "Xilinx", "Vivado", "2022.1", "bin")
+if os.name=='nt':
+    SIM = 'xsim'
+    SIM_PATH = "F:/Xilinx/Vivado/2022.1/bin/" #os.path.join("F:", "Xilinx", "Vivado", "2022.1", "bin")
+else:
+    SIM = 'verilator'
+    SIM_PATH = ''
 
-DATA_DIR   = 'vectors'
-os.makedirs(DATA_DIR, exist_ok=True)
-DATA_DIR_SIM = f'../{DATA_DIR}'
-MODULE_DIR = deepsocflow.__file__.replace('\\', '/').replace("/__init__.py", "")
 
-TB_MODULE = "dnn_engine_tb"
-WAVEFORM = "dnn_engine_tb_behav.wcfg"
-
-type_d = {
-    'np': {8: np.int8, 16: np.int16, 32: np.int32, 64: np.int64}
-}
+keras.utils.set_random_seed(0)
+type_d = { 'np': {8: np.int8, 16: np.int16, 32: np.int32, 64: np.int64} }
 
 '''
-Synthesis Parameters
+0. Specify Hardware
 '''
-
-def product_dict(**kwargs):
-    keys, vals = kwargs.keys(), kwargs.values()
-    for instance in itertools.product(*vals):
-        d = dict(zip(keys, instance))
-        yield namedtuple('Compile', d)(**d)
-
-
-def make_compile_params(c):
-
-    assert c.ROWS >= c.KW_MAX//2 # to capture the bottom pixels
-
-    def clog2(x):
-        return int(np.ceil(np.log2(x)))
-    
-    d = { 
-        'KH_MAX'                : c.KW_MAX, 
-        'L_MAX'                 : int(np.ceil(c.XH_MAX//c.ROWS)),
-    }
-    n = namedtuple('Compile', d)(**d)
-    c = namedtuple("Compile", c._fields + n._fields)(*(c + n))
-
-    d = { 
-        'CONFIG_BEATS'          : 0,
-        'X_PAD'                 : int(np.ceil(c.KH_MAX//2)),
-        'BITS_KW2'              : clog2((c.KW_MAX+1)/2),
-        'BITS_KH2'              : clog2((c.KH_MAX+1)/2),
-        'BITS_CIN_MAX'          : clog2(c.CI_MAX),
-        'BITS_COLS_MAX'         : clog2(c.XW_MAX),
-        'BITS_BLOCKS_MAX'       : clog2(c.L_MAX),
-        'BITS_XN_MAX'           : clog2(c.XN_MAX),
-        'BITS_RAM_WEIGHTS_ADDR' : clog2(c.RAM_WEIGHTS_DEPTH),
-         }
-    n = namedtuple('Compile', d)(**d)
-    c = namedtuple("Compile", c._fields + n._fields)(*(c + n))
-
-    print(f"\n\n---------- {SIM}:{c} ----------\n\n")
-    return c
+hw = Hardware (
+        processing_elements  = (8,24),
+        frequency_mhz        = 250,
+        bits_input           = 4,
+        bits_weights         = 4,
+        bits_sum             = 24,
+        bits_bias            = 16,
+        max_batch_size       = 64, 
+        max_channels_in      = 2048,
+        max_kernel_size      = (13, 13),
+        max_image_size       = (512,512),
+        ram_weights_depth    = 20,
+        ram_edges_depth      = 288,
+        axi_width            = 64,
+        target_cpu_int_bits  = 32,
+        valid_prob           = 0.1,
+        ready_prob           = 0.1,
+        data_dir             = 'vectors',
+     )
+hw.export_json()
+hw = Hardware.from_json('hardware.json')
+hw.export() # Generates: config_hw.svh, config_hw.tcl
 
 
-def compile(c):
+def test_dnn_engine():
 
-    with open(f'./config_hw.svh', 'w') as f:
-        f.write(f'''
-    // Written from param_tests.py
-
-    `define ROWS                {c.ROWS}                 \t// PE rows, constrained by resources
-    `define COLS                {c.COLS}                 \t// PE cols, constrained by resources
-    `define X_BITS              {c.X_BITS}               \t// Bits per word in input
-    `define K_BITS              {c.K_BITS}               \t// Bits per word in input
-    `define Y_BITS              {c.Y_BITS}               \t// Bits per word in output of conv
-
-    `define KH_MAX              {c.KH_MAX}               \t// max of kernel height, across layers
-    `define KW_MAX              {c.KW_MAX}               \t// max of kernel width, across layers
-    `define XH_MAX              {c.XH_MAX}               \t// max of input image height, across layers
-    `define XW_MAX              {c.XW_MAX}               \t// max of input image width, across layers
-    `define XN_MAX              {c.XN_MAX}               \t// max of input batch size, across layers
-    `define CI_MAX              {c.CI_MAX}               \t// max of input channels, across layers
-    `define CONFIG_BEATS        {c.CONFIG_BEATS}         \t// constant, for now
-    `define RAM_WEIGHTS_DEPTH   {c.RAM_WEIGHTS_DEPTH}    \t// CONFIG_BEATS + max(KW * CI), across layers
-    `define RAM_EDGES_DEPTH     {c.RAM_EDGES_DEPTH}      \t// max (KW * CI * XW), across layers when KW != 1
-
-    `define DELAY_ACC    1                               \t// constant, for now
-    `define DELAY_MUL    2                               \t// constant, for now 
-    `define DELAY_W_RAM  2                               \t// constant, for now 
-
-    `define S_WEIGHTS_WIDTH_LF  {c.IN_BITS}              \t// constant (64), for now
-    `define S_PIXELS_WIDTH_LF   {c.IN_BITS}              \t// constant (64), for now
-    `define M_OUTPUT_WIDTH_LF   {c.OUT_BITS}             \t// constant (64), for now
-    ''')
-        
-    with open(f'./config_hw.tcl', 'w') as f:
-        f.write(f'''
-    # Written from param_tests.py
-    set RAM_WEIGHTS_DEPTH {c.RAM_WEIGHTS_DEPTH}
-    set ROWS               {c.ROWS}
-    set COLS               {c.COLS}
-    set X_BITS             {c.X_BITS}
-    set K_BITS             {c.K_BITS}
-    set Y_BITS             {c.Y_BITS}
-    set DELAY_W_RAM        2
-    set RAM_EDGES_DEPTH    {c.RAM_EDGES_DEPTH}
-    set KH_MAX             {c.KH_MAX}
-    set S_WEIGHTS_WIDTH_LF  {c.IN_BITS}
-    set S_PIXELS_WIDTH_LF   {c.IN_BITS}
-    set M_OUTPUT_WIDTH_LF   {c.OUT_BITS}
-        ''')
-
-    os.makedirs('build', exist_ok=True)
-    with open('./config_tb.svh', 'w') as f:
-        f.write(f'`define VALID_PROB {c.VALID_PROB} \n`define READY_PROB {c.READY_PROB}')
-
-
-    SOURCES = glob.glob(f'{MODULE_DIR}/test/sv/*.sv') + glob.glob(f"{MODULE_DIR}/rtl/**/*.v", recursive=True) + glob.glob(f"{MODULE_DIR}/rtl/**/*.sv", recursive=True) + glob.glob(f"{os.getcwd()}/*.svh")
-    print(SOURCES)
-    with open('sources.txt', 'w') as f:
-        f.write("\n".join([os.path.normpath(s) for s in SOURCES]))
-
-    if SIM == 'xsim':
-        assert subprocess.run(cwd="build", shell=True, args=fr'{XIL_PATH}\xsc {MODULE_DIR}/c/example.c --gcc_compile_options -I../').returncode == 0
-        assert subprocess.run(cwd="build", shell=True, args=fr'{XIL_PATH}\xvlog -sv -f ../sources.txt -i ../').returncode == 0
-        assert subprocess.run(cwd="build", shell=True, args=fr'{XIL_PATH}\xelab {TB_MODULE} --snapshot {TB_MODULE} -log elaborate.log --debug typical -sv_lib dpi').returncode == 0
-
-    if SIM == 'icarus':
-        cmd = [ "iverilog", "-v", "-g2012", "-o", "build/a.out", "-I", "sv", "-s", TB_MODULE] + SOURCES
-        print(" ".join(cmd))
-        assert subprocess.run(cmd).returncode == 0
-
-    if SIM == "verilator":
-        cmd = f'verilator --binary -j 0 -Wno-fatal --trace --relative-includes --top {TB_MODULE} -I../ -F ../sources.txt -CFLAGS -DVERILATOR -CFLAGS -I../ {MODULE_DIR}/c/example.c --Mdir ./'
-        print(cmd)
-        assert subprocess.run(cmd.split(' '), cwd='build').returncode == 0
-
-    return c
-
-
-@pytest.mark.parametrize("COMPILE", list(product_dict(
-                                                X_BITS     = [4    ], 
-                                                K_BITS     = [4    ], 
-                                                B_BITS     = [16   ], 
-                                                Y_BITS     = [24   ], 
-                                                INT_BITS   = [32   ], # size of integer in target CPU
-                                                ROWS       = [8    ], 
-                                                COLS       = [24   ], 
-                                                KW_MAX     = [13   ], 
-                                                CI_MAX     = [2048 ], 
-                                                XW_MAX     = [512  ], 
-                                                XH_MAX     = [512  ], 
-                                                XN_MAX     = [64   ], 
-                                                IN_BITS    = [64   ], 
-                                                OUT_BITS   = [64   ],
-                                                RAM_WEIGHTS_DEPTH = [20  ],  # KH*CI + Config beats
-                                                RAM_EDGES_DEPTH   = [288 ], # max(CI * XW * (XH/ROWS-1))
-
-                                                VALID_PROB = [1],
-                                                READY_PROB = [100],
-                                            )))
-def test_dnn_engine(COMPILE):
-    c = make_compile_params(COMPILE)
-    assert c.X_BITS in [1,2,4,8] and c.K_BITS in [1,2,4,8], "X_BITS and K_BITS should be in [1,2,4,8]"
-    assert c.B_BITS in [8,16,32], "B_BITS should be in [8,16,32]"
-    xq, kq, bq = f'quantized_bits({c.X_BITS},0,False,True,1)', f'quantized_bits({c.K_BITS},0,False,True,1)', f'quantized_bits({c.B_BITS},0,False,True,1)'
-    inp        = {'bits':c.X_BITS, 'frac':c.X_BITS-1}
+    xq, kq, bq = f'quantized_bits({hw.X_BITS},0,False,True,1)', f'quantized_bits({hw.K_BITS},0,False,True,1)', f'quantized_bits({hw.B_BITS},0,False,True,1)'
+    inp        = {'bits':hw.X_BITS, 'frac':hw.X_BITS-1}
 
     '''
     Build Model
@@ -188,13 +59,13 @@ def test_dnn_engine(COMPILE):
     x = x_in = Input(input_shape[1:], name='input')
     x = QActivation(xq)(x)
 
-    x = x_skip1 = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':(11,11), 'strides':(2,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0)'    }, pool= {'type':'avg', 'size':(3,4), 'strides':(2,3), 'padding':'same', 'act_str':f'quantized_bits({c.X_BITS},0,False,False,1)'})(x)
-    x = x_skip2 = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_bits({c.X_BITS},0,False,False,1)'       }, add = {'act_str':f'quantized_bits({c.X_BITS},0,False,True,1)'})(x, x_skip1)
-    x =           Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 7, 7), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':False, 'act_str':f'quantized_bits({c.X_BITS},0,False,True,1)'        }, add = {'act_str':f'quantized_bits({c.X_BITS},0,False,True,1)'})(x, x_skip2)
-    x =           Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 5, 5), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'}, add = {'act_str':f'quantized_bits({c.X_BITS},0,False,True,1)'})(x, x_skip1)
-    x =           Bundle( core= {'type':'conv' , 'filters':24, 'kernel_size':( 3, 3), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0)'    },)(x)
-    x =           Bundle( core= {'type':'conv' , 'filters':10, 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'}, flatten= True)(x)
-    x =           Bundle( core= {'type':'dense', 'units'  :10,                                                           'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({c.X_BITS},0,negative_slope=0.125)'})(x)
+    x = x_skip1 = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':(11,11), 'strides':(2,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({hw.X_BITS},0,negative_slope=0)'    }, pool= {'type':'avg', 'size':(3,4), 'strides':(2,3), 'padding':'same', 'act_str':f'quantized_bits({hw.X_BITS},0,False,False,1)'})(x)
+    x = x_skip2 = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_bits({hw.X_BITS},0,False,False,1)'       }, add = {'act_str':f'quantized_bits({hw.X_BITS},0,False,True,1)'})(x, x_skip1)
+    x =           Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 7, 7), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':False, 'act_str':f'quantized_bits({hw.X_BITS},0,False,True,1)'        }, add = {'act_str':f'quantized_bits({hw.X_BITS},0,False,True,1)'})(x, x_skip2)
+    x =           Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 5, 5), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({hw.X_BITS},0,negative_slope=0.125)'}, add = {'act_str':f'quantized_bits({hw.X_BITS},0,False,True,1)'})(x, x_skip1)
+    x =           Bundle( core= {'type':'conv' , 'filters':24, 'kernel_size':( 3, 3), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({hw.X_BITS},0,negative_slope=0)'    },)(x)
+    x =           Bundle( core= {'type':'conv' , 'filters':10, 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({hw.X_BITS},0,negative_slope=0.125)'}, flatten= True)(x)
+    x =           Bundle( core= {'type':'dense', 'units'  :10,                                                           'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':f'quantized_relu({hw.X_BITS},0,negative_slope=0.125)'})(x)
 
     model = Model(inputs=x_in, outputs=x)
 
@@ -209,8 +80,11 @@ def test_dnn_engine(COMPILE):
     inp['tensor'] = inp_act_model(x, training=False)
     inp['int'] = inp['tensor'].numpy() * 2**inp['frac']
 
-
-    for file in os.scandir(DATA_DIR):
+    '''
+    Clean the data directory
+    '''
+    os.makedirs(hw.DATA_DIR, exist_ok=True)
+    for file in os.scandir(hw.DATA_DIR):
         os.remove(file.path)
 
     bundles = model.layers[2:]
@@ -222,8 +96,8 @@ def test_dnn_engine(COMPILE):
     buffer_map = []
     for ib, b in enumerate(bundles):
         print(f'-----------------{b.idx}-----------------------')
-        b.process(inp if b.idx==0 else None, c)
-        b.export(c, False) #ib==len(bundles)-1
+        b.process(inp if b.idx==0 else None, hw)
+        b.export(hw, False) #ib==len(bundles)-1
         
         '''
         Buffer allocation for add bundle
@@ -265,10 +139,10 @@ def test_dnn_engine(COMPILE):
         ch.write(f"Bundle_t bundles [N_BUNDLES] = {{\n")
         
         for ib, b in enumerate(bundles):
-            w_bpt    = (c.K_BITS*b.we[-1][0].size + c.IN_BITS)//8
-            w_bpt_p0 = (c.K_BITS*b.we[0][0].size + c.IN_BITS )//8
-            x_bpt    = (c.X_BITS*b.xe[-1].size + c.IN_BITS   )//8 
-            x_bpt_p0 = (c.X_BITS*b.xe[0].size + c.IN_BITS    )//8
+            w_bpt    = (hw.K_BITS*b.we[-1][0].size + hw.IN_BITS)//8
+            w_bpt_p0 = (hw.K_BITS*b.we[0][0].size + hw.IN_BITS )//8
+            x_bpt    = (hw.X_BITS*b.xe[-1].size + hw.IN_BITS   )//8 
+            x_bpt_p0 = (hw.X_BITS*b.xe[0].size + hw.IN_BITS    )//8
             
             if ib == len(bundles)-1:
                 o_words_b = b.o_int.size
@@ -280,11 +154,11 @@ def test_dnn_engine(COMPILE):
                 o_wpt_p0  = b_next.xe[0].size
                 o_words_b = o_wpt_p0 + (b_next.r.CP-1)*o_wpt
 
-                o_bpt = (c.X_BITS*b_next.xe[-1].size + c.IN_BITS)//8
-                o_bpt_p0 = (c.X_BITS*b_next.xe[0].size + c.IN_BITS)//8
+                o_bpt = (hw.X_BITS*b_next.xe[-1].size + hw.IN_BITS)//8
+                o_bpt_p0 = (hw.X_BITS*b_next.xe[0].size + hw.IN_BITS)//8
                 o_bytes_b = o_bpt_p0 + (b_next.r.CP-1)*o_bpt
 
-            xp_words  = b.r.XN * b.r.XL * b.r.XW * (c.ROWS+c.X_PAD)
+            xp_words  = b.r.XN * b.r.XL * b.r.XW * (hw.ROWS+hw.X_PAD)
 
             w_bytes_b = (w_bpt_p0 + (b.r.CP-1)*w_bpt)*b.r.IT
             x_bytes_b = (x_bpt_p0 + (b.r.CP-1)*x_bpt)
@@ -302,7 +176,7 @@ def test_dnn_engine(COMPILE):
 
             y_coe = b.r.CO_PRL
             y_coe_tl = b.r.CO_PRL if (b.r.CO==b.r.IT*b.r.CO_PRL) else b.r.CO%b.r.IT
-            y_r_ll = c.ROWS if b.r.XH==b.r.XL*c.ROWS else  b.r.XH % c.ROWS
+            y_r_ll = hw.ROWS if b.r.XH==b.r.XL*hw.ROWS else  b.r.XH % hw.ROWS
 
             ca_nzero, ca_shift, ca_pl_scale = b.core['act']['non_zero'], b.core['act']['shift_bits'], b.core['act']['plog_slope']
 
@@ -338,15 +212,15 @@ def test_dnn_engine(COMPILE):
 
 
         ch.write(f"\n}};\n\n")
-        ch.write(f"#define X_BITS_L2   {int(np.log2(c.X_BITS))}\n")
-        ch.write(f"#define W_BITS_L2   {int(np.log2(c.K_BITS))}\n")
-        ch.write(f"#define X_PAD       {c.X_PAD}\n")
-        ch.write(f"#define KH_MAX      {c.KH_MAX}\n")
-        ch.write(f"#define PE_ROWS     {c.ROWS}\n")
-        ch.write(f"#define PE_COLS     {c.COLS}\n\n")
+        ch.write(f"#define X_BITS_L2   {int(np.log2(hw.X_BITS))}\n")
+        ch.write(f"#define W_BITS_L2   {int(np.log2(hw.K_BITS))}\n")
+        ch.write(f"#define X_PAD       {hw.X_PAD}\n")
+        ch.write(f"#define KH_MAX      {hw.KH_MAX}\n")
+        ch.write(f"#define PE_ROWS     {hw.ROWS}\n")
+        ch.write(f"#define PE_COLS     {hw.COLS}\n\n")
 
         ch.write(f"#define N_ADD_BUF   {len(buffer_map) if len(buffer_map) > 0 else ''}\n")
-        ch.write(f"#define WB_BYTES    {w_bytes + (b_words*c.B_BITS)//8}\n")
+        ch.write(f"#define WB_BYTES    {w_bytes + (b_words*hw.B_BITS)//8}\n")
         ch.write(f"#define W_BYTES     {w_bytes}\n")
         ch.write(f"#define X_BYTES     {x_bytes}\n")
         ch.write(f"#define O_WORDS     {o_words}\n")
@@ -354,11 +228,11 @@ def test_dnn_engine(COMPILE):
         ch.write(f"#define O_BYTES_MAX {o_bytes_max}\n")
         ch.write(f"#define X_BYTES_ALL {x_bytes_all}\n")
         ch.write(f"#define NHWC_WORDS  {nhwc_words_max}\n")
-        ch.write(f"#define B_TYPE      int{c.B_BITS}_t\n")
+        ch.write(f"#define B_TYPE      int{hw.B_BITS}_t\n")
         ch.write(f"#define B_WORDS     {b_words}\n")
-        ch.write(f'#define DATA_DIR   "{DATA_DIR_SIM}"\n\n')
+        ch.write(f'#define DATA_DIR   "../{hw.DATA_DIR}"\n\n')
 
-        mask_nums = [(2**c.X_BITS-1) << (p*c.X_BITS)  for p in range(8//c.X_BITS)]
+        mask_nums = [(2**hw.X_BITS-1) << (p*hw.X_BITS)  for p in range(8//hw.X_BITS)]
         mask_nums = ~np.array(mask_nums, dtype=np.uint8)
         ch.write(f"static const uint8_t X_POSITION_INVERTED_MASKS [] = {{ {', '.join([str(n) for n in mask_nums])} }};\n")
 
@@ -371,25 +245,25 @@ def test_dnn_engine(COMPILE):
     for ib, b in enumerate(bundles):
         x_bitstring_b = b''
         if b.b:
-            b_bitstring += b.be.astype(type_d['np'][c.B_BITS]).tobytes()
+            b_bitstring += b.be.astype(type_d['np'][hw.B_BITS]).tobytes()
         for ip in range(b.r.CP):
-            xe = Bundle.pack_words_into_bytes(arr=b.xe[ip].flatten(), bits=c.X_BITS)
+            xe = Bundle.pack_words_into_bytes(arr=b.xe[ip].flatten(), bits=hw.X_BITS)
             x_bitstring_b += b.r.x_header_be_p[ip!=0].tobytes() + xe.tobytes()
                 
             for it in range(b.r.IT):
-                we = Bundle.pack_words_into_bytes(arr=b.we[ip][it].flatten(), bits=c.K_BITS)
+                we = Bundle.pack_words_into_bytes(arr=b.we[ip][it].flatten(), bits=hw.K_BITS)
                 w_bitstring += b.r.w_header_be_p[ip!=0].tobytes() + we.tobytes()
         x_bitstring += x_bitstring_b
-        with open(f"{DATA_DIR}/{ib}_x_sim.bin", 'wb') as f: 
+        with open(f"{hw.DATA_DIR}/{ib}_x_sim.bin", 'wb') as f: 
             f.write(x_bitstring_b)
         if ib==0:
-            with open(f"{DATA_DIR}/x.bin", 'wb') as f: 
+            with open(f"{hw.DATA_DIR}/x.bin", 'wb') as f: 
                 f.write(x_bitstring_b)
 
-    with open(f"{DATA_DIR}/w.bin", 'wb') as f: 
+    with open(f"{hw.DATA_DIR}/w.bin", 'wb') as f: 
         f.write(w_bitstring + b_bitstring)
 
-    with open(f"{DATA_DIR}/x_all.bin", 'wb') as f: 
+    with open(f"{hw.DATA_DIR}/x_all.bin", 'wb') as f: 
         f.write(x_bitstring)
 
 
@@ -397,53 +271,43 @@ def test_dnn_engine(COMPILE):
     Write Text files of vectors
     '''
     for b in bundles:
-        np.savetxt(f"{DATA_DIR}/{b.idx}_y_nhwc_exp.txt", b.oe_exp_nhwc.flatten(), fmt='%d')
-        np.savetxt(f"{DATA_DIR}/{b.idx}_xe.txt", np.concatenate([a.flatten() for a in b.xe]), fmt='%d')
+        np.savetxt(f"{hw.DATA_DIR}/{b.idx}_y_nhwc_exp.txt", b.oe_exp_nhwc.flatten(), fmt='%d')
+        np.savetxt(f"{hw.DATA_DIR}/{b.idx}_xe.txt", np.concatenate([a.flatten() for a in b.xe]), fmt='%d')
         for ip in range(b.r.CP):
             CM_p = b.r.CM_0 if ip==0 else b.r.CM
             x_config = b.r.x_header_le_p[ip!=0][0]
-            x_config = format(x_config, f'#0{c.IN_BITS}b')
-            x_config_words = [int(x_config[i:i+c.X_BITS], 2) for i in range(0, len(x_config), c.X_BITS)]
+            x_config = format(x_config, f'#0{hw.IN_BITS}b')
+            x_config_words = [int(x_config[i:i+hw.X_BITS], 2) for i in range(0, len(x_config), hw.X_BITS)]
             x_config_words.reverse()
             x_config_words = np.array(x_config_words, dtype=np.int8)
 
             xp = b.xe[ip].flatten()
             xp = np.concatenate([x_config_words, xp], axis=0)
-            assert xp.shape == (c.IN_BITS/c.X_BITS +b.r.XN*b.r.XL*b.r.XW*CM_p*(c.ROWS+c.X_PAD),)
-            np.savetxt(f"{DATA_DIR}/{b.idx}_{ip}_x.txt", xp, fmt='%d')
+            assert xp.shape == (hw.IN_BITS/hw.X_BITS +b.r.XN*b.r.XL*b.r.XW*CM_p*(hw.ROWS+hw.X_PAD),)
+            np.savetxt(f"{hw.DATA_DIR}/{b.idx}_{ip}_x.txt", xp, fmt='%d')
 
 
             for it in range(b.r.IT):
                 
                 w_config = b.r.w_header_le_p[ip!=0][0]
-                w_config = format(w_config, f'#0{c.IN_BITS}b')
-                w_config_words = [int(w_config[i:i+c.K_BITS], 2) for i in range(0, len(w_config), c.K_BITS)]
+                w_config = format(w_config, f'#0{hw.IN_BITS}b')
+                w_config_words = [int(w_config[i:i+hw.K_BITS], 2) for i in range(0, len(w_config), hw.K_BITS)]
                 w_config_words.reverse()
                 w_config_words = np.array(w_config_words,dtype=np.int8)
 
                 wp = b.we[ip][it].flatten()            
                 wp = np.concatenate([w_config_words, wp], axis=0)
-                assert wp.shape == (c.IN_BITS/c.K_BITS + (CM_p*b.r.KH+c.CONFIG_BEATS)*c.COLS,)
-                np.savetxt(f"{DATA_DIR}/{b.idx}_{ip}_{it}_w.txt", wp, fmt='%d')
+                assert wp.shape == (hw.IN_BITS/hw.K_BITS + (CM_p*b.r.KH+hw.CONFIG_BEATS)*hw.COLS,)
+                np.savetxt(f"{hw.DATA_DIR}/{b.idx}_{ip}_{it}_w.txt", wp, fmt='%d')
 
-                np.savetxt(f"{DATA_DIR}/{b.idx}_{ip}_{it}_y_exp.txt", b.ye_exp_p[ip][it].flatten(), fmt='%d')
-    print(f'Weights, inputs, outputs saved to {DATA_DIR}/ib_ip_it_*.txt')
+                np.savetxt(f"{hw.DATA_DIR}/{b.idx}_{ip}_{it}_y_exp.txt", b.ye_exp_p[ip][it].flatten(), fmt='%d')
+    print(f'Weights, inputs, outputs saved to {hw.DATA_DIR}/ib_ip_it_*.txt')
 
 
     '''
     RUN SIMULATION
     '''
-    compile(c=c)
-    print("SIMULATING...")
-
-    if SIM == 'xsim':
-        with open('build/xsim_cfg.tcl', 'w') as f:
-            f.write('''log_wave -recursive * \nrun all \nexit''')
-        assert subprocess.run(fr'{XIL_PATH}\xsim {TB_MODULE} --tclbatch xsim_cfg.tcl', cwd="build", shell=True).returncode == 0
-    if SIM == 'icarus':
-        subprocess.run(["vvp", "build/a.out"])
-    if SIM == 'verilator':
-        subprocess.run([f"./V{TB_MODULE}"], cwd="build")
+    hw.simulate(SIM=SIM, SIM_PATH=SIM_PATH)
 
 
     '''
@@ -455,30 +319,30 @@ def test_dnn_engine(COMPILE):
         for ip in range(b.r.CP):
             for it in range(b.r.IT):
                 y_raw_exp = b.ye_exp_p[ip][it]
-                y_raw_sim = np.loadtxt(f"{DATA_DIR}/{b.idx}_{ip}_{it}_y_raw_sim.txt", np.int32).reshape(y_raw_exp.shape)
+                y_raw_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.idx}_{ip}_{it}_y_raw_sim.txt", np.int32).reshape(y_raw_exp.shape)
                 error = np.sum(np.abs(y_raw_exp-y_raw_sim))
                 assert error == 0, f"Error={error}, for y_raw_sim at {b.idx=}_{ip=}_{it=}"
 
         ''' Verify sum output '''
         y_sum_exp = b.oe_sum_exp
-        y_sum_sim = np.loadtxt(f"{DATA_DIR}/{b.idx}_y_sum_sim.txt", np.int32).reshape(y_sum_exp.shape)
+        y_sum_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.idx}_y_sum_sim.txt", np.int32).reshape(y_sum_exp.shape)
         error = np.sum(np.abs(y_sum_exp-y_sum_sim))
         assert error == 0, f"Error={error}, for y_sum_sim at {b.idx=}"
 
         ''' Verify processed output HWC'''
-        y_nhwc_sim = np.loadtxt(f"{DATA_DIR}/{b.idx}_y_nhwc_sim.txt",np.int32).reshape(b.oe_exp_nhwc.shape)
+        y_nhwc_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.idx}_y_nhwc_sim.txt",np.int32).reshape(b.oe_exp_nhwc.shape)
         error = np.sum(np.abs(y_nhwc_sim - b.oe_exp_nhwc))
         assert error == 0, f"sim:\n{y_nhwc_sim[0,:,:,0]}\n exp:\n{b.oe_exp_nhwc[0,:,:,0]}\n input:\n{b.before_pool[0,:,:,0] if b.pool else None}"
 
         ''' Verify tiled output'''
         y_tiled_exp = b.o_int if ib == len(bundles)-1 else np.concatenate([a.flatten() for a in bundles[ib+1].xe])
-        y_tiled_sim = np.loadtxt(f"{DATA_DIR}/{b.idx}_y_tiled_sim.txt", np.int32).reshape(y_tiled_exp.shape)
+        y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.idx}_y_tiled_sim.txt", np.int32).reshape(y_tiled_exp.shape)
         error = np.sum(np.abs(y_tiled_sim-y_tiled_exp))
         assert error == 0, f"Error={error}, for y_tiled_sim at {b.idx=}"
 
         ''' Verify packed output'''
         if ib != len(bundles)-1:
-            with open(f'{DATA_DIR}/{ib}_y_packed_sim.bin', 'rb') as f_sim, open(f'{DATA_DIR}/{ib+1}_x_sim.bin', 'rb') as f_exp:
+            with open(f'{hw.DATA_DIR}/{ib}_y_packed_sim.bin', 'rb') as f_sim, open(f'{hw.DATA_DIR}/{ib+1}_x_sim.bin', 'rb') as f_exp:
                 y_packed_sim = np.frombuffer(f_sim.read(), dtype=np.uint8)
                 y_packed_exp = np.frombuffer(f_exp.read(), dtype=np.uint8)
             error = np.sum(np.abs(y_packed_sim-y_packed_exp))

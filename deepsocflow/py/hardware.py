@@ -1,8 +1,10 @@
-# from deepsocflow import Hardware, Bundle, QInput, BundleModel, QConvCore, QDenseCore, QAdd, QPool, Softmax, QLeakyReLu
 import numpy as np
-from abc import ABC, abstractmethod
 import json
+import os
+import subprocess
+import glob
 from deepsocflow.py.utils import *
+import deepsocflow
 
 
 class Hardware:
@@ -19,11 +21,15 @@ class Hardware:
             bits_bias: int = 16, 
             max_batch_size: int = 512, 
             max_channels_in: int = 512, 
-            max_channels_out: int = 512, 
             max_kernel_size: int = 13, 
             max_image_size: int = 32, 
-            weights_cache_kbytes: int =384, 
-            edge_cache_kbytes: int|None = None
+            ram_weights_depth: int = 512, 
+            ram_edges_depth: int|None = 288,
+            axi_width: int = 64,
+            target_cpu_int_bits: int = 32,
+            valid_prob: float = 0.01,
+            ready_prob: float = 0.1,
+            data_dir: str = 'vectors/'
             ):
         """
         Args:
@@ -35,11 +41,11 @@ class Hardware:
             bits_bias (int, optional): _description_. Defaults to 16.
             max_batch_size (int, optional): _description_. Defaults to 512.
             max_channels_in (int, optional): _description_. Defaults to 512.
-            max_channels_out (int, optional): _description_. Defaults to 512.
             max_kernel_size (int, optional): _description_. Defaults to 13.
             max_image_size (int, optional): _description_. Defaults to 32.
-            weights_cache_kbytes (int, optional): _description_. Defaults to 384.
-            edge_cache_kbytes (int | None, optional): _description_. Defaults to None.
+            ram_weights_depth (int, optional): _description_. Defaults to 512.
+            ram_edges_depth (int | None, optional): _description_. Defaults to None.
+            target_cpu_int_bits (int, optional): _description_. Defaults to 32.
         """
         
         self.params = locals()
@@ -57,17 +63,20 @@ class Hardware:
         self.B_BITS = bits_bias
         self.XN_MAX = max_batch_size
         self.CI_MAX = max_channels_in
-        self.CO_MAX = max_channels_out
         self.KH_MAX, self.KW_MAX = tuple(max_kernel_size) if (type(max_kernel_size) in [tuple, list]) else (max_kernel_size, max_kernel_size)
         self.XH_MAX, self.XW_MAX = tuple(max_image_size ) if (type(max_image_size ) in [tuple, list]) else (max_image_size , max_image_size )
+        self.IN_BITS = self.OUT_BITS = axi_width
+        self.INT_BITS = target_cpu_int_bits
+        self.VALID_PROB = int(valid_prob * 1000)
+        self.READY_PROB = int(ready_prob * 1000)
 
-        self.RAM_WEIGHTS_DEPTH     = int((weights_cache_kbytes*1024)/(self.K_BITS*self.COLS*2))
+        self.RAM_WEIGHTS_DEPTH     = ram_weights_depth
         '''
         | Width of weights RAM   = K_BITS * COLS
         | Number of weights RAMs = 2
         '''
 
-        self.RAM_EDGES_DEPTH       = edge_cache_kbytes if edge_cache_kbytes is not None else int(self.CI_MAX * self.XW_MAX * np.ceil(self.XH_MAX/self.ROWS)-1)
+        self.RAM_EDGES_DEPTH       = ram_edges_depth
         '''
         | Depth of RAM needed for edge padding.
         |     if k == 1 -> 0
@@ -85,8 +94,11 @@ class Hardware:
         self.BITS_XN_MAX           = clog2(self.XN_MAX)
         self.BITS_RAM_WEIGHTS_ADDR = clog2(self.RAM_WEIGHTS_DEPTH)
 
-        self.IN_BITS = self.OUT_BITS = 64
-
+        self.MODULE_DIR = os.path.dirname(deepsocflow.__file__)
+        self.TB_MODULE = "dnn_engine_tb"
+        self.WAVEFORM = "dnn_engine_tb_behav.wcfg"
+        self.SOURCES = glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.v", recursive=True) + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.sv", recursive=True) + glob.glob(f"{os.getcwd()}/*.svh")
+        self.DATA_DIR = data_dir
 
     def export_json(self, path='./hardware.json'):
         '''
@@ -113,7 +125,13 @@ class Hardware:
         Exports the hardware parameters to SystemVerilog and TCL scripts.
         '''
 
-        with open('rtl/include/config_hw.svh', 'w') as f:
+        with open('config_tb.svh', 'w') as f:
+            f.write(f'`define VALID_PROB {self.VALID_PROB} \n`define READY_PROB {self.READY_PROB}')
+
+        with open('sources.txt', 'w') as f:
+            f.write("\n".join([os.path.normpath(s) for s in self.SOURCES]))
+
+        with open('config_hw.svh', 'w') as f:
             f.write(f'''
 // Written from Hardware.export()
 
@@ -143,7 +161,7 @@ class Hardware:
 ''')
 
 
-        with open('fpga/scripts/config_hw.tcl', 'w') as f:
+        with open('config_hw.tcl', 'w') as f:
             f.write(f'''
 # Written from Hardware.export()
                     
@@ -160,3 +178,37 @@ set S_WEIGHTS_WIDTH_LF {self.IN_BITS}
 set S_PIXELS_WIDTH_LF  {self.IN_BITS}
 set M_OUTPUT_WIDTH_LF  {self.OUT_BITS}
 ''')
+
+
+
+    def simulate(self, SIM='verilator', SIM_PATH=''):
+
+        os.makedirs('build', exist_ok=True)
+        print("\n\nCOMPILING...\n\n")
+
+        if SIM == 'xsim':
+            assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xsc {self.MODULE_DIR}/c/example.c --gcc_compile_options -I../').returncode == 0
+            assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xvlog -sv -f ../sources.txt -i ../').returncode == 0
+            assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xelab {self.TB_MODULE} --snapshot {self.TB_MODULE} -log elaborate.log --debug typical -sv_lib dpi').returncode == 0
+
+        if SIM == 'icarus':
+            cmd = [ "iverilog", "-v", "-g2012", "-o", "build/a.out", "-I", "sv", "-s", self.TB_MODULE] + self.SOURCES
+            print(" ".join(cmd))
+            assert subprocess.run(cmd).returncode == 0
+
+        if SIM == "verilator":
+            cmd = f'{SIM_PATH}verilator --binary -j 0 -Wno-fatal --trace --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -DVERILATOR -CFLAGS -I../ {self.MODULE_DIR}/c/example.c --Mdir ./'
+            print(cmd)
+            assert subprocess.run(cmd.split(' '), cwd='build').returncode == 0
+        
+
+        print("\n\nSIMULATING...\n\n")
+
+        if SIM == 'xsim':
+            with open('build/xsim_cfg.tcl', 'w') as f:
+                f.write('''log_wave -recursive * \nrun all \nexit''')
+            assert subprocess.run(fr'{SIM_PATH}xsim {self.TB_MODULE} --tclbatch xsim_cfg.tcl', cwd="build", shell=True).returncode == 0
+        if SIM == 'icarus':
+            subprocess.run(["vvp", "build/a.out"])
+        if SIM == 'verilator':
+            subprocess.run([f"./V{self.TB_MODULE}"], cwd="build")
