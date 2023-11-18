@@ -22,6 +22,7 @@ deepsocflow/test/py/*
 
 run/work/vectors/*
 run/work/build/*
+run/work/dsf*
 
 
 # Distribution / packaging

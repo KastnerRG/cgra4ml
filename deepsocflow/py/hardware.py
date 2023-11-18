@@ -94,7 +94,7 @@ class Hardware:
         self.BITS_XN_MAX           = clog2(self.XN_MAX)
         self.BITS_RAM_WEIGHTS_ADDR = clog2(self.RAM_WEIGHTS_DEPTH)
 
-        self.MODULE_DIR = os.path.dirname(deepsocflow.__file__)
+        self.MODULE_DIR = os.path.normpath(os.path.dirname(deepsocflow.__file__)).replace('\\', '/')
         self.TB_MODULE = "dnn_engine_tb"
         self.WAVEFORM = "dnn_engine_tb_behav.wcfg"
         self.SOURCES = glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.v", recursive=True) + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.sv", recursive=True) + glob.glob(f"{os.getcwd()}/*.svh")
@@ -164,14 +164,15 @@ class Hardware:
         with open('config_hw.tcl', 'w') as f:
             f.write(f'''
 # Written from Hardware.export()
-                    
-set RAM_WEIGHTS_DEPTH  {self.RAM_WEIGHTS_DEPTH}
+
+set FREQ               {self.FREQ}
 set ROWS               {self.ROWS}
 set COLS               {self.COLS}
 set X_BITS             {self.X_BITS}
 set K_BITS             {self.K_BITS}
 set Y_BITS             {self.Y_BITS}
 set DELAY_W_RAM        2
+set RAM_WEIGHTS_DEPTH  {self.RAM_WEIGHTS_DEPTH}
 set RAM_EDGES_DEPTH    {self.RAM_EDGES_DEPTH}
 set KH_MAX             {self.KH_MAX}
 set S_WEIGHTS_WIDTH_LF {self.IN_BITS}
@@ -212,3 +213,27 @@ set M_OUTPUT_WIDTH_LF  {self.OUT_BITS}
             subprocess.run(["vvp", "build/a.out"])
         if SIM == 'verilator':
             subprocess.run([f"./V{self.TB_MODULE}"], cwd="build")
+
+
+    def export_vivado_tcl(self, board='zcu104', rtl_dir_abspath=None, scripts_dir_abspath=None, board_tcl_abspath=None):
+
+        if rtl_dir_abspath is None:
+            rtl_dir_abspath = self.MODULE_DIR + '/rtl'
+        if scripts_dir_abspath is None:
+            scripts_dir_abspath = self.MODULE_DIR + '/fpga/scripts'
+        if board_tcl_abspath is None:
+            board_tcl_abspath = f'{scripts_dir_abspath}/{board}.tcl'
+        
+        assert os.path.exists(board_tcl_abspath), f"Board script {board_tcl_abspath} does not exist."
+        assert os.path.exists('./config_hw.tcl'), f"./config_hw.tcl does not exist."
+
+        with open('vivado_flow.tcl', 'w') as f:
+            f.write(f'''
+set PROJECT_NAME dsf_{board}
+set RTL_DIR      {rtl_dir_abspath}
+set CONFIG_DIR   .
+
+source config_hw.tcl
+source {board_tcl_abspath}
+source {scripts_dir_abspath}/vivado.tcl
+''')

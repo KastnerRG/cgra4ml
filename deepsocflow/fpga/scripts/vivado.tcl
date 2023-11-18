@@ -1,14 +1,3 @@
-set PROJECT_NAME sys_accl
-set RTL_DIR ../../rtl
-set SCRIPTS_DIR ../scripts
-source $SCRIPTS_DIR/vivado_config.tcl
-
-#Board specific
-source $SCRIPTS_DIR/pynq_z2.tcl
-# source $SCRIPTS_DIR/zcu102.tcl
-# source $SCRIPTS_DIR/zcu104.tcl
-
-
 # CREATE IPs
 set IP_NAME "ram_weights"
 set WIDTH [expr "$COLS * $K_BITS"]
@@ -67,7 +56,7 @@ apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config "Clk_master {Auto} Clk
 
 
 # Engine
-add_files -norecurse -scan_for_includes [glob $RTL_DIR/*]
+add_files  [glob $CONFIG_DIR/*.svh] [glob $RTL_DIR/*] [glob $RTL_DIR/ext/*]
 set_property top dnn_engine [current_fileset]
 create_bd_cell -type module -reference dnn_engine dnn_engine_0
 
@@ -98,12 +87,12 @@ write_hw_platform -fixed -include_bit -force -file design_1_wrapper.xsa
 
 # Reports
 open_run impl_1
-if {![file exists ../reports]} {exec mkdir ../reports}
-report_timing_summary -delay_type min_max -report_unconstrained -check_timing_verbose -max_paths 100 -input_pins -routable_nets -name timing_1 -file ../reports/${PROJECT_NAME}_${BOARD}_${FREQ}_timing_report.txt
-report_utilization -file ../reports/${PROJECT_NAME}_${BOARD}_${FREQ}_utilization_report.txt -name utilization_1
-report_power -file ../reports/${PROJECT_NAME}_${BOARD}_${FREQ}_power_1.txt -name {power_1}
-report_drc -name drc_1 -file ../reports/${PROJECT_NAME}_${BOARD}_${FREQ}_drc_1.txt -ruledecks {default opt_checks placer_checks router_checks bitstream_checks incr_eco_checks eco_checks abs_checks}
+if {![file exists reports]} {exec mkdir reports}
+report_timing_summary -delay_type min_max -report_unconstrained -check_timing_verbose -max_paths 100 -input_pins -routable_nets -name timing_1 -file reports/${PROJECT_NAME}_${BOARD}_${FREQ}_timing_report.txt
+report_utilization -file $PROJECT_NAME/reports/${PROJECT_NAME}_${BOARD}_${FREQ}_utilization_report.txt -name utilization_1
+report_power -file reports/${PROJECT_NAME}_${BOARD}_${FREQ}_power_1.txt -name {power_1}
+report_drc -name drc_1 -file reports/${PROJECT_NAME}_${BOARD}_${FREQ}_drc_1.txt -ruledecks {default opt_checks placer_checks router_checks bitstream_checks incr_eco_checks eco_checks abs_checks}
 
-exec mkdir -p ../output
-exec cp "$PROJECT_NAME/$PROJECT_NAME.gen/sources_1/bd/design_1/hw_handoff/design_1.hwh" ../output/
-exec cp "$PROJECT_NAME/$PROJECT_NAME.runs/impl_1/design_1_wrapper.bit" ../output/design_1.bit
+exec mkdir -p $PROJECT_NAME/output
+exec cp "$PROJECT_NAME/$PROJECT_NAME.gen/sources_1/bd/design_1/hw_handoff/design_1.hwh" $PROJECT_NAME/output/
+exec cp "$PROJECT_NAME/$PROJECT_NAME.runs/impl_1/design_1_wrapper.bit" $PROJECT_NAME/output/design_1.bit

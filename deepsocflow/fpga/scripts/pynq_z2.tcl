@@ -1,8 +1,7 @@
 set BOARD pynq_z2
-set FREQ  99
 
 create_project ${PROJECT_NAME} ${PROJECT_NAME} -part xc7z020clg400-1 -force
-# set_property board_part xilinx.com:zcu104:part0:1.1 [current_project]
+set_property board_part tul.com.tw:pynq-z2:part0:1.0 [current_project]
 
 create_bd_design "design_1"
 create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 processing_system7_0
