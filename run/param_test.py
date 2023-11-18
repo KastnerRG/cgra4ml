@@ -45,6 +45,7 @@ hw = Hardware (
 hw.export_json()
 hw = Hardware.from_json('hardware.json')
 hw.export() # Generates: config_hw.svh, config_hw.tcl
+hw.export_vivado_tcl(board='zcu104')
 
 
 def test_dnn_engine():
