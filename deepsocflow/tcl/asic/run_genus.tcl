@@ -1,6 +1,6 @@
 set TOP proc_engine_out
-set FREQ_MHZ 1000
-set clock_cycle [expr 1000/$FREQ_MHZ]
+set FREQ 1000
+set clock_cycle [expr 1000/$FREQ]
 set io_delay [expr $clock_cycle/5]
 
 #--------- CONFIG
@@ -28,7 +28,10 @@ check_design > ${REPORT_DIR}/check_design.rpt
 uniquify $TOP
 
 #--------- CONSTRAINTS
-read_sdc ../constraints/$TOP.sdc
+create_clock -name aclk -period $clock_cycle [get_ports aclk]
+set_false_path -from [get_ports "aresetn"]
+set_input_delay -clock [get_clocks aclk] -add_delay -max $io_delay [all_inputs]
+set_output_delay -clock [get_clocks aclk] -add_delay -max $io_delay [all_outputs]
 
 #--------- RETIME OPTIONS
 set_db retime_async_reset true
