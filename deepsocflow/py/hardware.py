@@ -220,7 +220,7 @@ set M_OUTPUT_WIDTH_LF  {self.OUT_BITS}
         if rtl_dir_abspath is None:
             rtl_dir_abspath = self.MODULE_DIR + '/rtl'
         if scripts_dir_abspath is None:
-            scripts_dir_abspath = self.MODULE_DIR + '/fpga/scripts'
+            scripts_dir_abspath = self.MODULE_DIR + '/tcl/fpga'
         if board_tcl_abspath is None:
             board_tcl_abspath = f'{scripts_dir_abspath}/{board}.tcl'
         
