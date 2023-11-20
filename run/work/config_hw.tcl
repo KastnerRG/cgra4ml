@@ -3,7 +3,7 @@
 
 set FREQ               250
 set ROWS               8
-set COLS               96
+set COLS               24
 set X_BITS             4
 set K_BITS             4
 set Y_BITS             16
