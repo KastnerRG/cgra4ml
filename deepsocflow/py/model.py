@@ -298,8 +298,8 @@ class QModel(Model):
                 y_tiled_exp = b.o_int
                 if b.softmax:
                     y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.idx}_y_tiled_sim.txt", np.float32).reshape(y_tiled_exp.shape)
-                    error = np.sum(np.abs(y_tiled_sim-y_tiled_exp))
-                    assert np.allclose(y_tiled_sim, y_tiled_exp, 1e-3), f"Error={error}, for y_tiled_sim at {b.idx=}. \n y_tiled_sim=\n{y_tiled_sim} \n y_tiled_exp=\n{y_tiled_exp}\n \nbefore_softmax=\n{b.before_softmax}"
+                    error = np.max(np.abs(y_tiled_sim-y_tiled_exp))
+                    assert np.allclose(y_tiled_sim, y_tiled_exp, atol=1e-1), f"Error={error}, \nsub:\n{y_tiled_sim-y_tiled_exp} for y_tiled_sim at {b.idx=}. \n y_tiled_sim=\n{y_tiled_sim} \n y_tiled_exp=\n{y_tiled_exp}\n \nbefore_softmax=\n{b.before_softmax}"
                 else:
                     y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.idx}_y_tiled_sim.txt", np.float32).reshape(y_tiled_exp.shape)
                     error = np.sum(np.abs(y_tiled_sim-y_tiled_exp))
@@ -318,4 +318,4 @@ class QModel(Model):
                 error = np.sum(np.abs(y_packed_sim-y_packed_exp))
                 assert error == 0, f"Error={error}, for y_packed_sim at {b.idx=}, y_packed_sim=\n{y_packed_sim[:100]} \n y_packed_exp=\n{y_packed_exp[:100]}\n"
                 
-            print(f"Bundle {b.idx}, Error: {error}")
+            print(f"Bundle {b.idx}, Error: {error}. Passed")

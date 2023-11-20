@@ -434,11 +434,11 @@ class Bundle(tf.keras.Model):
         if self.softmax:
             self.before_softmax = np.copy(self.proc['int'])
             self.softmax_frac = self.proc['frac']
-            self.proc['int'] = self.proc['int'] / 2**self.softmax_frac
+            self.proc['int'] = (self.proc['int'] / 2**self.softmax_frac).astype(np.float32)
 
             self.softmax_max_f = self.proc['int'].max()
-            exp = np.exp(self.proc['int'] - self.softmax_max_f)
-            self.proc['int'] = exp/np.sum(exp, axis=1)[0]
+            exp = np.exp(self.proc['int'] - self.softmax_max_f).astype(np.float32)
+            self.proc['int'] = exp/np.sum(exp, axis=1, dtype=np.float32)[0]
 
             assert np.all(np.argmax(self.out['int'], axis=-1) == np.argmax(self.proc['int'], axis=-1))
         else:
