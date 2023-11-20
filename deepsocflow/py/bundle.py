@@ -432,12 +432,20 @@ class Bundle(tf.keras.Model):
 
 
         if self.softmax:
-            self.proc['int'] = self.proc['int'] / 2**self.proc['frac']
-            exp = np.exp(self.proc['int'] - self.proc['int'].max())
+            self.before_softmax = np.copy(self.proc['int'])
+            self.softmax_frac = self.proc['frac']
+            self.proc['int'] = self.proc['int'] / 2**self.softmax_frac
+
+            self.softmax_max_f = self.proc['int'].max()
+            exp = np.exp(self.proc['int'] - self.softmax_max_f)
             self.proc['int'] = exp/np.sum(exp, axis=1)[0]
+
             assert np.all(np.argmax(self.out['int'], axis=-1) == np.argmax(self.proc['int'], axis=-1))
         else:
+            self.softmax_frac = 0
+            self.softmax_max_f = 0
             assert np.all(self.proc['int'] == self.out['int']), f"Overall output of bundle {self.idx} is not a fixed point"
+        self.o_exp = self.proc['int']
 
     @staticmethod
     def get_compile_params(bundles, ROWS, COLS):

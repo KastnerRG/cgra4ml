@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <stdint.h>
+#include <math.h>
 
 #ifdef VERILATOR
   #define EXT_C "C"
@@ -14,9 +15,10 @@ typedef const struct {
   const int32_t  n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0, xp_words;
   const int32_t  w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes; // bytes per transfer
   const int8_t  out_buffer_idx, add_out_buffer_idx, add_in_buffer_idx;
-  const int8_t   is_bias, is_pool, is_flatten;
+  const int8_t   is_bias, is_pool, is_flatten, is_softmax;
   const int32_t  b_offset, b_val_shift, b_bias_shift;
-  const int8_t   ca_nzero, ca_shift, ca_pl_scale, add_act_shift, pool_act_shift;
+  const int8_t   ca_nzero, ca_shift, ca_pl_scale, add_act_shift, pool_act_shift, softmax_frac;
+  const float    softmax_max_f;
   const int32_t  csh, ch, csh_shift, pkh, psh, ph, psh_shift, csw, cw, csw_shift, pkw, psw, pw, psw_shift, pool, on, oh, ow, oc;
   const uint64_t x_header, x_header_p0, w_header, w_header_p0; // 64 bits (at least)
   const int32_t  debug_nhwc_words;
@@ -33,7 +35,7 @@ typedef struct {
   int8_t     w              [W_BYTES     ];
   B_TYPE     b              [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
   int8_t     x              [X_BYTES_ALL ];
-  int32_t    y              [O_WORDS     ];
+  O_TYPE     y              [O_WORDS     ];
   int32_t    nhwc           [NHWC_WORDS  ];
   int8_t     debug_tiled    [O_WORDS_MAX ];
   int32_t    debug_nhwc     [NHWC_WORDS  ];
@@ -275,10 +277,6 @@ PROCESS_START:
         // ------ CORE ACT ------
         out_val = quant_lrelu(out_val, pb->ca_nzero, pb->ca_shift, pb->ca_pl_scale);
 
-
-        // ------ SOFTMAX ------
-
-
         // ------ RESIDUAL ADD ---
 
         if (pb->add_in_buffer_idx != -1) {
@@ -288,6 +286,32 @@ PROCESS_START:
           out_val = clip(out_val, -(1<<(X_BITS-1)), (1<<(X_BITS-1))-1);
         }
         
+        // ------ SOFTMAX ------
+
+        if (pb->is_softmax) {
+          assert_printf (ib , !=, N_BUNDLES, "Softmax is only allowed for the last bundle.", DEBUG_INFO);
+
+          float val = (float)out_val;
+          val = val / (float)(1 << pb->softmax_frac);
+          val = val - pb->softmax_max_f;
+          val = (float)exp(val);
+
+          mem.y[iy_nhwc] = val;
+
+          if (i_yc == pb->co-1) {
+            float sum = 0;
+            int32_t iy_nhwc;
+            for (int i=0; i<pb->co; i++){
+              iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i, yn,yh,yw,yc, "Before softmax sum", DEBUG_INFO);
+              sum += mem.y[iy_nhwc];
+            }
+            for (int i=0; i<pb->co; i++){
+              iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i, yn,yh,yw,yc, "After softmax sum", DEBUG_INFO);
+              mem.y[iy_nhwc] = mem.y[iy_nhwc] / sum;
+            }
+          }
+          goto PROCESS_AND_STORE_DONE;
+        }
 
         // ------ MAX/AVG POOL ---
 
@@ -388,7 +412,10 @@ PROCESS_AND_STORE_DONE:
             sprintf(f_path_tiled, "%s/%0d_y_tiled_sim.txt", DATA_DIR, ib);
             FILE *fp_tiled = fopen(f_path_tiled, "w");
             for (int32_t i=0; i<pb->o_words; i++)
-              fprintf(fp_tiled,"%d\n", ib == N_BUNDLES-1 ? mem.y[i] : mem.debug_tiled[i]);
+              if (ib == N_BUNDLES-1)
+                if (pb->is_softmax) fprintf(fp_tiled,"%f\n", mem.y[i]);
+                else                fprintf(fp_tiled,"%d\n", mem.y[i]);
+              else fprintf(fp_tiled,"%d\n", mem.debug_tiled[i]);
             fclose(fp_tiled);
 
             if (ib != N_BUNDLES-1){

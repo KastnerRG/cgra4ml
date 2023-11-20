@@ -144,14 +144,17 @@ class QModel(Model):
                     pool_type = 'POOL_AVG'
                 pool_act_shift = b.pool['act']['shift_bits'] if b.pool is not None else 0
 
+                out_type = 'float' if (ib == len(bundles)-1 and b.softmax) else 'int32_t'
+
                 out_buffer_idx = 1*(not out_buffer_idx) if ib != len(bundles)-1 else -1 # alternate between 0 and 1
 
                 ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .coe_tl={y_coe_tl:<3}, .r_ll={y_r_ll:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<4}, .co={b.r.CO:<3}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, .xp_words={xp_words:<3}, ")
                 ch.write(     f".w_bpt={w_bpt:<5}, .w_bpt_p0={w_bpt_p0:<5}, .x_bpt={x_bpt:<5}, .x_bpt_p0={x_bpt_p0:<5}, .o_words={o_words_b:<5}, .o_bytes={o_bytes_b:<5}, ")
                 ch.write(     f".out_buffer_idx={out_buffer_idx:<2}, .add_out_buffer_idx={add_out_buffer_idx:<2}, .add_in_buffer_idx={add_in_buffer_idx:<2}, ")
-                ch.write(     f".is_bias={1*(b.b is not None):<3}, .is_flatten={1*b.flatten:<3}, ")
+                ch.write(     f".is_bias={1*(b.b is not None):<3}, .is_flatten={1*b.flatten:<3}, .is_softmax={1*b.softmax:<3}, ")
                 ch.write(     f".b_offset={b_words:<3}, .b_val_shift={b.bias_val_shift:<3}, .b_bias_shift={b.bias_b_shift:<3}, ")
-                ch.write(     f".ca_nzero={ca_nzero:<3}, .ca_shift={ca_shift:<3}, .ca_pl_scale={ca_pl_scale:<3}, .add_act_shift={add_act_shift:<3}, .pool_act_shift={pool_act_shift:<3}, ")
+                ch.write(     f".ca_nzero={ca_nzero:<3}, .ca_shift={ca_shift:<3}, .ca_pl_scale={ca_pl_scale:<3}, .add_act_shift={add_act_shift:<3}, .pool_act_shift={pool_act_shift:<3}, .softmax_frac={b.softmax_frac:<3}, ")
+                ch.write(     f".softmax_max_f={b.softmax_max_f:<15}, ")
                 ch.write(     f".csh={b.r.CSH:<3}, .ch={b.r.CYH:<3}, .csh_shift={b.r.CSH_SHIFT:<3}, .pkh={b.r.PKH:<3}, .psh={b.r.PSH:<3}, .ph={b.r.PYH:<3}, .psh_shift={b.r.PSH_SHIFT:<3}, .csw={b.r.CSW:<3}, .cw={b.r.CYW:<3}, .csw_shift={b.r.CSW_SHIFT:<3}, .pkw={b.r.PKW:<3}, .psw={b.r.PSW:<3}, .pw={b.r.PYW:<3}, .psw_shift={b.r.PSW_SHIFT:<3}, .pool={pool_type:<10}, .on={b.r.ON:<3}, .oh={b.r.OH:<3}, .ow={b.r.OW:<3}, .oc={b.r.OC:<3}, ")
                 ch.write(     f".x_header={b.r.x_header_le_p[-1][0]:>23}u, .x_header_p0={b.r.x_header_le_p[0][0]:>23}u, .w_header={b.r.w_header_le_p[-1][0]:>23}u, .w_header_p0={b.r.x_header_le_p[0][0]:>25}u , ")
                 ch.write(     f".debug_nhwc_words={b.oe_exp_nhwc.size:<5} }}")
@@ -159,8 +162,6 @@ class QModel(Model):
                 b_words += b.be.size if b.b else 0
                 if b.idx != len(bundles)-1:
                     ch.write(',\n')
-            
-            ''' Bit masks for X_BITS '''
 
 
             ch.write(f"\n}};\n\n")
@@ -181,6 +182,7 @@ class QModel(Model):
             ch.write(f"#define X_BYTES_ALL {x_bytes_all}\n")
             ch.write(f"#define NHWC_WORDS  {nhwc_words_max}\n")
             ch.write(f"#define B_TYPE      int{hw.B_BITS}_t\n")
+            ch.write(f"#define O_TYPE      {out_type}\n")
             ch.write(f"#define B_WORDS     {b_words}\n")
             ch.write(f'#define DATA_DIR   "../{hw.DATA_DIR}"\n\n')
 
@@ -285,15 +287,28 @@ class QModel(Model):
             assert error == 0, f"Error={error}, for y_sum_sim at {b.idx=}"
 
             ''' Verify processed output HWC'''
-            y_nhwc_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.idx}_y_nhwc_sim.txt",np.int32).reshape(b.oe_exp_nhwc.shape)
-            error = np.sum(np.abs(y_nhwc_sim - b.oe_exp_nhwc))
-            assert error == 0, f"sim:\n{y_nhwc_sim[0,:,:,0]}\n exp:\n{b.oe_exp_nhwc[0,:,:,0]}\n input:\n{b.before_pool[0,:,:,0] if b.pool else None}"
+            if not (ib == len(bundles)-1 and b.softmax):
+                y_nhwc_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.idx}_y_nhwc_sim.txt",np.int32).reshape(b.oe_exp_nhwc.shape)
+                error = np.sum(np.abs(y_nhwc_sim - b.oe_exp_nhwc))
+                assert error == 0, f"sim:\n{y_nhwc_sim[0,:,:,0]}\n exp:\n{b.oe_exp_nhwc[0,:,:,0]}\n input:\n{b.before_pool[0,:,:,0] if b.pool else None}"
+
 
             ''' Verify tiled output'''
-            y_tiled_exp = b.o_int if ib == len(bundles)-1 else np.concatenate([a.flatten() for a in bundles[ib+1].xe])
-            y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.idx}_y_tiled_sim.txt", np.int32).reshape(y_tiled_exp.shape)
-            error = np.sum(np.abs(y_tiled_sim-y_tiled_exp))
-            assert error == 0, f"Error={error}, for y_tiled_sim at {b.idx=}"
+            if (ib == len(bundles)-1):
+                y_tiled_exp = b.o_int
+                if b.softmax:
+                    y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.idx}_y_tiled_sim.txt", np.float32).reshape(y_tiled_exp.shape)
+                    error = np.sum(np.abs(y_tiled_sim-y_tiled_exp))
+                    assert np.allclose(y_tiled_sim, y_tiled_exp, 1e-3), f"Error={error}, for y_tiled_sim at {b.idx=}. \n y_tiled_sim=\n{y_tiled_sim} \n y_tiled_exp=\n{y_tiled_exp}\n \nbefore_softmax=\n{b.before_softmax}"
+                else:
+                    y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.idx}_y_tiled_sim.txt", np.float32).reshape(y_tiled_exp.shape)
+                    error = np.sum(np.abs(y_tiled_sim-y_tiled_exp))
+                    assert error == 0, f"Error={error}, for y_tiled_sim at {b.idx=}"
+            else:
+                y_tiled_exp = np.concatenate([a.flatten() for a in bundles[ib+1].xe])
+                y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.idx}_y_tiled_sim.txt", np.float32).reshape(y_tiled_exp.shape)
+                error = np.sum(np.abs(y_tiled_sim-y_tiled_exp))
+                assert error == 0, f"Error={error}, for y_tiled_sim at {b.idx=}"
 
             ''' Verify packed output'''
             if ib != len(bundles)-1:
