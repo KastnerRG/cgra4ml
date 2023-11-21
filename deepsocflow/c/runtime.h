@@ -188,11 +188,23 @@ extern EXT_C void load_y (uint8_t *p_done, uint64_t *p_base_addr_next, int32_t *
   FILE *fp_raw = fopen(f_path_raw, "a"); 
   FILE *fp_sum = fopen(f_path_sum, "a"); 
 
-  static char is_first_call = 1;
   static char ocm_bank = 1;
   int32_t w_last, sram_addr;
   static uint8_t write_x_header = N_BUNDLES == 1 ? 0 : 1;
 
+
+  /**
+   * ---------- WAIT FOR S2MM DMA DONE ----------
+   * 
+   * When running on hardware, we wait for DMA's interrupt at "DMA_WAIT"
+   * But Verilator cannot pass simulation time when "waiting"
+   * Therefore,
+      * During simulation, this function gets called again and again
+      * On first call, values are set and returned before processing.
+      * On subsequent calls, function skips to DMA_WAIT, and starts processing
+      * This mimics the behavior of waiting for DMA's interrupt
+  */
+  static char is_first_call = 1;
   if (is_first_call)  is_first_call = 0;
   else                goto DMA_WAIT;   
   
@@ -224,199 +236,198 @@ extern EXT_C void load_y (uint8_t *p_done, uint64_t *p_base_addr_next, int32_t *
             for (iw_kw2 = 0; iw_kw2 < pb->w_kw2; iw_kw2++) {
 
 
-  ocm_bank = !ocm_bank;
-  w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
-  *p_base_addr_next = (uint64_t)&mem.ocm[ocm_bank];
-  *p_bpt_next = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
+              ocm_bank = !ocm_bank;
+              w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
+              *p_base_addr_next = (uint64_t)&mem.ocm[ocm_bank];
+              *p_bpt_next = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
 
-  return;
+              return;
 DMA_WAIT:
 
-  w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
-  sram_addr=0;
+              w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
+              sram_addr=0;
 
-  for (int32_t icoe=0; icoe < pb->coe; icoe++) {
-    int32_t i_bias = it_bias + icoe;
+              for (int32_t icoe=0; icoe < pb->coe; icoe++) {
+                int32_t i_bias = it_bias + icoe;
 
-    for (int32_t iw_last=0; iw_last<w_last; iw_last++) {
-      for (int32_t ir=0; ir<PE_ROWS; ir++) {
-        // Indexing: [b, p, t, n, l, w | coe, w_last, r]
+                for (int32_t iw_last=0; iw_last<w_last; iw_last++) {
+                  for (int32_t ir=0; ir<PE_ROWS; ir++) {
+                    // Indexing: [b, p, t, n, l, w | coe, w_last, r]
 
 #define DEBUG_INFO "--- ib:%d ip:%d it:%d in:%d il:%d iw_kw2:%d icoe:%d iw_last:%d ir:%d \n",ib,ip,it,in,il,iw_kw2,icoe,iw_last,ir
 
-        int32_t raw_val=0, out_val=0;
-        
-        // Caculate y_index
-        int32_t i_yn = in;
-        int32_t i_yh = il*PE_ROWS + ir;
-        int32_t i_yw = iw_kw2 + iw_last;
-        int32_t i_yc = pb->coe*it + icoe;
+                    int32_t raw_val=0, out_val=0;
+                    
+                    // Caculate y_index
+                    int32_t i_yn = in;
+                    int32_t i_yh = il*PE_ROWS + ir;
+                    int32_t i_yw = iw_kw2 + iw_last;
+                    int32_t i_yc = pb->coe*it + icoe;
 
-        // Save y_dims
-        int32_t yn = pb->n;
-        int32_t yh = pb->h;
-        int32_t yw = pb->w;
-        int32_t yc = pb->co;
+                    // Save y_dims
+                    int32_t yn = pb->n;
+                    int32_t yh = pb->h;
+                    int32_t yw = pb->w;
+                    int32_t yc = pb->co;
 
-        // if out of bounds, early return
-        if (i_yh >= yh || i_yc >= yc) { 
-          if (ip == pb->p-1)
-            fprintf(fp_sum,"%d\n", 0);        // Save summed output
-          goto PROCESS_AND_STORE_DONE;
-        }
+                    // if out of bounds, early return
+                    if (i_yh >= yh || i_yc >= yc) { 
+                      if (ip == pb->p-1)
+                        fprintf(fp_sum,"%d\n", 0);        // Save summed output
+                      goto PROCESS_AND_STORE_DONE;
+                    }
 
-        raw_val = mem.ocm[ocm_bank][sram_addr];
-        out_val = raw_val;
+                    raw_val = mem.ocm[ocm_bank][sram_addr];
+                    out_val = raw_val;
 
 PROCESS_START:
 
-        // ------ ADD P PASSES ------ 
-        iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc, "Before add P passes", DEBUG_INFO);
+                    // ------ ADD P PASSES ------ 
+                    iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc, "Before add P passes", DEBUG_INFO);
 
-        if (pb->p == 1) {          // only p  : proceed with value
-        } else if (ip == pb->p-1) {// last p  : read, add, proceed
-          out_val += mem.nhwc[iy_nhwc];
-        } else if (ip == 0) {            // first p : overwrite memory, return
-          mem.nhwc[iy_nhwc] = out_val;
-          goto PROCESS_AND_STORE_DONE;
-        } else {                         // middle p: read, add, store, return
-          mem.nhwc[iy_nhwc] += out_val;
-          goto PROCESS_AND_STORE_DONE;
-        }
-        fprintf(fp_sum,"%d\n", out_val); // Save summed output
+                    if (pb->p == 1) {          // only p  : proceed with value
+                    } else if (ip == pb->p-1) {// last p  : read, add, proceed
+                      out_val += mem.nhwc[iy_nhwc];
+                    } else if (ip == 0) {            // first p : overwrite memory, return
+                      mem.nhwc[iy_nhwc] = out_val;
+                      goto PROCESS_AND_STORE_DONE;
+                    } else {                         // middle p: read, add, store, return
+                      mem.nhwc[iy_nhwc] += out_val;
+                      goto PROCESS_AND_STORE_DONE;
+                    }
+                    fprintf(fp_sum,"%d\n", out_val); // Save summed output
 
 
-        // ------ CONV STRIDING ------
-        div_ch = div(i_yh-pb->csh_shift, pb->csh);
-        div_cw = div(i_yw-pb->csw_shift, pb->csw);
+                    // ------ CONV STRIDING ------
+                    div_ch = div(i_yh-pb->csh_shift, pb->csh);
+                    div_cw = div(i_yw-pb->csw_shift, pb->csw);
 
-        if (div_ch.rem != 0 || div_cw.rem != 0)
-          goto PROCESS_AND_STORE_DONE;
+                    if (div_ch.rem != 0 || div_cw.rem != 0)
+                      goto PROCESS_AND_STORE_DONE;
 
-        i_yh = div_ch.quot; // update indices and dimensions
-        i_yw = div_cw.quot;
-        yh   = pb->ch;
-        yw   = pb->cw;
+                    i_yh = div_ch.quot; // update indices and dimensions
+                    i_yw = div_cw.quot;
+                    yh   = pb->ch;
+                    yw   = pb->cw;
 
-        // ------ ADD BIAS ------ 
-        if (pb->is_bias)
-          out_val = (out_val << pb->b_val_shift) + (mem.b[i_bias] << pb->b_bias_shift);
-        
+                    // ------ ADD BIAS ------ 
+                    if (pb->is_bias)
+                      out_val = (out_val << pb->b_val_shift) + (mem.b[i_bias] << pb->b_bias_shift);
+                    
 
-        // ------ CORE ACT ------
-        out_val = quant_lrelu(out_val, pb->ca_nzero, pb->ca_shift, pb->ca_pl_scale);
+                    // ------ CORE ACT ------
+                    out_val = quant_lrelu(out_val, pb->ca_nzero, pb->ca_shift, pb->ca_pl_scale);
 
-        // ------ RESIDUAL ADD ---
+                    // ------ RESIDUAL ADD ---
 
-        if (pb->add_in_buffer_idx != -1) {
-          iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc, "Before add", DEBUG_INFO);// store as nhwc for pooling
-          out_val += mem.add_buffers[pb->add_in_buffer_idx][iy_nhwc];
-          out_val = shift_round(out_val, pb->add_act_shift);
-          out_val = clip(out_val, -(1<<(X_BITS-1)), (1<<(X_BITS-1))-1);
-        }
-        
-        // ------ SOFTMAX ------
+                    if (pb->add_in_buffer_idx != -1) {
+                      iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc, "Before add", DEBUG_INFO);// store as nhwc for pooling
+                      out_val += mem.add_buffers[pb->add_in_buffer_idx][iy_nhwc];
+                      out_val = shift_round(out_val, pb->add_act_shift);
+                      out_val = clip(out_val, -(1<<(X_BITS-1)), (1<<(X_BITS-1))-1);
+                    }
+                    
+                    // ------ SOFTMAX ------
 
-        if (pb->is_softmax) {
-          assert_printf (ib , !=, N_BUNDLES, "Softmax is only allowed for the last bundle.", DEBUG_INFO);
+                    if (pb->is_softmax) {
+                      assert_printf (ib , !=, N_BUNDLES, "Softmax is only allowed for the last bundle.", DEBUG_INFO);
 
-          float val = (float)out_val;
-          val = val / (float)(1 << pb->softmax_frac);
-          val = val - pb->softmax_max_f;
-          val = (float)exp(val);
+                      float val = (float)out_val;
+                      val = val / (float)(1 << pb->softmax_frac);
+                      val = val - pb->softmax_max_f;
+                      val = (float)exp(val);
 
-          mem.y[iy_nhwc] = val;
+                      mem.y[iy_nhwc] = val;
 
-          if (i_yc == pb->co-1) {
-            float sum = 0;
-            int32_t iy_nhwc;
-            for (int i=0; i<pb->co; i++){
-              iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i, yn,yh,yw,yc, "Before softmax sum", DEBUG_INFO);
-              sum += mem.y[iy_nhwc];
-            }
-            for (int i=0; i<pb->co; i++){
-              iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i, yn,yh,yw,yc, "After softmax sum", DEBUG_INFO);
-              mem.y[iy_nhwc] = mem.y[iy_nhwc] / sum;
-            }
-          }
-          goto PROCESS_AND_STORE_DONE;
-        }
+                      if (i_yc == pb->co-1) {
+                        float sum = 0;
+                        int32_t iy_nhwc;
+                        for (int i=0; i<pb->co; i++){
+                          iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i, yn,yh,yw,yc, "Before softmax sum", DEBUG_INFO);
+                          sum += mem.y[iy_nhwc];
+                        }
+                        for (int i=0; i<pb->co; i++){
+                          iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i, yn,yh,yw,yc, "After softmax sum", DEBUG_INFO);
+                          mem.y[iy_nhwc] = mem.y[iy_nhwc] / sum;
+                        }
+                      }
+                      goto PROCESS_AND_STORE_DONE;
+                    }
 
-        // ------ MAX/AVG POOL ---
+                    // ------ MAX/AVG POOL ---
 
-        if (pb->pool == POOL_NONE) {
-          tile_write(out_val, p_out_buffer, ib, pb, i_yn, i_yh, i_yw, i_yc, yn, yh, yw, yc);
-          goto PROCESS_AND_STORE_DONE;
-        }
+                    if (pb->pool == POOL_NONE) {
+                      tile_write(out_val, p_out_buffer, ib, pb, i_yn, i_yh, i_yw, i_yc, yn, yh, yw, yc);
+                      goto PROCESS_AND_STORE_DONE;
+                    }
 
-        iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc, "Before maxpool", DEBUG_INFO);// store as nhwc for pooling
-        mem.nhwc[iy_nhwc] = out_val;
+                    iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc, "Before maxpool", DEBUG_INFO);// store as nhwc for pooling
+                    mem.nhwc[iy_nhwc] = out_val;
 
-        div_ixh = div(i_yh+pb->psh_shift-pb->pkh+1, pb->psh);
-        div_ixw = div(i_yw+pb->psw_shift-pb->pkw+1, pb->psw);
-        ixh_beg = div_ixh.quot; // ix(hw) that corresponds to the pooling window
-        ixw_beg = div_ixw.quot;
-        
-        if (ixh_beg < 0 || ixw_beg < 0) // skip when target ix(h,w) < 0
-          goto PROCESS_AND_STORE_DONE;
+                    div_ixh = div(i_yh+pb->psh_shift-pb->pkh+1, pb->psh);
+                    div_ixw = div(i_yw+pb->psw_shift-pb->pkw+1, pb->psw);
+                    ixh_beg = div_ixh.quot; // ix(hw) that corresponds to the pooling window
+                    ixw_beg = div_ixw.quot;
+                    
+                    if (ixh_beg < 0 || ixw_beg < 0) // skip when target ix(h,w) < 0
+                      goto PROCESS_AND_STORE_DONE;
 
-        // Pool Striding
-        if (div_ixh.rem != 0)                         // invalid ixh
-          if (i_yh==yh-1) ixh_beg += 1;                  //but last yh. start sweeping
-          else            goto PROCESS_AND_STORE_DONE;   // not last yh. skip
-        
-        if (div_ixw.rem != 0)
-          if (i_yw==yw-1) ixw_beg += 1;
-          else            goto PROCESS_AND_STORE_DONE;
+                    // Pool Striding
+                    if (div_ixh.rem != 0)                         // invalid ixh
+                      if (i_yh==yh-1) ixh_beg += 1;                  //but last yh. start sweeping
+                      else            goto PROCESS_AND_STORE_DONE;   // not last yh. skip
+                    
+                    if (div_ixw.rem != 0)
+                      if (i_yw==yw-1) ixw_beg += 1;
+                      else            goto PROCESS_AND_STORE_DONE;
 
-        ph_end       = i_yh; // iy(h,w) is the bottom-right of pooling window -> All values in pooling window have been computed
-        pw_end       = i_yw;
-        ph_beg_const = max(pb->psh*ixh_beg-pb->psh_shift, 0)-1; // p(h,w)_beg is the index of top left corner of pooling window. If negative, set to zero
-        pw_beg_const = max(pb->psw*ixw_beg-pb->psw_shift, 0)-1;
+                    ph_end       = i_yh; // iy(h,w) is the bottom-right of pooling window -> All values in pooling window have been computed
+                    pw_end       = i_yw;
+                    ph_beg_const = max(pb->psh*ixh_beg-pb->psh_shift, 0)-1; // p(h,w)_beg is the index of top left corner of pooling window. If negative, set to zero
+                    pw_beg_const = max(pb->psw*ixw_beg-pb->psw_shift, 0)-1;
 
-        xh_sweep = i_yh == yh-1 ? pb->ph : ixh_beg+1; // ix(hw) is sweeped from ix(hw)_beg to x(h,w)_sweep. Normally sweep is 1.
-        xw_sweep = i_yw == yw-1 ? pb->pw : ixw_beg+1; // But when iy(h,w) is at its edges, need to compute remaining ix(hw) pixels by sweeping
+                    xh_sweep = i_yh == yh-1 ? pb->ph : ixh_beg+1; // ix(hw) is sweeped from ix(hw)_beg to x(h,w)_sweep. Normally sweep is 1.
+                    xw_sweep = i_yw == yw-1 ? pb->pw : ixw_beg+1; // But when iy(h,w) is at its edges, need to compute remaining ix(hw) pixels by sweeping
 
-        // Sweep the pooling window
-        for (int32_t ixh = ixh_beg, ph_beg = ph_beg_const;  ixh < xh_sweep;  ixh++, ph_beg += pb->psh) {
-          for (int32_t ixw = ixw_beg, pw_beg = pw_beg_const;  ixw < xw_sweep;  ixw++, pw_beg += pb->psw) {
+                    // Sweep the pooling window
+                    for (int32_t ixh = ixh_beg, ph_beg = ph_beg_const;  ixh < xh_sweep;  ixh++, ph_beg += pb->psh) {
+                      for (int32_t ixw = ixw_beg, pw_beg = pw_beg_const;  ixw < xw_sweep;  ixw++, pw_beg += pb->psw) {
 
-            // Traverse each pool window & perform pooling
-            int32_t result = pb->pool == POOL_MAX ? INT_MIN : 0;
-            for (int32_t ipyh = ph_end; ipyh > ph_beg; ipyh--){
-              for (int32_t ipyw = pw_end; ipyw > pw_beg; ipyw--){
+                        // Traverse each pool window & perform pooling
+                        int32_t result = pb->pool == POOL_MAX ? INT_MIN : 0;
+                        for (int32_t ipyh = ph_end; ipyh > ph_beg; ipyh--){
+                          for (int32_t ipyw = pw_end; ipyw > pw_beg; ipyw--){
 
-                int32_t read_idx = flatten_nhwc(i_yn, ipyh, ipyw, i_yc,    yn, yh, yw, yc, "Inside pool window", DEBUG_INFO);
-                int32_t read_val = mem.nhwc[read_idx];
-                result = pb->pool==POOL_MAX ? max(result, read_val) : (result + read_val);
-              }
-            }
+                            int32_t read_idx = flatten_nhwc(i_yn, ipyh, ipyw, i_yc,    yn, yh, yw, yc, "Inside pool window", DEBUG_INFO);
+                            int32_t read_val = mem.nhwc[read_idx];
+                            result = pb->pool==POOL_MAX ? max(result, read_val) : (result + read_val);
+                          }
+                        }
 
-            // ------ AVG POOL: Divide & Activation ------
-            if (pb->pool == POOL_AVG) {
-              int32_t count  = (ph_end-ph_beg)*(pw_end-pw_beg);
-              result = div_round(result, count);
-              result = shift_round(result, pb->pool_act_shift);
-              result = clip(result, -(1<<(X_BITS-1)), (1<<(X_BITS-1))-1);
-            }
+                        // ------ AVG POOL: Divide & Activation ------
+                        if (pb->pool == POOL_AVG) {
+                          int32_t count  = (ph_end-ph_beg)*(pw_end-pw_beg);
+                          result = div_round(result, count);
+                          result = shift_round(result, pb->pool_act_shift);
+                          result = clip(result, -(1<<(X_BITS-1)), (1<<(X_BITS-1))-1);
+                        }
 
-            tile_write(result, p_out_buffer, ib, pb,   i_yn, ixh, ixw, i_yc,  yn, pb->ph, pb->pw, yc); // Write
-          }
-        }
-        yh = pb->ph;
-        yw = pb->pw;
-        
+                        tile_write(result, p_out_buffer, ib, pb,   i_yn, ixh, ixw, i_yc,  yn, pb->ph, pb->pw, yc); // Write
+                      }
+                    }
+                    yh = pb->ph;
+                    yw = pb->pw;
+                    
 
 PROCESS_AND_STORE_DONE:
 
-        fprintf(fp_raw,"%d\n", raw_val); // Save raw output
-        sram_addr += 1;
-      }
-    }
-  }
-  fclose(fp_sum);
-  fclose(fp_raw);
-
+                    fprintf(fp_raw,"%d\n", raw_val); // Save raw output
+                    sram_addr += 1;
+                  }
+                }
+              }
+              fclose(fp_sum);
+              fclose(fp_raw);
 
             } // iw_kw2
             iw_kw2 = 0;
@@ -429,10 +440,9 @@ PROCESS_AND_STORE_DONE:
     } // ip
     ip = 0; 
     //after_each(ib) = after_all(ip):
+    is_bundle_write_done = 1;
             
     printf("done bundle!! iw_kw2:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw_kw2, in, il, it, ip, ib);
-    is_bundle_write_done = 1;
-
 
     char f_path_debug [1000];
     sprintf(f_path_debug, "%s/%0d_y_nhwc_sim.txt", DATA_DIR, ib);
@@ -463,7 +473,6 @@ PROCESS_AND_STORE_DONE:
   ib = 0;
   *p_done = 1;
   is_first_call = 1;
-
 }
 
 
