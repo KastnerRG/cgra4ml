@@ -93,6 +93,7 @@ class Hardware:
         self.BITS_BLOCKS_MAX       = clog2(self.L_MAX)
         self.BITS_XN_MAX           = clog2(self.XN_MAX)
         self.BITS_RAM_WEIGHTS_ADDR = clog2(self.RAM_WEIGHTS_DEPTH)
+        self.Y_OUT_BITS            = 2**clog2(self.Y_BITS)
 
         self.MODULE_DIR = os.path.normpath(os.path.dirname(deepsocflow.__file__)).replace('\\', '/')
         self.TB_MODULE = "dnn_engine_tb"

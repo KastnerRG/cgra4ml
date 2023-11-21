@@ -14,6 +14,7 @@ module dnn_engine #(
 
                 S_PIXELS_WIDTH_LF       = `S_PIXELS_WIDTH_LF  ,
                 S_WEIGHTS_WIDTH_LF      = `S_WEIGHTS_WIDTH_LF ,
+                M_OUTPUT_WIDTH_LF       = `M_OUTPUT_WIDTH_LF  ,
 
                 OUT_ADDR_WIDTH          = 10,
                 OUT_BITS                = 32
@@ -33,11 +34,10 @@ module dnn_engine #(
     input  wire [S_WEIGHTS_WIDTH_LF  -1:0]  s_axis_weights_tdata,
     input  wire [S_WEIGHTS_WIDTH_LF/8-1:0]  s_axis_weights_tkeep,
 
-    input  wire [(OUT_ADDR_WIDTH+2)-1:0]    m_ram_addr_a,
-    output wire [ OUT_BITS         -1:0]    m_ram_rddata_a,
-    input  wire                             m_ram_en_a,
-    output wire m_done_fill,
-    input  wire m_t_done_proc
+    input  wire m_axis_tready, 
+    output wire m_axis_tvalid, m_axis_tlast,
+    output wire [M_OUTPUT_WIDTH_LF   -1:0] m_axis_tdata,
+    output wire [M_OUTPUT_WIDTH_LF/8 -1:0] m_axis_tkeep
   ); 
 
   localparam  TUSER_WIDTH = `TUSER_WIDTH;
@@ -50,9 +50,6 @@ module dnn_engine #(
   wire [X_BITS*ROWS -1:0] pixels_m_data;
   wire [K_BITS*COLS -1:0] weights_m_data;
   wire [TUSER_WIDTH -1:0] weights_m_user;
-
-  wire out_s_ready, out_s_valid, out_s_last;
-  wire [M_DATA_WIDTH_HF_CONV_DW -1:0] out_s_data;
 
 
   // Unpack tkeep_bytes into tkeep_words
@@ -108,6 +105,9 @@ module dnn_engine #(
     .pixels_m_ready  (pixels_m_ready ) 
   );
 
+  wire m_ready, m_valid, m_last;
+  wire [M_DATA_WIDTH_HF_CONV_DW -1:0] m_data;
+
   proc_engine_out PROC_OUT (
     .aclk           (aclk    ),
     .aresetn        (aresetn ),
@@ -117,25 +117,46 @@ module dnn_engine #(
     .s_user         (weights_m_user             ),
     .s_data_pixels  (pixels_m_data              ),
     .s_data_weights (weights_m_data             ),
-    .m_ready        (out_s_ready                ),
-    .m_valid        (out_s_valid                ),
-    .m_data         (out_s_data                 ),
-    .m_last         (out_s_last                 )
+    .m_ready        (m_ready                    ),
+    .m_valid        (m_valid                    ),
+    .m_data         (m_data                     ),
+    .m_last         (m_last                     )
   );
 
-  out_ram_switch OUT_RAM (
-    .clk          (aclk          ), 
-    .rstn         (aresetn       ),
-    .s_ready      (out_s_ready   ),
-    .s_valid      (out_s_valid   ), 
-    .s_data       (out_s_data    ),
-    .s_last       (out_s_last    ), 
+  localparam Y_BITS_PADDED = 2**$clog2(Y_BITS);
+  genvar iy;
+  
+  wire [Y_BITS_PADDED*ROWS-1:0] m_data_padded;
+  generate
+    for (iy=0; iy<ROWS; iy=iy+1) begin
+      assign m_data_padded[Y_BITS_PADDED*(iy+1)-1:Y_BITS_PADDED*iy] = $signed(m_data[Y_BITS*(iy+1)-1:Y_BITS*iy]);
+    end
+  endgenerate
+  
 
-    .m_ram_addr_a   (m_ram_addr_a  ),
-    .m_ram_rddata_a (m_ram_rddata_a),
-    .m_ram_en_a     (m_ram_en_a    ),
-    .m_done_fill    (m_done_fill   ),
-    .m_t_done_proc  (m_t_done_proc )
+  alex_axis_adapter_any #(
+    .S_DATA_WIDTH  (Y_BITS_PADDED*ROWS),
+    .M_DATA_WIDTH  (M_OUTPUT_WIDTH_LF ),
+    .S_KEEP_ENABLE (1),
+    .M_KEEP_ENABLE (1),
+    .S_KEEP_WIDTH  (Y_BITS_PADDED*ROWS/8),
+    .M_KEEP_WIDTH  (M_OUTPUT_WIDTH_LF/8),
+    .ID_ENABLE     (0),
+    .DEST_ENABLE   (0),
+    .USER_ENABLE   (0)
+  ) DW (
+    .clk           (aclk         ),
+    .rst           (~aresetn     ),
+    .s_axis_tready (m_ready      ),
+    .s_axis_tvalid (m_valid      ),
+    .s_axis_tdata  (m_data_padded),
+    .s_axis_tlast  (m_last       ),
+    .s_axis_tkeep  ({(Y_BITS_PADDED*ROWS/8){1'b1}}),
+    .m_axis_tready (m_axis_tready),
+    .m_axis_tvalid (m_axis_tvalid),
+    .m_axis_tdata  (m_axis_tdata ),
+    .m_axis_tlast  (m_axis_tlast ),
+    .m_axis_tkeep  (m_axis_tkeep )
   );
 endmodule
 

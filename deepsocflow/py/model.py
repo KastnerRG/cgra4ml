@@ -181,6 +181,7 @@ class QModel(Model):
             ch.write(f"#define O_BYTES_MAX {o_bytes_max}\n")
             ch.write(f"#define X_BYTES_ALL {x_bytes_all}\n")
             ch.write(f"#define NHWC_WORDS  {nhwc_words_max}\n")
+            ch.write(f"#define Y_TYPE      int{hw.Y_OUT_BITS}_t\n")
             ch.write(f"#define B_TYPE      int{hw.B_BITS}_t\n")
             ch.write(f"#define O_TYPE      {out_type}\n")
             ch.write(f"#define B_WORDS     {b_words}\n")

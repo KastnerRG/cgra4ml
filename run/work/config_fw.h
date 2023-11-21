@@ -25,6 +25,7 @@ Bundle_t bundles [N_BUNDLES] = {
 #define O_BYTES_MAX 8080
 #define X_BYTES_ALL 30220
 #define NHWC_WORDS  20736
+#define Y_TYPE      int16_t
 #define B_TYPE      int16_t
 #define O_TYPE      float
 #define B_WORDS     112
