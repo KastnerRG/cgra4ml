@@ -188,33 +188,52 @@ extern EXT_C void load_y (uint8_t *p_done, uint64_t *p_base_addr_next, int32_t *
   FILE *fp_raw = fopen(f_path_raw, "a"); 
   FILE *fp_sum = fopen(f_path_sum, "a"); 
 
-  // Init - add headers to out buffer
-  static uint8_t write_x_header = N_BUNDLES == 1 ? 0 : 1;
-  if (write_x_header) { // enabled for each new bundle
-    Bundle_t *pb_out = &bundles[ib+1];
-
-    for (int ixp=0; ixp < pb_out->p; ixp++) {
-      int32_t offset_words   = (ixp == 0) ? 0 : (pb_out->cm_p0 + (ixp-1)*pb_out->cm)*pb_out->xp_words;
-      int32_t offset_bytes   = offset_words/X_WORDS_PER_BYTE + ixp*8;
-
-      *(uint64_t*)&(p_out_buffer[offset_bytes])     = ixp == 0 ? pb_out->x_header_p0 : pb_out->x_header;
-      // printf("--------ib:%d, ixp:%d offset_bytes:%d\n", ib, ixp, offset_bytes);
-    }
-    write_x_header = 0;
-  }
-
-  //New iw_kw2:
-  int32_t w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
-  int32_t sram_addr=0;
-
   static char is_first_call = 1;
-  static char ocm_bank = 0;
-  if (is_first_call) {
-    is_first_call = 0;
-    *p_base_addr_next = (uint64_t)&mem.ocm[ocm_bank];
-    *p_bpt_next = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
-    return;
-  }
+  static char ocm_bank = 1;
+  int32_t w_last, sram_addr;
+  static uint8_t write_x_header = N_BUNDLES == 1 ? 0 : 1;
+
+  if (is_first_call)  is_first_call = 0;
+  else                goto DMA_WAIT;   
+  
+
+  for (ib = 0; ib < N_BUNDLES; ib++) {
+
+    pb = &bundles[ib];
+    p_out_buffer = (int8_t*)&mem.out_buffers[pb->out_buffer_idx];
+
+    // Init - add headers to out buffer
+    if (ib != N_BUNDLES-1) {
+      Bundle_t *pb_out = &bundles[ib+1];
+      for (int ixp=0; ixp < pb_out->p; ixp++) {
+        int32_t offset_words   = (ixp == 0) ? 0 : (pb_out->cm_p0 + (ixp-1)*pb_out->cm)*pb_out->xp_words;
+        int32_t offset_bytes   = offset_words/X_WORDS_PER_BYTE + ixp*8;
+
+        *(uint64_t*)&(p_out_buffer[offset_bytes])     = ixp == 0 ? pb_out->x_header_p0 : pb_out->x_header;
+        // printf("--------ib:%d, ixp:%d offset_bytes:%d\n", ib, ixp, offset_bytes);
+      }
+    }
+
+    for (ip = 0; ip < pb->p; ip++) {
+      for (it = 0; it < pb->t; it++) {
+
+        it_bias = pb->b_offset + pb->coe*it;
+
+        for (in = 0; in < pb->n; in++) {
+          for (il = 0; il < pb->l; il++) {
+            for (iw_kw2 = 0; iw_kw2 < pb->w_kw2; iw_kw2++) {
+
+
+  ocm_bank = !ocm_bank;
+  w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
+  *p_base_addr_next = (uint64_t)&mem.ocm[ocm_bank];
+  *p_bpt_next = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
+
+  return;
+DMA_WAIT:
+
+  w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
+  sram_addr=0;
 
   for (int32_t icoe=0; icoe < pb->coe; icoe++) {
     int32_t i_bias = it_bias + icoe;
@@ -399,64 +418,52 @@ PROCESS_AND_STORE_DONE:
   fclose(fp_raw);
 
 
-  //Nested for loop [for(ib) for(ip) for(it) for(il) for(in) for(iw_kw2) {}] 
-  //  inverted to increment once per call
-  ++iw_kw2; if (iw_kw2 >= pb->w_kw2) { iw_kw2 = 0; //after_each(in) = after_all(iw_kw2):
-    ++il; if (il >= pb->l) { il = 0;               //after_each(in) = after_all(il):
-      ++in; if (in >= pb->n) { in = 0;             //after_each(it) = after_all(in):
-        ++it; if (it >= pb->t) { it = 0;           //after_each(ip) = after_all(it):
-          ++ip; if (ip >= pb->p) { ip = 0;         //after_each(ib) = after_all(ip):
+            } // iw_kw2
+            iw_kw2 = 0;
+          } // il
+          il = 0;
+        } // in
+        in = 0;
+      } // it
+      it = 0;
+    } // ip
+    ip = 0; 
+    //after_each(ib) = after_all(ip):
             
-            printf("done bundle!! iw_kw2:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw_kw2, in, il, it, ip, ib);
-            is_bundle_write_done = 1;
+    printf("done bundle!! iw_kw2:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw_kw2, in, il, it, ip, ib);
+    is_bundle_write_done = 1;
 
 
-            char f_path_debug [1000];
-            sprintf(f_path_debug, "%s/%0d_y_nhwc_sim.txt", DATA_DIR, ib);
-            FILE *fp_debug = fopen(f_path_debug, "w");
-            for (int32_t i=0; i<pb->debug_nhwc_words; i++)
-              fprintf(fp_debug,"%d\n", mem.debug_nhwc[i]);
-            fclose(fp_debug);
+    char f_path_debug [1000];
+    sprintf(f_path_debug, "%s/%0d_y_nhwc_sim.txt", DATA_DIR, ib);
+    FILE *fp_debug = fopen(f_path_debug, "w");
+    for (int32_t i=0; i<pb->debug_nhwc_words; i++)
+      fprintf(fp_debug,"%d\n", mem.debug_nhwc[i]);
+    fclose(fp_debug);
 
-            char f_path_tiled [1000];
-            sprintf(f_path_tiled, "%s/%0d_y_tiled_sim.txt", DATA_DIR, ib);
-            FILE *fp_tiled = fopen(f_path_tiled, "w");
-            for (int32_t i=0; i<pb->o_words; i++)
-              if (ib == N_BUNDLES-1)
-                if (pb->is_softmax) fprintf(fp_tiled,"%f\n", mem.y[i]);
-                else                fprintf(fp_tiled,"%d\n", mem.y[i]);
-              else fprintf(fp_tiled,"%d\n", mem.debug_tiled[i]);
-            fclose(fp_tiled);
+    char f_path_tiled [1000];
+    sprintf(f_path_tiled, "%s/%0d_y_tiled_sim.txt", DATA_DIR, ib);
+    FILE *fp_tiled = fopen(f_path_tiled, "w");
+    for (int32_t i=0; i<pb->o_words; i++)
+      if (ib == N_BUNDLES-1)
+        if (pb->is_softmax) fprintf(fp_tiled,"%f\n", mem.y[i]);
+        else                fprintf(fp_tiled,"%d\n", mem.y[i]);
+      else fprintf(fp_tiled,"%d\n", mem.debug_tiled[i]);
+    fclose(fp_tiled);
 
-            if (ib != N_BUNDLES-1){
-              char f_path_packed [1000];
-              sprintf(f_path_packed, "%s/%0d_y_packed_sim.bin", DATA_DIR, ib);
-              FILE *fp_packed = fopen(f_path_packed, "wb");
-              fwrite(p_out_buffer, 1, pb->o_bytes, fp_packed);
-              fclose(fp_packed);
-            }
-            
-            ++ib; if (ib >= N_BUNDLES) { ib = 0;  // after_all(ib):
-              *p_done = 1;
-              is_first_call = 1;
-            }//new(ib):
+    if (ib != N_BUNDLES-1){
+      char f_path_packed [1000];
+      sprintf(f_path_packed, "%s/%0d_y_packed_sim.bin", DATA_DIR, ib);
+      FILE *fp_packed = fopen(f_path_packed, "wb");
+      fwrite(p_out_buffer, 1, pb->o_bytes, fp_packed);
+      fclose(fp_packed);
+    }
 
-            pb = &bundles[ib];
-            p_out_buffer = (int8_t*)&mem.out_buffers[pb->out_buffer_idx];
-            if (ib != N_BUNDLES-1) write_x_header = 1; // Make write_x write new headers
-            
-          }//new(ip):
-        }//new(it):
-        it_bias = pb->b_offset + pb->coe*it;
-      }//new(in):
-    }//new(il):
-  }//new(iw_kw2):
-  // *pt_done_proc = !(*pt_done_proc);
+  } // ib
+  ib = 0;
+  *p_done = 1;
+  is_first_call = 1;
 
-  ocm_bank = !ocm_bank;
-  w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
-  *p_base_addr_next = (uint64_t)&mem.ocm[ocm_bank];
-  *p_bpt_next = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
 }
 
 
