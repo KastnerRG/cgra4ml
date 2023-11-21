@@ -37,25 +37,25 @@ module dnn_engine_tb;
   logic [S_WEIGHTS_WIDTH_LF/K_BITS-1:0][K_BITS-1:0] s_axis_weights_tdata;
   logic [S_WEIGHTS_WIDTH_LF/8-1:0] s_axis_weights_tkeep;
 
-  bit m_ram_en_a, m_done_fill, m_t_done_proc;
-  logic [(OUT_ADDR_WIDTH+2)-1:0]  m_ram_addr_a;
-  logic [ OUT_BITS         -1:0]  m_ram_rddata_a;
-
+  bit m_axis_tready, m_axis_tvalid, m_axis_tlast;
+  logic [M_OUTPUT_WIDTH_LF   -1:0] m_axis_tdata;
+  logic [M_OUTPUT_WIDTH_LF/8 -1:0] m_axis_tkeep;
 
   dnn_engine pipe (.*);
 
   // SOURCEs & SINKS
 
-  DMA_M2S #(S_PIXELS_WIDTH_LF , VALID_PROB, 1) source_x (aclk, aresetn, s_axis_pixels_tready , s_axis_pixels_tvalid , s_axis_pixels_tlast , s_axis_pixels_tdata , s_axis_pixels_tkeep );
-  DMA_M2S #(S_WEIGHTS_WIDTH_LF, VALID_PROB, 0) source_k (aclk, aresetn, s_axis_weights_tready, s_axis_weights_tvalid, s_axis_weights_tlast, s_axis_weights_tdata, s_axis_weights_tkeep);
+  DMA_M2S #(S_PIXELS_WIDTH_LF , VALID_PROB) source_x (aclk, aresetn, s_axis_pixels_tready , s_axis_pixels_tvalid , s_axis_pixels_tlast , s_axis_pixels_tdata , s_axis_pixels_tkeep );
+  DMA_M2S #(S_WEIGHTS_WIDTH_LF, VALID_PROB) source_k (aclk, aresetn, s_axis_weights_tready, s_axis_weights_tvalid, s_axis_weights_tlast, s_axis_weights_tdata, s_axis_weights_tkeep);
+  DMA_S2M #(M_OUTPUT_WIDTH_LF , READY_PROB) sink_y   (aclk, aresetn, m_axis_tready        , m_axis_tvalid        , m_axis_tlast        , m_axis_tdata        , m_axis_tkeep);
 
   bit y_done=0, x_done=0, w_done=0, bundle_read_done=0, bundle_write_done=0;
-  longint unsigned w_base=0, x_base=0;
-  int w_bpt=0, x_bpt=0;
+  longint unsigned w_base=0, x_base=0, y_base=0;
+  int w_bpt=0, x_bpt=0, y_bpt=0;
   
   import "DPI-C" function void load_x(inout bit x_done, bundle_read_done, inout longint unsigned x_base, inout int x_bpt);
   import "DPI-C" function void load_w(inout bit w_done, inout longint unsigned w_base, inout int w_bpt);
-  import "DPI-C" function void load_y(inout bit y_done, inout bit m_t_done_proc, inout bit [31:0] y_sram [ROWS*COLS-1:0]);
+  import "DPI-C" function void load_y(inout bit y_done, inout longint unsigned y_base, inout int y_bpt);
   import "DPI-C" function void fill_memory(inout longint unsigned w_base, x_base);
   import "DPI-C" function byte get_byte (longint unsigned addr);
   import "DPI-C" function byte get_is_bundle_write_done();
@@ -81,25 +81,14 @@ module dnn_engine_tb;
       if (x_done) break;
     end
 
-  // Y_SRAM
-  int file, y_wpt, dout;
-  initial  begin
-    {m_ram_addr_a, m_ram_en_a, m_t_done_proc} = 0;
-    wait(aresetn);
-    repeat(2) @(posedge aclk);
-
-    while (!y_done) begin
-      wait (m_done_fill); // callback trigger
-
-      for (int unsigned ir=0; ir < ROWS*COLS; ir++) begin // DPI-C cannot consume time in verilator, so read in advance
-        m_ram_addr_a <= ir*(OUT_BITS/8); // 4 byte words
-        m_ram_en_a <= 1;
-        repeat(2) @(posedge aclk) #1ps;
-        y_sram[ir] = m_ram_rddata_a;
-      end
-      load_y(y_done, m_t_done_proc, y_sram);
+  // Y DMA
+  initial 
+    while (1) begin
+      load_y (y_done, y_base, y_bpt);
+      sink_y.axis_pull(y_base, y_bpt);
+      $display("Done output dma at offset=%h, bpt=%d \n", y_base, y_bpt);
+      if (y_done) break;
     end
-  end
 
   // initial begin
   //   $dumpfile("dnn_engine_tb.vcd");

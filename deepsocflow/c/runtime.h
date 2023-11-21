@@ -32,6 +32,7 @@ typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 #define X_BITS_MASK       ((1 << X_BITS) -1)
 
 typedef struct {
+  Y_TYPE     ocm            [2][PE_COLS*PE_ROWS];
   int8_t     w              [W_BYTES     ];
   B_TYPE     b              [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
   int8_t     x              [X_BYTES_ALL ];
@@ -40,7 +41,7 @@ typedef struct {
   int8_t     debug_tiled    [O_WORDS_MAX ];
   int32_t    debug_nhwc     [NHWC_WORDS  ];
   int8_t     out_buffers    [2           ][O_BYTES_MAX ];
-  int8_t     add_buffers    [N_ADD_BUF   ][NHWC_WORDS  ];
+  int8_t     add_buffers    [N_ADD_BUF   ][NHWC_WORDS  ]; // should be last, since N_ADD_BUF can be empty
 } Memory_st;
 Memory_st mem;
 
@@ -169,13 +170,12 @@ static inline void tile_write( int32_t out_val, int8_t *p_out_buffer, int32_t ib
 }
 
 
-extern EXT_C void load_y (uint8_t *p_done, uint8_t *pt_done_proc,  const uint32_t *p_sram_u32) {
+extern EXT_C void load_y (uint8_t *p_done, uint64_t *p_base_addr_next, int32_t *p_bpt_next) {
 
   static Bundle_t *pb = &bundles[0];
   static int32_t it_bias=0;
   static int32_t ib=0, ip=0, it=0, in=0, il=0, iw_kw2=0;
   static int8_t  *p_out_buffer = (int8_t*)&mem.out_buffers[0];
-  const  int32_t *p_sram = (const int32_t *)p_sram_u32;
 
   int32_t iy_nhwc;
   div_t   div_ch, div_cw, div_ixh, div_ixw;
@@ -206,6 +206,16 @@ extern EXT_C void load_y (uint8_t *p_done, uint8_t *pt_done_proc,  const uint32_
   //New iw_kw2:
   int32_t w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
   int32_t sram_addr=0;
+
+  static char is_first_call = 1;
+  static char ocm_bank = 0;
+  if (is_first_call) {
+    is_first_call = 0;
+    *p_base_addr_next = (uint64_t)&mem.ocm[ocm_bank];
+    *p_bpt_next = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
+    return;
+  }
+
   for (int32_t icoe=0; icoe < pb->coe; icoe++) {
     int32_t i_bias = it_bias + icoe;
 
@@ -236,7 +246,7 @@ extern EXT_C void load_y (uint8_t *p_done, uint8_t *pt_done_proc,  const uint32_
           goto PROCESS_AND_STORE_DONE;
         }
 
-        raw_val = p_sram[sram_addr];
+        raw_val = mem.ocm[ocm_bank][sram_addr];
         out_val = raw_val;
 
 PROCESS_START:
@@ -428,6 +438,7 @@ PROCESS_AND_STORE_DONE:
             
             ++ib; if (ib >= N_BUNDLES) { ib = 0;  // after_all(ib):
               *p_done = 1;
+              is_first_call = 1;
             }//new(ib):
 
             pb = &bundles[ib];
@@ -440,7 +451,12 @@ PROCESS_AND_STORE_DONE:
       }//new(in):
     }//new(il):
   }//new(iw_kw2):
-  *pt_done_proc = !(*pt_done_proc);
+  // *pt_done_proc = !(*pt_done_proc);
+
+  ocm_bank = !ocm_bank;
+  w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
+  *p_base_addr_next = (uint64_t)&mem.ocm[ocm_bank];
+  *p_bpt_next = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
 }
 
 
@@ -516,6 +532,10 @@ extern EXT_C void fill_memory (uint64_t *p_w_base, uint64_t *p_x_base){
 
 extern EXT_C int8_t get_byte (uint64_t addr){
   return *(int8_t*)addr;
+}
+
+extern EXT_C void set_byte (uint64_t addr, int8_t data){
+  *(int8_t*)addr = data;
 }
 
 extern EXT_C char get_is_bundle_write_done(){

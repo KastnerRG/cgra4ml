@@ -5,7 +5,6 @@
 
 module DMA_M2S #(
   parameter BUS_WIDTH=8, PROB_VALID=20,
-  parameter MODE=0,
   parameter BYTES_PER_BEAT = BUS_WIDTH/8
 )(
     input  logic aclk, aresetn, s_ready, 
@@ -66,5 +65,46 @@ module DMA_M2S #(
     {s_valid, s_data, s_keep, s_last, prev_slast, i_bytes} = '0;
     prev_handshake = 1;
     @(posedge aclk);
+  endtask
+endmodule
+
+
+module DMA_S2M #(
+  parameter  BUS_WIDTH=8, PROB_READY=20,
+  parameter  BYTES_PER_BEAT = BUS_WIDTH/8
+)(
+    input  logic aclk, aresetn,
+    output logic m_ready,
+    input  logic m_valid, m_last,
+    input  logic [BYTES_PER_BEAT-1:0][7:0] m_data, 
+    input  logic [BYTES_PER_BEAT-1:0] m_keep
+);
+
+  longint unsigned i_bytes = 0;
+  bit done = 0;
+
+  import "DPI-C" function void set_byte (longint unsigned addr, byte data);
+
+  task axis_pull (input longint unsigned base_addr, input int bytes_per_transfer);
+    m_ready = 0;
+    wait(aresetn);
+    
+    while (!done) begin
+
+      @(posedge aclk)
+      if (m_ready && m_valid) begin  // read at posedge
+        for (int i=0; i < BYTES_PER_BEAT; i=i+1)
+          if (m_keep[i]) begin
+            set_byte(base_addr + i_bytes, m_data[i]);
+            i_bytes  += 1;
+          end
+        if (m_last) done <= 1;
+      end
+
+      #10ps // delay before writing
+      m_ready = $urandom_range(0,999) < PROB_READY;
+    end
+
+    {done, i_bytes} = 0;
   endtask
 endmodule

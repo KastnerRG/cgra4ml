@@ -27,7 +27,7 @@ def product_dict(**kwargs):
                                         ram_edges_depth      = [ 288     ],
                                         axi_width            = [ 64      ],
                                         target_cpu_int_bits  = [ 32      ],
-                                        valid_prob           = [ 0.1     ],
+                                        valid_prob           = [ 0.01    ],
                                         ready_prob           = [ 0.1     ],
                                         data_dir             = ['vectors'],
                                     )))
