@@ -26,9 +26,11 @@ typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 
 typedef struct {
   Y_TYPE     ocm            [2][PE_COLS*PE_ROWS];
+
   int8_t     w              [W_BYTES     ];
   B_TYPE     b              [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
-  int8_t     x              [X_BYTES_ALL ];
+  int8_t     x              [X_BYTES     ]; // keep next to wb. wbx is loaded to w_ptr
+
   O_TYPE     y              [O_WORDS     ];
   int32_t    nhwc           [NHWC_WORDS  ];
   int8_t     debug_tiled    [O_WORDS_MAX ];
@@ -214,9 +216,12 @@ extern EXT_C void load_y (uint8_t *p_done, uint64_t *p_base_addr_next, int32_t *
       * This mimics the behavior of waiting for DMA's interrupt
   */
   static char is_first_call = 1;
+#ifdef SIM
   if (is_first_call)  is_first_call = 0;
   else                goto DMA_WAIT;
+#endif
 
+  printf("starting load_y");
 
   for (ib = 0; ib < N_BUNDLES; ib++) {
 
@@ -250,8 +255,12 @@ extern EXT_C void load_y (uint8_t *p_done, uint64_t *p_base_addr_next, int32_t *
               *p_base_addr_next = (uint64_t)&p_mem->ocm[ocm_bank];
               *p_bpt_next = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
 
+#ifdef SIM
               return;
 DMA_WAIT:
+#else
+			  start_wait_output((UINTPTR)*p_base_addr_next, *p_bpt_next);
+#endif
 
               w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
               sram_addr=0;
@@ -454,6 +463,9 @@ PROCESS_AND_STORE_DONE:
     ip = 0;
     //after_each(ib) = after_all(ip):
     is_bundle_write_done = 1;
+#ifndef SIM
+    start_pixels_dma();
+#endif
 
     printf("done bundle!! iw_kw2:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw_kw2, in, il, it, ip, ib);
 
@@ -540,18 +552,11 @@ extern EXT_C void fill_memory (uint64_t *p_w_base, uint64_t *p_x_base){
   FILE *fp;
   char f_path [1000];
 
-  sprintf(f_path, "%s/w.bin", DATA_DIR);
+  sprintf(f_path, "%s/wbx.bin", DATA_DIR);
   fp = fopen(f_path, "rb");
   if(!fp)
     printf("ERROR! File not found: %s \n", f_path);
-  fread(p_mem->w, 1, WB_BYTES, fp);
-  fclose(fp);
-
-  sprintf(f_path, "%s/x_all.bin", DATA_DIR);
-  fp = fopen(f_path, "rb");
-  if(!fp)
-    printf("ERROR! File not found: %s \n", f_path);
-  fread(p_mem->x, 1, X_BYTES_ALL, fp);
+  fread(p_mem->w, 1, WB_BYTES+X_BYTES, fp);
   fclose(fp);
 
   for (int32_t i=0; i<B_WORDS; i++)
