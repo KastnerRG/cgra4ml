@@ -197,6 +197,7 @@ class QModel(Model):
         w_bitstring = b''
         x_bitstring = b''
         b_bitstring = b''
+        x_bitstring_0 = b''
         for ib, b in enumerate(bundles):
             x_bitstring_b = b''
             if b.b:
@@ -212,11 +213,15 @@ class QModel(Model):
             with open(f"{hw.DATA_DIR}/{ib}_x_sim.bin", 'wb') as f: 
                 f.write(x_bitstring_b)
             if ib==0:
-                with open(f"{hw.DATA_DIR}/x.bin", 'wb') as f: 
-                    f.write(x_bitstring_b)
+                x_bitstring_0 = x_bitstring_b
+        with open(f"{hw.DATA_DIR}/x.bin", 'wb') as f: 
+            f.write(x_bitstring_0)
 
-        with open(f"{hw.DATA_DIR}/w.bin", 'wb') as f: 
+        with open(f"{hw.DATA_DIR}/wb.bin", 'wb') as f: 
             f.write(w_bitstring + b_bitstring)
+
+        with open(f"{hw.DATA_DIR}/wbx.bin", 'wb') as f: 
+            f.write(w_bitstring + b_bitstring + x_bitstring_0)
 
         with open(f"{hw.DATA_DIR}/x_all.bin", 'wb') as f: 
             f.write(x_bitstring)
