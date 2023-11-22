@@ -45,10 +45,9 @@ typedef struct {
   #include <stdio.h>
   #define fprintf fprintf
   Memory_st mem;
-  #define p_mem (&mem)
 #else
   #define fprintf(...)
-  #define p_mem ((Memory_st*)MEM_BASEADDR)
+  #define mem (*(Memory_st*)MEM_BASEADDR)
 #endif
 
 #ifdef __cplusplus
@@ -95,7 +94,7 @@ static inline void write_x(int8_t val, int8_t *p_out_buffer, int32_t ib, int32_t
 
   // Debug tiled output
   int32_t flat_index     = p_offset + flat_index_n2r;
-  p_mem->debug_tiled[flat_index] = val;
+  mem.debug_tiled[flat_index] = val;
 
   // Pack bits and store
   int32_t flat_index_with_header = p_offset + flat_index_n2r + (ixp+1)*64/X_BITS;
@@ -109,7 +108,7 @@ static inline void write_x(int8_t val, int8_t *p_out_buffer, int32_t ib, int32_t
   uint8_t mem_val_cleaned        = X_POSITION_INVERTED_MASKS[packed_position] & mem_val;
   p_out_buffer[packed_index]     = mem_val_cleaned | packed_val;
 
-  // if (ib==1 && packed_index >= 356) printf("index:%d, final_val:%d --- position:%d value:%d packed_val:%d, mem_val:%d, mem_val_cleaned:%d, clean_mask:%d, pos_mask:%d \n", packed_index, p_mem->debug_packed[packed_index], packed_position, val, packed_val, mem_val, mem_val_cleaned, X_BITS_MASK, X_POSITION_INVERTED_MASKS[packed_position]);
+  // if (ib==1 && packed_index >= 356) printf("index:%d, final_val:%d --- position:%d value:%d packed_val:%d, mem_val:%d, mem_val_cleaned:%d, clean_mask:%d, pos_mask:%d \n", packed_index, mem.debug_packed[packed_index], packed_position, val, packed_val, mem_val, mem_val_cleaned, X_BITS_MASK, X_POSITION_INVERTED_MASKS[packed_position]);
 }
 
 
@@ -153,14 +152,14 @@ static inline void tile_write( int32_t out_val, int8_t *p_out_buffer, int32_t ib
   // ------ STORE  ------
 
   int32_t iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc,,);
-  p_mem->debug_nhwc[iy_nhwc] = out_val;
+  mem.debug_nhwc[iy_nhwc] = out_val;
 
   // Store for residual add
   if (pb->add_out_buffer_idx != -1)
-    p_mem->add_buffers[pb->add_out_buffer_idx][iy_nhwc] = (int8_t)out_val;
+    mem.add_buffers[pb->add_out_buffer_idx][iy_nhwc] = (int8_t)out_val;
 
   if (ib == N_BUNDLES-1)
-    p_mem->y[iy_nhwc] = out_val; // Last bundle: save as NHWC
+    mem.y[iy_nhwc] = out_val; // Last bundle: save as NHWC
   else {
 
     // Other bundles: pad & save as tiled
@@ -185,7 +184,7 @@ extern EXT_C void load_y (uint8_t *p_done, uint64_t *p_base_addr_next, int32_t *
   static Bundle_t *pb = &bundles[0];
   static int32_t it_bias=0;
   static int32_t ib=0, ip=0, it=0, in=0, il=0, iw_kw2=0;
-  static int8_t  *p_out_buffer = (int8_t*)&p_mem->out_buffers[0];
+  static int8_t  *p_out_buffer = (int8_t*)&mem.out_buffers[0];
 
   int32_t iy_nhwc;
   div_t   div_ch, div_cw, div_ixh, div_ixw;
@@ -226,7 +225,7 @@ extern EXT_C void load_y (uint8_t *p_done, uint64_t *p_base_addr_next, int32_t *
   for (ib = 0; ib < N_BUNDLES; ib++) {
 
     pb = &bundles[ib];
-    p_out_buffer = (int8_t*)&p_mem->out_buffers[pb->out_buffer_idx];
+    p_out_buffer = (int8_t*)&mem.out_buffers[pb->out_buffer_idx];
 
     // Init - add headers to out buffer
     if (ib != N_BUNDLES-1) {
@@ -252,7 +251,7 @@ extern EXT_C void load_y (uint8_t *p_done, uint64_t *p_base_addr_next, int32_t *
 
               ocm_bank = !ocm_bank;
               w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
-              *p_base_addr_next = (uint64_t)&p_mem->ocm[ocm_bank];
+              *p_base_addr_next = (uint64_t)&mem.ocm[ocm_bank];
               *p_bpt_next = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
 
 #ifdef SIM
@@ -295,7 +294,7 @@ DMA_WAIT:
                       goto PROCESS_AND_STORE_DONE;
                     }
 
-                    raw_val = p_mem->ocm[ocm_bank][sram_addr];
+                    raw_val = mem.ocm[ocm_bank][sram_addr];
                     out_val = raw_val;
 
 PROCESS_START:
@@ -305,12 +304,12 @@ PROCESS_START:
 
                     if (pb->p == 1) {          // only p  : proceed with value
                     } else if (ip == pb->p-1) {// last p  : read, add, proceed
-                      out_val += p_mem->nhwc[iy_nhwc];
+                      out_val += mem.nhwc[iy_nhwc];
                     } else if (ip == 0) {            // first p : overwrite memory, return
-                      p_mem->nhwc[iy_nhwc] = out_val;
+                      mem.nhwc[iy_nhwc] = out_val;
                       goto PROCESS_AND_STORE_DONE;
                     } else {                         // middle p: read, add, store, return
-                      p_mem->nhwc[iy_nhwc] += out_val;
+                      mem.nhwc[iy_nhwc] += out_val;
                       goto PROCESS_AND_STORE_DONE;
                     }
                     fprintf(fp_sum,"%d\n", out_val); // Save summed output
@@ -330,7 +329,7 @@ PROCESS_START:
 
                     // ------ ADD BIAS ------
                     if (pb->is_bias)
-                      out_val = (out_val << pb->b_val_shift) + (p_mem->b[i_bias] << pb->b_bias_shift);
+                      out_val = (out_val << pb->b_val_shift) + (mem.b[i_bias] << pb->b_bias_shift);
 
 
                     // ------ CORE ACT ------
@@ -340,7 +339,7 @@ PROCESS_START:
 
                     if (pb->add_in_buffer_idx != -1) {
                       iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc, "Before add", DEBUG_INFO);// store as nhwc for pooling
-                      out_val += p_mem->add_buffers[pb->add_in_buffer_idx][iy_nhwc];
+                      out_val += mem.add_buffers[pb->add_in_buffer_idx][iy_nhwc];
                       out_val = shift_round(out_val, pb->add_act_shift);
                       out_val = clip(out_val, -(1<<(X_BITS-1)), (1<<(X_BITS-1))-1);
                     }
@@ -356,18 +355,18 @@ PROCESS_START:
 #ifdef SIM
                       val = (float)exp(val);
 #endif
-                      p_mem->y[iy_nhwc] = val;
+                      mem.y[iy_nhwc] = val;
 
                       if (i_yc == pb->co-1) {
                         float sum = 0;
                         int32_t iy_nhwc;
                         for (int i=0; i<pb->co; i++){
                           iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i, yn,yh,yw,yc, "Before softmax sum", DEBUG_INFO);
-                          sum += p_mem->y[iy_nhwc];
+                          sum += mem.y[iy_nhwc];
                         }
                         for (int i=0; i<pb->co; i++){
                           iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i, yn,yh,yw,yc, "After softmax sum", DEBUG_INFO);
-                          p_mem->y[iy_nhwc] = p_mem->y[iy_nhwc] / sum;
+                          mem.y[iy_nhwc] = mem.y[iy_nhwc] / sum;
                         }
                       }
                       goto PROCESS_AND_STORE_DONE;
@@ -381,7 +380,7 @@ PROCESS_START:
                     }
 
                     iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc, "Before maxpool", DEBUG_INFO);// store as nhwc for pooling
-                    p_mem->nhwc[iy_nhwc] = out_val;
+                    mem.nhwc[iy_nhwc] = out_val;
 
                     div_ixh = div(i_yh+pb->psh_shift-pb->pkh+1, pb->psh);
                     div_ixw = div(i_yw+pb->psw_shift-pb->pkw+1, pb->psw);
@@ -420,7 +419,7 @@ PROCESS_START:
                           for (int32_t ipyw = pw_end; ipyw > pw_beg; ipyw--){
 
                             int32_t read_idx = flatten_nhwc(i_yn, ipyh, ipyw, i_yc,    yn, yh, yw, yc, "Inside pool window", DEBUG_INFO);
-                            int32_t read_val = p_mem->nhwc[read_idx];
+                            int32_t read_val = mem.nhwc[read_idx];
                             result = pb->pool==POOL_MAX ? max(result, read_val) : (result + read_val);
                           }
                         }
@@ -474,7 +473,7 @@ PROCESS_AND_STORE_DONE:
     sprintf(f_path_debug, "%s/%0d_y_nhwc_sim.txt", DATA_DIR, ib);
     FILE *fp_debug = fopen(f_path_debug, "w");
     for (int32_t i=0; i<pb->debug_nhwc_words; i++)
-      fprintf(fp_debug,"%d\n", p_mem->debug_nhwc[i]);
+      fprintf(fp_debug,"%d\n", mem.debug_nhwc[i]);
     fclose(fp_debug);
 
     char f_path_tiled [1000];
@@ -482,9 +481,9 @@ PROCESS_AND_STORE_DONE:
     FILE *fp_tiled = fopen(f_path_tiled, "w");
     for (int32_t i=0; i<pb->o_words; i++)
       if (ib == N_BUNDLES-1)
-        if (pb->is_softmax) fprintf(fp_tiled,"%f\n", p_mem->y[i]);
-        else                fprintf(fp_tiled,"%d\n", p_mem->y[i]);
-      else fprintf(fp_tiled,"%d\n", p_mem->debug_tiled[i]);
+        if (pb->is_softmax) fprintf(fp_tiled,"%f\n", mem.y[i]);
+        else                fprintf(fp_tiled,"%d\n", mem.y[i]);
+      else fprintf(fp_tiled,"%d\n", mem.debug_tiled[i]);
     fclose(fp_tiled);
 
     if (ib != N_BUNDLES-1){
@@ -507,7 +506,7 @@ extern EXT_C void load_x (uint8_t *p_done, uint8_t *bundle_read_done, uint64_t *
 
   static int32_t ib=0, ip=0, it=0, offset_next=0;
 
-  int8_t *p_buffer_base = (ib==0) ? p_mem->x : p_mem->out_buffers[bundles[ib-1].out_buffer_idx];
+  int8_t *p_buffer_base = (ib==0) ? mem.x : mem.out_buffers[bundles[ib-1].out_buffer_idx];
 
   *p_base_addr = (uint64_t)p_buffer_base + offset_next;
   *p_bpt = ip == 0 ? bundles[ib].x_bpt_p0 : bundles[ib].x_bpt;
@@ -534,7 +533,7 @@ extern EXT_C void load_w (uint8_t *p_done, uint64_t *p_base_addr, int32_t *p_bpt
   int32_t offset = offset_next;
   int32_t bpt = ip == 0 ? bundles[ib].w_bpt_p0 : bundles[ib].w_bpt;
 
-  *p_base_addr = (uint64_t)&p_mem->w + offset;
+  *p_base_addr = (uint64_t)&mem.w + offset;
   *p_bpt = bpt;
 
   // Nested for loop [for ib: for ip: for it: {}] inverted to increment once per call
@@ -556,14 +555,14 @@ extern EXT_C void fill_memory (uint64_t *p_w_base, uint64_t *p_x_base){
   fp = fopen(f_path, "rb");
   if(!fp)
     printf("ERROR! File not found: %s \n", f_path);
-  fread(p_mem->w, 1, WB_BYTES+X_BYTES, fp);
+  fread(mem.w, 1, WB_BYTES+X_BYTES, fp);
   fclose(fp);
 
   for (int32_t i=0; i<B_WORDS; i++)
-    printf("i:%d, bias:%d\n", i, p_mem->b[i]);
+    printf("i:%d, bias:%d\n", i, mem.b[i]);
 
-  *p_w_base = (uint64_t)&p_mem->w;
-  *p_x_base = (uint64_t)&p_mem->x;
+  *p_w_base = (uint64_t)&mem.w;
+  *p_x_base = (uint64_t)&mem.x;
 }
 #endif
 
