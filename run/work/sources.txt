@@ -14,7 +14,6 @@ D:\dnn-engine\deepsocflow\rtl\counter.sv
 D:\dnn-engine\deepsocflow\rtl\cyclic_bram.sv
 D:\dnn-engine\deepsocflow\rtl\huffman_2_decoder.sv
 D:\dnn-engine\deepsocflow\rtl\n_delay.sv
-D:\dnn-engine\deepsocflow\rtl\proc_element.sv
 D:\dnn-engine\deepsocflow\rtl\proc_engine.sv
 D:\dnn-engine\deepsocflow\rtl\ext\alex_axis_adapter.sv
 D:\dnn-engine\deepsocflow\rtl\ext\alex_axis_adapter_any.sv

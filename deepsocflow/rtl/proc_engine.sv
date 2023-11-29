@@ -7,7 +7,6 @@ module proc_engine #(
               X_BITS              = `X_BITS              ,
               K_BITS              = `K_BITS              ,
               Y_BITS              = `Y_BITS              ,
-              DELAY_ACC           = `DELAY_ACC           ,
               DELAY_MUL           = `DELAY_MUL           ,
               KW_MAX              = `KW_MAX              ,
               TUSER_WIDTH         = `TUSER_WIDTH         ,
@@ -31,7 +30,7 @@ module proc_engine #(
   tuser_st mul_m_user, acc_s_user, mux_s2_user, acc_m_user;
   logic [COLS-1:0] clken_acc, bypass_sum, bypass_sum_next, bypass, acc_m_sum_start, acc_s_valid, acc_m_keep;
   logic [COLS-1:0] lut_sum_start [KW_MAX/2:0];
-  logic [COLS-1:0][ROWS-1:0][M_BITS -1:0] mul_m_data;
+  logic [COLS-1:0][ROWS-1:0][M_BITS -1:0] mul_m_data, mul_m_data_comb;
   logic [COLS-1:0][ROWS-1:0][Y_BITS -1:0] shift_data, acc_m_data;
 
   assign s_ready = clken_mul;
@@ -48,7 +47,10 @@ module proc_engine #(
 
     assign clken_mul = en  && !sel_shift;
             
-    for (c=0; c < COLS; c++) begin: Mb
+
+    for (c=0; c < COLS; c++) begin: Cg
+
+      // Lookup table
       for (kw2=0; kw2 <= KW_MAX/2; kw2++)
         assign lut_sum_start[kw2][c] = c % (kw2*2+1) == 0; // c % 3 < 1 : 0,1
       
@@ -66,37 +68,41 @@ module proc_engine #(
 
     end
 
-    for (r=0; r < ROWS ; r++) begin: Ua
-      for (c=0; c < COLS   ; c++) begin: Ma
-        assign shift_data [c][r] = c==0 ? 0 : m_data [c-1][r];
-        proc_element #(
-          .X_BITS (X_BITS),
-          .K_BITS (K_BITS),
-          .Y_BITS (Y_BITS)
-          ) PE (
-          .clk           (clk           ),
-          .clken         (en            ),
-          .resetn        (resetn        ),
-          .clken_mul     (clken_mul     ),
-          .sel_shift     (sel_shift     ),
-          .s_data_pixels (s_data_pixels    [r]), 
-          .s_data_weights(s_data_weights[c]   ),
-          .mul_m_data    (mul_m_data    [c][r]),
-          .shift_data    (shift_data    [c][r]),
-          .bypass        (bypass        [c]),
-          .clken_acc     (clken_acc     [c]),
-          .m_data        (acc_m_data    [c][r])
-        );
-    end end
+    // PE ARRAY: ROWS * COLS
+    for (r=0; r < ROWS ; r++) begin: Rg
+      for (c=0; c < COLS   ; c++) begin: Cg
+        // --------------- PROCESSING ELEMENT ------------------
 
-    n_delay #(.N(DELAY_ACC), .W(TUSER_WIDTH)) ACC_USER (.c(clk), .rn(resetn), .e(en & mul_m_valid), .i(mul_m_user), .o(acc_m_user));
+        // Multiplier: with DELAY_MUL pipeline stages after it
+        assign mul_m_data_comb [c][r] = $signed(s_data_pixels[r]) * $signed(s_data_weights[c]);
+        n_delay #(.N(DELAY_MUL), .W(M_BITS)) MUL (.c(clk), .rn(1'b1), .e(clken_mul), .i(mul_m_data_comb[c][r]), .o(mul_m_data[c][r]));
+        
+        // Two muxes
+        assign shift_data [c][r] = c==0 ? 0 : acc_m_data [c-1][r];
+        wire signed [Y_BITS -1:0] add_in_1 = sel_shift ? shift_data [c][r]: Y_BITS'($signed(mul_m_data[c][r]));
+        wire signed [Y_BITS -1:0] add_in_2 = bypass[c] ? 0                : acc_m_data [c][r];
+
+        // Accumulator
+        always_ff @(posedge clk)
+          if (clken_acc[c]) acc_m_data [c][r] <= add_in_1 + add_in_2;
+        
+        // --------------- PROCESSING ELEMENT ------------------
+      end 
+    end
+
 
     assign acc_m_valid_next = !sel_shift && mul_m_valid && (mul_m_user.is_config || mul_m_user.is_cin_last);
-    
-    n_delay #(.N(DELAY_ACC), .W(2)) ACC_VALID_LAST(.c(clk), .rn(resetn), .e(en), .i({acc_m_valid_next, mul_m_last}), .o({acc_m_valid, acc_m_last}));
+
+    // Pipeline AXI-Stream signals with DELAY_ACC=1
+    always_ff @(posedge clk)
+      if (!resetn)            {acc_m_user, acc_m_valid, acc_m_last} <= '0;
+      else begin
+        if (en & mul_m_valid) acc_m_user                <= mul_m_user;
+        if (en)               {acc_m_valid, acc_m_last} <= {acc_m_valid_next, mul_m_last};
+      end
 
     // AXI Stream
-    assign en = m_valid ? m_ready : 1;
+    assign en = m_ready || !m_valid;
     assign {m_data, m_valid, m_last, m_user} = {acc_m_data, acc_m_valid, acc_m_last, acc_m_user};
 
   endgenerate
