@@ -1,6 +1,7 @@
 `timescale 1ns/1ps
 `include "defines.svh"
 
+(* use_dsp = "yes" *)
 module proc_engine #(
   localparam  COLS                = `COLS                ,
               ROWS                = `ROWS                ,
@@ -30,7 +31,7 @@ module proc_engine #(
   tuser_st mul_m_user, acc_s_user, mux_s2_user, acc_m_user;
   logic [COLS-1:0] clken_acc, bypass_sum, bypass_sum_next, bypass, acc_m_sum_start, acc_s_valid, acc_m_keep;
   logic [COLS-1:0] lut_sum_start [KW_MAX/2:0];
-  logic [COLS-1:0][ROWS-1:0][M_BITS -1:0] mul_m_data, mul_m_data_comb;
+  logic [COLS-1:0][ROWS-1:0][M_BITS -1:0] mul_m_data;
   logic [COLS-1:0][ROWS-1:0][Y_BITS -1:0] shift_data, acc_m_data;
 
   assign s_ready = clken_mul;
@@ -74,8 +75,12 @@ module proc_engine #(
         // --------------- PROCESSING ELEMENT ------------------
 
         // Multiplier: with DELAY_MUL pipeline stages after it
-        assign mul_m_data_comb [c][r] = $signed(s_data_pixels[r]) * $signed(s_data_weights[c]);
-        n_delay #(.N(DELAY_MUL), .W(M_BITS)) MUL (.c(clk), .rn(1'b1), .e(clken_mul), .i(mul_m_data_comb[c][r]), .o(mul_m_data[c][r]));
+        logic [DELAY_MUL:0][M_BITS-1:0] mul_pipeline; // N stage pipeline, [N:1] are registers, [0] is input, [N] is output. 
+
+        always_comb mul_pipeline[0] = $signed(s_data_pixels[r]) * $signed(s_data_weights[c]);
+        always_ff @ (posedge clk)
+          if (clken_mul) mul_pipeline[DELAY_MUL:1] <= mul_pipeline[DELAY_MUL-1:0];
+        always_comb mul_m_data[c][r] = mul_pipeline[DELAY_MUL];
         
         // Two muxes
         assign shift_data [c][r] = c==0 ? 0 : acc_m_data [c-1][r];
