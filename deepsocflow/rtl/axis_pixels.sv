@@ -53,10 +53,17 @@ module axis_pixels #(
     .s_axis_tvalid (dw_s_valid ),
     .s_axis_tlast  (s_last     ),
     .s_axis_tready (dw_s_ready ),
+    .s_axis_tid    ('0),
+    .s_axis_tdest  ('0),
+    .s_axis_tuser  ('0),
     .m_axis_tdata  (dw_m_data  ),
     .m_axis_tready (dw_m_ready ),
     .m_axis_tvalid (dw_m_valid ),
-    .m_axis_tlast  (dw_m_last  )
+    .m_axis_tlast  (dw_m_last  ),
+    .m_axis_tid    (),
+    .m_axis_tdest  (),
+    .m_axis_tkeep  (),
+    .m_axis_tuser  ()
   );
 
   // State machine
@@ -67,8 +74,8 @@ module axis_pixels #(
   logic [BITS_CI -1:0] ref_ci_in;
   logic [BITS_XW -1:0] ref_w_in ;
   logic [BITS_IM_BLOCKS-1:0] ref_l_in ;
-
-  assign {ref_l_in, ref_w_in, ref_ci_in, ref_kh2_in} = s_data;
+  localparam BITS_REF = BITS_IM_BLOCKS + BITS_XW + BITS_CI + BITS_KH2;
+  assign {ref_l_in, ref_w_in, ref_ci_in, ref_kh2_in} = BITS_REF'(s_data);
 
   wire dw_m_last_beat = dw_m_valid && dw_m_ready && dw_m_last;
   wire s_last_beat    = s_valid    && s_ready    && s_last;
@@ -118,10 +125,10 @@ module axis_pixels #(
   end
 
   // Counters: KH, CI, W, Blocks
-  counter #(.W(BITS_KH)       ) C_KH (.clk(aclk), .reset(en_config), .en(en_kh      ), .max_in(BITS_KH'(ref_kh2_in*2)), .last_clk(last_clk_kh ), .last(last_kh));
-  counter #(.W(BITS_CI)       ) C_CI (.clk(aclk), .reset(en_config), .en(last_clk_kh), .max_in(ref_ci_in             ), .last_clk(last_clk_ci ));
-  counter #(.W(BITS_XW)       ) C_W  (.clk(aclk), .reset(en_config), .en(last_clk_ci), .max_in(ref_w_in              ), .last_clk(last_clk_w  ));
-  counter #(.W(BITS_IM_BLOCKS)) C_L  (.clk(aclk), .reset(en_config), .en(last_clk_w ), .max_in(ref_l_in              ), .last    (last_l      ), .first(first_l));
+  counter #(.W(BITS_KH)       ) C_KH (.clk(aclk), .reset(en_config), .en(en_kh      ), .max_in(BITS_KH'(ref_kh2_in*2)), .last_clk(last_clk_kh ), .last(last_kh),.first(),       .count());
+  counter #(.W(BITS_CI)       ) C_CI (.clk(aclk), .reset(en_config), .en(last_clk_kh), .max_in(ref_ci_in             ), .last_clk(last_clk_ci ), .last(),       .first(),       .count());
+  counter #(.W(BITS_XW)       ) C_W  (.clk(aclk), .reset(en_config), .en(last_clk_ci), .max_in(ref_w_in              ), .last_clk(last_clk_w  ), .last(),       .first(),       .count());
+  counter #(.W(BITS_IM_BLOCKS)) C_L  (.clk(aclk), .reset(en_config), .en(last_clk_w ), .max_in(ref_l_in              ), .last_clk(),             .last(last_l), .first(first_l),.count());
 
   // RAM
   logic [$clog2(RAM_EDGES_DEPTH) -1:0] ram_addr, ram_addr_r, ram_addr_in;

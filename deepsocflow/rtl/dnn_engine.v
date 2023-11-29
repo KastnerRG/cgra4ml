@@ -120,6 +120,7 @@ module dnn_engine #(
     .m_ready        (m_ready                    ),
     .m_valid        (m_valid                    ),
     .m_data         (m_data                     ),
+    .m_last_pkt     (),
     .m_last         (m_last                     )
   );
 
@@ -152,11 +153,17 @@ module dnn_engine #(
     .s_axis_tdata  (m_data_padded),
     .s_axis_tlast  (m_last       ),
     .s_axis_tkeep  ({(Y_BITS_PADDED*ROWS/8){1'b1}}),
+    .s_axis_tid    ('0         ),
+    .s_axis_tdest  ('0         ),
+    .s_axis_tuser  ('0         ),
     .m_axis_tready (m_axis_tready),
     .m_axis_tvalid (m_axis_tvalid),
     .m_axis_tdata  (m_axis_tdata ),
     .m_axis_tlast  (m_axis_tlast ),
-    .m_axis_tkeep  (m_axis_tkeep )
+    .m_axis_tkeep  (m_axis_tkeep ),
+    .m_axis_tid    (),
+    .m_axis_tdest  (),
+    .m_axis_tuser  ()
   );
 endmodule
 
@@ -213,7 +220,8 @@ module proc_engine_out #(
     .m_valid (m_valid               ),
     .m_data  (m_data                ),
     .m_last_pkt (m_last_pkt         ),
-    .m_last  (m_last                )
+    .m_last  (m_last                ),
+    .m_user  ()
   );
 
 endmodule

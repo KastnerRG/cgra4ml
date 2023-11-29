@@ -11,7 +11,7 @@ module dnn_engine_tb;
   // CLOCK GENERATION
   logic aclk = 0;
   localparam  CLK_PERIOD = 10ns;
-  initial forever #(CLK_PERIOD/2) aclk    <= ~aclk;
+  initial forever #(CLK_PERIOD/2) aclk = ~aclk;
 
   // SIGNALS
 
@@ -76,7 +76,7 @@ module dnn_engine_tb;
     while (1) begin
       load_x (x_done, bundle_read_done, x_base, x_bpt);
       source_x.axis_push(x_base, x_bpt);
-      while(bundle_read_done && !get_is_bundle_write_done()) #10ps;
+      while(bundle_read_done && get_is_bundle_write_done()==8'b0) #10ps;
       $display("Done input dma at offset=%h, bpt=%d \n", x_base, x_bpt);
       if (x_done) break;
     end

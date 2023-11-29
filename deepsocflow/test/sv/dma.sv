@@ -98,7 +98,7 @@ module DMA_S2M #(
             set_byte(base_addr + i_bytes, m_data[i]);
             i_bytes  += 1;
           end
-        if (m_last) done <= 1;
+        if (m_last) done = 1;
       end
 
       #10ps // delay before writing

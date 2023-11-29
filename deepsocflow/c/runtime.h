@@ -481,8 +481,8 @@ PROCESS_AND_STORE_DONE:
     FILE *fp_tiled = fopen(f_path_tiled, "w");
     for (int32_t i=0; i<pb->o_words; i++)
       if (ib == N_BUNDLES-1)
-        if (pb->is_softmax) fprintf(fp_tiled,"%f\n", mem.y[i]);
-        else                fprintf(fp_tiled,"%d\n", mem.y[i]);
+        if (pb->is_softmax) fprintf(fp_tiled,"%f\n", (float  )mem.y[i]);
+        else                fprintf(fp_tiled,"%d\n", (int32_t)mem.y[i]);
       else fprintf(fp_tiled,"%d\n", mem.debug_tiled[i]);
     fclose(fp_tiled);
 
@@ -555,7 +555,7 @@ extern EXT_C void fill_memory (uint64_t *p_w_base, uint64_t *p_x_base){
   fp = fopen(f_path, "rb");
   if(!fp)
     printf("ERROR! File not found: %s \n", f_path);
-  fread(mem.w, 1, WB_BYTES+X_BYTES, fp);
+  int bytes = fread(mem.w, 1, WB_BYTES+X_BYTES, fp);
   fclose(fp);
 
   for (int32_t i=0; i<B_WORDS; i++)

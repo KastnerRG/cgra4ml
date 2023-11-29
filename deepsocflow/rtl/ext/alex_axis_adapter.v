@@ -260,8 +260,8 @@ end else begin : downsize
         if (!m_axis_tvalid_reg || m_axis_tready) begin
             // output register empty
 
-            m_axis_tdata_reg <= s_axis_tvalid_reg ? s_axis_tdata_reg : s_axis_tdata;
-            m_axis_tkeep_reg <= s_axis_tvalid_reg ? s_axis_tkeep_reg : s_axis_tkeep;
+            m_axis_tdata_reg <= s_axis_tvalid_reg ? M_DATA_WIDTH'(s_axis_tdata_reg) : M_DATA_WIDTH'(s_axis_tdata);
+            m_axis_tkeep_reg <= s_axis_tvalid_reg ? M_KEEP_WIDTH'(s_axis_tkeep_reg) : M_KEEP_WIDTH'(s_axis_tkeep);
             m_axis_tlast_reg <= 1'b0;
             m_axis_tid_reg <= s_axis_tvalid_reg ? s_axis_tid_reg : s_axis_tid;
             m_axis_tdest_reg <= s_axis_tvalid_reg ? s_axis_tdest_reg : s_axis_tdest;
