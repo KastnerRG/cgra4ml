@@ -239,7 +239,7 @@ class QModel(Model):
                 x_config = format(x_config, f'#0{hw.IN_BITS}b')
                 x_config_words = [int(x_config[i:i+hw.X_BITS], 2) for i in range(0, len(x_config), hw.X_BITS)]
                 x_config_words.reverse()
-                x_config_words = np.array(x_config_words, dtype=np.int8)
+                x_config_words = np.array(x_config_words, dtype=np.uint8)
 
                 xp = b.xe[ip].flatten()
                 xp = np.concatenate([x_config_words, xp], axis=0)
@@ -253,7 +253,7 @@ class QModel(Model):
                     w_config = format(w_config, f'#0{hw.IN_BITS}b')
                     w_config_words = [int(w_config[i:i+hw.K_BITS], 2) for i in range(0, len(w_config), hw.K_BITS)]
                     w_config_words.reverse()
-                    w_config_words = np.array(w_config_words,dtype=np.int8)
+                    w_config_words = np.array(w_config_words, dtype=np.uint8)
 
                     wp = b.we[ip][it].flatten()            
                     wp = np.concatenate([w_config_words, wp], axis=0)
