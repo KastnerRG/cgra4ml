@@ -97,24 +97,6 @@ localparam M_BYTE_LANES = M_KEEP_ENABLE ? M_KEEP_WIDTH : 1;
 localparam S_BYTE_SIZE = S_DATA_WIDTH / S_BYTE_LANES;
 localparam M_BYTE_SIZE = M_DATA_WIDTH / M_BYTE_LANES;
 
-// bus width assertions
-initial begin
-    if (S_BYTE_SIZE * S_BYTE_LANES != S_DATA_WIDTH) begin
-        $error("Error: input data width not evenly divisible (instance %m)");
-        $finish;
-    end
-
-    if (M_BYTE_SIZE * M_BYTE_LANES != M_DATA_WIDTH) begin
-        $error("Error: output data width not evenly divisible (instance %m)");
-        $finish;
-    end
-
-    if (S_BYTE_SIZE != M_BYTE_SIZE) begin
-        $error("Error: byte size mismatch (instance %m)");
-        $finish;
-    end
-end
-
 generate
 
 if (M_BYTE_LANES == S_BYTE_LANES) begin : bypass
@@ -141,21 +123,21 @@ end else if (M_BYTE_LANES > S_BYTE_LANES) begin : upsize
 
     reg [$clog2(SEG_COUNT)-1:0] seg_reg = 0;
 
-    reg [S_DATA_WIDTH-1:0] s_axis_tdata_reg = {S_DATA_WIDTH{1'b0}};
-    reg [S_KEEP_WIDTH-1:0] s_axis_tkeep_reg = {S_KEEP_WIDTH{1'b0}};
-    reg s_axis_tvalid_reg = 1'b0;
-    reg s_axis_tlast_reg = 1'b0;
-    reg [ID_WIDTH-1:0] s_axis_tid_reg = {ID_WIDTH{1'b0}};
-    reg [DEST_WIDTH-1:0] s_axis_tdest_reg = {DEST_WIDTH{1'b0}};
-    reg [USER_WIDTH-1:0] s_axis_tuser_reg = {USER_WIDTH{1'b0}};
+    reg [S_DATA_WIDTH-1:0] s_axis_tdata_reg;
+    reg [S_KEEP_WIDTH-1:0] s_axis_tkeep_reg;
+    reg s_axis_tvalid_reg;
+    reg s_axis_tlast_reg;
+    reg [ID_WIDTH-1:0] s_axis_tid_reg;
+    reg [DEST_WIDTH-1:0] s_axis_tdest_reg;
+    reg [USER_WIDTH-1:0] s_axis_tuser_reg;
 
-    reg [M_DATA_WIDTH-1:0] m_axis_tdata_reg = {M_DATA_WIDTH{1'b0}};
-    reg [M_KEEP_WIDTH-1:0] m_axis_tkeep_reg = {M_KEEP_WIDTH{1'b0}};
-    reg m_axis_tvalid_reg = 1'b0;
-    reg m_axis_tlast_reg = 1'b0;
-    reg [ID_WIDTH-1:0] m_axis_tid_reg = {ID_WIDTH{1'b0}};
-    reg [DEST_WIDTH-1:0] m_axis_tdest_reg = {DEST_WIDTH{1'b0}};
-    reg [USER_WIDTH-1:0] m_axis_tuser_reg = {USER_WIDTH{1'b0}};
+    reg [M_DATA_WIDTH-1:0] m_axis_tdata_reg;
+    reg [M_KEEP_WIDTH-1:0] m_axis_tkeep_reg;
+    reg m_axis_tvalid_reg;
+    reg m_axis_tlast_reg;
+    reg [ID_WIDTH-1:0] m_axis_tid_reg;
+    reg [DEST_WIDTH-1:0] m_axis_tdest_reg;
+    reg [USER_WIDTH-1:0] m_axis_tuser_reg;
 
     assign s_axis_tready = !s_axis_tvalid_reg;
 
@@ -219,6 +201,21 @@ end else if (M_BYTE_LANES > S_BYTE_LANES) begin : upsize
             seg_reg <= 0;
             s_axis_tvalid_reg <= 1'b0;
             m_axis_tvalid_reg <= 1'b0;
+
+            // converted fpga defaults to ASIC
+            s_axis_tdata_reg  <= {S_DATA_WIDTH{1'b0}};
+            s_axis_tkeep_reg  <= {S_KEEP_WIDTH{1'b0}};
+            s_axis_tlast_reg  <= 1'b0;
+            s_axis_tid_reg    <= {ID_WIDTH{1'b0}};
+            s_axis_tdest_reg  <= {DEST_WIDTH{1'b0}};
+            s_axis_tuser_reg  <= {USER_WIDTH{1'b0}};
+
+            m_axis_tdata_reg  <= {M_DATA_WIDTH{1'b0}};
+            m_axis_tkeep_reg  <= {M_KEEP_WIDTH{1'b0}};
+            m_axis_tlast_reg  <= 1'b0;
+            m_axis_tid_reg    <= {ID_WIDTH{1'b0}};
+            m_axis_tdest_reg  <= {DEST_WIDTH{1'b0}};
+            m_axis_tuser_reg  <= {USER_WIDTH{1'b0}};
         end
     end
 
@@ -231,21 +228,21 @@ end else begin : downsize
     localparam SEG_DATA_WIDTH = S_DATA_WIDTH / SEG_COUNT;
     localparam SEG_KEEP_WIDTH = S_BYTE_LANES / SEG_COUNT;
 
-    reg [S_DATA_WIDTH-1:0] s_axis_tdata_reg = {S_DATA_WIDTH{1'b0}};
-    reg [S_KEEP_WIDTH-1:0] s_axis_tkeep_reg = {S_KEEP_WIDTH{1'b0}};
-    reg s_axis_tvalid_reg = 1'b0;
-    reg s_axis_tlast_reg = 1'b0;
-    reg [ID_WIDTH-1:0] s_axis_tid_reg = {ID_WIDTH{1'b0}};
-    reg [DEST_WIDTH-1:0] s_axis_tdest_reg = {DEST_WIDTH{1'b0}};
-    reg [USER_WIDTH-1:0] s_axis_tuser_reg = {USER_WIDTH{1'b0}};
+    reg [S_DATA_WIDTH-1:0] s_axis_tdata_reg;
+    reg [S_KEEP_WIDTH-1:0] s_axis_tkeep_reg;
+    reg s_axis_tvalid_reg;
+    reg s_axis_tlast_reg;
+    reg [ID_WIDTH-1:0] s_axis_tid_reg;
+    reg [DEST_WIDTH-1:0] s_axis_tdest_reg;
+    reg [USER_WIDTH-1:0] s_axis_tuser_reg;
 
-    reg [M_DATA_WIDTH-1:0] m_axis_tdata_reg = {M_DATA_WIDTH{1'b0}};
-    reg [M_KEEP_WIDTH-1:0] m_axis_tkeep_reg = {M_KEEP_WIDTH{1'b0}};
-    reg m_axis_tvalid_reg = 1'b0;
-    reg m_axis_tlast_reg = 1'b0;
-    reg [ID_WIDTH-1:0] m_axis_tid_reg = {ID_WIDTH{1'b0}};
-    reg [DEST_WIDTH-1:0] m_axis_tdest_reg = {DEST_WIDTH{1'b0}};
-    reg [USER_WIDTH-1:0] m_axis_tuser_reg = {USER_WIDTH{1'b0}};
+    reg [M_DATA_WIDTH-1:0] m_axis_tdata_reg;
+    reg [M_KEEP_WIDTH-1:0] m_axis_tkeep_reg;
+    reg m_axis_tvalid_reg;
+    reg m_axis_tlast_reg;
+    reg [ID_WIDTH-1:0] m_axis_tid_reg;
+    reg [DEST_WIDTH-1:0] m_axis_tdest_reg;
+    reg [USER_WIDTH-1:0] m_axis_tuser_reg;
 
     assign s_axis_tready = !s_axis_tvalid_reg;
 
@@ -313,6 +310,21 @@ end else begin : downsize
         if (rst) begin
             s_axis_tvalid_reg <= 1'b0;
             m_axis_tvalid_reg <= 1'b0;
+
+
+            s_axis_tdata_reg  <= {S_DATA_WIDTH{1'b0}};
+            s_axis_tkeep_reg  <= {S_KEEP_WIDTH{1'b0}};
+            s_axis_tlast_reg  <= 1'b0;
+            s_axis_tid_reg    <= {ID_WIDTH{1'b0}};
+            s_axis_tdest_reg  <= {DEST_WIDTH{1'b0}};
+            s_axis_tuser_reg  <= {USER_WIDTH{1'b0}};
+
+            m_axis_tdata_reg  <= {M_DATA_WIDTH{1'b0}};
+            m_axis_tkeep_reg  <= {M_KEEP_WIDTH{1'b0}};
+            m_axis_tlast_reg  <= 1'b0;
+            m_axis_tid_reg    <= {ID_WIDTH{1'b0}};
+            m_axis_tdest_reg  <= {DEST_WIDTH{1'b0}};
+            m_axis_tuser_reg  <= {USER_WIDTH{1'b0}};
         end
     end
 
