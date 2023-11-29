@@ -31,7 +31,7 @@ module axis_weight_rotator #(
     BRAM_WIDTH          = M_WIDTH                  ,
     BRAM_DEPTH          = RAM_WEIGHTS_DEPTH        ,
     BITS_ADDR           = $clog2(RAM_WEIGHTS_DEPTH ),
-    BITS_CONFIG_BEATS   = $clog2(CONFIG_BEATS+1)
+    BITS_CONFIG_BEATS   = $clog2(CONFIG_BEATS)+1
   )(
     
     input logic aclk,
@@ -71,7 +71,7 @@ module axis_weight_rotator #(
   config_st s_config, count;
   logic [1:0][BITS_ADDR + BITS_XN + BITS_IM_BLOCKS + BITS_XW + BITS_CI + BITS_KW2 -1:0] ref_config;
   
-  assign s_config = s_axis_tdata;
+  assign s_config = config_st'(s_axis_tdata);
   wire s_handshake      = s_axis_tready && s_axis_tvalid;
   wire s_last_handshake = s_handshake   && s_axis_tlast;
 
@@ -97,7 +97,15 @@ module axis_weight_rotator #(
     .m_axis_tvalid (dw_m_valid     ),
     .m_axis_tready (dw_m_ready     ),
     .m_axis_tdata  (dw_m_data_flat ),
-    .m_axis_tlast  (dw_m_last      )
+    .m_axis_tlast  (dw_m_last      ),
+    // Extras
+    .s_axis_tid    ('0),
+    .s_axis_tdest  ('0),
+    .s_axis_tuser  ('0),
+    .m_axis_tid    (),
+    .m_axis_tdest  (),
+    .m_axis_tkeep  (),
+    .m_axis_tuser  ()
   );
 
   wire dw_m_handshake      = dw_m_valid     && dw_m_ready;
@@ -281,7 +289,19 @@ module axis_weight_rotator #(
     .s_axis_tvalid(bram_m_valid),
     .m_axis_tdata (m_axis_tdata),
     .m_axis_tvalid(bram_reg_m_valid),
-    .m_axis_tready(bram_m_ready[i_read])
+    .m_axis_tready(bram_m_ready[i_read]),
+    // Unused
+    .s_axis_tkeep ('0),
+    .s_axis_tlast ('0),
+    .s_axis_tid   ('0),
+    .s_axis_tdest ('0),
+    .s_axis_tuser ('0),
+    .s_axis_tready(),
+    .m_axis_tkeep (),
+    .m_axis_tlast (),
+    .m_axis_tid   (),
+    .m_axis_tdest (),
+    .m_axis_tuser ()
   );
 
   // Counters
@@ -292,12 +312,12 @@ module axis_weight_rotator #(
   assign ref_i_read = ref_config[i_read]; 
 
   wire [BITS_CONFIG_BEATS-1:0] config_beats_const = CONFIG_BEATS-1;
-  counter #(.W(BITS_CONFIG_BEATS)) C_CONFIG    (.clk(aclk), .reset(copy_config), .en(en_count_config), .max_in(                      config_beats_const  ), .last_clk(lc_config), .last(l_config)                                  );
-  counter #(.W(BITS_KW          )) C_KW        (.clk(aclk), .reset(copy_config), .en(en_kw          ), .max_in(BITS_KW          '( 2*ref_i_read.kw2     )), .last_clk(lc_kw    ), .last(l_kw    ), .first(f_kw    )                );
-  counter #(.W(BITS_CI          )) C_CI        (.clk(aclk), .reset(copy_config), .en(lc_kw          ), .max_in(BITS_CI          '(   ref_i_read.cin_1   )), .last_clk(lc_cin   ), .last(l_cin   ), .first(f_cin   )                );
+  counter #(.W(BITS_CONFIG_BEATS)) C_CONFIG    (.clk(aclk), .reset(copy_config), .en(en_count_config), .max_in(                      config_beats_const  ), .last_clk(lc_config), .last(l_config), .first(),         .count()      );
+  counter #(.W(BITS_KW          )) C_KW        (.clk(aclk), .reset(copy_config), .en(en_kw          ), .max_in(BITS_KW          '( 2*ref_i_read.kw2     )), .last_clk(lc_kw    ), .last(l_kw    ), .first(f_kw    ), .count()      );
+  counter #(.W(BITS_CI          )) C_CI        (.clk(aclk), .reset(copy_config), .en(lc_kw          ), .max_in(BITS_CI          '(   ref_i_read.cin_1   )), .last_clk(lc_cin   ), .last(l_cin   ), .first(f_cin   ), .count()      );
   counter #(.W(BITS_XW          )) C_XW        (.clk(aclk), .reset(copy_config), .en(lc_cin         ), .max_in(BITS_XW          '(   ref_i_read.cols_1  )), .last_clk(lc_cols  ), .last(l_cols  ), .first(f_cols  ), .count(c_cols));
-  counter #(.W(BITS_IM_BLOCKS   )) C_IM_BLOCKS (.clk(aclk), .reset(copy_config), .en(lc_cols        ), .max_in(BITS_IM_BLOCKS   '(   ref_i_read.blocks_1)), .last_clk(lc_blocks), .last(l_blocks)                                  );
-  counter #(.W(BITS_XN          )) C_XN        (.clk(aclk), .reset(copy_config), .en(lc_blocks      ), .max_in(BITS_XN          '(   ref_i_read.xn_1    )), .last_clk(lc_xn    ), .last(l_xn    )                                  );
+  counter #(.W(BITS_IM_BLOCKS   )) C_IM_BLOCKS (.clk(aclk), .reset(copy_config), .en(lc_cols        ), .max_in(BITS_IM_BLOCKS   '(   ref_i_read.blocks_1)), .last_clk(lc_blocks), .last(l_blocks), .first(),         .count()      );
+  counter #(.W(BITS_XN          )) C_XN        (.clk(aclk), .reset(copy_config), .en(lc_blocks      ), .max_in(BITS_XN          '(   ref_i_read.xn_1    )), .last_clk(lc_xn    ), .last(l_xn    ), .first(),         .count()      );
 
   // Last & User
 

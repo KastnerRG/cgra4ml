@@ -36,21 +36,8 @@ module alex_axis_adapter_any #(
 );
 
   function integer lcm (input integer x, input integer y);
-    logic found = 0;
-    integer max, min, i;
-    if (x > y) begin
-      max = x;
-      min = y;
-    end else begin
-      max = y;
-      min = x;
-    end
-
-    for (i=max; i <= x*y; i=i+max)
-      if ( !found && (i % min == 0)) begin
-        lcm = i;
-        found = 1;
-      end
+    for (int m=x*y; m >= x; m=m-x) // Every multiple of x from x*y down to x
+      if (m % y == 0) lcm = m;     // Return the smallest multiple of x that is divisible by y
   endfunction
 
   localparam I_DATA_WIDTH  = lcm(S_DATA_WIDTH, M_DATA_WIDTH);
