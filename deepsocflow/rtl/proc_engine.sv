@@ -37,7 +37,7 @@ module proc_engine #(
   assign s_ready = clken_mul;
 
   generate
-    genvar r,c,kw2,sw_1;
+    genvar r,c,kw2,d;
     n_delay #(.N(DELAY_MUL), .W(TUSER_WIDTH+2)) MUL_CONTROL (.c(clk), .rn(resetn), .e(clken_mul), .i({s_valid, s_last, s_user}), .o ({mul_m_valid, mul_m_last, mul_m_user}));
 
     assign sel_shift_next = mul_m_valid && mul_m_user.is_cin_last && (mul_m_user.kw2 != 0);
@@ -74,13 +74,15 @@ module proc_engine #(
       for (c=0; c < COLS   ; c++) begin: Cg
         // --------------- PROCESSING ELEMENT ------------------
 
-        // Multiplier: with DELAY_MUL pipeline stages after it
-        logic [DELAY_MUL:0][M_BITS-1:0] mul_pipeline; // N stage pipeline, [N:1] are registers, [0] is input, [N] is output. 
+        // Multiplier
+        wire [M_BITS-1:0] mul_comb = $signed(s_data_pixels[r]) * $signed(s_data_weights[c]);
 
-        always_comb mul_pipeline[0] = $signed(s_data_pixels[r]) * $signed(s_data_weights[c]);
-        always_ff @ (posedge clk)
-          if (clken_mul) mul_pipeline[DELAY_MUL:1] <= mul_pipeline[DELAY_MUL-1:0];
-        always_comb mul_m_data[c][r] = mul_pipeline[DELAY_MUL];
+        // Multiplier pipeline
+        logic [DELAY_MUL-1:0][M_BITS-1:0] mul_pipeline;
+        for (d=0; d < DELAY_MUL; d++)
+          always_ff @ (posedge clk)
+            if (clken_mul) mul_pipeline[d] <= d==0 ? mul_comb : mul_pipeline[d-1];
+        always_comb mul_m_data[c][r] = mul_pipeline[DELAY_MUL-1];
         
         // Two muxes
         assign shift_data [c][r] = c==0 ? 0 : acc_m_data [c-1][r];
