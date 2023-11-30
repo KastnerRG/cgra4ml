@@ -125,12 +125,15 @@ module dnn_engine #(
   );
 
   localparam Y_BITS_PADDED = 2**$clog2(Y_BITS);
+  localparam Y_PADDING     = Y_BITS_PADDED-Y_BITS;
   genvar iy;
   
   wire [Y_BITS_PADDED*ROWS-1:0] m_data_padded;
   generate
     for (iy=0; iy<ROWS; iy=iy+1) begin
-      assign m_data_padded[Y_BITS_PADDED*(iy+1)-1:Y_BITS_PADDED*iy] = $signed(m_data[Y_BITS*(iy+1)-1:Y_BITS*iy]);
+      // Sign padding: can be done as $signed(), but verilator gives warning for width mismatch
+      wire sign_bit = m_data[Y_BITS*(iy+1)-1];
+      assign m_data_padded[Y_BITS_PADDED*(iy+1)-1:Y_BITS_PADDED*iy] = {{Y_PADDING{sign_bit}}, m_data[Y_BITS*(iy+1)-1:Y_BITS*iy]};
     end
   endgenerate
   

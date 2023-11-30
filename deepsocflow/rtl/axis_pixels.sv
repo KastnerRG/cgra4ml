@@ -192,7 +192,7 @@ module axis_pixels #(
 
   always_comb
     for (int r=0; r<ROWS; r=r+1)
-      m_data[r] = shift_reg[r + EDGE_WORDS-ref_kh2];
+      m_data[r] = shift_reg[r + EDGE_WORDS-32'(ref_kh2)];
 
   // m_valid, m_last
 

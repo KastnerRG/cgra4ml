@@ -198,7 +198,7 @@ set M_OUTPUT_WIDTH_LF  {self.OUT_BITS}
             assert subprocess.run(cmd).returncode == 0
 
         if SIM == "verilator":
-            cmd = f'{SIM_PATH}verilator --binary -j 0 -Wno-fatal -Wno-WIDTHEXPAND --trace --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -I../ {self.MODULE_DIR}/c/example.c --Mdir ./'
+            cmd = f'{SIM_PATH}verilator --binary -j 0 --trace --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -I../ {self.MODULE_DIR}/c/example.c --Mdir ./'
             print(cmd)
             assert subprocess.run(cmd.split(' '), cwd='build').returncode == 0
         
