@@ -64,8 +64,8 @@ module axis_weight_rotator #(
     logic [BITS_ADDR        -1:0] addr_max;
     logic [BITS_XN          -1:0] xn_1;
     logic [BITS_IM_BLOCKS   -1:0] blocks_1;
-    logic [BITS_XW     -1:0] cols_1;
-    logic [BITS_CI      -1:0] cin_1;
+    logic [BITS_XW          -1:0] cols_1;
+    logic [BITS_CI          -1:0] cin_1;
     logic [BITS_KW2         -1:0] kw2;
   } config_st;
   config_st s_config, count;
@@ -327,7 +327,7 @@ module axis_weight_rotator #(
   assign m_axis_tuser.kw2              = ref_i_read.kw2;
   assign m_axis_tuser.is_w_first_clk   = f_cols && f_cin && f_kw;
   assign m_axis_tuser.is_cin_last      = l_kw   && l_cin;
-  assign m_axis_tuser.is_w_first_kw2   = (ref_i_read.cols_1 - c_cols) < ref_i_read.kw2;
+  assign m_axis_tuser.is_w_first_kw2   = (ref_i_read.cols_1 - c_cols) < BITS_XW'(ref_i_read.kw2);
   assign m_axis_tuser.is_w_last        = l_cols;
 
 endmodule

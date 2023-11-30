@@ -104,9 +104,9 @@ module dnn_engine_tb;
 
     fill_memory(w_base, x_base);
 
-    for (int i=0; i<50; i++)
+    for (longint i=0; i<50; i++)
       $display("weights: i:%h, w:%b", i, get_byte(w_base + i));
-    for (int i=0; i<10; i++)
+    for (longint i=0; i<10; i++)
       $display("inputs : i:%h, w:%b", i, get_byte(x_base + i));
     
     repeat(2) @(posedge aclk) #1;

@@ -120,8 +120,8 @@ end else if (M_BYTE_LANES > S_BYTE_LANES) begin : upsize
     // data width and keep width per segment
     localparam SEG_DATA_WIDTH = M_DATA_WIDTH / SEG_COUNT;
     localparam SEG_KEEP_WIDTH = M_BYTE_LANES / SEG_COUNT;
-
-    reg [$clog2(SEG_COUNT)-1:0] seg_reg = 0;
+    localparam BITS_SEG_REG = $clog2(SEG_COUNT);
+    reg [BITS_SEG_REG-1:0] seg_reg = 0;
 
     reg [S_DATA_WIDTH-1:0] s_axis_tdata_reg;
     reg [S_KEEP_WIDTH-1:0] s_axis_tkeep_reg;
@@ -157,7 +157,7 @@ end else if (M_BYTE_LANES > S_BYTE_LANES) begin : upsize
 
             if (seg_reg == 0) begin
                 m_axis_tdata_reg[seg_reg*SEG_DATA_WIDTH +: SEG_DATA_WIDTH] <= s_axis_tvalid_reg ? s_axis_tdata_reg : s_axis_tdata;
-                m_axis_tkeep_reg <= s_axis_tvalid_reg ? s_axis_tkeep_reg : s_axis_tkeep;
+                m_axis_tkeep_reg <= s_axis_tvalid_reg ? M_KEEP_WIDTH'(s_axis_tkeep_reg) : M_KEEP_WIDTH'(s_axis_tkeep);
             end else begin
                 m_axis_tdata_reg[seg_reg*SEG_DATA_WIDTH +: SEG_DATA_WIDTH] <= s_axis_tdata;
                 m_axis_tkeep_reg[seg_reg*SEG_KEEP_WIDTH +: SEG_KEEP_WIDTH] <= s_axis_tkeep;
@@ -171,7 +171,7 @@ end else if (M_BYTE_LANES > S_BYTE_LANES) begin : upsize
                 // consume data from buffer
                 s_axis_tvalid_reg <= 1'b0;
 
-                if (s_axis_tlast_reg || seg_reg == SEG_COUNT-1) begin
+                if (s_axis_tlast_reg || seg_reg == BITS_SEG_REG'(SEG_COUNT-1)) begin
                     seg_reg <= 0;
                     m_axis_tvalid_reg <= 1'b1;
                 end else begin
@@ -179,7 +179,7 @@ end else if (M_BYTE_LANES > S_BYTE_LANES) begin : upsize
                 end
             end else if (s_axis_tvalid) begin
                 // data direct from input
-                if (s_axis_tlast || seg_reg == SEG_COUNT-1) begin
+                if (s_axis_tlast || seg_reg == BITS_SEG_REG'(SEG_COUNT-1)) begin
                     seg_reg <= 0;
                     m_axis_tvalid_reg <= 1'b1;
                 end else begin

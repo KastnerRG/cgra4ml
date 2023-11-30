@@ -33,7 +33,7 @@ module DMA_M2S #(
     while (~prev_slast) begin    // loop goes from (aresetn & s_ready) to s_last
       if (prev_handshake) begin  // change data
         for (int i=0; i < BYTES_PER_BEAT; i++) begin
-          if(i_bytes >= bytes_per_transfer) begin
+          if(i_bytes >= 64'(bytes_per_transfer)) begin
             s_data_val[i] = 0;
             s_keep_val[i] = 0;
           end
@@ -43,7 +43,7 @@ module DMA_M2S #(
             s_keep_val[i] = 1;
             i_bytes  += 1;
           end
-          s_last_val = i_bytes >= bytes_per_transfer;
+          s_last_val = i_bytes >= 64'(bytes_per_transfer);
         end
       end
       s_valid = $urandom_range(0,999) < PROB_VALID;      // randomize s_valid
