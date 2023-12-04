@@ -185,6 +185,7 @@ class QModel(Model):
             ch.write(f"#define B_TYPE      int{hw.B_BITS}_t\n")
             ch.write(f"#define O_TYPE      {out_type}\n")
             ch.write(f"#define B_WORDS     {b_words}\n")
+            ch.write(f"#define AXI_WIDTH   {hw.IN_BITS}\n")
             ch.write(f'#define DATA_DIR   "../{hw.DATA_DIR}"\n\n')
 
             mask_nums = [(2**hw.X_BITS-1) << (p*hw.X_BITS)  for p in range(8//hw.X_BITS)]
@@ -198,17 +199,20 @@ class QModel(Model):
         x_bitstring = b''
         b_bitstring = b''
         x_bitstring_0 = b''
+
+        header_padding = b'\x00\x00\x00\x00\x00\x00\x00\x00' if hw.IN_BITS == 128 else b''
+
         for ib, b in enumerate(bundles):
             x_bitstring_b = b''
             if b.b:
                 b_bitstring += b.be.astype(type_d['np'][hw.B_BITS]).tobytes()
             for ip in range(b.r.CP):
                 xe = Bundle.pack_words_into_bytes(arr=b.xe[ip].flatten(), bits=hw.X_BITS)
-                x_bitstring_b += b.r.x_header_be_p[ip!=0].tobytes() + xe.tobytes()
+                x_bitstring_b += b.r.x_header_be_p[ip!=0].tobytes() + header_padding + xe.tobytes()
                     
                 for it in range(b.r.IT):
                     we = Bundle.pack_words_into_bytes(arr=b.we[ip][it].flatten(), bits=hw.K_BITS)
-                    w_bitstring += b.r.w_header_be_p[ip!=0].tobytes() + we.tobytes()
+                    w_bitstring += b.r.w_header_be_p[ip!=0].tobytes() + header_padding + we.tobytes()
             x_bitstring += x_bitstring_b
             with open(f"{hw.DATA_DIR}/{ib}_x_sim.bin", 'wb') as f: 
                 f.write(x_bitstring_b)
@@ -321,7 +325,18 @@ class QModel(Model):
                 with open(f'{hw.DATA_DIR}/{ib}_y_packed_sim.bin', 'rb') as f_sim, open(f'{hw.DATA_DIR}/{ib+1}_x_sim.bin', 'rb') as f_exp:
                     y_packed_sim = np.frombuffer(f_sim.read(), dtype=np.uint8)
                     y_packed_exp = np.frombuffer(f_exp.read(), dtype=np.uint8)
-                error = np.sum(np.abs(y_packed_sim-y_packed_exp))
-                assert error == 0, f"Error={error}, for y_packed_sim at {b.idx=}, y_packed_sim=\n{y_packed_sim[:100]} \n y_packed_exp=\n{y_packed_exp[:100]}\n"
+                diff  = y_packed_sim-y_packed_exp
+                error = np.sum(np.abs(diff))
+                assert error == 0, f"Error={error}, for y_packed_sim at {b.idx=}, y_packed_sim=\n{y_packed_sim[:100]} \n y_packed_exp=\n{y_packed_exp[:100]}\n, diff=\n{diff.tolist()}\n  y_packed_sim=\n{y_packed_sim.tolist()} \n y_packed_exp=\n{y_packed_exp.tolist()}\n"
                 
             print(f"Bundle {b.idx}, Error: {error}. Passed")
+
+    def predict_performance(self):
+
+        clocks_total = 0
+        for b in self.bundles:
+            clocks, mem_bits = Bundle.predict_performance(hw=self.hw, r=b.r)
+            clocks_total += clocks
+
+        time = clocks_total / (self.hw.FREQ * 1e6)
+        return time

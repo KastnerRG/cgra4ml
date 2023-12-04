@@ -645,6 +645,34 @@ class Bundle(tf.keras.Model):
         r = namedtuple('Runtime', params)(**params)
         return r
 
+    @staticmethod
+    def predict_performance(hw, r):
+
+        clocks_p0 = r.IT*(1 + r.XN*r.XL*r.XW*(1 + r.CM_0*r.KH))
+        clocks_p  = r.IT*(1 + r.XN*r.XL*r.XW*(1 + r.CM*r.KH))
+
+        mem_bits_p0 = \
+            hw.X_BITS * (r.IT * r.XN   * r.XL * r.XW * r.CM_0 * (hw.ROWS + hw.KH_MAX-1)) +\
+            hw.K_BITS * (r.IT * r.CM_0 * r.KH * hw.COLS) +\
+            hw.X_BITS * (r.XN * r.XH   * r.XW * r.CO)
+        mem_bits_p = \
+            hw.X_BITS * (r.IT * r.XN   * r.XL * r.XW * r.CM   * (hw.ROWS + hw.KH_MAX-1)) +\
+            hw.K_BITS * (r.IT * r.CM_0 * r.KH * hw.COLS) +\
+            hw.X_BITS * (r.XN * r.XH   * r.XW * r.CO)
+
+        '''
+        Accurate mem access (output):
+            - baseline: next bundle input + padding
+            - p_add   - write & read
+            - pooling - write & read
+            - softmax - write & read
+        '''
+
+        clocks    = clocks_p0 + (r.CP-1)*clocks_p
+        mem_bits  = mem_bits_p0 + (r.CP-1)*mem_bits_p
+
+        return clocks, mem_bits
+
 
     @staticmethod
     def create_headers(c, r):
