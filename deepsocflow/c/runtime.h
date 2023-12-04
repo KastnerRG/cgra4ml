@@ -43,10 +43,10 @@ typedef struct {
 #ifdef __x86_64__
   #define SIM
   #include <stdio.h>
-  #define fprintf fprintf
+  #define sim_fprintf fprintf
   Memory_st mem;
 #else
-  #define fprintf(...)
+  #define sim_fprintf(...)
   #define mem (*(Memory_st*)MEM_BASEADDR)
 #endif
 
@@ -56,7 +56,13 @@ typedef struct {
   #define EXT_C
 #endif
 
-#define assert_printf(v1, op, v2, optional_debug_info,...) ((v1  op v2) || (printf("ASSERT FAILED: \n CONDITION: "), printf("( " #v1 " " #op " " #v2 " )"), printf(", VALUES: ( %d %s %d ), ", v1, #op, v2), printf("DEBUG_INFO: " optional_debug_info), printf(" " __VA_ARGS__), printf("\n\n"), assert(v1 op v2), 0))
+#ifdef NDEBUG
+  #define assert_printf(...)
+  #define debug_printf(...)
+#else
+  #define debug_printf printf
+  #define assert_printf(v1, op, v2, optional_debug_info,...) ((v1  op v2) || (debug_printf("ASSERT FAILED: \n CONDITION: "), debug_printf("( " #v1 " " #op " " #v2 " )"), debug_printf(", VALUES: ( %d %s %d ), ", v1, #op, v2), debug_printf("DEBUG_INFO: " optional_debug_info), debug_printf(" " __VA_ARGS__), debug_printf("\n\n"), assert(v1 op v2), 0))
+#endif
 
 volatile char is_bundle_write_done = 1;
 
@@ -108,7 +114,7 @@ static inline void write_x(int8_t val, int8_t *p_out_buffer, int32_t ib, int32_t
   uint8_t mem_val_cleaned        = X_POSITION_INVERTED_MASKS[packed_position] & mem_val;
   p_out_buffer[packed_index]     = mem_val_cleaned | packed_val;
 
-  // if (ib==1 && packed_index >= 356) printf("index:%d, final_val:%d --- position:%d value:%d packed_val:%d, mem_val:%d, mem_val_cleaned:%d, clean_mask:%d, pos_mask:%d \n", packed_index, mem.debug_packed[packed_index], packed_position, val, packed_val, mem_val, mem_val_cleaned, X_BITS_MASK, X_POSITION_INVERTED_MASKS[packed_position]);
+  // if (ib==1 && packed_index >= 356) debug_printf("index:%d, final_val:%d --- position:%d value:%d packed_val:%d, mem_val:%d, mem_val_cleaned:%d, clean_mask:%d, pos_mask:%d \n", packed_index, mem.debug_packed[packed_index], packed_position, val, packed_val, mem_val, mem_val_cleaned, X_BITS_MASK, X_POSITION_INVERTED_MASKS[packed_position]);
 }
 
 
@@ -179,7 +185,7 @@ static inline void tile_write( int32_t out_val, int8_t *p_out_buffer, int32_t ib
   }
 }
 
-extern EXT_C void load_y (uint8_t *p_done, uint64_t *p_base_addr_next, int32_t *p_bpt_next) {
+extern EXT_C void load_y (volatile uint8_t *p_done, uint64_t *p_base_addr_next, int32_t *p_bpt_next) {
 
   static Bundle_t *pb = &bundles[0];
   static int32_t it_bias=0;
@@ -214,13 +220,13 @@ extern EXT_C void load_y (uint8_t *p_done, uint64_t *p_base_addr_next, int32_t *
       * On subsequent calls, function skips to DMA_WAIT, and starts processing
       * This mimics the behavior of waiting for DMA's interrupt
   */
-  static char is_first_call = 1;
 #ifdef SIM
+  static char is_first_call = 1;
   if (is_first_call)  is_first_call = 0;
   else                goto DMA_WAIT;
 #endif
 
-  printf("starting load_y");
+  debug_printf("starting load_y");
 
   for (ib = 0; ib < N_BUNDLES; ib++) {
 
@@ -235,7 +241,7 @@ extern EXT_C void load_y (uint8_t *p_done, uint64_t *p_base_addr_next, int32_t *
         int32_t offset_bytes   = offset_words/X_WORDS_PER_BYTE + ixp*8;
 
         *(uint64_t*)&(p_out_buffer[offset_bytes])     = ixp == 0 ? pb_out->x_header_p0 : pb_out->x_header;
-        // printf("--------ib:%d, ixp:%d offset_bytes:%d\n", ib, ixp, offset_bytes);
+        // debug_printf("--------ib:%d, ixp:%d offset_bytes:%d\n", ib, ixp, offset_bytes);
       }
     }
 
@@ -290,14 +296,14 @@ DMA_WAIT:
                     // if out of bounds, early return
                     if (i_yh >= yh || i_yc >= yc) {
                       if (ip == pb->p-1)
-                        fprintf(fp_sum,"%d\n", 0);        // Save summed output
+                        sim_fprintf(fp_sum,"%d\n", 0);        // Save summed output
                       goto PROCESS_AND_STORE_DONE;
                     }
 
                     raw_val = mem.ocm[ocm_bank][sram_addr];
                     out_val = raw_val;
 
-PROCESS_START:
+//PROCESS_START:
 
                     // ------ ADD P PASSES ------
                     iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc, "Before add P passes", DEBUG_INFO);
@@ -312,7 +318,7 @@ PROCESS_START:
                       mem.nhwc[iy_nhwc] += out_val;
                       goto PROCESS_AND_STORE_DONE;
                     }
-                    fprintf(fp_sum,"%d\n", out_val); // Save summed output
+                    sim_fprintf(fp_sum,"%d\n", out_val); // Save summed output
 
 
                     // ------ CONV STRIDING ------
@@ -439,7 +445,7 @@ PROCESS_START:
 
 PROCESS_AND_STORE_DONE:
 
-                    fprintf(fp_raw,"%d\n", raw_val); // Save raw output
+                    sim_fprintf(fp_raw,"%d\n", raw_val); // Save raw output
                     sram_addr += 1;
                   }
                 }
@@ -464,14 +470,14 @@ PROCESS_AND_STORE_DONE:
     start_pixels_dma();
 #endif
 
-    printf("done bundle!! iw_kw2:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw_kw2, in, il, it, ip, ib);
+    debug_printf("done bundle!! iw_kw2:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw_kw2, in, il, it, ip, ib);
 
 #ifdef SIM
     char f_path_debug [1000];
     sprintf(f_path_debug, "%s/%0d_y_nhwc_sim.txt", DATA_DIR, ib);
     FILE *fp_debug = fopen(f_path_debug, "w");
     for (int32_t i=0; i<pb->debug_nhwc_words; i++)
-      fprintf(fp_debug,"%d\n", mem.debug_nhwc[i]);
+      sim_fprintf(fp_debug,"%d\n", mem.debug_nhwc[i]);
     fclose(fp_debug);
 
     char f_path_tiled [1000];
@@ -479,9 +485,9 @@ PROCESS_AND_STORE_DONE:
     FILE *fp_tiled = fopen(f_path_tiled, "w");
     for (int32_t i=0; i<pb->o_words; i++)
       if (ib == N_BUNDLES-1)
-        if (pb->is_softmax) fprintf(fp_tiled,"%f\n", (float  )mem.y[i]);
-        else                fprintf(fp_tiled,"%d\n", (int32_t)mem.y[i]);
-      else fprintf(fp_tiled,"%d\n", mem.debug_tiled[i]);
+        if (pb->is_softmax) sim_fprintf(fp_tiled,"%f\n", (float  )mem.y[i]);
+        else                sim_fprintf(fp_tiled,"%d\n", (int32_t)mem.y[i]);
+      else sim_fprintf(fp_tiled,"%d\n", mem.debug_tiled[i]);
     fclose(fp_tiled);
 
     if (ib != N_BUNDLES-1){
@@ -496,11 +502,13 @@ PROCESS_AND_STORE_DONE:
   } // ib
   ib = 0;
   *p_done = 1;
+#ifdef SIM
   is_first_call = 1;
+#endif
 }
 
 
-extern EXT_C void load_x (uint8_t *p_done, uint8_t *bundle_read_done, uint64_t *p_base_addr, int32_t *p_bpt) {
+extern EXT_C void load_x (volatile uint8_t *p_done, volatile uint8_t *bundle_read_done, uint64_t *p_base_addr, int32_t *p_bpt) {
 
   static int32_t ib=0, ip=0, it=0, offset_next=0;
 
@@ -524,7 +532,7 @@ extern EXT_C void load_x (uint8_t *p_done, uint8_t *bundle_read_done, uint64_t *
 }
 
 
-extern EXT_C void load_w (uint8_t *p_done, uint64_t *p_base_addr, int32_t *p_bpt) {
+extern EXT_C void load_w (volatile uint8_t *p_done, uint64_t *p_base_addr, int32_t *p_bpt) {
 
   static int32_t ib=0, ip=0, it=0, offset_next=0;
 
@@ -552,12 +560,12 @@ extern EXT_C void fill_memory (uint64_t *p_w_base, uint64_t *p_x_base){
   sprintf(f_path, "%s/wbx.bin", DATA_DIR);
   fp = fopen(f_path, "rb");
   if(!fp)
-    printf("ERROR! File not found: %s \n", f_path);
+    debug_printf("ERROR! File not found: %s \n", f_path);
   int bytes = fread(mem.w, 1, WB_BYTES+X_BYTES, fp);
   fclose(fp);
 
   for (int32_t i=0; i<B_WORDS; i++)
-    printf("i:%d, bias:%d\n", i, mem.b[i]);
+    debug_printf("i:%d, bias:%d\n", i, mem.b[i]);
 
   *p_w_base = (uint64_t)&mem.w;
   *p_x_base = (uint64_t)&mem.x;
