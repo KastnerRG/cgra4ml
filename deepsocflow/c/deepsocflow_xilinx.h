@@ -21,13 +21,13 @@
 
 static volatile uint8_t bundle_read_done = 0, done_pixels = 0, done_weights = 0, done_output = 0, done_all = 0;
 static UINTPTR w_base, x_base, y_base;
-static int32_t w_bpt, x_bpt, y_bpt;
+static int32_t w_bpt, x_bpt, y_bpt; // 
 static XAxiDma dma_pixels, dma_weights, dma_output;
 static XScuGic intr_controller; // Generic interrupt controller
 static u32     status;
 
 
-// RUNTIME.H included here
+// RUNTIME.H included here, where?
 
 static void start_pixels_dma();
 static void start_wait_output(UINTPTR, u32);
