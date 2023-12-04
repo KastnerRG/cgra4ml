@@ -1,6 +1,8 @@
 old/
 __pycache__
 
+temp/
+
 run/fpga/*
 
 run/asic/*

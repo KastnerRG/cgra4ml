@@ -103,7 +103,7 @@ static inline void write_x(int8_t val, int8_t *p_out_buffer, int32_t ib, int32_t
   mem.debug_tiled[flat_index] = val;
 
   // Pack bits and store
-  int32_t flat_index_with_header = p_offset + flat_index_n2r + (ixp+1)*64/X_BITS;
+  int32_t flat_index_with_header = p_offset + flat_index_n2r + (ixp+1)*(AXI_WIDTH/X_BITS);
   int32_t packed_index           = flat_index_with_header / X_WORDS_PER_BYTE;
   uint8_t packed_position        = flat_index_with_header % X_WORDS_PER_BYTE; // 0,1,2,3
 
@@ -238,9 +238,11 @@ extern EXT_C void load_y (volatile uint8_t *p_done, uint64_t *p_base_addr_next, 
       Bundle_t *pb_out = &bundles[ib+1];
       for (int ixp=0; ixp < pb_out->p; ixp++) {
         int32_t offset_words   = (ixp == 0) ? 0 : (pb_out->cm_p0 + (ixp-1)*pb_out->cm)*pb_out->xp_words;
-        int32_t offset_bytes   = offset_words/X_WORDS_PER_BYTE + ixp*8;
-
-        *(uint64_t*)&(p_out_buffer[offset_bytes])     = ixp == 0 ? pb_out->x_header_p0 : pb_out->x_header;
+        int32_t offset_bytes   = offset_words/X_WORDS_PER_BYTE + ixp*(AXI_WIDTH/8);
+        uint64_t *p_header = (uint64_t*)&(p_out_buffer[offset_bytes]);
+        p_header[0] = ixp == 0 ? pb_out->x_header_p0 : pb_out->x_header;
+        if (AXI_WIDTH == 128)
+          p_header[1] = (uint64_t)0;
         // debug_printf("--------ib:%d, ixp:%d offset_bytes:%d\n", ib, ixp, offset_bytes);
       }
     }

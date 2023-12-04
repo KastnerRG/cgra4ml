@@ -14,10 +14,10 @@ def product_dict(**kwargs):
 
 @pytest.mark.parametrize("PARAMS", list(product_dict(
                                         processing_elements  = [(8,24)   ],
-                                        frequency_mhz        = [ 250     ],
-                                        bits_input           = [ 4       ],
-                                        bits_weights         = [ 4       ],
-                                        bits_sum             = [ 16      ],
+                                        frequency_mhz        = [ 100     ],
+                                        bits_input           = [ 8       ],
+                                        bits_weights         = [ 8       ],
+                                        bits_sum             = [ 32      ],
                                         bits_bias            = [ 16      ],
                                         max_batch_size       = [ 64      ], 
                                         max_channels_in      = [ 2048    ],
@@ -25,7 +25,7 @@ def product_dict(**kwargs):
                                         max_image_size       = [ 512     ],
                                         ram_weights_depth    = [ 20      ],
                                         ram_edges_depth      = [ 288     ],
-                                        axi_width            = [ 64      ],
+                                        axi_width            = [ 128     ],
                                         target_cpu_int_bits  = [ 32      ],
                                         valid_prob           = [ 0.01    ],
                                         ready_prob           = [ 0.1     ],
@@ -79,3 +79,5 @@ def test_dnn_engine(PARAMS):
     '''
     model.export_inference(x=model.random_input, hw=hw)
     model.verify_inference(SIM=SIM, SIM_PATH=SIM_PATH)
+
+    print(f"Predicted time on hardware: {1000*model.predict_performance():.5f} ms")
