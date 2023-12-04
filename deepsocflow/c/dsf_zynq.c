@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <stdint.h>
-#define printf xil_printf
+#include <stdio.h>
 
 #define MEM_BASEADDR 0x20000000
 
@@ -21,20 +21,21 @@ XAxiDma dma_pixels, dma_weights, dma_output;
 XScuGic intr_controller; // Generic interrupt controller
 u32     status;
 
+
 static void start_wait_output(UINTPTR baseaddr, u32 bpt){
 	int status = XAxiDma_SimpleTransfer(&dma_output , baseaddr, bpt, XAXIDMA_DEVICE_TO_DMA);
 	if (status != XST_SUCCESS) xil_printf("S2MM transfer failed, base:%p, bpt:%d\n", baseaddr, bpt);
 	while(!done_output);
-	printf("Done output dma at :%p, bpt:%d\n", baseaddr, bpt);
+	xil_printf("Done output dma at :%p, bpt:%d\n", baseaddr, bpt);
 	Xil_DCacheFlushRange((INTPTR)baseaddr, bpt);
 	done_output = 0;
 }
 
 static void start_pixels_dma();
 
+#define printf xil_printf
 #include "runtime.h"
-
-
+#undef printf
 
 
 static void start_pixels_dma() {
@@ -84,6 +85,8 @@ static void setup_interrupt(XScuGic *p_intr_controller, u32 intr_id, Xil_Interru
 
 int main() {
   init_platform();
+
+
   xil_printf("Store wbx at: %p; y:%p; buffers {0:%p,1:%p}; debug_nhwc:%p; debug_tiled:%p \n", &mem.w, &mem.y, &mem.out_buffers[0], &mem.out_buffers[1], &mem.debug_nhwc, &mem.debug_tiled);
   print("Starting!!!\n\r");
 
@@ -127,8 +130,9 @@ int main() {
   xil_printf("Done inference: %d \n", 0);
   Xil_DCacheFlushRange((INTPTR)&mem.y, O_WORDS*sizeof(O_TYPE));  // force transfer to DDR, starting addr & length
 
-  for (int i=0; i<20; i++)
-	  xil_printf("y[%d]: %d \n", i, mem.y[i]);
+  for (int i=0; i<sizeof(mem.y)/sizeof(mem.y[0]); i++)
+	  if (bundles[N_BUNDLES-1].is_softmax) printf("y[%d]: %f \n", i, (float  )mem.y[i]);
+	  else                                 printf("y[%d]: %d \n", i, (int32_t)mem.y[i]);
 
   xil_printf("Done all: %d \n", 0);
 

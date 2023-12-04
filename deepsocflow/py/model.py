@@ -148,7 +148,7 @@ class QModel(Model):
 
                 out_buffer_idx = 1*(not out_buffer_idx) if ib != len(bundles)-1 else -1 # alternate between 0 and 1
 
-                ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .coe_tl={y_coe_tl:<3}, .r_ll={y_r_ll:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<4}, .co={b.r.CO:<3}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, .xp_words={xp_words:<3}, ")
+                ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .coe_tl={y_coe_tl:<3}, .r_ll={y_r_ll:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<4}, .co={b.r.CO:<3}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, .xp_words={xp_words:<4}, ")
                 ch.write(     f".w_bpt={w_bpt:<5}, .w_bpt_p0={w_bpt_p0:<5}, .x_bpt={x_bpt:<5}, .x_bpt_p0={x_bpt_p0:<5}, .o_words={o_words_b:<5}, .o_bytes={o_bytes_b:<5}, ")
                 ch.write(     f".out_buffer_idx={out_buffer_idx:<2}, .add_out_buffer_idx={add_out_buffer_idx:<2}, .add_in_buffer_idx={add_in_buffer_idx:<2}, ")
                 ch.write(     f".is_bias={1*(b.b is not None):<3}, .is_flatten={1*b.flatten:<3}, .is_softmax={1*b.softmax:<3}, ")

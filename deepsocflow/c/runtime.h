@@ -352,9 +352,7 @@ PROCESS_START:
                       float val = (float)out_val;
                       val = val / (float)(1 << pb->softmax_frac);
                       val = val - pb->softmax_max_f;
-#ifdef SIM
                       val = (float)exp(val);
-#endif
                       mem.y[iy_nhwc] = val;
 
                       if (i_yc == pb->co-1) {
