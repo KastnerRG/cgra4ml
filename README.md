@@ -98,6 +98,31 @@ c. Compile C firmware with generated header (config_fw.h) and run on device
 '''
 ```
 
+## Execution API
+
+```c
+#define NDEBUG
+#include "deepsocflow_xilinx.h"
+
+int main() {
+
+  hardware_setup();
+  xil_printf("Welcome to DeepSoCFlow!\n Store weights, biases & inputs at: %p; \n", &mem.w);
+
+  model_setup();
+  model_run();    // run model and measure time
+
+  // Print: outputs & measured time
+  Xil_DCacheFlushRange((INTPTR)&mem.y, sizeof(mem.y));  // force transfer to DDR, starting addr & length
+  for (int i=0; i<O_WORDS; i++)
+    printf("y[%d]: %f \n", i, (float)mem.y[i]);
+  printf("Done inference! time taken: %.5f ms \n", 1000.0*(float)(time_end-time_start)/COUNTS_PER_SECOND);
+
+  hardware_cleanup();
+  return 0;
+}
+```
+
 ## Motivation
 
 [HLS4ML](https://github.com/fastmachinelearning/hls4ml) is an open source python framework that's being widely adopted by the scientific community, to generate FPGA & ASIC implementations of their custom Deep Neural Networks. CERN has taped out chips with DNN compression algorithms to be used in LHC using HLS4ML. However, it is not possible to implement deeper neural networks on HLS4ML since it implements one engine per layer in hardware. This project aims to solve that problem and enhance HLS4ML, by creating a statically & dynamically reconfigurable, AXI-Stream DNN engine.
