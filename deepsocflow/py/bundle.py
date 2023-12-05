@@ -99,6 +99,11 @@ class Bundle(tf.keras.Model):
         if core['type'] == 'conv':
             for i in ['filters', 'kernel_size', 'strides', 'padding', 'kernel_quantizer', 'bias_quantizer', 'use_bias', 'act_str']:
                 assert i in core, f"'{i}' must be provided for conv"
+            
+            if type(core['kernel_size']) not in [list, tuple]:
+                self.core['kernel_size'] = (core['kernel_size'], core['kernel_size'])
+            if type(core['strides'])  not in [list, tuple]:
+                self.core['strides'] = (core['strides'], core['strides'])
 
             self.core['layer'] = QConv2DBatchnorm(
                 filters=self.core['filters'], kernel_size=self.core['kernel_size'], strides=self.core['strides'],
@@ -132,6 +137,11 @@ class Bundle(tf.keras.Model):
         if pool:
             for i in ['type', 'size', 'strides', 'padding']:
                 assert i in pool, f"'{i}' must be provided for pool"
+
+            if type(pool['size']) not in [list, tuple]:
+                self.pool['size'] = (pool['size'], pool['size'])
+            if type(pool['strides'])  not in [list, tuple]:
+                self.pool['strides'] = (pool['strides'], pool['strides'])
 
             if pool['type'] == 'max':
                 self.pool_layer = MaxPooling2D(self.pool['size'], strides=self.pool['strides'], padding=self.pool['padding'])

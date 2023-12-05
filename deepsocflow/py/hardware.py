@@ -152,7 +152,7 @@ class Hardware:
 `define RAM_WEIGHTS_DEPTH   {self.RAM_WEIGHTS_DEPTH  :<10}  // CONFIG_BEATS + max(KW * CI), across layers
 `define RAM_EDGES_DEPTH     {self.RAM_EDGES_DEPTH    :<10}  // max (KW * CI * XW), across layers when KW != 1
 
-`define DELAY_MUL           2            // constant, for now 
+`define DELAY_MUL           3            // constant, for now 
 `define DELAY_W_RAM         2            // constant, for now 
 
 `define S_WEIGHTS_WIDTH_LF  {self.IN_BITS            :<10}  // constant (64), for now

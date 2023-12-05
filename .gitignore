@@ -22,7 +22,7 @@ deepsocflow/test/py/*
 .svls.toml
 .svlint.toml
 
-run/work/vectors/*
+**/vectors/*
 run/work/build/*
 run/work/dsf*
 
