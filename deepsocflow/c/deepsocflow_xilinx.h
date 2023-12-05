@@ -1,4 +1,3 @@
-#include "platform.h"
 #include "xaxidma.h"
 #include "xparameters.h"
 #include "xparameters_ps.h"
@@ -6,6 +5,7 @@
 #include "xil_printf.h"
 #include "xscugic.h"
 #include "xtime_l.h"
+
 #include <assert.h>
 #include <limits.h>
 #include <stdint.h>
@@ -148,7 +148,11 @@ static inline void model_setup(){
   start_weights_dma();
 }
 
+XTime time_start, time_end;
+
 static inline void model_run(){
   start_pixels_dma();
+  XTime_GetTime(&time_start);
   load_y (&done_all, &y_base, &y_bpt);
+  XTime_GetTime(&time_end);
 }
