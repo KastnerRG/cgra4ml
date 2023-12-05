@@ -188,7 +188,7 @@ set M_OUTPUT_WIDTH_LF  {self.OUT_BITS}
         print("\n\nCOMPILING...\n\n")
 
         if SIM == 'xsim':
-            assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xsc {self.MODULE_DIR}/c/example.c --gcc_compile_options -I../').returncode == 0
+            assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xsc {self.MODULE_DIR}/c/sim.c --gcc_compile_options -I../').returncode == 0
             assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xvlog -sv -f ../sources.txt -i ../').returncode == 0
             assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xelab {self.TB_MODULE} --snapshot {self.TB_MODULE} -log elaborate.log --debug typical -sv_lib dpi').returncode == 0
 
@@ -198,7 +198,7 @@ set M_OUTPUT_WIDTH_LF  {self.OUT_BITS}
             assert subprocess.run(cmd).returncode == 0
 
         if SIM == "verilator":
-            cmd = f'{SIM_PATH}verilator --binary -j 0 --trace --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -I../ {self.MODULE_DIR}/c/example.c --Mdir ./'
+            cmd = f'{SIM_PATH}verilator --binary -j 0 --trace --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -I../ {self.MODULE_DIR}/c/sim.c --Mdir ./'
             print(cmd)
             assert subprocess.run(cmd.split(' '), cwd='build').returncode == 0
         
