@@ -22,15 +22,15 @@ set_property generate_synth_checkpoint 0 [get_files $IP_NAME.xci]
 
 set IP_NAME "dma_weights"
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 $IP_NAME
-set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_mm2s_burst_size {8} CONFIG.c_sg_include_stscntrl_strm {0} CONFIG.c_include_mm2s_dre {1} CONFIG.c_m_axi_mm2s_data_width $S_WEIGHTS_WIDTH_LF CONFIG.c_m_axis_mm2s_tdata_width $S_WEIGHTS_WIDTH_LF CONFIG.c_include_s2mm {0}] [get_bd_cells $IP_NAME]
+set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_mm2s_burst_size {8} CONFIG.c_sg_include_stscntrl_strm {0} CONFIG.c_include_mm2s_dre {1} CONFIG.c_m_axi_mm2s_data_width $S_WEIGHTS_WIDTH_LF CONFIG.c_m_axis_mm2s_tdata_width $S_WEIGHTS_WIDTH_LF CONFIG.c_include_s2mm {0} CONFIG.c_m_axi_mm2s_data_width $S_WEIGHTS_WIDTH_LF CONFIG.c_mm2s_burst_size {256}] [get_bd_cells $IP_NAME]
 
 set IP_NAME "dma_pixels"
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 $IP_NAME
-set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_m_axi_mm2s_data_width $S_PIXELS_WIDTH_LF CONFIG.c_m_axis_mm2s_tdata_width $S_PIXELS_WIDTH_LF CONFIG.c_include_mm2s_dre {1} CONFIG.c_mm2s_burst_size {64} CONFIG.c_include_s2mm {0}] [get_bd_cells $IP_NAME]
+set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_m_axi_mm2s_data_width $S_PIXELS_WIDTH_LF CONFIG.c_m_axis_mm2s_tdata_width $S_PIXELS_WIDTH_LF CONFIG.c_include_mm2s_dre {1} CONFIG.c_include_s2mm {0} CONFIG.c_m_axi_mm2s_data_width $S_PIXELS_WIDTH_LF CONFIG.c_mm2s_burst_size {256}] [get_bd_cells $IP_NAME]
 
 set IP_NAME "dma_output"
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 $IP_NAME
-set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_s2mm_burst_size {8} CONFIG.c_sg_include_stscntrl_strm {0} CONFIG.c_include_s2mm_dre {1} CONFIG.c_m_axi_s2mm_data_width $M_OUTPUT_WIDTH_LF CONFIG.c_s_axis_s2mm_tdata_width $M_OUTPUT_WIDTH_LF CONFIG.c_include_s2mm {1} CONFIG.c_include_mm2s {0}] [get_bd_cells $IP_NAME]
+set_property -dict [list CONFIG.c_include_sg {0} CONFIG.c_sg_length_width {26} CONFIG.c_s2mm_burst_size {8} CONFIG.c_sg_include_stscntrl_strm {0} CONFIG.c_include_s2mm_dre {1} CONFIG.c_m_axi_s2mm_data_width $M_OUTPUT_WIDTH_LF CONFIG.c_s_axis_s2mm_tdata_width $M_OUTPUT_WIDTH_LF CONFIG.c_include_s2mm {1} CONFIG.c_include_mm2s {0} CONFIG.c_m_axi_s2mm_data_width $M_OUTPUT_WIDTH_LF CONFIG.c_s2mm_burst_size {256} ] [get_bd_cells $IP_NAME]
 
 # Interrupts
 create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat:2.1 xlconcat_0
@@ -46,20 +46,27 @@ apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config "Clk_master $PS_CLK Cl
 apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config "Clk_master $PS_CLK Clk_slave $PS_CLK Clk_xbar $PS_CLK Master $PS_M_AXI_LITE Slave {/dma_output/S_AXI_LITE}  ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}"  [get_bd_intf_pins dma_output/S_AXI_LITE ]
 
 # AXI Full
-apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config "Clk_master $PS_CLK Clk_slave $PS_CLK Clk_xbar $PS_CLK Master {/dma_pixels/M_AXI_MM2S}  Slave $PS_S_AXI ddr_seg {Auto} intc_ip {New AXI SmartConnect} master_apm {0}" [get_bd_intf_pins ${PS_S_AXI}           ]
-apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config "Clk_master $PS_CLK Clk_slave $PS_CLK Clk_xbar $PS_CLK Master {/dma_weights/M_AXI_MM2S} Slave $PS_S_AXI ddr_seg {Auto} intc_ip {New AXI SmartConnect} master_apm {0}" [get_bd_intf_pins dma_weights/M_AXI_MM2S]
-apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config "Clk_master $PS_CLK Clk_slave $PS_CLK Clk_xbar $PS_CLK Master {/dma_output/M_AXI_S2MM}  Slave $PS_S_AXI ddr_seg {Auto} intc_ip {New AXI SmartConnect} master_apm {0}" [get_bd_intf_pins dma_output/M_AXI_S2MM ]
+connect_bd_intf_net [get_bd_intf_pins dma_output/M_AXI_S2MM ] [get_bd_intf_pins $PS_S_AXI_OUTPUT   ]
+connect_bd_intf_net [get_bd_intf_pins dma_pixels/M_AXI_MM2S ] [get_bd_intf_pins $PS_S_AXI_PIXELS   ]
+connect_bd_intf_net [get_bd_intf_pins dma_weights/M_AXI_MM2S] [get_bd_intf_pins $PS_S_AXI_WEIGHTS  ]
 
 # Engine
 add_files  [glob $CONFIG_DIR/*.svh] [glob $RTL_DIR/*] [glob $RTL_DIR/ext/*]
 set_property top dnn_engine [current_fileset]
 create_bd_cell -type module -reference dnn_engine dnn_engine_0
 
-connect_bd_net [get_bd_pins $PS_CLK] [get_bd_pins dnn_engine_0/aclk]
-connect_bd_intf_net [get_bd_intf_pins dma_pixels/M_AXIS_MM2S] [get_bd_intf_pins dnn_engine_0/s_axis_pixels]
+
+connect_bd_net      [get_bd_pins $PS_CLK]                      [get_bd_pins dnn_engine_0/aclk]
+connect_bd_intf_net [get_bd_intf_pins dma_pixels/M_AXIS_MM2S]  [get_bd_intf_pins dnn_engine_0/s_axis_pixels]
 connect_bd_intf_net [get_bd_intf_pins dma_weights/M_AXIS_MM2S] [get_bd_intf_pins dnn_engine_0/s_axis_weights]
-connect_bd_intf_net [get_bd_intf_pins dma_output/S_AXIS_S2MM] [get_bd_intf_pins dnn_engine_0/m_axis]
-connect_bd_net [get_bd_pins dnn_engine_0/aresetn] [get_bd_pins axi_smc/aresetn]
+connect_bd_intf_net [get_bd_intf_pins dma_output/S_AXIS_S2MM]  [get_bd_intf_pins dnn_engine_0/m_axis]
+connect_bd_net      [get_bd_pins dnn_engine_0/aresetn]         [get_bd_pins rst_ps8_0_${FREQ}M/peripheral_aresetn]
+
+# Clock Automations
+apply_bd_automation -rule xilinx.com:bd_rule:clkrst -config " Clk $PS_CLK Freq {100} Ref_Clk0 {} Ref_Clk1 {} Ref_Clk2 {}"  [get_bd_pins dma_output/m_axi_s2mm_aclk ]
+apply_bd_automation -rule xilinx.com:bd_rule:clkrst -config " Clk $PS_CLK Freq {100} Ref_Clk0 {} Ref_Clk1 {} Ref_Clk2 {}"  [get_bd_pins dma_pixels/m_axi_mm2s_aclk ]
+apply_bd_automation -rule xilinx.com:bd_rule:clkrst -config " Clk $PS_CLK Freq {100} Ref_Clk0 {} Ref_Clk1 {} Ref_Clk2 {}"  [get_bd_pins dma_weights/m_axi_mm2s_aclk]
+
 
 validate_bd_design
 

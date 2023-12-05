@@ -1,3 +1,6 @@
+#include "platform.h"
+
+
 #define NDEBUG
 #include "deepsocflow_xilinx.h"
 
