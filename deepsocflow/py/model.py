@@ -20,7 +20,9 @@ class QModel(Model):
 
         type_d = { 'np': {8: np.int8, 16: np.int16, 32: np.int32, 64: np.int64} }
 
+        print("starting keras forward pass")
         y = self(x, training=False)
+        print("done keras forward pass")
         self.hw = hw
 
         inp_act_model = Model(inputs=self.input, outputs=self.layers[1].output)
@@ -34,7 +36,6 @@ class QModel(Model):
             }
 
         bundles = self.layers[2:]
-        self.bundles = bundles
 
         '''
         Export
@@ -45,6 +46,7 @@ class QModel(Model):
         for file in os.scandir(hw.DATA_DIR):
             os.remove(file.path)
 
+        print("starting export")
         buffer_map = []
         for ib, b in enumerate(bundles):
             print(f'-----------------{b.idx}-----------------------')
@@ -277,7 +279,7 @@ class QModel(Model):
     def verify_inference(self, SIM, SIM_PATH):
 
         hw = self.hw
-        bundles = self.bundles
+        bundles = self.layers[2:]
 
         '''
         RUN SIMULATION
@@ -341,7 +343,7 @@ class QModel(Model):
     def predict_performance(self):
 
         clocks_total = 0
-        for b in self.bundles:
+        for b in self.layers[2:]:
             clocks, mem_bits = Bundle.predict_performance(hw=self.hw, r=b.r)
             clocks_total += clocks
 
