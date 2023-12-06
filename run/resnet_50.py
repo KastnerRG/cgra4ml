@@ -125,4 +125,4 @@ model.summary()
 
 model.export_inference(x=model.random_input, hw=hw)  # Runs forward pass in float & int, compares them. Generates: config_fw.h (C firmware), weights.bin, expected.bin
 
-model.verify_inference(SIM='xsim', SIM_PATH="F:/Xilinx/Vivado/2022.1/bin/")   # Runs SystemVerilog testbench with the model & weights, randomizing handshakes, testing with actual C firmware in simulation
+model.verify_inference(SIM='verilator', SIM_PATH="")   # Runs SystemVerilog testbench with the model & weights, randomizing handshakes, testing with actual C firmware in simulation
