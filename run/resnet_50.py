@@ -17,8 +17,8 @@ hw = Hardware (                          # Alternatively: hw = Hardware.from_jso
         max_kernel_size     = 13       , #
         max_image_size      = 512      , #
         ram_weights_depth   = 512      , #
-        ram_edges_depth     = 524288     , #
-        axi_width           = 64       , #
+        ram_edges_depth     = 524288   , #
+        axi_width           = 128      , #
         target_cpu_int_bits = 32       , #
         valid_prob          = 1      , # probability in which AXI-Stream s_valid signal should be toggled in simulation
         ready_prob          = 1      , # probability in which AXI-Stream m_ready signal should be toggled in simulation

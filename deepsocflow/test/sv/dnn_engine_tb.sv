@@ -86,7 +86,7 @@ module dnn_engine_tb;
     while (1) begin
       load_y (y_done, y_base, y_bpt);
       sink_y.axis_pull(y_base, y_bpt);
-      $display("Done output dma at offset=%h, bpt=%d \n", y_base, y_bpt);
+      // $display("Done output dma at offset=%h, bpt=%d \n", y_base, y_bpt);
       if (y_done) break;
     end
 

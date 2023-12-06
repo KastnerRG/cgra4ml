@@ -265,6 +265,13 @@ class QModel(Model):
                     np.savetxt(f"{hw.DATA_DIR}/{b.idx}_{ip}_{it}_w.txt", wp, fmt='%d')
 
                     np.savetxt(f"{hw.DATA_DIR}/{b.idx}_{ip}_{it}_y_exp.txt", b.ye_exp_p[ip][it].flatten(), fmt='%d')
+        
+        y_exp = bundles[-1].o_int.flatten()
+        np.savetxt(f"{hw.DATA_DIR}/y_exp.txt", y_exp, fmt= '%f' if bundles[-1].softmax else '%d')
+        for i in range(len(y_exp)):
+            if (i < 20 or len(y_exp)-i < 20):
+                print(f"y_exp {i}: {y_exp[i]}")
+        
         print(f'Weights, inputs, outputs saved to {hw.DATA_DIR}/ib_ip_it_*.txt')
 
     def verify_inference(self, SIM, SIM_PATH):
