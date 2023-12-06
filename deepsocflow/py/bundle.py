@@ -39,7 +39,9 @@ Bundle (next)
     - concat_matrix (transformer)
 '''
 
-class Bundle(tf.keras.Model):
+
+class Bundle(tf.keras.layers.Layer):
+    idx = 0
     def __init__(self, 
                  core,             # dict, Mandaroty: parameters for conv/dense layer, act can be quantization or relu
                  add=None,         # dict, Mandatory if x1 is not None in call(), else ignored
@@ -49,6 +51,9 @@ class Bundle(tf.keras.Model):
                  **kwargs):
 
         super(Bundle, self).__init__()
+
+        self.idx = Bundle.idx
+        Bundle.idx += 1
         
         self.core = core
         self.add = add
@@ -170,10 +175,8 @@ class Bundle(tf.keras.Model):
     def call(self, x, x_1=None):
         if hasattr(x, "bundle"):
             self.prev_bundle = x.bundle
-            self.idx = self.prev_bundle.idx + 1
         else:
             self.prev_bundle = None
-            self.idx = 0
 
         self.inp['tensor'] = x
 
