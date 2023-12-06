@@ -8,6 +8,7 @@ class QModel(Model):
 
     def __init(self, inputs, outputs, name=None):
         super().__init__(inputs, outputs, name=name)
+        Bundle.idx = 0
 
 
     @property
@@ -15,6 +16,9 @@ class QModel(Model):
         tensorflow.keras.utils.set_random_seed(0)
         return np.clip(np.random.randn(*self.input.shape), -1.0, 1.0)
 
+    @property
+    def bundles(self):
+        return sorted(self.layers[2:], key= lambda b:b.idx) # Sort bundles in-place by index. Note: idx != ib
 
     def export_inference(self, x, hw):
 
@@ -35,7 +39,7 @@ class QModel(Model):
             'int':inp_tensor.numpy() * 2**(hw.X_BITS-1)
             }
 
-        bundles = self.layers[2:]
+        bundles = self.bundles
 
         '''
         Export
@@ -48,10 +52,11 @@ class QModel(Model):
 
         print("starting export")
         buffer_map = []
-        for ib, b in enumerate(bundles):
+
+        for b in bundles:
             print(f'-----------------{b.idx}-----------------------')
             b.process(inp if b.idx==0 else None, hw)
-            b.export(hw, False) #ib==len(bundles)-1
+            b.export(hw, False) 
             
             '''
             Buffer allocation for add bundle
@@ -63,12 +68,12 @@ class QModel(Model):
             if len(b.add_tensor_dest) != 0:
                 for im in range(len(buffer_map)):
                     if buffer_map[im] is None:
-                        buffer_map[im] = {'in':ib, 'out':b.add_tensor_dest}
+                        buffer_map[im] = {'in':b.idx, 'out':b.add_tensor_dest}
                         b.add_out_buffer_idx = im
                         break
                 else: #m if break is not hit
                     b.add_out_buffer_idx = len(buffer_map)
-                    buffer_map += [{'in':ib, 'out':b.add_tensor_dest}]
+                    buffer_map += [{'in':b.idx, 'out':b.add_tensor_dest}]
             
             print('add_out_buffer_idx:', b.add_out_buffer_idx)
 
@@ -76,7 +81,7 @@ class QModel(Model):
             for im in range(len(buffer_map)):
                 buf = buffer_map[im]
                 if buf is not None:
-                    if buf['out'][-1] == ib:
+                    if buf['out'][-1] == b.idx:
                         buffer_map[im] = None
 
             print(f'output_map:{buffer_map}')
@@ -279,7 +284,7 @@ class QModel(Model):
     def verify_inference(self, SIM, SIM_PATH):
 
         hw = self.hw
-        bundles = self.layers[2:]
+        bundles = self.bundles
 
         '''
         RUN SIMULATION
@@ -343,7 +348,7 @@ class QModel(Model):
     def predict_performance(self):
 
         clocks_total = 0
-        for b in self.layers[2:]:
+        for b in self.bundles:
             clocks, mem_bits = Bundle.predict_performance(hw=self.hw, r=b.r)
             clocks_total += clocks
 
