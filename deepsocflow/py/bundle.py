@@ -5,6 +5,7 @@ from collections import namedtuple
 import math
 import copy
 import tensorflow as tf
+from deepsocflow.py.utils import *
 
 '''
 Bundle (current):
@@ -531,8 +532,11 @@ class Bundle(tf.keras.layers.Layer):
         assert r.XH <= c.XH_MAX
         assert r.XW <= c.XW_MAX
         assert r.XN <= c.XN_MAX
-        assert r.CM * r.XW * int(np.ceil(r.XH/c.ROWS)-1) <= c.RAM_EDGES_DEPTH or r.KH == 1
+        EDGES = r.CM * r.XW * int(np.ceil(r.XH/c.ROWS)-1)
+        assert EDGES <= c.RAM_EDGES_DEPTH or r.KH == 1, f"Edges: {EDGES} < {c.RAM_EDGES_DEPTH}"
         assert r.XW >= r.KH//2
+        ACC_WIDTH = c.K_BITS + c.X_BITS + clog2(r.KH*r.KW*r.CM)
+        assert ACC_WIDTH <= c.Y_BITS, f"ACC_WIDTH:{ACC_WIDTH} > Y_BITS{c.Y_BITS}"
 
         print(r)
         self.check_sparsity(w_int, x_int)

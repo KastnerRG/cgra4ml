@@ -1,7 +1,5 @@
-#include "platform.h"
-
-
 #define NDEBUG
+#include "platform.h"
 #include "deepsocflow_xilinx.h"
 
 int main() {
