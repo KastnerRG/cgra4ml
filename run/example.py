@@ -4,7 +4,7 @@ from deepsocflow import Bundle, Hardware, QModel, QInput
 0. Specify Hardware
 '''
 hw = Hardware (                          # Alternatively: hw = Hardware.from_json('hardware.json')
-        processing_elements = (8, 96)  , # (rows, columns) of multiply-add units
+        processing_elements = (8, 24)  , # (rows, columns) of multiply-add units
         frequency_mhz       = 250      , #  
         bits_input          = 4        , # bit width of input pixels and activations
         bits_weights        = 4        , # bit width of weights
@@ -18,8 +18,8 @@ hw = Hardware (                          # Alternatively: hw = Hardware.from_jso
         ram_edges_depth     = 288      , #
         axi_width           = 64       , #
         target_cpu_int_bits = 32       , #
-        valid_prob          = 0.1      , # probability in which AXI-Stream s_valid signal should be toggled in simulation
-        ready_prob          = 0.1      , # probability in which AXI-Stream m_ready signal should be toggled in simulation
+        valid_prob          = 1        , # probability in which AXI-Stream s_valid signal should be toggled in simulation
+        ready_prob          = 1        , # probability in which AXI-Stream m_ready signal should be toggled in simulation
         data_dir            = 'vectors', # directory to store generated test vectors
      )
 hw.export() # Generates: config_hw.svh, config_hw.tcl, config_tb.svh, hardware.json
