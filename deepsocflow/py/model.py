@@ -16,7 +16,7 @@ class QModel(Model):
         tensorflow.keras.utils.set_random_seed(0)
         return np.clip(np.random.randn(*self.input.shape), -1.0, 1.0)
 
-    @property
+    @property # property cuz assigning to self.bundles takes forever (zips and stores)
     def bundles(self):
         return sorted(self.layers[2:], key= lambda b:b.idx) # Sort bundles in-place by index. Note: idx != ib
 
