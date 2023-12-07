@@ -10,7 +10,7 @@ typedef const struct {
   const int8_t  out_buffer_idx, add_out_buffer_idx, add_in_buffer_idx;
   const int8_t   is_bias, is_pool, is_flatten, is_softmax;
   const int32_t  b_offset, b_val_shift, b_bias_shift;
-  const int8_t   ca_nzero, ca_shift, ca_pl_scale, add_act_shift, pool_act_shift, softmax_frac;
+  const int8_t   ca_nzero, ca_shift, ca_pl_scale, aa_nzero, aa_shift, aa_pl_scale, pa_nzero, pa_shift, pa_pl_scale, softmax_frac;
   const float    softmax_max_f;
   const int32_t  csh, ch, csh_shift, pkh, psh, ph, psh_shift, csw, cw, csw_shift, pkw, psw, pw, psw_shift, pool, on, oh, ow, oc;
   const uint64_t x_header, x_header_p0, w_header, w_header_p0; // 64 bits (at least)
@@ -348,8 +348,7 @@ DMA_WAIT:
                     if (pb->add_in_buffer_idx != -1) {
                       iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc, "Before add", DEBUG_INFO);// store as nhwc for pooling
                       out_val += mem.add_buffers[pb->add_in_buffer_idx][iy_nhwc];
-                      out_val = shift_round(out_val, pb->add_act_shift);
-                      out_val = clip(out_val, -(1<<(X_BITS-1)), (1<<(X_BITS-1))-1);
+                      out_val = quant_lrelu(out_val, pb->aa_nzero, pb->aa_shift, pb->aa_pl_scale);
                     }
 
                     // ------ SOFTMAX ------
@@ -434,8 +433,7 @@ DMA_WAIT:
                         if (pb->pool == POOL_AVG) {
                           int32_t count  = (ph_end-ph_beg)*(pw_end-pw_beg);
                           result = div_round(result, count);
-                          result = shift_round(result, pb->pool_act_shift);
-                          result = clip(result, -(1<<(X_BITS-1)), (1<<(X_BITS-1))-1);
+                          out_val = quant_lrelu(out_val, pb->pa_nzero, pb->pa_shift, pb->pa_pl_scale);
                         }
 
                         tile_write(result, p_out_buffer, ib, pb,   i_yn, ixh, ixw, i_yc,  yn, pb->ph, pb->pw, yc); // Write
@@ -565,9 +563,6 @@ extern EXT_C void fill_memory (uint64_t *p_w_base, uint64_t *p_x_base){
     debug_printf("ERROR! File not found: %s \n", f_path);
   int bytes = fread(mem.w, 1, WB_BYTES+X_BYTES, fp);
   fclose(fp);
-
-  for (int32_t i=0; i<B_WORDS; i++)
-    debug_printf("i:%d, bias:%d\n", i, mem.b[i]);
 
   *p_w_base = (uint64_t)&mem.w;
   *p_x_base = (uint64_t)&mem.x;
