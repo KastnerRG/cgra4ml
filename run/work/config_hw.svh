@@ -17,7 +17,7 @@
 `define RAM_WEIGHTS_DEPTH   20          // CONFIG_BEATS + max(KW * CI), across layers
 `define RAM_EDGES_DEPTH     288         // max (KW * CI * XW), across layers when KW != 1
 
-`define DELAY_MUL           2            // constant, for now 
+`define DELAY_MUL           3            // constant, for now 
 `define DELAY_W_RAM         2            // constant, for now 
 
 `define S_WEIGHTS_WIDTH_LF  128         // constant (64), for now

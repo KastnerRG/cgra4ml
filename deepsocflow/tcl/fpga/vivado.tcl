@@ -67,6 +67,9 @@ apply_bd_automation -rule xilinx.com:bd_rule:clkrst -config " Clk $PS_CLK Freq {
 apply_bd_automation -rule xilinx.com:bd_rule:clkrst -config " Clk $PS_CLK Freq {100} Ref_Clk0 {} Ref_Clk1 {} Ref_Clk2 {}"  [get_bd_pins dma_pixels/m_axi_mm2s_aclk ]
 apply_bd_automation -rule xilinx.com:bd_rule:clkrst -config " Clk $PS_CLK Freq {100} Ref_Clk0 {} Ref_Clk1 {} Ref_Clk2 {}"  [get_bd_pins dma_weights/m_axi_mm2s_aclk]
 
+set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY full [get_runs synth_1]
+set_property STEPS.SYNTH_DESIGN.ARGS.RETIMING true [get_runs synth_1]
+
 
 validate_bd_design
 

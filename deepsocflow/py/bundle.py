@@ -69,9 +69,11 @@ class Bundle(tf.keras.layers.Layer):
 
         # Store reference to bundle object here, not just a idx number
         self.prev_bundle = None
+        self.next_bundles = []
         self.add_bundle = None
         self.add_tensor_dest = []
         self.add_out_buffer_idx = None
+        self.out_buffer_idx = None
 
         def extract_act(signature):
             ilayer = QActivation(signature)
@@ -176,6 +178,7 @@ class Bundle(tf.keras.layers.Layer):
     def call(self, x, x_1=None):
         if hasattr(x, "bundle"):
             self.prev_bundle = x.bundle
+            self.prev_bundle.next_bundles += [self]
         else:
             self.prev_bundle = None
 

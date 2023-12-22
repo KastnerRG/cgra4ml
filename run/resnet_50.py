@@ -31,19 +31,19 @@ hw.export_vivado_tcl(board='zcu104')
 '''
 1. Build Model 
 '''
-XN = 1
+XN = 7
 input_shape = (XN,224,224,3) # (XN, XH, XW, CI)
 
 QINT_BITS = 0
 kq = f'quantized_bits({hw.K_BITS},{QINT_BITS},False,True,1)'
 bq = f'quantized_bits({hw.B_BITS},{QINT_BITS},False,True,1)'
 qr = f'quantized_relu({hw.X_BITS},{QINT_BITS},negative_slope=0)'    
-qb = f'quantized_bits({hw.X_BITS},{QINT_BITS},False,True,1)'       
+qb = f'quantized_bits({hw.X_BITS},{QINT_BITS},False,False,1)'       
 
 
 x = x_in = QInput(shape=input_shape[1:], batch_size=XN, hw=hw, int_bits=QINT_BITS, name='input')
-x = Bundle( core= {'type':'conv' , 'filters':64 , 'kernel_size':7, 'strides':2, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr}, pool= {'type':'max', 'size':3, 'strides':2, 'padding':'same', 'act_str':qb} )(x) # conv1_conv
 
+x  = Bundle( core= {'type':'conv' , 'filters':64 , 'kernel_size':7, 'strides':2, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr}, pool= {'type':'max', 'size':3, 'strides':2, 'padding':'same', 'act_str':qb} )(x) # conv1_conv
 x1 = Bundle( core= {'type':'conv' , 'filters':256, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb} )(x) # conv2_block1_0_conv
 x =      Bundle( core= {'type':'conv' , 'filters':64 , 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv2_block1_1_conv
 x =      Bundle( core= {'type':'conv' , 'filters':64 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv2_block1_2_conv
@@ -74,45 +74,45 @@ x =      Bundle( core= {'type':'conv' , 'filters':128, 'kernel_size':1, 'strides
 x =      Bundle( core= {'type':'conv' , 'filters':128, 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv3_block4_2_conv
 x = x1 = Bundle( core= {'type':'conv' , 'filters':512, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x1) # conv3_block4_3_conv
 # conv3_block4_add
-# x1 = Bundle( core= {'type':'conv' , 'filters':1024, 'kernel_size':1, 'strides':2, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb} )(x) # conv4_block1_0_conv
-# x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':1, 'strides':2, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block1_1_conv
-# x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block1_2_conv
-# x = x1 = Bundle( core= {'type':'conv' , 'filters':1024, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x1) # conv4_block1_3_conv
-# # conv4_block1_add
-# x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block2_1_conv
-# x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block2_2_conv
-# x = x1 = Bundle( core= {'type':'conv' , 'filters':1024, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x1) # conv4_block2_3_conv
-# # conv4_block2_add
-# x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block3_1_conv
-# x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block3_2_conv
-# x = x1 = Bundle( core= {'type':'conv' , 'filters':1024, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x1) # conv4_block3_3_conv
-# # conv4_block3_add
-# x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block4_1_conv
-# x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block4_2_conv
-# x = x1 = Bundle( core= {'type':'conv' , 'filters':1024, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x1) # conv4_block4_3_conv
-# # conv4_block4_add
-# x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block5_1_conv
-# x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block5_2_conv
-# x = x1 = Bundle( core= {'type':'conv' , 'filters':1024, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x1) # conv4_block5_3_conv
-# # conv4_block5_add
-# x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block6_1_conv
-# x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block6_2_conv
-# x = x1 = Bundle( core= {'type':'conv' , 'filters':1024, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x1) # conv4_block6_3_conv
-# # conv4_block6_add
-# x1 = Bundle( core= {'type':'conv' , 'filters':2048, 'kernel_size':1, 'strides':2, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb} )(x) # conv5_block1_0_conv
-# x =      Bundle( core= {'type':'conv' , 'filters':512 , 'kernel_size':1, 'strides':2, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv5_block1_1_conv
-# x =      Bundle( core= {'type':'conv' , 'filters':512 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv5_block1_2_conv
-# x = x1 = Bundle( core= {'type':'conv' , 'filters':2048, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x1) # conv5_block1_3_conv
-# # conv5_block1_add
-# x =      Bundle( core= {'type':'conv' , 'filters':512 , 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv5_block2_1_conv
-# x =      Bundle( core= {'type':'conv' , 'filters':512 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv5_block2_2_conv
-# x = x1 = Bundle( core= {'type':'conv' , 'filters':2048, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x1) # conv5_block2_3_conv
-# # conv5_block2_add
-# x =      Bundle( core= {'type':'conv' , 'filters':512 , 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv5_block3_1_conv
-# x =      Bundle( core= {'type':'conv' , 'filters':512 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv5_block3_2_conv
-# x = x1 = Bundle( core= {'type':'conv' , 'filters':2048, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr}, pool= {'type':'avg', 'size':7, 'strides':7, 'padding':'same', 'act_str':qb}, flatten=True )(x, x1) # conv5_block3_3_conv
-# # conv5_block3_add
-# x =      Bundle( core= {'type':'dense', 'units'  :1000,                                                 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, softmax= True)(x)
+x1 = Bundle( core= {'type':'conv' , 'filters':1024, 'kernel_size':1, 'strides':2, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb} )(x) # conv4_block1_0_conv
+x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':1, 'strides':2, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block1_1_conv
+x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block1_2_conv
+x = x1 = Bundle( core= {'type':'conv' , 'filters':1024, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x1) # conv4_block1_3_conv
+# conv4_block1_add
+x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block2_1_conv
+x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block2_2_conv
+x = x1 = Bundle( core= {'type':'conv' , 'filters':1024, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x1) # conv4_block2_3_conv
+# conv4_block2_add
+x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block3_1_conv
+x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block3_2_conv
+x = x1 = Bundle( core= {'type':'conv' , 'filters':1024, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x1) # conv4_block3_3_conv
+# conv4_block3_add
+x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block4_1_conv
+x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block4_2_conv
+x = x1 = Bundle( core= {'type':'conv' , 'filters':1024, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x1) # conv4_block4_3_conv
+# conv4_block4_add
+x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block5_1_conv
+x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block5_2_conv
+x = x1 = Bundle( core= {'type':'conv' , 'filters':1024, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x1) # conv4_block5_3_conv
+# conv4_block5_add
+x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block6_1_conv
+x =      Bundle( core= {'type':'conv' , 'filters':256 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv4_block6_2_conv
+x = x1 = Bundle( core= {'type':'conv' , 'filters':1024, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x1) # conv4_block6_3_conv
+# conv4_block6_add
+x1 = Bundle( core= {'type':'conv' , 'filters':2048, 'kernel_size':1, 'strides':2, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb} )(x) # conv5_block1_0_conv
+x =      Bundle( core= {'type':'conv' , 'filters':512 , 'kernel_size':1, 'strides':2, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv5_block1_1_conv
+x =      Bundle( core= {'type':'conv' , 'filters':512 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv5_block1_2_conv
+x = x1 = Bundle( core= {'type':'conv' , 'filters':2048, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x1) # conv5_block1_3_conv
+# conv5_block1_add
+x =      Bundle( core= {'type':'conv' , 'filters':512 , 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv5_block2_1_conv
+x =      Bundle( core= {'type':'conv' , 'filters':512 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv5_block2_2_conv
+x = x1 = Bundle( core= {'type':'conv' , 'filters':2048, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x1) # conv5_block2_3_conv
+# conv5_block2_add
+x =      Bundle( core= {'type':'conv' , 'filters':512 , 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv5_block3_1_conv
+x =      Bundle( core= {'type':'conv' , 'filters':512 , 'kernel_size':3, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr} )(x) # conv5_block3_2_conv
+x = x1 = Bundle( core= {'type':'conv' , 'filters':2048, 'kernel_size':1, 'strides':1, 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr}, pool= {'type':'avg', 'size':7, 'strides':7, 'padding':'same', 'act_str':qb}, flatten=True )(x, x1) # conv5_block3_3_conv
+# conv5_block3_add
+x =      Bundle( core= {'type':'dense', 'units'  :1000,                                                 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, softmax= True)(x)
 
 
 model = QModel(inputs=x_in.raw, outputs=x)
