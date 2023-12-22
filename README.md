@@ -1,3 +1,5 @@
+https://github.com/abarajithan11/deepsocflow/assets/26372005/113bfd40-cb4a-4940-83f4-d2ef91b47c91
+
 # An Open Workflow to Build Custom SoCs and accelerate Deep Models ![status](https://github.com/abarajithan11/dnn-engine/actions/workflows/verify.yml/badge.svg) 
 
 DeepSoCFlow is a Python library that helps researchers build, train, and implement their own deep ML models, such as ResNet CNNs, Autoencoders, and Transformers on FPGAs and custom ASIC.
