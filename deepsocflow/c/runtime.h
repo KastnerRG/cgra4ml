@@ -5,9 +5,9 @@
 #include <math.h>
 
 typedef const struct {
-  const int32_t  n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0, xp_words;
+  const int32_t  n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0, xp_words, ib_out;
   const int32_t  w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes; // bytes per transfer
-  const int8_t  out_buffer_idx, add_out_buffer_idx, add_in_buffer_idx;
+  const int8_t   in_buffer_idx, out_buffer_idx, add_out_buffer_idx, add_in_buffer_idx;
   const int8_t   is_bias, is_pool, is_flatten, is_softmax;
   const int32_t  b_offset, b_val_shift, b_bias_shift;
   const int8_t   ca_nzero, ca_shift, ca_pl_scale, aa_nzero, aa_shift, aa_pl_scale, pa_nzero, pa_shift, pa_pl_scale, softmax_frac;
@@ -35,7 +35,7 @@ typedef struct {
   int32_t    nhwc           [NHWC_WORDS  ];
   int8_t     debug_tiled    [O_WORDS_MAX ];
   int32_t    debug_nhwc     [NHWC_WORDS  ];
-  int8_t     out_buffers    [2           ][O_BYTES_MAX ];
+  int8_t     out_buffers    [N_OUT_BUF   ][O_BYTES_MAX ];
   int8_t     add_buffers    [N_ADD_BUF   ][NHWC_WORDS  ]; // should be last, since N_ADD_BUF can be empty
 } Memory_st;
 
@@ -133,16 +133,32 @@ static inline void tile_write( int32_t out_val, int8_t *p_out_buffer, int32_t ib
     yn = 1;
   }
 
-  // Check
-  assert_printf (yn, ==, pb->on,,);
-  assert_printf (yh, ==, pb->oh,,);
-  assert_printf (yw, ==, pb->ow,,);
-  assert_printf (yc, ==, pb->oc,,);
+  int32_t iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, pb->on,pb->oh,pb->ow,pb->oc,,);
+#ifndef NDEBUG
+  mem.debug_nhwc[iy_nhwc] = out_val;
+#endif
+ // ------ STORE IN NHWC  ------
+
+  if (ib == N_BUNDLES-1) {
+    mem.y[iy_nhwc] = out_val; // Last bundle: save as NHWC
+    return;
+  }
+
+  // Store for residual add
+  if (pb->add_out_buffer_idx != -1)
+    mem.add_buffers[pb->add_out_buffer_idx][iy_nhwc] = (int8_t)out_val;
+
+  // If output only goes to residual add, early return
+  Bundle_t* pb_out;
+  if (pb->ib_out == -1)
+    return;
+  else
+    pb_out = &bundles[pb->ib_out];
+    
 
   // ------ TILING: Calculate X coordinates ------
   // y [n,h,w,c] -> x[p, n, l, w,cmp, r+pad]
 
-  Bundle_t* pb_out = ib == N_BUNDLES-1 ? &bundles[ib] : &bundles[ib+1];
   int8_t yp_first  = i_yc < pb_out->cm_p0;
 
   div_t   div_oh  = div(i_yh, PE_ROWS);
@@ -154,35 +170,22 @@ static inline void tile_write( int32_t out_val, int8_t *p_out_buffer, int32_t ib
   int32_t i_ycm     = yp_first ? i_yc          : div_oc.rem;
   int32_t ycm       = yp_first ? pb_out->cm_p0 : pb_out->cm  ;
 
+  // ------ STORE FOR NEXT BUNDLE  ------
+  // Other bundles: pad & save as tiled
+  int32_t yr_sweep = i_yh==yh-1 ? PE_ROWS : i_yr + 1;
 
-  // ------ STORE  ------
+  for (int32_t i_yr_dest = i_yr; i_yr_dest < yr_sweep; i_yr_dest++) {
+    write_x(out_val, p_out_buffer, ib, i_yp, i_yn, i_yl, i_yw, i_ycm, i_yr_dest,   pb_out, ycm);
 
-  int32_t iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc,,);
-  mem.debug_nhwc[iy_nhwc] = out_val;
-
-  // Store for residual add
-  if (pb->add_out_buffer_idx != -1)
-    mem.add_buffers[pb->add_out_buffer_idx][iy_nhwc] = (int8_t)out_val;
-
-  if (ib == N_BUNDLES-1)
-    mem.y[iy_nhwc] = out_val; // Last bundle: save as NHWC
-  else {
-
-    // Other bundles: pad & save as tiled
-    int32_t yr_sweep = i_yh==yh-1 ? PE_ROWS : i_yr + 1;
-
-    for (int32_t i_yr_dest = i_yr; i_yr_dest < yr_sweep; i_yr_dest++) {
-      write_x(out_val, p_out_buffer, ib, i_yp, i_yn, i_yl, i_yw, i_ycm, i_yr_dest,   pb_out, ycm);
-
-      // --- PADDING: the [bottom X_PAD rows of previous block (l-1)] with [first X_PAD rows of this block (l)]
-      if (i_yr_dest < X_PAD) {
-        int32_t pad_val = (i_yl == 0) ? 0         : out_val;
-        int32_t dest_yl = (i_yl == 0) ? pb_out->l-1 : i_yl-1;
-        write_x(pad_val, p_out_buffer, ib, i_yp, i_yn, dest_yl, i_yw, i_ycm, i_yr_dest+PE_ROWS,   pb_out, ycm);
-      }
-      out_val = 0;
+    // --- PADDING: the [bottom X_PAD rows of previous block (l-1)] with [first X_PAD rows of this block (l)]
+    if (i_yr_dest < X_PAD) {
+      int32_t pad_val = (i_yl == 0) ? 0         : out_val;
+      int32_t dest_yl = (i_yl == 0) ? pb_out->l-1 : i_yl-1;
+      write_x(pad_val, p_out_buffer, ib, i_yp, i_yn, dest_yl, i_yw, i_ycm, i_yr_dest+PE_ROWS,   pb_out, ycm);
     }
+    out_val = 0;
   }
+  
 }
 
 extern EXT_C void load_y (volatile uint8_t *p_done, uint64_t *p_base_addr_next, int32_t *p_bpt_next) {
@@ -234,8 +237,8 @@ extern EXT_C void load_y (volatile uint8_t *p_done, uint64_t *p_base_addr_next, 
     p_out_buffer = (int8_t*)&mem.out_buffers[pb->out_buffer_idx];
 
     // Init - add headers to out buffer
-    if (ib != N_BUNDLES-1) {
-      Bundle_t *pb_out = &bundles[ib+1];
+    if (ib != N_BUNDLES-1 && pb->ib_out != -1) {
+      Bundle_t *pb_out = &bundles[pb->ib_out];
       for (int ixp=0; ixp < pb_out->p; ixp++) {
         int32_t offset_words   = (ixp == 0) ? 0 : (pb_out->cm_p0 + (ixp-1)*pb_out->cm)*pb_out->xp_words;
         int32_t offset_bytes   = offset_words/X_WORDS_PER_BYTE + ixp*(AXI_WIDTH/8);
@@ -512,7 +515,7 @@ extern EXT_C void load_x (volatile uint8_t *p_done, volatile uint8_t *bundle_rea
 
   static int32_t ib=0, ip=0, it=0, offset_next=0;
 
-  int8_t *p_buffer_base = (ib==0) ? mem.x : mem.out_buffers[bundles[ib-1].out_buffer_idx];
+  int8_t *p_buffer_base = (ib==0) ? mem.x : mem.out_buffers[bundles[ib].in_buffer_idx];
 
   *p_base_addr = (uint64_t)p_buffer_base + offset_next;
   *p_bpt = ip == 0 ? bundles[ib].x_bpt_p0 : bundles[ib].x_bpt;

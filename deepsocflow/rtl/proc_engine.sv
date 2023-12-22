@@ -1,7 +1,6 @@
 `timescale 1ns/1ps
 `include "defines.svh"
 
-(* use_dsp = "yes" *)
 module proc_engine #(
   localparam  COLS                = `COLS                ,
               ROWS                = `ROWS                ,
@@ -26,6 +25,8 @@ module proc_engine #(
   output logic [COLS-1:0][ROWS-1:0][Y_BITS-1:0] m_data,
   output tuser_st m_user
 );
+
+  localparam DELAY_MUL_1 = DELAY_MUL-1;
 
   logic en, clken_mul, sel_shift_next, sel_shift, mul_m_valid, acc_m_valid_next, acc_m_valid, mul_m_last, acc_m_last;
   tuser_st mul_m_user, acc_s_user, mux_s2_user, acc_m_user;
@@ -74,15 +75,21 @@ module proc_engine #(
       for (c=0; c < COLS   ; c++) begin: Cg
         // --------------- PROCESSING ELEMENT ------------------
 
+        // Pipeline DSP input
+        logic [X_BITS-1:0] pixels_reg;
+        logic [K_BITS-1:0] weights_reg;
+        always_ff @ (posedge clk)
+          if (clken_mul) {pixels_reg, weights_reg} <= {s_data_pixels[r], s_data_weights[c]};
+        
         // Multiplier
-        wire [M_BITS-1:0] mul_comb = $signed(s_data_pixels[r]) * $signed(s_data_weights[c]);
+        wire [M_BITS-1:0] mul_comb = $signed(pixels_reg) * $signed(weights_reg);
 
         // Multiplier pipeline
-        logic [DELAY_MUL-1:0][M_BITS-1:0] mul_pipeline;
-        for (d=0; d < DELAY_MUL; d++)
+        logic [DELAY_MUL_1-1:0][M_BITS-1:0] mul_pipeline;
+        for (d=0; d < DELAY_MUL_1; d++)
           always_ff @ (posedge clk)
             if (clken_mul) mul_pipeline[d] <= d==0 ? mul_comb : mul_pipeline[d-1];
-        always_comb mul_m_data[c][r] = mul_pipeline[DELAY_MUL-1];
+        always_comb mul_m_data[c][r] = mul_pipeline[DELAY_MUL_1-1];
         
         // Two muxes
         assign shift_data [c][r] = c==0 ? 0 : acc_m_data [c-1][r];

@@ -1,3 +1,5 @@
+import sys
+sys.path.append("../../")
 from deepsocflow import Bundle, Hardware, QModel, QInput
 
 '''
@@ -6,9 +8,9 @@ from deepsocflow import Bundle, Hardware, QModel, QInput
 hw = Hardware (                          # Alternatively: hw = Hardware.from_json('hardware.json')
         processing_elements = (8, 24)  , # (rows, columns) of multiply-add units
         frequency_mhz       = 250      , #  
-        bits_input          = 4        , # bit width of input pixels and activations
-        bits_weights        = 4        , # bit width of weights
-        bits_sum            = 16       , # bit width of accumulator
+        bits_input          = 8        , # bit width of input pixels and activations
+        bits_weights        = 8        , # bit width of weights
+        bits_sum            = 24       , # bit width of accumulator
         bits_bias           = 16       , # bit width of bias
         max_batch_size      = 64       , # 
         max_channels_in     = 2048     , #
