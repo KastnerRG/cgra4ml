@@ -535,8 +535,11 @@ class Bundle(tf.keras.layers.Layer):
         assert r.XH <= c.XH_MAX
         assert r.XW <= c.XW_MAX
         assert r.XN <= c.XN_MAX
-        EDGES = r.CM * r.XW * int(np.ceil(r.XH/c.ROWS)-1)
+
+        cm_max = r.CM_0 if r.CP==1 else r.CM
+        EDGES = cm_max * r.XW #* int(np.ceil(r.XH/c.ROWS)-1)
         assert EDGES <= c.RAM_EDGES_DEPTH or r.KH == 1, f"Edges: {EDGES} < {c.RAM_EDGES_DEPTH}"
+
         assert r.XW >= r.KH//2
         ACC_WIDTH = c.K_BITS + c.X_BITS + clog2(r.KH*r.KW*r.CM)
         assert ACC_WIDTH <= c.Y_BITS, f"ACC_WIDTH:{ACC_WIDTH} > Y_BITS{c.Y_BITS}"
@@ -795,8 +798,14 @@ class Bundle(tf.keras.layers.Layer):
             wp = wp.reshape (r.IT, CM_p*r.KH, c.COLS)                # (IT, CM*KH, c.COLS)
             wp = np.pad(wp, ((0,0),(c.CONFIG_BEATS,0),(0,0)))        # (IT, c.CONFIG_BEATS+CM*KH, c.COLS)
             assert wp.shape == (r.IT, CM_p*r.KH +c.CONFIG_BEATS, c.COLS)
-            w_list += [wp]
+            
+            words_per_byte = 8//c.K_BITS
+            wp = wp.reshape(r.IT,-1)
+            pad = words_per_byte-(wp[0].size%words_per_byte)
+            pad = 0 if pad == words_per_byte else pad
+            wp = np.pad(wp, ((0,pad),(0,0)))
 
+            w_list += [wp]
             ic_left = ic_right
         return w_list
 
@@ -830,8 +839,14 @@ class Bundle(tf.keras.layers.Layer):
 
             xp = x[:,:,:, ic_left:ic_right, :]                              #(XN, XL, XW, CM, (c.ROWS+c.X_PAD))
             assert xp.shape == (r.XN, r.XL, r.XW, CM_p, (c.ROWS+c.X_PAD))
-            x_list += [xp]
 
+            xp = xp.flatten()
+            words_per_byte = 8//c.X_BITS
+            pad = words_per_byte-(xp.size%words_per_byte)
+            pad = 0 if pad == words_per_byte else pad
+            xp = np.pad(xp, ((0,pad)))
+
+            x_list += [xp]
             ic_left = ic_right
         return x_list
 
