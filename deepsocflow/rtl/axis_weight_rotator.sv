@@ -272,7 +272,7 @@ module axis_weight_rotator #(
     end
   endgenerate
 
-  n_delay #(.N(DELAY_W_RAM ), .W(1)) BRAM_VALID (.c(aclk), .rn(aresetn & bram_reg_resetn), .e(1'b1), .i(bram_m_ready[i_read]), .o(bram_m_valid));
+  n_delay #(.N(DELAY_W_RAM ), .W(1)) BRAM_VALID (.c(aclk), .rn(bram_reg_resetn), .e(1'b1), .i(bram_m_ready[i_read]), .o(bram_m_valid));
 
   axis_pipeline_register2 # (
     .DATA_WIDTH  (BRAM_WIDTH),
@@ -285,7 +285,8 @@ module axis_weight_rotator #(
     .LENGTH      (DELAY_W_RAM )
   ) REG_PIPE (
     .clk          (aclk),
-    .rstn         (aresetn & bram_reg_resetn),
+    .rstn         (aresetn),
+    .rstn_local   (bram_reg_resetn),
     .s_axis_tdata (bram_m_data [i_read]),
     .s_axis_tvalid(bram_m_valid),
     .m_axis_tdata (m_axis_tdata),
