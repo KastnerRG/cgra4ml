@@ -58,6 +58,7 @@ module axis_register #
 (
     input  wire                   clk,
     input  wire                   rstn,
+    input  wire                   rstn_local,
 
     /*
      * AXI Stream input
@@ -159,6 +160,10 @@ if (REG_TYPE > 1) begin
             s_axis_tready_reg <= 1'b0;
             m_axis_tvalid_reg <= 1'b0;
             temp_m_axis_tvalid_reg <= 1'b0;
+        end else if (!rstn_local) begin
+            s_axis_tready_reg <= 1'b0;
+            m_axis_tvalid_reg <= 1'b0;
+            temp_m_axis_tvalid_reg <= 1'b0;
         end else begin
             s_axis_tready_reg <= s_axis_tready_early;
             m_axis_tvalid_reg <= m_axis_tvalid_next;
@@ -238,6 +243,9 @@ end else if (REG_TYPE == 1) begin
 
     always @(posedge clk) begin
         if (!rstn) begin
+            s_axis_tready_reg <= 1'b0;
+            m_axis_tvalid_reg <= 1'b0;
+        end else if (!rstn_local) begin
             s_axis_tready_reg <= 1'b0;
             m_axis_tvalid_reg <= 1'b0;
         end else begin
