@@ -88,7 +88,7 @@ module axis_weight_rotator #(
     .USER_ENABLE   (0)
   ) DW (
     .clk           (aclk       ),
-    .rst           (~aresetn   ),
+    .rstn          (aresetn    ),
     .s_axis_tvalid (dw_s_valid  ),
     .s_axis_tready (dw_s_ready  ),
     .s_axis_tdata  (s_axis_tdata),
@@ -285,7 +285,7 @@ module axis_weight_rotator #(
     .LENGTH      (DELAY_W_RAM )
   ) REG_PIPE (
     .clk          (aclk),
-    .rst          (~(aresetn & bram_reg_resetn)),
+    .rstn         (aresetn & bram_reg_resetn),
     .s_axis_tdata (bram_m_data [i_read]),
     .s_axis_tvalid(bram_m_valid),
     .m_axis_tdata (m_axis_tdata),
