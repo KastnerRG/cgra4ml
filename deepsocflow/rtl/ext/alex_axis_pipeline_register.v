@@ -59,7 +59,7 @@ module axis_pipeline_register2 #
 )
 (
     input  wire                   clk,
-    input  wire                   rst,
+    input  wire                   rstn,
 
     /*
      * AXI input
@@ -132,7 +132,7 @@ generate
         )
         reg_inst (
             .clk(clk),
-            .rst(rst),
+            .rstn(rstn),
             // AXI input
             .s_axis_tdata(axis_tdata[i]),
             .s_axis_tkeep(axis_tkeep[i]),

@@ -16,7 +16,7 @@ module alex_axis_adapter_any #(
   USER_WIDTH    = 1
 )(
   input  logic                     clk           ,
-  input  logic                     rst           ,
+  input  logic                     rstn          ,
   input  logic [S_DATA_WIDTH-1:0]  s_axis_tdata  ,
   input  logic [S_KEEP_WIDTH-1:0]  s_axis_tkeep  ,
   input  logic                     s_axis_tvalid ,
@@ -79,7 +79,7 @@ module alex_axis_adapter_any #(
         .USER_WIDTH    (USER_WIDTH   )
       ) SLAVE_ADAPTER (
         .clk           (clk          ),
-        .rst           (rst          ),
+        .rstn          (rstn         ),
         .s_axis_tdata  (s_axis_tdata ),
         .s_axis_tkeep  (s_axis_tkeep ),
         .s_axis_tvalid (s_axis_tvalid),
@@ -124,7 +124,7 @@ module alex_axis_adapter_any #(
         .USER_WIDTH    (USER_WIDTH   )
       ) MASTER_ADAPTER (
         .clk           (clk          ),
-        .rst           (rst          ),
+        .rstn          (rstn         ),
         .s_axis_tdata  (i_axis_tdata ),
         .s_axis_tkeep  (i_axis_tkeep ),
         .s_axis_tvalid (i_axis_tvalid),

@@ -150,7 +150,7 @@ module dnn_engine #(
     .USER_ENABLE   (0)
   ) DW (
     .clk           (aclk         ),
-    .rst           (~aresetn     ),
+    .rstn          (aresetn      ),
     .s_axis_tready (m_ready      ),
     .s_axis_tvalid (m_valid      ),
     .s_axis_tdata  (m_data_padded),

@@ -47,7 +47,7 @@ module axis_pixels #(
     .USER_ENABLE   (0)
     ) DW (
     .clk           (aclk       ),
-    .rst           (~aresetn   ),
+    .rstn          (aresetn    ),
     .s_axis_tdata  (s_data     ),
     .s_axis_tkeep  (s_keep     ),
     .s_axis_tvalid (dw_s_valid ),
