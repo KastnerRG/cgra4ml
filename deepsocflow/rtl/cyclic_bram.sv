@@ -10,7 +10,7 @@ module cyclic_bram #(
               W_ADDR_WIDTH = $clog2(W_DEPTH),
               R_ADDR_WIDTH = $clog2(R_DEPTH)
   )(
-    input  logic clk, clken, resetn,
+    input  logic clk, clken, resetn_global, resetn_local,
     input  logic w_en, r_en,
     input  logic [W_DATA_WIDTH-1:0] s_data,
     output logic [R_DATA_WIDTH-1:0] m_data,
@@ -21,11 +21,13 @@ module cyclic_bram #(
   logic [R_ADDR_WIDTH-1:0] r_addr;
  
   always_ff @(posedge clk) 
-    if (!resetn)            w_addr <= 0;
+    if (!resetn_global)     w_addr <= 0;
+    else if (!resetn_local) w_addr <= 0;
     else if (clken && w_en) w_addr <= w_addr + 1;
 
   always_ff @(posedge clk) 
-    if (!resetn)            r_addr <= 0;
+    if (!resetn_global)     r_addr <= 0;
+    else if (!resetn_local) r_addr <= 0;
     else if (clken && r_en) r_addr <= r_addr == r_addr_max ?  r_addr_min : r_addr + 1;
 
   ram_weights BRAM (
