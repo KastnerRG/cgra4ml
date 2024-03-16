@@ -234,7 +234,8 @@ module axis_weight_rotator #(
       ) BRAM (
         .clk          (aclk),
         .clken        (1'b1),
-        .resetn       (aresetn && bram_resetn [i]),
+        .resetn_global(aresetn),
+        .resetn_local (bram_resetn [i]),
         .s_data       (dw_m_data_flat),
         .w_en         (bram_wen    [i]),
         .m_data       (bram_m_data [i]),
