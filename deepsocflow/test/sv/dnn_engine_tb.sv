@@ -10,7 +10,7 @@ module dnn_engine_tb;
 
   // CLOCK GENERATION
   logic aclk = 0;
-  localparam  CLK_PERIOD = 10ns;
+  localparam  CLK_PERIOD = 4ns;
   initial forever #(CLK_PERIOD/2) aclk = ~aclk;
 
   // SIGNALS
@@ -29,15 +29,15 @@ module dnn_engine_tb;
   bit [31:0] y_sram [ROWS*COLS-1:0];
 
   logic aresetn;
-  logic s_axis_pixels_tready, s_axis_pixels_tvalid, s_axis_pixels_tlast;
-  logic [S_PIXELS_WIDTH_LF/X_BITS -1:0][X_BITS-1:0] s_axis_pixels_tdata;
-  logic [S_PIXELS_WIDTH_LF/8 -1:0] s_axis_pixels_tkeep;
+  logic s_axis_pixels_tready, s_axis_pixels_tvalid ='0, s_axis_pixels_tlast ='0;
+  logic [S_PIXELS_WIDTH_LF/X_BITS -1:0][X_BITS-1:0] s_axis_pixels_tdata ='0;
+  logic [S_PIXELS_WIDTH_LF/8 -1:0] s_axis_pixels_tkeep ='0;
 
-  logic s_axis_weights_tready, s_axis_weights_tvalid, s_axis_weights_tlast;
-  logic [S_WEIGHTS_WIDTH_LF/K_BITS-1:0][K_BITS-1:0] s_axis_weights_tdata;
-  logic [S_WEIGHTS_WIDTH_LF/8-1:0] s_axis_weights_tkeep;
+  logic s_axis_weights_tready, s_axis_weights_tvalid ='0, s_axis_weights_tlast ='0;
+  logic [S_WEIGHTS_WIDTH_LF/K_BITS-1:0][K_BITS-1:0] s_axis_weights_tdata ='0;
+  logic [S_WEIGHTS_WIDTH_LF/8-1:0] s_axis_weights_tkeep ='0;
 
-  bit m_axis_tready, m_axis_tvalid, m_axis_tlast;
+  bit m_axis_tready ='0, m_axis_tvalid, m_axis_tlast;
   logic [M_OUTPUT_WIDTH_LF   -1:0] m_axis_tdata;
   logic [M_OUTPUT_WIDTH_LF/8 -1:0] m_axis_tkeep;
 
