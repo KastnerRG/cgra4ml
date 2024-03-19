@@ -20,7 +20,7 @@ dependencies = [
     'numpy >= 1.26.2',
     'pyparsing >= 3.0.9',
     'pytest >= 7.4.0',
-    'QKeras >= 0.9.0',
-    'tensorflow >= 2.15.0',
-    'tf_keras'
+    'QKeras == 0.9.0',
+    'tensorflow == 2.15.0',
+    'tensorflow-model-optimization == 0.7.5'
 ]
