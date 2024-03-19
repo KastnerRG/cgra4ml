@@ -22,4 +22,5 @@ dependencies = [
     'pytest >= 7.4.0',
     'QKeras >= 0.9.0',
     'tensorflow >= 2.15.0',
+    'tf_keras'
 ]
