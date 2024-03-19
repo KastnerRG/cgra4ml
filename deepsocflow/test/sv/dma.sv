@@ -2,6 +2,7 @@
 // But iVerilog does not support {class, ref, break, rand}
 
 `timescale 1ns/1ps
+`include "config_tb.svh"
 
 module DMA_M2S #(
   parameter BUS_WIDTH=8, PROB_VALID=20,
@@ -14,7 +15,7 @@ module DMA_M2S #(
 ); 
 
   clocking cb @(posedge aclk);
-    default input #0.8ns output #0.8ns;
+    default input #(`INPUT_DELAY_NS) output #(`OUTPUT_DELAY_NS);
     input  s_ready;
     output s_valid, s_last, s_data, s_keep;
   endclocking
@@ -68,7 +69,8 @@ module DMA_M2S #(
     end
 
     // Reset & close packet after done
-    {cb.s_valid, cb.s_data, cb.s_keep, cb.s_last, prev_slast, i_bytes} <= '0;
+    {cb.s_valid, cb.s_data, cb.s_keep, cb.s_last} <= '0;
+    {prev_slast, i_bytes} <= '0;
     prev_handshake = 1;
     @(cb);
   endtask
@@ -87,7 +89,7 @@ module DMA_S2M #(
 );
 
   clocking cb @(posedge aclk);
-    default input #0.8ns output #0.8ns;
+    default input #(`INPUT_DELAY_NS) output #(`OUTPUT_DELAY_NS);
     output m_ready;
     input  m_valid, m_last, m_data, m_keep;
   endclocking

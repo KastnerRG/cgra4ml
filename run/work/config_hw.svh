@@ -1,5 +1,7 @@
 
 // Written from Hardware.export()
+                    
+`define OR_NEGEDGE(RSTN)    or negedge RSTN
 
 `define ROWS                8           // PE rows, constrained by resources
 `define COLS                24          // PE cols, constrained by resources

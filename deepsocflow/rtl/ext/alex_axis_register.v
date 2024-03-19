@@ -158,7 +158,7 @@ if (REG_TYPE > 1) begin
         end
     end
 
-    always @(posedge clk `OR_NEGEDGE(rstn)) begin
+    always @(posedge clk `OR_NEGEDGE(rstn))
         if (!rstn) begin
             s_axis_tready_reg <= 1'b0;
             m_axis_tvalid_reg <= 1'b0;
@@ -174,6 +174,8 @@ if (REG_TYPE > 1) begin
         end
 
         // datapath
+    always @(posedge clk) begin
+
         if (store_axis_input_to_output) begin
             m_axis_tdata_reg <= s_axis_tdata;
             m_axis_tkeep_reg <= s_axis_tkeep;
@@ -244,7 +246,7 @@ end else if (REG_TYPE == 1) begin
         end
     end
 
-    always @(posedge clk `OR_NEGEDGE(rstn)) begin
+    always @(posedge clk `OR_NEGEDGE(rstn))
         if (!rstn) begin
             s_axis_tready_reg <= 1'b0;
             m_axis_tvalid_reg <= 1'b0;
@@ -257,6 +259,7 @@ end else if (REG_TYPE == 1) begin
         end
 
         // datapath
+    always @(posedge clk)
         if (store_axis_input_to_output) begin
             m_axis_tdata_reg <= s_axis_tdata;
             m_axis_tkeep_reg <= s_axis_tkeep;
@@ -265,7 +268,6 @@ end else if (REG_TYPE == 1) begin
             m_axis_tdest_reg <= s_axis_tdest;
             m_axis_tuser_reg <= s_axis_tuser;
         end
-    end
 
 end else begin
     // bypass

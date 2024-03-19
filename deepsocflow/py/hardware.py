@@ -27,6 +27,7 @@ class Hardware:
             ram_edges_depth: int|None = 288,
             axi_width: int = 64,
             target_cpu_int_bits: int = 32,
+            async_resetn: bool = True,
             valid_prob: float = 0.01,
             ready_prob: float = 0.1,
             data_dir: str = 'vectors/'
@@ -67,6 +68,7 @@ class Hardware:
         self.XH_MAX, self.XW_MAX = tuple(max_image_size ) if (type(max_image_size ) in [tuple, list]) else (max_image_size , max_image_size )
         self.IN_BITS = self.OUT_BITS = axi_width
         self.INT_BITS = target_cpu_int_bits
+        self.ASYNC_RESETN = async_resetn
         self.VALID_PROB = int(valid_prob * 1000)
         self.READY_PROB = int(ready_prob * 1000)
 
@@ -125,9 +127,18 @@ class Hardware:
         '''
         Exports the hardware parameters to SystemVerilog and TCL scripts.
         '''
+        PERIOD_NS = 1000/self.FREQ
+        INPUT_DELAY_NS = PERIOD_NS/5
+        OUTPUT_DELAY_NS = PERIOD_NS/5
 
         with open('config_tb.svh', 'w') as f:
-            f.write(f'`define VALID_PROB {self.VALID_PROB} \n`define READY_PROB {self.READY_PROB}')
+            f.write(f'''
+`define VALID_PROB {self.VALID_PROB} 
+`define READY_PROB {self.READY_PROB} 
+`define CLK_PERIOD {PERIOD_NS:.1f} 
+`define INPUT_DELAY_NS  {INPUT_DELAY_NS :.1f}ns
+`define OUTPUT_DELAY_NS {OUTPUT_DELAY_NS:.1f}ns
+''')
 
         with open('sources.txt', 'w') as f:
             f.write("\n".join([os.path.normpath(s) for s in self.SOURCES]))
@@ -135,6 +146,8 @@ class Hardware:
         with open('config_hw.svh', 'w') as f:
             f.write(f'''
 // Written from Hardware.export()
+                    
+`define OR_NEGEDGE(RSTN)    {"or negedge RSTN" if self.ASYNC_RESETN else ""}
 
 `define ROWS                {self.ROWS               :<10}  // PE rows, constrained by resources
 `define COLS                {self.COLS               :<10}  // PE cols, constrained by resources
