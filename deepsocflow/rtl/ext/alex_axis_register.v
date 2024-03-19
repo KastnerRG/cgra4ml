@@ -25,6 +25,7 @@ THE SOFTWARE.
 // Language: Verilog 2001
 
 `timescale 1ns / 1ps
+`include "../defines.svh"
 
 /*
  * AXI4-Stream register
@@ -155,7 +156,7 @@ if (REG_TYPE > 1) begin
         end
     end
 
-    always @(posedge clk) begin
+    always @(posedge clk `OR_NEGEDGE(rstn)) begin
         if (!rstn) begin
             s_axis_tready_reg <= 1'b0;
             m_axis_tvalid_reg <= 1'b0;
@@ -241,7 +242,7 @@ end else if (REG_TYPE == 1) begin
         end
     end
 
-    always @(posedge clk) begin
+    always @(posedge clk `OR_NEGEDGE(rstn)) begin
         if (!rstn) begin
             s_axis_tready_reg <= 1'b0;
             m_axis_tvalid_reg <= 1'b0;

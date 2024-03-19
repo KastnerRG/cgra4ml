@@ -43,7 +43,7 @@ module proc_engine #(
 
     assign sel_shift_next = mul_m_valid && mul_m_user.is_cin_last && (mul_m_user.kw2 != 0);
 
-    always_ff @(posedge clk)
+    always_ff @(posedge clk `OR_NEGEDGE(resetn))
       if (!resetn) sel_shift <= 0;
       else if (en) sel_shift <= sel_shift_next;
 
@@ -62,7 +62,7 @@ module proc_engine #(
 
       assign bypass_sum_next [c] = mul_m_user.is_cin_last || mul_m_user.is_config;
 
-      always_ff @(posedge clk)
+      always_ff @(posedge clk `OR_NEGEDGE(resetn))
         if (!resetn)            bypass_sum [c] <= 0;
         else if (clken_acc [c]) bypass_sum [c] <= bypass_sum_next [c];
 
@@ -108,7 +108,7 @@ module proc_engine #(
     assign acc_m_valid_next = !sel_shift && mul_m_valid && (mul_m_user.is_config || mul_m_user.is_cin_last);
 
     // Pipeline AXI-Stream signals with DELAY_ACC=1
-    always_ff @(posedge clk)
+    always_ff @(posedge clk `OR_NEGEDGE(resetn))
       if (!resetn)            {acc_m_user, acc_m_valid, acc_m_last} <= '0;
       else begin
         if (en & mul_m_valid) acc_m_user                <= mul_m_user;

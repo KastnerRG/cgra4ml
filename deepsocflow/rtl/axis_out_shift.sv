@@ -42,7 +42,7 @@ module axis_out_shift #(
   logic [$clog2(COLS+1)-1:0] counter;
   enum {IDLE, SHIFT} state;
 
-  always_ff @(posedge aclk or negedge aresetn) begin
+  always_ff @(posedge aclk `OR_NEGEDGE(aresetn)) begin
     if (!aresetn) begin 
       state   <= IDLE;
       s_ready <= 1;
@@ -72,7 +72,7 @@ module axis_out_shift #(
     endcase    
   end
 
-  always_ff @(posedge aclk or negedge aresetn)
+  always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
     if      (!aresetn)                counter <= COLS;
     else if (state==SHIFT && m_ready) counter <= counter == 1 ? COLS : counter - 1;
 

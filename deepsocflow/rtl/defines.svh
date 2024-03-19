@@ -1,6 +1,8 @@
     `include "config_hw.svh"
 
     `define BITS_KW2  $clog2((`KW_MAX+1)/2)
+    `define OR_NEGEDGE(RSTN) or negedge RSTN
+    // `define OR_NEGEDGE(RSTN)
     
     `ifndef VERILOG
     `ifndef STRUCT 

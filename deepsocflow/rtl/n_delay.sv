@@ -1,4 +1,6 @@
 `timescale 1ns/1ps
+`include "defines.svh"
+
 module n_delay #(
   parameter N = 1,
             W = 8
@@ -15,7 +17,7 @@ module n_delay #(
 
   genvar n;
   for (n=0 ; n < N; n++)
-    always_ff @(posedge c)
+    always_ff @(posedge c `OR_NEGEDGE(rn))
       if (!rn)    data [n+1] <= 0;
       else if (e) data [n+1] <= data [n];
 

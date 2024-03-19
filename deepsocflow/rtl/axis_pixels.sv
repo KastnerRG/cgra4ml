@@ -83,7 +83,7 @@ module axis_pixels #(
   wire m_last_beat    = m_ready    && m_valid    && m_last;
   wire m_beat         = m_ready    && m_valid;
 
-  always_ff @(posedge aclk)
+  always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
     if (!aresetn)                      state <= SET ;
     else case (state)
       SET   : if (s_valid && s_ready)  state <= PASS;
@@ -162,7 +162,7 @@ module axis_pixels #(
   assign ram_dout_r = ram_ren_reg ? ram_dout : ram_dout_hold;
 
 
-  always_ff @(posedge aclk)
+  always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
     if (!aresetn)
       {first_l_r,last_l_r,last_clk_kh_r,en_copy_r,ram_addr_r,dw_m_data_r,dw_m_last_r} <= '0;
     else if (en_shift) begin // m_ready
@@ -196,8 +196,9 @@ module axis_pixels #(
 
   // m_valid, m_last
 
-  always_ff @(posedge aclk)
-    if (!aresetn || m_last_beat)       {m_valid, m_last_reg} <= '0;
+  always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
+    if (!aresetn)         {m_valid, m_last_reg} <= '0;
+    else if (m_last_beat) {m_valid, m_last_reg} <= '0;
     else begin 
       if (en_copy_r && en_shift) m_last_reg <= dw_m_last_r;
       if (last_kh_r && en_shift) m_valid    <= dw_m_valid_r;
