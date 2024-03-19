@@ -25,7 +25,9 @@ THE SOFTWARE.
 // Language: Verilog 2001
 
 `timescale 1ns / 1ps
+`define VERILOG
 `include "../defines.svh"
+`undef  VERILOG
 
 /*
  * AXI4-Stream register
