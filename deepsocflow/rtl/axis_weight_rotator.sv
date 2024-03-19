@@ -113,7 +113,7 @@ module axis_weight_rotator #(
 
 
   //  STATE MACHINE: WRITE
-  always_ff @(posedge aclk) 
+  always_ff @(posedge aclk `OR_NEGEDGE(aresetn)) 
     if (!aresetn)                                              state_write <= W_IDLE_S;
     else unique case (state_write)
       W_IDLE_S    : if (done_read [i_write]   )                state_write <= W_GET_REF_S;
@@ -125,7 +125,7 @@ module axis_weight_rotator #(
 
 
   //  STATE MACHINE: READ
-  always_ff @(posedge aclk)
+  always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
     if (!aresetn)                                state_read <= R_IDLE_S;
     else unique case (state_read)
       R_IDLE_S        : if (done_write [i_read]) state_read <= CONFIG_BEATS==0 ? R_READ_S : R_PASS_CONFIG_S;
@@ -158,7 +158,7 @@ module axis_weight_rotator #(
   end
 
   // Switching RAMs
-  always_ff @(posedge aclk)
+  always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
     if (!aresetn)  {i_write, i_read} <= 0;
     else begin
       if (state_write == W_SWITCH_S)  i_write <= !i_write;
@@ -167,7 +167,7 @@ module axis_weight_rotator #(
   
 
   // State machine DW
-  always_ff @(posedge aclk)
+  always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
     if (!aresetn)                       state_dw <= DW_BLOCK_S;
     else unique case (state_dw)
       DW_BLOCK_S: if (s_handshake)      state_dw <= DW_PASS_S;
@@ -261,10 +261,14 @@ module axis_weight_rotator #(
           - When FSM_read finishes, it sets 1, FSM_write gets out of IDLE and starts reading
       */
       
-      always_ff @(posedge aclk) begin
-        done_write[i] <= !aresetn ? 0 : done_write_next[i];
-        done_read [i] <= !aresetn ? 1 : done_read_next [i];
-      end
+      always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
+        if (!aresetn) begin
+          done_write[i] <= 0;
+          done_read [i] <= 1;
+        end else begin
+          done_write[i] <= done_write_next[i];
+          done_read [i] <= done_read_next [i];
+        end
 
       // Reference Registers
       always_ff @(posedge aclk)

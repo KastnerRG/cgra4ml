@@ -1,4 +1,6 @@
 `timescale 1ns/1ps
+`include "defines.svh"
+
 module cyclic_bram #(
   parameter   R_DEPTH      = 8,
               R_DATA_WIDTH = 8,
@@ -20,12 +22,12 @@ module cyclic_bram #(
   logic [W_ADDR_WIDTH-1:0] w_addr;
   logic [R_ADDR_WIDTH-1:0] r_addr;
  
-  always_ff @(posedge clk) 
+  always_ff @(posedge clk `OR_NEGEDGE(resetn_global)) 
     if (!resetn_global)     w_addr <= 0;
     else if (!resetn_local) w_addr <= 0;
     else if (clken && w_en) w_addr <= w_addr + 1;
 
-  always_ff @(posedge clk) 
+  always_ff @(posedge clk `OR_NEGEDGE(resetn_global)) 
     if (!resetn_global)     r_addr <= 0;
     else if (!resetn_local) r_addr <= 0;
     else if (clken && r_en) r_addr <= r_addr == r_addr_max ?  r_addr_min : r_addr + 1;
