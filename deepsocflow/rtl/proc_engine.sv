@@ -91,8 +91,10 @@ module proc_engine #(
             if (clken_mul) mul_pipeline[d] <= d==0 ? mul_comb : mul_pipeline[d-1];
         always_comb mul_m_data[c][r] = mul_pipeline[DELAY_MUL_1-1];
         
+        if (c == 0) assign shift_data [c][r] = '0;
+        else        assign shift_data [c][r] = acc_m_data [c-1][r];
+
         // Two muxes
-        assign shift_data [c][r] = c==0 ? 0 : acc_m_data [c-1][r];
         wire signed [Y_BITS -1:0] add_in_1 = sel_shift ? shift_data [c][r]: Y_BITS'($signed(mul_m_data[c][r]));
         wire signed [Y_BITS -1:0] add_in_2 = bypass[c] ? 0                : acc_m_data [c][r];
 

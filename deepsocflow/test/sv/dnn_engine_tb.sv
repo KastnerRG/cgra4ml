@@ -36,7 +36,7 @@ module dnn_engine_tb;
   logic [S_WEIGHTS_WIDTH_LF/K_BITS-1:0][K_BITS-1:0] s_axis_weights_tdata;
   logic [S_WEIGHTS_WIDTH_LF/8-1:0] s_axis_weights_tkeep;
 
-  bit m_axis_tready ='0, m_axis_tvalid, m_axis_tlast;
+  bit m_axis_tready, m_axis_tvalid, m_axis_tlast;
   logic [M_OUTPUT_WIDTH_LF   -1:0] m_axis_tdata;
   logic [M_OUTPUT_WIDTH_LF/8 -1:0] m_axis_tkeep;
 
