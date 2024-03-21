@@ -26,8 +26,6 @@ module proc_engine #(
   output tuser_st m_user
 );
 
-  localparam DELAY_MUL_1 = DELAY_MUL-1;
-
   logic en, clken_mul, sel_shift_next, sel_shift, mul_m_valid, acc_m_valid_next, acc_m_valid, mul_m_last, acc_m_last;
   tuser_st mul_m_user, acc_s_user, mux_s2_user, acc_m_user;
   logic [COLS-1:0] clken_acc, bypass_sum, bypass_sum_next, bypass, acc_m_sum_start, acc_s_valid, acc_m_keep;
@@ -84,12 +82,7 @@ module proc_engine #(
         // Multiplier
         wire [M_BITS-1:0] mul_comb = $signed(pixels_reg) * $signed(weights_reg);
 
-        // Multiplier pipeline
-        logic [DELAY_MUL_1-1:0][M_BITS-1:0] mul_pipeline;
-        for (d=0; d < DELAY_MUL_1; d++)
-          always_ff @ (posedge clk)
-            if (clken_mul) mul_pipeline[d] <= d==0 ? mul_comb : mul_pipeline[d-1];
-        always_comb mul_m_data[c][r] = mul_pipeline[DELAY_MUL_1-1];
+        n_delay #(.N(DELAY_MUL-1), .W(M_BITS)) MUL_PIPE (.c(clk), .rn(resetn), .e(clken_mul), .i(mul_comb), .o (mul_m_data[c][r]));
         
         if (c == 0) assign shift_data [c][r] = '0;
         else        assign shift_data [c][r] = acc_m_data [c-1][r];
