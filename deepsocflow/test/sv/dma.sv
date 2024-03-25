@@ -9,9 +9,9 @@ module DMA_M2S #(
   parameter BYTES_PER_BEAT = BUS_WIDTH/8
 )(
     input  logic aclk, aresetn, s_ready, 
-    output logic s_valid, s_last,
-    output logic [BYTES_PER_BEAT-1:0][7:0] s_data,
-    output logic [BYTES_PER_BEAT-1:0] s_keep
+    output logic s_valid='0, s_last='0,
+    output logic [BYTES_PER_BEAT-1:0][7:0] s_data='0,
+    output logic [BYTES_PER_BEAT-1:0] s_keep='0
 ); 
 
   clocking cb @(posedge aclk);
@@ -82,7 +82,7 @@ module DMA_S2M #(
   parameter  BYTES_PER_BEAT = BUS_WIDTH/8
 )(
     input  logic aclk, aresetn,
-    output logic m_ready,
+    output logic m_ready='0,
     input  logic m_valid, m_last,
     input  logic [BYTES_PER_BEAT-1:0][7:0] m_data, 
     input  logic [BYTES_PER_BEAT-1:0] m_keep

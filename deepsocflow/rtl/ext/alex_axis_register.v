@@ -174,8 +174,21 @@ if (REG_TYPE > 1) begin
         end
 
         // datapath
-    always @(posedge clk) begin
-
+    always @(posedge clk `OR_NEGEDGE(rstn))
+    if (!rstn) begin
+        m_axis_tdata_reg      <= 0;
+        m_axis_tkeep_reg      <= 0;
+        m_axis_tlast_reg      <= 0;
+        m_axis_tid_reg        <= 0;
+        m_axis_tdest_reg      <= 0;
+        m_axis_tuser_reg      <= 0;
+        temp_m_axis_tdata_reg <= 0;
+        temp_m_axis_tkeep_reg <= 0;
+        temp_m_axis_tlast_reg <= 0;
+        temp_m_axis_tid_reg   <= 0;
+        temp_m_axis_tdest_reg <= 0;
+        temp_m_axis_tuser_reg <= 0;
+    end else begin
         if (store_axis_input_to_output) begin
             m_axis_tdata_reg <= s_axis_tdata;
             m_axis_tkeep_reg <= s_axis_tkeep;
@@ -259,8 +272,15 @@ end else if (REG_TYPE == 1) begin
         end
 
         // datapath
-    always @(posedge clk)
-        if (store_axis_input_to_output) begin
+    always @(posedge clk `OR_NEGEDGE(rstn))
+        if (!rstn) begin
+            m_axis_tdata_reg <= 0;
+            m_axis_tkeep_reg <= 0;
+            m_axis_tlast_reg <= 0;
+            m_axis_tid_reg   <= 0;
+            m_axis_tdest_reg <= 0;
+            m_axis_tuser_reg <= 0;
+        end else if (store_axis_input_to_output) begin
             m_axis_tdata_reg <= s_axis_tdata;
             m_axis_tkeep_reg <= s_axis_tkeep;
             m_axis_tlast_reg <= s_axis_tlast;
