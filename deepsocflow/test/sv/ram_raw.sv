@@ -11,11 +11,11 @@ module ram_raw #(
   input  logic wea  ,
   input  logic [$clog2(DEPTH)-1:0] addra,
   input  logic [WIDTH        -1:0] dina ,
-  output logic [WIDTH        -1:0] douta
+  output logic [WIDTH        -1:0] douta = '0
 );
   generate
       // Write
-      logic [DEPTH-1:0][WIDTH-1:0] data;
+      logic [DEPTH-1:0][WIDTH-1:0] data = '0;
 
       always_ff @(posedge clka)
         if (ena && wea) data[addra] <= dina;
@@ -26,7 +26,7 @@ module ram_raw #(
           if (ena) douta <= data[addra];
 
       end else begin
-        logic [LATENCY-2:0][WIDTH-1:0] delay;
+        logic [LATENCY-2:0][WIDTH-1:0] delay='0;
         always_ff @(posedge clka)
           if (ena) {douta, delay} <= {delay, data[addra]};
       end

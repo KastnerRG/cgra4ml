@@ -70,7 +70,7 @@ module axis_pixels #(
   enum {SET, PASS , BLOCK} state;
 
   logic en_config, en_shift, en_copy, en_kh, en_copy_r, last_kh, last_kh_r, last_clk_kh, last_clk_kh_r, last_clk_ci, last_clk_w, last_l, last_l_r, m_last_reg, m_last, first_l, first_l_r;
-  logic [BITS_KH2-1:0] ref_kh2, ref_kh2_in;
+  logic [BITS_KH2-1:0] ref_kh2, ref_kh2_in, ref_kh2_in_bounded;
   logic [BITS_CI -1:0] ref_ci_in;
   logic [BITS_XW -1:0] ref_w_in ;
   logic [BITS_IM_BLOCKS-1:0] ref_l_in ;
@@ -125,18 +125,19 @@ module axis_pixels #(
   end
 
   // Counters: KH, CI, W, Blocks
-  counter #(.W(BITS_KH)       ) C_KH (.clk(aclk), .reset(en_config), .en(en_kh      ), .max_in(BITS_KH'(ref_kh2_in*2)), .last_clk(last_clk_kh ), .last(last_kh),.first(),       .count());
-  counter #(.W(BITS_CI)       ) C_CI (.clk(aclk), .reset(en_config), .en(last_clk_kh), .max_in(ref_ci_in             ), .last_clk(last_clk_ci ), .last(),       .first(),       .count());
-  counter #(.W(BITS_XW)       ) C_W  (.clk(aclk), .reset(en_config), .en(last_clk_ci), .max_in(ref_w_in              ), .last_clk(last_clk_w  ), .last(),       .first(),       .count());
-  counter #(.W(BITS_IM_BLOCKS)) C_L  (.clk(aclk), .reset(en_config), .en(last_clk_w ), .max_in(ref_l_in              ), .last_clk(),             .last(last_l), .first(first_l),.count());
+  counter #(.W(BITS_KH)       ) C_KH (.clk(aclk), .rstn_g(aresetn), .rst_l(en_config), .en(en_kh      ), .max_in(BITS_KH'(ref_kh2_in*2)), .last_clk(last_clk_kh ), .last(last_kh),.first(),       .count());
+  counter #(.W(BITS_CI)       ) C_CI (.clk(aclk), .rstn_g(aresetn), .rst_l(en_config), .en(last_clk_kh), .max_in(ref_ci_in             ), .last_clk(last_clk_ci ), .last(),       .first(),       .count());
+  counter #(.W(BITS_XW)       ) C_W  (.clk(aclk), .rstn_g(aresetn), .rst_l(en_config), .en(last_clk_ci), .max_in(ref_w_in              ), .last_clk(last_clk_w  ), .last(),       .first(),       .count());
+  counter #(.W(BITS_IM_BLOCKS)) C_L  (.clk(aclk), .rstn_g(aresetn), .rst_l(en_config), .en(last_clk_w ), .max_in(ref_l_in              ), .last_clk(),             .last(last_l), .first(first_l),.count());
 
   // RAM
   logic [$clog2(RAM_EDGES_DEPTH) -1:0] ram_addr, ram_addr_r, ram_addr_in;
   logic [EDGE_WORDS-1:0][WORD_WIDTH-1:0] ram_dout, ram_dout_hold, ram_dout_r, edge_top_r, edge_bot_r;
 
-  always_ff @(posedge aclk)
-    if (en_config || last_clk_w) ram_addr <= 0;
-    else if (en_copy)            ram_addr <= ram_addr + 1;
+  always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
+    if (!aresetn)                     ram_addr <= 0;
+    else if (en_config || last_clk_w) ram_addr <= 0;
+    else if (en_copy)                 ram_addr <= ram_addr + 1;
 
   // ------------------ PIPELINE STAGE: (_R), to match RAM Read Latency = 1;
 
@@ -155,16 +156,19 @@ module axis_pixels #(
 
   // When ram_wen, read value is lost. This is used to hold that
   logic ram_ren_reg;
-  always_ff @(posedge aclk) begin
-    ram_ren_reg <= ram_ren;
-    if (ram_ren_reg) ram_dout_hold <= ram_dout;
-  end
+  always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
+    if (!aresetn) {ram_ren_reg, ram_dout_hold} <= '0;
+    else begin
+      ram_ren_reg <= ram_ren;
+      if (ram_ren_reg) ram_dout_hold <= ram_dout;
+    end
+
   assign ram_dout_r = ram_ren_reg ? ram_dout : ram_dout_hold;
 
 
   always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
     if (!aresetn)
-      {first_l_r,last_l_r,last_clk_kh_r,en_copy_r,ram_addr_r,dw_m_data_r,dw_m_last_r} <= '0;
+      {first_l_r, last_l_r, last_clk_kh_r, last_kh_r, en_copy_r, ram_addr_r, dw_m_data_r, dw_m_last_r, dw_m_valid_r} <= '0;
     else if (en_shift) begin // m_ready
       first_l_r     <= first_l;
       last_l_r      <= last_l;
@@ -182,13 +186,16 @@ module axis_pixels #(
   // Shift Regs
   logic [IM_SHIFT_REGS-1:0][WORD_WIDTH-1:0] shift_reg;
 
-  always_ff @(posedge aclk)
-    if      (en_copy_r && en_shift) shift_reg <= {dw_m_data_r, edge_top_r};
-    else if (en_shift ) shift_reg <= shift_reg >> WORD_WIDTH;
+  always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
+    if (!aresetn)                   shift_reg <= '0;
+    else if (en_copy_r && en_shift) shift_reg <= {dw_m_data_r, edge_top_r};
+    else if (en_shift )             shift_reg <= shift_reg >> WORD_WIDTH;
 
   // Out mux
-  always_ff @(posedge aclk )
-    if (en_config) ref_kh2 <= ref_kh2_in;
+  assign ref_kh2_in_bounded = ref_kh2_in < BITS_KH2'(EDGE_WORDS) ? ref_kh2_in : '0;
+  always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
+    if (!aresetn)       ref_kh2 <= '0;
+    else if (en_config) ref_kh2 <= ref_kh2_in_bounded;
 
   always_comb
     for (int r=0; r<ROWS; r=r+1)

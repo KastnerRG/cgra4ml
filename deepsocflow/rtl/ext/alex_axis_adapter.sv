@@ -150,7 +150,7 @@ end else if (M_BYTE_LANES > S_BYTE_LANES) begin : upsize
     assign m_axis_tdest  = DEST_ENABLE ? m_axis_tdest_reg : {DEST_WIDTH{1'b0}};
     assign m_axis_tuser  = USER_ENABLE ? m_axis_tuser_reg : {USER_WIDTH{1'b0}};
 
-    always @(posedge clk `OR_NEGEDGE(rstn)) begin
+    always_ff @(posedge clk `OR_NEGEDGE(rstn)) begin
 
         if (!rstn) begin
             seg_reg <= 0;
@@ -258,7 +258,7 @@ end else begin : downsize
     assign m_axis_tdest  = DEST_ENABLE ? m_axis_tdest_reg : {DEST_WIDTH{1'b0}};
     assign m_axis_tuser  = USER_ENABLE ? m_axis_tuser_reg : {USER_WIDTH{1'b0}};
 
-    always @(posedge clk `OR_NEGEDGE(rstn)) begin
+    always_ff @(posedge clk `OR_NEGEDGE(rstn)) begin
 
         if (!rstn) begin
             s_axis_tvalid_reg <= 1'b0;

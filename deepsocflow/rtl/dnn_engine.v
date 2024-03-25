@@ -223,8 +223,7 @@ module proc_engine_out #(
     .m_valid (m_valid               ),
     .m_data  (m_data                ),
     .m_last_pkt (m_last_pkt         ),
-    .m_last  (m_last                ),
-    .m_user  ()
+    .m_last  (m_last                )
   );
 
 endmodule

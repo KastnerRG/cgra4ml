@@ -16,7 +16,6 @@ module axis_out_shift #(
 
   input  logic m_ready,
   output logic [ROWS -1:0][WORD_WIDTH  -1:0] m_data,
-  output tuser_st m_user,
   output logic m_valid, m_last, m_last_pkt
 );
 
@@ -46,7 +45,7 @@ module axis_out_shift #(
     if (!aresetn) begin 
       state   <= IDLE;
       s_ready <= 1;
-      {shift_valid, shift_last_pkt, shift_last} <= '0;
+      {shift_data, shift_valid, shift_last, shift_last_pkt} <= '0;
     end else case (state)
       IDLE  : if (s_valid && valid_mask) begin 
                 state   <= SHIFT;
