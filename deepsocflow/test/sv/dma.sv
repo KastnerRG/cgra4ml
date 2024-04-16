@@ -14,7 +14,7 @@ module DMA_M2S #(
     output logic [BYTES_PER_BEAT-1:0] s_keep='0
 ); 
 
-  clocking cb @(posedge aclk);
+  clocking cs @(posedge aclk);
     default input #(`INPUT_DELAY_NS) output #(`OUTPUT_DELAY_NS);
     input  s_ready;
     output s_valid, s_last, s_data, s_keep;
@@ -32,7 +32,7 @@ module DMA_M2S #(
   import "DPI-C" function byte get_byte (longint unsigned addr);
 
   task axis_push (input longint unsigned base_addr, input int bytes_per_transfer);
-    {cb.s_valid, cb.s_data, cb.s_last, cb.s_keep} <= '0;
+    {cs.s_valid, cs.s_data, cs.s_last, cs.s_keep} <= '0;
 
     wait(aresetn); // wait for slave to begin
     
@@ -53,26 +53,26 @@ module DMA_M2S #(
         end
       end
       is_valid = $urandom_range(0,999) < PROB_VALID;
-      cb.s_valid <= is_valid;       // randomize s_valid
+      cs.s_valid <= is_valid;       // randomize s_valid
       
       // scramble data signals on every cycle if !valid to catch slave reading it at wrong time
-      cb.s_data <= is_valid ? s_data_val : '1;
-      cb.s_keep <= is_valid ? s_keep_val : '1;
-      cb.s_last <= is_valid ? s_last_val : '1;
+      cs.s_data <= is_valid ? s_data_val : '1;
+      cs.s_keep <= is_valid ? s_keep_val : '1;
+      cs.s_last <= is_valid ? s_last_val : '1;
 
       // -------------- LOOP BEGINS HERE -----------
-      @(cb);
-      prev_handshake = s_valid && cb.s_ready; // read at posedge
-      prev_slast     = s_valid && cb.s_ready && s_last;
+      @(cs);
+      prev_handshake = s_valid && cs.s_ready; // read at posedge
+      prev_slast     = s_valid && cs.s_ready && s_last;
       
       // #10ps; // Delay before writing s_valid, s_data, s_keep
     end
 
     // Reset & close packet after done
-    {cb.s_valid, cb.s_data, cb.s_keep, cb.s_last} <= '0;
+    {cs.s_valid, cs.s_data, cs.s_keep, cs.s_last} <= '0;
     {prev_slast, i_bytes} <= '0;
     prev_handshake = 1;
-    @(cb);
+    @(cs);
   endtask
 endmodule
 
