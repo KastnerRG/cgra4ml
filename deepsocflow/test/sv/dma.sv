@@ -100,7 +100,7 @@ module DMA_S2M #(
   import "DPI-C" function void set_byte (longint unsigned addr, byte data);
 
   task axis_pull (input longint unsigned base_addr, input int bytes_per_transfer);
-    m_ready = 0;
+    cb.m_ready <= 0;
     wait(aresetn);
     
     while (!done) begin
