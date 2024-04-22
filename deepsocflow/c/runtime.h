@@ -25,12 +25,12 @@ typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 #define X_BITS_MASK       ((1 << X_BITS) -1)
 
 typedef struct {
-  Y_TYPE     ocm            [2][PE_COLS*PE_ROWS];
 
   int8_t     w              [W_BYTES     ];
   B_TYPE     b              [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
   int8_t     x              [X_BYTES     ]; // keep next to wb. wbx is loaded to w_ptr
 
+  Y_TYPE     ocm            [2][PE_COLS*PE_ROWS];
   O_TYPE     y              [O_WORDS     ];
   int32_t    nhwc           [NHWC_WORDS  ];
   int8_t     debug_tiled    [O_WORDS_MAX ];
@@ -38,6 +38,11 @@ typedef struct {
   int8_t     out_buffers    [N_OUT_BUF   ][O_BYTES_MAX ];
   int8_t     add_buffers    [N_ADD_BUF   ][NHWC_WORDS  ]; // should be last, since N_ADD_BUF can be empty
 } Memory_st;
+
+//#define OCM_BASEADDR 0xFFFF0000
+//typedef Y_TYPE ocm_t [2][PE_COLS*PE_ROWS];
+//#define ocm ((ocm_t*)&OCM_BASEADDR)
+#define ocm (mem.ocm)
 
 
 #ifdef __x86_64__
@@ -262,7 +267,7 @@ extern EXT_C void load_y (volatile uint8_t *p_done, uint64_t *p_base_addr_next, 
 
               ocm_bank = !ocm_bank;
               w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
-              *p_base_addr_next = (uint64_t)&mem.ocm[ocm_bank];
+              *p_base_addr_next = (uint64_t)&ocm[ocm_bank];
               *p_bpt_next = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
 
 #ifdef SIM
@@ -305,7 +310,7 @@ DMA_WAIT:
                       goto PROCESS_AND_STORE_DONE;
                     }
 
-                    raw_val = mem.ocm[ocm_bank][sram_addr];
+                    raw_val = ocm[ocm_bank][sram_addr];
                     out_val = raw_val;
 
 //PROCESS_START:
