@@ -26,6 +26,15 @@ static XAxiDma dma_pixels, dma_weights, dma_output;
 static XScuGic intr_controller; // Generic interrupt controller
 static u32     status;
 
+static inline void write_flush_u8(u8* addr, u8 val) {
+	*addr = val;
+	Xil_DCacheFlushRange((INTPTR)addr, 1);
+}
+
+static inline void write_flush_u64(u64* addr, u64 val) {
+	*addr = val;
+	Xil_DCacheFlushRange((INTPTR)addr, 8);
+}
 
 // RUNTIME.H included here
 
@@ -35,7 +44,6 @@ static void start_wait_output(UINTPTR, u32);
 #define printf xil_printf
 #include "runtime.h"
 #undef printf
-
 
 // OUTPUT DMA: Used in runtime.h
 
@@ -62,7 +70,7 @@ static void s2mm_output_handler(void* CallbackRef){
 
 static void start_pixels_dma() {
   load_x (&done_pixels, &bundle_read_done, &x_base, &x_bpt);
-  Xil_DCacheFlushRange((INTPTR)x_base, x_bpt);
+//  Xil_DCacheFlushRange((INTPTR)x_base, x_bpt);
   status = XAxiDma_SimpleTransfer(&dma_pixels , x_base  , x_bpt, XAXIDMA_DMA_TO_DEVICE); assert_printf (status, ==, XST_SUCCESS, "Pixels  DMA transfer failed ", "base:%p, bpt:%d\n", x_base, x_bpt);
 }
 

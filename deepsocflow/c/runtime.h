@@ -50,6 +50,15 @@ typedef struct {
   #include <stdio.h>
   #define sim_fprintf fprintf
   Memory_st mem;
+
+  static inline void write_flush_u8 (uint8_t* addr, uint8_t val) {
+    *addr = val;
+  }
+
+  static inline void write_flush_u64 (uint64_t* addr, uint64_t val) {
+    *addr = val;
+  }
+
 #else
   #define sim_fprintf(...)
   #define mem (*(Memory_st*)MEM_BASEADDR)
@@ -117,7 +126,7 @@ static inline void write_x(int8_t val, int8_t *p_out_buffer, int32_t ib, int32_t
   uint8_t packed_val             = ((uint8_t)val & X_BITS_MASK) << (packed_position * X_BITS);
   uint8_t mem_val                = p_out_buffer[packed_index];
   uint8_t mem_val_cleaned        = X_POSITION_INVERTED_MASKS[packed_position] & mem_val;
-  p_out_buffer[packed_index]     = mem_val_cleaned | packed_val;
+  write_flush_u8((uint8_t*)(p_out_buffer + packed_index), mem_val_cleaned | packed_val);
 
   // if (ib==1 && packed_index >= 356) debug_printf("index:%d, final_val:%d --- position:%d value:%d packed_val:%d, mem_val:%d, mem_val_cleaned:%d, clean_mask:%d, pos_mask:%d \n", packed_index, mem.debug_packed[packed_index], packed_position, val, packed_val, mem_val, mem_val_cleaned, X_BITS_MASK, X_POSITION_INVERTED_MASKS[packed_position]);
 }
@@ -248,9 +257,9 @@ extern EXT_C void load_y (volatile uint8_t *p_done, uint64_t *p_base_addr_next, 
         int32_t offset_words   = (ixp == 0) ? 0 : (pb_out->cm_p0 + (ixp-1)*pb_out->cm)*pb_out->xp_words;
         int32_t offset_bytes   = offset_words/X_WORDS_PER_BYTE + ixp*(AXI_WIDTH/8);
         uint64_t *p_header = (uint64_t*)&(p_out_buffer[offset_bytes]);
-        p_header[0] = ixp == 0 ? pb_out->x_header_p0 : pb_out->x_header;
+        write_flush_u64(p_header+0, ixp == 0 ? pb_out->x_header_p0 : pb_out->x_header);
         if (AXI_WIDTH == 128)
-          p_header[1] = (uint64_t)0;
+          write_flush_u64(p_header+1, (uint64_t)0);
         // debug_printf("--------ib:%d, ixp:%d offset_bytes:%d\n", ib, ixp, offset_bytes);
       }
     }
