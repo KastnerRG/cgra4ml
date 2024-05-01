@@ -85,7 +85,8 @@ module DMA_S2M #(
     output logic m_ready='0,
     input  logic m_valid, m_last,
     input  logic [BYTES_PER_BEAT-1:0][7:0] m_data, 
-    input  logic [BYTES_PER_BEAT-1:0] m_keep
+    input  logic [BYTES_PER_BEAT-1:0] m_keep,
+    input  logic [31:0] hw_bpt
 );
 
   clocking cb @(posedge aclk);
@@ -107,6 +108,7 @@ module DMA_S2M #(
 
       @(cb);
       if (m_ready && cb.m_valid) begin  // read at posedge
+        assert (bytes_per_transfer == hw_bpt) else $display("Error: bytes_per_transfer=%d, hw_bpt=%d", bytes_per_transfer, hw_bpt);
         for (int i=0; i < BYTES_PER_BEAT; i=i+1)
           if (cb.m_keep[i]) begin
             set_byte(base_addr + i_bytes, cb.m_data[i]);

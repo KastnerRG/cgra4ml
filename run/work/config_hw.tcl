@@ -1,7 +1,7 @@
 
 # Written from Hardware.export()
 
-set FREQ               100
+set FREQ               250
 set ROWS               8
 set COLS               24
 set X_BITS             8

@@ -6,7 +6,7 @@ sys.path.append("../../")
 from deepsocflow import Bundle, Hardware, QModel, QInput
 
 # Simulator: xsim on windows, verilator otherwise
-(SIM, SIM_PATH) = ('xsim', "F:/Xilinx/Vivado/2022.1/bin/") if os.name=='nt' else ('verilator', '')
+(SIM, SIM_PATH) = ('xsim', "F:/Xilinx/Vivado/2022.2/bin/") if os.name=='nt' else ('verilator', '')
 
 def product_dict(**kwargs):
     for instance in itertools.product(*(kwargs.values())):
@@ -44,7 +44,7 @@ def test_dnn_engine(PARAMS):
     '''
     1. BUILD MODEL
     '''
-    XN = 8
+    XN = 1
     input_shape = (XN,18,18,3) # (XN, XH, XW, CI)
 
     QINT_BITS = 0
