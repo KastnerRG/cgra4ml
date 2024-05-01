@@ -3,7 +3,7 @@
         8,
         24
     ],
-    "frequency_mhz": 100,
+    "frequency_mhz": 250,
     "bits_input": 8,
     "bits_weights": 8,
     "bits_sum": 32,
@@ -16,7 +16,8 @@
     "ram_edges_depth": 288,
     "axi_width": 128,
     "target_cpu_int_bits": 32,
-    "valid_prob": 1,
-    "ready_prob": 1,
+    "async_resetn": true,
+    "valid_prob": 0.01,
+    "ready_prob": 0.1,
     "data_dir": "vectors"
 }

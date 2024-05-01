@@ -96,6 +96,7 @@ class Hardware:
         self.BITS_XN_MAX           = clog2(self.XN_MAX)
         self.BITS_RAM_WEIGHTS_ADDR = clog2(self.RAM_WEIGHTS_DEPTH)
         self.Y_OUT_BITS            = 2**clog2(self.Y_BITS)
+        self.W_BPT                 = clog2(self.ROWS*self.COLS*self.Y_OUT_BITS/8)
 
         self.MODULE_DIR = os.path.normpath(os.path.dirname(deepsocflow.__file__)).replace('\\', '/')
         self.TB_MODULE = "dnn_engine_tb"
@@ -164,6 +165,7 @@ class Hardware:
 `define CONFIG_BEATS        {self.CONFIG_BEATS       :<10}  // constant, for now
 `define RAM_WEIGHTS_DEPTH   {self.RAM_WEIGHTS_DEPTH  :<10}  // CONFIG_BEATS + max(KW * CI), across layers
 `define RAM_EDGES_DEPTH     {self.RAM_EDGES_DEPTH    :<10}  // max (KW * CI * XW), across layers when KW != 1
+`define W_BPT               {self.W_BPT              :<10}  // Width of output integer denoting bytes per transfer
 
 `define DELAY_MUL           3            // constant, for now 
 `define DELAY_W_RAM         2            // constant, for now 
