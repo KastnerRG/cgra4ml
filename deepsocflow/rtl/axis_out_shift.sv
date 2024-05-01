@@ -5,7 +5,8 @@ module axis_out_shift #(
              COLS                 = `COLS                 ,
              KW_MAX               = `KW_MAX               ,
              WORD_WIDTH           = `Y_BITS               ,
-             W_BPT                = $clog2(ROWS*COLS*WORD_WIDTH/8)       
+             Y_OUT_BITS           = `Y_OUT_BITS           ,
+             W_BPT                = `W_BPT      
 
 )(
   input logic aclk, aresetn,
@@ -36,8 +37,8 @@ module axis_out_shift #(
       assign lut_last       [k2][c_1] = (c == k);
       assign lut_last_pkt   [k2][c_1] = (c == k2+1);
     end
-    assign lut_bpt [0][k2] = (ROWS * (COLS/k) * 1      * WORD_WIDTH) / 8;
-    assign lut_bpt [1][k2] = (ROWS * (COLS/k) * (k2+1) * WORD_WIDTH) / 8;
+    assign lut_bpt [0][k2] = (ROWS * (COLS/k) * 1      * Y_OUT_BITS) / 8;
+    assign lut_bpt [1][k2] = (ROWS * (COLS/k) * (k2+1) * Y_OUT_BITS) / 8;
   end
 
   wire valid_mask = !s_user.is_w_first_kw2 && !s_user.is_config;

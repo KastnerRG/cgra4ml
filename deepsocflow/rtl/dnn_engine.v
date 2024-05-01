@@ -9,6 +9,7 @@ module dnn_engine #(
                 X_BITS                  = `X_BITS             , 
                 K_BITS                  = `K_BITS             , 
                 Y_BITS                  = `Y_BITS             ,
+                Y_OUT_BITS              = `Y_OUT_BITS         ,
                 M_DATA_WIDTH_HF_CONV    = COLS  * ROWS  * Y_BITS,
                 M_DATA_WIDTH_HF_CONV_DW = ROWS  * Y_BITS,
 
@@ -128,26 +129,24 @@ module dnn_engine #(
     .m_bytes_per_transfer  (s_bytes_per_transfer)
   );
 
-  localparam Y_BITS_PADDED = 2**$clog2(Y_BITS);
-  localparam Y_PADDING     = Y_BITS_PADDED-Y_BITS;
+  localparam Y_PADDING     = Y_OUT_BITS-Y_BITS;
+  wire [Y_OUT_BITS*ROWS-1:0] m_data_padded;
   genvar iy;
-  
-  wire [Y_BITS_PADDED*ROWS-1:0] m_data_padded;
   generate
     for (iy=0; iy<ROWS; iy=iy+1) begin
       // Sign padding: can be done as $signed(), but verilator gives warning for width mismatch
       wire sign_bit = m_data[Y_BITS*(iy+1)-1];
-      assign m_data_padded[Y_BITS_PADDED*(iy+1)-1:Y_BITS_PADDED*iy] = {{Y_PADDING{sign_bit}}, m_data[Y_BITS*(iy+1)-1:Y_BITS*iy]};
+      assign m_data_padded[Y_OUT_BITS*(iy+1)-1:Y_OUT_BITS*iy] = {{Y_PADDING{sign_bit}}, m_data[Y_BITS*(iy+1)-1:Y_BITS*iy]};
     end
   endgenerate
   
 
   alex_axis_adapter_any #(
-    .S_DATA_WIDTH  (Y_BITS_PADDED*ROWS),
+    .S_DATA_WIDTH  (Y_OUT_BITS*ROWS),
     .M_DATA_WIDTH  (M_OUTPUT_WIDTH_LF ),
     .S_KEEP_ENABLE (1),
     .M_KEEP_ENABLE (1),
-    .S_KEEP_WIDTH  (Y_BITS_PADDED*ROWS/8),
+    .S_KEEP_WIDTH  (Y_OUT_BITS*ROWS/8),
     .M_KEEP_WIDTH  (M_OUTPUT_WIDTH_LF/8),
     .ID_ENABLE     (0),
     .DEST_ENABLE   (0),
@@ -160,7 +159,7 @@ module dnn_engine #(
     .s_axis_tvalid (m_valid      ),
     .s_axis_tdata  (m_data_padded),
     .s_axis_tlast  (m_last       ),
-    .s_axis_tkeep  ({(Y_BITS_PADDED*ROWS/8){1'b1}}),
+    .s_axis_tkeep  ({(Y_OUT_BITS*ROWS/8){1'b1}}),
     .m_axis_tready (m_axis_tready),
     .m_axis_tvalid (m_axis_tvalid),
     .m_axis_tdata  (m_axis_tdata ),
