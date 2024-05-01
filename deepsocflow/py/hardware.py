@@ -155,6 +155,7 @@ class Hardware:
 `define X_BITS              {self.X_BITS             :<10}  // Bits per word in input
 `define K_BITS              {self.K_BITS             :<10}  // Bits per word in input
 `define Y_BITS              {self.Y_BITS             :<10}  // Bits per word in output of conv
+`define Y_OUT_BITS          {self.Y_OUT_BITS         :<10}  // Padded bits per word in output of conv
 
 `define KH_MAX              {self.KH_MAX             :<10}  // max of kernel height, across layers
 `define KW_MAX              {self.KW_MAX             :<10}  // max of kernel width, across layers
