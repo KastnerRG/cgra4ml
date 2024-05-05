@@ -6,7 +6,7 @@
 
 typedef const struct {
   const int32_t  n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0, xp_words, ib_out;
-  const int32_t  w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes; // bytes per transfer
+  const int32_t  w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes, x_pad; // bytes per transfer
   const int8_t   in_buffer_idx, out_buffer_idx, add_out_buffer_idx, add_in_buffer_idx;
   const int8_t   is_bias, is_pool, is_flatten, is_softmax;
   const int32_t  b_offset, b_val_shift, b_bias_shift;
@@ -102,7 +102,7 @@ static inline int32_t quant_lrelu(int32_t x, int8_t nzero, int8_t shift, int8_t 
 static inline void write_x(int8_t val, int8_t *p_out_buffer, int32_t ib, int32_t ixp, int32_t ixn, int32_t ixl, int32_t ixw, int32_t ixcm, int32_t ixr, Bundle_t *pb_out, int32_t xcm ){
 
   #define WRITEX_DEBUG_INFO "--- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n",ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm
-  assert_printf (ixr , <, PE_ROWS+X_PAD, "write_x", WRITEX_DEBUG_INFO);
+  assert_printf (ixr , <, PE_ROWS+pb_out->x_pad, "write_x", WRITEX_DEBUG_INFO);
   assert_printf (ixcm, <, xcm          , "write_x", WRITEX_DEBUG_INFO);
   assert_printf (ixw , <, pb_out->w    , "write_x", WRITEX_DEBUG_INFO);
   assert_printf (ixl , <, pb_out->l    , "write_x", WRITEX_DEBUG_INFO);
@@ -110,7 +110,7 @@ static inline void write_x(int8_t val, int8_t *p_out_buffer, int32_t ib, int32_t
   assert_printf (ixp , <, pb_out->p    , "write_x", WRITEX_DEBUG_INFO);
 
   int32_t p_offset       = (ixp == 0) ? 0 : (pb_out->cm_p0 + (ixp-1)*pb_out->cm) * pb_out->xp_words;
-  int32_t flat_index_n2r = (((ixn*pb_out->l + ixl)*pb_out->w + ixw)*xcm + ixcm)*(PE_ROWS+X_PAD) + ixr; // multidim_index -> flat_index [n,l,w,cm,r]
+  int32_t flat_index_n2r = (((ixn*pb_out->l + ixl)*pb_out->w + ixw)*xcm + ixcm)*(PE_ROWS+pb_out->x_pad) + ixr; // multidim_index -> flat_index [n,l,w,cm,r]
 
   // Debug tiled output
   int32_t flat_index     = p_offset + flat_index_n2r;
@@ -191,8 +191,8 @@ static inline void tile_write( int32_t out_val, int8_t *p_out_buffer, int32_t ib
   for (int32_t i_yr_dest = i_yr; i_yr_dest < yr_sweep; i_yr_dest++) {
     write_x(out_val, p_out_buffer, ib, i_yp, i_yn, i_yl, i_yw, i_ycm, i_yr_dest,   pb_out, ycm);
 
-    // --- PADDING: the [bottom X_PAD rows of previous block (l-1)] with [first X_PAD rows of this block (l)]
-    if (i_yr_dest < X_PAD) {
+    // --- PADDING: the [bottom x_pad rows of previous block (l-1)] with [first x_pad rows of this block (l)]
+    if (i_yr_dest < pb_out->x_pad) {
       int32_t pad_val = (i_yl == 0) ? 0         : out_val;
       int32_t dest_yl = (i_yl == 0) ? pb_out->l-1 : i_yl-1;
       write_x(pad_val, p_out_buffer, ib, i_yp, i_yn, dest_yl, i_yw, i_ycm, i_yr_dest+PE_ROWS,   pb_out, ycm);
