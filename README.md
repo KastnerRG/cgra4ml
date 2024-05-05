@@ -15,7 +15,7 @@ Often, after all that work, the models do not meet their expected performance du
 
 We present a highly flexible, high performance accelerator system that can be adjusted to your needs through a simple Python API. The implementation is maintained as open source and bare-bones, allowing the user to modify the processing element to do floating point, binarized calculations...etc.  
 
-<img src="docs/sys.PNG" width="100">
+<p align="center"> <img src="docs/sys.PNG" width="600"> </p>
 
 ## User API
 
@@ -181,21 +181,10 @@ innovus
 source ../../tcl/asic/pnr.tcl
 ```
 
-## Repository Structure
+## Framework Infrastructure
 
-![System](docs/infra.png)
+<p align="center"> <img src="docs/infra.png" width="600"> </p>
 
-- deepsocflow
-  - rtl - systemverilog design of the engine
-  - tcl
-    - asic
-    - fpga
-  - c - runtime firmware
-  - py - python library
-- docs - documentation
-- run - example files
-  - work - generated files
-    - vectors - generated test vectors
 
 ## Team Members
 
