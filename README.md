@@ -1,6 +1,6 @@
-https://github.com/abarajithan11/deepsocflow/assets/26372005/113bfd40-cb4a-4940-83f4-d2ef91b47c91
+<!-- https://github.com/abarajithan11/deepsocflow/assets/26372005/113bfd40-cb4a-4940-83f4-d2ef91b47c91 -->
 
-# An Open Workflow to Build Custom SoCs and accelerate Deep Models ![status](https://github.com/abarajithan11/dnn-engine/actions/workflows/verify.yml/badge.svg) 
+# An Open Framework to Empower Scientific Edge Computing with Modern Neural Networks ![status](https://github.com/abarajithan11/dnn-engine/actions/workflows/verify.yml/badge.svg) 
 
 DeepSoCFlow is a Python library that helps researchers build, train, and implement their own deep ML models, such as ResNet CNNs, Autoencoders, and Transformers on FPGAs and custom ASIC.
 
@@ -15,9 +15,11 @@ Often, after all that work, the models do not meet their expected performance du
 
 We present a highly flexible, high performance accelerator system that can be adjusted to your needs through a simple Python API. The implementation is maintained as open source and bare-bones, allowing the user to modify the processing element to do floating point, binarized calculations...etc.  
 
-![System](docs/overall.png)
+<img src="docs/sys.PNG" width="100">
 
 ## User API
+
+![System](docs/workflow.png)
 
 ```py
 from deepsocflow import Bundle, Hardware, QModel, QInput
@@ -199,18 +201,3 @@ source ../../tcl/asic/pnr.tcl
 
 - Aba
 - Zhenghua
-
-## Results
-
-![Results](docs/results-2.png)
-
-### Results for 8 bit
-
-The dataflow and its implementation results in 5.8× more Gops/mm2, 1.6× more Gops/W, higher MAC utilization & fewer DRAM accesses than the state-of-the-art (TCAS-1, TCOMP), processing AlexNet, VGG16 & ResNet50 at 336.6, 17.5 & 64.2 fps, when synthesized as a 7mm^2 chip usign TSMC 65nm GP.
-
-![Results](docs/results.png)
-
-Performance Efficiency (PE utilization across space & time) and number of DRAM accesses:
-
-![Results](docs/perf.png)
-![Results](docs/memory.png)
