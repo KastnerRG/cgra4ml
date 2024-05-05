@@ -152,7 +152,7 @@ class QModel(Model):
                     o_bpt_p0 = (hw.X_BITS*b_next.xe[0].size + hw.IN_BITS)//8
                     o_bytes_b = o_bpt_p0 + (b_next.r.CP-1)*o_bpt
 
-                xp_words  = b.r.XN * b.r.XL * b.r.XW * (hw.ROWS+hw.X_PAD)
+                xp_words  = b.r.XN * b.r.XL * b.r.XW * (hw.ROWS+b.r.X_PAD)
 
                 w_bytes_b = (w_bpt_p0 + (b.r.CP-1)*w_bpt)*b.r.IT
                 x_bytes_b = (x_bpt_p0 + (b.r.CP-1)*x_bpt)
@@ -193,7 +193,7 @@ class QModel(Model):
                 out_type = 'float' if (ib == len(bundles)-1 and b.softmax) else 'int32_t'
 
                 ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .coe_tl={y_coe_tl:<3}, .r_ll={y_r_ll:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<4}, .co={b.r.CO:<4}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, .xp_words={xp_words:<6}, .ib_out={ib_out:<4}, ")
-                ch.write(     f".w_bpt={w_bpt:<5}, .w_bpt_p0={w_bpt_p0:<5}, .x_bpt={x_bpt:<8}, .x_bpt_p0={x_bpt_p0:<8}, .o_words={o_words_b:<8}, .o_bytes={o_bytes_b:<8}, ")
+                ch.write(     f".w_bpt={w_bpt:<5}, .w_bpt_p0={w_bpt_p0:<5}, .x_bpt={x_bpt:<8}, .x_bpt_p0={x_bpt_p0:<8}, .o_words={o_words_b:<8}, .o_bytes={o_bytes_b:<8}, .x_pad={b.r.X_PAD:<3}, ")
                 ch.write(     f".in_buffer_idx={in_buffer_idx:<3}, .out_buffer_idx={b.out_buffer_idx:<3}, .add_out_buffer_idx={add_out_buffer_idx:<2}, .add_in_buffer_idx={add_in_buffer_idx:<2}, ")
                 ch.write(     f".is_bias={1*(b.b is not None):<3}, .is_flatten={1*b.flatten:<3}, .is_softmax={1*b.softmax:<3}, ")
                 ch.write(     f".b_offset={b_words:<5}, .b_val_shift={b.bias_val_shift:<3}, .b_bias_shift={b.bias_b_shift:<3}, ")
@@ -211,7 +211,6 @@ class QModel(Model):
             ch.write(f"\n}};\n\n")
             ch.write(f"#define X_BITS_L2   {int(np.log2(hw.X_BITS))}\n")
             ch.write(f"#define W_BITS_L2   {int(np.log2(hw.K_BITS))}\n")
-            ch.write(f"#define X_PAD       {hw.X_PAD}\n")
             ch.write(f"#define KH_MAX      {hw.KH_MAX}\n")
             ch.write(f"#define PE_ROWS     {hw.ROWS}\n")
             ch.write(f"#define PE_COLS     {hw.COLS}\n\n")
@@ -294,7 +293,7 @@ class QModel(Model):
 
                 xp = b.xe[ip].flatten()
                 xp = np.concatenate([x_config_words, xp], axis=0)
-                # assert xp.shape == (hw.IN_BITS/hw.X_BITS +b.r.XN*b.r.XL*b.r.XW*CM_p*(hw.ROWS+hw.X_PAD),)
+                # assert xp.shape == (hw.IN_BITS/hw.X_BITS +b.r.XN*b.r.XL*b.r.XW*CM_p*(hw.ROWS+r.XPAD),)
                 np.savetxt(f"{hw.DATA_DIR}/{b.idx}_{ip}_x.txt", xp, fmt='%d')
 
 
@@ -326,9 +325,10 @@ class QModel(Model):
         hw = self.hw
         bundles = self.bundles
         
-        seconds = self.predict_performance()
+        seconds, mem_bytes = self.predict_performance()
         print(f"Predicted time on hardware: {1000*seconds:.5f} ms/frame")
         print(f"Predicted fps: {1/seconds}")
+        print(f"Data movement (bytes): mem_bytes")
 
         '''
         RUN SIMULATION
@@ -399,4 +399,5 @@ class QModel(Model):
             clocks_total += clocks
 
         time = clocks_total / (self.hw.FREQ * 1e6)
-        return time
+        mem_bytes = mem_bits / 8
+        return time, mem_bytes

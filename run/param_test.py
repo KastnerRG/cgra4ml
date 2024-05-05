@@ -80,4 +80,6 @@ def test_dnn_engine(PARAMS):
     model.export_inference(x=model.random_input, hw=hw)
     model.verify_inference(SIM=SIM, SIM_PATH=SIM_PATH)
 
-    print(f"Predicted time on hardware: {1000*model.predict_performance():.5f} ms")
+    seconds, bytes = model.predict_performance()
+    print(f"Predicted time on hardware: {1000*seconds:.5f} ms")
+    print(f"Predicted data movement: {bytes/1000:.5f} kB")

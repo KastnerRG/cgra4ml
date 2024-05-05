@@ -87,7 +87,7 @@ class Hardware:
 
         self.L_MAX                 = int(np.ceil(self.XH_MAX//self.ROWS))
         self.CONFIG_BEATS          = 0
-        self.X_PAD                 = int(np.ceil(self.KH_MAX//2))
+        self.X_PAD_MAX             = int(np.ceil(self.KH_MAX//2))
         self.BITS_KW2              = clog2((self.KW_MAX+1)/2)
         self.BITS_KH2              = clog2((self.KH_MAX+1)/2)
         self.BITS_CIN_MAX          = clog2(self.CI_MAX)
