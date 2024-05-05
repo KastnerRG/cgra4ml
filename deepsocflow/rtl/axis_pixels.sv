@@ -137,7 +137,7 @@ module axis_pixels #(
   always_comb
     if (state == SET) begin 
       s_ready       = 1;
-      {dw_re_s_valid, i_ready, i_data, i_valid, i_last, dw_re_m_ready, dw_ro_m_ready} = '0;
+      {dw_re_s_valid, i_ready, i_data, i_valid, i_last, dw_re_m_ready, dw_ro_m_ready, dw_ro_s_valid} = '0;
     end else begin
 
       i_ready       = en_copy;

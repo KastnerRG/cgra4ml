@@ -2,23 +2,16 @@
 // But iVerilog does not support {class, ref, break, rand}
 
 `timescale 1ns/1ps
-`include "config_tb.svh"
 
 module DMA_M2S #(
   parameter BUS_WIDTH=8, PROB_VALID=20,
   parameter BYTES_PER_BEAT = BUS_WIDTH/8
 )(
     input  logic aclk, aresetn, s_ready, 
-    output logic s_valid='0, s_last='0,
-    output logic [BYTES_PER_BEAT-1:0][7:0] s_data='0,
-    output logic [BYTES_PER_BEAT-1:0] s_keep='0
+    output logic s_valid, s_last,
+    output logic [BYTES_PER_BEAT-1:0][7:0] s_data,
+    output logic [BYTES_PER_BEAT-1:0] s_keep
 ); 
-
-  clocking cs @(posedge aclk);
-    default input #(`INPUT_DELAY_NS) output #(`OUTPUT_DELAY_NS);
-    input  s_ready;
-    output s_valid, s_last, s_data, s_keep;
-  endclocking
 
   logic s_last_val;
   logic [BYTES_PER_BEAT-1:0][7:0] s_data_val;
@@ -27,12 +20,12 @@ module DMA_M2S #(
   int status;
   longint unsigned i_bytes=0;
   bit prev_handshake=1; // data is released first
-  bit prev_slast=0, is_valid;
+  bit prev_slast=0;
 
   import "DPI-C" function byte get_byte (longint unsigned addr);
 
   task axis_push (input longint unsigned base_addr, input int bytes_per_transfer);
-    {cs.s_valid, cs.s_data, cs.s_last, cs.s_keep} <= '0;
+    {s_valid, s_data, s_last, s_keep} = '0;
 
     wait(aresetn); // wait for slave to begin
     
@@ -46,33 +39,32 @@ module DMA_M2S #(
           end
           else begin
             s_data_val[i] = get_byte(base_addr + i_bytes);
+            // $display("DMA: start:%d, i_bytes:%d, val:%d", offset, i_bytes, $signed(s_data_val[i]));
             s_keep_val[i] = 1;
             i_bytes  += 1;
           end
           s_last_val = i_bytes >= 64'(bytes_per_transfer);
         end
       end
-      is_valid = $urandom_range(0,999) < PROB_VALID;
-      cs.s_valid <= is_valid;       // randomize s_valid
+      s_valid = $urandom_range(0,999) < PROB_VALID;      // randomize s_valid
       
-      // scramble data signals on every cycle if !valid to catch slave reading it at wrong time
-      cs.s_data <= is_valid ? s_data_val : '1;
-      cs.s_keep <= is_valid ? s_keep_val : '1;
-      cs.s_last <= is_valid ? s_last_val : '1;
+      // scrable data signals on every cycle if !valid to catch slave reading it at wrong time
+      s_data = s_valid ? s_data_val : 'x;
+      s_keep = s_valid ? s_keep_val : 'x;
+      s_last = s_valid ? s_last_val : 'x;
 
       // -------------- LOOP BEGINS HERE -----------
-      @(cs);
-      prev_handshake = s_valid && cs.s_ready; // read at posedge
-      prev_slast     = s_valid && cs.s_ready && s_last;
+      @(posedge aclk);
+      prev_handshake = s_valid && s_ready; // read at posedge
+      prev_slast     = s_valid && s_ready && s_last;
       
-      // #10ps; // Delay before writing s_valid, s_data, s_keep
+      #10ps; // Delay before writing s_valid, s_data, s_keep
     end
 
     // Reset & close packet after done
-    {cs.s_valid, cs.s_data, cs.s_keep, cs.s_last} <= '0;
-    {prev_slast, i_bytes} <= '0;
+    {s_valid, s_data, s_keep, s_last, prev_slast, i_bytes} = '0;
     prev_handshake = 1;
-    @(cs);
+    @(posedge aclk);
   endtask
 endmodule
 
@@ -82,18 +74,12 @@ module DMA_S2M #(
   parameter  BYTES_PER_BEAT = BUS_WIDTH/8
 )(
     input  logic aclk, aresetn,
-    output logic m_ready='0,
+    output logic m_ready,
     input  logic m_valid, m_last,
     input  logic [BYTES_PER_BEAT-1:0][7:0] m_data, 
     input  logic [BYTES_PER_BEAT-1:0] m_keep,
     input  logic [31:0] hw_bpt
 );
-
-  clocking cb @(posedge aclk);
-    default input #(`INPUT_DELAY_NS) output #(`OUTPUT_DELAY_NS);
-    output m_ready;
-    input  m_valid, m_last, m_data, m_keep;
-  endclocking
 
   longint unsigned i_bytes = 0;
   bit done = 0;
@@ -101,24 +87,24 @@ module DMA_S2M #(
   import "DPI-C" function void set_byte (longint unsigned addr, byte data);
 
   task axis_pull (input longint unsigned base_addr, input int bytes_per_transfer);
-    cb.m_ready <= 0;
+    m_ready = 0;
     wait(aresetn);
     
     while (!done) begin
 
-      @(cb);
-      if (m_ready && cb.m_valid) begin  // read at posedge
+      @(posedge aclk)
+      if (m_ready && m_valid) begin  // read at posedge
         // assert (bytes_per_transfer == hw_bpt) else $display("Error: bytes_per_transfer=%d, hw_bpt=%d", bytes_per_transfer, hw_bpt);
         for (int i=0; i < BYTES_PER_BEAT; i=i+1)
-          if (cb.m_keep[i]) begin
-            set_byte(base_addr + i_bytes, cb.m_data[i]);
+          if (m_keep[i]) begin
+            set_byte(base_addr + i_bytes, m_data[i]);
             i_bytes  += 1;
           end
-        if (cb.m_last) done = 1;
+        if (m_last) done = 1;
       end
 
-      // #10ps // delay before writing
-      cb.m_ready <= $urandom_range(0,999) < PROB_READY;
+      #10ps // delay before writing
+      m_ready = $urandom_range(0,999) < PROB_READY;
     end
 
     {done, i_bytes} = 0;
