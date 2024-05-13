@@ -6,7 +6,7 @@
 
 typedef const struct {
   const int32_t  n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0, xp_words, ib_out;
-  const int32_t  w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes; // bytes per transfer
+  const int32_t  w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes, x_pad; // bytes per transfer
   const int8_t   in_buffer_idx, out_buffer_idx, add_out_buffer_idx, add_in_buffer_idx;
   const int8_t   is_bias, is_pool, is_flatten, is_softmax;
   const int32_t  b_offset, b_val_shift, b_bias_shift;
@@ -25,12 +25,12 @@ typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 #define X_BITS_MASK       ((1 << X_BITS) -1)
 
 typedef struct {
-  Y_TYPE     ocm            [2][PE_COLS*PE_ROWS];
 
   int8_t     w              [W_BYTES     ];
   B_TYPE     b              [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
   int8_t     x              [X_BYTES     ]; // keep next to wb. wbx is loaded to w_ptr
 
+  Y_TYPE     ocm            [2][PE_COLS*PE_ROWS];
   O_TYPE     y              [O_WORDS     ];
   int32_t    nhwc           [NHWC_WORDS  ];
   int8_t     debug_tiled    [O_WORDS_MAX ];
@@ -39,12 +39,26 @@ typedef struct {
   int8_t     add_buffers    [N_ADD_BUF   ][NHWC_WORDS  ]; // should be last, since N_ADD_BUF can be empty
 } Memory_st;
 
+//#define OCM_BASEADDR 0xFFFF0000
+//typedef Y_TYPE ocm_t [2][PE_COLS*PE_ROWS];
+//#define ocm ((ocm_t*)&OCM_BASEADDR)
+#define ocm (mem.ocm)
+
 
 #ifdef __x86_64__
   #define SIM
   #include <stdio.h>
   #define sim_fprintf fprintf
   Memory_st mem;
+
+  static inline void write_flush_u8 (uint8_t* addr, uint8_t val) {
+    *addr = val;
+  }
+
+  static inline void write_flush_u64 (uint64_t* addr, uint64_t val) {
+    *addr = val;
+  }
+
 #else
   #define sim_fprintf(...)
   #define mem (*(Memory_st*)MEM_BASEADDR)
@@ -88,7 +102,7 @@ static inline int32_t quant_lrelu(int32_t x, int8_t nzero, int8_t shift, int8_t 
 static inline void write_x(int8_t val, int8_t *p_out_buffer, int32_t ib, int32_t ixp, int32_t ixn, int32_t ixl, int32_t ixw, int32_t ixcm, int32_t ixr, Bundle_t *pb_out, int32_t xcm ){
 
   #define WRITEX_DEBUG_INFO "--- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n",ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm
-  assert_printf (ixr , <, PE_ROWS+X_PAD, "write_x", WRITEX_DEBUG_INFO);
+  assert_printf (ixr , <, PE_ROWS+pb_out->x_pad, "write_x", WRITEX_DEBUG_INFO);
   assert_printf (ixcm, <, xcm          , "write_x", WRITEX_DEBUG_INFO);
   assert_printf (ixw , <, pb_out->w    , "write_x", WRITEX_DEBUG_INFO);
   assert_printf (ixl , <, pb_out->l    , "write_x", WRITEX_DEBUG_INFO);
@@ -96,7 +110,7 @@ static inline void write_x(int8_t val, int8_t *p_out_buffer, int32_t ib, int32_t
   assert_printf (ixp , <, pb_out->p    , "write_x", WRITEX_DEBUG_INFO);
 
   int32_t p_offset       = (ixp == 0) ? 0 : (pb_out->cm_p0 + (ixp-1)*pb_out->cm) * pb_out->xp_words;
-  int32_t flat_index_n2r = (((ixn*pb_out->l + ixl)*pb_out->w + ixw)*xcm + ixcm)*(PE_ROWS+X_PAD) + ixr; // multidim_index -> flat_index [n,l,w,cm,r]
+  int32_t flat_index_n2r = (((ixn*pb_out->l + ixl)*pb_out->w + ixw)*xcm + ixcm)*(PE_ROWS+pb_out->x_pad) + ixr; // multidim_index -> flat_index [n,l,w,cm,r]
 
   // Debug tiled output
   int32_t flat_index     = p_offset + flat_index_n2r;
@@ -112,7 +126,7 @@ static inline void write_x(int8_t val, int8_t *p_out_buffer, int32_t ib, int32_t
   uint8_t packed_val             = ((uint8_t)val & X_BITS_MASK) << (packed_position * X_BITS);
   uint8_t mem_val                = p_out_buffer[packed_index];
   uint8_t mem_val_cleaned        = X_POSITION_INVERTED_MASKS[packed_position] & mem_val;
-  p_out_buffer[packed_index]     = mem_val_cleaned | packed_val;
+  write_flush_u8((uint8_t*)(p_out_buffer + packed_index), mem_val_cleaned | packed_val);
 
   // if (ib==1 && packed_index >= 356) debug_printf("index:%d, final_val:%d --- position:%d value:%d packed_val:%d, mem_val:%d, mem_val_cleaned:%d, clean_mask:%d, pos_mask:%d \n", packed_index, mem.debug_packed[packed_index], packed_position, val, packed_val, mem_val, mem_val_cleaned, X_BITS_MASK, X_POSITION_INVERTED_MASKS[packed_position]);
 }
@@ -177,8 +191,8 @@ static inline void tile_write( int32_t out_val, int8_t *p_out_buffer, int32_t ib
   for (int32_t i_yr_dest = i_yr; i_yr_dest < yr_sweep; i_yr_dest++) {
     write_x(out_val, p_out_buffer, ib, i_yp, i_yn, i_yl, i_yw, i_ycm, i_yr_dest,   pb_out, ycm);
 
-    // --- PADDING: the [bottom X_PAD rows of previous block (l-1)] with [first X_PAD rows of this block (l)]
-    if (i_yr_dest < X_PAD) {
+    // --- PADDING: the [bottom x_pad rows of previous block (l-1)] with [first x_pad rows of this block (l)]
+    if (i_yr_dest < pb_out->x_pad) {
       int32_t pad_val = (i_yl == 0) ? 0         : out_val;
       int32_t dest_yl = (i_yl == 0) ? pb_out->l-1 : i_yl-1;
       write_x(pad_val, p_out_buffer, ib, i_yp, i_yn, dest_yl, i_yw, i_ycm, i_yr_dest+PE_ROWS,   pb_out, ycm);
@@ -243,9 +257,9 @@ extern EXT_C void load_y (volatile uint8_t *p_done, uint64_t *p_base_addr_next, 
         int32_t offset_words   = (ixp == 0) ? 0 : (pb_out->cm_p0 + (ixp-1)*pb_out->cm)*pb_out->xp_words;
         int32_t offset_bytes   = offset_words/X_WORDS_PER_BYTE + ixp*(AXI_WIDTH/8);
         uint64_t *p_header = (uint64_t*)&(p_out_buffer[offset_bytes]);
-        p_header[0] = ixp == 0 ? pb_out->x_header_p0 : pb_out->x_header;
+        write_flush_u64(p_header+0, ixp == 0 ? pb_out->x_header_p0 : pb_out->x_header);
         if (AXI_WIDTH == 128)
-          p_header[1] = (uint64_t)0;
+          write_flush_u64(p_header+1, (uint64_t)0);
         // debug_printf("--------ib:%d, ixp:%d offset_bytes:%d\n", ib, ixp, offset_bytes);
       }
     }
@@ -262,7 +276,7 @@ extern EXT_C void load_y (volatile uint8_t *p_done, uint64_t *p_base_addr_next, 
 
               ocm_bank = !ocm_bank;
               w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
-              *p_base_addr_next = (uint64_t)&mem.ocm[ocm_bank];
+              *p_base_addr_next = (uint64_t)&ocm[ocm_bank];
               *p_bpt_next = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
 
 #ifdef SIM
@@ -305,7 +319,7 @@ DMA_WAIT:
                       goto PROCESS_AND_STORE_DONE;
                     }
 
-                    raw_val = mem.ocm[ocm_bank][sram_addr];
+                    raw_val = ocm[ocm_bank][sram_addr];
                     out_val = raw_val;
 
 //PROCESS_START:

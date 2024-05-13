@@ -9,12 +9,14 @@ module dnn_engine #(
                 X_BITS                  = `X_BITS             , 
                 K_BITS                  = `K_BITS             , 
                 Y_BITS                  = `Y_BITS             ,
+                Y_OUT_BITS              = `Y_OUT_BITS         ,
                 M_DATA_WIDTH_HF_CONV    = COLS  * ROWS  * Y_BITS,
                 M_DATA_WIDTH_HF_CONV_DW = ROWS  * Y_BITS,
 
                 S_PIXELS_WIDTH_LF       = `S_PIXELS_WIDTH_LF  ,
                 S_WEIGHTS_WIDTH_LF      = `S_WEIGHTS_WIDTH_LF ,
                 M_OUTPUT_WIDTH_LF       = `M_OUTPUT_WIDTH_LF  ,
+                W_BPT                   = `W_BPT              ,
 
                 OUT_ADDR_WIDTH          = 10,
                 OUT_BITS                = 32
@@ -37,7 +39,8 @@ module dnn_engine #(
     input  wire m_axis_tready, 
     output wire m_axis_tvalid, m_axis_tlast,
     output wire [M_OUTPUT_WIDTH_LF   -1:0] m_axis_tdata,
-    output wire [M_OUTPUT_WIDTH_LF/8 -1:0] m_axis_tkeep
+    output wire [M_OUTPUT_WIDTH_LF/8 -1:0] m_axis_tkeep,
+    output wire [W_BPT-1:0] m_bytes_per_transfer
   ); 
 
   localparam  TUSER_WIDTH = `TUSER_WIDTH;
@@ -50,6 +53,7 @@ module dnn_engine #(
   wire [X_BITS*ROWS -1:0] pixels_m_data;
   wire [K_BITS*COLS -1:0] weights_m_data;
   wire [COLS-1:0][TUSER_WIDTH -1:0] weights_m_user;
+  wire [W_BPT-1:0] s_bytes_per_transfer;
 
 
   // Unpack tkeep_bytes into tkeep_words
@@ -122,33 +126,33 @@ module dnn_engine #(
     .m_valid        (m_valid                    ),
     .m_data         (m_data                     ),
     .m_last_pkt     (),
-    .m_last         (m_last                     )
+    .m_last         (m_last                     ),
+    .m_bytes_per_transfer  (s_bytes_per_transfer)
   );
 
-  localparam Y_BITS_PADDED = 2**$clog2(Y_BITS);
-  localparam Y_PADDING     = Y_BITS_PADDED-Y_BITS;
+  localparam Y_PADDING     = Y_OUT_BITS-Y_BITS;
+  wire [Y_OUT_BITS*ROWS-1:0] m_data_padded;
   genvar iy;
-  
-  wire [Y_BITS_PADDED*ROWS-1:0] m_data_padded;
   generate
     for (iy=0; iy<ROWS; iy=iy+1) begin
       // Sign padding: can be done as $signed(), but verilator gives warning for width mismatch
       wire sign_bit = m_data[Y_BITS*(iy+1)-1];
-      assign m_data_padded[Y_BITS_PADDED*(iy+1)-1:Y_BITS_PADDED*iy] = {{Y_PADDING{sign_bit}}, m_data[Y_BITS*(iy+1)-1:Y_BITS*iy]};
+      assign m_data_padded[Y_OUT_BITS*(iy+1)-1:Y_OUT_BITS*iy] = {{Y_PADDING{sign_bit}}, m_data[Y_BITS*(iy+1)-1:Y_BITS*iy]};
     end
   endgenerate
   
 
   alex_axis_adapter_any #(
-    .S_DATA_WIDTH  (Y_BITS_PADDED*ROWS),
+    .S_DATA_WIDTH  (Y_OUT_BITS*ROWS),
     .M_DATA_WIDTH  (M_OUTPUT_WIDTH_LF ),
     .S_KEEP_ENABLE (1),
     .M_KEEP_ENABLE (1),
-    .S_KEEP_WIDTH  (Y_BITS_PADDED*ROWS/8),
+    .S_KEEP_WIDTH  (Y_OUT_BITS*ROWS/8),
     .M_KEEP_WIDTH  (M_OUTPUT_WIDTH_LF/8),
     .ID_ENABLE     (0),
     .DEST_ENABLE   (0),
-    .USER_ENABLE   (0)
+    .USER_WIDTH    (W_BPT),
+    .USER_ENABLE   (1)
   ) DW (
     .clk           (aclk         ),
     .rstn          (aresetn      ),
@@ -156,7 +160,7 @@ module dnn_engine #(
     .s_axis_tvalid (m_valid      ),
     .s_axis_tdata  (m_data_padded),
     .s_axis_tlast  (m_last       ),
-    .s_axis_tkeep  ({(Y_BITS_PADDED*ROWS/8){1'b1}}),
+    .s_axis_tkeep  ({(Y_OUT_BITS*ROWS/8){1'b1}}),
     .m_axis_tready (m_axis_tready),
     .m_axis_tvalid (m_axis_tvalid),
     .m_axis_tdata  (m_axis_tdata ),
@@ -164,10 +168,10 @@ module dnn_engine #(
     .m_axis_tkeep  (m_axis_tkeep ),
     .s_axis_tid    (8'b0),
     .s_axis_tdest  (8'b0),
-    .s_axis_tuser  (1'b0),
+    .s_axis_tuser  (s_bytes_per_transfer),
     .m_axis_tid    (),
     .m_axis_tdest  (),
-    .m_axis_tuser  ()
+    .m_axis_tuser  (m_bytes_per_transfer)
   );
 endmodule
 
@@ -177,6 +181,7 @@ module proc_engine_out #(
     M_DATA_WIDTH_HF_CONV = `COLS  * `ROWS  * `Y_BITS,
     M_DATA_WIDTH_HF_CONV_DW = `ROWS  * `Y_BITS,
     COLS = `COLS
+    W_BPT                   = `W_BPT
 )(
     input wire aclk          ,
     input wire aresetn       ,
@@ -191,7 +196,8 @@ module proc_engine_out #(
     output wire m_valid,
     output wire [M_DATA_WIDTH_HF_CONV_DW-1:0] m_data,
     output wire m_last_pkt,
-    output wire m_last 
+    output wire m_last,
+    output wire [W_BPT-1:0] m_bytes_per_transfer
   );
 
   wire conv_m_axis_tready, conv_m_axis_tvalid, conv_m_axis_tlast ;
@@ -225,7 +231,8 @@ module proc_engine_out #(
     .m_valid (m_valid               ),
     .m_data  (m_data                ),
     .m_last_pkt (m_last_pkt         ),
-    .m_last  (m_last                )
+    .m_last     (m_last             ),
+    .m_bytes_per_transfer  (m_bytes_per_transfer)
   );
 
 endmodule

@@ -16,8 +16,8 @@ def product_dict(**kwargs):
 @pytest.mark.parametrize("PARAMS", list(product_dict(
                                         processing_elements  = [(8,24)   ],
                                         frequency_mhz        = [ 250     ],
-                                        bits_input           = [ 8       ],
-                                        bits_weights         = [ 8       ],
+                                        bits_input           = [ 4       ],
+                                        bits_weights         = [ 4       ],
                                         bits_sum             = [ 32      ],
                                         bits_bias            = [ 16      ],
                                         max_batch_size       = [ 64      ], 
@@ -45,7 +45,7 @@ def test_dnn_engine(PARAMS):
     '''
     1. BUILD MODEL
     '''
-    XN = 8
+    XN = 1
     input_shape = (XN,18,18,3) # (XN, XH, XW, CI)
 
     QINT_BITS = 0
@@ -81,4 +81,6 @@ def test_dnn_engine(PARAMS):
     model.export_inference(x=model.random_input, hw=hw)
     model.verify_inference(SIM=SIM, SIM_PATH=SIM_PATH)
 
-    print(f"Predicted time on hardware: {1000*model.predict_performance():.5f} ms")
+    seconds, bytes = model.predict_performance()
+    print(f"Predicted time on hardware: {1000*seconds:.5f} ms")
+    print(f"Predicted data movement: {bytes/1000:.5f} kB")
