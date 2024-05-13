@@ -89,13 +89,13 @@ module dnn_engine_tb;
       if (y_done) break;
     end
 
-  // initial begin
-  //   $dumpfile("dnn_engine_tb.vcd");
-  //   $dumpvars(0, dnn_engine_tb);
+  initial begin
+     $dumpfile("dnn_engine_tb.vcd");
+     $dumpvars(0, dnn_engine_tb);
   //   #600us;
   //   $display("Finished early!");
   //   $finish();
-  // end
+  end
 
   // START SIM  
   initial begin

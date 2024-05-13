@@ -28,7 +28,7 @@ module axis_weight_rotator #(
     BITS_XN             = $clog2(XN_MAX      ) ,
 
     M_WIDTH             = WORD_WIDTH*COLS          ,
-    BRAM_WIDTH          = M_WIDTH                  ,
+    BRAM_WIDTH          = WORD_WIDTH                  ,
     BRAM_DEPTH          = RAM_WEIGHTS_DEPTH        ,
     BITS_ADDR           = $clog2(RAM_WEIGHTS_DEPTH ),
     BITS_CONFIG_BEATS   = $clog2(CONFIG_BEATS)+1
@@ -43,11 +43,11 @@ module axis_weight_rotator #(
     input  logic [S_WEIGHTS_WIDTH_LF            -1:0]  s_axis_tdata ,
     input  logic [S_WEIGHTS_WIDTH_LF/WORD_WIDTH -1:0]  s_axis_tkeep ,
 
-    input  logic               m_axis_tready,
-    output logic               m_axis_tvalid,
-    output logic               m_axis_tlast ,
-    output tuser_st            m_axis_tuser ,
-    output logic [M_WIDTH-1:0] m_axis_tdata
+    input  logic    [COLS-1:0]              m_axis_tready,
+    output logic    [COLS-1:0]              m_axis_tvalid,
+    output logic    [COLS-1:0]              m_axis_tlast ,
+    output tuser_st [COLS-1:0]              m_axis_tuser ,
+    output logic [COLS-1:0][WORD_WIDTH-1:0] m_axis_tdata
   );
 
   enum {W_IDLE_S, W_GET_REF_S, W_WRITE_S, W_FILL_1_S, W_FILL_2_S, W_SWITCH_S} state_write;
@@ -57,9 +57,12 @@ module axis_weight_rotator #(
   logic i_read, i_write, dw_m_ready, dw_m_valid, dw_m_last, dw_s_valid, dw_s_ready;
   logic      [M_WIDTH-1:0] dw_m_data_flat;
   logic [1:0][M_WIDTH-1:0] bram_m_data;
-  logic [1:0] done_read_next, done_write_next, en_ref, done_read, done_write, bram_resetn, bram_wen, bram_m_ready;
-  logic       bram_reg_resetn, bram_m_valid, bram_reg_m_valid;
-  logic en_count_config, l_config, l_kw, l_cin, l_cols, l_blocks, l_xn, f_kw, f_cin, f_cols, lc_config, lc_kw, lc_cin, lc_cols, lc_blocks, lc_xn;
+  logic [1:0] done_read_next, done_write_next, en_ref, done_read, done_write, bram_resetn, bram_wen;
+  logic [1:0][COLS-1:0] bram_m_ready;
+  logic       bram_reg_resetn;
+  logic [COLS-1:0] bram_m_valid, bram_reg_m_valid;
+  logic [COLS-1:0] en_count_config, l_config, l_kw, l_cin, l_cols, l_blocks, l_xn, f_kw, f_cin, f_cols, lc_config, lc_kw, lc_cin, lc_cols, lc_blocks, lc_xn;
+  logic [COLS-1:0]     last_config;
   typedef struct packed {
     logic [BITS_ADDR        -1:0] addr_max;
     logic [BITS_XN          -1:0] xn_1;
@@ -110,6 +113,7 @@ module axis_weight_rotator #(
 
   wire dw_m_handshake      = dw_m_valid     && dw_m_ready;
   wire dw_m_last_handshake = dw_m_handshake && dw_m_last;
+  wire and_ready = &m_axis_tready;
 
 
   //  STATE MACHINE: WRITE
@@ -126,30 +130,30 @@ module axis_weight_rotator #(
 
   //  STATE MACHINE: READ
   always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
-    if (!aresetn)                                state_read <= R_IDLE_S;
+    if (!aresetn)                                 state_read <= R_IDLE_S;
     else unique case (state_read)
-      R_IDLE_S        : if (done_write [i_read]) state_read <= CONFIG_BEATS==0 ? R_READ_S : R_PASS_CONFIG_S;
-      R_PASS_CONFIG_S : if (lc_config)           state_read <= R_READ_S;
-      R_READ_S        : if (lc_xn    )           state_read <= R_SWITCH_S;
-      R_SWITCH_S      :                          state_read <= R_IDLE_S;
+      R_IDLE_S        : if (done_write [i_read])  state_read <= CONFIG_BEATS==0 ? R_READ_S : R_PASS_CONFIG_S;
+      R_PASS_CONFIG_S : if (last_config[COLS-1])  state_read <= R_READ_S;
+      R_READ_S        : if (m_axis_tlast[COLS-1]) state_read <= R_SWITCH_S;
+      R_SWITCH_S      :                           state_read <= R_IDLE_S;
     endcase 
 
   always_comb begin
 
-    en_count_config   = 0;
-    m_axis_tvalid     = 0;
+    en_count_config   = '0;
+    m_axis_tvalid     = '0;
     bram_reg_resetn   = 1;
 
     unique case (state_read)
       R_IDLE_S        : begin
-                          en_count_config = 1;
+                          en_count_config = '1;
                         end
       R_PASS_CONFIG_S : begin
                           m_axis_tvalid      = bram_reg_m_valid;
-                          en_count_config    = m_axis_tvalid && m_axis_tready;
+                          en_count_config    = m_axis_tvalid & m_axis_tready;
                         end
       R_READ_S        : begin
-                          m_axis_tvalid      = bram_reg_m_valid;
+                            m_axis_tvalid      = bram_reg_m_valid;
                         end
       R_SWITCH_S      : begin
                           bram_reg_resetn    = 0;
@@ -196,7 +200,7 @@ module axis_weight_rotator #(
         done_write_next [i] = done_write[i];
         
         done_read_next  [i]    = done_read[i];
-        bram_m_ready    [i]    = 0;
+        bram_m_ready    [i]    = '0;
 
         if (i==i_write) 
           case (state_write)
@@ -213,11 +217,11 @@ module axis_weight_rotator #(
 
           if (CONFIG_BEATS==0 ? (state_read==R_IDLE_S && done_write [i_read]) : (state_read==R_PASS_CONFIG_S)) begin
             done_read_next [i] = 0;
-            bram_m_ready   [i] = 1;
+            bram_m_ready   [i] = '1;
           end
 
           case (state_read)
-            R_PASS_CONFIG_S, R_READ_S :   bram_m_ready   [i] = m_axis_tready;
+            R_PASS_CONFIG_S, R_READ_S :   bram_m_ready   [i] = m_axis_tready; // TODO check in sim if working correctly
             R_SWITCH_S                :   done_read_next [i] = 1;
           endcase 
         end
@@ -225,24 +229,36 @@ module axis_weight_rotator #(
 
       config_st ref_i;
       assign ref_i = ref_config[i];
-      cyclic_bram #(
-        .R_DEPTH      (BRAM_DEPTH),
-        .R_DATA_WIDTH (BRAM_WIDTH),
-        .W_DATA_WIDTH (BRAM_WIDTH),
-        .LATENCY      (DELAY_W_RAM ),
-        .ABSORB       (0)
-      ) BRAM (
-        .clk          (aclk),
-        .clken        (1'b1),
-        .resetn_global(aresetn),
-        .resetn_local (bram_resetn [i]),
-        .s_data       (dw_m_data_flat),
-        .w_en         (bram_wen    [i]),
-        .m_data       (bram_m_data [i]),
-        .r_en         (bram_m_ready[i]),
-        .r_addr_min   (BITS_ADDR'(CONFIG_BEATS)),
-        .r_addr_max   (ref_i.addr_max )
-      );
+      for (genvar j=0; j<COLS; j++) begin
+
+        // always_ff@(posedge aclk `OR_NEGEDGE(aresetn)) begin
+        //   if(j!=0) begin
+        //     if (!aresetn) bram_m_ready[i][j] <= 0;
+        //     else begin
+        //       //if(and_ready)
+        //         bram_m_ready[i][j] <= bram_m_ready[i][j-1];
+        //     end
+        //   end
+        // end
+        cyclic_bram #(
+          .R_DEPTH      (BRAM_DEPTH),
+          .R_DATA_WIDTH (BRAM_WIDTH),
+          .W_DATA_WIDTH (BRAM_WIDTH),
+          .LATENCY      (DELAY_W_RAM ),
+          .ABSORB       (0)
+        ) BRAM (
+          .clk          (aclk),
+          .clken        (1'b1),
+          .resetn_global(aresetn),
+          .resetn_local (bram_resetn [i]),
+          .s_data       (dw_m_data_flat[WORD_WIDTH*(j+1)-1:WORD_WIDTH*j]),
+          .w_en         (bram_wen    [i]),
+          .m_data       (bram_m_data [i][WORD_WIDTH*(j+1)-1:WORD_WIDTH*j]),
+          .r_en         (bram_m_ready[i][j]),
+          .r_addr_min   (BITS_ADDR'(CONFIG_BEATS)),
+          .r_addr_max   (ref_i.addr_max )
+        );
+      end
 
       /*
         DONE FLAGS
@@ -277,75 +293,124 @@ module axis_weight_rotator #(
     end
   endgenerate
 
-  n_delay #(.N(DELAY_W_RAM ), .W(1)) BRAM_VALID (.c(aclk), .rng(aresetn), .rnl(bram_reg_resetn), .e(1'b1), .i(bram_m_ready[i_read]), .o(bram_m_valid));
+  generate
+    for (genvar j=0; j<COLS; j++) begin
+      n_delay #(.N(DELAY_W_RAM ), .W(1)) BRAM_VALID (.c(aclk), .rng(aresetn), .rnl(bram_reg_resetn), .e(1'b1), .i(bram_m_ready[i_read][j]), .o(bram_m_valid[j]));
 
-  axis_pipeline_register2 # (
-    .DATA_WIDTH  (BRAM_WIDTH),
-    .KEEP_ENABLE (0),
-    .LAST_ENABLE (0),
-    .ID_ENABLE   (0),
-    .DEST_ENABLE (0),
-    .USER_ENABLE (0),
-    .REG_TYPE    (2), // skid buffer
-    .LENGTH      (DELAY_W_RAM )
-  ) REG_PIPE (
-    .clk          (aclk),
-    .rstn         (aresetn),
-    .rstn_local   (bram_reg_resetn),
-    .s_axis_tdata (bram_m_data [i_read]),
-    .s_axis_tvalid(bram_m_valid),
-    .m_axis_tdata (m_axis_tdata),
-    .m_axis_tvalid(bram_reg_m_valid),
-    .m_axis_tready(bram_m_ready[i_read]),
-    // Unused
-    .s_axis_tkeep ('0),
-    .s_axis_tlast ('0),
-    .s_axis_tid   ('0),
-    .s_axis_tdest ('0),
-    .s_axis_tuser ('0),
-    .s_axis_tready(),
-    .m_axis_tkeep (),
-    .m_axis_tlast (),
-    .m_axis_tid   (),
-    .m_axis_tdest (),
-    .m_axis_tuser ()
-  );
+      axis_pipeline_register2 # (
+        .DATA_WIDTH  (BRAM_WIDTH),
+        .KEEP_ENABLE (0),
+        .LAST_ENABLE (0),
+        .ID_ENABLE   (0),
+        .DEST_ENABLE (0),
+        .USER_ENABLE (0),
+        .REG_TYPE    (2), // skid buffer
+        .LENGTH      (DELAY_W_RAM )
+      ) REG_PIPE (
+        .clk          (aclk),
+        .rstn         (aresetn),
+        .rstn_local   (bram_reg_resetn),
+        .s_axis_tdata (bram_m_data [i_read][WORD_WIDTH*(j+1)-1:WORD_WIDTH*j]),
+        .s_axis_tvalid(bram_m_valid[j]),
+        .m_axis_tdata (m_axis_tdata[j]),
+        .m_axis_tvalid(bram_reg_m_valid[j]),
+        .m_axis_tready(bram_m_ready[i_read][j]), // What does this do?
+        // Unused
+        .s_axis_tkeep ('0),
+        .s_axis_tlast ('0),
+        .s_axis_tid   ('0),
+        .s_axis_tdest ('0),
+        .s_axis_tuser ('0),
+        .s_axis_tready(),
+        .m_axis_tkeep (),
+        .m_axis_tlast (),
+        .m_axis_tid   (),
+        .m_axis_tdest (),
+        .m_axis_tuser ()
+      );
+    end
+  endgenerate
 
   // Counters
-  logic [BITS_XW -1:0] c_cols;
+  logic [COLS-1:0][BITS_XW -1:0] c_cols;
+
   wire copy_config = (state_read == R_IDLE_S) && done_write [i_read];
-  wire en_kw       = m_axis_tvalid && m_axis_tready && state_read == R_READ_S;
+
   config_st ref_i_read;
   assign ref_i_read = ref_config[i_read]; 
 
   wire [BITS_CONFIG_BEATS-1:0] config_beats_const = CONFIG_BEATS-1;
-  counter #(.W(BITS_CONFIG_BEATS)) C_CONFIG    (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(en_count_config), .max_in(                      config_beats_const  ), .last_clk(lc_config), .last(l_config), .first(),         .count()      );
-  counter #(.W(BITS_KW          )) C_KW        (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(en_kw          ), .max_in(BITS_KW          '( 2*ref_i_read.kw2     )), .last_clk(lc_kw    ), .last(l_kw    ), .first(f_kw    ), .count()      );
-  counter #(.W(BITS_CI          )) C_CI        (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(lc_kw          ), .max_in(BITS_CI          '(   ref_i_read.cin_1   )), .last_clk(lc_cin   ), .last(l_cin   ), .first(f_cin   ), .count()      );
-  counter #(.W(BITS_XW          )) C_XW        (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(lc_cin         ), .max_in(BITS_XW          '(   ref_i_read.cols_1  )), .last_clk(lc_cols  ), .last(l_cols  ), .first(f_cols  ), .count(c_cols));
-  counter #(.W(BITS_IM_BLOCKS   )) C_IM_BLOCKS (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(lc_cols        ), .max_in(BITS_IM_BLOCKS   '(   ref_i_read.blocks_1)), .last_clk(lc_blocks), .last(l_blocks), .first(),         .count()      );
-  counter #(.W(BITS_XN          )) C_XN        (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(lc_blocks      ), .max_in(BITS_XN          '(   ref_i_read.xn_1    )), .last_clk(lc_xn    ), .last(l_xn    ), .first(),         .count()      );
 
+  generate 
+  for (genvar i=0; i<COLS; i++ ) begin
+    wire en_kw       = m_axis_tvalid[i] && m_axis_tready[i] && state_read == R_READ_S; //TODO: needs to be changed??
+
+    counter #(.W(BITS_CONFIG_BEATS)) C_CONFIG    (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(en_count_config[i]), .max_in(                      config_beats_const  ), .last_clk(lc_config[i]), .last(l_config[i]), .first(),         .count()      );
+    counter #(.W(BITS_KW          )) C_KW        (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(en_kw          ), .max_in(BITS_KW          '( 2*ref_i_read.kw2     )), .last_clk(lc_kw[i]    ), .last(l_kw[i]    ), .first(f_kw[i]    ), .count()      );
+    counter #(.W(BITS_CI          )) C_CI        (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(lc_kw[i]       ), .max_in(BITS_CI          '(   ref_i_read.cin_1   )), .last_clk(lc_cin[i]   ), .last(l_cin[i]   ), .first(f_cin[i]   ), .count()      );
+    counter #(.W(BITS_XW          )) C_XW        (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(lc_cin[i]         ), .max_in(BITS_XW          '(   ref_i_read.cols_1  )), .last_clk(lc_cols[i]  ), .last(l_cols[i]  ), .first(f_cols[i]  ), .count(c_cols[i]));
+    counter #(.W(BITS_IM_BLOCKS   )) C_IM_BLOCKS (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(lc_cols[i]        ), .max_in(BITS_IM_BLOCKS   '(   ref_i_read.blocks_1)), .last_clk(lc_blocks[i]), .last(l_blocks[i]), .first(),         .count()      );
+    counter #(.W(BITS_XN          )) C_XN        (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(lc_blocks[i]      ), .max_in(BITS_XN          '(   ref_i_read.xn_1    )), .last_clk(lc_xn[i]    ), .last(l_xn[i]    ), .first(),         .count()      );
+  
   // Last & User
 
-  assign m_axis_tlast = lc_xn;
+    assign m_axis_tlast[i] = lc_xn[i];
+    assign last_config[i] = lc_config[i];
 
-  assign m_axis_tuser.is_config        = state_read  == R_PASS_CONFIG_S;
-  assign m_axis_tuser.kw2              = ref_i_read.kw2;
-  assign m_axis_tuser.is_w_first_clk   = f_cols && f_cin && f_kw;
-  assign m_axis_tuser.is_cin_last      = l_kw   && l_cin;
-  assign m_axis_tuser.is_w_first_kw2   = (ref_i_read.cols_1 - c_cols) < BITS_XW'(ref_i_read.kw2);
-  assign m_axis_tuser.is_w_last        = l_cols;
+    assign m_axis_tuser[i].is_config        = state_read  == R_PASS_CONFIG_S;
+    assign m_axis_tuser[i].kw2              = ref_i_read.kw2;
+    assign m_axis_tuser[i].is_w_first_clk   = f_cols[i] && f_cin[i] && f_kw[i];
+    assign m_axis_tuser[i].is_cin_last      = l_kw[i]   && l_cin[i];
+    assign m_axis_tuser[i].is_w_first_kw2   = (ref_i_read.cols_1 - c_cols[i]) < BITS_XW'(ref_i_read.kw2);
+    assign m_axis_tuser[i].is_w_last        = l_cols[i];
+  end
+  endgenerate
+
+  // generate
+  //   for (genvar j=0; j<COLS; j++) begin
+
+  //   always_ff@(posedge aclk) begin
+  //     if(j!=0) begin
+  //       //if(and_ready) begin
+  //       m_axis_tlast[j] <= m_axis_tlast[j-1];
+  //       m_axis_tuser[j] <= m_axis_tuser[j-1];
+  //       last_config[j]  <=  last_config[j-1];
+  //       //end
+  //     end
+
+  //   end
+  //   end
+  // endgenerate
 
 endmodule
 
 
-module axis_sync (
-  input logic weights_m_valid, pixels_m_valid, m_axis_tready,
-  input tuser_st weights_m_user,
-  output logic m_axis_tvalid, weights_m_ready, pixels_m_ready
+
+module axis_sync #(
+    parameter   COLS                    = `COLS)(
+  input logic [COLS-1:0] weights_m_valid, m_axis_tready,
+  input logic aclk,
+  input logic pixels_m_valid,
+  input tuser_st [COLS-1:0] weights_m_user,
+  output logic [COLS-1:0] m_axis_tvalid, weights_m_ready, 
+  output logic pixels_m_ready
 );
-  assign m_axis_tvalid   = weights_m_valid && (pixels_m_valid || weights_m_user.is_config);
-  assign weights_m_ready = m_axis_tready   && (pixels_m_valid || weights_m_user.is_config);
-  assign pixels_m_ready  = m_axis_tready   && weights_m_valid && !weights_m_user.is_config;
+
+logic [COLS-1:0] pixels_m_valid_pipe;
+
+assign pixels_m_valid_pipe[0] = m_axis_tready[0] ? pixels_m_valid: 1'b0;
+
+generate //TODO: pixels_m_valid should be pipelined?
+for (genvar i=0; i<COLS; i++) begin
+  always_ff@(posedge aclk) begin 
+    if (i>0) begin
+      if (m_axis_tready[i]) pixels_m_valid_pipe[i] <= pixels_m_valid_pipe[i-1];
+    end
+  end
+  assign m_axis_tvalid[i]   = weights_m_valid[i] && (pixels_m_valid_pipe[i] || weights_m_user[i].is_config);
+  assign weights_m_ready[i] = m_axis_tready[i]   && (pixels_m_valid_pipe[i] || weights_m_user[i].is_config);
+end 
+endgenerate
+
+  assign pixels_m_ready  = m_axis_tready[0]   && weights_m_valid[0] && !weights_m_user[0].is_config;
 endmodule
