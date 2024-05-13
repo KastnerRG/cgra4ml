@@ -4,9 +4,10 @@ import itertools
 import sys
 sys.path.append("../../")
 from deepsocflow import Bundle, Hardware, QModel, QInput
-
+# import tensorflow as tf
+# tf.keras.utils.set_random_seed(0)
 # Simulator: xsim on windows, verilator otherwise
-(SIM, SIM_PATH) = ('xsim', "F:/Xilinx/Vivado/2022.1/bin/") if os.name=='nt' else ('verilator', '')
+(SIM, SIM_PATH) = ('xsim', "E:/Vivado/2023.2/bin/") if os.name=='nt' else ('verilator', '')
 
 def product_dict(**kwargs):
     for instance in itertools.product(*(kwargs.values())):

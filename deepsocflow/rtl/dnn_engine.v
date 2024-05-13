@@ -45,11 +45,11 @@ module dnn_engine #(
   /* WIRES */
 
   wire pixels_m_valid, pixels_m_ready;
-  wire weights_m_valid, weights_m_ready, weights_m_last;
-  wire conv_s_valid, conv_s_ready;
+  wire [COLS-1:0] weights_m_valid, weights_m_ready, weights_m_last;
+  wire [COLS-1:0] conv_s_valid, conv_s_ready;
   wire [X_BITS*ROWS -1:0] pixels_m_data;
   wire [K_BITS*COLS -1:0] weights_m_data;
-  wire [TUSER_WIDTH -1:0] weights_m_user;
+  wire [COLS-1:0][TUSER_WIDTH -1:0] weights_m_user;
 
 
   // Unpack tkeep_bytes into tkeep_words
@@ -96,6 +96,7 @@ module dnn_engine #(
   );
 
   axis_sync SYNC (
+    .aclk(aclk),
     .weights_m_valid (weights_m_valid), 
     .pixels_m_valid  (pixels_m_valid ), 
     .m_axis_tready   (conv_s_ready   ),
@@ -174,14 +175,15 @@ endmodule
 module proc_engine_out #(
   parameter 
     M_DATA_WIDTH_HF_CONV = `COLS  * `ROWS  * `Y_BITS,
-    M_DATA_WIDTH_HF_CONV_DW = `ROWS  * `Y_BITS
+    M_DATA_WIDTH_HF_CONV_DW = `ROWS  * `Y_BITS,
+    COLS = `COLS
 )(
     input wire aclk          ,
     input wire aresetn       ,
-    input wire s_valid       ,
-    output wire s_ready       ,
-    input wire s_last        ,
-    input wire [`TUSER_WIDTH  -1:0] s_user        ,
+    input wire [COLS-1:0] s_valid       ,
+    output wire[COLS-1:0] s_ready       ,
+    input wire [COLS-1:0] s_last        ,
+    input wire [COLS-1:0][`TUSER_WIDTH  -1:0] s_user        ,
     input wire [`X_BITS*`ROWS -1:0] s_data_pixels ,
     input wire [`K_BITS*`COLS -1:0] s_data_weights,
 
