@@ -4,8 +4,8 @@
         24
     ],
     "frequency_mhz": 250,
-    "bits_input": 4,
-    "bits_weights": 4,
+    "bits_input": 8,
+    "bits_weights": 8,
     "bits_sum": 32,
     "bits_bias": 16,
     "max_batch_size": 64,

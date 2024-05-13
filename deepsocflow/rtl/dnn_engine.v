@@ -180,7 +180,7 @@ module proc_engine_out #(
   parameter 
     M_DATA_WIDTH_HF_CONV = `COLS  * `ROWS  * `Y_BITS,
     M_DATA_WIDTH_HF_CONV_DW = `ROWS  * `Y_BITS,
-    COLS = `COLS
+    COLS = `COLS,
     W_BPT                   = `W_BPT
 )(
     input wire aclk          ,
