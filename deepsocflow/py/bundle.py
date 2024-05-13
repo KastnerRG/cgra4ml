@@ -485,7 +485,7 @@ class Bundle(tf.keras.layers.Layer):
         RAM_EDGES_DEPTH       = max([b.RAM_EDGES                  for b in bundles])
         
         L_MAX                 = clog2(XH_MAX//ROWS)
-        X_PAD                 = clog2(KH_MAX//2)
+        X_PAD_MAX             = clog2(KH_MAX//2)
         BITS_KW2              = clog2((KW_MAX+1)/2)
         BITS_KH2              = clog2((KH_MAX+1)/2)
         BITS_SW               = clog2(SW_MAX)
@@ -599,6 +599,7 @@ class Bundle(tf.keras.layers.Layer):
         XL  = int(np.ceil(XH/c.ROWS))    # Blocks
         YN, YH, YW, YC = XN, XH, XW, CO
 
+        X_PAD = 0 if KH == 1 else c.X_PAD_MAX
 
         '''
         Conv Striding
@@ -675,11 +676,11 @@ class Bundle(tf.keras.layers.Layer):
         clocks_p  = r.IT*(1 + r.XN*r.XL*r.XW*(1 + r.CM*r.KH))
 
         mem_bits_p0 = \
-            hw.X_BITS * (r.IT * r.XN   * r.XL * r.XW * r.CM_0 * (hw.ROWS + hw.KH_MAX-1)) +\
+            hw.X_BITS * (r.IT * r.XN   * r.XL * r.XW * r.CM_0 * (hw.ROWS + r.X_PAD-1)) +\
             hw.K_BITS * (r.IT * r.CM_0 * r.KH * hw.COLS) +\
             hw.X_BITS * (r.XN * r.XH   * r.XW * r.CO)
         mem_bits_p = \
-            hw.X_BITS * (r.IT * r.XN   * r.XL * r.XW * r.CM   * (hw.ROWS + hw.KH_MAX-1)) +\
+            hw.X_BITS * (r.IT * r.XN   * r.XL * r.XW * r.CM   * (hw.ROWS + r.X_PAD-1)) +\
             hw.K_BITS * (r.IT * r.CM_0 * r.KH * hw.COLS) +\
             hw.X_BITS * (r.XN * r.XH   * r.XW * r.CO)
 
@@ -817,19 +818,19 @@ class Bundle(tf.keras.layers.Layer):
         x = np.pad(x, ((0,0),(0,r.XL*c.ROWS-r.XH),(0,0),(0,0)))         # (XN, L*HL , XW, CI)
         x = x.reshape  (r.XN, r.XL, c.ROWS, r.XW, r.CI)                   # (XN, XL, HL, XW, CI)
 
-        zeros = np.zeros((r.XN,r.XL,c.ROWS+c.X_PAD,r.XW,r.CI),x.dtype)  # (XN,XL,c.ROWS+X_PAD,XW,CI)
+        zeros = np.zeros((r.XN,r.XL,c.ROWS+r.X_PAD,r.XW,r.CI),x.dtype)  # (XN,XL,c.ROWS+X_PAD,XW,CI)
         zeros[:,:,:c.ROWS,:,:] = x
 
         ''' Fill bot rows from next '''
         for l in range(r.XL):
             if l == r.XL-1:
-                zeros[:,l, c.ROWS: ,:,:] = np.zeros((r.XN,c.X_PAD,r.XW,r.CI),x.dtype)
+                zeros[:,l, c.ROWS: ,:,:] = np.zeros((r.XN,r.X_PAD,r.XW,r.CI),x.dtype)
             else:
-                zeros[:,l, c.ROWS: ,:,:] = x[:,l+1,:c.X_PAD,:,:]
+                zeros[:,l, c.ROWS: ,:,:] = x[:,l+1,:r.X_PAD,:,:]
 
         x = zeros                                                  # (XN,XL,c.ROWS+X_PAD,XW,CI)
         x = x.transpose(0,1,3,4,2)                                 # (XN,XL,XW,CI,c.ROWS+X_PAD)
-        x = x.reshape((r.XN, r.XL, r.XW, r.CI, (c.ROWS+c.X_PAD)))
+        x = x.reshape((r.XN, r.XL, r.XW, r.CI, (c.ROWS+r.X_PAD)))
 
         x_list = []
         ic_left = ic_right = 0
@@ -837,8 +838,8 @@ class Bundle(tf.keras.layers.Layer):
             CM_p = r.CM_0 if ip==0 else r.CM
             ic_right += CM_p
 
-            xp = x[:,:,:, ic_left:ic_right, :]                              #(XN, XL, XW, CM, (c.ROWS+c.X_PAD))
-            assert xp.shape == (r.XN, r.XL, r.XW, CM_p, (c.ROWS+c.X_PAD))
+            xp = x[:,:,:, ic_left:ic_right, :]                              #(XN, XL, XW, CM, (c.ROWS+r.X_PAD))
+            assert xp.shape == (r.XN, r.XL, r.XW, CM_p, (c.ROWS+r.X_PAD))
 
             xp = xp.flatten()
             words_per_byte = 8//c.X_BITS

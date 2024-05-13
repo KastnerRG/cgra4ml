@@ -87,7 +87,7 @@ class Hardware:
 
         self.L_MAX                 = int(np.ceil(self.XH_MAX//self.ROWS))
         self.CONFIG_BEATS          = 0
-        self.X_PAD                 = int(np.ceil(self.KH_MAX//2))
+        self.X_PAD_MAX             = int(np.ceil(self.KH_MAX//2))
         self.BITS_KW2              = clog2((self.KW_MAX+1)/2)
         self.BITS_KH2              = clog2((self.KH_MAX+1)/2)
         self.BITS_CIN_MAX          = clog2(self.CI_MAX)
@@ -96,6 +96,7 @@ class Hardware:
         self.BITS_XN_MAX           = clog2(self.XN_MAX)
         self.BITS_RAM_WEIGHTS_ADDR = clog2(self.RAM_WEIGHTS_DEPTH)
         self.Y_OUT_BITS            = 2**clog2(self.Y_BITS)
+        self.W_BPT                 = clog2(self.ROWS*self.COLS*self.Y_OUT_BITS/8)
 
         self.MODULE_DIR = os.path.normpath(os.path.dirname(deepsocflow.__file__)).replace('\\', '/')
         self.TB_MODULE = "dnn_engine_tb"
@@ -154,6 +155,7 @@ class Hardware:
 `define X_BITS              {self.X_BITS             :<10}  // Bits per word in input
 `define K_BITS              {self.K_BITS             :<10}  // Bits per word in input
 `define Y_BITS              {self.Y_BITS             :<10}  // Bits per word in output of conv
+`define Y_OUT_BITS          {self.Y_OUT_BITS         :<10}  // Padded bits per word in output of conv
 
 `define KH_MAX              {self.KH_MAX             :<10}  // max of kernel height, across layers
 `define KW_MAX              {self.KW_MAX             :<10}  // max of kernel width, across layers
@@ -164,6 +166,7 @@ class Hardware:
 `define CONFIG_BEATS        {self.CONFIG_BEATS       :<10}  // constant, for now
 `define RAM_WEIGHTS_DEPTH   {self.RAM_WEIGHTS_DEPTH  :<10}  // CONFIG_BEATS + max(KW * CI), across layers
 `define RAM_EDGES_DEPTH     {self.RAM_EDGES_DEPTH    :<10}  // max (KW * CI * XW), across layers when KW != 1
+`define W_BPT               {self.W_BPT              :<10}  // Width of output integer denoting bytes per transfer
 
 `define DELAY_MUL           3            // constant, for now 
 `define DELAY_W_RAM         2            // constant, for now 

@@ -9,9 +9,8 @@ Bundle_t bundles [N_BUNDLES] = {
    {.n=1  , .l=1  , .kw=1  , .coe=24 , .coe_tl=0  , .r_ll=8  , .h=8  , .w=1  , .ci=300 , .co=10  , .w_kw2=1  , .t=1  , .p=15 , .cm=20 , .cm_p0=20 , .xp_words=14    , .ib_out=-1  , .w_bpt=496  , .w_bpt_p0=496  , .x_bpt=296     , .x_bpt_p0=296     , .o_words=80      , .o_bytes=320     , .in_buffer_idx=1  , .out_buffer_idx=-1 , .add_out_buffer_idx=-1, .add_in_buffer_idx=-1, .is_bias=1  , .is_flatten=0  , .is_softmax=1  , .b_offset=88   , .b_val_shift=1  , .b_bias_shift=0  , .ca_nzero=1  , .ca_shift=11 , .ca_pl_scale=3  , .aa_nzero=0  , .aa_shift=0  , .aa_pl_scale=0  , .pa_nzero=0  , .pa_shift=0  , .pa_pl_scale=0  , .softmax_frac=7  , .softmax_max_f=0.5859375      , .csh=1  , .ch=8  , .csh_shift=0  , .pkh=1  , .psh=1  , .ph=8  , .psh_shift=0  , .csw=1  , .cw=1  , .csw_shift=0  , .pkw=1  , .psw=1  , .pw=1  , .psw_shift=0  , .pool=POOL_NONE , .on=1  , .oh=8  , .ow=1  , .oc=10  , .x_header=                    152u, .x_header_p0=                    152u, .w_header=           652835029144u, .w_header_p0=                      152u , .debug_nhwc_words=80        }
 };
 
-#define X_BITS_L2   3
-#define W_BITS_L2   3
-#define X_PAD       6
+#define X_BITS_L2   2
+#define W_BITS_L2   2
 #define KH_MAX      13
 #define PE_ROWS     8
 #define PE_COLS     24
@@ -33,4 +32,4 @@ Bundle_t bundles [N_BUNDLES] = {
 #define AXI_WIDTH   128
 #define DATA_DIR   "../vectors"
 
-static const uint8_t X_POSITION_INVERTED_MASKS [] = { 0 };
+static const uint8_t X_POSITION_INVERTED_MASKS [] = { 240, 15 };
