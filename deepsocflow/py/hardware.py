@@ -253,3 +253,27 @@ source config_hw.tcl
 source {board_tcl_abspath}
 source {scripts_dir_abspath}/vivado.tcl
 ''')
+    
+    def export_vitis_tcl(self, board='zcu104', rtl_dir_abspath=None, scripts_dir_abspath=None, board_tcl_abspath=None):
+
+        if rtl_dir_abspath is None:
+            rtl_dir_abspath = self.MODULE_DIR + '/rtl'
+        if scripts_dir_abspath is None:
+            scripts_dir_abspath = self.MODULE_DIR + '/tcl/fpga'
+        if board_tcl_abspath is None:
+            board_tcl_abspath = f'{scripts_dir_abspath}/{board}.tcl'
+        
+        assert os.path.exists(board_tcl_abspath), f"Board script {board_tcl_abspath} does not exist."
+        assert os.path.exists('./config_hw.tcl'), f"./config_hw.tcl does not exist."
+
+        with open('vitis_flow.tcl', 'w') as f:
+            f.write(f'''
+app create -name dsf_app -os {{standalone}} -proc {{psu_cortexa53_0}} -lang {{c}} -arch {{64}} -hw {os.getcwd()}/dsf_{board}/design_1_wrapper.xsa -out {os.getcwd()}/workspace;
+app config -name dsf_app -add libraries {{m}}
+app config -name dsf_app -set compiler-optimization {{Optimize most (-O3)}}
+app config -name dsf_app -add include-path {self.MODULE_DIR}/c 
+app config -name dsf_app -add include-path {os.getcwd()} 
+
+exec cp {self.MODULE_DIR}/c/xilinx_example.c {os.getcwd()}/workspace/dsf_app/src/helloworld.c
+app build -name dsf_app
+''')
