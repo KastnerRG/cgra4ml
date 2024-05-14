@@ -254,17 +254,7 @@ source {board_tcl_abspath}
 source {scripts_dir_abspath}/vivado.tcl
 ''')
     
-    def export_vitis_tcl(self, board='zcu104', rtl_dir_abspath=None, scripts_dir_abspath=None, board_tcl_abspath=None):
-
-        if rtl_dir_abspath is None:
-            rtl_dir_abspath = self.MODULE_DIR + '/rtl'
-        if scripts_dir_abspath is None:
-            scripts_dir_abspath = self.MODULE_DIR + '/tcl/fpga'
-        if board_tcl_abspath is None:
-            board_tcl_abspath = f'{scripts_dir_abspath}/{board}.tcl'
-        
-        assert os.path.exists(board_tcl_abspath), f"Board script {board_tcl_abspath} does not exist."
-        assert os.path.exists('./config_hw.tcl'), f"./config_hw.tcl does not exist."
+    def export_vitis_tcl(self, board='zcu104'):
 
         with open('vitis_flow.tcl', 'w') as f:
             f.write(f'''
