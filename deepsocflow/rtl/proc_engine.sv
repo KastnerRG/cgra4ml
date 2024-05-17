@@ -82,8 +82,8 @@ module proc_engine #(
       logic [COLS-1:0][X_BITS-1:0] pixels_reg;
       
       always_ff @ (posedge clk `OR_NEGEDGE(resetn)) begin
-        if(!resetn) pixels_reg[0] <= '0;
-        else if (clken_mul[0]) pixels_reg[0] <= s_data_pixels[r];
+        if(!resetn) pixels_reg[COLS-1] <= '0;
+        else if (clken_mul[COLS-1]) pixels_reg[COLS-1] <= s_data_pixels[r];
       end
 
       for (c=0; c < COLS   ; c++) begin: Cg
@@ -95,12 +95,12 @@ module proc_engine #(
         always_ff @ (posedge clk `OR_NEGEDGE(resetn))
           if (!resetn) begin        
             weights_reg <= '0;
-            if (c>0) pixels_reg[c] <= '0; 
+            if (c<COLS-1) pixels_reg[c] <= '0; 
           end
           else if (clken_mul[c]) begin
             //{pixels_reg[0], weights_reg} <= {s_data_pixels[r], s_data_weights[c]}; // move this to outside the for loop?
             weights_reg <= s_data_weights[c];
-            if (c>0) pixels_reg[c] <= pixels_reg[c-1];  
+            if (c<COLS-1) pixels_reg[c] <= pixels_reg[c+1];  
           end
         // Multiplier
         wire [M_BITS-1:0] mul_comb = $signed(pixels_reg[c]) * $signed(weights_reg);
@@ -137,8 +137,6 @@ module proc_engine #(
     
     end
 
-    assign en[COLS-1] = ~acc_m_valid[COLS-1] | force_en;
-
     always_ff @(posedge clk `OR_NEGEDGE(resetn) `OR_NEGEDGE(~force_en_reset)) begin
       if (!resetn) force_en <= 0;
       else if (force_en_reset) force_en <= 1'b0;
@@ -154,8 +152,8 @@ module proc_engine #(
     always_ff @(posedge clk `OR_NEGEDGE(resetn))
       if (!resetn)            {acc_m_user, acc_m_last} <= '0;
       else begin
-        if (en[COLS-1] & mul_m_valid[COLS-1]) acc_m_user                <= mul_m_user[COLS-1];
-        if (en[COLS-1])               acc_m_last <= mul_m_last[COLS-1];
+        if (en[0] & mul_m_valid[0]) acc_m_user                <= mul_m_user[0];
+        if (en[0])               acc_m_last <= mul_m_last[0];
       end
 
     // AXI Stream

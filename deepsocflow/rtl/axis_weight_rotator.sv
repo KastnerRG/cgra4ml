@@ -133,8 +133,8 @@ module axis_weight_rotator #(
     if (!aresetn)                                 state_read <= R_IDLE_S;
     else unique case (state_read)
       R_IDLE_S        : if (done_write [i_read])  state_read <= CONFIG_BEATS==0 ? R_READ_S : R_PASS_CONFIG_S;
-      R_PASS_CONFIG_S : if (last_config[COLS-1])  state_read <= R_READ_S;
-      R_READ_S        : if (m_axis_tlast[COLS-1]) state_read <= R_SWITCH_S;
+      R_PASS_CONFIG_S : if (last_config[0])  state_read <= R_READ_S;
+      R_READ_S        : if (m_axis_tlast[0]) state_read <= R_SWITCH_S;
       R_SWITCH_S      :                           state_read <= R_IDLE_S;
     endcase 
 
@@ -400,14 +400,14 @@ module axis_sync #(
 logic [COLS-1:0] pixels_m_valid_pipe;
 //logic pixels_m_valid_pipe_0; // verilator compile
 
-assign pixels_m_valid_pipe[0] = m_axis_tready[0] ? pixels_m_valid: 1'b0;
+assign pixels_m_valid_pipe[COLS-1] = m_axis_tready[COLS-1] ? pixels_m_valid: 1'b0;
 //assign pixels_m_valid_pipe_0 = m_axis_tready[0] ? pixels_m_valid: 1'b0;
 
 generate //TODO: pixels_m_valid should be pipelined?
 for (genvar i=0; i<COLS; i++) begin
   always_ff@(posedge aclk) begin 
-    if (i>0) begin
-      if (m_axis_tready[i]) pixels_m_valid_pipe[i] <= pixels_m_valid_pipe[i-1];
+    if (i<COLS-1) begin
+      if (m_axis_tready[i]) pixels_m_valid_pipe[i] <= pixels_m_valid_pipe[i+1];
     end
     //else begin
     //  if (m_axis_tready[1]) pixels_m_valid_pipe[i] <= pixels_m_valid_pipe_0;
@@ -419,5 +419,5 @@ for (genvar i=0; i<COLS; i++) begin
 end
 endgenerate
 
-  assign pixels_m_ready  = m_axis_tready[0]   && weights_m_valid[0] && !weights_m_user[0].is_config;
+  assign pixels_m_ready  = m_axis_tready[COLS-1]   && weights_m_valid[COLS-1] && !weights_m_user[COLS-1].is_config;
 endmodule
