@@ -123,37 +123,22 @@ module proc_engine #(
       end 
     end
 
-//TODO: for loop over cols here?
-    //assign acc_m_valid_next = !sel_shift[COLS-1] && mul_m_valid[COLS-1] && (mul_m_user[COLS-1].is_config || mul_m_user[COLS-1].is_cin_last);
-    assign acc_m_valid_next[COLS-1] = !sel_shift[COLS-1] && mul_m_valid[COLS-1] && (mul_m_user[COLS-1].is_config || mul_m_user[COLS-1].is_cin_last);
-    for(c=0; c<COLS-1; c++) begin
+    for(c=0; c<COLS; c++) begin
       assign en[c] = ~acc_m_valid[c] | force_en;
-      //assign en[c] = ~acc_m_valid[c];
       assign acc_m_valid_next[c] = !sel_shift[c] & mul_m_valid[c] & (mul_m_user[c].is_config | mul_m_user[c].is_cin_last);
       
       always_ff @(posedge clk `OR_NEGEDGE(resetn))
       if (!resetn) begin            
         acc_m_valid[c] <= '0;
-        //en[c] <= 0;
       end
-      //else if (!acc_m_valid[COLS-1]) acc_m_valid[c] <= '0;
       else begin
-        //en[c] = ~acc_m_valid[c] | force_en;
         if (en[c])            acc_m_valid[c] <= acc_m_valid_next[c];
       end
     
     end
-    
-    //assign en[COLS-1] = m_ready || !m_valid;
+
     assign en[COLS-1] = ~acc_m_valid[COLS-1] | force_en;
 
-    // always_ff @(posedge clk `OR_NEGEDGE(resetn)) begin
-    //   if(!resetn) en[COLS-1] <= 0;
-    //   //else en[COLS-1] <= m_ready || !m_valid;
-    //   else en[COLS-1] <= ~acc_m_valid[COLS-1] | force_en;
-    // end
-
-    //always_ff @(posedge acc_m_valid[COLS-1] `OR_NEGEDGE(resetn) `OR_NEGEDGE(~force_en_reset)) begin
     always_ff @(posedge clk `OR_NEGEDGE(resetn) `OR_NEGEDGE(~force_en_reset)) begin
       if (!resetn) force_en <= 0;
       else if (force_en_reset) force_en <= 1'b0;
@@ -164,12 +149,13 @@ module proc_engine #(
       if (!resetn) force_en_reset <= 0;
       else force_en_reset <= force_en;
     end
+
     // Pipeline AXI-Stream signals with DELAY_ACC=1
     always_ff @(posedge clk `OR_NEGEDGE(resetn))
-      if (!resetn)            {acc_m_user, acc_m_valid, acc_m_last} <= '0;
+      if (!resetn)            {acc_m_user, acc_m_last} <= '0;
       else begin
         if (en[COLS-1] & mul_m_valid[COLS-1]) acc_m_user                <= mul_m_user[COLS-1];
-        if (en[COLS-1])               {acc_m_valid[COLS-1], acc_m_last} <= {acc_m_valid_next[COLS-1], mul_m_last[COLS-1]};
+        if (en[COLS-1])               acc_m_last <= mul_m_last[COLS-1];
       end
 
     // AXI Stream
