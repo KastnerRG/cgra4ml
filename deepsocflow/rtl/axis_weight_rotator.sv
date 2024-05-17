@@ -300,6 +300,7 @@ module axis_weight_rotator #(
       axis_pipeline_register2 # (
         .DATA_WIDTH  (BRAM_WIDTH),
         .KEEP_ENABLE (0),
+        .KEEP_WIDTH  (1),
         .LAST_ENABLE (0),
         .ID_ENABLE   (0),
         .DEST_ENABLE (0),
@@ -343,7 +344,7 @@ module axis_weight_rotator #(
 
   generate 
   for (genvar i=0; i<COLS; i++ ) begin
-    wire en_kw       = m_axis_tvalid[i] && m_axis_tready[i] && state_read == R_READ_S; //TODO: needs to be changed??
+    wire en_kw       = m_axis_tvalid[i] && m_axis_tready[i] && state_read == R_READ_S;
 
     counter #(.W(BITS_CONFIG_BEATS)) C_CONFIG    (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(en_count_config[i]), .max_in(                      config_beats_const  ), .last_clk(lc_config[i]), .last(l_config[i]), .first(),         .count()      );
     counter #(.W(BITS_KW          )) C_KW        (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(en_kw          ), .max_in(BITS_KW          '( 2*ref_i_read.kw2     )), .last_clk(lc_kw[i]    ), .last(l_kw[i]    ), .first(f_kw[i]    ), .count()      );
@@ -397,8 +398,10 @@ module axis_sync #(
 );
 
 logic [COLS-1:0] pixels_m_valid_pipe;
+//logic pixels_m_valid_pipe_0; // verilator compile
 
 assign pixels_m_valid_pipe[0] = m_axis_tready[0] ? pixels_m_valid: 1'b0;
+//assign pixels_m_valid_pipe_0 = m_axis_tready[0] ? pixels_m_valid: 1'b0;
 
 generate //TODO: pixels_m_valid should be pipelined?
 for (genvar i=0; i<COLS; i++) begin
@@ -406,10 +409,14 @@ for (genvar i=0; i<COLS; i++) begin
     if (i>0) begin
       if (m_axis_tready[i]) pixels_m_valid_pipe[i] <= pixels_m_valid_pipe[i-1];
     end
+    //else begin
+    //  if (m_axis_tready[1]) pixels_m_valid_pipe[i] <= pixels_m_valid_pipe_0;
+    //end
+    
   end
   assign m_axis_tvalid[i]   = weights_m_valid[i] && (pixels_m_valid_pipe[i] || weights_m_user[i].is_config);
   assign weights_m_ready[i] = m_axis_tready[i]   && (pixels_m_valid_pipe[i] || weights_m_user[i].is_config);
-end 
+end
 endgenerate
 
   assign pixels_m_ready  = m_axis_tready[0]   && weights_m_valid[0] && !weights_m_user[0].is_config;
