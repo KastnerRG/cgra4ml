@@ -137,7 +137,7 @@ module proc_engine #(
     
     end
 
-    always_ff @(posedge clk `OR_NEGEDGE(resetn) `OR_NEGEDGE(~force_en_reset)) begin
+    always_ff @(posedge clk `OR_NEGEDGE(resetn)) begin
       if (!resetn) force_en <= 0;
       else if (force_en_reset) force_en <= 1'b0;
       else if (m_ready & m_valid) force_en <= 1'b1;

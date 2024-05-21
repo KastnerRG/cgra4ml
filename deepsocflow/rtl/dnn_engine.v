@@ -52,7 +52,7 @@ module dnn_engine #(
   wire [COLS-1:0] conv_s_valid, conv_s_ready;
   wire [X_BITS*ROWS -1:0] pixels_m_data;
   wire [K_BITS*COLS -1:0] weights_m_data;
-  wire [COLS-1:0][TUSER_WIDTH -1:0] weights_m_user;
+  wire [COLS*TUSER_WIDTH -1:0] weights_m_user;
   wire [W_BPT-1:0] s_bytes_per_transfer;
 
 
@@ -181,14 +181,15 @@ module proc_engine_out #(
     M_DATA_WIDTH_HF_CONV = `COLS  * `ROWS  * `Y_BITS,
     M_DATA_WIDTH_HF_CONV_DW = `ROWS  * `Y_BITS,
     COLS = `COLS,
-    W_BPT                   = `W_BPT
+    W_BPT                   = `W_BPT,
+    TUSER_WIDTH = `TUSER_WIDTH
 )(
     input wire aclk          ,
     input wire aresetn       ,
     input wire [COLS-1:0] s_valid       ,
     output wire[COLS-1:0] s_ready       ,
     input wire [COLS-1:0] s_last        ,
-    input wire [COLS-1:0][`TUSER_WIDTH  -1:0] s_user        ,
+    input wire [COLS*TUSER_WIDTH  -1:0] s_user        ,
     input wire [`X_BITS*`ROWS -1:0] s_data_pixels ,
     input wire [`K_BITS*`COLS -1:0] s_data_weights,
 
