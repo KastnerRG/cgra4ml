@@ -4,8 +4,8 @@ import itertools
 import sys
 sys.path.append("../../")
 from deepsocflow import Bundle, Hardware, QModel, QInput
-# import tensorflow as tf
-# tf.keras.utils.set_random_seed(0)
+import tensorflow as tf
+tf.keras.utils.set_random_seed(0)
 # Simulator: xsim on windows, verilator otherwise
 (SIM, SIM_PATH) = ('xsim', "E:/Vivado/2023.2/bin/") if os.name=='nt' else ('verilator', '')
 
@@ -28,8 +28,8 @@ def product_dict(**kwargs):
                                         ram_edges_depth      = [ 288     ],
                                         axi_width            = [ 128     ],
                                         target_cpu_int_bits  = [ 32      ],
-                                        valid_prob           = [ 0.01    ],
-                                        ready_prob           = [ 0.1     ],
+                                        valid_prob           = [ 1    ],
+                                        ready_prob           = [ 1     ],
                                         data_dir             = ['vectors'],
                                     )))
 def test_dnn_engine(PARAMS):

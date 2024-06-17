@@ -54,6 +54,7 @@ module dnn_engine #(
   wire [K_BITS*COLS -1:0] weights_m_data;
   wire [COLS-1:0][TUSER_WIDTH -1:0] weights_m_user;
   wire [W_BPT-1:0] s_bytes_per_transfer;
+  //wire [1:0] weights_rd_state;
 
 
   // Unpack tkeep_bytes into tkeep_words
@@ -96,6 +97,7 @@ module dnn_engine #(
     .m_axis_tvalid (weights_m_valid      ),   
     .m_axis_tdata  (weights_m_data       ),
     .m_axis_tlast  (weights_m_last       ),
+    //.m_rd_state (weights_rd_state),
     .m_axis_tuser  (weights_m_user       ) 
   );
 
@@ -105,6 +107,7 @@ module dnn_engine #(
     .pixels_m_valid  (pixels_m_valid ), 
     .m_axis_tready   (conv_s_ready   ),
     .weights_m_user  (weights_m_user ),
+    //.weights_rd_state (weights_rd_state),
     .m_axis_tvalid   (conv_s_valid   ), 
     .weights_m_ready (weights_m_ready), 
     .pixels_m_ready  (pixels_m_ready ) 
@@ -213,20 +216,11 @@ module proc_engine_out #(
     .s_user         (s_user                     ),
     .s_data_pixels  (s_data_pixels              ),
     .s_data_weights (s_data_weights             ),
-    .m_valid        (conv_m_axis_tvalid         ),
-    .m_ready        (conv_m_axis_tready         ),
-    .m_data         (conv_m_axis_tdata          ),
-    .m_last         (conv_m_axis_tlast          ),
-    .m_user         (conv_m_axis_tuser          )
-  );
-  axis_out_shift OUT (
-    .aclk    (aclk   ),
-    .aresetn (aresetn),
-    .s_ready (conv_m_axis_tready    ),
-    .s_valid (conv_m_axis_tvalid    ),
-    .s_data  (conv_m_axis_tdata     ),
-    .s_user  (conv_m_axis_tuser     ),
-    .s_last  (conv_m_axis_tlast     ),
+    // .m_valid        (conv_m_axis_tvalid         ),
+    // .m_ready        (conv_m_axis_tready         ),
+    // .m_data         (conv_m_axis_tdata          ),
+    // .m_last         (conv_m_axis_tlast          ),
+    // .m_user         (conv_m_axis_tuser          )
     .m_ready (m_ready               ),
     .m_valid (m_valid               ),
     .m_data  (m_data                ),
@@ -234,5 +228,20 @@ module proc_engine_out #(
     .m_last     (m_last             ),
     .m_bytes_per_transfer  (m_bytes_per_transfer)
   );
+  // axis_out_shift OUT (
+  //   .aclk    (aclk   ),
+  //   .aresetn (aresetn),
+  //   .s_ready (conv_m_axis_tready    ),
+  //   .s_valid (conv_m_axis_tvalid    ),
+  //   .s_data  (conv_m_axis_tdata     ),
+  //   .s_user  (conv_m_axis_tuser     ),
+  //   .s_last  (conv_m_axis_tlast     ),
+  //   .m_ready (m_ready               ),
+  //   .m_valid (m_valid               ),
+  //   .m_data  (m_data                ),
+  //   .m_last_pkt (m_last_pkt         ),
+  //   .m_last     (m_last             ),
+  //   .m_bytes_per_transfer  (m_bytes_per_transfer)
+  // );
 
 endmodule

@@ -39,12 +39,14 @@ module DMA_M2S #(
           end
           else begin
             s_data_val[i] = get_byte(base_addr + i_bytes);
+            $display("DEBUG: i = %d, i_bytes = %x ,data = %x", i, i_bytes, s_data_val[i]);
             // $display("DMA: start:%d, i_bytes:%d, val:%d", offset, i_bytes, $signed(s_data_val[i]));
             s_keep_val[i] = 1;
             i_bytes  += 1;
           end
           s_last_val = i_bytes >= 64'(bytes_per_transfer);
         end
+        $display("DEBUG: at time %t, base_addr+i_bytes is %x, BPT is %d, s_data is %x", $time,base_addr + i_bytes, bytes_per_transfer, s_data);
       end
       s_valid = $urandom_range(0,999) < PROB_VALID;      // randomize s_valid
       
@@ -60,6 +62,7 @@ module DMA_M2S #(
       
       #10ps; // Delay before writing s_valid, s_data, s_keep
     end
+    // $display("DEBUG: at time %t, s_data is %x", $time, s_data);
 
     // Reset & close packet after done
     {s_valid, s_data, s_keep, s_last, prev_slast, i_bytes} = '0;
