@@ -184,15 +184,7 @@ module proc_engine #(
         m_bytes_per_transfer <= 0;
         {shift_data_out, shift_valid, shift_last, shift_last_pkt} <= '0;
       end else case (state)
-        IDLE  :  begin if (!shift_out_ready) begin // Final Column ready to be shifted out
-                  state   <= SHIFT;
-                  //hift_out_ready <= 0;
-                  m_bytes_per_transfer <= lut_bpt[acc_m_user[COLS-1].is_w_last][acc_m_user[COLS-1].kw2];
-                  //shift_valid <= s_valid_cols_sel & {COLS{valid_mask}};
-                  //shift_last  <= s_last_cols_sel;
-                  //shift_last_pkt <= {COLS{acc_m_last[0]}} & lut_last_pkt[acc_m_user[0].kw2];
-                end
-                else begin
+        IDLE  :  begin 
                   for (co=0; co<COLS; co=co+1) begin : Cs
                     if(acc_m_valid[co] && valid_mask[co] && shift_out_ready[co]) begin
                       shift_data_out[co]  <= acc_m_data[co];
@@ -200,10 +192,14 @@ module proc_engine #(
                       shift_last_pkt[co] <= {acc_m_last[co]} & lut_last_pkt[acc_m_user[co].kw2][co];
                       shift_valid[co] <= s_valid_cols_sel[co] & valid_mask[co];
                       shift_last[co]  <= s_last_cols_sel[co];
+                      if(co == COLS-1) begin
+                        state   <= SHIFT;
+                        m_bytes_per_transfer <= lut_bpt[acc_m_user[COLS-1].is_w_last][acc_m_user[COLS-1].kw2];
+
+                      end
                       
                     end
-                  end
-                end        
+                  end      
               end
                   
         SHIFT : if (m_ready) begin
