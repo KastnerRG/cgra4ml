@@ -36,6 +36,8 @@ class XActivation(QActivation):
     def __init__(self, sys_bits, o_int_bits, type='relu', slope=1, *args, **kwargs):
 
         match type:
+            case None:
+                act_str = f'quantized_bits({sys_bits.x},{o_int_bits},False,False,1)'
             case "relu":
                 act_str = f'quantized_relu({sys_bits.x},{o_int_bits},negative_slope={slope})'
             case _:
@@ -53,6 +55,9 @@ class XConvBN(QConv2DBatchnorm):
         self.out_frac = get_frac_bits(self.o_bits, o_int_bits)
         self.act = act
 
+        if act is None:
+            raise ValueError("Activation function must be provided. Set type to none if no activation is needed")
+        
         if "kernel_quantizer" in kwargs or "bias_quantizer" in kwargs:
             raise ValueError("kernel_quantizer and bias_quantizer will be derived from xconfig and k_frac")
 
@@ -62,17 +67,41 @@ class XConvBN(QConv2DBatchnorm):
         super().__init__(kernel_quantizer=self.kernel_quantizer, bias_quantizer=self.bias_quantizer, *args, **kwargs)
 
 
+class XPool(Layer):
+    def __init__(self, type, size, strides, padding, act, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.type = type
+        self.size = size
+        self.strides = strides
+        self.padding = padding
+        self.act = act
+
+
+        if self.type == 'avg':
+            self.pool_layer = AveragePooling2D(pool_size=size, strides=strides, padding=padding)
+        elif self.type == 'max':
+            self.pool_layer = MaxPooling2D(pool_size=size, strides=strides, padding=padding)
+        else:
+            raise ValueError(f"Pooling type {type} not recognized")
+        
+        if act is None:
+            raise ValueError("Activation function must be provided. Set type to none if no activation is needed")
+
+    def call(self, x):
+        x = self.pool_layer(x)
+        return x
+
 @keras.saving.register_keras_serializable()
 class XBundle(Layer):
 
-    def __init__(self, core, core_act, flatten=False, *args, **kwargs):
+    def __init__(self, core, pool=None, flatten=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.flatten = flatten
         self.core = core
-        self.core_act = core_act
+        self.pool = pool
 
         if self.flatten:
-            self.flat = Flatten()
+            self.flatten = Flatten()
 
     def call(self, input_tensor, training=False, x_1=None):
     
@@ -86,7 +115,7 @@ class XBundle(Layer):
         # self.inp['tensor'] = x 
 
         x = self.core(x)
-        x = self.core_act(x)
+        x = self.core.act(x)
         # self.core['tensor'] = x 
 
         # if x_1 is not None:
@@ -98,12 +127,12 @@ class XBundle(Layer):
         #     x = Add()([x, x_1])
         #     x = self.act_add(x)
         #     # self.add['tensor'] = x
-        # if self.pool:
-        #     x = self.pool(x)
-        #     x = self.act_pool(x)
+        if self.pool:
+            x = self.pool(x)
+            x = self.pool.act(x)
         #     # self.pool['tensor'] = x
         if self.flatten:
-            x = self.flat(x)
+            x = self.flatten(x)
         # if self.softmax:
         #     x = self.softmax(x)
 
@@ -175,8 +204,15 @@ class UserModel(XModel):
                 padding="same",
                 use_bias=True,
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0),
-                sys_bits=sys_bits),
-            core_act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0),
+                sys_bits=sys_bits,),
+
+            pool=XPool(
+                type='avg',
+                size=(3,4),
+                strides=(2,3),
+                padding='same',
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),),
+
             flatten=True)
 
         self.dense = QDense(NB_CLASSES, kernel_quantizer=quantized_bits(sys_bits.x,0,1),
