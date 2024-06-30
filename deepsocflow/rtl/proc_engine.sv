@@ -13,7 +13,8 @@ module proc_engine #(
               M_BITS              = X_BITS + K_BITS      ,
               WORD_WIDTH           = `Y_BITS             ,
               Y_OUT_BITS           = `Y_OUT_BITS         ,
-              W_BPT                = `W_BPT      
+              W_BPT                = `W_BPT              ,
+              BITS_COLS           = $clog2(COLS) 
 )(
   input  logic clk, resetn,
 
@@ -37,6 +38,7 @@ module proc_engine #(
   logic [COLS-1:0] en;
   logic force_en, force_en_reset;
   logic [COLS-1:0] acc_m_valid_next, acc_m_valid;
+  logic [COLS-1:0] mac_freeze;
   //logic en;
   logic [COLS-1:0] clken_mul;
   logic [COLS-1:0] sel_shift_next, sel_shift, mul_m_valid, mul_m_last;
@@ -60,8 +62,13 @@ module proc_engine #(
   wire [COLS-1:0] s_valid_cols_sel; 
   wire [COLS-1:0] s_last_cols_sel;  
 
+  logic [COLS-1:0] en_outshift, sel_outshift, outshift_flag;
+  logic shift_out_ready_last_col_prev;
+  logic [BITS_COLS-1:0] count_outshift;
+  logic cnt_en;
+
   genvar k2, c_1;
-  integer co;
+  genvar co;
   for (k2=0; k2 <= KW_MAX/2; k2++) begin
     localparam k = k2*2+1;
     for (c_1=0; c_1 <  COLS; c_1++) begin
@@ -83,7 +90,7 @@ module proc_engine #(
   //assign s_valid_cols_sel = acc_m_user[COLS-1].is_w_last ? lut_valid_last[acc_m_user[COLS-1].kw2] : lut_valid[acc_m_user[COLS-1].kw2];
   //assign s_last_cols_sel  = acc_m_user[COLS-1].is_w_last ? lut_last_pkt  [acc_m_user[COLS-1].kw2] : lut_last [acc_m_user[COLS-1].kw2];
 
-  logic [$clog2(COLS+1)-1:0] counter;
+  //logic [$clog2(COLS+1)-1:0] counter;
   enum {IDLE, SHIFT} state;
 
   assign s_ready = clken_mul;
@@ -176,50 +183,112 @@ module proc_engine #(
         // --------------- PROCESSING ELEMENT ------------------
       end 
     end
+    
     // -------------- OUTPUT SHIFTER ----------------
-    always_ff@(posedge clk `OR_NEGEDGE(resetn)) begin
-      if (!resetn) begin 
-        state   <= IDLE;
-        shift_out_ready <= '1;
-        m_bytes_per_transfer <= 0;
-        {shift_data_out, shift_valid, shift_last, shift_last_pkt} <= '0;
-      end else case (state)
-        IDLE  :  begin 
-                  for (co=0; co<COLS; co=co+1) begin : Cs
-                    if(acc_m_valid[co] && valid_mask[co] && shift_out_ready[co]) begin
-                      shift_data_out[co]  <= acc_m_data[co];
-                      shift_out_ready[co] <= 0;
-                      shift_last_pkt[co] <= {acc_m_last[co]} & lut_last_pkt[acc_m_user[co].kw2][co];
-                      shift_valid[co] <= s_valid_cols_sel[co] & valid_mask[co];
-                      shift_last[co]  <= s_last_cols_sel[co];
-                      if(co == COLS-1) begin
-                        state   <= SHIFT;
-                        m_bytes_per_transfer <= lut_bpt[acc_m_user[COLS-1].is_w_last][acc_m_user[COLS-1].kw2];
+    
+    // counter value is used as pointer to which is the last column to be shifted out
+    //counter #(.W(BITS_COLS)) C_OUTSHIFT (.clk(clk), .rstn_g(1'b1), .rst_l(~resetn), .en(cnt_en), .max_in(COLS-1), .last_clk(), .last(), .first(), .count(count_outshift));
+    
+    //assign cnt_en = m_ready & ~shift_out_ready[COLS-1] & (outshift_flag[COLS-1-count_outshift] == 1);
 
-                      end
-                      
-                    end
-                  end      
+    for (co=0; co<COLS; co=co+1) begin : Cs
+
+      // outshift_flag is used to decide whether the column should be shifted out or not
+      // outshift_flag is set to 1 for all cols when the last col of out shifter gets valid data
+      // it is set to 0 when shift_out_ready[co] = 0 i.e. the data from that col has been shifted out.
+      always_ff@(posedge clk `OR_NEGEDGE(resetn)) begin
+        if (!resetn) begin 
+          outshift_flag[co] <= 0;
+        end
+        else begin
+          shift_out_ready_last_col_prev <= shift_out_ready[COLS-1];
+
+          if(shift_out_ready_last_col_prev & ~shift_out_ready[COLS-1]) begin // when last col of out shifter gets data from acc, it is ready to start shifting.
+            outshift_flag[co] <= 1;
+          end
+          else begin
+          //else if ((count_outshift == (COLS-1)-co) && en_outshift[co]) begin
+            if (co < COLS-1) begin
+              if (shift_out_ready[co]) begin
+                outshift_flag[co] <= 0;
               end
-                  
-        SHIFT : if (m_ready) begin
+            end
+            else if (shift_out_ready[co]) outshift_flag[co] <= 0; // for last column
 
-                  shift_data_out  <= shift_data_out  << (ROWS * WORD_WIDTH);
-                  shift_valid <= shift_valid << 1;
-                  shift_last  <= shift_last  << 1;
-                  shift_last_pkt  <= shift_last_pkt  << 1;
+          end
+        end
+      end
+      
+      // en_outshift enables the output shifter. The first condition is to shift data out,
+      // and the second condition is for the accumulator to write to the output shifter.
+      assign en_outshift[co] = (m_ready & outshift_flag[co]) | ~sel_outshift[co];
+      
+      // sel_outshift = 1 -> data comes from prev col, 0 -> data comes from accumulator.
+      if (co < COLS-1)
+        assign sel_outshift[co] = ~(acc_m_valid[co] & valid_mask[co] & shift_out_ready[co] & shift_out_ready[co+1]);
+      else
+        assign sel_outshift[co] = ~(acc_m_valid[co] & valid_mask[co] & shift_out_ready[co]);
 
-                  if (counter == 1) begin
-                    state   <= IDLE;
-                    shift_out_ready <= '1;
-                  end
-                end
-      endcase
+      always_ff@(posedge clk `OR_NEGEDGE(resetn)) begin
+        if (!resetn) begin 
+          state   <= IDLE;
+          shift_out_ready <= '1;
+          m_bytes_per_transfer <= 0;
+          {shift_data_out, shift_valid, shift_last, shift_last_pkt} <= '0;
+        end else  
+          if(en_outshift[co]) begin
+            if (co>0) begin
+                      shift_data_out[co]  <= (sel_outshift[co]) ? shift_data_out[co-1]: acc_m_data[co] ;
+                      shift_last_pkt[co]  <= (sel_outshift[co]) ? shift_last_pkt[co-1] : {acc_m_last[co]} & lut_last_pkt[acc_m_user[co].kw2][co];
+                      shift_valid[co]     <= (sel_outshift[co]) ? shift_valid[co-1] : s_valid_cols_sel[co] & valid_mask[co];
+                      shift_last[co]      <= (sel_outshift[co]) ? shift_last[co-1] :s_last_cols_sel[co];
+                      shift_out_ready[co] <= (sel_outshift[co]) ? shift_out_ready[co-1] : 1'b0;
+                      
+                      if(co == COLS-1) begin // TODO: fix
+                        if(~sel_outshift[co]) m_bytes_per_transfer <= lut_bpt[acc_m_user[COLS-1].is_w_last][acc_m_user[COLS-1].kw2];
+                      end
+            end
+            else begin // COL 0
+              shift_data_out[co]  <= (sel_outshift[co]) ? shift_data_out[co]: acc_m_data[co] ;
+              shift_last_pkt[co]  <= (sel_outshift[co]) ? shift_last_pkt[co] : {acc_m_last[co]} & lut_last_pkt[acc_m_user[co].kw2][co];
+              shift_valid[co]     <= (sel_outshift[co]) ? shift_valid[co] : s_valid_cols_sel[co] & valid_mask[co];
+              shift_last[co]      <= (sel_outshift[co]) ? shift_last[co] :s_last_cols_sel[co];
+              shift_out_ready[co] <= (sel_outshift[co]) ? 1'b1 : 1'b0;
+            end
+
+          end
+
+                      // if(acc_m_valid[co] && valid_mask[co] && shift_out_ready[co] && m_ready) begin
+                      //   shift_data_out[co]  <= acc_m_data[co];
+                      //   shift_out_ready[co] <= 0;
+                      //   shift_last_pkt[co] <= {acc_m_last[co]} & lut_last_pkt[acc_m_user[co].kw2][co];
+                      //   shift_valid[co] <= s_valid_cols_sel[co] & valid_mask[co];
+                      //   shift_last[co]  <= s_last_cols_sel[co];
+                      //   if(co == COLS-1) begin
+                      //     //state   <= SHIFT;
+                      //     m_bytes_per_transfer <= lut_bpt[acc_m_user[COLS-1].is_w_last][acc_m_user[COLS-1].kw2];
+
+                      //   end
+                        
+                      // end
+                      // else if (m_ready && !shift_out_ready[COLS-1] && !shift_out_ready[COLS-1:co]) begin
+                      //   if(co>0) begin
+                      //     shift_data_out[co] <= shift_data_out[co-1];
+                      //     shift_valid[co] <= shift_valid[co-1];
+                      //     shift_last[co] <= shift_last[co-1];
+                      //     shift_last_pkt[co] <= shift_last_pkt[co-1];  
+                      //     shift_out_ready[co] <= shift_out_ready[co-1];
+                      //   end
+                      //   else shift_out_ready[co] <= 1; // column 0
+
+                      // end
+
+      end
     end
 
-    always_ff @(posedge clk `OR_NEGEDGE(resetn))
-    if      (!resetn)                counter <= COLS;
-    else if (state==SHIFT && m_ready) counter <= counter == 1 ? COLS : counter - 1;
+     //always_ff @(posedge clk `OR_NEGEDGE(resetn))
+     //if      (!resetn)                counter <= 0;
+     //else if (!shift_out_ready[COLS-1] && m_ready) counter <= counter == COLS ? 0 : counter + 1;
 
     assign m_data   = shift_data_out [COLS-1];
     assign m_valid  = shift_valid[COLS-1];
@@ -229,9 +298,19 @@ module proc_engine #(
     // -------------- OUTPUT SHIFTER ----------------      
 
     //assign en_mac = &(~acc_m_valid | shift_out_ready);
-    assign en[0] = ~acc_m_valid[0] | shift_out_ready[0];
+    //assign en[0] = ~acc_m_valid[0] | shift_out_ready[0];
     for(c=0; c<COLS; c++) begin
-      //assign en[c] = ~acc_m_valid[c] | shift_out_ready[c];
+      if(c<COLS-1) begin
+        assign mac_freeze[c] = (acc_m_valid[c] & ~(shift_out_ready[c] & shift_out_ready[c+1]));
+        //assign en[c] = (~acc_m_valid[c] | shift_out_ready[c] & shift_out_ready[c+1]);
+      end
+      else begin
+        assign mac_freeze[c] = (acc_m_valid[c] & ~shift_out_ready[c]);
+        //assign en[c] = (~acc_m_valid[c] | shift_out_ready[c]);
+      end
+
+      assign en[c] = &(~mac_freeze); //TODO: change to single en signal instead of col wise.
+
       assign acc_m_valid_next[c] = !sel_shift[c] & mul_m_valid[c] & (mul_m_user[c].is_config | mul_m_user[c].is_cin_last);
       
       always_ff @(posedge clk `OR_NEGEDGE(resetn))
@@ -240,7 +319,7 @@ module proc_engine #(
       end
       else begin
         if (en[c])            acc_m_valid[c] <= acc_m_valid_next[c];
-        if (c > 0)            en[c] <= en[c-1];
+      //  if (c > 0)            en[c] <= en[c-1];
       end
 
       always_ff @(posedge clk `OR_NEGEDGE(resetn))

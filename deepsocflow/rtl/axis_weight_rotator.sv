@@ -428,9 +428,9 @@ for (genvar i=0; i<COLS; i++) begin
   always_ff@(posedge aclk) begin 
     if (i>0) begin
       //if (m_axis_tready[i]) pixels_m_valid_pipe[i] <= pixels_m_valid_pipe[i-1]; // is if() condition necessary?
-      pixels_m_valid_pipe[i] <= pixels_m_valid_pipe[i-1];
-      weights_m_ready[i] <= weights_m_ready[i-1];
-      m_axis_tvalid[i] <= m_axis_tvalid[i-1];
+      if (m_axis_tready[i]) pixels_m_valid_pipe[i] <= pixels_m_valid_pipe[i-1];
+      //weights_m_ready[i] <= weights_m_ready[i-1];
+      //m_axis_tvalid[i] <= m_axis_tvalid[i-1];
     end
     //else if (m_axis_tready[i]) pixels_m_valid_pipe[i] <= pixels_m_valid_pipe_0;
     //else if (m_axis_tready[i]) pixels_m_valid_pipe[i] <= pixels_m_valid_pipe_0;
@@ -439,11 +439,11 @@ for (genvar i=0; i<COLS; i++) begin
     //end
     
   end
-  //assign m_axis_tvalid[i]   = weights_m_valid[i] && (pixels_m_valid_pipe[i] || weights_m_user[i].is_config);
-  //assign weights_m_ready[i] = m_axis_tready[i]   && (pixels_m_valid_pipe[i] || weights_m_user[i].is_config);
+  assign m_axis_tvalid[i]   = weights_m_valid[i] && (pixels_m_valid_pipe[i] || weights_m_user[i].is_config);
+  assign weights_m_ready[i] = m_axis_tready[i]   && (pixels_m_valid_pipe[i] || weights_m_user[i].is_config);
 end
 endgenerate
-  assign m_axis_tvalid[0]   = weights_m_valid[0] && (pixels_m_valid_pipe[0] || weights_m_user[0].is_config);
-  assign weights_m_ready[0] = m_axis_tready[0]   && (pixels_m_valid_pipe[0] || weights_m_user[0].is_config);
+  //assign m_axis_tvalid[0]   = weights_m_valid[0] && (pixels_m_valid_pipe[0] || weights_m_user[0].is_config);
+  //assign weights_m_ready[0] = m_axis_tready[0]   && (pixels_m_valid_pipe[0] || weights_m_user[0].is_config);
   assign pixels_m_ready  = m_axis_tready[0]   && weights_m_valid[0] && !weights_m_user[0].is_config;
 endmodule
