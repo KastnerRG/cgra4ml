@@ -1,5 +1,5 @@
 from tensorflow import keras
-from keras.layers import Flatten, Activation, Input, Layer
+from keras.layers import Flatten, Activation, Input, Layer, Add
 from keras.models import Model, save_model
 
 from keras.datasets import mnist
@@ -64,7 +64,8 @@ class XConvBN(QConv2DBatchnorm):
         self.kernel_quantizer = f'quantized_bits({sys_bits.k},{k_int_bits},False,True,1)'
         self.bias_quantizer = f'quantized_bits({sys_bits.b},{b_int_bits},False,True,1)'
 
-        super().__init__(kernel_quantizer=self.kernel_quantizer, bias_quantizer=self.bias_quantizer, *args, **kwargs)
+        super().__init__(kernel_quantizer=self.kernel_quantizer, bias_quantizer=self.bias_quantizer, padding='same', *args, **kwargs)
+        
 
 
 class XPool(Layer):
@@ -94,38 +95,39 @@ class XPool(Layer):
 @keras.saving.register_keras_serializable()
 class XBundle(Layer):
 
-    def __init__(self, core, pool=None, flatten=False, *args, **kwargs):
+    def __init__(self, core, pool=None, add_act=None, flatten=False, softmax=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.flatten = flatten
         self.core = core
         self.pool = pool
+        self.add_act = add_act
+        self.flatten = Flatten() if flatten else None
+        self.softmax = Activation("softmax") if softmax else None
 
-        if self.flatten:
-            self.flatten = Flatten()
-
-    def call(self, input_tensor, training=False, x_1=None):
+    def call(self, input_tensor, x_add=None, training=False):
     
         x = input_tensor
-        if hasattr(x, "bundle"):
-            self.prev_bundle = x.bundle
-            self.prev_bundle.next_bundles += [self]
-        else:
-            self.prev_bundle = None
-
+        # if hasattr(x, "bundle"):
+        #     self.prev_bundle = x.bundle
+        #     self.prev_bundle.next_bundles += [self]
+        # else:
+        #     self.prev_bundle = None
         # self.inp['tensor'] = x 
 
         x = self.core(x)
         x = self.core.act(x)
         # self.core['tensor'] = x 
 
-        # if x_1 is not None:
-        #     if hasattr(x_1, "bundle"):
-        #         self.add['bundle'] = x_1.bundle
-        #         x_1.bundle.add_tensor_dest += [self.idx]
-        #     else:
-        #         self.add['bundle'] = None
-        #     x = Add()([x, x_1])
-        #     x = self.act_add(x)
+        if x_add is not None:
+            if self.add_act is None:
+                raise ValueError("Activation function must be provided for add layer")
+            
+            # if hasattr(x_add, "bundle"):
+            #     self.add['bundle'] = x_add.bundle
+            #     x_add.bundle.add_tensor_dest += [self.idx]
+            # else:
+            #     self.add['bundle'] = None
+            x = Add()([x, x_add])
+            x = self.add_act(x)
         #     # self.add['tensor'] = x
         if self.pool:
             x = self.pool(x)
@@ -133,11 +135,11 @@ class XBundle(Layer):
         #     # self.pool['tensor'] = x
         if self.flatten:
             x = self.flatten(x)
-        # if self.softmax:
-        #     x = self.softmax(x)
+        if self.softmax:
+            x = self.softmax(x)
 
         # self.out['tensor'] = x
-        x.bundle = self
+        # x.bundle = self
         return x
     
 @keras.saving.register_keras_serializable()
@@ -162,7 +164,7 @@ class XModel(Layer):
 Dataset
 '''
 
-NB_EPOCH = 3
+NB_EPOCH = 2
 BATCH_SIZE = 64
 VERBOSE = 1
 VALIDATION_SPLIT = 0.1
@@ -193,27 +195,98 @@ class UserModel(XModel):
     def __init__(self, sys_bits, x_int_bits, *args, **kwargs):
         super().__init__(sys_bits, x_int_bits, *args, **kwargs)
 
-        self.m1 = XBundle( 
+
+
+# x = x_skip1 = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':(11,11), 'strides':(2,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':q1}, pool= {'type':'avg', 'size':(3,4), 'strides':(2,3), 'padding':'same', 'act_str':f'quantized_bits({hw.X_BITS},0,False,False,1)'})(x)
+        self.b1 = XBundle( 
             core=XConvBN(
                 k_int_bits=0,
                 b_int_bits=0,
                 o_int_bits=0,
                 filters=8,
-                kernel_size=(11,11),
+                kernel_size=11,
                 strides=(2,1),
-                padding="same",
                 use_bias=True,
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0),
                 sys_bits=sys_bits,),
-
             pool=XPool(
                 type='avg',
                 size=(3,4),
                 strides=(2,3),
                 padding='same',
-                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),),
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),)
+            )
+        
+# x = x_skip2 = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':q2}, add = {'act_str':f'quantized_bits({hw.X_BITS},0,False,True,1)'})(x, x_skip1)
+        self.b2 = XBundle( 
+            core=XConvBN(
+                k_int_bits=0,
+                b_int_bits=0,
+                o_int_bits=0,
+                filters=8,
+                kernel_size=1,
+                use_bias=True,
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),
+                sys_bits=sys_bits,),
+            add_act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0.125)
+        )
+        
+# x =           Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 7, 7), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':False, 'act_str':q3}, add = {'act_str':f'quantized_bits({hw.X_BITS},0,False,True,1)'})(x, x_skip2)
+        self.b3 = XBundle( 
+            core=XConvBN(
+                k_int_bits=0,
+                b_int_bits=0,
+                o_int_bits=0,
+                filters=8,
+                kernel_size=7,
+                use_bias=False,
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),
+                sys_bits=sys_bits,),
+            add_act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0)
+        )
 
-            flatten=True)
+# x =           Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 5, 5), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':q4}, add = {'act_str':f'quantized_bits({hw.X_BITS},0,False,True,1)'})(x, x_skip1)
+        self.b4 = XBundle( 
+            core=XConvBN(
+                k_int_bits=0,
+                b_int_bits=0,
+                o_int_bits=0,
+                filters=8,
+                kernel_size=5,
+                use_bias=True,
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),
+                sys_bits=sys_bits,),
+            add_act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0)
+        )
+
+# x =           Bundle( core= {'type':'conv' , 'filters':24, 'kernel_size':( 3, 3), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':q1},)(x)
+        self.b5 = XBundle( 
+            core=XConvBN(
+                k_int_bits=0,
+                b_int_bits=0,
+                o_int_bits=0,
+                filters=24,
+                kernel_size=3,
+                use_bias=True,
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0),
+                sys_bits=sys_bits,),
+        )
+
+# x =           Bundle( core= {'type':'conv' , 'filters':10, 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':q4}, flatten= True)(x)
+        self.b6 = XBundle( 
+            core=XConvBN(
+                k_int_bits=0,
+                b_int_bits=0,
+                o_int_bits=0,
+                filters=10,
+                kernel_size=1,
+                use_bias=True,
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0),
+                sys_bits=sys_bits,),
+            flatten=True
+        )
+
+# x =           Bundle( core= {'type':'dense', 'units'  :10,                                                           'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':q4}, softmax= True)(x)
 
         self.dense = QDense(NB_CLASSES, kernel_quantizer=quantized_bits(sys_bits.x,0,1),
                         bias_quantizer=quantized_bits(sys_bits.x,0,1))
@@ -222,7 +295,12 @@ class UserModel(XModel):
     def call (self, x):
         x = self.input_quant_layer(x)
 
-        x = self.m1(x)
+        x = x_skip1 = self.b1(x)
+        x = x_skip2 = self.b2(x, x_skip1)
+        x = self.b3(x, x_skip2)
+        x = self.b4(x, x_skip1)
+        x = self.b5(x)
+        x = self.b6(x)
 
         x = self.dense(x)
         x = self.act4 (x)
@@ -287,4 +365,4 @@ loaded_model = load_qmodel("mnist.h5")
 score = loaded_model.evaluate(x_test, y_test, verbose=0)
 print(f"Test loss:{score[0]}, Test accuracy:{score[1]}")
 
-# print(loaded_model.layers[1].m1.get_raw())
+# print(loaded_model.layers[1].b1.get_raw())
