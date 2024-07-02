@@ -34,6 +34,10 @@ def get_frac_bits(bits, int_bits):
 @keras.saving.register_keras_serializable()
 class XActivation(QActivation):
     def __init__(self, sys_bits, o_int_bits, type='relu', slope=1, *args, **kwargs):
+        self.sys_bits = sys_bits
+        self.o_int_bits = o_int_bits
+        self.type = type
+        self.slope = slope
 
         match type:
             case None:
@@ -48,35 +52,64 @@ class XActivation(QActivation):
 
 @keras.saving.register_keras_serializable()
 class XConvBN(QConv2DBatchnorm):
-    def __init__(self, sys_bits, k_int_bits, b_int_bits, o_int_bits, act, *args, **kwargs):
-        self.sys_bits = sys_bits
-        self.k_frac = get_frac_bits(sys_bits.k, k_int_bits)
-        self.o_bits = sys_bits.x
-        self.out_frac = get_frac_bits(self.o_bits, o_int_bits)
-        self.act = act
+    def __init__(self, k_int_bits, b_int_bits, act, *args, **kwargs):
 
         if act is None:
             raise ValueError("Activation function must be provided. Set type to none if no activation is needed")
         
+        self.act = act
+        self.sys_bits = act.sys_bits
+        self.k_frac = get_frac_bits(sys_bits.k, k_int_bits)
+        self.o_bits = self.sys_bits.x
+        self.out_frac = get_frac_bits(self.o_bits, act.o_int_bits)
+        
         if "kernel_quantizer" in kwargs or "bias_quantizer" in kwargs:
             raise ValueError("kernel_quantizer and bias_quantizer will be derived from xconfig and k_frac")
 
-        self.kernel_quantizer = f'quantized_bits({sys_bits.k},{k_int_bits},False,True,1)'
-        self.bias_quantizer = f'quantized_bits({sys_bits.b},{b_int_bits},False,True,1)'
+        self.kernel_quantizer = f'quantized_bits({self.sys_bits.k},{k_int_bits},False,True,1)'
+        self.bias_quantizer = f'quantized_bits({self.sys_bits.b},{b_int_bits},False,True,1)'
 
         super().__init__(kernel_quantizer=self.kernel_quantizer, bias_quantizer=self.bias_quantizer, padding='same', *args, **kwargs)
         
+@keras.saving.register_keras_serializable()
+class XDense(QDense):
+    def __init__(self, k_int_bits, b_int_bits, act, *args, **kwargs):
 
+        if act is None:
+            raise ValueError("Activation function must be provided. Set type to none if no activation is needed")
+        
+        self.act = act
+        self.sys_bits = act.sys_bits
+        self.k_frac = get_frac_bits(self.sys_bits.k, k_int_bits)
+        self.o_bits = self.sys_bits.x
+        self.out_frac = get_frac_bits(self.o_bits, act.o_int_bits)
+        
+        if "kernel_quantizer" in kwargs or "bias_quantizer" in kwargs:
+            raise ValueError("kernel_quantizer and bias_quantizer will be derived from xconfig and k_frac")
+
+        self.kernel_quantizer = f'quantized_bits({self.sys_bits.k},{k_int_bits},False,True,1)'
+        self.bias_quantizer = f'quantized_bits({self.sys_bits.b},{b_int_bits},False,True,1)'
+
+        super().__init__(kernel_quantizer=self.kernel_quantizer, bias_quantizer=self.bias_quantizer, *args, **kwargs)
+
+@keras.saving.register_keras_serializable()
 
 class XPool(Layer):
     def __init__(self, type, size, strides, padding, act, *args, **kwargs):
+
         super().__init__(*args, **kwargs)
+        
         self.type = type
         self.size = size
         self.strides = strides
         self.padding = padding
-        self.act = act
 
+        if act is None:
+            raise ValueError("Activation function must be provided. Set type to none if no activation is needed")
+        
+        self.act = act
+        self.sys_bits = act.sys_bits
+        self.o_bits = act.sys_bits.x
 
         if self.type == 'avg':
             self.pool_layer = AveragePooling2D(pool_size=size, strides=strides, padding=padding)
@@ -85,8 +118,7 @@ class XPool(Layer):
         else:
             raise ValueError(f"Pooling type {type} not recognized")
         
-        if act is None:
-            raise ValueError("Activation function must be provided. Set type to none if no activation is needed")
+        self.out_frac = get_frac_bits(self.o_bits, act.o_int_bits)
 
     def call(self, x):
         x = self.pool_layer(x)
@@ -114,6 +146,7 @@ class XBundle(Layer):
         # self.inp['tensor'] = x 
 
         x = self.core(x)
+
         x = self.core.act(x)
         # self.core['tensor'] = x 
 
@@ -164,9 +197,8 @@ class XModel(Layer):
 Dataset
 '''
 
-NB_EPOCH = 2
+NB_EPOCH = 3
 BATCH_SIZE = 64
-VERBOSE = 1
 VALIDATION_SPLIT = 0.1
 NB_CLASSES = 10
 
@@ -202,13 +234,11 @@ class UserModel(XModel):
             core=XConvBN(
                 k_int_bits=0,
                 b_int_bits=0,
-                o_int_bits=0,
                 filters=8,
                 kernel_size=11,
                 strides=(2,1),
                 use_bias=True,
-                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0),
-                sys_bits=sys_bits,),
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0)),
             pool=XPool(
                 type='avg',
                 size=(3,4),
@@ -222,12 +252,10 @@ class UserModel(XModel):
             core=XConvBN(
                 k_int_bits=0,
                 b_int_bits=0,
-                o_int_bits=0,
                 filters=8,
                 kernel_size=1,
                 use_bias=True,
-                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),
-                sys_bits=sys_bits,),
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None)),
             add_act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0.125)
         )
         
@@ -236,12 +264,10 @@ class UserModel(XModel):
             core=XConvBN(
                 k_int_bits=0,
                 b_int_bits=0,
-                o_int_bits=0,
                 filters=8,
                 kernel_size=7,
                 use_bias=False,
-                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),
-                sys_bits=sys_bits,),
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),),
             add_act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0)
         )
 
@@ -250,12 +276,10 @@ class UserModel(XModel):
             core=XConvBN(
                 k_int_bits=0,
                 b_int_bits=0,
-                o_int_bits=0,
                 filters=8,
                 kernel_size=5,
                 use_bias=True,
-                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),
-                sys_bits=sys_bits,),
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),),
             add_act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0)
         )
 
@@ -264,12 +288,10 @@ class UserModel(XModel):
             core=XConvBN(
                 k_int_bits=0,
                 b_int_bits=0,
-                o_int_bits=0,
                 filters=24,
                 kernel_size=3,
                 use_bias=True,
-                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0),
-                sys_bits=sys_bits,),
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0),),
         )
 
 # x =           Bundle( core= {'type':'conv' , 'filters':10, 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':q4}, flatten= True)(x)
@@ -277,20 +299,29 @@ class UserModel(XModel):
             core=XConvBN(
                 k_int_bits=0,
                 b_int_bits=0,
-                o_int_bits=0,
                 filters=10,
                 kernel_size=1,
                 use_bias=True,
-                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0),
-                sys_bits=sys_bits,),
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0),),
             flatten=True
         )
 
 # x =           Bundle( core= {'type':'dense', 'units'  :10,                                                           'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':q4}, softmax= True)(x)
 
-        self.dense = QDense(NB_CLASSES, kernel_quantizer=quantized_bits(sys_bits.x,0,1),
-                        bias_quantizer=quantized_bits(sys_bits.x,0,1))
-        self.act4  = Activation("softmax", name="softmax")
+        self.b7 = XBundle(
+            core=XDense(
+                k_int_bits=1,
+                b_int_bits=1,
+                units=NB_CLASSES,
+                act=XActivation(sys_bits=sys_bits, o_int_bits=1, type=None),),
+            softmax=True
+        )
+
+        # TODO: Remove act before softmax to improve accuracy
+
+        # self.dense = QDense(NB_CLASSES, kernel_quantizer=quantized_bits(sys_bits.x,0,1),
+        #         bias_quantizer=quantized_bits(sys_bits.x,0,1))
+        # self.act4  = Activation("softmax", name="softmax")
 
     def call (self, x):
         x = self.input_quant_layer(x)
@@ -301,9 +332,9 @@ class UserModel(XModel):
         x = self.b4(x, x_skip1)
         x = self.b5(x)
         x = self.b6(x)
-
-        x = self.dense(x)
-        x = self.act4 (x)
+        x = self.b7(x)
+        # x = self.dense(x)
+        # x = self.act4(x)
         return x
 
 x = x_in =  Input(x_train.shape[1:], name="input")
@@ -324,7 +355,7 @@ history = model.fit(
         batch_size=BATCH_SIZE,
         epochs=NB_EPOCH, 
         initial_epoch=1, 
-        verbose=VERBOSE,
+        verbose=True,
         validation_split=VALIDATION_SPLIT)
 
 print(model.submodules)
