@@ -23,6 +23,8 @@ module proc_engine #(
   input  logic [ROWS-1:0][X_BITS-1:0] s_data_pixels,
   input  logic [COLS-1:0][K_BITS-1:0] s_data_weights,                                                                        
   input  tuser_st [COLS-1:0] s_user,
+  input  logic pixels_m_valid,
+  output logic [COLS-1:0] pixels_m_valid_pipe,
 
   //input  logic m_ready,
   //output logic m_valid, m_last,
@@ -67,6 +69,8 @@ module proc_engine #(
   logic [BITS_COLS-1:0] count_outshift;
   logic cnt_en;
 
+  logic [COLS-1:0] s_axis_tvalid;
+
   genvar k2, c_1;
   genvar co;
   for (k2=0; k2 <= KW_MAX/2; k2++) begin
@@ -95,10 +99,25 @@ module proc_engine #(
 
   assign s_ready = clken_mul;
 
+  // assign pixels_m_valid_pipe[0] = (s_ready[0]) ? pixels_m_valid: 1'b0;
+  assign pixels_m_valid_pipe[0] = pixels_m_valid;
+
+generate
+  for (genvar i=0; i<COLS; i++) begin
+    always_ff@(posedge clk) begin 
+      if (i>0) begin
+        pixels_m_valid_pipe[i] <= (s_ready[i-1]) ? pixels_m_valid_pipe[i-1] : (s_ready[i]) ? 1'b0 : pixels_m_valid_pipe[i];
+      end
+    end
+    //assign weights_m_ready[i] = s_ready[i]   && (pixels_m_valid_pipe[i] || s_user[i].is_config);
+    assign s_axis_tvalid[i]   = s_valid[i] && (pixels_m_valid_pipe[i] || s_user[i].is_config);
+end
+endgenerate
+
   generate
     genvar r,c,kw2,d;
     for(c=0; c<COLS; c++) begin
-      n_delay #(.N(DELAY_MUL), .W(TUSER_WIDTH+2)) MUL_CONTROL (.c(clk), .rng(resetn), .rnl(1'b1), .e(clken_mul[c]), .i({s_valid[c], s_last[c], s_user[c]}), .o ({mul_m_valid[c], mul_m_last[c], mul_m_user[c]}));
+      n_delay #(.N(DELAY_MUL), .W(TUSER_WIDTH+2)) MUL_CONTROL (.c(clk), .rng(resetn), .rnl(1'b1), .e(clken_mul[c]), .i({s_axis_tvalid[c], s_last[c], s_user[c]}), .o ({mul_m_valid[c], mul_m_last[c], mul_m_user[c]}));
       
       assign sel_shift_next[c] = mul_m_valid[c] && mul_m_user[c].is_cin_last && (mul_m_user[c].kw2 != 0);
 
@@ -160,7 +179,7 @@ module proc_engine #(
 
         n_delay #(.N(DELAY_MUL-1), .W(M_BITS)) MUL_PIPE (.c(clk), .rng(resetn), .rnl(1'b1), .e(clken_mul[c]), .i(mul_comb), .o (mul_m_data[c][r]));
         
-        //TODO: change to FF so that it has previous cycle data?
+        // changed shift_data to FF so that it has previous cycle data.
         always_ff @ (posedge clk `OR_NEGEDGE(resetn)) begin
           if(!resetn) shift_data [c][r] <= '0;
           else begin
@@ -309,7 +328,8 @@ module proc_engine #(
         //assign en[c] = (~acc_m_valid[c] | shift_out_ready[c]);
       end
 
-      assign en[c] = &(~mac_freeze); //TODO: change to single en signal instead of col wise.
+      //assign en[c] = &(~mac_freeze);
+      assign en[c] = &(~mac_freeze[COLS-1:c]);  // all cols to the left of frozen column should freeze.
 
       assign acc_m_valid_next[c] = !sel_shift[c] & mul_m_valid[c] & (mul_m_user[c].is_config | mul_m_user[c].is_cin_last);
       
@@ -319,6 +339,10 @@ module proc_engine #(
       end
       else begin
         if (en[c])            acc_m_valid[c] <= acc_m_valid_next[c];
+        else if (c<COLS-1) begin
+          if (~en[c] & acc_m_valid[c] & shift_out_ready[c] & shift_out_ready[c+1]) acc_m_valid[c] <= acc_m_valid_next[c]; // if handshake happens when en is 0, acc_m_valid should become low
+        end
+        else if (~en[c] & acc_m_valid[c] & shift_out_ready[c]) acc_m_valid[c] <= acc_m_valid_next[c];
       //  if (c > 0)            en[c] <= en[c-1];
       end
 

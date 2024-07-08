@@ -411,12 +411,12 @@ module axis_sync #(
   input logic aclk,
   input logic pixels_m_valid,
   input tuser_st [COLS-1:0] weights_m_user,
+  input logic [COLS-1:0] pixels_m_valid_pipe,
   //input logic [1:0] weights_rd_state,
   output logic [COLS-1:0] m_axis_tvalid, weights_m_ready, 
   output logic pixels_m_ready
 );
 
-logic [COLS-1:0] pixels_m_valid_pipe;
 //logic pixels_m_valid_pipe_0; // verilator compile
 
 assign pixels_m_valid_pipe[0] = (m_axis_tready[0]) ? pixels_m_valid: 1'b0;
@@ -425,21 +425,22 @@ assign pixels_m_valid_pipe[0] = (m_axis_tready[0]) ? pixels_m_valid: 1'b0;
 
 generate //TODO: pixels_m_valid should be pipelined?
 for (genvar i=0; i<COLS; i++) begin
-  always_ff@(posedge aclk) begin 
-    if (i>0) begin
+  //always_ff@(posedge aclk) begin 
+  //  if (i>0) begin
       //if (m_axis_tready[i]) pixels_m_valid_pipe[i] <= pixels_m_valid_pipe[i-1]; // is if() condition necessary?
-      if (m_axis_tready[i]) pixels_m_valid_pipe[i] <= pixels_m_valid_pipe[i-1];
+      //pixels_m_valid_pipe[i] <= (|m_axis_tready[i:0]) ? pixels_m_valid_pipe[i-1] : 1'b0;
+  //    pixels_m_valid_pipe[i] <= pixels_m_valid_pipe[i-1];
       //weights_m_ready[i] <= weights_m_ready[i-1];
       //m_axis_tvalid[i] <= m_axis_tvalid[i-1];
-    end
+  //  end
     //else if (m_axis_tready[i]) pixels_m_valid_pipe[i] <= pixels_m_valid_pipe_0;
     //else if (m_axis_tready[i]) pixels_m_valid_pipe[i] <= pixels_m_valid_pipe_0;
     //else begin
     //  if (m_axis_tready[1]) pixels_m_valid_pipe[i] <= pixels_m_valid_pipe_0;
     //end
     
-  end
-  assign m_axis_tvalid[i]   = weights_m_valid[i] && (pixels_m_valid_pipe[i] || weights_m_user[i].is_config);
+  //end
+  assign m_axis_tvalid[i]   = weights_m_valid[i];// && (pixels_m_valid_pipe[i] || weights_m_user[i].is_config);
   assign weights_m_ready[i] = m_axis_tready[i]   && (pixels_m_valid_pipe[i] || weights_m_user[i].is_config);
 end
 endgenerate
