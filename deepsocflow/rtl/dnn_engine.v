@@ -54,6 +54,7 @@ module dnn_engine #(
   wire [K_BITS*COLS -1:0] weights_m_data;
   wire [COLS*TUSER_WIDTH -1:0] weights_m_user;
   wire [W_BPT-1:0] s_bytes_per_transfer;
+  wire [COLS-1:0] pixels_m_valid_pipe;
   //wire [1:0] weights_rd_state;
 
 
@@ -107,6 +108,7 @@ module dnn_engine #(
     .pixels_m_valid  (pixels_m_valid ), 
     .m_axis_tready   (conv_s_ready   ),
     .weights_m_user  (weights_m_user ),
+    .pixels_m_valid_pipe(pixels_m_valid_pipe),
     //.weights_rd_state (weights_rd_state),
     .m_axis_tvalid   (conv_s_valid   ), 
     .weights_m_ready (weights_m_ready), 
@@ -121,10 +123,12 @@ module dnn_engine #(
     .aresetn        (aresetn ),
     .s_valid        (conv_s_valid               ),
     .s_ready        (conv_s_ready               ),
+    .pixels_m_valid_pipe(pixels_m_valid_pipe),
     .s_last         (weights_m_last             ),
     .s_user         (weights_m_user             ),
     .s_data_pixels  (pixels_m_data              ),
     .s_data_weights (weights_m_data             ),
+    .pixels_m_valid  (pixels_m_valid            ), 
     .m_ready        (m_ready                    ),
     .m_valid        (m_valid                    ),
     .m_data         (m_data                     ),
@@ -195,6 +199,8 @@ module proc_engine_out #(
     input wire [COLS*TUSER_WIDTH  -1:0] s_user        ,
     input wire [`X_BITS*`ROWS -1:0] s_data_pixels ,
     input wire [`K_BITS*`COLS -1:0] s_data_weights,
+    input wire pixels_m_valid,
+    output wire [COLS-1:0] pixels_m_valid_pipe,
 
     input wire m_ready,
     output wire m_valid,
@@ -217,6 +223,8 @@ module proc_engine_out #(
     .s_user         (s_user                     ),
     .s_data_pixels  (s_data_pixels              ),
     .s_data_weights (s_data_weights             ),
+    .pixels_m_valid (pixels_m_valid),
+    .pixels_m_valid_pipe(pixels_m_valid_pipe),
     // .m_valid        (conv_m_axis_tvalid         ),
     // .m_ready        (conv_m_axis_tready         ),
     // .m_data         (conv_m_axis_tdata          ),
