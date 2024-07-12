@@ -419,7 +419,7 @@ module axis_sync #(
 
 //logic pixels_m_valid_pipe_0; // verilator compile
 
-assign pixels_m_valid_pipe[0] = (m_axis_tready[0]) ? pixels_m_valid: 1'b0;
+//assign pixels_m_valid_pipe[0] = (m_axis_tready[0]) ? pixels_m_valid: 1'b0;
 //assign pixels_m_valid_pipe[0] = (m_axis_tready[0] && (weights_rd_state[1:0]==2'b10)) ? pixels_m_valid: 1'b0;
 //assign pixels_m_valid_pipe[0] = pixels_m_ready ? pixels_m_valid: 1'b0;
 
