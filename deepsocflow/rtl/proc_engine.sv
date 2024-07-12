@@ -184,7 +184,7 @@ endgenerate
           if(!resetn) shift_data [c][r] <= '0;
           else begin
             if(c == 0) shift_data [c][r] <= '0;
-            else shift_data [c][r] <= acc_m_data [c-1][r];
+            else if (acc_m_valid[c-1]) shift_data [c][r] <= acc_m_data [c-1][r];
           end
         end
         //if (c == 0) assign shift_data [c][r] = '0;
@@ -310,7 +310,7 @@ endgenerate
      //else if (!shift_out_ready[COLS-1] && m_ready) counter <= counter == COLS ? 0 : counter + 1;
 
     assign m_data   = shift_data_out [COLS-1];
-    assign m_valid  = shift_valid[COLS-1];
+    assign m_valid  = shift_valid[COLS-1] & outshift_flag[COLS-1];
     assign m_last   = shift_last [COLS-1];
     assign m_last_pkt = shift_last_pkt [COLS-1];
 
