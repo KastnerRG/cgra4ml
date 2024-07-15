@@ -2,18 +2,18 @@
 
 # An Open Framework to Empower Scientific Edge Computing with Modern Neural Networks ![status](https://github.com/abarajithan11/dnn-engine/actions/workflows/verify.yml/badge.svg) 
 
-DeepSoCFlow is a Python library that helps researchers build, train, and implement their own deep ML models, such as ResNet CNNs, Autoencoders, and Transformers on FPGAs and custom ASIC.
+cgra4ml is a Python library that helps researchers build, train, and implement their own deep ML models, such as ResNet CNNs, Autoencoders, and Transformers on FPGAs and custom ASIC.
 
-It takes several months of work to get such deep models running correctly on edge platforms, at their promised maximal performance. This painful work includes:
+It takes a lot of effort and expertise to implement highly optimized neural networks on edge platforms. The challenging aspects include:
 
-- Designing an optimal dataflow
+- Designing an optimal dataflow architecture
 - Building & verifying an accelerator, optimizing for high-frequency
 - Building the System-on-Chip, verifying and optimizing data bottlenecks
-- Writing C firmware to control the accelerator, verifying, optimizing
+- Writing C firmware to control the accelerator and verify its correctness
 
 Often, after all that work, the models do not meet their expected performance due to memory bottlenecks and sub-optimal hardware implementation.
 
-We present a highly flexible, high performance accelerator system that can be adjusted to your needs through a simple Python API. The implementation is maintained as open source and bare-bones, allowing the user to modify the processing element to do floating point, binarized calculations...etc.  
+We present a highly flexible, high-performance accelerator system that can be adjusted to your needs through a simple Python API. The framework is maintained as open source, allowing a user to modify the processing element to their desired data type using customized architecture, easily expand the architecture to meet the desired performance, and implement new neural network models.
 
 <p align="center"> <img src="docs/sys.PNG" width="600"> </p>
 
