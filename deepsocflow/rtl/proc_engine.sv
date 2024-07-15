@@ -329,7 +329,7 @@ endgenerate
       end
 
       //assign en[c] = &(~mac_freeze);
-      assign en[c] = &(~mac_freeze[COLS-1:c]) & ~(acc_m_last[c] & ~shift_out_ready[COLS-1]);  // all cols to the left of frozen column should freeze.
+      assign en[c] = &(~mac_freeze[COLS-1:c]);  // all cols to the left of frozen column should freeze.
 
       assign acc_m_valid_next[c] = !sel_shift[c] & mul_m_valid[c] & (mul_m_user[c].is_config | mul_m_user[c].is_cin_last);
       
