@@ -82,7 +82,7 @@ save_bd_design
 # Implementation
 reset_run impl_1
 reset_run synth_1
-launch_runs impl_1 -to_step write_bitstream -jobs 10
+launch_runs impl_1 -to_step write_bitstream -jobs 16
 wait_on_run -timeout 360 impl_1
 write_hw_platform -fixed -include_bit -force -file $PROJECT_NAME/design_1_wrapper.xsa
 

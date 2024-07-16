@@ -3,11 +3,12 @@ import pytest
 import itertools
 import sys
 sys.path.append("../../")
+import tensorflow as tf
+tf.keras.utils.set_random_seed(42)
 from deepsocflow import Bundle, Hardware, QModel, QInput
 
 # Simulator: xsim on windows, verilator otherwise
-(SIM, SIM_PATH) = ('xsim', "F:/Xilinx/Vivado/2022.2/bin/") if os.name=='nt' else ('verilator', '')
-
+(SIM, SIM_PATH) = ('xsim', "/opt/Xilinx/Vivado/2022.2/bin/") 
 def product_dict(**kwargs):
     for instance in itertools.product(*(kwargs.values())):
         yield dict(zip(kwargs.keys(), instance))

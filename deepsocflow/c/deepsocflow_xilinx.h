@@ -69,6 +69,7 @@ static void s2mm_output_handler(void* CallbackRef){
 // PIXELS DMA: restart automatically
 
 static void start_pixels_dma() {
+  if (done_pixels) return;
   load_x (&done_pixels, &bundle_read_done, &x_base, &x_bpt);
 //  Xil_DCacheFlushRange((INTPTR)x_base, x_bpt);
   status = XAxiDma_SimpleTransfer(&dma_pixels , x_base  , x_bpt, XAXIDMA_DMA_TO_DEVICE); assert_printf (status, ==, XST_SUCCESS, "Pixels  DMA transfer failed ", "base:%p, bpt:%d\n", x_base, x_bpt);
@@ -87,6 +88,7 @@ static void mm2s_pixels_handler(void* CallbackRef){
 // WEIGHTS DMA: restart automatically
 
 static void start_weights_dma() {
+  if (done_weights) return;
   load_w (&done_weights, &w_base, &w_bpt);
   status = XAxiDma_SimpleTransfer(&dma_weights, w_base, w_bpt, XAXIDMA_DMA_TO_DEVICE); assert_printf (status, ==, XST_SUCCESS, "Weights DMA transfer failed", "base:%p, bpt:%d\n", w_base, w_bpt);
 }

@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <math.h>
+//#include <svdpi.h>
 
 typedef const struct {
   const int32_t  n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0, xp_words, ib_out;
@@ -24,6 +26,9 @@ typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 #define X_WORDS_PER_BYTE  (8 / X_BITS)
 #define X_BITS_MASK       ((1 << X_BITS) -1)
 
+#define MEMBASEADDR 0x20000000
+#define CONFIG_BASEADDR 0x00B0000000
+
 typedef struct {
 
   int8_t     w              [W_BYTES     ];
@@ -44,11 +49,24 @@ typedef struct {
 //#define ocm ((ocm_t*)&OCM_BASEADDR)
 #define ocm (mem.ocm)
 
+#define A_START        0x0
+#define A_DONE_READ    0x1 // 2
+#define A_DONE_WRITE   0x3 // 2
+#define A_OCM_BASE     0x5 // 2
+#define A_WEIGHTS_BASE 0x7
+#define A_BUNDLE_DONE  0x8
+#define A_N_BUNDLES_1  0x9
+#define A_W_DONE       0xA // W,X,O done are written by PL, read by PS to debug which one hangs
+#define A_X_DONE       0xB 
+#define A_O_DONE       0xC
 
 #ifdef __x86_64__
   #define SIM
   #include <stdio.h>
   #define sim_fprintf fprintf
+  #include <stdbool.h>
+  // Simulation is in 32 bit mode.
+
   Memory_st mem;
 
   static inline void write_flush_u8 (uint8_t* addr, uint8_t val) {
@@ -61,7 +79,28 @@ typedef struct {
 
 #else
   #define sim_fprintf(...)
-  #define mem (*(Memory_st*)MEM_BASEADDR)
+  #define mem (*(Memory_st*)MEMBASEADDR)
+  #include "xparameters.h"
+  #include "xparameters_ps.h"
+  #include "xil_cache.h"
+  #include "xil_printf.h"
+  #include "xtime_l.h"
+  #include "xil_io.h"
+  #include "xil_sleeptimer.h"
+  #define printf xil_printf
+
+  static volatile uint32_t read_reg_temp;
+
+  static inline void write_flush_u8(u8* addr, u8 val) {
+  	*addr = val;
+  	Xil_DCacheFlushRange((INTPTR)addr, 1);
+  }
+  
+  static inline void write_flush_u64(u64* addr, u64 val) {
+  	*addr = val;
+  	Xil_DCacheFlushRange((INTPTR)addr, 8);
+  }
+
 #endif
 
 #ifdef __cplusplus
@@ -76,6 +115,37 @@ typedef struct {
 #else
   #define debug_printf printf
   #define assert_printf(v1, op, v2, optional_debug_info,...) ((v1  op v2) || (debug_printf("ASSERT FAILED: \n CONDITION: "), debug_printf("( " #v1 " " #op " " #v2 " )"), debug_printf(", VALUES: ( %d %s %d ), ", v1, #op, v2), debug_printf("DEBUG_INFO: " optional_debug_info), debug_printf(" " __VA_ARGS__), debug_printf("\n\n"), assert(v1 op v2), 0))
+#endif
+
+extern EXT_C uint32_t to_embedded(void* addr){
+  #ifndef SIM
+    return (uint32_t)((uintptr_t)addr);
+  #else
+    uint64_t offset = (uint64_t)addr - (uint64_t)&mem;
+    return (uint32_t)offset + MEMBASEADDR;
+  #endif
+}
+
+extern EXT_C uint64_t embdded_to64(uint32_t addr){
+  return (uint64_t)addr - (uint64_t)MEMBASEADDR + (uint64_t)&mem;
+}
+
+#ifdef SIM
+	extern EXT_C uint32_t get_config(uint32_t);
+	extern EXT_C void set_config(uint32_t, uint32_t);
+#else
+	inline volatile uint32_t get_config(uint32_t offset){
+		//return *((int32_t*)(CONFIG_BASEADDR + offset));
+    //printf("");
+    //sleep(0.1);
+    return *(volatile uint32_t *) (UINTPTR)(CONFIG_BASEADDR + offset);
+	}
+	void set_config(uint32_t offset, uint32_t data){	
+		//*((int32_t*)(CONFIG_BASEADDR + offset)) = data;
+    //printf("Setting config with offset: %x, %x \n", offset, data);
+    //printf("");
+    Xil_Out32((UINTPTR)(CONFIG_BASEADDR + offset), data);
+	}
 #endif
 
 volatile char is_bundle_write_done = 1;
@@ -202,7 +272,7 @@ static inline void tile_write( int32_t out_val, int8_t *p_out_buffer, int32_t ib
   
 }
 
-extern EXT_C void load_y (volatile uint8_t *p_done, uint64_t *p_base_addr_next, int32_t *p_bpt_next) {
+extern EXT_C void load_y (volatile uint8_t *p_done) {
 
   static Bundle_t *pb = &bundles[0];
   static int32_t it_bias=0;
@@ -241,9 +311,10 @@ extern EXT_C void load_y (volatile uint8_t *p_done, uint64_t *p_base_addr_next, 
   static char is_first_call = 1;
   if (is_first_call)  is_first_call = 0;
   else                goto DMA_WAIT;
+
 #endif
 
-  debug_printf("starting load_y");
+//  debug_printf("starting load_y");
 
   for (ib = 0; ib < N_BUNDLES; ib++) {
 
@@ -272,20 +343,36 @@ extern EXT_C void load_y (volatile uint8_t *p_done, uint64_t *p_base_addr_next, 
         for (in = 0; in < pb->n; in++) {
           for (il = 0; il < pb->l; il++) {
             for (iw_kw2 = 0; iw_kw2 < pb->w_kw2; iw_kw2++) {
-
-
+              
+              // starting from bank 0
               ocm_bank = !ocm_bank;
               w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
-              *p_base_addr_next = (uint64_t)&ocm[ocm_bank];
-              *p_bpt_next = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
+              //*p_base_addr_next = (uint64_t)&ocm[ocm_bank];
+              //*p_bpt_next = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
+              debug_printf("Inside the firmware domain, now wait for ocm %x\n\n", ocm_bank);
+              // Verify the ocm reg values
 
 #ifdef SIM
-              return;
 DMA_WAIT:
+              // if sim return, so SV can pass time, and call again, which will jump to DMA_WAIT again
+	            if (!get_config(4*(A_DONE_WRITE + ocm_bank))) 
+	              return; 
 #else
-			  start_wait_output((UINTPTR)*p_base_addr_next, *p_bpt_next);
+			  //start_wait_output((UINTPTR)*p_base_addr_next, *p_bpt_next);
+        		// in FPGA, wait for write done
+		          while (!get_config(4*(A_DONE_WRITE + ocm_bank))){
+              };
+              //while(false);
+              usleep(0);
 #endif
+              set_config(4*(A_DONE_WRITE + ocm_bank), 0);
 
+#ifdef NDEBUG
+              // Flush the data just written by the PS to the DDR
+              //sleep(0.5);
+              Xil_DCacheFlushRange((INTPTR)&ocm[ocm_bank], PE_ROWS*PE_COLS*sizeof(Y_TYPE)) ;
+#endif
+              debug_printf("Done write by the PL! Start reading and processing ocm %d\n", ocm_bank);
               w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
               sram_addr=0;
 
@@ -471,23 +558,28 @@ PROCESS_AND_STORE_DONE:
               fclose(fp_sum);
               fclose(fp_raw);
 #endif
+              set_config(4*(A_DONE_READ + ocm_bank), 1);
+              debug_printf("done reading and processing ocm %d \n", ocm_bank);
+              debug_printf("firmware iw_kw2 0x%x done \n", iw_kw2);
             } // iw_kw2
             iw_kw2 = 0;
+            printf("firmware il %x done\n", il);
           } // il
           il = 0;
+          printf("firmware in %x done\n", in);
         } // in
         in = 0;
+        printf("firmware it %x done\n", it);
       } // it
       it = 0;
+      printf("firmware ip %x done\n", ip);
     } // ip
+    
     ip = 0;
     //after_each(ib) = after_all(ip):
     is_bundle_write_done = 1;
-#ifndef SIM
-    start_pixels_dma();
-#endif
 
-    debug_printf("done bundle!! iw_kw2:%d in:%d il:%d it:%d ip:%d ib:%d\n", iw_kw2, in, il, it, ip, ib);
+    printf("done bundle!! ib:%x\n", ib);
 
 #ifdef SIM
     char f_path_debug [1000];
@@ -515,10 +607,18 @@ PROCESS_AND_STORE_DONE:
       fclose(fp_packed);
     }
 #endif
-
+  set_config(4*A_BUNDLE_DONE, 1);
   } // ib
   ib = 0;
+  debug_printf("done all bundles!!\n");
   *p_done = 1;
+
+#ifdef NDEBUG
+    Xil_DCacheFlushRange((INTPTR)&mem.y, sizeof(mem.y));  // force transfer to DDR, starting addr & length
+    for (int i=0; i<O_WORDS; i++)
+      printf("y[%d]: %f \n", i, (float)mem.y[i]);
+#endif
+  
 #ifdef SIM
   is_first_call = 1;
 #endif
@@ -535,6 +635,11 @@ extern EXT_C void load_x (volatile uint8_t *p_done, volatile uint8_t *bundle_rea
   *p_bpt = ip == 0 ? bundles[ib].x_bpt_p0 : bundles[ib].x_bpt;
   *bundle_read_done = (it == bundles[ib].t-1) && (ip==bundles[ib].p-1);
 
+  if (it == 0 && ip == 0){
+    printf("This is a new bundle, bundle: %d, x_bpt_p0: 0x%x, x_bpt: 0x%x, t: 0x%x , p: 0x%x\n", ib, bundles[ib].x_bpt_p0, bundles[ib].x_bpt, bundles[ib].t, bundles[ib].p);
+  }
+  printf("Loading x: ib:0x%x, ip:0x%x, it:0x%x, p_buffer_base:0x%x, offset_next:0x%x, *p_base_addr:0x%x, *p_bpt:0x%x, ", ib, ip, it, p_buffer_base, offset_next, *p_base_addr, *p_bpt);
+
   // Nested for loop [for ib: for ip: for it: {}] inverted to increment once per call
   ++ it; if (it >= bundles[ib].t) { it = 0;
     offset_next += *p_bpt;
@@ -546,6 +651,7 @@ extern EXT_C void load_x (volatile uint8_t *p_done, volatile uint8_t *bundle_rea
       ++ ib; if (ib >= N_BUNDLES) { ib = 0;
         *p_done =1;
   }}}
+  printf("After this, *p_done: %d, offset_next:0x%x, is_bundle_write_done:0x%x\n", *p_done, offset_next, is_bundle_write_done);
 }
 
 
@@ -559,6 +665,12 @@ extern EXT_C void load_w (volatile uint8_t *p_done, uint64_t *p_base_addr, int32
   *p_base_addr = (uint64_t)&mem.w + offset;
   *p_bpt = bpt;
 
+/*
+  if (it == 0 && ip == 0){
+    printf("This is a new bundle, bundle: %d, w_bpt_p0: 0x%x, w_bpt: 0x%x, t: 0x%x , p: 0x%x\n", ib, bundles[ib].w_bpt_p0, bundles[ib].w_bpt, bundles[ib].t, bundles[ib].p);
+  }
+  printf("Loading w: ib:0x%x, ip:0x%x, it:0x%x, offset:0x%x, *p_base_addr:0x%x, *p_bpt:0x%x, ", ib, ip, it, offset, *p_base_addr, *p_bpt);
+*/
   // Nested for loop [for ib: for ip: for it: {}] inverted to increment once per call
   ++ it; if (it >= bundles[ib].t) { it = 0;
     ++ ip; if (ip >= bundles[ib].p) { ip = 0;
@@ -567,10 +679,11 @@ extern EXT_C void load_w (volatile uint8_t *p_done, uint64_t *p_base_addr, int32
         offset_next = 0;
   }}}
   offset_next += bpt;
+  //printf("After this, *p_done: %d, offset_next:0x%x\n", *p_done, offset_next);
 }
 
 #ifdef SIM
-extern EXT_C void fill_memory (uint64_t *p_w_base, uint64_t *p_x_base){
+extern EXT_C void fill_memory (){
   FILE *fp;
   char f_path [1000];
 
@@ -580,18 +693,28 @@ extern EXT_C void fill_memory (uint64_t *p_w_base, uint64_t *p_x_base){
     debug_printf("ERROR! File not found: %s \n", f_path);
   int bytes = fread(mem.w, 1, WB_BYTES+X_BYTES, fp);
   fclose(fp);
-
-  *p_w_base = (uint64_t)&mem.w;
-  *p_x_base = (uint64_t)&mem.x;
 }
+
 #endif
 
-extern EXT_C int8_t get_byte (uint64_t addr){
-  return *(int8_t*)addr;
+extern EXT_C uint8_t get_byte (uint64_t addr){
+  return *(uint8_t*)addr;
 }
 
-extern EXT_C void set_byte (uint64_t addr, int8_t data){
-  *(int8_t*)addr = data;
+extern EXT_C uint8_t get_byte_32 (uint32_t addr_32){
+  uint64_t addr = embdded_to64(addr_32);
+  uint8_t val = *(uint8_t*)addr;
+  //debug_printf("get_byte_32: addr32:0x%x, addr64:0x%lx, val:0x%x\n", addr_32, addr, val);
+  return val;
+}
+
+extern EXT_C void set_byte (uint64_t addr, uint8_t data){
+  *(uint8_t*)addr = data;
+}
+
+extern EXT_C void set_byte_32 (uint32_t addr_32, uint8_t data){
+  uint64_t addr = embdded_to64(addr_32);
+  *(uint8_t*)addr = data;
 }
 
 extern EXT_C char get_is_bundle_write_done(){
@@ -600,3 +723,51 @@ extern EXT_C char get_is_bundle_write_done(){
 extern EXT_C void set_is_bundle_write_done(uint8_t val){
   is_bundle_write_done = val;
 }
+
+extern EXT_C void model_setup(){
+  // Check if the mem region is legal
+  #ifdef SIM
+    fill_memory();
+  #else
+    xil_printf("Filling memory\n");
+    Xil_DCacheFlushRange((INTPTR)&mem.w, WB_BYTES+X_BYTES);
+  #endif
+  // Set up all the config registers
+  printf("Setting up config registers\n");
+  set_config(4*A_START, 0);  // Start
+  set_config(4*(A_DONE_READ+0), 1);  // Done read ocm bank 0
+  set_config(4*(A_DONE_READ+1), 1);  // Done read ocm bank 1
+  set_config(4*(A_DONE_WRITE+0), 0);  // Done write ocm bank 0
+  set_config(4*(A_DONE_WRITE+1), 0);  // Done write ocm bank 1
+  set_config(4*(A_OCM_BASE+0), to_embedded(ocm[0]));  // Base addr ocm bank 0
+  set_config(4*(A_OCM_BASE+1), to_embedded(ocm[1]));  // Base addr ocm bank 1
+  set_config(4*A_WEIGHTS_BASE, to_embedded(mem.w));  // Base adddr weights
+  set_config(4*A_BUNDLE_DONE, 1);  // Bundle done (?)
+  set_config(4*A_N_BUNDLES_1, N_BUNDLES);  // Number of bundles
+  set_config(4*A_W_DONE, 0);  // Weigths done
+  set_config(4*A_X_DONE, 0);  // Bundle done
+  set_config(4*A_O_DONE, 0);  // Output done
+
+  // Write into BRAM the config for controller
+  int32_t parameters[8*N_BUNDLES];
+  for (int var = 0; var < N_BUNDLES; var++){
+    parameters[8*var] = (var == 0) ? to_embedded(mem.x) : to_embedded(mem.out_buffers[bundles[var].in_buffer_idx]);       // x_base address
+    parameters[8*var+1] = bundles[var].x_bpt_p0;  // x_bpt0
+    parameters[8*var+2] = bundles[var].x_bpt;     // x_bpt
+    parameters[8*var+3] = bundles[var].w_bpt_p0;  // w_bpt0
+    parameters[8*var+4] = bundles[var].w_bpt;     // w_bpt
+    parameters[8*var+5] = bundles[var].p;         // max p
+    parameters[8*var+6] = bundles[var].t;         // max t
+    parameters[8*var+7] = 0;                      // blank
+  }
+  for (int var = 0; var < 8*N_BUNDLES; var++){
+    set_config(4*(16+var), parameters[var]);
+  }
+  printf("Done setting up config registers and bram\n");
+}
+
+extern EXT_C void model_run(){
+  printf("Start...\n");
+  set_config(4*A_START, 1);  // Start
+}
+
