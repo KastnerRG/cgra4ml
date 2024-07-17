@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 
 module skid_buffer_tb;
 
