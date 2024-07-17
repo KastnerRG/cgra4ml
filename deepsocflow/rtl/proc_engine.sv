@@ -104,10 +104,11 @@ module proc_engine #(
   assign pixels_m_valid_pipe[0] = pixels_m_valid;
 
 generate
-  for (genvar i=0; i<COLS; i++) begin
+  genvar i;
+  for (i=0; i<COLS; i++) begin
     // if prev column is not ready, current column pixel valid will either i) be set to 0 or ii) hold its current value, depending on s_ready[i].
-    always_ff@(posedge clk) begin 
-      if (i>0) begin
+    if (i>0) begin
+      always_ff@(posedge clk) begin 
         pixels_m_valid_pipe_reg[i] <= (s_ready[i-1]) ? pixels_m_valid_pipe[i-1] : (s_ready[i]) ? 1'b0 : pixels_m_valid_pipe[i];
       end
     end
@@ -169,13 +170,21 @@ endgenerate
         logic [K_BITS-1:0] weights_reg;
         always_ff @ (posedge clk `OR_NEGEDGE(resetn))
           if (!resetn) begin        
-            weights_reg <= '0;
-            if (c>0) pixels_reg[c] <= '0; 
+            weights_reg <= '0; 
           end
           else if (clken_mul[c]) begin
             //{pixels_reg[0], weights_reg} <= {s_data_pixels[r], s_data_weights[c]}; // move this to outside the for loop?
-            weights_reg <= s_data_weights[c];
-            if (c>0) pixels_reg[c] <= pixels_reg[c-1];  
+            weights_reg <= s_data_weights[c];  
+          end
+          
+          if(c>0) begin
+            always_ff @ (posedge clk `OR_NEGEDGE(resetn))
+            if (!resetn) begin
+              pixels_reg[c] <= '0; 
+            end
+            else if (clken_mul[c]) begin
+              pixels_reg[c] <= pixels_reg[c-1];  
+            end
           end
         // Multiplier
         wire [M_BITS-1:0] mul_comb = $signed(pixels_reg[c]) * $signed(weights_reg);
@@ -183,11 +192,20 @@ endgenerate
         n_delay #(.N(DELAY_MUL-1), .W(M_BITS)) MUL_PIPE (.c(clk), .rng(resetn), .rnl(1'b1), .e(clken_mul[c]), .i(mul_comb), .o (mul_m_data[c][r]));
         
         // changed shift_data to FF instead of wire, so that it has previous cycle data. This is because the column i will get sel_shift one cycle after column i-1.
-        always_ff @ (posedge clk `OR_NEGEDGE(resetn)) begin
-          if(!resetn) shift_data [c][r] <= '0;
-          else begin
-            if(c == 0) shift_data [c][r] <= '0;
-            else if (acc_m_valid[c-1]) shift_data [c][r] <= acc_m_data [c-1][r];
+        if(c == 0) begin
+          always_ff @ (posedge clk `OR_NEGEDGE(resetn)) begin
+            if(!resetn) shift_data [c][r] <= '0;
+            else begin
+              shift_data [c][r] <= '0;
+            end
+          end
+        end
+        else begin // c > 0
+          always_ff @ (posedge clk `OR_NEGEDGE(resetn)) begin
+            if(!resetn) shift_data [c][r] <= '0;
+            else begin
+              if (acc_m_valid[c-1]) shift_data [c][r] <= acc_m_data [c-1][r];
+            end
           end
         end
         //if (c == 0) assign shift_data [c][r] = '0;
@@ -251,34 +269,41 @@ endgenerate
       else
         assign sel_outshift[co] = ~(acc_m_valid[co] & valid_mask[co] & shift_out_ready[co]);
 
-      always_ff@(posedge clk `OR_NEGEDGE(resetn)) begin
-        if (!resetn) begin 
-          state   <= IDLE;
-          shift_out_ready <= '1;
-          m_bytes_per_transfer <= 0;
-          {shift_data_out, shift_valid, shift_last, shift_last_pkt} <= '0;
-        end else  
-          if(en_outshift[co]) begin
-            if (co>0) begin
-                      shift_data_out[co]  <= (sel_outshift[co]) ? shift_data_out[co-1]: acc_m_data[co] ;
-                      shift_last_pkt[co]  <= (sel_outshift[co]) ? shift_last_pkt[co-1] : {acc_m_last[co]} & lut_last_pkt[acc_m_user[co].kw2][co];
-                      shift_valid[co]     <= (sel_outshift[co]) ? shift_valid[co-1] : s_valid_cols_sel[co] & valid_mask[co];
-                      shift_last[co]      <= (sel_outshift[co]) ? shift_last[co-1] :s_last_cols_sel[co];
-                      shift_out_ready[co] <= (sel_outshift[co]) ? shift_out_ready[co-1] : 1'b0;
-                      
-                      if(co == COLS-1) begin // TODO: fix
-                        if(~sel_outshift[co]) m_bytes_per_transfer <= lut_bpt[acc_m_user[COLS-1].is_w_last][acc_m_user[COLS-1].kw2];
-                      end
+      if (co>0) begin
+        always_ff@(posedge clk `OR_NEGEDGE(resetn)) begin
+          if (!resetn) begin 
+            shift_out_ready[co] <= '1;
+            m_bytes_per_transfer <= 0;
+            {shift_data_out[co], shift_valid[co], shift_last[co], shift_last_pkt[co]} <= '0;
+          end else  
+            if(en_outshift[co]) begin
+              shift_data_out[co]  <= (sel_outshift[co]) ? shift_data_out[co-1]: acc_m_data[co] ;
+              shift_last_pkt[co]  <= (sel_outshift[co]) ? shift_last_pkt[co-1] : {acc_m_last[co]} & lut_last_pkt[acc_m_user[co].kw2][co];
+              shift_valid[co]     <= (sel_outshift[co]) ? shift_valid[co-1] : s_valid_cols_sel[co] & valid_mask[co];
+              shift_last[co]      <= (sel_outshift[co]) ? shift_last[co-1] :s_last_cols_sel[co];
+              shift_out_ready[co] <= (sel_outshift[co]) ? shift_out_ready[co-1] : 1'b0;
+              
+              if(co == COLS-1) begin
+                if(~sel_outshift[co]) m_bytes_per_transfer <= lut_bpt[acc_m_user[COLS-1].is_w_last][acc_m_user[COLS-1].kw2];
+              end
             end
-            else begin // COL 0
-              shift_data_out[co]  <= (sel_outshift[co]) ? shift_data_out[co]: acc_m_data[co] ;
-              shift_last_pkt[co]  <= (sel_outshift[co]) ? shift_last_pkt[co] : {acc_m_last[co]} & lut_last_pkt[acc_m_user[co].kw2][co];
-              shift_valid[co]     <= (sel_outshift[co]) ? shift_valid[co] : s_valid_cols_sel[co] & valid_mask[co];
-              shift_last[co]      <= (sel_outshift[co]) ? shift_last[co] :s_last_cols_sel[co];
-              shift_out_ready[co] <= (sel_outshift[co]) ? 1'b1 : 1'b0;
+        end
+      end
+      else begin //COL 0
+        always_ff@(posedge clk `OR_NEGEDGE(resetn)) begin
+          if (!resetn) begin 
+            shift_out_ready[co] <= '1;
+            //m_bytes_per_transfer <= 0;
+            {shift_data_out[co], shift_valid[co], shift_last[co], shift_last_pkt[co]} <= '0;
+          end else  
+            if(en_outshift[co]) begin
+                shift_data_out[co]  <= (sel_outshift[co]) ? shift_data_out[co]: acc_m_data[co] ;
+                shift_last_pkt[co]  <= (sel_outshift[co]) ? shift_last_pkt[co] : {acc_m_last[co]} & lut_last_pkt[acc_m_user[co].kw2][co];
+                shift_valid[co]     <= (sel_outshift[co]) ? shift_valid[co] : s_valid_cols_sel[co] & valid_mask[co];
+                shift_last[co]      <= (sel_outshift[co]) ? shift_last[co] :s_last_cols_sel[co];
+                shift_out_ready[co] <= (sel_outshift[co]) ? 1'b1 : 1'b0;
             end
-
-          end
+        end
       end
     end
 
@@ -299,29 +324,32 @@ endgenerate
       if(c<COLS-1) begin
         assign mac_freeze[c] = (acc_m_valid[c] & ~(shift_out_ready[c] & shift_out_ready[c+1]));
         //assign en[c] = (~acc_m_valid[c] | shift_out_ready[c] & shift_out_ready[c+1]);
+        always_ff @(posedge clk `OR_NEGEDGE(resetn))
+          if (!resetn) begin            
+            acc_m_valid[c] <= '0;
+          end
+          else begin
+            if (en[c])            acc_m_valid[c] <= acc_m_valid_next[c];
+            else if (~en[c] & acc_m_valid[c] & shift_out_ready[c] & shift_out_ready[c+1]) acc_m_valid[c] <= acc_m_valid_next[c]; // if handshake happens when en is 0, acc_m_valid should become low    
+          end
       end
       else begin
         assign mac_freeze[c] = (acc_m_valid[c] & ~shift_out_ready[c]);
         //assign en[c] = (~acc_m_valid[c] | shift_out_ready[c]);
+        always_ff @(posedge clk `OR_NEGEDGE(resetn))
+          if (!resetn) begin            
+            acc_m_valid[c] <= '0;
+          end
+          else begin
+            if (en[c])            acc_m_valid[c] <= acc_m_valid_next[c];
+            else if (~en[c] & acc_m_valid[c] & shift_out_ready[c]) acc_m_valid[c] <= acc_m_valid_next[c]; // if handshake happens when en is 0, acc_m_valid should become low
+          end
       end
 
       //assign en[c] = &(~mac_freeze);
       assign en[c] = &(~mac_freeze[COLS-1:c]);  // all cols to the left of frozen column should freeze.
 
       assign acc_m_valid_next[c] = !sel_shift[c] & mul_m_valid[c] & (mul_m_user[c].is_config | mul_m_user[c].is_cin_last);
-      
-      always_ff @(posedge clk `OR_NEGEDGE(resetn))
-      if (!resetn) begin            
-        acc_m_valid[c] <= '0;
-      end
-      else begin
-        if (en[c])            acc_m_valid[c] <= acc_m_valid_next[c];
-        else if (c<COLS-1) begin
-          if (~en[c] & acc_m_valid[c] & shift_out_ready[c] & shift_out_ready[c+1]) acc_m_valid[c] <= acc_m_valid_next[c]; // if handshake happens when en is 0, acc_m_valid should become low
-        end
-        else if (~en[c] & acc_m_valid[c] & shift_out_ready[c]) acc_m_valid[c] <= acc_m_valid_next[c];
-      //  if (c > 0)            en[c] <= en[c-1];
-      end
 
       always_ff @(posedge clk `OR_NEGEDGE(resetn))
         if (!resetn)            {acc_m_user, acc_m_last} <= '0;
