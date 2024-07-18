@@ -27,6 +27,8 @@ module axis_weight_rotator #(
     BITS_XW             = $clog2(XW_MAX      ) ,
     BITS_XN             = $clog2(XN_MAX      ) ,
 
+    BITS_SB_CNTR        = $clog2(2*DELAY_W_RAM) + 1,
+
     M_WIDTH             = WORD_WIDTH*COLS          ,
     BRAM_WIDTH          = WORD_WIDTH                  ,
     BRAM_DEPTH          = RAM_WEIGHTS_DEPTH        ,
@@ -66,6 +68,9 @@ module axis_weight_rotator #(
   logic [1:0][COLS-1:0] bram_m_ready;
   logic [COLS-1:0] bram_reg_resetn;
   logic [COLS-1:0] bram_m_valid, bram_reg_m_valid;
+  logic [COLS-1:0] sb_valid, sb_ready;
+  logic [COLS-1:0][WORD_WIDTH-1:0] sb_data;
+  logic [COLS-1:0][BITS_SB_CNTR-1:0] fill_skid_buffer_cntr; // count cycles for skid buffer to get filled
   logic [COLS-1:0] en_count_config, l_config, l_kw, l_cin, l_cols, l_blocks, l_xn, f_kw, f_cin, f_cols, lc_config, lc_kw, lc_cin, lc_cols, lc_blocks, lc_xn;
   logic [COLS-1:0]     last_config;
   typedef struct packed {
@@ -139,11 +144,21 @@ module axis_weight_rotator #(
     for(int col=0; col<COLS; col = col+1) begin
       if (!aresetn)                                 state_read[col]<= R_IDLE_S;
       else unique case (state_read[col])
-        R_IDLE_S        : if (done_write [i_read[col]])  state_read[col] <= CONFIG_BEATS==0 ? R_READ_S : R_PASS_CONFIG_S;
-        R_PASS_CONFIG_S : if (last_config[col])  state_read[col] <= R_READ_S;
+        R_IDLE_S        : if (done_write [i_read[col]])  state_read[col] <= CONFIG_BEATS==0 ? (fill_skid_buffer_cntr[col]>=2*DELAY_W_RAM-1 ? R_READ_S : R_IDLE_S) : R_PASS_CONFIG_S;
+        R_PASS_CONFIG_S : if (last_config[col] && fill_skid_buffer_cntr[col]>=2*DELAY_W_RAM-1)  state_read[col] <= R_READ_S;
         R_READ_S        : if (m_axis_tlast[col]) state_read[col] <= R_SWITCH_S;
         R_SWITCH_S      :                           state_read[col] <= R_IDLE_S;
       endcase 
+    end
+
+   always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
+    for(int col=0; col<COLS; col = col+1) begin
+      if (!aresetn || state_read[col]==R_SWITCH_S) fill_skid_buffer_cntr[col]<= 0;
+      else begin
+        if (CONFIG_BEATS==0 ? (state_read[col]==R_IDLE_S && done_write [i_read[col]]) : (state_read[col]==R_PASS_CONFIG_S)) begin 
+          if (fill_skid_buffer_cntr[col] < 2*DELAY_W_RAM) fill_skid_buffer_cntr[col] <= fill_skid_buffer_cntr[col] + 1;
+        end
+      end
     end
 
   always_comb begin
@@ -228,7 +243,7 @@ module axis_weight_rotator #(
         for (int j=0; j<COLS; j = j+1) begin
           if (i==i_read[j]) begin
 
-            if (CONFIG_BEATS==0 ? (state_read[j]==R_IDLE_S && done_write [i_read[j]]) : (state_read[j]==R_PASS_CONFIG_S)) begin
+            if (CONFIG_BEATS==0 ? (state_read[j]==R_IDLE_S && done_write [i_read[j]] && fill_skid_buffer_cntr[j]<=2*DELAY_W_RAM-1) : (state_read[j]==R_PASS_CONFIG_S && fill_skid_buffer_cntr[j]<=2*DELAY_W_RAM-1)) begin
               done_read_next [i][j] = 0;
               bram_m_ready   [i][j] = 1;
             end
@@ -343,6 +358,39 @@ module axis_weight_rotator #(
         .m_axis_tdest (),
         .m_axis_tuser ()
       );
+
+      // axis_pipeline_register2 # (
+      //   .DATA_WIDTH  (BRAM_WIDTH),
+      //   .KEEP_ENABLE (0),
+      //   .KEEP_WIDTH  (1),
+      //   .LAST_ENABLE (0),
+      //   .ID_ENABLE   (0),
+      //   .DEST_ENABLE (0),
+      //   .USER_ENABLE (0),
+      //   .REG_TYPE    (2), // skid buffer
+      //   .LENGTH      (DELAY_W_RAM )
+      // ) REG_PIPE_2 (
+      //   .clk          (aclk),
+      //   .rstn         (aresetn),
+      //   .rstn_local   (bram_reg_resetn[j]),
+      //   .s_axis_tdata (sb_data[j]),
+      //   .s_axis_tvalid(sb_valid[j]),
+      //   .m_axis_tdata (m_axis_tdata[j]),
+      //   .m_axis_tvalid(bram_reg_m_valid[j]),
+      //   .m_axis_tready(bram_m_ready[i_read[j]][j]),
+      //   // Unused
+      //   .s_axis_tkeep ('0),
+      //   .s_axis_tlast ('0),
+      //   .s_axis_tid   ('0),
+      //   .s_axis_tdest ('0),
+      //   .s_axis_tuser ('0),
+      //   .s_axis_tready(sb_ready[j]),
+      //   .m_axis_tkeep (),
+      //   .m_axis_tlast (),
+      //   .m_axis_tid   (),
+      //   .m_axis_tdest (),
+      //   .m_axis_tuser ()
+      // );
     end
   endgenerate
 
