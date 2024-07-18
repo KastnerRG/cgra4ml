@@ -37,7 +37,7 @@ module proc_engine #(
   output logic [W_BPT-1:0] m_bytes_per_transfer
 );
 
-  logic [COLS-1:1] pixels_m_valid_pipe_reg; // fix verilator compile
+  logic [COLS-1:1] pixels_m_valid_pipe_reg; // fix verilator compile - does not allow variable to be both continuous and procedurally assigned.
   logic [COLS-1:0] en;
   logic force_en, force_en_reset;
   logic [COLS-1:0] acc_m_valid_next, acc_m_valid;
@@ -91,16 +91,10 @@ module proc_engine #(
     assign s_valid_cols_sel[c_1] = acc_m_user[c_1].is_w_last ? lut_valid_last[acc_m_user[c_1].kw2][c_1] : lut_valid[acc_m_user[c_1].kw2][c_1];
     assign s_last_cols_sel[c_1]  = acc_m_user[c_1].is_w_last ? lut_last_pkt  [acc_m_user[c_1].kw2][c_1] : lut_last [acc_m_user[c_1].kw2][c_1];
   end
-  //assign valid_mask = !acc_m_user[0].is_w_first_kw2 && !acc_m_user[0].is_config;
-  //assign s_valid_cols_sel = acc_m_user[COLS-1].is_w_last ? lut_valid_last[acc_m_user[COLS-1].kw2] : lut_valid[acc_m_user[COLS-1].kw2];
-  //assign s_last_cols_sel  = acc_m_user[COLS-1].is_w_last ? lut_last_pkt  [acc_m_user[COLS-1].kw2] : lut_last [acc_m_user[COLS-1].kw2];
-
-  //logic [$clog2(COLS+1)-1:0] counter;
-  enum {IDLE, SHIFT} state;
-
+  
   assign s_ready = clken_mul;
 
-  // assign pixels_m_valid_pipe[0] = (s_ready[0]) ? pixels_m_valid: 1'b0;
+  // pixel_valid_pipe[i] indicates whether column i has a valid pixel or not. 
   assign pixels_m_valid_pipe[0] = pixels_m_valid;
 
 generate
@@ -113,6 +107,7 @@ generate
       end
     end
     //assign weights_m_ready[i] = s_ready[i]   && (pixels_m_valid_pipe[i] || s_user[i].is_config);
+    // s_valid is valid from weights_rotator.  it is ANDed with pixels_valid to get the combined valid signal to send to the MAC.
     assign s_axis_tvalid[i]   = s_valid[i] && (pixels_m_valid_pipe[i] || s_user[i].is_config);
     if (i>0) assign pixels_m_valid_pipe[i] = pixels_m_valid_pipe_reg[i];
 end
@@ -191,7 +186,9 @@ endgenerate
 
         n_delay #(.N(DELAY_MUL-1), .W(M_BITS)) MUL_PIPE (.c(clk), .rng(resetn), .rnl(1'b1), .e(clken_mul[c]), .i(mul_comb), .o (mul_m_data[c][r]));
         
-        // changed shift_data to FF instead of wire, so that it has previous cycle data. This is because the column i will get sel_shift one cycle after column i-1.
+        // changed shift_data to FF instead of wire, so that it has previous cycle data. 
+        // shift_data[i] is loaded with acc_m_data[i-1] when acc_m_valid[i-1] is high. 
+        // This is because the column i will get sel_shift one cycle after column i-1.
         if(c == 0) begin
           always_ff @ (posedge clk `OR_NEGEDGE(resetn)) begin
             if(!resetn) shift_data [c][r] <= '0;
@@ -259,7 +256,7 @@ endgenerate
         end
       end
       
-      // en_outshift enables the output shifter. The first condition is to shift data out,
+      // en_outshift enables the output shifter register. The first condition is to shift data out,
       // and the second condition is for the accumulator to write to the output shifter.
       assign en_outshift[co] = (m_ready & outshift_flag[co]) | ~sel_outshift[co];
       
@@ -301,15 +298,11 @@ endgenerate
                 shift_last_pkt[co]  <= (sel_outshift[co]) ? shift_last_pkt[co] : {acc_m_last[co]} & lut_last_pkt[acc_m_user[co].kw2][co];
                 shift_valid[co]     <= (sel_outshift[co]) ? shift_valid[co] : s_valid_cols_sel[co] & valid_mask[co];
                 shift_last[co]      <= (sel_outshift[co]) ? shift_last[co] :s_last_cols_sel[co];
-                shift_out_ready[co] <= (sel_outshift[co]) ? 1'b1 : 1'b0;
+                shift_out_ready[co] <= (sel_outshift[co]) ? 1'b1 : 1'b0; // shift_out_ready[0] becomes 1 when data is shifted out, becomes 0 if it is loaded with acculumator data.
             end
         end
       end
     end
-
-     //always_ff @(posedge clk `OR_NEGEDGE(resetn))
-     //if      (!resetn)                counter <= 0;
-     //else if (!shift_out_ready[COLS-1] && m_ready) counter <= counter == COLS ? 0 : counter + 1;
 
     assign m_data   = shift_data_out [COLS-1];
     assign m_valid  = shift_valid[COLS-1] & outshift_flag[COLS-1];
@@ -322,6 +315,7 @@ endgenerate
     //assign en[0] = ~acc_m_valid[0] | shift_out_ready[0];
     for(c=0; c<COLS; c++) begin
       if(c<COLS-1) begin
+        // If current column and next column output shifter regs both have valid data, and accumulator has valid data column gets frozen 
         assign mac_freeze[c] = (acc_m_valid[c] & ~(shift_out_ready[c] & shift_out_ready[c+1]));
         //assign en[c] = (~acc_m_valid[c] | shift_out_ready[c] & shift_out_ready[c+1]);
         always_ff @(posedge clk `OR_NEGEDGE(resetn))
@@ -333,7 +327,7 @@ endgenerate
             else if (~en[c] & acc_m_valid[c] & shift_out_ready[c] & shift_out_ready[c+1]) acc_m_valid[c] <= acc_m_valid_next[c]; // if handshake happens when en is 0, acc_m_valid should become low    
           end
       end
-      else begin
+      else begin // Final Column
         assign mac_freeze[c] = (acc_m_valid[c] & ~shift_out_ready[c]);
         //assign en[c] = (~acc_m_valid[c] | shift_out_ready[c]);
         always_ff @(posedge clk `OR_NEGEDGE(resetn))
