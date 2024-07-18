@@ -57,7 +57,7 @@ class XTensor:
             self.frac = get_frac_bits(bits, int) if frac is None else frac
             self.int = get_int_bits(bits, frac) if int is None else int
 
-        tensor = tf.convert_to_tensor(tensor) if isinstance(tensor, np.ndarray) else tensor
+        tensor = tf.convert_to_tensor(tensor, dtype=tf.float32) if isinstance(tensor, np.ndarray) else tensor
 
         if from_int:
             self._itensor = tensor
@@ -159,8 +159,6 @@ class XActivation(QActivation):
         x = x_tensor.itensor.numpy().astype(int)
         self.shift_bits = self.plog_slope + x_tensor.frac - self.out.frac
 
-        print(f"Applying {self.type} with bits:{self.out.bits}, frac:{self.out.frac}, plog_slope:{self.plog_slope}, non_zero:{self.non_zero}, shift_bits:{self.shift_bits}")
-
         x = ((x < 0) * x) * self.non_zero + (((x > 0) * x) << self.plog_slope)
         x = shift_round(x, self.shift_bits) # = np.around(x/2**shift_bits)
         x = np.clip(x, -2**(self.out.bits - self.plog_slope - 1), 2**(self.out.bits-1)-1).astype(int)
@@ -203,7 +201,7 @@ class XConvBN(QConv2DBatchnorm):
         self.x = x_tensor
 
         self.w = XTensor(tensor=self.kernel_quantizer_internal(self.get_folded_weights()[0]), bits=self.sys_bits.k, frac=self.k_frac)
-        self.b = XTensor(tensor=self.kernel_quantizer_internal(self.get_folded_weights()[1]), bits=self.sys_bits.b, frac=self.b_frac) if self.use_bias else None
+        self.b = XTensor(tensor=self.bias_quantizer_internal  (self.get_folded_weights()[1]), bits=self.sys_bits.b, frac=self.b_frac) if self.use_bias else None
 
         # self.act.out.assert_valid()
         self.w.assert_valid()
@@ -221,8 +219,6 @@ class XConvBN(QConv2DBatchnorm):
             frac=self.x.frac + self.w.frac,
             from_int=True
         )
-
-        print(f"{out.bits=}, {self.x.bits=} + {self.w.bits=} + {clog2_add=}")
 
         '''
         Add Bias
@@ -293,11 +289,11 @@ class XDense(QDense):
         return self.out.ftensor
     
 
-    def call_int(self, x_tensor, hw):
+    def call_int(self, x, hw):
 
-        self.inp = x_tensor
-        self.w = XTensor(tensor=self.get_folded_weights()[0], bits=sys_bits.k, frac=self.k_frac)
-        self.b = XTensor(tensor=self.get_folded_weights()[1], bits=sys_bits.b, frac=self.b_frac) if self.use_bias else None
+        self.x = x
+        self.w = XTensor(tensor=self.kernel_quantizer_internal(self.kernel), bits=sys_bits.k, frac=self.k_frac)
+        self.b = XTensor(tensor=self.bias_quantizer_internal  (self.bias  ), bits=sys_bits.b, frac=self.b_frac) if self.use_bias else None
 
         self.act.out.assert_valid()
         self.w.assert_valid()
@@ -312,8 +308,16 @@ class XDense(QDense):
             frac=self.x.frac + self.w.frac,
             from_int=True
         )
+
+        if self.use_bias:
+            out, (self.bias_val_shift, self.bias_b_shift) = out.add_val_shift(self.b)
+            assert out.bits <= hw.INT_BITS, f"After bias addition, resulting bits {out.bits} are more than bits for integer in CPU {hw.INT_BITS}. Reduce bits or increase integer bits of bias to continue"
+        else:
+            self.bias_val_shift, self.bias_b_shift = 0, 0
+
         assert np.allclose(out.ftensor.numpy(), self.out.ftensor.numpy()), "Dense output does not match"
         self.out = out
+        return out
 
 
 
@@ -326,10 +330,23 @@ class XAdd(Add):
         self.act = act
         self.sys_bits = sys_bits
         self.out = XTensor(None, None, float_only=True)
+        self.source_ib = None
+        self.add_val_shift = None
+        self.add_a_shift = None
 
     def call(self, input_tensor):
         self.out.ftensor = super().call(input_tensor)
         return self.out.ftensor
+    
+    def call_int(self, x, hw):
+
+        out, (self.add_val_shift, self.add_a_shift) = x.add_val_shift(BUNDLES[self.source_ib].out)
+
+        assert out.bits <= hw.INT_BITS, \
+            f"After residual addition, resulting bits {out.bits} are more than bits for integer in CPU {hw.INT_BITS}. Reduce bits or increase integer bits of bias to continue"
+        
+        self.out = out
+        return out
 
 
 class XPool(Layer):
@@ -450,21 +467,13 @@ class XBundle(Layer):
             self.flatten.out = XTensor(None, None, float_only=True)
         self.softmax = Activation("softmax") if softmax else None
 
-        # self.inp = self.core.inp
-
-        self.out = self.core.out
-        if self.pool:
-            self.out = self.pool.out
-        if self.add:
-            self.out = self.add.out
-        if self.flatten:
-            self.out = self.flatten.out
-        if self.softmax:
-            self.out = XTensor(None, None, float_only=True)
+        self.out = XTensor(None, None, float_only=True)
+        self.softmax_max_f = 0
 
         self.ib = None
         self.prev_ib = None
         self.next_ibs = []
+        self.next_add_ibs = []
 
 
     def call(self, input_tensor, x_add=None, training=False):
@@ -489,6 +498,9 @@ class XBundle(Layer):
             #     x_add.bundle.add_tensor_dest += [self.idx]
             # else:
             #     self.add['bundle'] = None
+            self.add.source_ib = x_add.ib
+            BUNDLES[x_add.ib].next_add_ibs += [self.ib]
+
             x = self.add([x, x_add])
             x = self.add.act(x)
         if self.pool:
@@ -498,7 +510,9 @@ class XBundle(Layer):
             x = self.flatten(x)
         if self.softmax:
             x = self.softmax(x)
+            self.out.ftensor = x
 
+        self.out.ftensor = x
         x.ib = self.ib
         return x
     
@@ -509,9 +523,33 @@ class XBundle(Layer):
         out = self.core.call_int(self.inp, hw)
         out = self.core.act.call_int(out, hw)
 
+        if self.add:
+            out = self.add.call_int(out, hw)
+            out = self.add.act.call_int(out, hw)
+
         if self.pool:
             out = self.pool.call_int(out, hw)
             out = self.pool.act.call_int(out, hw)
+
+        if self.flatten:
+            out = XTensor(tensor=out.itensor.numpy().reshape(out.itensor.shape[0],-1), bits=out.bits, frac=out.frac, from_int=True)
+            
+        if self.softmax:
+            softmax_out = out.ftensor.numpy().astype(np.float32)
+            self.softmax_max_f = softmax_out.max()
+            exp = np.exp(softmax_out - self.softmax_max_f).astype(np.float32)
+            softmax_out = exp/np.sum(exp, axis=1, dtype=np.float32)[0]
+
+            assert np.all(np.argmax(self.out.ftensor, axis=-1) == np.argmax(softmax_out, axis=-1)), \
+                f"Softmax argmax does not match. \nout:{self.out.ftensor}, \nself.out:{softmax_out}"
+            out.ftensor = tf.convert_to_tensor(softmax_out, dtype=tf.float32) # replace with one calc from int
+            out.from_int = False
+            out.float_only = True
+        else:
+            assert np.allclose(out.ftensor, self.out.ftensor), \
+                f"Bundle output does not match. \nout:{out.ftensor.numpy().flatten()[:100]}, \nself.out:{self.out.ftensor.numpy().flatten()[:100]}"
+        
+        self.out = out
 
 class XInputAct(QActivation):
     def __init__(self, *args, **kwargs):            
@@ -801,8 +839,6 @@ hw = Hardware (                          # Alternatively: hw = Hardware.from_jso
      )
 
 export_inference(loaded_model, hw)
-
-print(BUNDLES[0].core.out.ftensor)
 # print(loaded_model.outputs[0].bundle)
 # print(loaded_model.outputs[0].prev.bundle)
 
