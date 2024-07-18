@@ -112,25 +112,64 @@ class XActivation(QActivation):
         self.sys_bits = sys_bits
         self.o_int_bits = o_int_bits
         self.type = type
+
         self.slope = slope
-        self.out = XTensor(None, bits=self.sys_bits.x, int=self.o_int_bits)
+        self.non_zero = 1*(slope != 0)
+        self.log_slope = np.log2(slope) if self.non_zero else 0
+        assert int(self.log_slope) == self.log_slope and self.log_slope <= 0, f"Error: negative_slope:{slope} of leaky_relu has to be a negative power of two. eg.0.125"
+        self.plog_slope = -int(self.log_slope)
+        self.shift_bits = None
 
         match type:
             case None:
                 act_str = f'quantized_bits({sys_bits.x},{o_int_bits},False,1,1)'
             case "relu":
                 # QKeras treats relu (slope=0) as unsigned. We have everything signed, so we reduce bitwidth
-                if slope == 0:
-                    self.out.bits -= 1
-                act_str = f'quantized_relu({self.out.bits},{o_int_bits},negative_slope={slope})'
+                o_bits = sys_bits.x - 1 if slope == 0 else sys_bits.x
+                assert o_bits > 0, "Error: Cannot use bits=1 with Relu. Use leaky_relu. Reason: Qkeras keeps relu signed"
+                act_str = f'quantized_relu({o_bits},{o_int_bits},negative_slope={slope})'
             case _:
                 raise ValueError(f"Activation type {type} not recognized")
             
+        self.out = XTensor(None, bits=sys_bits.x, int=o_int_bits)
         super().__init__(act_str, *args, **kwargs)
+
     
     def call(self, input_tensor):
         self.out.ftensor = super().call(input_tensor)
         return self.out.ftensor
+    
+    def call_int(self, x_tensor, hw):
+
+        def shift_round(n,s):
+            '''Performs integer division with round-to-nearest-even. 
+               Eq: np.around(n/2**s).astype(int)'''
+            half_b = 1<<(s-1) if s>0 else 0
+            return (n + half_b - (s>0)*(~(n>>s)&1) ) >> s
+        
+        def div_round(n,d):
+            '''Performs integer division with round-to-nearest-even for d>0. 
+               Eq: np.around(n/d).astype(int)'''
+            return (n + (d//2) - (~(d|n//d) &1)) // d
+        
+
+        x = x_tensor.itensor.numpy().astype(int)
+        self.shift_bits = self.plog_slope + x_tensor.frac - self.out.frac
+
+        print(f"Applying {self.type} with bits:{self.out.bits}, frac:{self.out.frac}, plog_slope:{self.plog_slope}, non_zero:{self.non_zero}, shift_bits:{self.shift_bits}")
+
+        x = ((x < 0) * x) * self.non_zero + (((x > 0) * x) << self.plog_slope)
+        x = shift_round(x, self.shift_bits) # = np.around(x/2**shift_bits)
+        x = np.clip(x, -2**(self.out.bits - self.plog_slope - 1), 2**(self.out.bits-1)-1).astype(int)
+
+        out = XTensor(tensor=x, bits=self.out.bits, frac=self.out.frac, from_int=True)
+
+        assert np.allclose(out.ftensor, self.out.ftensor), f"Activation output does not match. \nout:{out.ftensor.numpy().flatten()[:100]}, \nself.out:{self.out.ftensor.numpy().flatten()[:100]}"
+        self.out = out
+        return out
+
+# Applying relu with bits:4, frac:3, plog_slope:0, non_zero:0, shift_bits:12
+# Applying relu with bits:4, frac:3, plog_slope:0, non_zero:0, shift_bits:12
 
 class XConvBN(QConv2DBatchnorm):
     def __init__(self, k_int_bits, b_int_bits, act, *args, **kwargs):
@@ -165,8 +204,7 @@ class XConvBN(QConv2DBatchnorm):
         self.w = XTensor(tensor=self.kernel_quantizer_internal(self.get_folded_weights()[0]), bits=self.sys_bits.k, frac=self.k_frac)
         self.b = XTensor(tensor=self.kernel_quantizer_internal(self.get_folded_weights()[1]), bits=self.sys_bits.b, frac=self.b_frac) if self.use_bias else None
 
-        print(self.act.out.from_int)
-        self.act.out.assert_valid()
+        # self.act.out.assert_valid()
         self.w.assert_valid()
         if self.use_bias:
             self.b.assert_valid()
@@ -225,7 +263,7 @@ class XConvBN(QConv2DBatchnorm):
         
         assert np.allclose(out.ftensor, self.out.ftensor), "Convolution output does not match"
         self.out = out
-
+        return out
 
 class XDense(QDense):
     def __init__(self, k_int_bits, b_int_bits, act, *args, **kwargs):
@@ -389,7 +427,9 @@ class XBundle(Layer):
     def call_int(self, x, hw):
 
         self.inp = x if self.ib == 0 else BUNDLES[self.prev_ib].out
-        self.core.call_int(self.inp, hw)
+
+        out = self.core.call_int(self.inp, hw)
+        out = self.core.act.call_int(out, hw)
 
 class XInputAct(QActivation):
     def __init__(self, *args, **kwargs):            
