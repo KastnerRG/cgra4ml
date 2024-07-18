@@ -22,10 +22,30 @@ np.random.seed(42)
 BUNDLES = []
 
 '''
-Custom Classes
+Util Functions
 '''
 
+def shift_round(n,s):
+    '''Performs integer division with round-to-nearest-even. 
+        Eq: np.around(n/2**s).astype(int)'''
+    half_b = 1<<(s-1) if s>0 else 0
+    return (n + half_b - (s>0)*(~(n>>s)&1) ) >> s
 
+def div_round(n,d):
+    '''Performs integer division with round-to-nearest-even for d>0. 
+        Eq: np.around(n/d).astype(int)'''
+    return (n + (d//2) - (~(d|n//d) &1)) // d
+
+def get_int_bits(bits, frac):
+    return bits-frac-1 # we always use signed integer
+
+def get_frac_bits(bits, int_bits):
+    return bits-int_bits-1  # we always use signed integer
+
+
+'''
+Custom Classes
+'''
 
 class XTensor:
     def __init__(self, tensor, bits, frac=None, int=None, float_only=False, from_int=False):
@@ -91,6 +111,7 @@ class XTensor:
         r_tensor = XTensor(tensor=r, bits=r_bits, frac=r_frac, from_int=True)
         return r_tensor, (s_shift, t_shift)
 
+
 @keras.saving.register_keras_serializable()
 class SYS_BITS:
     def __init__(self, x, k, b):
@@ -99,12 +120,6 @@ class SYS_BITS:
         self.b = b
     def get_config(self):
         return {'x': self.x, 'k': self.k, 'b': self.b}
-
-def get_int_bits(bits, frac):
-    return bits-frac-1 # we always use signed integer
-
-def get_frac_bits(bits, int_bits):
-    return bits-int_bits-1  # we always use signed integer
 
 
 class XActivation(QActivation):
@@ -139,19 +154,7 @@ class XActivation(QActivation):
         self.out.ftensor = super().call(input_tensor)
         return self.out.ftensor
     
-    def call_int(self, x_tensor, hw):
-
-        def shift_round(n,s):
-            '''Performs integer division with round-to-nearest-even. 
-               Eq: np.around(n/2**s).astype(int)'''
-            half_b = 1<<(s-1) if s>0 else 0
-            return (n + half_b - (s>0)*(~(n>>s)&1) ) >> s
-        
-        def div_round(n,d):
-            '''Performs integer division with round-to-nearest-even for d>0. 
-               Eq: np.around(n/d).astype(int)'''
-            return (n + (d//2) - (~(d|n//d) &1)) // d
-        
+    def call_int(self, x_tensor, hw):       
 
         x = x_tensor.itensor.numpy().astype(int)
         self.shift_bits = self.plog_slope + x_tensor.frac - self.out.frac
@@ -168,8 +171,6 @@ class XActivation(QActivation):
         self.out = out
         return out
 
-# Applying relu with bits:4, frac:3, plog_slope:0, non_zero:0, shift_bits:12
-# Applying relu with bits:4, frac:3, plog_slope:0, non_zero:0, shift_bits:12
 
 class XConvBN(QConv2DBatchnorm):
     def __init__(self, k_int_bits, b_int_bits, act, *args, **kwargs):
@@ -332,31 +333,108 @@ class XAdd(Add):
 
 
 class XPool(Layer):
-    def __init__(self, type, size, strides, padding, act, *args, **kwargs):
+    def __init__(self, type, pool_size, strides, padding, act, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        self.type = type
-        self.size = size
-        self.strides = strides
-        self.padding = padding
+        assert act is not None, "Activation function must be provided. Set type to none if no activation is needed"
+        assert padding in ['same', 'valid'], f"Padding {padding} not recognized"
+        assert type in ['avg', 'max'], f"Pooling type {type} not recognized"
 
-        if act is None:
-            raise ValueError("Activation function must be provided. Set type to none if no activation is needed")
-        
+        self.type = type
         self.act = act
         self.sys_bits = act.sys_bits
         self.out = XTensor(None, None, float_only=True)
 
         if self.type == 'avg':
-            self.pool_layer = AveragePooling2D(pool_size=size, strides=strides, padding=padding)
+            self.pool_layer = AveragePooling2D(pool_size=pool_size, strides=strides, padding=padding)
         elif self.type == 'max':
-            self.pool_layer = MaxPooling2D(pool_size=size, strides=strides, padding=padding)
-        else:
-            raise ValueError(f"Pooling type {type} not recognized")
+            self.pool_layer = MaxPooling2D(pool_size=pool_size, strides=strides, padding=padding)
 
     def call(self, x):
         self.out.ftensor = self.pool_layer(x)
         return self.out.ftensor
+    
+    def call_int(self, x, hw):
+
+        in_arr = x.itensor.numpy().astype(int)
+        YN, YH, YW, YC = in_arr.shape
+        PKH, PKW = self.pool_layer.pool_size
+        PSH, PSW = self.pool_layer.strides
+
+        if self.pool_layer.padding == "same":
+            PXH = (YH+PSH-1)//PSH
+            PXW = (YW+PSW-1)//PSW
+        else:
+            PXH = (YH-PKH+PSH)//PSH
+            PXW = (YW-PKW+PSW)//PSW
+
+        out_arr = np.zeros((YN, PXH, PXW, YC), dtype=int)
+
+        p_st, q_st = 0, 0
+        if self.pool_layer.padding == "same":
+            p_st = max((PSH*(PXH-1)+PKH-YH)//2, 0)
+            q_st = max((PSW*(PXW-1)+PKW-YW)//2, 0)
+
+        for n in range(YN):
+            for ic in range(YC):
+                for iyh in range(YH):
+                    for iyw in range(YW):
+
+                        ph_end_const = iyh # iy(h,w) is the bottom-right of pooling window -> All values in pooling window have been computed
+                        pw_end_const = iyw
+
+                        ixh_before_stride = iyh+p_st-PKH+1
+                        ixw_before_stride = iyw+q_st-PKW+1
+
+                        ixh_beg = int(ixh_before_stride/PSH) # ix(hw) that corresponds to the pooling window
+                        ixw_beg = int(ixw_before_stride/PSW)
+                        if (ixh_before_stride % PSH != 0) or (ixw_before_stride % PSW != 0): # ix(hw) that corresponds to the window is skipped by pool striding
+                            continue
+
+                        if ixh_beg < 0 or ixw_beg <0: # skip with target ix(h,w) < 0
+                            continue
+
+                        ph_beg_const = max(PSH*ixh_beg-p_st, 0)-1 # p(h,w)_beg is the index of top left corner of pooling window. If negative, set to zero
+                        pw_beg_const = max(PSW*ixw_beg-q_st, 0)-1
+
+                        xh_sweep = PXH if iyh >= YH-PSH else ixh_beg+1 # ix(hw) is sweeped from ix(hw)_beg to x(h,w)_sweep. Normally sweep is 1.
+                        xw_sweep = PXW if iyw >= YW-PSW else ixw_beg+1 # But when iy(h,w) is at its edges, need to compute remaining ix(hw) pixels by sweeping
+
+                        ''' Handling edges '''
+                        ph_end, ph_beg = ph_end_const, ph_beg_const
+                        for ixh in range(ixh_beg, xh_sweep):
+                            pw_end, pw_beg = pw_end_const, pw_beg_const # move the pooling window back to start of sweep
+                            for ixw in range(ixw_beg, xw_sweep):
+                                
+                                ''' Pooling Window '''
+                                result = -math.inf if self.type == 'max' else 0
+                                for ipyh in range(ph_end, ph_beg,-1):
+                                    for ipyw in range(pw_end, pw_beg,-1):
+                                        
+                                        if self.type=='max':
+                                            result = max(result, in_arr[n,ipyh,ipyw,ic])
+                                        else:
+                                            result += in_arr[n,ipyh,ipyw,ic]
+
+                                count  = (ph_end-ph_beg)*(pw_end-pw_beg)
+                                result = result if self.type=='max' else div_round(result, count)
+                                ''' Writing '''
+                                out_arr[n,ixh,ixw,ic] = result
+
+                                pw_beg += PSW # move pooling window by stride
+                                pw_end = min(pw_end+PSW, YW-1)
+                            ph_beg += PSH # move pooling window by stride
+                            ph_end = min(ph_end+PSH, YH-1)
+        
+        bits = x.bits + int(np.ceil(np.log2(PKH*PKW))) if self.type == 'avg' else x.bits
+        assert bits <= hw.INT_BITS, f"When summing avg pool, resulting bits {bits} are more than bits for integer in CPU {hw.INT_BITS}. Reduce bits or increase integer bits of bias to continue"
+
+        out = XTensor(tensor=out_arr, bits=bits, frac=x.frac, from_int=True)
+        if self.type != 'avg': # out.ftensor for avg pool has recurring float (0.333)
+            assert np.allclose(out.ftensor, self.out.ftensor), f"Activation output does not match. \nout:{out.ftensor.numpy().flatten()[:100]}, \nself.out:{self.out.ftensor.numpy().flatten()[:100]}"
+        self.out = out
+        return out
+
 
 @keras.saving.register_keras_serializable()
 class XBundle(Layer):
@@ -431,6 +509,10 @@ class XBundle(Layer):
         out = self.core.call_int(self.inp, hw)
         out = self.core.act.call_int(out, hw)
 
+        if self.pool:
+            out = self.pool.call_int(out, hw)
+            out = self.pool.act.call_int(out, hw)
+
 class XInputAct(QActivation):
     def __init__(self, *args, **kwargs):            
         super().__init__(*args, **kwargs)
@@ -502,7 +584,7 @@ class UserModel(XModel):
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0)),
             pool=XPool(
                 type='avg',
-                size=(3,4),
+                pool_size=(3,4),
                 strides=(2,3),
                 padding='same',
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),)
