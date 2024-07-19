@@ -57,9 +57,9 @@ module axis_weight_rotator #(
   logic i_read, i_write, dw_m_ready, dw_m_valid, dw_m_last, dw_s_valid, dw_s_ready;
   logic      [M_WIDTH-1:0] dw_m_data_flat;
   logic [1:0][M_WIDTH-1:0] bram_m_data;
-  logic [1:0] done_read_next, done_write_next, en_ref, done_read, done_write, bram_resetn, bram_wen, bram_w_full, bram_m_ready;
+  logic [1:0] done_read_next, done_write_next, en_ref, done_read, done_write, bram_resetn, bram_wen, bram_m_ready;
   logic       bram_reg_resetn, bram_m_valid, bram_reg_m_valid;
-  logic en_count_config, l_config, l_kw, l_cin, l_cols, l_blocks, l_xn, f_kw, f_cin, f_cols, f_blocks, lc_config, lc_kw, lc_cin, lc_cols, lc_blocks, lc_xn;
+  logic en_count_config, l_config, l_kw, l_cin, l_cols, l_blocks, l_xn, f_kw, f_cin, f_cols, lc_config, lc_kw, lc_cin, lc_cols, lc_blocks, lc_xn;
   typedef struct packed {
     logic [BITS_ADDR        -1:0] addr_max;
     logic [BITS_XN          -1:0] xn_1;
@@ -68,7 +68,7 @@ module axis_weight_rotator #(
     logic [BITS_CI          -1:0] cin_1;
     logic [BITS_KW2         -1:0] kw2;
   } config_st;
-  config_st s_config, count;
+  config_st s_config;
   logic [1:0][BITS_ADDR + BITS_XN + BITS_IM_BLOCKS + BITS_XW + BITS_CI + BITS_KW2 -1:0] ref_config;
   
   assign s_config = config_st'(s_axis_tdata);
@@ -88,7 +88,7 @@ module axis_weight_rotator #(
     .USER_ENABLE   (0)
   ) DW (
     .clk           (aclk       ),
-    .rst           (~aresetn   ),
+    .rstn          (aresetn    ),
     .s_axis_tvalid (dw_s_valid  ),
     .s_axis_tready (dw_s_ready  ),
     .s_axis_tdata  (s_axis_tdata),
@@ -113,7 +113,7 @@ module axis_weight_rotator #(
 
 
   //  STATE MACHINE: WRITE
-  always_ff @(posedge aclk) 
+  always_ff @(posedge aclk `OR_NEGEDGE(aresetn)) 
     if (!aresetn)                                              state_write <= W_IDLE_S;
     else unique case (state_write)
       W_IDLE_S    : if (done_read [i_write]   )                state_write <= W_GET_REF_S;
@@ -125,7 +125,7 @@ module axis_weight_rotator #(
 
 
   //  STATE MACHINE: READ
-  always_ff @(posedge aclk)
+  always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
     if (!aresetn)                                state_read <= R_IDLE_S;
     else unique case (state_read)
       R_IDLE_S        : if (done_write [i_read]) state_read <= CONFIG_BEATS==0 ? R_READ_S : R_PASS_CONFIG_S;
@@ -158,7 +158,7 @@ module axis_weight_rotator #(
   end
 
   // Switching RAMs
-  always_ff @(posedge aclk)
+  always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
     if (!aresetn)  {i_write, i_read} <= 0;
     else begin
       if (state_write == W_SWITCH_S)  i_write <= !i_write;
@@ -167,7 +167,7 @@ module axis_weight_rotator #(
   
 
   // State machine DW
-  always_ff @(posedge aclk)
+  always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
     if (!aresetn)                       state_dw <= DW_BLOCK_S;
     else unique case (state_dw)
       DW_BLOCK_S: if (s_handshake)      state_dw <= DW_PASS_S;
@@ -234,7 +234,8 @@ module axis_weight_rotator #(
       ) BRAM (
         .clk          (aclk),
         .clken        (1'b1),
-        .resetn       (aresetn && bram_resetn [i]),
+        .resetn_global(aresetn),
+        .resetn_local (bram_resetn [i]),
         .s_data       (dw_m_data_flat),
         .w_en         (bram_wen    [i]),
         .m_data       (bram_m_data [i]),
@@ -260,18 +261,23 @@ module axis_weight_rotator #(
           - When FSM_read finishes, it sets 1, FSM_write gets out of IDLE and starts reading
       */
       
-      always_ff @(posedge aclk) begin
-        done_write[i] <= !aresetn ? 0 : done_write_next[i];
-        done_read [i] <= !aresetn ? 1 : done_read_next [i];
-      end
+      always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
+        if (!aresetn) begin
+          done_write[i] <= 0;
+          done_read [i] <= 1;
+        end else begin
+          done_write[i] <= done_write_next[i];
+          done_read [i] <= done_read_next [i];
+        end
 
       // Reference Registers
-      always_ff @(posedge aclk)
-        if (en_ref[i]) ref_config [i] <= s_config;
+      always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
+        if (!aresetn)       ref_config [i] <= '0;
+        else if (en_ref[i]) ref_config [i] <= s_config;
     end
   endgenerate
 
-  n_delay #(.N(DELAY_W_RAM ), .W(1)) BRAM_VALID (.c(aclk), .rn(aresetn & bram_reg_resetn), .e(1'b1), .i(bram_m_ready[i_read]), .o(bram_m_valid));
+  n_delay #(.N(DELAY_W_RAM ), .W(1)) BRAM_VALID (.c(aclk), .rng(aresetn), .rnl(bram_reg_resetn), .e(1'b1), .i(bram_m_ready[i_read]), .o(bram_m_valid));
 
   axis_pipeline_register2 # (
     .DATA_WIDTH  (BRAM_WIDTH),
@@ -284,7 +290,8 @@ module axis_weight_rotator #(
     .LENGTH      (DELAY_W_RAM )
   ) REG_PIPE (
     .clk          (aclk),
-    .rst          (~(aresetn & bram_reg_resetn)),
+    .rstn         (aresetn),
+    .rstn_local   (bram_reg_resetn),
     .s_axis_tdata (bram_m_data [i_read]),
     .s_axis_tvalid(bram_m_valid),
     .m_axis_tdata (m_axis_tdata),
@@ -312,12 +319,12 @@ module axis_weight_rotator #(
   assign ref_i_read = ref_config[i_read]; 
 
   wire [BITS_CONFIG_BEATS-1:0] config_beats_const = CONFIG_BEATS-1;
-  counter #(.W(BITS_CONFIG_BEATS)) C_CONFIG    (.clk(aclk), .reset(copy_config), .en(en_count_config), .max_in(                      config_beats_const  ), .last_clk(lc_config), .last(l_config), .first(),         .count()      );
-  counter #(.W(BITS_KW          )) C_KW        (.clk(aclk), .reset(copy_config), .en(en_kw          ), .max_in(BITS_KW          '( 2*ref_i_read.kw2     )), .last_clk(lc_kw    ), .last(l_kw    ), .first(f_kw    ), .count()      );
-  counter #(.W(BITS_CI          )) C_CI        (.clk(aclk), .reset(copy_config), .en(lc_kw          ), .max_in(BITS_CI          '(   ref_i_read.cin_1   )), .last_clk(lc_cin   ), .last(l_cin   ), .first(f_cin   ), .count()      );
-  counter #(.W(BITS_XW          )) C_XW        (.clk(aclk), .reset(copy_config), .en(lc_cin         ), .max_in(BITS_XW          '(   ref_i_read.cols_1  )), .last_clk(lc_cols  ), .last(l_cols  ), .first(f_cols  ), .count(c_cols));
-  counter #(.W(BITS_IM_BLOCKS   )) C_IM_BLOCKS (.clk(aclk), .reset(copy_config), .en(lc_cols        ), .max_in(BITS_IM_BLOCKS   '(   ref_i_read.blocks_1)), .last_clk(lc_blocks), .last(l_blocks), .first(),         .count()      );
-  counter #(.W(BITS_XN          )) C_XN        (.clk(aclk), .reset(copy_config), .en(lc_blocks      ), .max_in(BITS_XN          '(   ref_i_read.xn_1    )), .last_clk(lc_xn    ), .last(l_xn    ), .first(),         .count()      );
+  counter #(.W(BITS_CONFIG_BEATS)) C_CONFIG    (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(en_count_config), .max_in(                      config_beats_const  ), .last_clk(lc_config), .last(l_config), .first(),         .count()      );
+  counter #(.W(BITS_KW          )) C_KW        (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(en_kw          ), .max_in(BITS_KW          '( 2*ref_i_read.kw2     )), .last_clk(lc_kw    ), .last(l_kw    ), .first(f_kw    ), .count()      );
+  counter #(.W(BITS_CI          )) C_CI        (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(lc_kw          ), .max_in(BITS_CI          '(   ref_i_read.cin_1   )), .last_clk(lc_cin   ), .last(l_cin   ), .first(f_cin   ), .count()      );
+  counter #(.W(BITS_XW          )) C_XW        (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(lc_cin         ), .max_in(BITS_XW          '(   ref_i_read.cols_1  )), .last_clk(lc_cols  ), .last(l_cols  ), .first(f_cols  ), .count(c_cols));
+  counter #(.W(BITS_IM_BLOCKS   )) C_IM_BLOCKS (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(lc_cols        ), .max_in(BITS_IM_BLOCKS   '(   ref_i_read.blocks_1)), .last_clk(lc_blocks), .last(l_blocks), .first(),         .count()      );
+  counter #(.W(BITS_XN          )) C_XN        (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config), .en(lc_blocks      ), .max_in(BITS_XN          '(   ref_i_read.xn_1    )), .last_clk(lc_xn    ), .last(l_xn    ), .first(),         .count()      );
 
   // Last & User
 

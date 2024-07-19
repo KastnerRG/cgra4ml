@@ -10,8 +10,7 @@ module dnn_engine_tb;
 
   // CLOCK GENERATION
   logic aclk = 0;
-  localparam  CLK_PERIOD = 10ns;
-  initial forever #(CLK_PERIOD/2) aclk = ~aclk;
+  initial forever #(`CLK_PERIOD/2) aclk = ~aclk;
 
   // SIGNALS
 
@@ -23,6 +22,7 @@ module dnn_engine_tb;
               M_OUTPUT_WIDTH_LF          = `M_OUTPUT_WIDTH_LF ,
               S_WEIGHTS_WIDTH_LF         = `S_WEIGHTS_WIDTH_LF,
               S_PIXELS_WIDTH_LF          = `S_PIXELS_WIDTH_LF ,
+              W_BPT                      = `W_BPT   ,
               OUT_ADDR_WIDTH             = 10,
               OUT_BITS                   = 32;
 
@@ -40,6 +40,7 @@ module dnn_engine_tb;
   bit m_axis_tready, m_axis_tvalid, m_axis_tlast;
   logic [M_OUTPUT_WIDTH_LF   -1:0] m_axis_tdata;
   logic [M_OUTPUT_WIDTH_LF/8 -1:0] m_axis_tkeep;
+  logic [W_BPT-1:0] m_bytes_per_transfer;
 
   dnn_engine pipe (.*);
 
@@ -47,7 +48,7 @@ module dnn_engine_tb;
 
   DMA_M2S #(S_PIXELS_WIDTH_LF , VALID_PROB) source_x (aclk, aresetn, s_axis_pixels_tready , s_axis_pixels_tvalid , s_axis_pixels_tlast , s_axis_pixels_tdata , s_axis_pixels_tkeep );
   DMA_M2S #(S_WEIGHTS_WIDTH_LF, VALID_PROB) source_k (aclk, aresetn, s_axis_weights_tready, s_axis_weights_tvalid, s_axis_weights_tlast, s_axis_weights_tdata, s_axis_weights_tkeep);
-  DMA_S2M #(M_OUTPUT_WIDTH_LF , READY_PROB) sink_y   (aclk, aresetn, m_axis_tready        , m_axis_tvalid        , m_axis_tlast        , m_axis_tdata        , m_axis_tkeep);
+  DMA_S2M #(M_OUTPUT_WIDTH_LF , READY_PROB) sink_y   (aclk, aresetn, m_axis_tready        , m_axis_tvalid        , m_axis_tlast        , m_axis_tdata        , m_axis_tkeep, 32'(m_bytes_per_transfer));
 
   bit y_done=0, x_done=0, w_done=0, bundle_read_done=0, bundle_write_done=0;
   longint unsigned w_base=0, x_base=0, y_base=0;
@@ -86,7 +87,7 @@ module dnn_engine_tb;
     while (1) begin
       load_y (y_done, y_base, y_bpt);
       sink_y.axis_pull(y_base, y_bpt);
-      $display("Done output dma at offset=%h, bpt=%d \n", y_base, y_bpt);
+      // $display("Done output dma at offset=%h, bpt=%d \n", y_base, y_bpt);
       if (y_done) break;
     end
 

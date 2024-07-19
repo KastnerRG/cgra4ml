@@ -5,6 +5,7 @@ from collections import namedtuple
 import math
 import copy
 import tensorflow as tf
+from deepsocflow.py.utils import *
 
 '''
 Bundle (current):
@@ -39,7 +40,9 @@ Bundle (next)
     - concat_matrix (transformer)
 '''
 
-class Bundle(tf.keras.Model):
+
+class Bundle(tf.keras.layers.Layer):
+    idx = 0
     def __init__(self, 
                  core,             # dict, Mandaroty: parameters for conv/dense layer, act can be quantization or relu
                  add=None,         # dict, Mandatory if x1 is not None in call(), else ignored
@@ -49,6 +52,9 @@ class Bundle(tf.keras.Model):
                  **kwargs):
 
         super(Bundle, self).__init__()
+
+        self.idx = Bundle.idx
+        Bundle.idx += 1
         
         self.core = core
         self.add = add
@@ -63,9 +69,11 @@ class Bundle(tf.keras.Model):
 
         # Store reference to bundle object here, not just a idx number
         self.prev_bundle = None
+        self.next_bundles = []
         self.add_bundle = None
         self.add_tensor_dest = []
         self.add_out_buffer_idx = None
+        self.out_buffer_idx = None
 
         def extract_act(signature):
             ilayer = QActivation(signature)
@@ -99,6 +107,11 @@ class Bundle(tf.keras.Model):
         if core['type'] == 'conv':
             for i in ['filters', 'kernel_size', 'strides', 'padding', 'kernel_quantizer', 'bias_quantizer', 'use_bias', 'act_str']:
                 assert i in core, f"'{i}' must be provided for conv"
+            
+            if type(core['kernel_size']) not in [list, tuple]:
+                self.core['kernel_size'] = (core['kernel_size'], core['kernel_size'])
+            if type(core['strides'])  not in [list, tuple]:
+                self.core['strides'] = (core['strides'], core['strides'])
 
             self.core['layer'] = QConv2DBatchnorm(
                 filters=self.core['filters'], kernel_size=self.core['kernel_size'], strides=self.core['strides'],
@@ -133,6 +146,11 @@ class Bundle(tf.keras.Model):
             for i in ['type', 'size', 'strides', 'padding']:
                 assert i in pool, f"'{i}' must be provided for pool"
 
+            if type(pool['size']) not in [list, tuple]:
+                self.pool['size'] = (pool['size'], pool['size'])
+            if type(pool['strides'])  not in [list, tuple]:
+                self.pool['strides'] = (pool['strides'], pool['strides'])
+
             if pool['type'] == 'max':
                 self.pool_layer = MaxPooling2D(self.pool['size'], strides=self.pool['strides'], padding=self.pool['padding'])
             elif pool['type'] == 'avg':
@@ -160,10 +178,9 @@ class Bundle(tf.keras.Model):
     def call(self, x, x_1=None):
         if hasattr(x, "bundle"):
             self.prev_bundle = x.bundle
-            self.idx = self.prev_bundle.idx + 1
+            self.prev_bundle.next_bundles += [self]
         else:
             self.prev_bundle = None
-            self.idx = 0
 
         self.inp['tensor'] = x
 
@@ -468,7 +485,7 @@ class Bundle(tf.keras.Model):
         RAM_EDGES_DEPTH       = max([b.RAM_EDGES                  for b in bundles])
         
         L_MAX                 = clog2(XH_MAX//ROWS)
-        X_PAD                 = clog2(KH_MAX//2)
+        X_PAD_MAX             = clog2(KH_MAX//2)
         BITS_KW2              = clog2((KW_MAX+1)/2)
         BITS_KH2              = clog2((KH_MAX+1)/2)
         BITS_SW               = clog2(SW_MAX)
@@ -518,8 +535,14 @@ class Bundle(tf.keras.Model):
         assert r.XH <= c.XH_MAX
         assert r.XW <= c.XW_MAX
         assert r.XN <= c.XN_MAX
-        assert r.CM * r.XW * int(np.ceil(r.XH/c.ROWS)-1) <= c.RAM_EDGES_DEPTH or r.KH == 1
+
+        cm_max = r.CM_0 if r.CP==1 else r.CM
+        EDGES = cm_max * r.XW #* int(np.ceil(r.XH/c.ROWS)-1)
+        assert EDGES <= c.RAM_EDGES_DEPTH or r.KH == 1, f"Edges: {EDGES} < {c.RAM_EDGES_DEPTH}"
+
         assert r.XW >= r.KH//2
+        ACC_WIDTH = c.K_BITS + c.X_BITS + clog2(r.KH*r.KW*r.CM)
+        assert ACC_WIDTH <= c.Y_BITS, f"ACC_WIDTH:{ACC_WIDTH} > Y_BITS{c.Y_BITS}"
 
         print(r)
         self.check_sparsity(w_int, x_int)
@@ -576,6 +599,7 @@ class Bundle(tf.keras.Model):
         XL  = int(np.ceil(XH/c.ROWS))    # Blocks
         YN, YH, YW, YC = XN, XH, XW, CO
 
+        X_PAD = 0 if KH == 1 else c.X_PAD_MAX
 
         '''
         Conv Striding
@@ -652,11 +676,11 @@ class Bundle(tf.keras.Model):
         clocks_p  = r.IT*(1 + r.XN*r.XL*r.XW*(1 + r.CM*r.KH))
 
         mem_bits_p0 = \
-            hw.X_BITS * (r.IT * r.XN   * r.XL * r.XW * r.CM_0 * (hw.ROWS + hw.KH_MAX-1)) +\
+            hw.X_BITS * (r.IT * r.XN   * r.XL * r.XW * r.CM_0 * (hw.ROWS + r.X_PAD-1)) +\
             hw.K_BITS * (r.IT * r.CM_0 * r.KH * hw.COLS) +\
             hw.X_BITS * (r.XN * r.XH   * r.XW * r.CO)
         mem_bits_p = \
-            hw.X_BITS * (r.IT * r.XN   * r.XL * r.XW * r.CM   * (hw.ROWS + hw.KH_MAX-1)) +\
+            hw.X_BITS * (r.IT * r.XN   * r.XL * r.XW * r.CM   * (hw.ROWS + r.X_PAD-1)) +\
             hw.K_BITS * (r.IT * r.CM_0 * r.KH * hw.COLS) +\
             hw.X_BITS * (r.XN * r.XH   * r.XW * r.CO)
 
@@ -775,8 +799,14 @@ class Bundle(tf.keras.Model):
             wp = wp.reshape (r.IT, CM_p*r.KH, c.COLS)                # (IT, CM*KH, c.COLS)
             wp = np.pad(wp, ((0,0),(c.CONFIG_BEATS,0),(0,0)))        # (IT, c.CONFIG_BEATS+CM*KH, c.COLS)
             assert wp.shape == (r.IT, CM_p*r.KH +c.CONFIG_BEATS, c.COLS)
-            w_list += [wp]
+            
+            words_per_byte = 8//c.K_BITS
+            wp = wp.reshape(r.IT,-1)
+            pad = words_per_byte-(wp[0].size%words_per_byte)
+            pad = 0 if pad == words_per_byte else pad
+            wp = np.pad(wp, ((0,pad),(0,0)))
 
+            w_list += [wp]
             ic_left = ic_right
         return w_list
 
@@ -788,19 +818,19 @@ class Bundle(tf.keras.Model):
         x = np.pad(x, ((0,0),(0,r.XL*c.ROWS-r.XH),(0,0),(0,0)))         # (XN, L*HL , XW, CI)
         x = x.reshape  (r.XN, r.XL, c.ROWS, r.XW, r.CI)                   # (XN, XL, HL, XW, CI)
 
-        zeros = np.zeros((r.XN,r.XL,c.ROWS+c.X_PAD,r.XW,r.CI),x.dtype)  # (XN,XL,c.ROWS+X_PAD,XW,CI)
+        zeros = np.zeros((r.XN,r.XL,c.ROWS+r.X_PAD,r.XW,r.CI),x.dtype)  # (XN,XL,c.ROWS+X_PAD,XW,CI)
         zeros[:,:,:c.ROWS,:,:] = x
 
         ''' Fill bot rows from next '''
         for l in range(r.XL):
             if l == r.XL-1:
-                zeros[:,l, c.ROWS: ,:,:] = np.zeros((r.XN,c.X_PAD,r.XW,r.CI),x.dtype)
+                zeros[:,l, c.ROWS: ,:,:] = np.zeros((r.XN,r.X_PAD,r.XW,r.CI),x.dtype)
             else:
-                zeros[:,l, c.ROWS: ,:,:] = x[:,l+1,:c.X_PAD,:,:]
+                zeros[:,l, c.ROWS: ,:,:] = x[:,l+1,:r.X_PAD,:,:]
 
         x = zeros                                                  # (XN,XL,c.ROWS+X_PAD,XW,CI)
         x = x.transpose(0,1,3,4,2)                                 # (XN,XL,XW,CI,c.ROWS+X_PAD)
-        x = x.reshape((r.XN, r.XL, r.XW, r.CI, (c.ROWS+c.X_PAD)))
+        x = x.reshape((r.XN, r.XL, r.XW, r.CI, (c.ROWS+r.X_PAD)))
 
         x_list = []
         ic_left = ic_right = 0
@@ -808,10 +838,16 @@ class Bundle(tf.keras.Model):
             CM_p = r.CM_0 if ip==0 else r.CM
             ic_right += CM_p
 
-            xp = x[:,:,:, ic_left:ic_right, :]                              #(XN, XL, XW, CM, (c.ROWS+c.X_PAD))
-            assert xp.shape == (r.XN, r.XL, r.XW, CM_p, (c.ROWS+c.X_PAD))
-            x_list += [xp]
+            xp = x[:,:,:, ic_left:ic_right, :]                              #(XN, XL, XW, CM, (c.ROWS+r.X_PAD))
+            assert xp.shape == (r.XN, r.XL, r.XW, CM_p, (c.ROWS+r.X_PAD))
 
+            xp = xp.flatten()
+            words_per_byte = 8//c.X_BITS
+            pad = words_per_byte-(xp.size%words_per_byte)
+            pad = 0 if pad == words_per_byte else pad
+            xp = np.pad(xp, ((0,pad)))
+
+            x_list += [xp]
             ic_left = ic_right
         return x_list
 

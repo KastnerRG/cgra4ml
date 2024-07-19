@@ -22,10 +22,24 @@ deepsocflow/test/py/*
 .svls.toml
 .svlint.toml
 
-run/work/vectors/*
+**/vectors/*
 run/work/build/*
 run/work/dsf*
+run/work_resnet
+run/work_temp
+run/work_ccd
+run/work_dddd
+run/work/project_1
 
+# Vivado sim
+run/work/xsim/xsim.dir
+run/work/xsim/*.jou
+run/work/xsim/*.log
+run/work/xsim/*.pb
+run/work/xsim/*.wdb
+run/work/xsim/*.vcd
+run/work/xsim/*.Xil
+run/work/xsim/*.timestamp
 
 # Distribution / packaging
 .Python

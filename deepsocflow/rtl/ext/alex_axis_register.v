@@ -25,6 +25,9 @@ THE SOFTWARE.
 // Language: Verilog 2001
 
 `timescale 1ns / 1ps
+`define VERILOG
+`include "../defines.svh"
+`undef  VERILOG
 
 /*
  * AXI4-Stream register
@@ -57,7 +60,8 @@ module axis_register #
 )
 (
     input  wire                   clk,
-    input  wire                   rst,
+    input  wire                   rstn,
+    input  wire                   rstn_local,
 
     /*
      * AXI Stream input
@@ -154,8 +158,12 @@ if (REG_TYPE > 1) begin
         end
     end
 
-    always @(posedge clk) begin
-        if (rst) begin
+    always @(posedge clk `OR_NEGEDGE(rstn))
+        if (!rstn) begin
+            s_axis_tready_reg <= 1'b0;
+            m_axis_tvalid_reg <= 1'b0;
+            temp_m_axis_tvalid_reg <= 1'b0;
+        end else if (!rstn_local) begin
             s_axis_tready_reg <= 1'b0;
             m_axis_tvalid_reg <= 1'b0;
             temp_m_axis_tvalid_reg <= 1'b0;
@@ -166,6 +174,21 @@ if (REG_TYPE > 1) begin
         end
 
         // datapath
+    always @(posedge clk `OR_NEGEDGE(rstn))
+    if (!rstn) begin
+        m_axis_tdata_reg      <= 0;
+        m_axis_tkeep_reg      <= 0;
+        m_axis_tlast_reg      <= 0;
+        m_axis_tid_reg        <= 0;
+        m_axis_tdest_reg      <= 0;
+        m_axis_tuser_reg      <= 0;
+        temp_m_axis_tdata_reg <= 0;
+        temp_m_axis_tkeep_reg <= 0;
+        temp_m_axis_tlast_reg <= 0;
+        temp_m_axis_tid_reg   <= 0;
+        temp_m_axis_tdest_reg <= 0;
+        temp_m_axis_tuser_reg <= 0;
+    end else begin
         if (store_axis_input_to_output) begin
             m_axis_tdata_reg <= s_axis_tdata;
             m_axis_tkeep_reg <= s_axis_tkeep;
@@ -236,8 +259,11 @@ end else if (REG_TYPE == 1) begin
         end
     end
 
-    always @(posedge clk) begin
-        if (rst) begin
+    always @(posedge clk `OR_NEGEDGE(rstn))
+        if (!rstn) begin
+            s_axis_tready_reg <= 1'b0;
+            m_axis_tvalid_reg <= 1'b0;
+        end else if (!rstn_local) begin
             s_axis_tready_reg <= 1'b0;
             m_axis_tvalid_reg <= 1'b0;
         end else begin
@@ -246,7 +272,15 @@ end else if (REG_TYPE == 1) begin
         end
 
         // datapath
-        if (store_axis_input_to_output) begin
+    always @(posedge clk `OR_NEGEDGE(rstn))
+        if (!rstn) begin
+            m_axis_tdata_reg <= 0;
+            m_axis_tkeep_reg <= 0;
+            m_axis_tlast_reg <= 0;
+            m_axis_tid_reg   <= 0;
+            m_axis_tdest_reg <= 0;
+            m_axis_tuser_reg <= 0;
+        end else if (store_axis_input_to_output) begin
             m_axis_tdata_reg <= s_axis_tdata;
             m_axis_tkeep_reg <= s_axis_tkeep;
             m_axis_tlast_reg <= s_axis_tlast;
@@ -254,7 +288,6 @@ end else if (REG_TYPE == 1) begin
             m_axis_tdest_reg <= s_axis_tdest;
             m_axis_tuser_reg <= s_axis_tuser;
         end
-    end
 
 end else begin
     // bypass

@@ -1,7 +1,6 @@
 `timescale 1ns/1ps
 `include "defines.svh"
 
-(* use_dsp = "yes" *)
 module proc_engine #(
   localparam  COLS                = `COLS                ,
               ROWS                = `ROWS                ,
@@ -28,8 +27,8 @@ module proc_engine #(
 );
 
   logic en, clken_mul, sel_shift_next, sel_shift, mul_m_valid, acc_m_valid_next, acc_m_valid, mul_m_last, acc_m_last;
-  tuser_st mul_m_user, acc_s_user, mux_s2_user, acc_m_user;
-  logic [COLS-1:0] clken_acc, bypass_sum, bypass_sum_next, bypass, acc_m_sum_start, acc_s_valid, acc_m_keep;
+  tuser_st mul_m_user, acc_m_user;
+  logic [COLS-1:0] clken_acc, bypass_sum, bypass_sum_next, bypass, acc_m_sum_start, acc_s_valid;
   logic [COLS-1:0] lut_sum_start [KW_MAX/2:0];
   logic [COLS-1:0][ROWS-1:0][M_BITS -1:0] mul_m_data;
   logic [COLS-1:0][ROWS-1:0][Y_BITS -1:0] shift_data, acc_m_data;
@@ -38,11 +37,11 @@ module proc_engine #(
 
   generate
     genvar r,c,kw2,d;
-    n_delay #(.N(DELAY_MUL), .W(TUSER_WIDTH+2)) MUL_CONTROL (.c(clk), .rn(resetn), .e(clken_mul), .i({s_valid, s_last, s_user}), .o ({mul_m_valid, mul_m_last, mul_m_user}));
+    n_delay #(.N(DELAY_MUL), .W(TUSER_WIDTH+2)) MUL_CONTROL (.c(clk), .rng(resetn), .rnl(1'b1), .e(clken_mul), .i({s_valid, s_last, s_user}), .o ({mul_m_valid, mul_m_last, mul_m_user}));
 
     assign sel_shift_next = mul_m_valid && mul_m_user.is_cin_last && (mul_m_user.kw2 != 0);
 
-    always_ff @(posedge clk)
+    always_ff @(posedge clk `OR_NEGEDGE(resetn))
       if (!resetn) sel_shift <= 0;
       else if (en) sel_shift <= sel_shift_next;
 
@@ -61,7 +60,7 @@ module proc_engine #(
 
       assign bypass_sum_next [c] = mul_m_user.is_cin_last || mul_m_user.is_config;
 
-      always_ff @(posedge clk)
+      always_ff @(posedge clk `OR_NEGEDGE(resetn))
         if (!resetn)            bypass_sum [c] <= 0;
         else if (clken_acc [c]) bypass_sum [c] <= bypass_sum_next [c];
 
@@ -74,24 +73,29 @@ module proc_engine #(
       for (c=0; c < COLS   ; c++) begin: Cg
         // --------------- PROCESSING ELEMENT ------------------
 
-        // Multiplier
-        wire [M_BITS-1:0] mul_comb = $signed(s_data_pixels[r]) * $signed(s_data_weights[c]);
-
-        // Multiplier pipeline
-        logic [DELAY_MUL-1:0][M_BITS-1:0] mul_pipeline;
-        for (d=0; d < DELAY_MUL; d++)
-          always_ff @ (posedge clk)
-            if (clken_mul) mul_pipeline[d] <= d==0 ? mul_comb : mul_pipeline[d-1];
-        always_comb mul_m_data[c][r] = mul_pipeline[DELAY_MUL-1];
+        // Pipeline DSP input
+        logic [X_BITS-1:0] pixels_reg;
+        logic [K_BITS-1:0] weights_reg;
+        always_ff @ (posedge clk `OR_NEGEDGE(resetn))
+          if (!resetn)        {pixels_reg, weights_reg} <= '0;
+          else if (clken_mul) {pixels_reg, weights_reg} <= {s_data_pixels[r], s_data_weights[c]};
         
+        // Multiplier
+        wire [M_BITS-1:0] mul_comb = $signed(pixels_reg) * $signed(weights_reg);
+
+        n_delay #(.N(DELAY_MUL-1), .W(M_BITS)) MUL_PIPE (.c(clk), .rng(resetn), .rnl(1'b1), .e(clken_mul), .i(mul_comb), .o (mul_m_data[c][r]));
+        
+        if (c == 0) assign shift_data [c][r] = '0;
+        else        assign shift_data [c][r] = acc_m_data [c-1][r];
+
         // Two muxes
-        assign shift_data [c][r] = c==0 ? 0 : acc_m_data [c-1][r];
         wire signed [Y_BITS -1:0] add_in_1 = sel_shift ? shift_data [c][r]: Y_BITS'($signed(mul_m_data[c][r]));
         wire signed [Y_BITS -1:0] add_in_2 = bypass[c] ? 0                : acc_m_data [c][r];
 
         // Accumulator
-        always_ff @(posedge clk)
-          if (clken_acc[c]) acc_m_data [c][r] <= add_in_1 + add_in_2;
+        always_ff @(posedge clk `OR_NEGEDGE(resetn))
+          if (!resetn)           acc_m_data [c][r] <= '0;
+          else if (clken_acc[c]) acc_m_data [c][r] <= add_in_1 + add_in_2;
         
         // --------------- PROCESSING ELEMENT ------------------
       end 
@@ -101,7 +105,7 @@ module proc_engine #(
     assign acc_m_valid_next = !sel_shift && mul_m_valid && (mul_m_user.is_config || mul_m_user.is_cin_last);
 
     // Pipeline AXI-Stream signals with DELAY_ACC=1
-    always_ff @(posedge clk)
+    always_ff @(posedge clk `OR_NEGEDGE(resetn))
       if (!resetn)            {acc_m_user, acc_m_valid, acc_m_last} <= '0;
       else begin
         if (en & mul_m_valid) acc_m_user                <= mul_m_user;

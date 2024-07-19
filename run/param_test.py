@@ -3,20 +3,21 @@ import pytest
 import itertools
 import sys
 sys.path.append("../../")
+import tensorflow as tf
+tf.keras.utils.set_random_seed(0)
 from deepsocflow import Bundle, Hardware, QModel, QInput
 
 # Simulator: xsim on windows, verilator otherwise
-(SIM, SIM_PATH) = ('xsim', "F:/Xilinx/Vivado/2022.1/bin/") if os.name=='nt' else ('verilator', '')
-
+(SIM, SIM_PATH) = ('xsim', "/opt/Xilinx/Vivado/2022.2/bin/") 
 def product_dict(**kwargs):
     for instance in itertools.product(*(kwargs.values())):
         yield dict(zip(kwargs.keys(), instance))
 
 @pytest.mark.parametrize("PARAMS", list(product_dict(
                                         processing_elements  = [(8,24)   ],
-                                        frequency_mhz        = [ 100     ],
-                                        bits_input           = [ 8       ],
-                                        bits_weights         = [ 8       ],
+                                        frequency_mhz        = [ 250     ],
+                                        bits_input           = [ 4       ],
+                                        bits_weights         = [ 4       ],
                                         bits_sum             = [ 32      ],
                                         bits_bias            = [ 16      ],
                                         max_batch_size       = [ 64      ], 
@@ -44,7 +45,7 @@ def test_dnn_engine(PARAMS):
     '''
     1. BUILD MODEL
     '''
-    XN = 8
+    XN = 1
     input_shape = (XN,18,18,3) # (XN, XH, XW, CI)
 
     QINT_BITS = 0
@@ -80,4 +81,6 @@ def test_dnn_engine(PARAMS):
     model.export_inference(x=model.random_input, hw=hw)
     model.verify_inference(SIM=SIM, SIM_PATH=SIM_PATH)
 
-    print(f"Predicted time on hardware: {1000*model.predict_performance():.5f} ms")
+    seconds, bytes = model.predict_performance()
+    print(f"Predicted time on hardware: {1000*seconds:.5f} ms")
+    print(f"Predicted data movement: {bytes/1000:.5f} kB")

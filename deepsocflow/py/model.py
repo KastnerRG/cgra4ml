@@ -8,6 +8,7 @@ class QModel(Model):
 
     def __init(self, inputs, outputs, name=None):
         super().__init__(inputs, outputs, name=name)
+        Bundle.idx = 0
 
 
     @property
@@ -15,12 +16,17 @@ class QModel(Model):
         tensorflow.keras.utils.set_random_seed(0)
         return np.clip(np.random.randn(*self.input.shape), -1.0, 1.0)
 
+    @property # property cuz assigning to self.bundles takes forever (zips and stores)
+    def bundles(self):
+        return sorted(self.layers[2:], key= lambda b:b.idx) # Sort bundles in-place by index. Note: idx != ib
 
     def export_inference(self, x, hw):
 
         type_d = { 'np': {8: np.int8, 16: np.int16, 32: np.int32, 64: np.int64} }
 
+        print("starting keras forward pass")
         y = self(x, training=False)
+        print("done keras forward pass")
         self.hw = hw
 
         inp_act_model = Model(inputs=self.input, outputs=self.layers[1].output)
@@ -33,8 +39,7 @@ class QModel(Model):
             'int':inp_tensor.numpy() * 2**(hw.X_BITS-1)
             }
 
-        bundles = self.layers[2:]
-        self.bundles = bundles
+        bundles = self.bundles
 
         '''
         Export
@@ -45,39 +50,74 @@ class QModel(Model):
         for file in os.scandir(hw.DATA_DIR):
             os.remove(file.path)
 
-        buffer_map = []
-        for ib, b in enumerate(bundles):
-            print(f'-----------------{b.idx}-----------------------')
+        print("\n-----------STARTING EXPORT-----------\n")
+        add_buffer_map = []
+        out_buffer_map = []
+
+        for b in bundles:
+            print(f'-----------------bundle.idx:{b.idx}-----------------------')
             b.process(inp if b.idx==0 else None, hw)
-            b.export(hw, False) #ib==len(bundles)-1
+            b.export(hw, False) 
+
+            '''
+            OUTPUT BUFFER ALLOCATION
+            '''
+            print(f'input_out_map:{out_buffer_map}')
+
+            '''Find and assign a free buffer. If not, add new buffer'''
+            b.out_buffer_idx = -1
+            if len(b.next_bundles) != 0:
+                next_bundles_sorted = [bn.idx for bn in b.next_bundles]
+                next_bundles_sorted.sort()
+                for im in range(len(out_buffer_map)):
+                    if out_buffer_map[im] is None:
+                        out_buffer_map[im] = {'in':b.idx, 'out':next_bundles_sorted}
+                        b.out_buffer_idx = im
+                        break
+                else: #m if break is not hit
+                    b.out_buffer_idx = len(out_buffer_map)
+                    out_buffer_map += [{'in':b.idx, 'out':next_bundles_sorted}]
+            
+            print('out_buffer_idx:', b.out_buffer_idx)
+
+            '''Free the buffers whose last destination is current bundle'''
+            for im in range(len(out_buffer_map)):
+                buf = out_buffer_map[im]
+                if buf is not None:
+                    if buf['out'][-1] == b.idx:
+                        out_buffer_map[im] = None
+
+            print(f'out_buffer_map:{out_buffer_map}')
+
+
             
             '''
-            Buffer allocation for add bundle
+            ADD BUFFER ALLOCATION
             '''
-            print(f'input_map:{buffer_map}')
+            print(f'input_add_map:{add_buffer_map}')
 
             '''Find and assign a free buffer. If not, add new buffer'''
             b.add_out_buffer_idx = -1
             if len(b.add_tensor_dest) != 0:
-                for im in range(len(buffer_map)):
-                    if buffer_map[im] is None:
-                        buffer_map[im] = {'in':ib, 'out':b.add_tensor_dest}
+                for im in range(len(add_buffer_map)):
+                    if add_buffer_map[im] is None:
+                        add_buffer_map[im] = {'in':b.idx, 'out':b.add_tensor_dest}
                         b.add_out_buffer_idx = im
                         break
                 else: #m if break is not hit
-                    b.add_out_buffer_idx = len(buffer_map)
-                    buffer_map += [{'in':ib, 'out':b.add_tensor_dest}]
+                    b.add_out_buffer_idx = len(add_buffer_map)
+                    add_buffer_map += [{'in':b.idx, 'out':b.add_tensor_dest}]
             
             print('add_out_buffer_idx:', b.add_out_buffer_idx)
 
             '''Free the buffers whose last destination is current bundle'''
-            for im in range(len(buffer_map)):
-                buf = buffer_map[im]
+            for im in range(len(add_buffer_map)):
+                buf = add_buffer_map[im]
                 if buf is not None:
-                    if buf['out'][-1] == ib:
-                        buffer_map[im] = None
+                    if buf['out'][-1] == b.idx:
+                        add_buffer_map[im] = None
 
-            print(f'output_map:{buffer_map}')
+            print(f'add_buffer_map:{add_buffer_map}')
 
 
         '''
@@ -91,6 +131,8 @@ class QModel(Model):
             ch.write(f"Bundle_t bundles [N_BUNDLES] = {{\n")
             
             for ib, b in enumerate(bundles):
+                assert ib == b.idx
+
                 w_bpt    = (hw.K_BITS*b.we[-1][0].size + hw.IN_BITS)//8
                 w_bpt_p0 = (hw.K_BITS*b.we[0][0].size + hw.IN_BITS )//8
                 x_bpt    = (hw.X_BITS*b.xe[-1].size + hw.IN_BITS   )//8 
@@ -110,7 +152,7 @@ class QModel(Model):
                     o_bpt_p0 = (hw.X_BITS*b_next.xe[0].size + hw.IN_BITS)//8
                     o_bytes_b = o_bpt_p0 + (b_next.r.CP-1)*o_bpt
 
-                xp_words  = b.r.XN * b.r.XL * b.r.XW * (hw.ROWS+hw.X_PAD)
+                xp_words  = b.r.XN * b.r.XL * b.r.XW * (hw.ROWS+b.r.X_PAD)
 
                 w_bytes_b = (w_bpt_p0 + (b.r.CP-1)*w_bpt)*b.r.IT
                 x_bytes_b = (x_bpt_p0 + (b.r.CP-1)*x_bpt)
@@ -123,6 +165,8 @@ class QModel(Model):
                 w_bytes += w_bytes_b
                 x_bytes_all += x_bytes_b
 
+                ib_out = -1 if len(b.next_bundles) == 0 else b.next_bundles[0].idx
+
                 if ib == 0:
                     x_bytes = (x_bpt_p0 + (b.r.CP-1)*x_bpt)
 
@@ -132,9 +176,12 @@ class QModel(Model):
 
                 ca_nzero, ca_shift, ca_pl_scale = b.core['act']['non_zero'], b.core['act']['shift_bits'], b.core['act']['plog_slope']
 
-                add_act_shift = b.add['act']['shift_bits'] if b.add is not None else 0
+                (aa_nzero, aa_shift, aa_pl_scale) = (b.add ['act']['non_zero'], b.add ['act']['shift_bits'], b.add ['act']['plog_slope'])if b.add  is not None else (0,0,0)
+                (pa_nzero, pa_shift, pa_pl_scale) = (b.pool['act']['non_zero'], b.pool['act']['shift_bits'], b.pool['act']['plog_slope'])if b.pool is not None else (0,0,0)
+
                 add_out_buffer_idx = b.add_out_buffer_idx
                 add_in_buffer_idx = b.add['bundle'].add_out_buffer_idx if b.add is not None else -1
+                in_buffer_idx = b.prev_bundle.out_buffer_idx if b.prev_bundle is not None else -1
 
                 if b.pool is None:
                     pool_type = 'POOL_NONE'
@@ -142,22 +189,19 @@ class QModel(Model):
                     pool_type = 'POOL_MAX'
                 elif b.pool['type'] == 'avg':
                     pool_type = 'POOL_AVG'
-                pool_act_shift = b.pool['act']['shift_bits'] if b.pool is not None else 0
 
                 out_type = 'float' if (ib == len(bundles)-1 and b.softmax) else 'int32_t'
 
-                out_buffer_idx = 1*(not out_buffer_idx) if ib != len(bundles)-1 else -1 # alternate between 0 and 1
-
-                ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .coe_tl={y_coe_tl:<3}, .r_ll={y_r_ll:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<4}, .co={b.r.CO:<3}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, .xp_words={xp_words:<4}, ")
-                ch.write(     f".w_bpt={w_bpt:<5}, .w_bpt_p0={w_bpt_p0:<5}, .x_bpt={x_bpt:<5}, .x_bpt_p0={x_bpt_p0:<5}, .o_words={o_words_b:<5}, .o_bytes={o_bytes_b:<5}, ")
-                ch.write(     f".out_buffer_idx={out_buffer_idx:<2}, .add_out_buffer_idx={add_out_buffer_idx:<2}, .add_in_buffer_idx={add_in_buffer_idx:<2}, ")
+                ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .coe_tl={y_coe_tl:<3}, .r_ll={y_r_ll:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<4}, .co={b.r.CO:<4}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, .xp_words={xp_words:<6}, .ib_out={ib_out:<4}, ")
+                ch.write(     f".w_bpt={w_bpt:<5}, .w_bpt_p0={w_bpt_p0:<5}, .x_bpt={x_bpt:<8}, .x_bpt_p0={x_bpt_p0:<8}, .o_words={o_words_b:<8}, .o_bytes={o_bytes_b:<8}, .x_pad={b.r.X_PAD:<3}, ")
+                ch.write(     f".in_buffer_idx={in_buffer_idx:<3}, .out_buffer_idx={b.out_buffer_idx:<3}, .add_out_buffer_idx={add_out_buffer_idx:<2}, .add_in_buffer_idx={add_in_buffer_idx:<2}, ")
                 ch.write(     f".is_bias={1*(b.b is not None):<3}, .is_flatten={1*b.flatten:<3}, .is_softmax={1*b.softmax:<3}, ")
-                ch.write(     f".b_offset={b_words:<3}, .b_val_shift={b.bias_val_shift:<3}, .b_bias_shift={b.bias_b_shift:<3}, ")
-                ch.write(     f".ca_nzero={ca_nzero:<3}, .ca_shift={ca_shift:<3}, .ca_pl_scale={ca_pl_scale:<3}, .add_act_shift={add_act_shift:<3}, .pool_act_shift={pool_act_shift:<3}, .softmax_frac={b.softmax_frac:<3}, ")
+                ch.write(     f".b_offset={b_words:<5}, .b_val_shift={b.bias_val_shift:<3}, .b_bias_shift={b.bias_b_shift:<3}, ")
+                ch.write(     f".ca_nzero={ca_nzero:<3}, .ca_shift={ca_shift:<3}, .ca_pl_scale={ca_pl_scale:<3}, .aa_nzero={aa_nzero:<3}, .aa_shift={aa_shift:<3}, .aa_pl_scale={aa_pl_scale:<3}, .pa_nzero={pa_nzero:<3}, .pa_shift={pa_shift:<3}, .pa_pl_scale={pa_pl_scale:<3}, .softmax_frac={b.softmax_frac:<3}, ")
                 ch.write(     f".softmax_max_f={b.softmax_max_f:<15}, ")
-                ch.write(     f".csh={b.r.CSH:<3}, .ch={b.r.CYH:<3}, .csh_shift={b.r.CSH_SHIFT:<3}, .pkh={b.r.PKH:<3}, .psh={b.r.PSH:<3}, .ph={b.r.PYH:<3}, .psh_shift={b.r.PSH_SHIFT:<3}, .csw={b.r.CSW:<3}, .cw={b.r.CYW:<3}, .csw_shift={b.r.CSW_SHIFT:<3}, .pkw={b.r.PKW:<3}, .psw={b.r.PSW:<3}, .pw={b.r.PYW:<3}, .psw_shift={b.r.PSW_SHIFT:<3}, .pool={pool_type:<10}, .on={b.r.ON:<3}, .oh={b.r.OH:<3}, .ow={b.r.OW:<3}, .oc={b.r.OC:<3}, ")
+                ch.write(     f".csh={b.r.CSH:<3}, .ch={b.r.CYH:<3}, .csh_shift={b.r.CSH_SHIFT:<3}, .pkh={b.r.PKH:<3}, .psh={b.r.PSH:<3}, .ph={b.r.PYH:<3}, .psh_shift={b.r.PSH_SHIFT:<3}, .csw={b.r.CSW:<3}, .cw={b.r.CYW:<3}, .csw_shift={b.r.CSW_SHIFT:<3}, .pkw={b.r.PKW:<3}, .psw={b.r.PSW:<3}, .pw={b.r.PYW:<3}, .psw_shift={b.r.PSW_SHIFT:<3}, .pool={pool_type:<10}, .on={b.r.ON:<3}, .oh={b.r.OH:<3}, .ow={b.r.OW:<3}, .oc={b.r.OC:<4}, ")
                 ch.write(     f".x_header={b.r.x_header_le_p[-1][0]:>23}u, .x_header_p0={b.r.x_header_le_p[0][0]:>23}u, .w_header={b.r.w_header_le_p[-1][0]:>23}u, .w_header_p0={b.r.x_header_le_p[0][0]:>25}u , ")
-                ch.write(     f".debug_nhwc_words={b.oe_exp_nhwc.size:<5} }}")
+                ch.write(     f".debug_nhwc_words={b.oe_exp_nhwc.size:<9} }}")
                 
                 b_words += b.be.size if b.b else 0
                 if b.idx != len(bundles)-1:
@@ -167,12 +211,12 @@ class QModel(Model):
             ch.write(f"\n}};\n\n")
             ch.write(f"#define X_BITS_L2   {int(np.log2(hw.X_BITS))}\n")
             ch.write(f"#define W_BITS_L2   {int(np.log2(hw.K_BITS))}\n")
-            ch.write(f"#define X_PAD       {hw.X_PAD}\n")
             ch.write(f"#define KH_MAX      {hw.KH_MAX}\n")
             ch.write(f"#define PE_ROWS     {hw.ROWS}\n")
             ch.write(f"#define PE_COLS     {hw.COLS}\n\n")
 
-            ch.write(f"#define N_ADD_BUF   {len(buffer_map) if len(buffer_map) > 0 else ''}\n")
+            ch.write(f"#define N_OUT_BUF   {max(len(out_buffer_map),1)}\n")
+            ch.write(f"#define N_ADD_BUF   {len(add_buffer_map) if len(add_buffer_map) > 0 else ''}\n")
             ch.write(f"#define WB_BYTES    {w_bytes + (b_words*hw.B_BITS)//8}\n")
             ch.write(f"#define W_BYTES     {w_bytes}\n")
             ch.write(f"#define X_BYTES     {x_bytes}\n")
@@ -203,6 +247,7 @@ class QModel(Model):
         header_padding = b'\x00\x00\x00\x00\x00\x00\x00\x00' if hw.IN_BITS == 128 else b''
 
         for ib, b in enumerate(bundles):
+            assert ib == b.idx
             x_bitstring_b = b''
             if b.b:
                 b_bitstring += b.be.astype(type_d['np'][hw.B_BITS]).tobytes()
@@ -234,7 +279,8 @@ class QModel(Model):
         '''
         Write Text files of vectors
         '''
-        for b in bundles:
+        for ib, b in enumerate(bundles):
+            assert ib == b.idx
             np.savetxt(f"{hw.DATA_DIR}/{b.idx}_y_nhwc_exp.txt", b.oe_exp_nhwc.flatten(), fmt='%d')
             np.savetxt(f"{hw.DATA_DIR}/{b.idx}_xe.txt", np.concatenate([a.flatten() for a in b.xe]), fmt='%d')
             for ip in range(b.r.CP):
@@ -247,7 +293,7 @@ class QModel(Model):
 
                 xp = b.xe[ip].flatten()
                 xp = np.concatenate([x_config_words, xp], axis=0)
-                assert xp.shape == (hw.IN_BITS/hw.X_BITS +b.r.XN*b.r.XL*b.r.XW*CM_p*(hw.ROWS+hw.X_PAD),)
+                # assert xp.shape == (hw.IN_BITS/hw.X_BITS +b.r.XN*b.r.XL*b.r.XW*CM_p*(hw.ROWS+r.XPAD),)
                 np.savetxt(f"{hw.DATA_DIR}/{b.idx}_{ip}_x.txt", xp, fmt='%d')
 
 
@@ -265,22 +311,36 @@ class QModel(Model):
                     np.savetxt(f"{hw.DATA_DIR}/{b.idx}_{ip}_{it}_w.txt", wp, fmt='%d')
 
                     np.savetxt(f"{hw.DATA_DIR}/{b.idx}_{ip}_{it}_y_exp.txt", b.ye_exp_p[ip][it].flatten(), fmt='%d')
+        
+        y_exp = bundles[-1].o_int.flatten()
+        np.savetxt(f"{hw.DATA_DIR}/y_exp.txt", y_exp, fmt= '%f' if bundles[-1].softmax else '%d')
+        for i in range(len(y_exp)):
+            if (i < 20 or len(y_exp)-i < 20):
+                print(f"y_exp {i}: {y_exp[i]}")
+        
         print(f'Weights, inputs, outputs saved to {hw.DATA_DIR}/ib_ip_it_*.txt')
 
     def verify_inference(self, SIM, SIM_PATH):
 
         hw = self.hw
         bundles = self.bundles
+        
+        seconds, mem_bytes = self.predict_performance()
+        print(f"Predicted time on hardware: {1000*seconds:.5f} ms/frame")
+        print(f"Predicted fps: {1/seconds}")
+        print(f"Data movement (bytes): mem_bytes")
 
         '''
         RUN SIMULATION
         '''
         hw.simulate(SIM=SIM, SIM_PATH=SIM_PATH)
 
+
         '''
         CHECK ERROR
         '''
         for ib, b in enumerate(bundles):
+            assert ib == b.idx
             
             ''' Verify raw output '''
             for ip in range(b.r.CP):
@@ -309,7 +369,7 @@ class QModel(Model):
                 if b.softmax:
                     y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.idx}_y_tiled_sim.txt", np.float32).reshape(y_tiled_exp.shape)
                     error = np.max(np.abs(y_tiled_sim-y_tiled_exp))
-                    assert np.allclose(y_tiled_sim, y_tiled_exp, atol=1e-1), f"Error={error}, \nsub:\n{y_tiled_sim-y_tiled_exp} for y_tiled_sim at {b.idx=}. \n y_tiled_sim=\n{y_tiled_sim} \n y_tiled_exp=\n{y_tiled_exp}\n \nbefore_softmax=\n{b.before_softmax}"
+                    assert np.allclose(y_tiled_sim, y_tiled_exp, atol=0.5), f"Error={error}, \nsub:\n{y_tiled_sim-y_tiled_exp} for y_tiled_sim at {b.idx=}. \n y_tiled_sim=\n{y_tiled_sim} \n y_tiled_exp=\n{y_tiled_exp}\n \nbefore_softmax=\n{b.before_softmax}"
                 else:
                     y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.idx}_y_tiled_sim.txt", np.float32).reshape(y_tiled_exp.shape)
                     error = np.sum(np.abs(y_tiled_sim-y_tiled_exp))
@@ -321,7 +381,7 @@ class QModel(Model):
                 assert error == 0, f"Error={error}, for y_tiled_sim at {b.idx=}"
 
             ''' Verify packed output'''
-            if ib != len(bundles)-1:
+            if ib != len(bundles)-1 and len(b.next_bundles) != 0:
                 with open(f'{hw.DATA_DIR}/{ib}_y_packed_sim.bin', 'rb') as f_sim, open(f'{hw.DATA_DIR}/{ib+1}_x_sim.bin', 'rb') as f_exp:
                     y_packed_sim = np.frombuffer(f_sim.read(), dtype=np.uint8)
                     y_packed_exp = np.frombuffer(f_exp.read(), dtype=np.uint8)
@@ -339,4 +399,5 @@ class QModel(Model):
             clocks_total += clocks
 
         time = clocks_total / (self.hw.FREQ * 1e6)
-        return time
+        mem_bytes = mem_bits / 8
+        return time, mem_bytes

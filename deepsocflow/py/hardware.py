@@ -27,6 +27,7 @@ class Hardware:
             ram_edges_depth: int|None = 288,
             axi_width: int = 64,
             target_cpu_int_bits: int = 32,
+            async_resetn: bool = True,
             valid_prob: float = 0.01,
             ready_prob: float = 0.1,
             data_dir: str = 'vectors/'
@@ -67,6 +68,7 @@ class Hardware:
         self.XH_MAX, self.XW_MAX = tuple(max_image_size ) if (type(max_image_size ) in [tuple, list]) else (max_image_size , max_image_size )
         self.IN_BITS = self.OUT_BITS = axi_width
         self.INT_BITS = target_cpu_int_bits
+        self.ASYNC_RESETN = async_resetn
         self.VALID_PROB = int(valid_prob * 1000)
         self.READY_PROB = int(ready_prob * 1000)
 
@@ -85,7 +87,7 @@ class Hardware:
 
         self.L_MAX                 = int(np.ceil(self.XH_MAX//self.ROWS))
         self.CONFIG_BEATS          = 0
-        self.X_PAD                 = int(np.ceil(self.KH_MAX//2))
+        self.X_PAD_MAX             = int(np.ceil(self.KH_MAX//2))
         self.BITS_KW2              = clog2((self.KW_MAX+1)/2)
         self.BITS_KH2              = clog2((self.KH_MAX+1)/2)
         self.BITS_CIN_MAX          = clog2(self.CI_MAX)
@@ -94,11 +96,12 @@ class Hardware:
         self.BITS_XN_MAX           = clog2(self.XN_MAX)
         self.BITS_RAM_WEIGHTS_ADDR = clog2(self.RAM_WEIGHTS_DEPTH)
         self.Y_OUT_BITS            = 2**clog2(self.Y_BITS)
+        self.W_BPT                 = 32#clog2(self.ROWS*self.COLS*self.Y_OUT_BITS/8)
 
         self.MODULE_DIR = os.path.normpath(os.path.dirname(deepsocflow.__file__)).replace('\\', '/')
         self.TB_MODULE = "dnn_engine_tb"
         self.WAVEFORM = "dnn_engine_tb_behav.wcfg"
-        self.SOURCES = glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.v", recursive=True) + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.sv", recursive=True) + glob.glob(f"{os.getcwd()}/*.svh")
+        self.SOURCES = glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + glob.glob(f'{self.MODULE_DIR}/test/sv/**/*.v') + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.v", recursive=True) + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.sv", recursive=True) + glob.glob(f"{os.getcwd()}/*.svh")
         self.DATA_DIR = data_dir
 
     def export_json(self, path='./hardware.json'):
@@ -125,9 +128,18 @@ class Hardware:
         '''
         Exports the hardware parameters to SystemVerilog and TCL scripts.
         '''
+        PERIOD_NS = 1000/self.FREQ
+        INPUT_DELAY_NS = PERIOD_NS/5
+        OUTPUT_DELAY_NS = PERIOD_NS/5
 
         with open('config_tb.svh', 'w') as f:
-            f.write(f'`define VALID_PROB {self.VALID_PROB} \n`define READY_PROB {self.READY_PROB}')
+            f.write(f'''
+`define VALID_PROB {self.VALID_PROB} 
+`define READY_PROB {self.READY_PROB} 
+`define CLK_PERIOD {PERIOD_NS:.1f} 
+`define INPUT_DELAY_NS  {INPUT_DELAY_NS :.1f}ns
+`define OUTPUT_DELAY_NS {OUTPUT_DELAY_NS:.1f}ns
+''')
 
         with open('sources.txt', 'w') as f:
             f.write("\n".join([os.path.normpath(s) for s in self.SOURCES]))
@@ -135,12 +147,15 @@ class Hardware:
         with open('config_hw.svh', 'w') as f:
             f.write(f'''
 // Written from Hardware.export()
+                    
+`define OR_NEGEDGE(RSTN)    {"or negedge RSTN" if self.ASYNC_RESETN else ""}
 
 `define ROWS                {self.ROWS               :<10}  // PE rows, constrained by resources
 `define COLS                {self.COLS               :<10}  // PE cols, constrained by resources
 `define X_BITS              {self.X_BITS             :<10}  // Bits per word in input
 `define K_BITS              {self.K_BITS             :<10}  // Bits per word in input
 `define Y_BITS              {self.Y_BITS             :<10}  // Bits per word in output of conv
+`define Y_OUT_BITS          {self.Y_OUT_BITS         :<10}  // Padded bits per word in output of conv
 
 `define KH_MAX              {self.KH_MAX             :<10}  // max of kernel height, across layers
 `define KW_MAX              {self.KW_MAX             :<10}  // max of kernel width, across layers
@@ -151,8 +166,9 @@ class Hardware:
 `define CONFIG_BEATS        {self.CONFIG_BEATS       :<10}  // constant, for now
 `define RAM_WEIGHTS_DEPTH   {self.RAM_WEIGHTS_DEPTH  :<10}  // CONFIG_BEATS + max(KW * CI), across layers
 `define RAM_EDGES_DEPTH     {self.RAM_EDGES_DEPTH    :<10}  // max (KW * CI * XW), across layers when KW != 1
+`define W_BPT               {self.W_BPT              :<10}  // Width of output integer denoting bytes per transfer
 
-`define DELAY_MUL           2            // constant, for now 
+`define DELAY_MUL           3            // constant, for now 
 `define DELAY_W_RAM         2            // constant, for now 
 
 `define S_WEIGHTS_WIDTH_LF  {self.IN_BITS            :<10}  // constant (64), for now
@@ -188,7 +204,7 @@ set M_OUTPUT_WIDTH_LF  {self.OUT_BITS}
         print("\n\nCOMPILING...\n\n")
 
         if SIM == 'xsim':
-            assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xsc {self.MODULE_DIR}/c/example.c --gcc_compile_options -I../').returncode == 0
+            assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xsc {self.MODULE_DIR}/c/sim.c --gcc_compile_options -I../').returncode == 0
             assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xvlog -sv -f ../sources.txt -i ../').returncode == 0
             assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xelab {self.TB_MODULE} --snapshot {self.TB_MODULE} -log elaborate.log --debug typical -sv_lib dpi').returncode == 0
 
@@ -198,7 +214,7 @@ set M_OUTPUT_WIDTH_LF  {self.OUT_BITS}
             assert subprocess.run(cmd).returncode == 0
 
         if SIM == "verilator":
-            cmd = f'{SIM_PATH}verilator --binary -j 0 --trace --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -I../ {self.MODULE_DIR}/c/example.c --Mdir ./'
+            cmd = f'{SIM_PATH}verilator --binary -j 0 -O3 --trace --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -I../ {self.MODULE_DIR}/c/sim.c --Mdir ./'
             print(cmd)
             assert subprocess.run(cmd.split(' '), cwd='build').returncode == 0
         

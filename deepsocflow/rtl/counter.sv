@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 
 module counter #(parameter W = 8)(
-  input  logic clk, reset, en,
+  input  logic clk, rstn_g, rst_l, en,
   input  logic [W-1:0] max_in,
   output logic [W-1:0] count,
   output logic last, last_clk, first
@@ -10,7 +10,9 @@ module counter #(parameter W = 8)(
   wire  [W-1:0] count_next = last ? max : count - 1;
 
   always_ff @(posedge clk)
-    if (reset) begin
+    if (!rstn_g)
+      {count, max, last} <= '0;
+    else if (rst_l) begin
       count  <= max_in;
       max    <= max_in;
       last   <= max_in==0;
@@ -20,7 +22,7 @@ module counter #(parameter W = 8)(
       count  <= count_next;
     end
   
-  assign last_clk = en && last;
+  assign last_clk = en && last && rstn_g && !rst_l;
   assign first = count == max;
 
 endmodule
