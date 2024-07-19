@@ -41,6 +41,10 @@ run/work/xsim/*.vcd
 run/work/xsim/*.Xil
 run/work/xsim/*.timestamp
 
+# Verilator sim
+run/work/verilator-sim/sim-data/*
+run/work/verilator-sim/*.vcd
+
 # Distribution / packaging
 .Python
 build/

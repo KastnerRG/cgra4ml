@@ -21,7 +21,7 @@ typedef const struct {
 
 typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 
-#include "config_fw.h"
+#include "../../run/work/config_fw.h"
 #define X_BITS            (1 << X_BITS_L2)
 #define X_WORDS_PER_BYTE  (8 / X_BITS)
 #define X_BITS_MASK       ((1 << X_BITS) -1)
