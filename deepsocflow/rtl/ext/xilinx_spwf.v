@@ -1,5 +1,6 @@
 // Single-Port Block RAM Write-First Mode (recommended template)
 // File: rams_sp_wf.v
+`timescale 1ns/1ps
 module rams_sp_wf (clk, we, en, addr, di, dout);
 parameter WIDTH = 16;
 parameter DEPTH = 1024;
