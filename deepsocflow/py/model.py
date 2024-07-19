@@ -1,8 +1,9 @@
-from qkeras import Model
 import numpy as np
 import tensorflow.keras
 import os
+from tensorflow.keras.layers import Layer
 from deepsocflow.py.bundle import Bundle
+from qkeras import *
 
 class QModel(Model):
 

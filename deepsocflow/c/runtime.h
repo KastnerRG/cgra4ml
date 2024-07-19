@@ -35,9 +35,12 @@ typedef struct {
   int32_t    nhwc           [NHWC_WORDS  ];
   int8_t     debug_tiled    [O_WORDS_MAX ];
   int32_t    debug_nhwc     [NHWC_WORDS  ];
-  int8_t     out_buffers    [N_OUT_BUF   ][O_BYTES_MAX ];
+//  int8_t     out_buffers    [N_OUT_BUF   ][O_BYTES_MAX ];
   int8_t     add_buffers    [N_ADD_BUF   ][NHWC_WORDS  ]; // should be last, since N_ADD_BUF can be empty
 } Memory_st;
+
+typedef int8_t out_t [N_OUT_BUF][O_BYTES_MAX];
+
 
 //#define OCM_BASEADDR 0xFFFF0000
 //typedef Y_TYPE ocm_t [2][PE_COLS*PE_ROWS];
@@ -45,11 +48,13 @@ typedef struct {
 #define ocm (mem.ocm)
 
 
+
 #ifdef __x86_64__
   #define SIM
   #include <stdio.h>
   #define sim_fprintf fprintf
   Memory_st mem;
+  out_t out_buffers;
 
   static inline void write_flush_u8 (uint8_t* addr, uint8_t val) {
     *addr = val;
@@ -62,6 +67,7 @@ typedef struct {
 #else
   #define sim_fprintf(...)
   #define mem (*(Memory_st*)MEM_BASEADDR)
+  #define out_buffers (*(out_t*)OUT_BASEADDR)
 #endif
 
 #ifdef __cplusplus
@@ -207,7 +213,7 @@ extern EXT_C void load_y (volatile uint8_t *p_done, uint64_t *p_base_addr_next, 
   static Bundle_t *pb = &bundles[0];
   static int32_t it_bias=0;
   static int32_t ib=0, ip=0, it=0, in=0, il=0, iw_kw2=0;
-  static int8_t  *p_out_buffer = (int8_t*)&mem.out_buffers[0];
+  static int8_t  *p_out_buffer = (int8_t*)&out_buffers[0];
 
   int32_t iy_nhwc;
   div_t   div_ch, div_cw, div_ixh, div_ixw;
@@ -248,7 +254,7 @@ extern EXT_C void load_y (volatile uint8_t *p_done, uint64_t *p_base_addr_next, 
   for (ib = 0; ib < N_BUNDLES; ib++) {
 
     pb = &bundles[ib];
-    p_out_buffer = (int8_t*)&mem.out_buffers[pb->out_buffer_idx];
+    p_out_buffer = (int8_t*)&out_buffers[pb->out_buffer_idx];
 
     // Init - add headers to out buffer
     if (ib != N_BUNDLES-1 && pb->ib_out != -1) {
@@ -529,7 +535,7 @@ extern EXT_C void load_x (volatile uint8_t *p_done, volatile uint8_t *bundle_rea
 
   static int32_t ib=0, ip=0, it=0, offset_next=0;
 
-  int8_t *p_buffer_base = (ib==0) ? mem.x : mem.out_buffers[bundles[ib].in_buffer_idx];
+  int8_t *p_buffer_base = (ib==0) ? mem.x : out_buffers[bundles[ib].in_buffer_idx];
 
   *p_base_addr = (uint64_t)p_buffer_base + offset_next;
   *p_bpt = ip == 0 ? bundles[ib].x_bpt_p0 : bundles[ib].x_bpt;

@@ -1,5 +1,5 @@
 from qkeras import *
-from tensorflow.keras.layers import Flatten, Add, MaxPooling2D
+from tensorflow.keras.layers import Flatten, Add, MaxPooling2D, Layer
 import numpy as np
 from collections import namedtuple
 import math
@@ -175,7 +175,8 @@ class Bundle(tf.keras.layers.Layer):
 
 
     # functions for training
-    def call(self, x, x_1=None):
+    def call(self, input_tensor, x_1=None):
+        x = input_tensor
         if hasattr(x, "bundle"):
             self.prev_bundle = x.bundle
             self.prev_bundle.next_bundles += [self]
@@ -334,6 +335,8 @@ class Bundle(tf.keras.layers.Layer):
             x = self.proc['int'].astype(np.int32)
             frac, bits, plog_slope, non_zero = act_dict['frac'], act_dict['bits'], act_dict['plog_slope'], act_dict['non_zero']
             shift_bits = plog_slope + self.proc['frac']-frac
+
+            print(f"Applying {act_dict['type']} with bits:{bits}, frac:{frac}, plog_slope:{plog_slope}, non_zero:{non_zero}, shift_bits:{shift_bits}")
 
             x = ((x<0)*x)*non_zero + (((x>0)*x) << plog_slope)
             x = shift_round(x, shift_bits) # = np.around(x/2**shift_bits)
