@@ -5,6 +5,7 @@
 #include "xil_printf.h"
 #include "xscugic.h"
 #include "xtime_l.h"
+#include "xil_mmu.h"
 
 #include <assert.h>
 #include <limits.h>
@@ -12,6 +13,7 @@
 #include <stdio.h>
 
 #define MEM_BASEADDR 0x20000000
+#define OUT_BASEADDR 0x30000000
 
 #ifdef NDEBUG
   #define debug_xil_printf(...)
@@ -28,12 +30,12 @@ static u32     status;
 
 static inline void write_flush_u8(u8* addr, u8 val) {
 	*addr = val;
-	Xil_DCacheFlushRange((INTPTR)addr, 1);
+//	Xil_DCacheFlushRange((INTPTR)addr, 1);
 }
 
 static inline void write_flush_u64(u64* addr, u64 val) {
 	*addr = val;
-	Xil_DCacheFlushRange((INTPTR)addr, 8);
+//	Xil_DCacheFlushRange((INTPTR)addr, 8);
 }
 
 // RUNTIME.H included here
@@ -152,6 +154,18 @@ static inline void hardware_cleanup(){
 }
 
 static inline void model_setup(){
+
+  int out_buf_bytes = N_OUT_BUF*O_BYTES_MAX;
+  int out_buf_mb = out_buf_bytes/(1024*1024) + 1;
+  UINTPTR out_start = (UINTPTR)&out_buffers;
+
+  for (int i=0; i<out_buf_mb; i++){
+	  Xil_SetTlbAttributes(out_start, NORM_NONCACHE);
+	  printf("Disabled cache from %d to %d \n", (int)out_start, (int)(out_start+(1024*1024)));
+	  out_start += (1024*1024);
+  }
+
+
   Xil_DCacheFlushRange((INTPTR)&mem.w, WB_BYTES+X_BYTES);  // force transfer to DDR, starting addr & length
   start_weights_dma();
 }
