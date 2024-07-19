@@ -32,6 +32,7 @@ run/work_dddd
 run/work/project_1
 
 # Vivado sim
+run/work/.Xil/*
 run/work/xsim/xsim.dir/*
 run/work/xsim/*.jou
 run/work/xsim/*.log
