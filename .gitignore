@@ -31,20 +31,10 @@ run/work_ccd
 run/work_dddd
 run/work/project_1
 
-# Vivado sim
-run/work/.Xil/*
-run/work/xsim/xsim.dir/*
-run/work/xsim/*.jou
-run/work/xsim/*.log
-run/work/xsim/*.pb
-run/work/xsim/*.wdb
-run/work/xsim/*.vcd
-run/work/xsim/*.Xil
-run/work/xsim/*.timestamp
-
-# Verilator sim
-run/work/verilator-sim/sim-data/*
-run/work/verilator-sim/*.vcd
+# Vivado and verilator sim
+run/work/.Xil*
+run/work/xsim*
+run/work/verilator-sim*
 
 # Distribution / packaging
 .Python
