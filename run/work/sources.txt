@@ -1,3 +1,4 @@
+/home/dominus/axi-tb-sys/ndsf-final/deepsocflow/test/sv/axis_tb.sv
 /home/dominus/axi-tb-sys/ndsf-final/deepsocflow/test/sv/axi_sys_tb.sv
 /home/dominus/axi-tb-sys/ndsf-final/deepsocflow/test/sv/rtl_sim_top.sv
 /home/dominus/axi-tb-sys/ndsf-final/deepsocflow/test/sv/ext/demofull.v
