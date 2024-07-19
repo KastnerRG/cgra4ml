@@ -241,14 +241,6 @@ extern EXT_C void load_y (volatile uint8_t *p_done) {
   int32_t ph_end, ph_beg_const, ixh_beg, xh_sweep;
   int32_t pw_end, pw_beg_const, ixw_beg, xw_sweep;
 
-#ifdef SIM
-  char f_path_raw [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
-  sprintf(f_path_raw, "%s/%0d_%0d_%0d_y_raw_sim.txt", DATA_DIR, ib, ip, it);
-  sprintf(f_path_sum, "%s/%0d_y_sum_sim.txt", DATA_DIR, ib);
-  FILE *fp_raw = fopen(f_path_raw, "a");
-  FILE *fp_sum = fopen(f_path_sum, "a");
-#endif
-
   static int8_t ocm_bank = 1;
   int32_t w_last, sram_addr;
 
@@ -314,6 +306,12 @@ DMA_WAIT:
               // if sim return, so SV can pass time, and call again, which will jump to DMA_WAIT again
 	            if (!get_config(4*(A_DONE_WRITE + ocm_bank))) 
 	              return; 
+
+              char f_path_raw [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
+              sprintf(f_path_raw, "%s/%0d_%0d_%0d_y_raw_sim.txt", DATA_DIR, ib, ip, it);
+              sprintf(f_path_sum, "%s/%0d_y_sum_sim.txt", DATA_DIR, ib);
+              FILE *fp_raw = fopen(f_path_raw, "a");
+              FILE *fp_sum = fopen(f_path_sum, "a");
 #else
 			  //start_wait_output((UINTPTR)*p_base_addr_next, *p_bpt_next);
         		// in FPGA, wait for write done
