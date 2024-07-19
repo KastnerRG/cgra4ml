@@ -9,6 +9,7 @@ from deepsocflow.py.utils import *
 from deepsocflow.py.xmodel import *
 from deepsocflow.py.xlayers import *
 from deepsocflow.py.hardware import *
+from deepsocflow.py.dataflow import *
 
 
 @keras.saving.register_keras_serializable()
@@ -102,3 +103,79 @@ class XBundle(Layer):
                 f"Bundle output does not match. \nout:{out.ftensor.numpy().flatten()[:100]}, \nself.out:{self.out.ftensor.numpy().flatten()[:100]}"
         
         self.out = out
+
+
+    def export (self, hw, is_last):
+
+        if not self.core.type == 'conv':
+            print('Conv -> Dense Reshape')
+            CI,CO = self.core.w.itensor.shape
+            XN, _ = self.core.x.itensor.shape
+            w_int = self.core.w.itensor.numpy().reshape(1,1,CI,CO) # (CI,CO) -> (KH,KW,CI,CO)
+            x_int = self.core.x.itensor.numpy().reshape(1,XN,1,CI) # (XN,CI) -> (XN, XH, XW, CI)
+            y_int = self.core.y.itensor.numpy().reshape(1,XN,1,CO) # (XN,CI) -> (XN, XH, XW, CI)
+            o_int = self.core.out.itensor.numpy().reshape(1,XN,1,CO)
+        else:
+            y_int = self.core.y.itensor.numpy()
+            o_int = self.core.out.itensor.numpy()
+            w_int = self.core.w.itensor.numpy()
+            x_int = self.core.x.itensor.numpy()
+
+        b_int = self.core.b.itensor.numpy() if self.core.b else None
+        
+        r = get_runtime_params(
+            hw=hw, 
+            w_shape=w_int.shape, 
+            x_shape=x_int.shape, 
+            o_shape=self.out.ftensor.numpy().shape, 
+            core=self.core, 
+            pool=self.pool,
+            flatten = self.flatten,
+            )
+        r = create_headers(hw, r)
+
+        assert r.KH <= hw.KH_MAX
+        assert r.KW <= hw.KW_MAX
+        assert r.CM <= hw.CI_MAX
+        assert r.XH <= hw.XH_MAX
+        assert r.XW <= hw.XW_MAX
+        assert r.XN <= hw.XN_MAX
+
+        cm_max = r.CM_0 if r.CP==1 else r.CM
+        EDGES = cm_max * r.XW #* int(np.ceil(r.XH/hw.ROWS)-1)
+        assert EDGES <= hw.RAM_EDGES_DEPTH or r.KH == 1, f"Edges: {EDGES} < {hw.RAM_EDGES_DEPTH}"
+
+        assert r.XW >= r.KH//2
+        ACC_WIDTH = hw.K_BITS + hw.X_BITS + clog2(r.KH*r.KW*r.CM)
+        assert ACC_WIDTH <= hw.Y_BITS, f"ACC_WIDTH:{ACC_WIDTH} > Y_BITS{hw.Y_BITS}"
+
+        print(r)
+        check_sparsity(w_int, x_int)
+
+        self.be = reorder_b_q2e_conv(b_int, hw, r) if self.core.b else None
+        self.we = reorder_w_q2e_conv(w_int, hw, r)
+        self.ye_exp_shape = (r.IT, r.XN, r.XL, r.XW*r.CO_PRL, hw.ROWS)
+        self.ye_hw = np.zeros(self.ye_exp_shape)
+
+        self.xe = reorder_x_q2e_conv(x_int, hw, r)
+        self.ye_exp = reorder_y_q2e_conv(y_int, hw, r)
+        self.o_int = o_int
+        self.oe_sum_exp = o_int if is_last else reorder_y_q2e_conv(y_int, hw, r)
+        self.oe_exp_nhwc = o_int
+        print(f"x reshape: [int]:{self.core.x.itensor.shape}, int:{x_int.shape}. xe:{self.xe[0].shape}")
+
+        '''
+        Prepare expected outputs for each pass
+        '''
+        self.ye_exp_p = []
+        ic_left = ic_right = 0
+        for ip in range(r.CP):
+            CM_p = r.CM_0 if ip==0 else r.CM
+            ic_right += CM_p
+
+            wp = w_int[:,:, ic_left:ic_right, :]
+            xp = x_int[:,:,:, ic_left:ic_right ]
+            yp = tf.keras.backend.conv2d(xp.astype(np.float32), wp.astype(np.float32), padding='same').numpy().astype(np.int32)
+            self.ye_exp_p += [reorder_y_q2e_conv(yp, hw, r)]
+            ic_left = ic_right
+        self.hw, self.r = hw, r

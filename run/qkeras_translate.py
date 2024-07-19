@@ -17,7 +17,7 @@ np.random.seed(42)
 Dataset
 '''
 
-NB_EPOCH = 2
+NB_EPOCH = 0
 BATCH_SIZE = 64
 VALIDATION_SPLIT = 0.1
 NB_CLASSES = 10

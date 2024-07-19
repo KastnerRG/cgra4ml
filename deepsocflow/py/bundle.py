@@ -520,6 +520,8 @@ class Bundle(tf.keras.layers.Layer):
             o_sum_int = self.o_sum_exp
             o_int = self.o_exp
             w_int, x_int = self.w['int'], self.inp['int']
+
+        assert (o_sum_int == y_int).all()
         
         r = self.get_runtime_params(
             c=c, 
