@@ -94,7 +94,6 @@ class XTensor:
         assert self.valid, self.error
 
     def add_val_shift(self, other):
-
         '''
         Add s,t while preserving precision
         '''
@@ -165,7 +164,8 @@ class XActivation(QActivation):
 
         out = XTensor(tensor=x, bits=self.out.bits, frac=self.out.frac, from_int=True)
 
-        assert np.allclose(out.ftensor, self.out.ftensor), f"Activation output does not match. \nout:{out.ftensor.numpy().flatten()[:100]}, \nself.out:{self.out.ftensor.numpy().flatten()[:100]}"
+        assert np.allclose(out.ftensor, self.out.ftensor), \
+            f"Activation output does not match. \nout:{out.ftensor.numpy().flatten()[:100]}, \nself.out:{self.out.ftensor.numpy().flatten()[:100]}"
         self.out = out
         return out
 
@@ -181,13 +181,16 @@ class XConvBN(QConv2DBatchnorm):
         self.k_frac = get_frac_bits(self.sys_bits.k, k_int_bits)
         self.b_frac = get_frac_bits(self.sys_bits.b, b_int_bits)
         self.out = XTensor(None, None, float_only=True)
+        self.bias_val_shift = 0
+        self.bias_b_shift = 0
         
         if "kernel_quantizer" in kwargs or "bias_quantizer" in kwargs:
-            raise ValueError("kernel_quantizer and bias_quantizer will be derived from xconfig and k_frac")
+            raise ValueError("kernel_quantizer and bias_quantizer will be derived from act.sys_bits and k_frac")
 
         self.kernel_quantizer = f'quantized_bits({self.sys_bits.k},{k_int_bits},False,True,1)'
         self.bias_quantizer = f'quantized_bits({self.sys_bits.b},{b_int_bits},False,True,1)'
 
+        #!TODO: use_bias is always True. Need to handle False case
         super().__init__(kernel_quantizer=self.kernel_quantizer, bias_quantizer=self.bias_quantizer, padding='same', *args, **kwargs)
 
 
@@ -201,7 +204,7 @@ class XConvBN(QConv2DBatchnorm):
         self.x = x_tensor
 
         self.w = XTensor(tensor=self.kernel_quantizer_internal(self.get_folded_weights()[0]), bits=self.sys_bits.k, frac=self.k_frac)
-        self.b = XTensor(tensor=self.bias_quantizer_internal  (self.get_folded_weights()[1]), bits=self.sys_bits.b, frac=self.b_frac) if self.use_bias else None
+        self.b = XTensor(tensor=self.bias_quantizer_internal  (self.get_folded_weights()[1]), bits=self.sys_bits.b, frac=self.b_frac)
 
         # self.act.out.assert_valid()
         self.w.assert_valid()
@@ -224,11 +227,12 @@ class XConvBN(QConv2DBatchnorm):
         Add Bias
         '''
 
-        if self.use_bias:
-            out, (self.bias_val_shift, self.bias_b_shift) = out.add_val_shift(self.b)
-            assert out.bits <= hw.INT_BITS, f"After bias addition, resulting bits {out.bits} are more than bits for integer in CPU {hw.INT_BITS}. Reduce bits or increase integer bits of bias to continue"
-        else:
-            self.bias_val_shift, self.bias_b_shift = 0, 0
+        print(f"{self.use_bias}, {self.bias_quantizer_internal}")
+        print(f"{self.get_folded_weights()[1]}")
+
+        out, (self.bias_val_shift, self.bias_b_shift) = out.add_val_shift(self.b)
+        assert out.bits <= hw.INT_BITS, \
+            f"After bias addition, resulting bits {out.bits} are more than bits for integer in CPU {hw.INT_BITS}. Reduce bits or increase integer bits of bias to continue"
         
         '''
         Striding
@@ -258,7 +262,7 @@ class XConvBN(QConv2DBatchnorm):
 
             out = XTensor(tensor=post_stride, bits=out.bits, frac=out.frac, from_int=True)
         
-        assert np.allclose(out.ftensor, self.out.ftensor), "Convolution output does not match"
+        assert np.allclose(out.ftensor, self.out.ftensor), f"Convolution output does not match \nout:{out.ftensor.numpy().flatten()[:100]}, \nself.out:{self.out.ftensor.numpy().flatten()[:100]}"
         self.out = out
         return out
 
@@ -490,14 +494,8 @@ class XBundle(Layer):
         x = self.core.act(x)
 
         if x_add is not None:
-            if self.add is None:
-                raise ValueError("Activation function must be provided for add layer")
-            
-            # if hasattr(x_add, "bundle"):
-            #     self.add['bundle'] = x_add.bundle
-            #     x_add.bundle.add_tensor_dest += [self.idx]
-            # else:
-            #     self.add['bundle'] = None
+
+            assert self.add is not None, "Activation function must be provided for add layer"
             self.add.source_ib = x_add.ib
             BUNDLES[x_add.ib].next_add_ibs += [self.ib]
 
@@ -581,7 +579,7 @@ class XModel(Layer):
 Dataset
 '''
 
-NB_EPOCH = 0
+NB_EPOCH = 2
 BATCH_SIZE = 64
 VALIDATION_SPLIT = 0.1
 NB_CLASSES = 10
@@ -687,15 +685,10 @@ class UserModel(XModel):
                 k_int_bits=1,
                 b_int_bits=1,
                 units=NB_CLASSES,
+                use_bias=False,
                 act=XActivation(sys_bits=sys_bits, o_int_bits=1, type=None),),
             softmax=True
         )
-
-        # TODO: Remove act before softmax to improve accuracy
-
-        # self.dense = QDense(NB_CLASSES, kernel_quantizer=quantized_bits(sys_bits.x,0,1),
-        #         bias_quantizer=quantized_bits(sys_bits.x,0,1))
-        # self.act4  = Activation("softmax", name="softmax")
 
     def call (self, x):
         x = self.input_quant_layer(x)
@@ -812,7 +805,7 @@ def export_inference(model, hw):
     
 
     for ib, b in enumerate(BUNDLES):
-        print(f'-----------------idx:{ib}-----------------------')
+        print(f'-----------------ib:{ib}-----------------------')
         b.call_int(x if ib==0 else None, hw)
     #     # b.export(hw, False)
 
