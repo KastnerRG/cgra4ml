@@ -177,9 +177,9 @@ module dma_controller #(
 
   
 
-  ctrl_counter #(.W(COUNTER_WIDTH)) C_WT (.clk(clk), .rstn_g(rstn), .rst_l(w_ram_rd_valid  ), .en(en_wt), .max_in(COUNTER_WIDTH'(ram_max_t-1         )), .last_clk(lc_wt), .last(), .first(    ), .count(        ));
-  ctrl_counter #(.W(COUNTER_WIDTH)) C_WP (.clk(clk), .rstn_g(rstn), .rst_l(w_ram_rd_valid  ), .en(lc_wt), .max_in(COUNTER_WIDTH'(ram_max_p-1         )), .last_clk(lc_wp), .last(), .first(f_wp), .count(        ));
-  ctrl_counter #(.W(COUNTER_WIDTH)) C_WB (.clk(clk), .rstn_g(rstn), .rst_l(1'(cfg[A_START])), .en(lc_wp), .max_in(COUNTER_WIDTH'(cfg[A_N_BUNDLES_1]-1)), .last_clk(lc_wb), .last(), .first(    ), .count(count_wb));
+  counter #(.W(COUNTER_WIDTH)) C_WT (.clk(clk), .rstn_g(rstn), .rst_l(w_ram_rd_valid  ), .en(en_wt), .max_in(COUNTER_WIDTH'(ram_max_t-1         )), .last_clk(lc_wt), .last(), .first(    ), .count(        ));
+  counter #(.W(COUNTER_WIDTH)) C_WP (.clk(clk), .rstn_g(rstn), .rst_l(w_ram_rd_valid  ), .en(lc_wt), .max_in(COUNTER_WIDTH'(ram_max_p-1         )), .last_clk(lc_wp), .last(), .first(f_wp), .count(        ));
+  counter #(.W(COUNTER_WIDTH)) C_WB (.clk(clk), .rstn_g(rstn), .rst_l(1'(cfg[A_START])), .en(lc_wp), .max_in(COUNTER_WIDTH'(cfg[A_N_BUNDLES_1]-1)), .last_clk(lc_wb), .last(), .first(    ), .count(count_wb));
 
 
   //------------------- PIXELS DMA CONTROLLER -----------------------------------
@@ -222,9 +222,9 @@ module dma_controller #(
   (* mark_debug = "true" *) logic [COUNTER_WIDTH-1:0] count_xt_monitor;
   (* mark_debug = "true" *) logic count_xt_last_monitor;
 
-  ctrl_counter #(.W(COUNTER_WIDTH)) C_XT (.clk(clk), .rstn_g(rstn), .rst_l(x_ram_rd_valid  ), .en(en_xt), .max_in(COUNTER_WIDTH'(ram_max_t          - 1)), .last_clk(lc_xt), .last(count_xt_last_monitor), .first(    ), .count(count_xt_monitor));
-  ctrl_counter #(.W(COUNTER_WIDTH)) C_XP (.clk(clk), .rstn_g(rstn), .rst_l(x_ram_rd_valid  ), .en(lc_xt), .max_in(COUNTER_WIDTH'(ram_max_p          - 1)), .last_clk(lc_xp), .last(),                      .first(f_xp), .count(        ));
-  ctrl_counter #(.W(COUNTER_WIDTH)) C_XB (.clk(clk), .rstn_g(rstn), .rst_l(1'(cfg[A_START])), .en(lc_xp), .max_in(COUNTER_WIDTH'(cfg[A_N_BUNDLES_1] - 1)), .last_clk(lc_xb), .last(),                      .first(    ), .count(count_xb));
+  counter #(.W(COUNTER_WIDTH)) C_XT (.clk(clk), .rstn_g(rstn), .rst_l(x_ram_rd_valid  ), .en(en_xt), .max_in(COUNTER_WIDTH'(ram_max_t          - 1)), .last_clk(lc_xt), .last(count_xt_last_monitor), .first(    ), .count(count_xt_monitor));
+  counter #(.W(COUNTER_WIDTH)) C_XP (.clk(clk), .rstn_g(rstn), .rst_l(x_ram_rd_valid  ), .en(lc_xt), .max_in(COUNTER_WIDTH'(ram_max_p          - 1)), .last_clk(lc_xp), .last(),                      .first(f_xp), .count(        ));
+  counter #(.W(COUNTER_WIDTH)) C_XB (.clk(clk), .rstn_g(rstn), .rst_l(1'(cfg[A_START])), .en(lc_xp), .max_in(COUNTER_WIDTH'(cfg[A_N_BUNDLES_1] - 1)), .last_clk(lc_xb), .last(),                      .first(    ), .count(count_xb));
 
 
   //------------------- OUTPUT DMA CONTROLLER -----------------------------------

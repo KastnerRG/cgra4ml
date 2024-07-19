@@ -17,7 +17,7 @@
 */
 `timescale 1ns/1ps
 `define VERILOG
-`include "../defines.svh"
+`include "defines.svh"
 `undef  VERILOG
 
 module rtl_oc_top #(
@@ -81,8 +81,6 @@ module rtl_oc_top #(
     // axilite interface for configuration
     input  wire                   clk,
     input  wire                   rstn,
-    input  wire                   enable,   // Enable the DMAs
-    input  wire                   abort,    // Abort the output DMA
 
     /*
      * AXI-Lite slave interface
@@ -221,7 +219,7 @@ wire [AXI_ADDR_WIDTH-1:0] reg_rd_addr_ctrl = (reg_rd_addr-AXIL_BASE_ADDR) >> 2;
 
 
 
-axilite_ram #(
+alex_axilite_ram #(
     .DATA_WR_WIDTH(DATA_WR_WIDTH),
     .DATA_RD_WIDTH(DATA_RD_WIDTH),
     .ADDR_WIDTH(ADDR_WIDTH),
@@ -339,7 +337,7 @@ dnn_engine #(
     .m_bytes_per_transfer(m_bytes_per_transfer)
 );
 
-axi_dma_rd #(
+alex_axi_dma_rd #(
     .AXI_DATA_WIDTH(AXI_DATA_WIDTH_PS),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
     .AXI_STRB_WIDTH(AXI_STRB_WIDTH),
@@ -396,10 +394,10 @@ axi_dma_rd #(
     .m_axi_rlast(m_axi_pixel_rlast),
     .m_axi_rvalid(m_axi_pixel_rvalid),
     .m_axi_rready(m_axi_pixel_rready),
-    .enable(enable)
+    .enable(1'b1)
 );
 
-axi_dma_rd #(
+alex_axi_dma_rd #(
     .AXI_DATA_WIDTH(AXI_DATA_WIDTH_PS),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
     .AXI_STRB_WIDTH(AXI_STRB_WIDTH),
@@ -456,10 +454,10 @@ axi_dma_rd #(
     .m_axi_rlast(m_axi_weights_rlast),
     .m_axi_rvalid(m_axi_weights_rvalid),
     .m_axi_rready(m_axi_weights_rready),
-    .enable(enable)
+    .enable(1'b1)
 );
 
-axi_dma_wr #(
+alex_axi_dma_wr #(
     .AXI_DATA_WIDTH(AXI_DATA_WIDTH_PS),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
     .AXI_STRB_WIDTH(AXI_STRB_WIDTH),
@@ -520,8 +518,8 @@ axi_dma_wr #(
     .m_axi_bresp(m_axi_output_bresp),
     .m_axi_bvalid(m_axi_output_bvalid),
     .m_axi_bready(m_axi_output_bready),
-    .enable(enable),
-    .abort(abort)
+    .enable(1'b1),
+    .abort(1'b0)
 );
 
 endmodule

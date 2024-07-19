@@ -1,4 +1,5 @@
 set BOARD zcu104
+set AXILITE_ADDR 0x00B0000000
 
 create_project ${PROJECT_NAME} ${PROJECT_NAME} -part xczu7ev-ffvc1156-2-e -force
 set_property board_part xilinx.com:zcu104:part0:1.1 [current_project]

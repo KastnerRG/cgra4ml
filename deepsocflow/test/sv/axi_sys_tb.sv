@@ -15,7 +15,6 @@ module axi_sys_tb;
 
   // SIGNALS
   logic rstn = 0;
-  logic enable, abort;
   logic [ADDR_WIDTH-1:0]  s_axil_awaddr;
   logic [2:0]             s_axil_awprot;
   logic                   s_axil_awvalid;
@@ -78,26 +77,6 @@ module axi_sys_tb;
       dut.OC_TOP.CONTROLLER.sdp_ram.RAM[offset/4-16] <= data;
     end
   endfunction
-/*
-  function automatic AXI_read(input logic[C_S_AXI_ADDR_WIDTH-LSB-1:0] rd_addr, output logic [C_S_AXI_DATA_WIDTH-1:0] rd_data );
-        logic [C_S_AXI_ADDR_WIDTH-1:0] rd_addr_base = rd_addr << LSB;
-        $display("AXI read %x", rd_addr_base);
-        for (int i = 0; i < C_S_AXI_DATA_WIDTH/8; i++) begin 
-          rd_data[i*8 +: 8] = get_byte_32(rd_addr_base+i);
-        end
-        return rd_data;
-  endfunction //automatic
-
-  function automatic AXI_write(input logic[C_S_AXI_ADDR_WIDTH-LSB-1:0] wr_addr, input logic [C_S_AXI_DATA_WIDTH-1:0] wr_data, input logic [C_S_AXI_DATA_WIDTH/8-1:0] wr_strb);
-        logic [C_S_AXI_ADDR_WIDTH-1:0] wr_addr_base = wr_addr << LSB;
-        $display("AXI write %x", wr_addr_base);
-        for (int i = 0; i < C_S_AXI_DATA_WIDTH/8; i++) begin
-          if (wr_strb[i]) begin
-            set_byte_32(wr_addr_base+i, wr_data[i*8 +: 8]);
-          end
-        end
-  endfunction //automatic
-*/
 
   always_ff @(posedge clk ) begin : Axi_rw
     if (o_rd_pixel) begin
@@ -118,35 +97,15 @@ module axi_sys_tb;
       end
     end
   end
-
-/*
-  initial forever begin
-    @(posedge clk);
-    if (o_rd_pixel) begin
-      #10ps;
-      AXI_read(o_raddr_pixel, i_rdata_pixel);
-    end
-    if (o_rd_weights) begin
-      #10ps;
-      AXI_read(o_raddr_weights, i_rdata_weights);
-    end
-    if (o_we_output) begin
-      AXI_write(o_waddr_output, o_wdata_output, o_wstrb_output);
-    end
-  end
-*/
   
   initial begin
     $display("Start...");
     $dumpfile("axi_tb_sys.vcd");
     $dumpvars();
     rstn = 0;
-    enable = 0;
     repeat(2) @(posedge clk);
     #10ps;
     rstn = 1;
-    enable = 1;
-    abort = 0;
     
     model_setup();
     

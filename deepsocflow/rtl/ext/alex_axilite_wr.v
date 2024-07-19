@@ -28,7 +28,7 @@ THE SOFTWARE.
 /*
  * AXI lite register interface module (write)
  */
-module axilite_wr #
+module alex_axilite_wr #
 (
     // Width of data bus in bits
     parameter DATA_WIDTH = 32,

@@ -1,5 +1,4 @@
 `timescale 1ns/1ps
-`include "defines.svh"
 
 module counter #(parameter W = 8)(
   input  logic clk, rstn_g, rst_l, en,
@@ -10,7 +9,7 @@ module counter #(parameter W = 8)(
   logic [W-1:0] max;
   wire  [W-1:0] count_next = last ? max : count - 1;
 
-  always_ff @(posedge clk `OR_NEGEDGE(rstn_g))
+  always_ff @(posedge clk)
     if (!rstn_g)
       {count, max, last} <= '0;
     else if (rst_l) begin
@@ -23,7 +22,7 @@ module counter #(parameter W = 8)(
       count  <= count_next;
     end
   
-  assign last_clk = en && last;
+  assign last_clk = en && last && rstn_g && !rst_l;
   assign first = count == max;
 
 endmodule

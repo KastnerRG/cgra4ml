@@ -185,12 +185,12 @@ module axis_pixels #(
   assign ram_addr_in = ram_wen ? ram_addr_r : ram_addr;
 
   ram_edges RAM (
-    .clka  (aclk),    
-    .ena   (ram_ren || ram_wen),     
-    .wea   (ram_wen),     
-    .addra (ram_addr_in),  
-    .dina  (edge_bot_r),
-    .douta (ram_dout)
+    .clk  (aclk),    
+    .en   (ram_ren || ram_wen),     
+    .we  (ram_wen),     
+    .addr (ram_addr_in),  
+    .di  (edge_bot_r),
+    .dout (ram_dout)
   );
 
   // When ram_wen, read value is lost. This is used to hold that

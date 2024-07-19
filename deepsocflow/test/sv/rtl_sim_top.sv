@@ -11,7 +11,7 @@
 */
 `timescale 1ns/1ps
 `define VERILOG
-`include "../defines.svh"
+`include "../../rtl/defines.svh"
 `undef  VERILOG
 
 module rtl_sim_top #(
@@ -83,8 +83,6 @@ module rtl_sim_top #(
     // axilite interface for configuration
     input  wire                   clk,
     input  wire                   rstn,
-    input  wire                   enable,   // Enable the DMAs
-    input  wire                   abort,    // Abort the output DMA
 
     /*
      * AXI-Lite slave interface

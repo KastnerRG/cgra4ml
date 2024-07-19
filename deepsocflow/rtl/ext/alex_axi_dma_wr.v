@@ -31,7 +31,7 @@ THE SOFTWARE.
 /*
  * AXI4 DMA
  */
-module axi_dma_wr #
+module alex_axi_dma_wr #
 (
     // Width of AXI data bus in bits
     parameter AXI_DATA_WIDTH = 128,

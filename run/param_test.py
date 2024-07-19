@@ -4,7 +4,7 @@ import itertools
 import sys
 sys.path.append("../../")
 import tensorflow as tf
-tf.keras.utils.set_random_seed(42)
+tf.keras.utils.set_random_seed(0)
 from deepsocflow import Bundle, Hardware, QModel, QInput
 
 # Simulator: xsim on windows, verilator otherwise

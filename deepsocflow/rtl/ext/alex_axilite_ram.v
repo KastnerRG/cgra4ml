@@ -23,11 +23,11 @@ THE SOFTWARE.
 */
 
 // Language: Verilog 2001
-
+`timescale 1ns / 1ps
 /*
  * AXI lite register interface module
  */
-module axilite_ram #
+module alex_axilite_ram #
 (
     // Width of data bus in bits
     parameter DATA_WR_WIDTH = 32,
@@ -82,7 +82,7 @@ module axilite_ram #
     input  wire                   reg_rd_ack
 );
 
-axilite_wr #(
+alex_axilite_wr #(
     .DATA_WIDTH(DATA_WR_WIDTH),
     .ADDR_WIDTH(ADDR_WIDTH),
     .STRB_WIDTH(STRB_WIDTH),
@@ -118,7 +118,7 @@ axilite_wr_inst (
     .reg_wr_ack(reg_wr_ack)
 );
 
-axilite_rd #(
+alex_axilite_rd #(
     .DATA_WIDTH(DATA_RD_WIDTH),
     .ADDR_WIDTH(ADDR_WIDTH),
     .STRB_WIDTH(STRB_WIDTH),
