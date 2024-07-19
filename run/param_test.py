@@ -8,8 +8,8 @@ tf.keras.utils.set_random_seed(0)
 from deepsocflow import Bundle, Hardware, QModel, QInput
 
 # Simulator: xsim on windows, verilator otherwise
-(SIM, SIM_PATH) = ('xsim', "/opt/Xilinx/Vivado/2022.2/bin/") 
-#(SIM, SIM_PATH) = ('verilator', "")
+#(SIM, SIM_PATH) = ('xsim', "/opt/Xilinx/Vivado/2022.2/bin/") 
+(SIM, SIM_PATH) = ('verilator', "")
 def product_dict(**kwargs):
     for instance in itertools.product(*(kwargs.values())):
         yield dict(zip(kwargs.keys(), instance))
