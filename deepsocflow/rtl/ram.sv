@@ -3,7 +3,7 @@
 
 module ram_weights #(
   parameter   DEPTH   = `RAM_WEIGHTS_DEPTH,
-              WIDTH   = `COLS * `K_BITS,
+              WIDTH   = `K_BITS,
               LATENCY = `DELAY_W_RAM,
   localparam  ADDR_WIDTH = $clog2(DEPTH)
 )(
