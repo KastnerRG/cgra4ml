@@ -14,6 +14,12 @@ module AXIS_Sink #(
     input  logic [WORDS_PER_BEAT-1:0] m_keep
 );
 
+  clocking cb @(posedge aclk);
+    default input #0.8ns output #0.8ns;
+    output m_ready;
+    input  m_valid, m_last, m_data, m_keep;
+  endclocking
+
   int i_words = 0, file;
   bit done = 0;
 
@@ -24,29 +30,29 @@ module AXIS_Sink #(
     file = $fopen(FILE_PATH, "a");
 
     // start at reset
-    m_ready = 0;
+    cb.m_ready <= 0;
     wait(aresetn);
     
     while (!done) begin
 
       @(posedge aclk)
-      if (m_ready && m_valid) begin  // read at posedge
+      if (m_ready && cb.m_valid) begin  // read at posedge
 
         file = $fopen(FILE_PATH, "a"); // open and close file in "a" on each beat
         if (file==0) 
           $fatal(1, "File '%s' does not exist\n", FILE_PATH);
 
         for (int i=0; i < WORDS_PER_BEAT; i=i+1)
-          if (m_keep[i]) begin
-            $fdisplay(file, "%d", $signed(m_data[i]));
+          if (cb.m_keep[i]) begin
+            $fdisplay(file, "%d", $signed(cb.m_data[i]));
             i_words  += 1;
           end
         $fclose(file);
-        if (m_last) done <= 1;
+        if (cb.m_last) done <= 1;
       end
 
-      #10ps // delay before writing
-      m_ready = $urandom_range(0,999) < PROB_READY;
+      // #10ps // delay before writing
+      cb.m_ready <= $urandom_range(0,999) < PROB_READY;
     end
     {done, i_words} = 0;
     @(posedge aclk);
@@ -64,6 +70,12 @@ module AXIS_Source #(
     output logic [WORDS_PER_BEAT-1:0] s_keep
 ); 
 
+  clocking cb @(posedge aclk);
+    default input #0.8ns output #0.8ns;
+    input  s_ready;
+    output s_valid, s_last, s_data, s_keep;
+  endclocking
+
   logic s_last_val;
   logic [WORDS_PER_BEAT-1:0][WORD_WIDTH-1:0] s_data_val;
   logic [WORDS_PER_BEAT-1:0] s_keep_val;
@@ -73,7 +85,7 @@ module AXIS_Source #(
   bit prev_slast=0;
 
   task axis_push (input string FILE_PATH);
-    {s_valid, s_data, s_last, s_keep} = '0;
+    {cb.s_valid, cb.s_data, cb.s_last, cb.s_keep} <= '0;
 
     file = $fopen(FILE_PATH, "r");
     if (file == 0) 
@@ -99,25 +111,25 @@ module AXIS_Source #(
           s_last_val = $feof(file); // need to check one extra time to catch eof
         end
       end
-      s_valid = $urandom_range(0,999) < PROB_VALID;      // randomize s_valid
+      cb.s_valid <= $urandom_range(0,999) < PROB_VALID;      // randomize s_valid
       
       // scrable data signals on every cycle if !valid to catch slave reading it at wrong time
-      s_data = s_valid ? s_data_val : 'x;
-      s_keep = s_valid ? s_keep_val : 'x;
-      s_last = s_valid ? s_last_val : 'x;
+      cb.s_data <= s_valid ? s_data_val : '1;
+      cb.s_keep <= s_valid ? s_keep_val : '1;
+      cb.s_last <= s_valid ? s_last_val : '1;
 
       // -------------- LOOP BEGINS HERE -----------
       @(posedge aclk);
-      prev_handshake = s_valid && s_ready; // read at posedge
-      prev_slast     = s_valid && s_ready && s_last;
+      prev_handshake <= s_valid && cb.s_ready; // read at posedge
+      prev_slast     <= s_valid && cb.s_ready && s_last;
       
-      #10ps; // Delay before writing s_valid, s_data, s_keep
+      // #10ps; // Delay before writing cb.s_valid, cb.s_data, cb.s_keep
     end
 
     // Reset & close packet after done
     $display("Closing file '%s' at i_words=%d \n", FILE_PATH, i_words);
     $fclose(file);
-    {s_valid, s_data, s_keep, s_last, prev_slast, i_words} = '0;
+    {cb.s_valid, cb.s_data, cb.s_keep, cb.s_last, prev_slast, i_words} = '0;
     prev_handshake = 1;
     @(posedge aclk);
   endtask
