@@ -63,6 +63,7 @@ class XActivation(QActivation):
 class XConvBN(QConv2DBatchnorm):
     def __init__(self, k_int_bits, b_int_bits, act, *args, **kwargs):
 
+        self.type = 'conv'
         if act is None:
             raise ValueError("Activation function must be provided. Set type to none if no activation is needed")
         
@@ -112,6 +113,7 @@ class XConvBN(QConv2DBatchnorm):
             frac=self.x.frac + self.w.frac,
             from_int=True
         )
+        self.y = out
 
         '''
         Add Bias
@@ -160,6 +162,7 @@ class XConvBN(QConv2DBatchnorm):
 class XDense(QDense):
     def __init__(self, k_int_bits, b_int_bits, act, *args, **kwargs):
 
+        self.type = 'dense'
         if act is None:
             raise ValueError("Activation function must be provided. Set type to none if no activation is needed")
         
@@ -203,6 +206,7 @@ class XDense(QDense):
             frac=self.x.frac + self.w.frac,
             from_int=True
         )
+        self.y = out
 
         if self.use_bias:
             out, (self.bias_val_shift, self.bias_b_shift) = out.add_val_shift(self.b)

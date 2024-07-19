@@ -76,5 +76,5 @@ def export_inference(model, hw):
     for ib, b in enumerate(BUNDLES):
         print(f'-----------------ib:{ib}-----------------------')
         b.call_int(x if ib==0 else None, hw)
-    #     # b.export(hw, False)
+        b.export(hw, False)
 

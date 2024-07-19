@@ -103,3 +103,4 @@ def get_frac_bits(bits, int_bits):
 
 def clog2(x):
     return int(np.ceil(np.log2(x)))
+
