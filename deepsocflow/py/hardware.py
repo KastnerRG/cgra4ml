@@ -67,7 +67,7 @@ class Hardware:
         self.CI_MAX = max_channels_in
         self.KH_MAX, self.KW_MAX = tuple(max_kernel_size) if (type(max_kernel_size) in [tuple, list]) else (max_kernel_size, max_kernel_size)
         self.XH_MAX, self.XW_MAX = tuple(max_image_size ) if (type(max_image_size ) in [tuple, list]) else (max_image_size , max_image_size )
-        self.IN_BITS = self.OUT_BITS = axi_width
+        self.AXI_WIDTH = axi_width
         self.INT_BITS = target_cpu_int_bits
         self.ASYNC_RESETN = async_resetn
         self.VALID_PROB = int(valid_prob * 1000)
@@ -171,9 +171,7 @@ class Hardware:
 `define DELAY_MUL           3            // constant, for now 
 `define DELAY_W_RAM         2            // constant, for now 
 
-`define S_WEIGHTS_WIDTH_LF  {self.IN_BITS            :<10}  // constant (64), for now
-`define S_PIXELS_WIDTH_LF   {self.IN_BITS            :<10}  // constant (64), for now
-`define M_OUTPUT_WIDTH_LF   {self.OUT_BITS           :<10}  // constant (64), for now
+`define AXI_WIDTH           {self.AXI_WIDTH          :<10}
 ''')
 
 
@@ -191,9 +189,7 @@ set DELAY_W_RAM        2
 set RAM_WEIGHTS_DEPTH  {self.RAM_WEIGHTS_DEPTH}
 set RAM_EDGES_DEPTH    {self.RAM_EDGES_DEPTH}
 set KH_MAX             {self.KH_MAX}
-set S_WEIGHTS_WIDTH_LF {self.IN_BITS}
-set S_PIXELS_WIDTH_LF  {self.IN_BITS}
-set M_OUTPUT_WIDTH_LF  {self.OUT_BITS}
+set AXI_WIDTH          {self.AXI_WIDTH}
 ''')
 
 

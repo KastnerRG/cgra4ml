@@ -20,7 +20,7 @@
 `include "defines.svh"
 `undef  VERILOG
 
-module rtl_oc_top #(
+module axi_cgra4ml #(
     // Parameters for DNN engine
     parameter   ROWS                    = `ROWS               ,
                 COLS                    = `COLS               ,
@@ -31,9 +31,7 @@ module rtl_oc_top #(
                 M_DATA_WIDTH_HF_CONV    = COLS  * ROWS  * Y_BITS,
                 M_DATA_WIDTH_HF_CONV_DW = ROWS  * Y_BITS,
 
-                S_PIXELS_WIDTH_LF       = `S_PIXELS_WIDTH_LF  ,
-                S_WEIGHTS_WIDTH_LF      = `S_WEIGHTS_WIDTH_LF ,
-                M_OUTPUT_WIDTH_LF       = `M_OUTPUT_WIDTH_LF  ,
+                AXI_WIDTH               = `AXI_WIDTH          ,
                 W_BPT                   = `W_BPT              ,
 
                 OUT_ADDR_WIDTH          = 10,
@@ -198,20 +196,20 @@ wire m_wd_axis_write_desc_tready;
 wire s_axis_pixels_tready;
 wire s_axis_pixels_tvalid;
 wire s_axis_pixels_tlast ;
-wire [S_PIXELS_WIDTH_LF  -1:0]   s_axis_pixels_tdata;
-wire [S_PIXELS_WIDTH_LF/8-1:0]   s_axis_pixels_tkeep;
+wire [AXI_WIDTH  -1:0]   s_axis_pixels_tdata;
+wire [AXI_WIDTH/8-1:0]   s_axis_pixels_tkeep;
 
 wire s_axis_weights_tready;
 wire s_axis_weights_tvalid;
 wire s_axis_weights_tlast ;
-wire [S_WEIGHTS_WIDTH_LF  -1:0]  s_axis_weights_tdata;
-wire [S_WEIGHTS_WIDTH_LF/8-1:0]  s_axis_weights_tkeep;
+wire [AXI_WIDTH  -1:0]  s_axis_weights_tdata;
+wire [AXI_WIDTH/8-1:0]  s_axis_weights_tkeep;
     // AND, controller monitors the axis output status
 wire m_axis_output_tready; 
 wire m_axis_output_tvalid;
 wire m_axis_output_tlast;
-wire [M_OUTPUT_WIDTH_LF   -1:0] m_axis_output_tdata;
-wire [M_OUTPUT_WIDTH_LF/8 -1:0] m_axis_output_tkeep;
+wire [AXI_WIDTH   -1:0] m_axis_output_tdata;
+wire [AXI_WIDTH/8 -1:0] m_axis_output_tkeep;
 wire [W_BPT-1:0] m_bytes_per_transfer;
 
 wire [AXI_ADDR_WIDTH-1:0] reg_wr_addr_ctrl = (reg_wr_addr-AXIL_BASE_ADDR) >> 2;
@@ -310,9 +308,7 @@ dnn_engine #(
     .Y_OUT_BITS(Y_OUT_BITS),
     .M_DATA_WIDTH_HF_CONV(M_DATA_WIDTH_HF_CONV),
     .M_DATA_WIDTH_HF_CONV_DW(M_DATA_WIDTH_HF_CONV_DW),
-    .S_PIXELS_WIDTH_LF(S_PIXELS_WIDTH_LF),
-    .S_WEIGHTS_WIDTH_LF(S_WEIGHTS_WIDTH_LF),
-    .M_OUTPUT_WIDTH_LF(M_OUTPUT_WIDTH_LF),
+    .AXI_WIDTH(AXI_WIDTH),
     .W_BPT(W_BPT),
     .OUT_ADDR_WIDTH(OUT_ADDR_WIDTH),
     .OUT_BITS(OUT_BITS)

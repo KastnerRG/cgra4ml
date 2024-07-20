@@ -14,7 +14,7 @@ module axis_weight_rotator #(
     XW_MAX              = `XW_MAX              ,
     XH_MAX              = `XH_MAX              ,
     XN_MAX              = `XN_MAX              ,
-    S_WEIGHTS_WIDTH_LF  = `S_WEIGHTS_WIDTH_LF  ,
+    AXI_WIDTH           = `AXI_WIDTH           ,
     DELAY_W_RAM         = `DELAY_W_RAM         ,
     RAM_WEIGHTS_DEPTH   = `RAM_WEIGHTS_DEPTH   ,
     CONFIG_BEATS        = `CONFIG_BEATS        ,
@@ -42,8 +42,8 @@ module axis_weight_rotator #(
     output logic                                       s_axis_tready,
     input  logic                                       s_axis_tvalid,
     input  logic                                       s_axis_tlast ,
-    input  logic [S_WEIGHTS_WIDTH_LF            -1:0]  s_axis_tdata ,
-    input  logic [S_WEIGHTS_WIDTH_LF/WORD_WIDTH -1:0]  s_axis_tkeep ,
+    input  logic [AXI_WIDTH            -1:0]  s_axis_tdata ,
+    input  logic [AXI_WIDTH/WORD_WIDTH -1:0]  s_axis_tkeep ,
 
     input  logic    [COLS-1:0]              m_axis_tready,
     output logic    [COLS-1:0]              m_axis_tvalid,
@@ -91,11 +91,11 @@ module axis_weight_rotator #(
 
 
   alex_axis_adapter_any #(
-    .S_DATA_WIDTH  (S_WEIGHTS_WIDTH_LF),
+    .S_DATA_WIDTH  (AXI_WIDTH),
     .M_DATA_WIDTH  (M_WIDTH),
     .S_KEEP_ENABLE (1),
     .M_KEEP_ENABLE (1),
-    .S_KEEP_WIDTH  (S_WEIGHTS_WIDTH_LF/WORD_WIDTH),
+    .S_KEEP_WIDTH  (AXI_WIDTH/WORD_WIDTH),
     .M_KEEP_WIDTH  (M_WIDTH/WORD_WIDTH),
     .ID_ENABLE     (0),
     .DEST_ENABLE   (0),

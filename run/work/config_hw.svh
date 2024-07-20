@@ -24,6 +24,4 @@
 `define DELAY_MUL           3            // constant, for now 
 `define DELAY_W_RAM         2            // constant, for now 
 
-`define S_WEIGHTS_WIDTH_LF  128         // constant (64), for now
-`define S_PIXELS_WIDTH_LF   128         // constant (64), for now
-`define M_OUTPUT_WIDTH_LF   128         // constant (64), for now
+`define AXI_WIDTH           128       

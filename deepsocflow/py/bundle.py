@@ -470,7 +470,7 @@ class Bundle(tf.keras.layers.Layer):
         def clog2(x):
             return int(np.ceil(np.log2(x)))
         
-        IN_BITS               = 64
+        AXI_WIDTH             = 64
         CONFIG_BEATS          = 1
         X_BITS = K_BITS       = max([b.x[1] for b in bundles])
         KW_MAX                = max([b.KW   for b in bundles])
@@ -729,7 +729,7 @@ class Bundle(tf.keras.layers.Layer):
                 (r.XL-1 , c.BITS_BLOCKS_MAX),
                 (r.XN-1 , c.BITS_XN_MAX),
                 (c.CONFIG_BEATS + r.KH*CM_p-1, c.BITS_RAM_WEIGHTS_ADDR)
-            ], c.IN_BITS-1)
+            ], c.AXI_WIDTH-1)
             d['w_header_le_p'] += [w_header_le]
             d['w_header_be_p'] += [w_header_be]
 
@@ -739,7 +739,7 @@ class Bundle(tf.keras.layers.Layer):
                 (CM_p-1 , c.BITS_CIN_MAX),
                 (r.XW-1 , c.BITS_COLS_MAX),
                 (r.XL-1 , c.BITS_BLOCKS_MAX),
-            ], c.IN_BITS-1)
+            ], c.AXI_WIDTH-1)
             d['x_header_le_p'] += [x_header_le]
             d['x_header_be_p'] += [x_header_be]
 

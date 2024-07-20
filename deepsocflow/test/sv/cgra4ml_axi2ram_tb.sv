@@ -12,9 +12,10 @@
 `timescale 1ns/1ps
 `define VERILOG
 `include "../../rtl/defines.svh"
+`include "config_tb.svh"
 `undef  VERILOG
 
-module rtl_sim_top #(
+module cgra4ml_axi2ram_tb #(
     // Parameters for DNN engine
     parameter   ROWS                    = `ROWS               ,
                 COLS                    = `COLS               ,
@@ -25,10 +26,8 @@ module rtl_sim_top #(
                 M_DATA_WIDTH_HF_CONV    = COLS  * ROWS  * Y_BITS,
                 M_DATA_WIDTH_HF_CONV_DW = ROWS  * Y_BITS,
 
-                S_PIXELS_WIDTH_LF       = `S_PIXELS_WIDTH_LF  ,
-                S_WEIGHTS_WIDTH_LF      = `S_WEIGHTS_WIDTH_LF ,
-                M_OUTPUT_WIDTH_LF       = `M_OUTPUT_WIDTH_LF  ,
-                W_BPT                   = `W_BPT,//`W_BPT              ,
+                AXI_WIDTH               = `AXI_WIDTH  ,
+                W_BPT                   = `W_BPT,
 
                 OUT_ADDR_WIDTH          = 10,
                 OUT_BITS                = 32,
@@ -70,14 +69,16 @@ module rtl_sim_top #(
                 ENABLE_UNALIGNED        = 1,
     
     // Parameters for zip cpu
-		        C_S_AXI_ID_WIDTH	= 6,
-		        C_S_AXI_DATA_WIDTH	= 128,
-		        C_S_AXI_ADDR_WIDTH	= 32,
-		        OPT_LOCK     = 1'b0,
-		        OPT_LOCKID   = 1'b1,
-		        OPT_LOWPOWER = 1'b0,
+		        C_S_AXI_ID_WIDTH	    = 6,
+		        C_S_AXI_DATA_WIDTH	    = 128,
+		        C_S_AXI_ADDR_WIDTH	    = 32,
+		        OPT_LOCK                = 1'b0,
+		        OPT_LOCKID              = 1'b1,
+		        OPT_LOWPOWER            = 1'b0,
     // Randomizer for AXI4 requests
-                PROB_VALID   = 70, // Out of 100
+                VALID_PROB              = `VALID_PROB,
+                READY_PROB              = `READY_PROB,
+
     localparam	LSB = $clog2(C_S_AXI_DATA_WIDTH)-3                
 )(
     // axilite interface for configuration
@@ -201,31 +202,31 @@ module rtl_sim_top #(
 
     // Randomizer for AXI4 requests
     always_ff @( posedge clk ) begin
-        rand_pixel_r    <= $urandom_range(0, 100) < PROB_VALID;
-        rand_pixel_ar   <= $urandom_range(0, 100) < PROB_VALID;
-        rand_weights_r  <= $urandom_range(0, 100) < PROB_VALID;
-        rand_weights_ar <= $urandom_range(0, 100) < PROB_VALID;
-        rand_output_aw  <= $urandom_range(0, 100) < PROB_VALID;
-        rand_output_w   <= $urandom_range(0, 100) < PROB_VALID;
-        rand_output_b   <= $urandom_range(0, 100) < PROB_VALID;
+        rand_pixel_r    <= $urandom_range(0, 1000) < VALID_PROB;
+        rand_pixel_ar   <= $urandom_range(0, 1000) < VALID_PROB;
+        rand_weights_r  <= $urandom_range(0, 1000) < VALID_PROB;
+        rand_weights_ar <= $urandom_range(0, 1000) < VALID_PROB;
+        rand_output_aw  <= $urandom_range(0, 1000) < READY_PROB;
+        rand_output_w   <= $urandom_range(0, 1000) < READY_PROB;
+        rand_output_b   <= $urandom_range(0, 1000) < READY_PROB;
     end
 
-    assign m_axi_pixel_arvalid_zipcpu = rand_pixel_ar & m_axi_pixel_arvalid;
-    assign m_axi_pixel_arready        = rand_pixel_ar & m_axi_pixel_arready_zipcpu;
-    assign m_axi_pixel_rvalid         = rand_pixel_r & m_axi_pixel_rvalid_zipcpu;
-    assign m_axi_pixel_rready_zipcpu  = rand_pixel_r & m_axi_pixel_rready;
+    assign m_axi_pixel_arvalid_zipcpu   = rand_pixel_ar & m_axi_pixel_arvalid;
+    assign m_axi_pixel_arready          = rand_pixel_ar & m_axi_pixel_arready_zipcpu;
+    assign m_axi_pixel_rvalid           = rand_pixel_r  & m_axi_pixel_rvalid_zipcpu;
+    assign m_axi_pixel_rready_zipcpu    = rand_pixel_r  & m_axi_pixel_rready;
 
     assign m_axi_weights_arvalid_zipcpu = rand_weights_ar & m_axi_weights_arvalid;
     assign m_axi_weights_arready        = rand_weights_ar & m_axi_weights_arready_zipcpu;
-    assign m_axi_weights_rvalid         = rand_weights_r & m_axi_weights_rvalid_zipcpu;
-    assign m_axi_weights_rready_zipcpu  = rand_weights_r & m_axi_weights_rready;
+    assign m_axi_weights_rvalid         = rand_weights_r  & m_axi_weights_rvalid_zipcpu;
+    assign m_axi_weights_rready_zipcpu  = rand_weights_r  & m_axi_weights_rready;
 
     assign m_axi_output_awvalid_zipcpu = rand_output_aw & m_axi_output_awvalid;
     assign m_axi_output_awready        = rand_output_aw & m_axi_output_awready_zipcpu;
-    assign m_axi_output_wvalid_zipcpu  = rand_output_w & m_axi_output_wvalid;
-    assign m_axi_output_wready         = rand_output_w & m_axi_output_wready_zipcpu;
-    assign m_axi_output_bvalid         = rand_output_b & m_axi_output_bvalid_zipcpu;
-    assign m_axi_output_bready_zipcpu  = rand_output_b & m_axi_output_bready;
+    assign m_axi_output_wvalid_zipcpu  = rand_output_w  & m_axi_output_wvalid;
+    assign m_axi_output_wready         = rand_output_w  & m_axi_output_wready_zipcpu;
+    assign m_axi_output_bvalid         = rand_output_b  & m_axi_output_bvalid_zipcpu;
+    assign m_axi_output_bready_zipcpu  = rand_output_b  & m_axi_output_bready;
 
 
 zipcpu_axi2ram #(
@@ -396,7 +397,7 @@ zipcpu_axi2ram #(
     .S_AXI_RREADY(1'b0)
 );
 
-rtl_oc_top #(
+axi_cgra4ml #(
     .ROWS(ROWS),
     .COLS(COLS),
     .X_BITS(X_BITS),
@@ -405,9 +406,7 @@ rtl_oc_top #(
     .Y_OUT_BITS(Y_OUT_BITS),
     .M_DATA_WIDTH_HF_CONV(M_DATA_WIDTH_HF_CONV),
     .M_DATA_WIDTH_HF_CONV_DW(M_DATA_WIDTH_HF_CONV_DW),
-    .S_PIXELS_WIDTH_LF(S_PIXELS_WIDTH_LF),
-    .S_WEIGHTS_WIDTH_LF(S_WEIGHTS_WIDTH_LF),
-    .M_OUTPUT_WIDTH_LF(M_OUTPUT_WIDTH_LF),
+    .AXI_WIDTH(AXI_WIDTH),
     .W_BPT(W_BPT),
     .OUT_ADDR_WIDTH(OUT_ADDR_WIDTH),
     .OUT_BITS(OUT_BITS),
