@@ -2,8 +2,8 @@
 add_files  [glob $CONFIG_DIR/*.svh] [glob $RTL_DIR/*] [glob $RTL_DIR/ext/*]
 update_compile_order -fileset sources_1
 
-set_property top rtl_oc_top [current_fileset]
-create_bd_cell -type module -reference rtl_oc_top rtl_oc_top_0
+set_property top axi_cgra4ml [current_fileset]
+create_bd_cell -type module -reference axi_cgra4ml rtl_oc_top_0
 
 # Connect full AXI ports
 connect_bd_intf_net [get_bd_intf_pins rtl_oc_top_0/m_axi_output] [get_bd_intf_pins zynq_ultra_ps_e_0/S_AXI_HPC0_FPD]

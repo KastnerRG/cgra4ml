@@ -34,19 +34,20 @@ module axi_sys_tb;
   logic [1:0]                s_axil_rresp;
   logic                      s_axil_rvalid;
   logic                      s_axil_rready;
-  logic                                  o_rd_pixel;
-  logic   [C_S_AXI_ADDR_WIDTH-LSB-1:0]   o_raddr_pixel;
-  logic   [C_S_AXI_DATA_WIDTH-1:0]       i_rdata_pixel;
-  logic                                  o_rd_weights;
-  logic   [C_S_AXI_ADDR_WIDTH-LSB-1:0]   o_raddr_weights;
-  logic   [C_S_AXI_DATA_WIDTH-1:0]       i_rdata_weights;
-  logic                                  o_we_output;
-  logic  [C_S_AXI_ADDR_WIDTH-LSB-1:0]    o_waddr_output;
-  logic  [C_S_AXI_DATA_WIDTH-1:0]        o_wdata_output;
-  logic  [C_S_AXI_DATA_WIDTH/8-1:0]      o_wstrb_output;
 
-  rtl_sim_top dut(.*);
-  
+  logic                              o_rd_pixel;
+  logic [C_S_AXI_ADDR_WIDTH-LSB-1:0] o_raddr_pixel;
+  logic [C_S_AXI_DATA_WIDTH    -1:0] i_rdata_pixel;
+  logic                              o_rd_weights;
+  logic [C_S_AXI_ADDR_WIDTH-LSB-1:0] o_raddr_weights;
+  logic [C_S_AXI_DATA_WIDTH    -1:0] i_rdata_weights;
+  logic                              o_we_output;
+  logic [C_S_AXI_ADDR_WIDTH-LSB-1:0] o_waddr_output;
+  logic [C_S_AXI_DATA_WIDTH    -1:0] o_wdata_output;
+  logic [C_S_AXI_DATA_WIDTH/8  -1:0] o_wstrb_output;
+
+  cgra4ml_axi2ram_tb dut(.*);
+
   logic clk = 0;
   initial forever #(`CLK_PERIOD/2) clk = ~clk;
 

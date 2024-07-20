@@ -133,10 +133,10 @@ class QModel(Model):
             for ib, b in enumerate(bundles):
                 assert ib == b.idx
 
-                w_bpt    = (hw.K_BITS*b.we[-1][0].size + hw.IN_BITS)//8
-                w_bpt_p0 = (hw.K_BITS*b.we[0][0].size + hw.IN_BITS )//8
-                x_bpt    = (hw.X_BITS*b.xe[-1].size + hw.IN_BITS   )//8 
-                x_bpt_p0 = (hw.X_BITS*b.xe[0].size + hw.IN_BITS    )//8
+                w_bpt    = (hw.K_BITS*b.we[-1][0].size + hw.AXI_WIDTH)//8
+                w_bpt_p0 = (hw.K_BITS*b.we[0][0].size + hw.AXI_WIDTH )//8
+                x_bpt    = (hw.X_BITS*b.xe[-1].size + hw.AXI_WIDTH   )//8 
+                x_bpt_p0 = (hw.X_BITS*b.xe[0].size + hw.AXI_WIDTH    )//8
                 
                 if ib == len(bundles)-1:
                     o_words_b = b.o_int.size
@@ -148,8 +148,8 @@ class QModel(Model):
                     o_wpt_p0  = b_next.xe[0].size
                     o_words_b = o_wpt_p0 + (b_next.r.CP-1)*o_wpt
 
-                    o_bpt = (hw.X_BITS*b_next.xe[-1].size + hw.IN_BITS)//8
-                    o_bpt_p0 = (hw.X_BITS*b_next.xe[0].size + hw.IN_BITS)//8
+                    o_bpt = (hw.X_BITS*b_next.xe[-1].size + hw.AXI_WIDTH)//8
+                    o_bpt_p0 = (hw.X_BITS*b_next.xe[0].size + hw.AXI_WIDTH)//8
                     o_bytes_b = o_bpt_p0 + (b_next.r.CP-1)*o_bpt
 
                 xp_words  = b.r.XN * b.r.XL * b.r.XW * (hw.ROWS+b.r.X_PAD)
@@ -229,7 +229,7 @@ class QModel(Model):
             ch.write(f"#define B_TYPE      int{hw.B_BITS}_t\n")
             ch.write(f"#define O_TYPE      {out_type}\n")
             ch.write(f"#define B_WORDS     {b_words}\n")
-            ch.write(f"#define AXI_WIDTH   {hw.IN_BITS}\n")
+            ch.write(f"#define AXI_WIDTH   {hw.AXI_WIDTH}\n")
             ch.write(f'#define DATA_DIR   "../{hw.DATA_DIR}"\n\n')
 
             mask_nums = [(2**hw.X_BITS-1) << (p*hw.X_BITS)  for p in range(8//hw.X_BITS)]
@@ -244,7 +244,7 @@ class QModel(Model):
         b_bitstring = b''
         x_bitstring_0 = b''
 
-        header_padding = b'\x00\x00\x00\x00\x00\x00\x00\x00' if hw.IN_BITS == 128 else b''
+        header_padding = b'\x00\x00\x00\x00\x00\x00\x00\x00' if hw.AXI_WIDTH == 128 else b''
 
         for ib, b in enumerate(bundles):
             assert ib == b.idx
@@ -286,28 +286,28 @@ class QModel(Model):
             for ip in range(b.r.CP):
                 CM_p = b.r.CM_0 if ip==0 else b.r.CM
                 x_config = b.r.x_header_le_p[ip!=0][0]
-                x_config = format(x_config, f'#0{hw.IN_BITS}b')
+                x_config = format(x_config, f'#0{hw.AXI_WIDTH}b')
                 x_config_words = [int(x_config[i:i+hw.X_BITS], 2) for i in range(0, len(x_config), hw.X_BITS)]
                 x_config_words.reverse()
                 x_config_words = np.array(x_config_words, dtype=np.uint8)
 
                 xp = b.xe[ip].flatten()
                 xp = np.concatenate([x_config_words, xp], axis=0)
-                # assert xp.shape == (hw.IN_BITS/hw.X_BITS +b.r.XN*b.r.XL*b.r.XW*CM_p*(hw.ROWS+r.XPAD),)
+                # assert xp.shape == (hw.AXI_WIDTH/hw.X_BITS +b.r.XN*b.r.XL*b.r.XW*CM_p*(hw.ROWS+r.XPAD),)
                 np.savetxt(f"{hw.DATA_DIR}/{b.idx}_{ip}_x.txt", xp, fmt='%d')
 
 
                 for it in range(b.r.IT):
                     
                     w_config = b.r.w_header_le_p[ip!=0][0]
-                    w_config = format(w_config, f'#0{hw.IN_BITS}b')
+                    w_config = format(w_config, f'#0{hw.AXI_WIDTH}b')
                     w_config_words = [int(w_config[i:i+hw.K_BITS], 2) for i in range(0, len(w_config), hw.K_BITS)]
                     w_config_words.reverse()
                     w_config_words = np.array(w_config_words, dtype=np.uint8)
 
                     wp = b.we[ip][it].flatten()            
                     wp = np.concatenate([w_config_words, wp], axis=0)
-                    assert wp.shape == (hw.IN_BITS/hw.K_BITS + (CM_p*b.r.KH+hw.CONFIG_BEATS)*hw.COLS,)
+                    assert wp.shape == (hw.AXI_WIDTH/hw.K_BITS + (CM_p*b.r.KH+hw.CONFIG_BEATS)*hw.COLS,)
                     np.savetxt(f"{hw.DATA_DIR}/{b.idx}_{ip}_{it}_w.txt", wp, fmt='%d')
 
                     np.savetxt(f"{hw.DATA_DIR}/{b.idx}_{ip}_{it}_y_exp.txt", b.ye_exp_p[ip][it].flatten(), fmt='%d')

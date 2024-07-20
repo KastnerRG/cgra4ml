@@ -262,7 +262,7 @@ extern EXT_C uint8_t model_run() {
 
 #endif
 
-  debug_printf("Starting model_rn()");
+  debug_printf("Starting model_run()\n");
   set_config(4*A_START, 1); 
 
   for (ib = 0; ib < N_BUNDLES; ib++) {
