@@ -580,6 +580,7 @@ extern EXT_C void fill_memory (){
 
   sprintf(f_path, "%s/wbx.bin", DATA_DIR);
   fp = fopen(f_path, "rb");
+  debug_printf("DEBUG: Reading from file %s \n", f_path);
   if(!fp)
     debug_printf("ERROR! File not found: %s \n", f_path);
   int bytes = fread(mem.w, 1, WB_BYTES+X_BYTES, fp);
