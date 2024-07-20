@@ -228,7 +228,7 @@ module rtl_sim_top #(
     assign m_axi_output_bready_zipcpu  = rand_output_b & m_axi_output_bready;
 
 
-demofull #(
+zipcpu_axi2ram #(
     .C_S_AXI_ID_WIDTH(C_S_AXI_ID_WIDTH),
     .C_S_AXI_DATA_WIDTH(C_S_AXI_DATA_WIDTH),
     .C_S_AXI_ADDR_WIDTH(C_S_AXI_ADDR_WIDTH),
@@ -284,7 +284,7 @@ demofull #(
     .S_AXI_RREADY(m_axi_pixel_rready_zipcpu)
 );
 
-demofull #(
+zipcpu_axi2ram #(
     .C_S_AXI_ID_WIDTH(C_S_AXI_ID_WIDTH),
     .C_S_AXI_DATA_WIDTH(C_S_AXI_DATA_WIDTH),
     .C_S_AXI_ADDR_WIDTH(C_S_AXI_ADDR_WIDTH),
@@ -340,7 +340,7 @@ demofull #(
     .S_AXI_RREADY(m_axi_weights_rready_zipcpu)
 );
 
-demofull #(
+zipcpu_axi2ram #(
     .C_S_AXI_ID_WIDTH(C_S_AXI_ID_WIDTH),
     .C_S_AXI_DATA_WIDTH(C_S_AXI_DATA_WIDTH),
     .C_S_AXI_ADDR_WIDTH(C_S_AXI_ADDR_WIDTH),

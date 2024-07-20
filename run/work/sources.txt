@@ -1,9 +1,8 @@
-D:\cgra4ml\deepsocflow\test\sv\axis_tb.sv
 D:\cgra4ml\deepsocflow\test\sv\axi_sys_tb.sv
 D:\cgra4ml\deepsocflow\test\sv\rtl_sim_top.sv
 D:\cgra4ml\deepsocflow\test\sv\ext\axi_addr.v
-D:\cgra4ml\deepsocflow\test\sv\ext\demofull.v
 D:\cgra4ml\deepsocflow\test\sv\ext\skidbuffer.v
+D:\cgra4ml\deepsocflow\test\sv\ext\zipcpu_axi2ram.v
 D:\cgra4ml\deepsocflow\rtl\dnn_engine.v
 D:\cgra4ml\deepsocflow\rtl\rtl_oc_top.v
 D:\cgra4ml\deepsocflow\rtl\ext\alex_axilite_ram.v

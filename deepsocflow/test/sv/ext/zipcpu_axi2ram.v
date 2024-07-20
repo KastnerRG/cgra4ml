@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Filename: 	demofull.v
+// Filename: 	zipcpu_axi2ram.v
 // {{{
 // Project:	WB2AXIPSP: bus bridges and other odds and ends
 //
@@ -42,7 +42,7 @@
 //
 `timescale 1ns/1ps
 // }}}
-module demofull #(
+module zipcpu_axi2ram #(
 		// {{{
 		parameter integer C_S_AXI_ID_WIDTH	= 6,
 		parameter integer C_S_AXI_DATA_WIDTH	= 128,
