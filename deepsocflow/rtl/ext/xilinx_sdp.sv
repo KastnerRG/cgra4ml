@@ -67,7 +67,7 @@ module asym_ram_sdp_read_wider (
     reg [log2RATIO-1:0] lsbaddr;
     if (enaB) begin
       for (i = 0; i < RATIO; i = i + 1) begin
-        lsbaddr = log2RATIO'(i);
+        lsbaddr = i;
         readB[(i+1)*minWIDTH-1-:minWIDTH] <= RAM[{addrB, lsbaddr}];
       end
     end
