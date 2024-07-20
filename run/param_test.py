@@ -8,8 +8,6 @@ import tensorflow as tf
 from deepsocflow import Bundle, Hardware, QModel, QInput
 
 # Simulator: xsim on windows, verilator otherwise
-#(SIM, SIM_PATH) = ('xsim', "/opt/Xilinx/Vivado/2022.2/bin/") 
-# (SIM, SIM_PATH) = ('verilator', "")
 (SIM, SIM_PATH) = ('xsim', "F:/Xilinx/Vivado/2022.2/bin/") if os.name=='nt' else ('verilator', '')
 def product_dict(**kwargs):
     for instance in itertools.product(*(kwargs.values())):
@@ -30,8 +28,8 @@ def product_dict(**kwargs):
                                         ram_edges_depth      = [ 288     ],
                                         axi_width            = [ 128     ],
                                         target_cpu_int_bits  = [ 32      ],
-                                        valid_prob           = [ 0.01    ],
-                                        ready_prob           = [ 0.1     ],
+                                        valid_prob           = [ 1    ],
+                                        ready_prob           = [ 1     ],
                                         data_dir             = ['vectors'],
                                     )))
 def test_dnn_engine(PARAMS):

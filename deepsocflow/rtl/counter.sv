@@ -22,7 +22,7 @@ module counter #(parameter W = 8)(
       count  <= count_next;
     end
   
-  assign last_clk = en && last && rstn_g && !rst_l;
+  assign last_clk = en && last;
   assign first = count == max;
 
 endmodule
