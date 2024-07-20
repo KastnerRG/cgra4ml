@@ -26,6 +26,9 @@ THE SOFTWARE.
 /*
  * AXI lite register interface module (read)
  */
+`timescale 1ns / 1ps
+`include "../defines.svh"
+
 module alex_axilite_rd #
 (
     // Width of data bus in bits
@@ -65,14 +68,12 @@ module alex_axilite_rd #
 
 parameter TIMEOUT_WIDTH = 0;
 
-reg [TIMEOUT_WIDTH-1:0] timeout_count_reg = 0, timeout_count_next;
-
-reg [ADDR_WIDTH-1:0] s_axil_araddr_reg = {ADDR_WIDTH{1'b0}}, s_axil_araddr_next;
-reg s_axil_arvalid_reg = 1'b0, s_axil_arvalid_next;
-reg [DATA_WIDTH-1:0] s_axil_rdata_reg = {DATA_WIDTH{1'b0}}, s_axil_rdata_next;
-reg s_axil_rvalid_reg = 1'b0, s_axil_rvalid_next;
-
-reg reg_rd_en_reg = 1'b0, reg_rd_en_next;
+reg [TIMEOUT_WIDTH-1:0] timeout_count_reg, timeout_count_next;
+reg [ADDR_WIDTH-1:0] s_axil_araddr_reg, s_axil_araddr_next;
+reg s_axil_arvalid_reg, s_axil_arvalid_next;
+reg [DATA_WIDTH-1:0] s_axil_rdata_reg, s_axil_rdata_next;
+reg s_axil_rvalid_reg, s_axil_rvalid_next;
+reg reg_rd_en_reg, reg_rd_en_next;
 
 assign s_axil_arready = !s_axil_arvalid_reg;
 assign s_axil_rdata = s_axil_rdata_reg;
@@ -109,7 +110,22 @@ always @* begin
     reg_rd_en_next = s_axil_arvalid_next && !s_axil_rvalid_next;
 end
 
-always @(posedge clk) begin
+always @(posedge clk `OR_NEGEDGE(rstn)) begin
+    if (!rstn) begin
+
+        timeout_count_reg <= 0;
+        s_axil_araddr_reg <= {ADDR_WIDTH{1'b0}};
+        s_axil_arvalid_reg <= 1'b0;
+        s_axil_rdata_reg <= {DATA_WIDTH{1'b0}};
+        s_axil_rvalid_reg <= 1'b0;
+        reg_rd_en_reg <= 1'b0;
+
+
+        s_axil_arvalid_reg <= 1'b0;
+        s_axil_rvalid_reg <= 1'b0;
+        reg_rd_en_reg <= 1'b0;
+    end else begin
+
     timeout_count_reg <= timeout_count_next;
 
     s_axil_araddr_reg <= s_axil_araddr_next;
@@ -118,11 +134,6 @@ always @(posedge clk) begin
     s_axil_rvalid_reg <= s_axil_rvalid_next;
 
     reg_rd_en_reg <= reg_rd_en_next;
-
-    if (!rstn) begin
-        s_axil_arvalid_reg <= 1'b0;
-        s_axil_rvalid_reg <= 1'b0;
-        reg_rd_en_reg <= 1'b0;
     end
 end
 

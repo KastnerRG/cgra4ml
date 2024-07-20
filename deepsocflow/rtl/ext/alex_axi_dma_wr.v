@@ -27,6 +27,7 @@ THE SOFTWARE.
 `resetall
 `timescale 1ns / 1ps
 `default_nettype none
+`include "../defines.svh"
 
 /*
  * AXI4 DMA
@@ -236,31 +237,31 @@ reg status_fifo_we;
 integer i;
 reg [OFFSET_WIDTH:0] cycle_size;
 
-reg [AXI_ADDR_WIDTH-1:0] addr_reg = {AXI_ADDR_WIDTH{1'b0}}, addr_next;
-reg [LEN_WIDTH-1:0] op_word_count_reg = {LEN_WIDTH{1'b0}}, op_word_count_next;
-reg [LEN_WIDTH-1:0] tr_word_count_reg = {LEN_WIDTH{1'b0}}, tr_word_count_next;
+reg [AXI_ADDR_WIDTH-1:0] addr_reg, addr_next;
+reg [LEN_WIDTH-1:0] op_word_count_reg, op_word_count_next;
+reg [LEN_WIDTH-1:0] tr_word_count_reg, tr_word_count_next;
 
-reg [OFFSET_WIDTH-1:0] offset_reg = {OFFSET_WIDTH{1'b0}}, offset_next;
-reg [AXI_STRB_WIDTH-1:0] strb_offset_mask_reg = {AXI_STRB_WIDTH{1'b1}}, strb_offset_mask_next;
-reg zero_offset_reg = 1'b1, zero_offset_next;
-reg [OFFSET_WIDTH-1:0] last_cycle_offset_reg = {OFFSET_WIDTH{1'b0}}, last_cycle_offset_next;
-reg [LEN_WIDTH-1:0] length_reg = {LEN_WIDTH{1'b0}}, length_next;
-reg [CYCLE_COUNT_WIDTH-1:0] input_cycle_count_reg = {CYCLE_COUNT_WIDTH{1'b0}}, input_cycle_count_next;
-reg [CYCLE_COUNT_WIDTH-1:0] output_cycle_count_reg = {CYCLE_COUNT_WIDTH{1'b0}}, output_cycle_count_next;
-reg input_active_reg = 1'b0, input_active_next;
-reg first_cycle_reg = 1'b0, first_cycle_next;
-reg input_last_cycle_reg = 1'b0, input_last_cycle_next;
-reg output_last_cycle_reg = 1'b0, output_last_cycle_next;
-reg last_transfer_reg = 1'b0, last_transfer_next;
-reg [1:0] bresp_reg = AXI_RESP_OKAY, bresp_next;
+reg [OFFSET_WIDTH-1:0] offset_reg, offset_next;
+reg [AXI_STRB_WIDTH-1:0] strb_offset_mask_reg, strb_offset_mask_next;
+reg zero_offset_reg, zero_offset_next;
+reg [OFFSET_WIDTH-1:0] last_cycle_offset_reg, last_cycle_offset_next;
+reg [LEN_WIDTH-1:0] length_reg, length_next;
+reg [CYCLE_COUNT_WIDTH-1:0] input_cycle_count_reg, input_cycle_count_next;
+reg [CYCLE_COUNT_WIDTH-1:0] output_cycle_count_reg, output_cycle_count_next;
+reg input_active_reg, input_active_next;
+reg first_cycle_reg, first_cycle_next;
+reg input_last_cycle_reg, input_last_cycle_next;
+reg output_last_cycle_reg, output_last_cycle_next;
+reg last_transfer_reg, last_transfer_next;
+reg [1:0] bresp_reg, bresp_next;
 
-reg [TAG_WIDTH-1:0] tag_reg = {TAG_WIDTH{1'b0}}, tag_next;
-reg [AXIS_ID_WIDTH-1:0] axis_id_reg = {AXIS_ID_WIDTH{1'b0}}, axis_id_next;
-reg [AXIS_DEST_WIDTH-1:0] axis_dest_reg = {AXIS_DEST_WIDTH{1'b0}}, axis_dest_next;
-reg [AXIS_USER_WIDTH-1:0] axis_user_reg = {AXIS_USER_WIDTH{1'b0}}, axis_user_next;
+reg [TAG_WIDTH-1:0] tag_reg, tag_next;
+reg [AXIS_ID_WIDTH-1:0] axis_id_reg, axis_id_next;
+reg [AXIS_DEST_WIDTH-1:0] axis_dest_reg, axis_dest_next;
+reg [AXIS_USER_WIDTH-1:0] axis_user_reg, axis_user_next;
 
-reg [STATUS_FIFO_ADDR_WIDTH+1-1:0] status_fifo_wr_ptr_reg = 0;
-reg [STATUS_FIFO_ADDR_WIDTH+1-1:0] status_fifo_rd_ptr_reg = 0, status_fifo_rd_ptr_next;
+reg [STATUS_FIFO_ADDR_WIDTH+1-1:0] status_fifo_wr_ptr_reg;
+reg [STATUS_FIFO_ADDR_WIDTH+1-1:0] status_fifo_rd_ptr_reg, status_fifo_rd_ptr_next;
 reg [LEN_WIDTH-1:0] status_fifo_len[(2**STATUS_FIFO_ADDR_WIDTH)-1:0];
 reg [TAG_WIDTH-1:0] status_fifo_tag[(2**STATUS_FIFO_ADDR_WIDTH)-1:0];
 reg [AXIS_ID_WIDTH-1:0] status_fifo_id[(2**STATUS_FIFO_ADDR_WIDTH)-1:0];
@@ -274,31 +275,31 @@ reg [AXIS_DEST_WIDTH-1:0] status_fifo_wr_dest;
 reg [AXIS_USER_WIDTH-1:0] status_fifo_wr_user;
 reg status_fifo_wr_last;
 
-reg [STATUS_FIFO_ADDR_WIDTH+1-1:0] active_count_reg = 0;
-reg active_count_av_reg = 1'b1;
+reg [STATUS_FIFO_ADDR_WIDTH+1-1:0] active_count_reg;
+reg active_count_av_reg;
 reg inc_active;
 reg dec_active;
 
-reg s_axis_write_desc_ready_reg = 1'b0, s_axis_write_desc_ready_next;
+reg s_axis_write_desc_ready_reg, s_axis_write_desc_ready_next;
 
-reg [LEN_WIDTH-1:0] m_axis_write_desc_status_len_reg = {LEN_WIDTH{1'b0}}, m_axis_write_desc_status_len_next;
-reg [TAG_WIDTH-1:0] m_axis_write_desc_status_tag_reg = {TAG_WIDTH{1'b0}}, m_axis_write_desc_status_tag_next;
-reg [AXIS_ID_WIDTH-1:0] m_axis_write_desc_status_id_reg = {AXIS_ID_WIDTH{1'b0}}, m_axis_write_desc_status_id_next;
-reg [AXIS_DEST_WIDTH-1:0] m_axis_write_desc_status_dest_reg = {AXIS_DEST_WIDTH{1'b0}}, m_axis_write_desc_status_dest_next;
-reg [AXIS_USER_WIDTH-1:0] m_axis_write_desc_status_user_reg = {AXIS_USER_WIDTH{1'b0}}, m_axis_write_desc_status_user_next;
-reg [3:0] m_axis_write_desc_status_error_reg = 4'd0, m_axis_write_desc_status_error_next;
-reg m_axis_write_desc_status_valid_reg = 1'b0, m_axis_write_desc_status_valid_next;
+reg [LEN_WIDTH-1:0] m_axis_write_desc_status_len_reg, m_axis_write_desc_status_len_next;
+reg [TAG_WIDTH-1:0] m_axis_write_desc_status_tag_reg, m_axis_write_desc_status_tag_next;
+reg [AXIS_ID_WIDTH-1:0] m_axis_write_desc_status_id_reg, m_axis_write_desc_status_id_next;
+reg [AXIS_DEST_WIDTH-1:0] m_axis_write_desc_status_dest_reg, m_axis_write_desc_status_dest_next;
+reg [AXIS_USER_WIDTH-1:0] m_axis_write_desc_status_user_reg, m_axis_write_desc_status_user_next;
+reg [3:0] m_axis_write_desc_status_error_reg, m_axis_write_desc_status_error_next;
+reg m_axis_write_desc_status_valid_reg, m_axis_write_desc_status_valid_next;
 
-reg [AXI_ADDR_WIDTH-1:0] m_axi_awaddr_reg = {AXI_ADDR_WIDTH{1'b0}}, m_axi_awaddr_next;
-reg [7:0] m_axi_awlen_reg = 8'd0, m_axi_awlen_next;
-reg m_axi_awvalid_reg = 1'b0, m_axi_awvalid_next;
-reg m_axi_bready_reg = 1'b0, m_axi_bready_next;
+reg [AXI_ADDR_WIDTH-1:0] m_axi_awaddr_reg, m_axi_awaddr_next;
+reg [7:0] m_axi_awlen_reg, m_axi_awlen_next;
+reg m_axi_awvalid_reg, m_axi_awvalid_next;
+reg m_axi_bready_reg, m_axi_bready_next;
 
-reg s_axis_write_data_tready_reg = 1'b0, s_axis_write_data_tready_next;
+reg s_axis_write_data_tready_reg, s_axis_write_data_tready_next;
 
-reg [AXIS_DATA_WIDTH-1:0] save_axis_tdata_reg = {AXIS_DATA_WIDTH{1'b0}};
-reg [AXIS_KEEP_WIDTH_INT-1:0] save_axis_tkeep_reg = {AXIS_KEEP_WIDTH_INT{1'b0}};
-reg save_axis_tlast_reg = 1'b0;
+reg [AXIS_DATA_WIDTH-1:0] save_axis_tdata_reg;
+reg [AXIS_KEEP_WIDTH_INT-1:0] save_axis_tkeep_reg;
+reg save_axis_tlast_reg;
 
 reg [AXIS_DATA_WIDTH-1:0] shift_axis_tdata;
 reg [AXIS_KEEP_WIDTH_INT-1:0] shift_axis_tkeep;
@@ -791,7 +792,84 @@ always @* begin
     end
 end
 
-always @(posedge clk) begin
+always @(posedge clk `OR_NEGEDGE(rstn)) begin
+
+    if (!rstn) begin
+
+        state_reg <= STATE_IDLE;
+
+        addr_reg <= {AXI_ADDR_WIDTH{1'b0}};
+        op_word_count_reg <= {LEN_WIDTH{1'b0}};
+        tr_word_count_reg <= {LEN_WIDTH{1'b0}};
+
+        offset_reg <= {OFFSET_WIDTH{1'b0}};
+        strb_offset_mask_reg <= {AXI_STRB_WIDTH{1'b1}};
+        zero_offset_reg <= 1'b1;
+        last_cycle_offset_reg <= {OFFSET_WIDTH{1'b0}};
+        length_reg <= {LEN_WIDTH{1'b0}};
+        input_cycle_count_reg <= {CYCLE_COUNT_WIDTH{1'b0}};
+        output_cycle_count_reg <= {CYCLE_COUNT_WIDTH{1'b0}};
+        input_active_reg <= 1'b0;
+        first_cycle_reg <= 1'b0;
+        input_last_cycle_reg <= 1'b0;
+        output_last_cycle_reg <= 1'b0;
+        last_transfer_reg <= 1'b0;
+        bresp_reg <= AXI_RESP_OKAY;
+
+        tag_reg <= {TAG_WIDTH{1'b0}};
+        axis_id_reg <= {AXIS_ID_WIDTH{1'b0}};
+        axis_dest_reg <= {AXIS_DEST_WIDTH{1'b0}};
+        axis_user_reg <= {AXIS_USER_WIDTH{1'b0}};
+
+        status_fifo_wr_ptr_reg <= 0;
+        status_fifo_rd_ptr_reg <= 0;
+
+        active_count_reg <= 0;
+        active_count_av_reg <= 1'b1;
+
+        s_axis_write_desc_ready_reg <= 1'b0;
+
+        m_axis_write_desc_status_len_reg <= {LEN_WIDTH{1'b0}};
+        m_axis_write_desc_status_tag_reg <= {TAG_WIDTH{1'b0}};
+        m_axis_write_desc_status_id_reg <= {AXIS_ID_WIDTH{1'b0}};
+        m_axis_write_desc_status_dest_reg <= {AXIS_DEST_WIDTH{1'b0}};
+        m_axis_write_desc_status_user_reg <= {AXIS_USER_WIDTH{1'b0}};
+        m_axis_write_desc_status_error_reg <= 4'd0;
+        m_axis_write_desc_status_valid_reg <= 1'b0;
+
+        m_axi_awaddr_reg <= {AXI_ADDR_WIDTH{1'b0}};
+        m_axi_awlen_reg <= 8'd0;
+        m_axi_awvalid_reg <= 1'b0;
+        m_axi_bready_reg <= 1'b0;
+
+        s_axis_write_data_tready_reg <= 1'b0;
+
+        // Already existed
+
+        state_reg <= STATE_IDLE;
+
+        s_axis_write_desc_ready_reg <= 1'b0;
+        m_axis_write_desc_status_valid_reg <= 1'b0;
+
+        s_axis_write_data_tready_reg <= 1'b0;
+
+        m_axi_awvalid_reg <= 1'b0;
+        m_axi_bready_reg <= 1'b0;
+
+        bresp_reg <= AXI_RESP_OKAY;
+
+        save_axis_tlast_reg <= 1'b0;
+        shift_axis_extra_cycle_reg <= 1'b0;
+
+        status_fifo_wr_ptr_reg <= 0;
+        status_fifo_rd_ptr_reg <= 0;
+
+        active_count_reg <= 0;
+        active_count_av_reg <= 1'b1;
+
+    end else begin
+
+
     state_reg <= state_next;
 
     s_axis_write_desc_ready_reg <= s_axis_write_desc_ready_next;
@@ -866,39 +944,18 @@ always @(posedge clk) begin
         active_count_av_reg <= active_count_reg < 2**STATUS_FIFO_ADDR_WIDTH;
     end
 
-    if (!rstn) begin
-        state_reg <= STATE_IDLE;
-
-        s_axis_write_desc_ready_reg <= 1'b0;
-        m_axis_write_desc_status_valid_reg <= 1'b0;
-
-        s_axis_write_data_tready_reg <= 1'b0;
-
-        m_axi_awvalid_reg <= 1'b0;
-        m_axi_bready_reg <= 1'b0;
-
-        bresp_reg <= AXI_RESP_OKAY;
-
-        save_axis_tlast_reg <= 1'b0;
-        shift_axis_extra_cycle_reg <= 1'b0;
-
-        status_fifo_wr_ptr_reg <= 0;
-        status_fifo_rd_ptr_reg <= 0;
-
-        active_count_reg <= 0;
-        active_count_av_reg <= 1'b1;
     end
 end
 
 // output datapath logic
-reg [AXI_DATA_WIDTH-1:0] m_axi_wdata_reg  = {AXI_DATA_WIDTH{1'b0}};
-reg [AXI_STRB_WIDTH-1:0] m_axi_wstrb_reg  = {AXI_STRB_WIDTH{1'b0}};
-reg                      m_axi_wlast_reg  = 1'b0;
-reg                      m_axi_wvalid_reg = 1'b0;
+reg [AXI_DATA_WIDTH-1:0] m_axi_wdata_reg ;
+reg [AXI_STRB_WIDTH-1:0] m_axi_wstrb_reg ;
+reg                      m_axi_wlast_reg ;
+reg                      m_axi_wvalid_reg;
 
-reg [OUTPUT_FIFO_ADDR_WIDTH+1-1:0] out_fifo_wr_ptr_reg = 0;
-reg [OUTPUT_FIFO_ADDR_WIDTH+1-1:0] out_fifo_rd_ptr_reg = 0;
-reg out_fifo_half_full_reg = 1'b0;
+reg [OUTPUT_FIFO_ADDR_WIDTH+1-1:0] out_fifo_wr_ptr_reg;
+reg [OUTPUT_FIFO_ADDR_WIDTH+1-1:0] out_fifo_rd_ptr_reg;
+reg out_fifo_half_full_reg;
 
 wire out_fifo_full = out_fifo_wr_ptr_reg == (out_fifo_rd_ptr_reg ^ {1'b1, {OUTPUT_FIFO_ADDR_WIDTH{1'b0}}});
 wire out_fifo_empty = out_fifo_wr_ptr_reg == out_fifo_rd_ptr_reg;
@@ -917,7 +974,19 @@ assign m_axi_wstrb  = m_axi_wstrb_reg;
 assign m_axi_wvalid = m_axi_wvalid_reg;
 assign m_axi_wlast  = m_axi_wlast_reg;
 
-always @(posedge clk) begin
+always @(posedge clk `OR_NEGEDGE(rstn)) begin
+    if (!rstn) begin
+    
+        m_axi_wdata_reg  <= {AXI_DATA_WIDTH{1'b0}};
+        m_axi_wstrb_reg  <= {AXI_STRB_WIDTH{1'b0}};
+        m_axi_wlast_reg  <= 1'b0;
+
+        out_fifo_wr_ptr_reg <= 0;
+        out_fifo_rd_ptr_reg <= 0;
+        m_axi_wvalid_reg <= 1'b0;
+
+    end else begin
+
     m_axi_wvalid_reg <= m_axi_wvalid_reg && !m_axi_wready;
 
     out_fifo_half_full_reg <= $unsigned(out_fifo_wr_ptr_reg - out_fifo_rd_ptr_reg) >= 2**(OUTPUT_FIFO_ADDR_WIDTH-1);
@@ -936,11 +1005,6 @@ always @(posedge clk) begin
         m_axi_wvalid_reg <= 1'b1;
         out_fifo_rd_ptr_reg <= out_fifo_rd_ptr_reg + 1;
     end
-
-    if (!rstn) begin
-        out_fifo_wr_ptr_reg <= 0;
-        out_fifo_rd_ptr_reg <= 0;
-        m_axi_wvalid_reg <= 1'b0;
     end
 end
 
