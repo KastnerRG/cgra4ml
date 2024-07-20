@@ -230,8 +230,8 @@ class QModel(Model):
             ch.write(f"#define O_TYPE      {out_type}\n")
             ch.write(f"#define B_WORDS     {b_words}\n")
             ch.write(f"#define AXI_WIDTH   {hw.AXI_WIDTH}\n")
-            ch.write(f"#define MEM_BASEADDR   {hw.MEM_BASEADDR}\n")
-            ch.write(f"#define CONFIG_BASEADDR   {hw.CONFIG_BASEADDR}\n")
+            ch.write(f"#define MEM_BASEADDR   0x{hw.MEM_BASEADDR}\n")
+            ch.write(f"#define CONFIG_BASEADDR 0x{hw.CONFIG_BASEADDR}\n")
             ch.write(f'#define DATA_DIR   "../{hw.DATA_DIR}"\n\n')
 
             mask_nums = [(2**hw.X_BITS-1) << (p*hw.X_BITS)  for p in range(8//hw.X_BITS)]

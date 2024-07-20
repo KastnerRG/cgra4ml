@@ -21,7 +21,7 @@
 `undef  VERILOG
 
 module axi_cgra4ml #(
-    // Parameters for DNN engine
+                // For engine
     parameter   ROWS                    = `ROWS               ,
                 COLS                    = `COLS               ,
                 X_BITS                  = `X_BITS             , 
@@ -31,47 +31,17 @@ module axi_cgra4ml #(
                 M_DATA_WIDTH_HF_CONV    = COLS  * ROWS  * Y_BITS,
                 M_DATA_WIDTH_HF_CONV_DW = ROWS  * Y_BITS,
 
-                AXI_WIDTH               = `AXI_WIDTH          ,
-                AXI_MAX_BURST_LEN       = `AXI_MAX_BURST_LEN,
-                W_BPT                   = `W_BPT              ,
-
-                OUT_ADDR_WIDTH          = 10,
-                OUT_BITS                = 32,
-    // Parameters for controller
-                SRAM_RD_DATA_WIDTH      = 256,
-                SRAM_RD_DEPTH           = 256,
-                COUNTER_WIDTH           = 32,
-                AXI_ADDR_WIDTH          = 32,
-                AXI_DATA_WIDTH          = 32,
-                AXI_LEN_WIDTH           = 32,
-                AXIL_BASE_ADDR          = 40'h00B0000000,
-    
-    // Parameters for axilite to ram
-                DATA_WR_WIDTH           = 32,
-                DATA_RD_WIDTH           = 32,
-                ADDR_WIDTH              = 40,
-                STRB_WIDTH              = 4,
-                TIMEOUT                 = 0,
-
-    // Alex AXI DMA RD
-                AXI_DATA_WIDTH_PS       = AXI_WIDTH,
-              //AXI_ADDR_WIDTH          = 32, same as above
-                AXI_STRB_WIDTH          = (AXI_WIDTH/8),//(AXI_DATA_WIDTH/8),
+                // Full AXI
+                AXI_WIDTH               = `AXI_WIDTH   ,
                 AXI_ID_WIDTH            = 6,
-                AXIS_DATA_WIDTH         = AXI_WIDTH,//AXI_DATA_WIDTH,
-                AXIS_KEEP_ENABLE        = 1,//(AXIS_DATA_WIDTH>8),
-                AXIS_KEEP_WIDTH         = (AXI_WIDTH/8),//(AXIS_DATA_WIDTH/8),
-                AXIS_LAST_ENABLE        = 1,
-                AXIS_ID_ENABLE          = 0,
-                AXIS_ID_WIDTH           = 6,
-                AXIS_DEST_ENABLE        = 0,
-                AXIS_DEST_WIDTH         = 8,
-                AXIS_USER_ENABLE        = 1,
-                AXIS_USER_WIDTH         = 1,
-                LEN_WIDTH               = 32,
-                TAG_WIDTH               = 8,
-                ENABLE_SG               = 0,
-                ENABLE_UNALIGNED        = 1
+                AXI_STRB_WIDTH          = (AXI_WIDTH/8),
+                AXI_MAX_BURST_LEN       = `AXI_MAX_BURST_LEN,
+                AXI_ADDR_WIDTH          = 32,
+                // AXI-Lite
+                AXIL_WIDTH              = 32,
+                AXIL_ADDR_WIDTH              = 40,
+                STRB_WIDTH              = 4,
+                W_BPT                   = `W_BPT              
 
 ) (
     // axilite interface for configuration
@@ -81,22 +51,22 @@ module axi_cgra4ml #(
     /*
      * AXI-Lite slave interface
      */
-    input  wire [ADDR_WIDTH-1:0]  s_axil_awaddr,
+    input  wire [AXIL_ADDR_WIDTH-1:0]  s_axil_awaddr,
     input  wire [2:0]             s_axil_awprot,
     input  wire                   s_axil_awvalid,
     output wire                   s_axil_awready,
-    input  wire [DATA_WR_WIDTH-1:0]  s_axil_wdata,
+    input  wire [AXIL_WIDTH-1:0]  s_axil_wdata,
     input  wire [STRB_WIDTH-1:0]  s_axil_wstrb,
     input  wire                   s_axil_wvalid,
     output wire                   s_axil_wready,
     output wire [1:0]             s_axil_bresp,
     output wire                   s_axil_bvalid,
     input  wire                   s_axil_bready,
-    input  wire [ADDR_WIDTH-1:0]  s_axil_araddr,
+    input  wire [AXIL_ADDR_WIDTH-1:0]  s_axil_araddr,
     input  wire [2:0]             s_axil_arprot,
     input  wire                   s_axil_arvalid,
     output wire                   s_axil_arready,
-    output wire [DATA_RD_WIDTH-1:0]  s_axil_rdata,
+    output wire [AXIL_WIDTH-1:0]  s_axil_rdata,
     output wire [1:0]             s_axil_rresp,
     output wire                   s_axil_rvalid,
     input  wire                   s_axil_rready,
@@ -115,7 +85,7 @@ module axi_cgra4ml #(
     output wire                       m_axi_pixel_arvalid,
     input  wire                       m_axi_pixel_arready,
     input  wire [AXI_ID_WIDTH-1:0]    m_axi_pixel_rid,
-    input  wire [AXI_DATA_WIDTH_PS-1:0]  m_axi_pixel_rdata,
+    input  wire [AXI_WIDTH   -1:0]    m_axi_pixel_rdata,
     input  wire [1:0]                 m_axi_pixel_rresp,
     input  wire                       m_axi_pixel_rlast,
     input  wire                       m_axi_pixel_rvalid,
@@ -132,7 +102,7 @@ module axi_cgra4ml #(
     output wire                       m_axi_weights_arvalid,
     input  wire                       m_axi_weights_arready,
     input  wire [AXI_ID_WIDTH-1:0]    m_axi_weights_rid,
-    input  wire [AXI_DATA_WIDTH_PS-1:0]  m_axi_weights_rdata,
+    input  wire [AXI_WIDTH   -1:0]  m_axi_weights_rdata,
     input  wire [1:0]                 m_axi_weights_rresp,
     input  wire                       m_axi_weights_rlast,
     input  wire                       m_axi_weights_rvalid,
@@ -148,7 +118,7 @@ module axi_cgra4ml #(
     output wire [2:0]                 m_axi_output_awprot,
     output wire                       m_axi_output_awvalid,
     input  wire                       m_axi_output_awready,
-    (* mark_debug = "true" *) output wire [AXI_DATA_WIDTH_PS-1:0]  m_axi_output_wdata,
+    (* mark_debug = "true" *) output wire [AXI_WIDTH   -1:0]  m_axi_output_wdata,
     (* mark_debug = "true" *) output wire [AXI_STRB_WIDTH-1:0]  m_axi_output_wstrb,
     (* mark_debug = "true" *) output wire                       m_axi_output_wlast,
     (* mark_debug = "true" *) output wire                       m_axi_output_wvalid,
@@ -159,17 +129,42 @@ module axi_cgra4ml #(
     output wire                       m_axi_output_bready
 
 );
+
+localparam      OUT_ADDR_WIDTH          = 10,
+                OUT_BITS                = 32,
+    // Parameters for controller
+                SRAM_RD_DATA_WIDTH      = 256,
+                SRAM_RD_DEPTH           = 256,
+                COUNTER_WIDTH           = 32,
+                AXI_LEN_WIDTH           = 32,
+                AXIL_BASE_ADDR          = `CONFIG_BASEADDR,
+                TIMEOUT                 = 2, // since 0 gives error
+
+    // Alex AXI DMA RD                
+                AXIS_ID_WIDTH           = 6,
+                AXIS_KEEP_ENABLE        = 1,//(AXI_WIDTH>8),
+                AXIS_KEEP_WIDTH         = (AXI_WIDTH/8),//(AXI_WIDTH/8),
+                AXIS_LAST_ENABLE        = 1,
+                AXIS_ID_ENABLE          = 0,
+                AXIS_DEST_ENABLE        = 0,
+                AXIS_DEST_WIDTH         = 8,
+                AXIS_USER_ENABLE        = 1,
+                AXIS_USER_WIDTH         = 1,
+                LEN_WIDTH               = 32,
+                TAG_WIDTH               = 8,
+                ENABLE_SG               = 0,
+                ENABLE_UNALIGNED        = 1;
     
 
 // Wires connecting AXIL2RAM to CONTROLLER
-wire [ADDR_WIDTH-1:0] reg_wr_addr;
-wire [DATA_WR_WIDTH-1:0] reg_wr_data;
+wire [AXIL_ADDR_WIDTH-1:0] reg_wr_addr;
+wire [AXIL_WIDTH-1:0] reg_wr_data;
 wire [STRB_WIDTH-1:0] reg_wr_strb;
 wire reg_wr_en;
 wire reg_wr_ack;
-wire [ADDR_WIDTH-1:0] reg_rd_addr;
+wire [AXIL_ADDR_WIDTH-1:0] reg_rd_addr;
 wire reg_rd_en;
-wire [DATA_RD_WIDTH-1:0] reg_rd_data;
+wire [AXIL_WIDTH-1:0] reg_rd_data;
 wire reg_rd_ack;
 
 // Controller with Alex DMAs: desc signals (including od tag) and status signals
@@ -210,15 +205,15 @@ wire [AXI_WIDTH   -1:0] m_axis_output_tdata;
 wire [AXI_WIDTH/8 -1:0] m_axis_output_tkeep;
 wire [W_BPT-1:0] m_bytes_per_transfer;
 
-wire [AXI_ADDR_WIDTH-1:0] reg_wr_addr_ctrl = (reg_wr_addr-AXIL_BASE_ADDR) >> 2;
-wire [AXI_ADDR_WIDTH-1:0] reg_rd_addr_ctrl = (reg_rd_addr-AXIL_BASE_ADDR) >> 2;
+wire [AXI_ADDR_WIDTH-1:0] reg_wr_addr_ctrl = AXI_ADDR_WIDTH'((reg_wr_addr-AXIL_BASE_ADDR) >> 2);
+wire [AXI_ADDR_WIDTH-1:0] reg_rd_addr_ctrl = AXI_ADDR_WIDTH'((reg_rd_addr-AXIL_BASE_ADDR) >> 2);
 
 
 
 alex_axilite_ram #(
-    .DATA_WR_WIDTH(DATA_WR_WIDTH),
-    .DATA_RD_WIDTH(DATA_RD_WIDTH),
-    .ADDR_WIDTH(ADDR_WIDTH),
+    .DATA_WR_WIDTH(AXIL_WIDTH),
+    .DATA_RD_WIDTH(AXIL_WIDTH),
+    .ADDR_WIDTH(AXIL_ADDR_WIDTH),
     .STRB_WIDTH(STRB_WIDTH),
     .TIMEOUT(TIMEOUT)
 ) AXIL2RAM (
@@ -261,7 +256,7 @@ dma_controller #(
     .SRAM_RD_DEPTH(SRAM_RD_DEPTH),
     .COUNTER_WIDTH(COUNTER_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(AXI_DATA_WIDTH),
+    .AXI_DATA_WIDTH(AXIL_WIDTH),
     .AXI_LEN_WIDTH(AXI_LEN_WIDTH),
     .AXI_TAG_WIDTH(TAG_WIDTH)
 ) CONTROLLER (
@@ -332,12 +327,12 @@ dnn_engine #(
 );
 
 alex_axi_dma_rd #(
-    .AXI_DATA_WIDTH(AXI_DATA_WIDTH_PS),
+    .AXI_DATA_WIDTH(AXI_WIDTH   ),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
     .AXI_STRB_WIDTH(AXI_STRB_WIDTH),
     .AXI_ID_WIDTH(AXI_ID_WIDTH),
     .AXI_MAX_BURST_LEN(AXI_MAX_BURST_LEN),
-    .AXIS_DATA_WIDTH(AXIS_DATA_WIDTH),
+    .AXIS_DATA_WIDTH(AXI_WIDTH),
     .AXIS_KEEP_ENABLE(AXIS_KEEP_ENABLE),
     .AXIS_KEEP_WIDTH(AXIS_KEEP_WIDTH),
     .AXIS_LAST_ENABLE(AXIS_LAST_ENABLE),
@@ -392,12 +387,12 @@ alex_axi_dma_rd #(
 );
 
 alex_axi_dma_rd #(
-    .AXI_DATA_WIDTH(AXI_DATA_WIDTH_PS),
+    .AXI_DATA_WIDTH(AXI_WIDTH   ),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
     .AXI_STRB_WIDTH(AXI_STRB_WIDTH),
     .AXI_ID_WIDTH(AXI_ID_WIDTH),
     .AXI_MAX_BURST_LEN(AXI_MAX_BURST_LEN),
-    .AXIS_DATA_WIDTH(AXIS_DATA_WIDTH),
+    .AXIS_DATA_WIDTH(AXI_WIDTH),
     .AXIS_KEEP_ENABLE(AXIS_KEEP_ENABLE),
     .AXIS_KEEP_WIDTH(AXIS_KEEP_WIDTH),
     .AXIS_LAST_ENABLE(AXIS_LAST_ENABLE),
@@ -452,12 +447,12 @@ alex_axi_dma_rd #(
 );
 
 alex_axi_dma_wr #(
-    .AXI_DATA_WIDTH(AXI_DATA_WIDTH_PS),
+    .AXI_DATA_WIDTH(AXI_WIDTH   ),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
     .AXI_STRB_WIDTH(AXI_STRB_WIDTH),
     .AXI_ID_WIDTH(AXI_ID_WIDTH),
     .AXI_MAX_BURST_LEN(AXI_MAX_BURST_LEN),
-    .AXIS_DATA_WIDTH(AXIS_DATA_WIDTH),
+    .AXIS_DATA_WIDTH(AXI_WIDTH),
     .AXIS_KEEP_ENABLE(AXIS_KEEP_ENABLE),
     .AXIS_KEEP_WIDTH(AXIS_KEEP_WIDTH),
     .AXIS_LAST_ENABLE(AXIS_LAST_ENABLE),

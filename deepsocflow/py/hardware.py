@@ -27,8 +27,8 @@ class Hardware:
             ram_weights_depth: int = 512, 
             ram_edges_depth: int|None = 288,
             axi_width: int = 64,
-            config_baseaddr = "0xB0000000",
-            mem_baseaddr = "0x20000000",
+            config_baseaddr = "B0000000",
+            mem_baseaddr = "20000000",
             axi_max_burst_len: int = 16,
             target_cpu_int_bits: int = 32,
             async_resetn: bool = True,
@@ -179,7 +179,7 @@ class Hardware:
 
 `define AXI_WIDTH           {self.AXI_WIDTH          :<10}
 `define AXI_MAX_BURST_LEN   {self.AXI_MAX_BURST_LEN  :<10}
-`define CONFIG_BASEADDR     {self.CONFIG_BASEADDR    :<10}
+`define CONFIG_BASEADDR     40'h{self.CONFIG_BASEADDR:<10}
 ''')
 
 
@@ -198,7 +198,7 @@ set RAM_WEIGHTS_DEPTH  {self.RAM_WEIGHTS_DEPTH}
 set RAM_EDGES_DEPTH    {self.RAM_EDGES_DEPTH}
 set KH_MAX             {self.KH_MAX}
 set AXI_WIDTH          {self.AXI_WIDTH}
-set CONFIG_BASEADDR    {self.CONFIG_BASEADDR}
+set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
 ''')
 
 
@@ -219,7 +219,7 @@ set CONFIG_BASEADDR    {self.CONFIG_BASEADDR}
             assert subprocess.run(cmd).returncode == 0
 
         if SIM == "verilator":
-            cmd = f'{SIM_PATH}verilator --binary -j 0 -O3 -Wno-fatal --trace --trace-depth 0 --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -I../ {self.MODULE_DIR}/c/sim.c -CFLAGS -g --Mdir ./'
+            cmd = f'{SIM_PATH}verilator --binary -j 0 -O3 --trace --trace-depth 0 --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -I../ {self.MODULE_DIR}/c/sim.c -CFLAGS -g --Mdir ./'
             print(cmd)
             assert subprocess.run(cmd.split(' '), cwd='build').returncode == 0
         

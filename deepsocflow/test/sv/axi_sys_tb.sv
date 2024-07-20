@@ -59,7 +59,7 @@ module axi_sys_tb;
   import "DPI-C" context function bit  model_run();
 
 
-  function automatic get_config(input int offset);
+  function automatic int get_config(input int offset);
     if (offset < 16*4)  return dut.OC_TOP.CONTROLLER.cfg[offset/4];
     else                return dut.OC_TOP.CONTROLLER.sdp_ram.RAM[offset/4-16];
   endfunction
@@ -74,16 +74,16 @@ module axi_sys_tb;
   always_ff @(posedge clk) begin : Axi_rw
     if (o_rd_pixel) 
       for (int i = 0; i < C_S_AXI_DATA_WIDTH/8; i++) 
-        i_rdata_pixel[i*8 +: 8] <= get_byte_32((o_raddr_pixel << LSB) + i);
+        i_rdata_pixel[i*8 +: 8] <= get_byte_32((32'(o_raddr_pixel) << LSB) + i);
 
     if (o_rd_weights) 
       for (int i = 0; i < C_S_AXI_DATA_WIDTH/8; i++)
-        i_rdata_weights[i*8 +: 8] <= get_byte_32((o_raddr_weights << LSB) + i);
+        i_rdata_weights[i*8 +: 8] <= get_byte_32((32'(o_raddr_weights) << LSB) + i);
 
     if (o_we_output) 
       for (int i = 0; i < C_S_AXI_DATA_WIDTH/8; i++) 
         if (o_wstrb_output[i]) 
-          set_byte_32((o_waddr_output << LSB) + i, o_wdata_output[i*8 +: 8]);
+          set_byte_32((32'(o_waddr_output) << LSB) + i, o_wdata_output[i*8 +: 8]);
   end
   
 
