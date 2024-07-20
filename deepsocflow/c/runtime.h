@@ -25,8 +25,6 @@ typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 #define X_WORDS_PER_BYTE  (8 / X_BITS)
 #define X_BITS_MASK       ((1 << X_BITS) -1)
 
-#define MEMBASEADDR 0x20000000
-
 
 typedef struct {
 
@@ -81,11 +79,11 @@ typedef struct {
   
   extern EXT_C uint32_t to_embedded(void* addr){
     uint64_t offset = (uint64_t)addr - (uint64_t)&mem;
-    return (uint32_t)offset + MEMBASEADDR;
+    return (uint32_t)offset + MEM_BASEADDR;
   }
 
   extern EXT_C uint64_t embdded_to64(uint32_t addr){
-    return (uint64_t)addr - (uint64_t)MEMBASEADDR + (uint64_t)&mem;
+    return (uint64_t)addr - (uint64_t)MEM_BASEADDR + (uint64_t)&mem;
   }
 
   // Get and set config are done by sv
@@ -94,7 +92,16 @@ typedef struct {
 
 #else
   #define sim_fprintf(...)
-  #define mem (*(Memory_st*)MEMBASEADDR)
+  #define mem (*(Memory_st*)MEM_BASEADDR)
+
+  inline volatile uint32_t get_config(uint32_t offset){
+    return *(volatile uint32_t *) (UINTPTR)(CONFIG_BASEADDR + offset);
+  }
+
+  inline void set_config(uint32_t offset, uint32_t data){	
+    volatile uint32_t *Addr = (volatile uint32_t *)((uintptr_t)(CONFIG_BASEADDR + offset));
+    *Addr = data;
+  }
 
 #endif
 
@@ -514,15 +521,15 @@ PROCESS_AND_STORE_DONE:
           // debug_printf("-------- in %x done\n", in);
         } // in
         in = 0;
-        debug_printf("-------- it %x done\n", it);
+        debug_printf("------ it %x done\n", it);
       } // it
       it = 0;
-      debug_printf("-------- ip %x done\n", ip);
+      debug_printf("--- ip %x done\n", ip);
     } // ip
     
     ip = 0;
 
-    debug_printf("done bundle!! ib:%x\n", ib);
+    debug_printf("- done bundle!! ib:%x\n", ib);
 
 #ifdef SIM
     char f_path_debug [1000];

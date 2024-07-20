@@ -10,8 +10,8 @@
 `define Y_BITS              32          // Bits per word in output of conv
 `define Y_OUT_BITS          32          // Padded bits per word in output of conv
 
-`define KH_MAX              13          // max of kernel height, across layers
-`define KW_MAX              13          // max of kernel width, across layers
+`define KH_MAX              9           // max of kernel height, across layers
+`define KW_MAX              9           // max of kernel width, across layers
 `define XH_MAX              512         // max of input image height, across layers
 `define XW_MAX              512         // max of input image width, across layers
 `define XN_MAX              64          // max of input batch size, across layers
@@ -24,4 +24,6 @@
 `define DELAY_MUL           3            // constant, for now 
 `define DELAY_W_RAM         2            // constant, for now 
 
-`define AXI_WIDTH           128       
+`define AXI_WIDTH           64        
+`define AXI_MAX_BURST_LEN   16        
+`define CONFIG_BASEADDR     0xB0000000

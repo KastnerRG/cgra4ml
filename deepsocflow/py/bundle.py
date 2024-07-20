@@ -722,6 +722,8 @@ class Bundle(tf.keras.layers.Layer):
         
             ''' Weights Config'''
 
+            print(f"{c.BITS_KW2=}, {c.BITS_CIN_MAX=}, {c.BITS_COLS_MAX=}, {c.BITS_BLOCKS_MAX=}, {c.BITS_XN_MAX=}, {c.BITS_RAM_WEIGHTS_ADDR=}")
+
             w_header_le, w_header_be = pack_bits([
                 (r.KW//2, c.BITS_KW2),
                 (CM_p-1 , c.BITS_CIN_MAX),

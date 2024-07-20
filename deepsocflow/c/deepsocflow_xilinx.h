@@ -10,10 +10,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define MEMBASEADDR 0x20000000
-#define CONFIG_BASEADDR 0x00B0000000
-
-
 #ifdef NDEBUG
   #define debug_xil_printf(...)
 #else
@@ -30,15 +26,6 @@ static inline void write_flush_u8(u8* addr, u8 val) {
 static inline void write_flush_u64(u64* addr, u64 val) {
 	*addr = val;
 	Xil_DCacheFlushRange((INTPTR)addr, 8);
-}
-
-inline volatile uint32_t get_config(uint32_t offset){
-  return *(volatile uint32_t *) (UINTPTR)(CONFIG_BASEADDR + offset);
-}
-
-inline void set_config(uint32_t offset, uint32_t data){	
-	volatile uint32_t *Addr = (volatile uint32_t *)((uintptr_t)(CONFIG_BASEADDR + offset));
-	*Addr = data;
 }
 
 // RUNTIME.H included here, where?

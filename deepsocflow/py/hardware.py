@@ -27,6 +27,9 @@ class Hardware:
             ram_weights_depth: int = 512, 
             ram_edges_depth: int|None = 288,
             axi_width: int = 64,
+            config_baseaddr = "0xB0000000",
+            mem_baseaddr = "0x20000000",
+            axi_max_burst_len: int = 16,
             target_cpu_int_bits: int = 32,
             async_resetn: bool = True,
             valid_prob: float = 0.01,
@@ -68,6 +71,9 @@ class Hardware:
         self.KH_MAX, self.KW_MAX = tuple(max_kernel_size) if (type(max_kernel_size) in [tuple, list]) else (max_kernel_size, max_kernel_size)
         self.XH_MAX, self.XW_MAX = tuple(max_image_size ) if (type(max_image_size ) in [tuple, list]) else (max_image_size , max_image_size )
         self.AXI_WIDTH = axi_width
+        self.CONFIG_BASEADDR = config_baseaddr
+        self.MEM_BASEADDR = mem_baseaddr
+        self.AXI_MAX_BURST_LEN = axi_max_burst_len
         self.INT_BITS = target_cpu_int_bits
         self.ASYNC_RESETN = async_resetn
         self.VALID_PROB = int(valid_prob * 1000)
@@ -172,6 +178,8 @@ class Hardware:
 `define DELAY_W_RAM         2            // constant, for now 
 
 `define AXI_WIDTH           {self.AXI_WIDTH          :<10}
+`define AXI_MAX_BURST_LEN   {self.AXI_MAX_BURST_LEN  :<10}
+`define CONFIG_BASEADDR     {self.CONFIG_BASEADDR    :<10}
 ''')
 
 
@@ -190,6 +198,7 @@ set RAM_WEIGHTS_DEPTH  {self.RAM_WEIGHTS_DEPTH}
 set RAM_EDGES_DEPTH    {self.RAM_EDGES_DEPTH}
 set KH_MAX             {self.KH_MAX}
 set AXI_WIDTH          {self.AXI_WIDTH}
+set CONFIG_BASEADDR    {self.CONFIG_BASEADDR}
 ''')
 
 
