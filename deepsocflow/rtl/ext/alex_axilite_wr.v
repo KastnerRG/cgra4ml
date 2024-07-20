@@ -28,6 +28,9 @@ THE SOFTWARE.
 /*
  * AXI lite register interface module (write)
  */
+ `timescale 1ns / 1ps
+`include "../defines.svh"
+
 module alex_axilite_wr #
 (
     // Width of data bus in bits
@@ -71,16 +74,16 @@ module alex_axilite_wr #
 
 parameter TIMEOUT_WIDTH = 0;//$clog2(TIMEOUT_DEPTH) can't really be 0
 
-reg [TIMEOUT_WIDTH-1:0] timeout_count_reg = 0, timeout_count_next;
+reg [TIMEOUT_WIDTH-1:0] timeout_count_reg, timeout_count_next;
 
-reg [ADDR_WIDTH-1:0] s_axil_awaddr_reg = {ADDR_WIDTH{1'b0}}, s_axil_awaddr_next;
-reg s_axil_awvalid_reg = 1'b0, s_axil_awvalid_next;
-reg [DATA_WIDTH-1:0] s_axil_wdata_reg = {DATA_WIDTH{1'b0}}, s_axil_wdata_next;
-reg [STRB_WIDTH-1:0] s_axil_wstrb_reg = {STRB_WIDTH{1'b0}}, s_axil_wstrb_next;
-reg s_axil_wvalid_reg = 1'b0, s_axil_wvalid_next;
-reg s_axil_bvalid_reg = 1'b0, s_axil_bvalid_next;
+reg [ADDR_WIDTH-1:0] s_axil_awaddr_reg , s_axil_awaddr_next;
+reg s_axil_awvalid_reg , s_axil_awvalid_next;
+reg [DATA_WIDTH-1:0] s_axil_wdata_reg , s_axil_wdata_next;
+reg [STRB_WIDTH-1:0] s_axil_wstrb_reg , s_axil_wstrb_next;
+reg s_axil_wvalid_reg, s_axil_wvalid_next;
+reg s_axil_bvalid_reg, s_axil_bvalid_next;
 
-reg reg_wr_en_reg = 1'b0, reg_wr_en_next;
+reg reg_wr_en_reg, reg_wr_en_next;
 
 assign s_axil_awready = !s_axil_awvalid_reg;
 assign s_axil_wready = !s_axil_wvalid_reg;
@@ -127,7 +130,25 @@ always @* begin
     reg_wr_en_next = s_axil_awvalid_next && s_axil_wvalid_next && !s_axil_bvalid_next;
 end
 
-always @(posedge clk) begin
+always @(posedge clk `OR_NEGEDGE(rstn)) begin
+    if (!rstn) begin
+
+        timeout_count_reg <= 0;
+        s_axil_awaddr_reg <= {ADDR_WIDTH{1'b0}};
+        s_axil_awvalid_reg <= 1'b0;
+        s_axil_wdata_reg <= {DATA_WIDTH{1'b0}};
+        s_axil_wstrb_reg <= {STRB_WIDTH{1'b0}};
+        s_axil_wvalid_reg <= 1'b0;
+        s_axil_bvalid_reg <= 1'b0;
+        reg_wr_en_reg <= 1'b0;
+
+
+        s_axil_awvalid_reg <= 1'b0;
+        s_axil_wvalid_reg <= 1'b0;
+        s_axil_bvalid_reg <= 1'b0;
+        reg_wr_en_reg <= 1'b0;
+    end else begin
+
     timeout_count_reg <= timeout_count_next;
 
     s_axil_awaddr_reg <= s_axil_awaddr_next;
@@ -139,11 +160,6 @@ always @(posedge clk) begin
 
     reg_wr_en_reg <= reg_wr_en_next;
 
-    if (!rstn) begin
-        s_axil_awvalid_reg <= 1'b0;
-        s_axil_wvalid_reg <= 1'b0;
-        s_axil_bvalid_reg <= 1'b0;
-        reg_wr_en_reg <= 1'b0;
     end
 end
 

@@ -27,6 +27,7 @@ THE SOFTWARE.
 `resetall
 `timescale 1ns / 1ps
 `default_nettype none
+`include "../defines.svh"
 
 /*
  * AXI4 DMA
@@ -232,47 +233,47 @@ reg [0:0] axis_state_reg = AXIS_STATE_IDLE, axis_state_next;
 reg transfer_in_save;
 reg axis_cmd_ready;
 
-reg [AXI_ADDR_WIDTH-1:0] addr_reg = {AXI_ADDR_WIDTH{1'b0}}, addr_next;
-reg [LEN_WIDTH-1:0] op_word_count_reg = {LEN_WIDTH{1'b0}}, op_word_count_next;
-reg [LEN_WIDTH-1:0] tr_word_count_reg = {LEN_WIDTH{1'b0}}, tr_word_count_next;
+reg [AXI_ADDR_WIDTH-1:0] addr_reg, addr_next;
+reg [LEN_WIDTH-1:0] op_word_count_reg, op_word_count_next;
+reg [LEN_WIDTH-1:0] tr_word_count_reg, tr_word_count_next;
 
-reg [OFFSET_WIDTH-1:0] axis_cmd_offset_reg = {OFFSET_WIDTH{1'b0}}, axis_cmd_offset_next;
-reg [OFFSET_WIDTH-1:0] axis_cmd_last_cycle_offset_reg = {OFFSET_WIDTH{1'b0}}, axis_cmd_last_cycle_offset_next;
-reg [CYCLE_COUNT_WIDTH-1:0] axis_cmd_input_cycle_count_reg = {CYCLE_COUNT_WIDTH{1'b0}}, axis_cmd_input_cycle_count_next;
-reg [CYCLE_COUNT_WIDTH-1:0] axis_cmd_output_cycle_count_reg = {CYCLE_COUNT_WIDTH{1'b0}}, axis_cmd_output_cycle_count_next;
-reg axis_cmd_bubble_cycle_reg = 1'b0, axis_cmd_bubble_cycle_next;
-reg [TAG_WIDTH-1:0] axis_cmd_tag_reg = {TAG_WIDTH{1'b0}}, axis_cmd_tag_next;
-reg [AXIS_ID_WIDTH-1:0] axis_cmd_axis_id_reg = {AXIS_ID_WIDTH{1'b0}}, axis_cmd_axis_id_next;
-reg [AXIS_DEST_WIDTH-1:0] axis_cmd_axis_dest_reg = {AXIS_DEST_WIDTH{1'b0}}, axis_cmd_axis_dest_next;
-reg [AXIS_USER_WIDTH-1:0] axis_cmd_axis_user_reg = {AXIS_USER_WIDTH{1'b0}}, axis_cmd_axis_user_next;
-reg axis_cmd_valid_reg = 1'b0, axis_cmd_valid_next;
+reg [OFFSET_WIDTH-1:0] axis_cmd_offset_reg, axis_cmd_offset_next;
+reg [OFFSET_WIDTH-1:0] axis_cmd_last_cycle_offset_reg, axis_cmd_last_cycle_offset_next;
+reg [CYCLE_COUNT_WIDTH-1:0] axis_cmd_input_cycle_count_reg, axis_cmd_input_cycle_count_next;
+reg [CYCLE_COUNT_WIDTH-1:0] axis_cmd_output_cycle_count_reg, axis_cmd_output_cycle_count_next;
+reg axis_cmd_bubble_cycle_reg, axis_cmd_bubble_cycle_next;
+reg [TAG_WIDTH-1:0] axis_cmd_tag_reg, axis_cmd_tag_next;
+reg [AXIS_ID_WIDTH-1:0] axis_cmd_axis_id_reg, axis_cmd_axis_id_next;
+reg [AXIS_DEST_WIDTH-1:0] axis_cmd_axis_dest_reg, axis_cmd_axis_dest_next;
+reg [AXIS_USER_WIDTH-1:0] axis_cmd_axis_user_reg, axis_cmd_axis_user_next;
+reg axis_cmd_valid_reg, axis_cmd_valid_next;
 
-reg [OFFSET_WIDTH-1:0] offset_reg = {OFFSET_WIDTH{1'b0}}, offset_next;
-reg [OFFSET_WIDTH-1:0] last_cycle_offset_reg = {OFFSET_WIDTH{1'b0}}, last_cycle_offset_next;
-reg [CYCLE_COUNT_WIDTH-1:0] input_cycle_count_reg = {CYCLE_COUNT_WIDTH{1'b0}}, input_cycle_count_next;
-reg [CYCLE_COUNT_WIDTH-1:0] output_cycle_count_reg = {CYCLE_COUNT_WIDTH{1'b0}}, output_cycle_count_next;
-reg input_active_reg = 1'b0, input_active_next;
-reg output_active_reg = 1'b0, output_active_next;
-reg bubble_cycle_reg = 1'b0, bubble_cycle_next;
-reg first_cycle_reg = 1'b0, first_cycle_next;
-reg output_last_cycle_reg = 1'b0, output_last_cycle_next;
-reg [1:0] rresp_reg = AXI_RESP_OKAY, rresp_next;
+reg [OFFSET_WIDTH-1:0] offset_reg, offset_next;
+reg [OFFSET_WIDTH-1:0] last_cycle_offset_reg, last_cycle_offset_next;
+reg [CYCLE_COUNT_WIDTH-1:0] input_cycle_count_reg, input_cycle_count_next;
+reg [CYCLE_COUNT_WIDTH-1:0] output_cycle_count_reg, output_cycle_count_next;
+reg input_active_reg, input_active_next;
+reg output_active_reg, output_active_next;
+reg bubble_cycle_reg, bubble_cycle_next;
+reg first_cycle_reg, first_cycle_next;
+reg output_last_cycle_reg, output_last_cycle_next;
+reg [1:0] rresp_reg, rresp_next;
 
-reg [TAG_WIDTH-1:0] tag_reg = {TAG_WIDTH{1'b0}}, tag_next;
-reg [AXIS_ID_WIDTH-1:0] axis_id_reg = {AXIS_ID_WIDTH{1'b0}}, axis_id_next;
-reg [AXIS_DEST_WIDTH-1:0] axis_dest_reg = {AXIS_DEST_WIDTH{1'b0}}, axis_dest_next;
-reg [AXIS_USER_WIDTH-1:0] axis_user_reg = {AXIS_USER_WIDTH{1'b0}}, axis_user_next;
+reg [TAG_WIDTH-1:0] tag_reg, tag_next;
+reg [AXIS_ID_WIDTH-1:0] axis_id_reg, axis_id_next;
+reg [AXIS_DEST_WIDTH-1:0] axis_dest_reg, axis_dest_next;
+reg [AXIS_USER_WIDTH-1:0] axis_user_reg, axis_user_next;
 
-reg s_axis_read_desc_ready_reg = 1'b0, s_axis_read_desc_ready_next;
+reg s_axis_read_desc_ready_reg, s_axis_read_desc_ready_next;
 
-reg [TAG_WIDTH-1:0] m_axis_read_desc_status_tag_reg = {TAG_WIDTH{1'b0}}, m_axis_read_desc_status_tag_next;
-reg [3:0] m_axis_read_desc_status_error_reg = 4'd0, m_axis_read_desc_status_error_next;
-reg m_axis_read_desc_status_valid_reg = 1'b0, m_axis_read_desc_status_valid_next;
+reg [TAG_WIDTH-1:0] m_axis_read_desc_status_tag_reg, m_axis_read_desc_status_tag_next;
+reg [3:0] m_axis_read_desc_status_error_reg, m_axis_read_desc_status_error_next;
+reg m_axis_read_desc_status_valid_reg, m_axis_read_desc_status_valid_next;
 
-reg [AXI_ADDR_WIDTH-1:0] m_axi_araddr_reg = {AXI_ADDR_WIDTH{1'b0}}, m_axi_araddr_next;
-reg [7:0] m_axi_arlen_reg = 8'd0, m_axi_arlen_next;
-reg m_axi_arvalid_reg = 1'b0, m_axi_arvalid_next;
-reg m_axi_rready_reg = 1'b0, m_axi_rready_next;
+reg [AXI_ADDR_WIDTH-1:0] m_axi_araddr_reg, m_axi_araddr_next;
+reg [7:0] m_axi_arlen_reg, m_axi_arlen_next;
+reg m_axi_arvalid_reg, m_axi_arvalid_next;
+reg m_axi_rready_reg, m_axi_rready_next;
 
 reg [AXI_DATA_WIDTH-1:0] save_axi_rdata_reg = {AXI_DATA_WIDTH{1'b0}};
 
@@ -559,7 +560,63 @@ always @* begin
     endcase
 end
 
-always @(posedge clk) begin
+always @(posedge clk `OR_NEGEDGE(rstn)) begin
+
+    if (!rstn) begin
+        axi_state_reg <= AXI_STATE_IDLE;
+        axis_state_reg <= AXIS_STATE_IDLE;
+
+        axis_cmd_valid_reg <= 1'b0;
+
+        s_axis_read_desc_ready_reg <= 1'b0;
+
+        m_axis_read_desc_status_valid_reg <= 1'b0;
+        m_axi_arvalid_reg <= 1'b0;
+        m_axi_rready_reg <= 1'b0;
+
+        rresp_reg <= AXI_RESP_OKAY;
+        
+        
+        addr_reg <= {AXI_ADDR_WIDTH{1'b0}};
+        op_word_count_reg <= {LEN_WIDTH{1'b0}};
+        tr_word_count_reg <= {LEN_WIDTH{1'b0}};
+        axis_cmd_offset_reg <= {OFFSET_WIDTH{1'b0}};
+        axis_cmd_last_cycle_offset_reg <= {OFFSET_WIDTH{1'b0}};
+        axis_cmd_input_cycle_count_reg <= {CYCLE_COUNT_WIDTH{1'b0}};
+        axis_cmd_output_cycle_count_reg <= {CYCLE_COUNT_WIDTH{1'b0}};
+        axis_cmd_bubble_cycle_reg <= 1'b0;
+        axis_cmd_tag_reg <= {TAG_WIDTH{1'b0}};
+        axis_cmd_axis_id_reg <= {AXIS_ID_WIDTH{1'b0}};
+        axis_cmd_axis_dest_reg <= {AXIS_DEST_WIDTH{1'b0}};
+        axis_cmd_axis_user_reg <= {AXIS_USER_WIDTH{1'b0}};
+        axis_cmd_valid_reg <= 1'b0;
+        offset_reg <= {OFFSET_WIDTH{1'b0}};
+        last_cycle_offset_reg <= {OFFSET_WIDTH{1'b0}};
+        input_cycle_count_reg <= {CYCLE_COUNT_WIDTH{1'b0}};
+        output_cycle_count_reg <= {CYCLE_COUNT_WIDTH{1'b0}};
+        input_active_reg <= 1'b0;
+        output_active_reg <= 1'b0;
+        bubble_cycle_reg <= 1'b0;
+        first_cycle_reg <= 1'b0;
+        output_last_cycle_reg <= 1'b0;
+        rresp_reg <= AXI_RESP_OKAY;
+        tag_reg <= {TAG_WIDTH{1'b0}};
+        axis_id_reg <= {AXIS_ID_WIDTH{1'b0}};
+        axis_dest_reg <= {AXIS_DEST_WIDTH{1'b0}};
+        axis_user_reg <= {AXIS_USER_WIDTH{1'b0}};
+        s_axis_read_desc_ready_reg <= 1'b0;
+        m_axis_read_desc_status_tag_reg <= {TAG_WIDTH{1'b0}};
+        m_axis_read_desc_status_error_reg <= 4'd0;
+        m_axis_read_desc_status_valid_reg <= 1'b0;
+        m_axi_araddr_reg <= {AXI_ADDR_WIDTH{1'b0}};
+        m_axi_arlen_reg <= 8'd0;
+        m_axi_arvalid_reg <= 1'b0;
+        m_axi_rready_reg <= 1'b0;
+        save_axi_rdata_reg <= {AXI_DATA_WIDTH{1'b0}};
+
+
+    end else begin
+
     axi_state_reg <= axi_state_next;
     axis_state_reg <= axis_state_next;
 
@@ -609,34 +666,21 @@ always @(posedge clk) begin
         save_axi_rdata_reg <= m_axi_rdata;
     end
 
-    if (!rstn) begin
-        axi_state_reg <= AXI_STATE_IDLE;
-        axis_state_reg <= AXIS_STATE_IDLE;
-
-        axis_cmd_valid_reg <= 1'b0;
-
-        s_axis_read_desc_ready_reg <= 1'b0;
-
-        m_axis_read_desc_status_valid_reg <= 1'b0;
-        m_axi_arvalid_reg <= 1'b0;
-        m_axi_rready_reg <= 1'b0;
-
-        rresp_reg <= AXI_RESP_OKAY;
     end
 end
 
 // output datapath logic
-reg [AXIS_DATA_WIDTH-1:0] m_axis_read_data_tdata_reg  = {AXIS_DATA_WIDTH{1'b0}};
-reg [AXIS_KEEP_WIDTH-1:0] m_axis_read_data_tkeep_reg  = {AXIS_KEEP_WIDTH{1'b0}};
-reg                       m_axis_read_data_tvalid_reg = 1'b0;
-reg                       m_axis_read_data_tlast_reg  = 1'b0;
-reg [AXIS_ID_WIDTH-1:0]   m_axis_read_data_tid_reg    = {AXIS_ID_WIDTH{1'b0}};
-reg [AXIS_DEST_WIDTH-1:0] m_axis_read_data_tdest_reg  = {AXIS_DEST_WIDTH{1'b0}};
-reg [AXIS_USER_WIDTH-1:0] m_axis_read_data_tuser_reg  = {AXIS_USER_WIDTH{1'b0}};
+reg [AXIS_DATA_WIDTH-1:0] m_axis_read_data_tdata_reg  ;
+reg [AXIS_KEEP_WIDTH-1:0] m_axis_read_data_tkeep_reg  ;
+reg                       m_axis_read_data_tvalid_reg ;
+reg                       m_axis_read_data_tlast_reg  ;
+reg [AXIS_ID_WIDTH-1:0]   m_axis_read_data_tid_reg    ;
+reg [AXIS_DEST_WIDTH-1:0] m_axis_read_data_tdest_reg  ;
+reg [AXIS_USER_WIDTH-1:0] m_axis_read_data_tuser_reg  ;
 
-reg [OUTPUT_FIFO_ADDR_WIDTH+1-1:0] out_fifo_wr_ptr_reg = 0;
-reg [OUTPUT_FIFO_ADDR_WIDTH+1-1:0] out_fifo_rd_ptr_reg = 0;
-reg out_fifo_half_full_reg = 1'b0;
+reg [OUTPUT_FIFO_ADDR_WIDTH+1-1:0] out_fifo_wr_ptr_reg;
+reg [OUTPUT_FIFO_ADDR_WIDTH+1-1:0] out_fifo_rd_ptr_reg;
+reg out_fifo_half_full_reg ;
 
 wire out_fifo_full = out_fifo_wr_ptr_reg == (out_fifo_rd_ptr_reg ^ {1'b1, {OUTPUT_FIFO_ADDR_WIDTH{1'b0}}});
 wire out_fifo_empty = out_fifo_wr_ptr_reg == out_fifo_rd_ptr_reg;
@@ -664,7 +708,26 @@ assign m_axis_read_data_tid    = AXIS_ID_ENABLE   ? m_axis_read_data_tid_reg   :
 assign m_axis_read_data_tdest  = AXIS_DEST_ENABLE ? m_axis_read_data_tdest_reg : {AXIS_DEST_WIDTH{1'b0}};
 assign m_axis_read_data_tuser  = AXIS_USER_ENABLE ? m_axis_read_data_tuser_reg : {AXIS_USER_WIDTH{1'b0}};
 
-always @(posedge clk) begin
+always @(posedge clk `OR_NEGEDGE(rstn)) begin
+    if (!rstn) begin
+        out_fifo_wr_ptr_reg <= 0;
+        out_fifo_rd_ptr_reg <= 0;
+        m_axis_read_data_tvalid_reg <= 1'b0;
+
+        m_axis_read_data_tdata_reg  <= {AXIS_DATA_WIDTH{1'b0}};
+        m_axis_read_data_tkeep_reg  <= {AXIS_KEEP_WIDTH{1'b0}};
+        m_axis_read_data_tvalid_reg <= 1'b0;
+        m_axis_read_data_tlast_reg  <= 1'b0;
+        m_axis_read_data_tid_reg    <= {AXIS_ID_WIDTH{1'b0}};
+        m_axis_read_data_tdest_reg  <= {AXIS_DEST_WIDTH{1'b0}};
+        m_axis_read_data_tuser_reg  <= {AXIS_USER_WIDTH{1'b0}};
+
+        out_fifo_wr_ptr_reg    <= 0;
+        out_fifo_rd_ptr_reg    <= 0;
+        out_fifo_half_full_reg <= 1'b0;
+
+    end else begin
+
     m_axis_read_data_tvalid_reg <= m_axis_read_data_tvalid_reg && !m_axis_read_data_tready;
 
     out_fifo_half_full_reg <= $unsigned(out_fifo_wr_ptr_reg - out_fifo_rd_ptr_reg) >= 2**(OUTPUT_FIFO_ADDR_WIDTH-1);
@@ -690,10 +753,6 @@ always @(posedge clk) begin
         out_fifo_rd_ptr_reg <= out_fifo_rd_ptr_reg + 1;
     end
 
-    if (!rstn) begin
-        out_fifo_wr_ptr_reg <= 0;
-        out_fifo_rd_ptr_reg <= 0;
-        m_axis_read_data_tvalid_reg <= 1'b0;
     end
 end
 
