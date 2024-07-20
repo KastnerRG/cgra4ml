@@ -34,7 +34,7 @@ module cgra4ml_axi2ram_tb #(
                 OUT_BITS                = 32,
     // Parameters for controller
                 SRAM_RD_DATA_WIDTH      = 256,
-                SRAM_RD_DEPTH           = 256,
+                SRAM_RD_DEPTH           = `MAX_N_BUNDLES,
                 COUNTER_WIDTH           = 32,
                 AXI_ADDR_WIDTH          = 32,
                 AXIL_WIDTH          = 32,

@@ -26,6 +26,7 @@ def product_dict(**kwargs):
                                         max_channels_in      = [ 2048    ],
                                         max_kernel_size      = [ 9       ],
                                         max_image_size       = [ 512     ],
+                                        max_n_bundles        = [ 64      ],
                                         ram_weights_depth    = [ 20      ],
                                         ram_edges_depth      = [ 288     ],
                                         axi_width            = [ 64      ],

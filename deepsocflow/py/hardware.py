@@ -24,6 +24,7 @@ class Hardware:
             max_channels_in: int = 512, 
             max_kernel_size: int = 13, 
             max_image_size: int = 32, 
+            max_n_bundles: int = 64,
             ram_weights_depth: int = 512, 
             ram_edges_depth: int|None = 288,
             axi_width: int = 64,
@@ -70,6 +71,7 @@ class Hardware:
         self.CI_MAX = max_channels_in
         self.KH_MAX, self.KW_MAX = tuple(max_kernel_size) if (type(max_kernel_size) in [tuple, list]) else (max_kernel_size, max_kernel_size)
         self.XH_MAX, self.XW_MAX = tuple(max_image_size ) if (type(max_image_size ) in [tuple, list]) else (max_image_size , max_image_size )
+        self.MAX_N_BUNDLES = max_n_bundles
         self.AXI_WIDTH = axi_width
         self.CONFIG_BASEADDR = config_baseaddr
         self.MEM_BASEADDR = mem_baseaddr
@@ -169,6 +171,7 @@ class Hardware:
 `define XW_MAX              {self.XW_MAX             :<10}  // max of input image width, across layers
 `define XN_MAX              {self.XN_MAX             :<10}  // max of input batch size, across layers
 `define CI_MAX              {self.CI_MAX             :<10}  // max of input channels, across layers
+`define MAX_N_BUNDLES       {self.MAX_N_BUNDLES      :<10}  // max number of bundles in a network
 `define CONFIG_BEATS        {self.CONFIG_BEATS       :<10}  // constant, for now
 `define RAM_WEIGHTS_DEPTH   {self.RAM_WEIGHTS_DEPTH  :<10}  // CONFIG_BEATS + max(KW * CI), across layers
 `define RAM_EDGES_DEPTH     {self.RAM_EDGES_DEPTH    :<10}  // max (KW * CI * XW), across layers when KW != 1

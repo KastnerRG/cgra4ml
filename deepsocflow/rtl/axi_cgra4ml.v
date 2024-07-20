@@ -134,7 +134,7 @@ localparam      OUT_ADDR_WIDTH          = 10,
                 OUT_BITS                = 32,
     // Parameters for controller
                 SRAM_RD_DATA_WIDTH      = 256,
-                SRAM_RD_DEPTH           = 256,
+                SRAM_RD_DEPTH           = `MAX_N_BUNDLES,
                 COUNTER_WIDTH           = 32,
                 AXI_LEN_WIDTH           = 32,
                 AXIL_BASE_ADDR          = `CONFIG_BASEADDR,
