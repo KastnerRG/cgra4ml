@@ -276,7 +276,7 @@ reg m_axi_rready_reg = 1'b0, m_axi_rready_next;
 
 reg [AXI_DATA_WIDTH-1:0] save_axi_rdata_reg = {AXI_DATA_WIDTH{1'b0}};
 
-wire [AXI_DATA_WIDTH-1:0] shift_axi_rdata = {m_axi_rdata, save_axi_rdata_reg} >> ((AXI_STRB_WIDTH-offset_reg)*AXI_WORD_SIZE);
+wire [AXI_DATA_WIDTH-1:0] shift_axi_rdata = AXI_DATA_WIDTH'({m_axi_rdata, save_axi_rdata_reg} >> ((AXI_STRB_WIDTH-32'(offset_reg))*AXI_WORD_SIZE));
 
 // internal datapath
 reg  [AXIS_DATA_WIDTH-1:0] m_axis_read_data_tdata_int;
@@ -298,7 +298,7 @@ assign m_axis_read_desc_status_valid = m_axis_read_desc_status_valid_reg;
 assign m_axi_arid = {AXI_ID_WIDTH{1'b0}};
 assign m_axi_araddr = m_axi_araddr_reg;
 assign m_axi_arlen = m_axi_arlen_reg;
-assign m_axi_arsize = AXI_BURST_SIZE;
+assign m_axi_arsize = 3'(AXI_BURST_SIZE);
 assign m_axi_arburst = 2'b01;
 assign m_axi_arlock = 1'b0;
 assign m_axi_arcache = 4'b0011;

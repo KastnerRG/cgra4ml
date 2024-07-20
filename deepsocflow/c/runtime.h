@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <math.h>
-//#include <svdpi.h>
 
 typedef const struct {
   const int32_t  n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0, xp_words, ib_out;
@@ -229,7 +228,7 @@ static inline void tile_write( int32_t out_val, int8_t *p_out_buffer, int32_t ib
   
 }
 
-extern EXT_C void load_y (volatile uint8_t *p_done) {
+extern EXT_C uint8_t model_run() {
 
   static Bundle_t *pb = &bundles[0];
   static int32_t it_bias=0;
@@ -241,7 +240,7 @@ extern EXT_C void load_y (volatile uint8_t *p_done) {
   int32_t ph_end, ph_beg_const, ixh_beg, xh_sweep;
   int32_t pw_end, pw_beg_const, ixw_beg, xw_sweep;
 
-  static int8_t ocm_bank = 1;
+  static int8_t ocm_bank = 1; // We flip the bank at the beginning of loop. starting from bank 0
   int32_t w_last, sram_addr;
 
 
@@ -263,7 +262,8 @@ extern EXT_C void load_y (volatile uint8_t *p_done) {
 
 #endif
 
-//  debug_printf("starting load_y");
+  debug_printf("Starting model_rn()");
+  set_config(4*A_START, 1); 
 
   for (ib = 0; ib < N_BUNDLES; ib++) {
 
@@ -293,19 +293,14 @@ extern EXT_C void load_y (volatile uint8_t *p_done) {
           for (il = 0; il < pb->l; il++) {
             for (iw_kw2 = 0; iw_kw2 < pb->w_kw2; iw_kw2++) {
               
-              // starting from bank 0
               ocm_bank = !ocm_bank;
               w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
-              //*p_base_addr_next = (uint64_t)&ocm[ocm_bank];
-              //*p_bpt_next = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
-              debug_printf("Inside the firmware domain, now wait for ocm %x\n\n", ocm_bank);
-              // Verify the ocm reg values
 
 #ifdef SIM
 DMA_WAIT:
               // if sim return, so SV can pass time, and call again, which will jump to DMA_WAIT again
 	            if (!get_config(4*(A_DONE_WRITE + ocm_bank))) 
-	              return; 
+	              return 1; 
 
               char f_path_raw [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
               sprintf(f_path_raw, "%s/%0d_%0d_%0d_y_raw_sim.txt", DATA_DIR, ib, ip, it);
@@ -313,7 +308,6 @@ DMA_WAIT:
               FILE *fp_raw = fopen(f_path_raw, "a");
               FILE *fp_sum = fopen(f_path_sum, "a");
 #else
-			  //start_wait_output((UINTPTR)*p_base_addr_next, *p_bpt_next);
         		// in FPGA, wait for write done
 		          while (!get_config(4*(A_DONE_WRITE + ocm_bank))){
               };
@@ -324,10 +318,8 @@ DMA_WAIT:
 
 #ifdef NDEBUG
               // Flush the data just written by the PS to the DDR
-              //sleep(0.5);
               Xil_DCacheFlushRange((INTPTR)&ocm[ocm_bank], PE_ROWS*PE_COLS*sizeof(Y_TYPE)) ;
 #endif
-              debug_printf("Done write by the PL! Start reading and processing ocm %d\n", ocm_bank);
               w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
               sram_addr=0;
 
@@ -513,20 +505,19 @@ PROCESS_AND_STORE_DONE:
               fclose(fp_raw);
 #endif
               set_config(4*(A_DONE_READ + ocm_bank), 1);
-              debug_printf("done reading and processing ocm %d \n", ocm_bank);
-              debug_printf("firmware iw_kw2 0x%x done \n", iw_kw2);
+              // debug_printf("-------- iw_kw2 0x%x done \n", iw_kw2);
             } // iw_kw2
             iw_kw2 = 0;
-            debug_printf("firmware il %x done\n", il);
+            // debug_printf("-------- il %x done\n", il);
           } // il
           il = 0;
-          debug_printf("firmware in %x done\n", in);
+          // debug_printf("-------- in %x done\n", in);
         } // in
         in = 0;
-        debug_printf("firmware it %x done\n", it);
+        debug_printf("-------- it %x done\n", it);
       } // it
       it = 0;
-      debug_printf("firmware ip %x done\n", ip);
+      debug_printf("-------- ip %x done\n", ip);
     } // ip
     
     ip = 0;
@@ -562,18 +553,17 @@ PROCESS_AND_STORE_DONE:
   set_config(4*A_BUNDLE_DONE, 1);
   } // ib
   ib = 0;
-  debug_printf("done all bundles!!\n");
-  *p_done = 1;
-
-  
+  debug_printf("done all bundles!!\n");  
 #ifdef SIM
   is_first_call = 1;
 #endif
+  return 0;
 }
 
 
-// Rest fo the helper functions used in simulation.
+// Rest of the helper functions used in simulation.
 #ifdef SIM
+
 extern EXT_C void fill_memory (){
   FILE *fp;
   char f_path [1000];
@@ -611,7 +601,7 @@ extern EXT_C void model_setup(){
   // Check if the mem region is legal
   fill_memory();
   // Set up all the config registers
-  //printf("Setting up config registers\n");
+  // printf("Setting up config registers\n");
   set_config(4*A_START, 0);  // Start
   set_config(4*(A_DONE_READ+0), 1);  // Done read ocm bank 0
   set_config(4*(A_DONE_READ+1), 1);  // Done read ocm bank 1
@@ -644,8 +634,4 @@ extern EXT_C void model_setup(){
   //printf("Done setting up config registers and bram\n");
 }
 
-extern EXT_C void model_run(){
-  printf("Start...\n");
-  set_config(4*A_START, 1);  // Start
-}
 #endif

@@ -5,6 +5,7 @@ import subprocess
 import glob
 from deepsocflow.py.utils import *
 import deepsocflow
+import time
 
 
 class Hardware:
@@ -219,6 +220,7 @@ set M_OUTPUT_WIDTH_LF  {self.OUT_BITS}
         
 
         print("\n\nSIMULATING...\n\n")
+        start = time.time()
 
         if SIM == 'xsim':
             with open('build/xsim_cfg.tcl', 'w') as f:
@@ -228,6 +230,8 @@ set M_OUTPUT_WIDTH_LF  {self.OUT_BITS}
             subprocess.run(["vvp", "build/a.out"])
         if SIM == 'verilator':
             subprocess.run([f"./V{self.TB_MODULE}"], cwd="build")
+        
+        print(f"\n\nSIMULATION TIME: {time.time()-start:.2f} seconds\n\n")
 
 
     def export_vivado_tcl(self, board='zcu104', rtl_dir_abspath=None, scripts_dir_abspath=None, board_tcl_abspath=None):

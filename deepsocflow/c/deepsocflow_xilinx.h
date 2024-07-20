@@ -20,8 +20,6 @@
   #define debug_xil_printf xil_printf
 #endif
 
-static volatile uint8_t done_all = 0;
-
 // Helper functions that might vary for different hardware platforms
 
 static inline void write_flush_u8(u8* addr, u8 val) {
@@ -97,10 +95,9 @@ static inline void model_setup(){
 
 XTime time_start, time_end;
 
-static inline void model_run(){
+static inline void model_run_timing(){
   XTime_GetTime(&time_start);
-  set_config(4*A_START, 1); 
-  load_y (&done_all);
+  model_run();
   XTime_GetTime(&time_end);
 }
 
