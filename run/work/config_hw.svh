@@ -16,6 +16,7 @@
 `define XW_MAX              512         // max of input image width, across layers
 `define XN_MAX              64          // max of input batch size, across layers
 `define CI_MAX              2048        // max of input channels, across layers
+`define MAX_N_BUNDLES       64          // max number of bundles in a network
 `define CONFIG_BEATS        0           // constant, for now
 `define RAM_WEIGHTS_DEPTH   20          // CONFIG_BEATS + max(KW * CI), across layers
 `define RAM_EDGES_DEPTH     288         // max (KW * CI * XW), across layers when KW != 1
