@@ -374,7 +374,7 @@ always @* begin
             if (!m_axi_arvalid) begin
                 if (op_word_count_reg <= AXI_MAX_BURST_SIZE - (addr_reg & OFFSET_MASK) || AXI_MAX_BURST_SIZE >= 4096) begin
                     // packet smaller than max burst size
-                    if (((addr_reg & 12'hfff) + (op_word_count_reg & 12'hfff)) >> 12 != 0 || op_word_count_reg >> 12 != 0) begin
+                    if (((12'(addr_reg) & 12'hfff) + (12'(op_word_count_reg) & 12'hfff)) >> 12 != 0 || op_word_count_reg >> 12 != 0) begin
                         // crosses 4k boundary
                         tr_word_count_next = 13'h1000 - (addr_reg & 12'hfff);
                     end else begin
