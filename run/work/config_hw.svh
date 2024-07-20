@@ -26,4 +26,4 @@
 
 `define AXI_WIDTH           64        
 `define AXI_MAX_BURST_LEN   16        
-`define CONFIG_BASEADDR     0xB0000000
+`define CONFIG_BASEADDR     40'hB0000000  

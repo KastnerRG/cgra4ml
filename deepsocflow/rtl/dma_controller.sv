@@ -236,7 +236,7 @@ module dma_controller #(
   assign m_od_len     = o_bpt;
   assign m_od_tag     = 8'(ocm_idx);
   //wire   o_axi_ok     = o_axi_bvalid && o_axi_bready && (o_axi_bresp == 2'b00); // why? what is the resp during transfer?
-  wire o_axi_ok  =  os_valid && (os_error == 3'b000);
+  wire o_axi_ok  =  os_valid && (os_error == 4'b0);
 
   always_ff @(posedge clk) // All cfg written in this always block
     if (!rstn) begin 

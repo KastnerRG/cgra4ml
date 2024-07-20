@@ -37,23 +37,23 @@ module cgra4ml_axi2ram_tb #(
                 SRAM_RD_DEPTH           = 256,
                 COUNTER_WIDTH           = 32,
                 AXI_ADDR_WIDTH          = 32,
-                AXI_DATA_WIDTH          = 32,
+                AXIL_WIDTH          = 32,
                 AXI_LEN_WIDTH           = 32,
-                AXIL_BASE_ADDR          = 40'h0B00000000,
+                AXIL_BASE_ADDR          = `CONFIG_BASEADDR,
     
     // Parameters for axilite to ram
                 DATA_WR_WIDTH           = 32,
                 DATA_RD_WIDTH           = 32,
-                ADDR_WIDTH              = 40,
+                AXIL_ADDR_WIDTH              = 40,
                 STRB_WIDTH              = 4,
-                TIMEOUT                 = 0,
+                TIMEOUT                 = 2,
 
     // Alex AXI DMA RD
                 AXI_DATA_WIDTH_PS       = AXI_WIDTH,
                 //AXI_ADDR_WIDTH          = 32, same as above
                 AXI_STRB_WIDTH          = (AXI_WIDTH/8),
                 AXI_ID_WIDTH            = 6,
-                AXIS_DATA_WIDTH         = AXI_WIDTH,//AXI_DATA_WIDTH,
+                AXIS_DATA_WIDTH         = AXI_WIDTH,//AXIL_DATA_WIDTH,
                 AXIS_KEEP_ENABLE        = 1,//(AXIS_DATA_WIDTH>8),
                 AXIS_KEEP_WIDTH         = (AXI_WIDTH/8),//(AXIS_DATA_WIDTH/8),
                 AXIS_LAST_ENABLE        = 1,
@@ -88,7 +88,7 @@ module cgra4ml_axi2ram_tb #(
     /*
      * AXI-Lite slave interface
      */
-    input  wire [ADDR_WIDTH-1:0]  s_axil_awaddr,
+    input  wire [AXIL_ADDR_WIDTH-1:0]  s_axil_awaddr,
     input  wire [2:0]             s_axil_awprot,
     input  wire                   s_axil_awvalid,
     output wire                   s_axil_awready,
@@ -99,7 +99,7 @@ module cgra4ml_axi2ram_tb #(
     output wire [1:0]             s_axil_bresp,
     output wire                   s_axil_bvalid,
     input  wire                   s_axil_bready,
-    input  wire [ADDR_WIDTH-1:0]  s_axil_araddr,
+    input  wire [AXIL_ADDR_WIDTH-1:0]  s_axil_araddr,
     input  wire [2:0]             s_axil_arprot,
     input  wire                   s_axil_arvalid,
     output wire                   s_axil_arready,
@@ -406,44 +406,19 @@ axi_cgra4ml #(
     .Y_OUT_BITS(Y_OUT_BITS),
     .M_DATA_WIDTH_HF_CONV(M_DATA_WIDTH_HF_CONV),
     .M_DATA_WIDTH_HF_CONV_DW(M_DATA_WIDTH_HF_CONV_DW),
+
     .AXI_WIDTH(AXI_WIDTH),
-    .W_BPT(W_BPT),
-    .OUT_ADDR_WIDTH(OUT_ADDR_WIDTH),
-    .OUT_BITS(OUT_BITS),
-    .SRAM_RD_DATA_WIDTH(SRAM_RD_DATA_WIDTH),
-    .SRAM_RD_DEPTH(SRAM_RD_DEPTH),
-    .COUNTER_WIDTH(COUNTER_WIDTH),
-    .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(AXI_DATA_WIDTH),
-    .AXI_LEN_WIDTH(AXI_LEN_WIDTH),
-    .AXIL_BASE_ADDR(AXIL_BASE_ADDR),
-    .DATA_WR_WIDTH(DATA_WR_WIDTH),
-    .DATA_RD_WIDTH(DATA_RD_WIDTH),
-    .ADDR_WIDTH(ADDR_WIDTH),
-    .STRB_WIDTH(STRB_WIDTH),
-    .TIMEOUT(TIMEOUT),
-    .AXI_DATA_WIDTH_PS(AXI_DATA_WIDTH_PS),
-    .AXI_STRB_WIDTH(AXI_STRB_WIDTH),
     .AXI_ID_WIDTH(AXI_ID_WIDTH),
+    .AXI_STRB_WIDTH(AXI_STRB_WIDTH),
     .AXI_MAX_BURST_LEN(AXI_MAX_BURST_LEN),
-    .AXIS_DATA_WIDTH(AXIS_DATA_WIDTH),
-    .AXIS_KEEP_ENABLE(AXIS_KEEP_ENABLE),
-    .AXIS_KEEP_WIDTH(AXIS_KEEP_WIDTH),
-    .AXIS_LAST_ENABLE(AXIS_LAST_ENABLE),
-    .AXIS_ID_ENABLE(AXIS_ID_ENABLE),
-    .AXIS_ID_WIDTH(AXIS_ID_WIDTH),
-    .AXIS_DEST_ENABLE(AXIS_DEST_ENABLE),
-    .AXIS_DEST_WIDTH(AXIS_DEST_WIDTH),
-    .AXIS_USER_ENABLE(AXIS_USER_ENABLE),
-    .AXIS_USER_WIDTH(AXIS_USER_WIDTH),
-    .LEN_WIDTH(LEN_WIDTH),
-    .TAG_WIDTH(TAG_WIDTH),
-    .ENABLE_SG(ENABLE_SG),
-    .ENABLE_UNALIGNED(ENABLE_UNALIGNED)
+    .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
+
+    .AXIL_WIDTH(AXIL_WIDTH),
+    .AXIL_ADDR_WIDTH(AXIL_ADDR_WIDTH),
+    .STRB_WIDTH(STRB_WIDTH),
+    .W_BPT(W_BPT)
 ) OC_TOP (
     .*
 );
-
-
 
 endmodule

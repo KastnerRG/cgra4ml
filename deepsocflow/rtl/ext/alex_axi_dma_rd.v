@@ -161,6 +161,7 @@ wire                       s_axis_read_desc_valid  = s_axis_read_desc_tvalid;
 wire    s_axis_read_desc_ready;
 
 // bus width assertions
+// synthesis translate_off
 initial begin
     if (AXI_WORD_SIZE * AXI_STRB_WIDTH != AXI_DATA_WIDTH) begin
         $error("Error: AXI data width not evenly divisble (instance %m)");
@@ -197,6 +198,7 @@ initial begin
         $finish;
     end
 end
+// synthesis translate_on
 
 localparam [1:0]
     AXI_RESP_OKAY = 2'b00,
@@ -307,6 +309,8 @@ assign m_axi_arprot = 3'b010;
 assign m_axi_arvalid = m_axi_arvalid_reg;
 assign m_axi_rready = m_axi_rready_reg;
 
+localparam MASK12 = 32'(12'hfff);
+
 always @* begin
     axi_state_next = AXI_STATE_IDLE;
 
@@ -339,14 +343,14 @@ always @* begin
             if (s_axis_read_desc_ready && s_axis_read_desc_valid) begin
                 if (ENABLE_UNALIGNED) begin
                     addr_next = s_axis_read_desc_addr;
-                    axis_cmd_offset_next = AXI_STRB_WIDTH > 1 ? AXI_STRB_WIDTH - (s_axis_read_desc_addr & OFFSET_MASK) : 0;
+                    axis_cmd_offset_next = OFFSET_WIDTH'(AXI_STRB_WIDTH > 1 ? AXI_STRB_WIDTH - (s_axis_read_desc_addr & OFFSET_MASK) : 0);
                     axis_cmd_bubble_cycle_next = axis_cmd_offset_next > 0;
-                    axis_cmd_last_cycle_offset_next = s_axis_read_desc_len & OFFSET_MASK;
+                    axis_cmd_last_cycle_offset_next = OFFSET_WIDTH'(s_axis_read_desc_len & OFFSET_MASK);
                 end else begin
                     addr_next = s_axis_read_desc_addr & ADDR_MASK;
                     axis_cmd_offset_next = 0;
                     axis_cmd_bubble_cycle_next = 1'b0;
-                    axis_cmd_last_cycle_offset_next = s_axis_read_desc_len & OFFSET_MASK;
+                    axis_cmd_last_cycle_offset_next = OFFSET_WIDTH'(s_axis_read_desc_len & OFFSET_MASK);
                 end
                 axis_cmd_tag_next = s_axis_read_desc_tag;
                 op_word_count_next = s_axis_read_desc_len;
@@ -356,11 +360,11 @@ always @* begin
                 axis_cmd_axis_user_next = s_axis_read_desc_user;
 
                 if (ENABLE_UNALIGNED) begin
-                    axis_cmd_input_cycle_count_next = (op_word_count_next + (s_axis_read_desc_addr & OFFSET_MASK) - 1) >> AXI_BURST_SIZE;
+                    axis_cmd_input_cycle_count_next = CYCLE_COUNT_WIDTH'((op_word_count_next + (s_axis_read_desc_addr & OFFSET_MASK) - 1) >> AXI_BURST_SIZE);
                 end else begin
-                    axis_cmd_input_cycle_count_next = (op_word_count_next - 1) >> AXI_BURST_SIZE;
+                    axis_cmd_input_cycle_count_next = CYCLE_COUNT_WIDTH'((op_word_count_next - 1) >> AXI_BURST_SIZE);
                 end
-                axis_cmd_output_cycle_count_next = (op_word_count_next - 1) >> AXI_BURST_SIZE;
+                axis_cmd_output_cycle_count_next = CYCLE_COUNT_WIDTH'((op_word_count_next - 1) >> AXI_BURST_SIZE);
 
                 axis_cmd_valid_next = 1'b1;
 
@@ -375,18 +379,18 @@ always @* begin
             if (!m_axi_arvalid) begin
                 if (op_word_count_reg <= AXI_MAX_BURST_SIZE - (addr_reg & OFFSET_MASK) || AXI_MAX_BURST_SIZE >= 4096) begin
                     // packet smaller than max burst size
-                    if (((addr_reg & 12'hfff) + (op_word_count_reg & 12'hfff)) >> 12 != 0 || op_word_count_reg >> 12 != 0) begin
+                    if (((addr_reg & MASK12) + (op_word_count_reg & MASK12)) >> 12 != 0 || op_word_count_reg >> 12 != 0) begin
                         // crosses 4k boundary
-                        tr_word_count_next = 13'h1000 - (addr_reg & 12'hfff);
+                        tr_word_count_next = 32'(13'h1000) - (addr_reg & MASK12);
                     end else begin
                         // does not cross 4k boundary
                         tr_word_count_next = op_word_count_reg;
                     end
                 end else begin
                     // packet larger than max burst size
-                    if (((addr_reg & 12'hfff) + AXI_MAX_BURST_SIZE) >> 12 != 0) begin
+                    if (((addr_reg & MASK12) + AXI_MAX_BURST_SIZE) >> 12 != 0) begin
                         // crosses 4k boundary
-                        tr_word_count_next = 13'h1000 - (addr_reg & 12'hfff);
+                        tr_word_count_next = 32'(13'h1000) - (addr_reg & MASK12);
                     end else begin
                         // does not cross 4k boundary
                         tr_word_count_next = AXI_MAX_BURST_SIZE - (addr_reg & OFFSET_MASK);
@@ -395,9 +399,9 @@ always @* begin
 
                 m_axi_araddr_next = addr_reg;
                 if (ENABLE_UNALIGNED) begin
-                    m_axi_arlen_next = (tr_word_count_next + (addr_reg & OFFSET_MASK) - 1) >> AXI_BURST_SIZE;
+                    m_axi_arlen_next = 8'((tr_word_count_next + (addr_reg & OFFSET_MASK) - 1) >> AXI_BURST_SIZE);
                 end else begin
-                    m_axi_arlen_next = (tr_word_count_next - 1) >> AXI_BURST_SIZE;
+                    m_axi_arlen_next = 8'((tr_word_count_next - 1) >> AXI_BURST_SIZE);
                 end
                 m_axi_arvalid_next = 1'b1;
 
@@ -529,7 +533,7 @@ always @* begin
                     if (output_last_cycle_reg) begin
                         // no more data to transfer, finish operation
                         if (last_cycle_offset_reg > 0) begin
-                            m_axis_read_data_tkeep_int = {AXIS_KEEP_WIDTH_INT{1'b1}} >> (AXIS_KEEP_WIDTH_INT - last_cycle_offset_reg);
+                            m_axis_read_data_tkeep_int = {AXIS_KEEP_WIDTH_INT{1'b1}} >> (AXIS_KEEP_WIDTH_INT - 32'(last_cycle_offset_reg));
                         end
                         m_axis_read_data_tlast_int = 1'b1;
 

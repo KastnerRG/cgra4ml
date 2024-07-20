@@ -38,7 +38,7 @@ module alex_axilite_rd #
     // Width of wstrb (width of data bus in words)
     parameter STRB_WIDTH = 4,
     // Timeout delay (cycles)
-    parameter TIMEOUT = 0
+    parameter TIMEOUT = 2
 )
 (
     input  wire                   clk,
@@ -66,7 +66,7 @@ module alex_axilite_rd #
     input  wire                   reg_rd_ack    // const 1
 );
 
-parameter TIMEOUT_WIDTH = 0;
+parameter TIMEOUT_WIDTH = $clog2(TIMEOUT);
 
 reg [TIMEOUT_WIDTH-1:0] timeout_count_reg, timeout_count_next;
 reg [ADDR_WIDTH-1:0] s_axil_araddr_reg, s_axil_araddr_next;
@@ -100,7 +100,7 @@ always @* begin
     if (!s_axil_arvalid_reg) begin
         s_axil_araddr_next = s_axil_araddr;
         s_axil_arvalid_next = s_axil_arvalid;
-        timeout_count_next = TIMEOUT-1;
+        timeout_count_next = TIMEOUT_WIDTH'(TIMEOUT-1);
     end
 
     if (reg_rd_en && !reg_rd_wait && timeout_count_reg != 0)begin
