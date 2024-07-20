@@ -25,7 +25,7 @@ update_compile_order -fileset sources_1
 
 # Set AXl-lite and full_AXI addresses
 set_property range 256M [get_bd_addr_segs {zynq_ultra_ps_e_0/Data/SEG_rtl_oc_top_0_reg0}]
-set_property offset ${AXILITE_ADDR} [get_bd_addr_segs {zynq_ultra_ps_e_0/Data/SEG_rtl_oc_top_0_reg0}]
+set_property offset ${CONFIG_BASEADDR} [get_bd_addr_segs {zynq_ultra_ps_e_0/Data/SEG_rtl_oc_top_0_reg0}]
 assign_bd_address
 save_bd_design
 

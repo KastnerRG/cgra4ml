@@ -32,6 +32,7 @@ module axi_cgra4ml #(
                 M_DATA_WIDTH_HF_CONV_DW = ROWS  * Y_BITS,
 
                 AXI_WIDTH               = `AXI_WIDTH          ,
+                AXI_MAX_BURST_LEN       = `AXI_MAX_BURST_LEN,
                 W_BPT                   = `W_BPT              ,
 
                 OUT_ADDR_WIDTH          = 10,
@@ -53,14 +54,13 @@ module axi_cgra4ml #(
                 TIMEOUT                 = 0,
 
     // Alex AXI DMA RD
-                AXI_DATA_WIDTH_PS       = 128,
+                AXI_DATA_WIDTH_PS       = AXI_WIDTH,
               //AXI_ADDR_WIDTH          = 32, same as above
-                AXI_STRB_WIDTH          = 16,//(AXI_DATA_WIDTH/8),
+                AXI_STRB_WIDTH          = (AXI_WIDTH/8),//(AXI_DATA_WIDTH/8),
                 AXI_ID_WIDTH            = 6,
-                AXI_MAX_BURST_LEN       = 16,
-                AXIS_DATA_WIDTH         = 128,//AXI_DATA_WIDTH,
+                AXIS_DATA_WIDTH         = AXI_WIDTH,//AXI_DATA_WIDTH,
                 AXIS_KEEP_ENABLE        = 1,//(AXIS_DATA_WIDTH>8),
-                AXIS_KEEP_WIDTH         = 16,//(AXIS_DATA_WIDTH/8),
+                AXIS_KEEP_WIDTH         = (AXI_WIDTH/8),//(AXIS_DATA_WIDTH/8),
                 AXIS_LAST_ENABLE        = 1,
                 AXIS_ID_ENABLE          = 0,
                 AXIS_ID_WIDTH           = 6,
@@ -72,8 +72,6 @@ module axi_cgra4ml #(
                 TAG_WIDTH               = 8,
                 ENABLE_SG               = 0,
                 ENABLE_UNALIGNED        = 1
-
-
 
 ) (
     // axilite interface for configuration

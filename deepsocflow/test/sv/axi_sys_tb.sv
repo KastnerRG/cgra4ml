@@ -8,7 +8,7 @@ module axi_sys_tb;
               DATA_WR_WIDTH       = 32,
               STRB_WIDTH          = 4,
               DATA_RD_WIDTH       = 32,
-		          C_S_AXI_DATA_WIDTH	= 128,
+		          C_S_AXI_DATA_WIDTH	= `AXI_WIDTH,
 		          C_S_AXI_ADDR_WIDTH	= 32,
               LSB = $clog2(C_S_AXI_DATA_WIDTH)-3;             
 
