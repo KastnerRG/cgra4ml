@@ -1,6 +1,8 @@
 import numpy as np
 from collections import namedtuple
 
+from deepsocflow.py.utils import *
+
 def get_runtime_params(hw, w_shape, x_shape, o_shape, core, pool, flatten):
 
     KH, KW, CI, CO = w_shape
@@ -329,7 +331,7 @@ def predict_bundle_performance(hw, r):
     return clocks, mem_bits
 
 
-def predict_model_performance(BUNDLES, hw):
+def predict_model_performance(hw):
 
     clocks_total = 0
     for b in BUNDLES:

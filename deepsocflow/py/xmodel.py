@@ -350,7 +350,7 @@ def export_inference(model, hw):
 
 def verify_inference(model, hw, SIM, SIM_PATH):
     
-    seconds, mem_bytes = predict_model_performance(BUNDLES=BUNDLES, hw=hw)
+    seconds, mem_bytes = predict_model_performance(hw=hw)
     print(f"Predicted time on hardware: {1000*seconds:.5f} ms/frame")
     print(f"Predicted fps: {1/seconds}")
     print(f"Data movement (bytes): mem_bytes")
