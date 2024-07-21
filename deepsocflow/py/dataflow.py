@@ -94,35 +94,6 @@ def get_runtime_params(hw, w_shape, x_shape, o_shape, core, pool, flatten):
     return r
 
 
-def predict_performance(hw, r):
-
-    clocks_p0 = r.IT*(1 + r.XN*r.XL*r.XW*(1 + r.CM_0*r.KH))
-    clocks_p  = r.IT*(1 + r.XN*r.XL*r.XW*(1 + r.CM*r.KH))
-
-    mem_bits_p0 = \
-        hw.X_BITS * (r.IT * r.XN   * r.XL * r.XW * r.CM_0 * (hw.ROWS + r.X_PAD-1)) +\
-        hw.K_BITS * (r.IT * r.CM_0 * r.KH * hw.COLS) +\
-        hw.X_BITS * (r.XN * r.XH   * r.XW * r.CO)
-    mem_bits_p = \
-        hw.X_BITS * (r.IT * r.XN   * r.XL * r.XW * r.CM   * (hw.ROWS + r.X_PAD-1)) +\
-        hw.K_BITS * (r.IT * r.CM_0 * r.KH * hw.COLS) +\
-        hw.X_BITS * (r.XN * r.XH   * r.XW * r.CO)
-
-    '''
-    Accurate mem access (output):
-        - baseline: next bundle input + padding
-        - p_add   - write & read
-        - pooling - write & read
-        - softmax - write & read
-    '''
-
-    clocks    = clocks_p0 + (r.CP-1)*clocks_p
-    mem_bits  = mem_bits_p0 + (r.CP-1)*mem_bits_p
-
-    return clocks, mem_bits
-
-
-
 def create_headers(hw, r):
     '''
     Create headers
@@ -328,3 +299,43 @@ def pack_words_into_bytes (arr, bits):
     for i_word in range(1, w_words_per_byte):
         arr[:,0] += arr[:,i_word] << (i_word * bits) # pack multiple words into a byte
     return arr[:,0].astype(np.uint8) # packed byte
+
+
+def predict_bundle_performance(hw, r):
+
+    clocks_p0 = r.IT*(1 + r.XN*r.XL*r.XW*(1 + r.CM_0*r.KH))
+    clocks_p  = r.IT*(1 + r.XN*r.XL*r.XW*(1 + r.CM*r.KH))
+
+    mem_bits_p0 = \
+        hw.X_BITS * (r.IT * r.XN   * r.XL * r.XW * r.CM_0 * (hw.ROWS + r.X_PAD-1)) +\
+        hw.K_BITS * (r.IT * r.CM_0 * r.KH * hw.COLS) +\
+        hw.X_BITS * (r.XN * r.XH   * r.XW * r.CO)
+    mem_bits_p = \
+        hw.X_BITS * (r.IT * r.XN   * r.XL * r.XW * r.CM   * (hw.ROWS + r.X_PAD-1)) +\
+        hw.K_BITS * (r.IT * r.CM_0 * r.KH * hw.COLS) +\
+        hw.X_BITS * (r.XN * r.XH   * r.XW * r.CO)
+
+    '''
+    Accurate mem access (output):
+        - baseline: next bundle input + padding
+        - p_add   - write & read
+        - pooling - write & read
+        - softmax - write & read
+    '''
+
+    clocks    = clocks_p0 + (r.CP-1)*clocks_p
+    mem_bits  = mem_bits_p0 + (r.CP-1)*mem_bits_p
+
+    return clocks, mem_bits
+
+
+def predict_model_performance(BUNDLES, hw):
+
+    clocks_total = 0
+    for b in BUNDLES:
+        clocks, mem_bits = predict_bundle_performance(hw=hw, r=b.r)
+        clocks_total += clocks
+
+    time = clocks_total / (hw.FREQ * 1e6)
+    mem_bytes = mem_bits / 8
+    return time, mem_bytes

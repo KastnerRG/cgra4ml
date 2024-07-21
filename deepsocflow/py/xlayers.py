@@ -271,6 +271,8 @@ class XPool(Layer):
     
     def call_int(self, x, hw):
 
+        self.x = x
+
         in_arr = x.itensor.numpy().astype(int)
         YN, YH, YW, YC = in_arr.shape
         PKH, PKW = self.pool_layer.pool_size
