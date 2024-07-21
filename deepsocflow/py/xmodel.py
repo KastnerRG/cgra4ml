@@ -158,8 +158,8 @@ def export_inference(model, hw):
 
             w_bpt    = (hw.K_BITS*b.we[-1][0].size + hw.AXI_WIDTH)//8
             w_bpt_p0 = (hw.K_BITS*b.we[0][0].size + hw.AXI_WIDTH )//8
-            x_bpt    = (hw.X_BITS*b.xe[-1].size + hw.AXI_WIDTH   )//8 
-            x_bpt_p0 = (hw.X_BITS*b.xe[0].size + hw.AXI_WIDTH    )//8
+            x_bpt    = (hw.X_BITS*b.xe[-1].size)//8 
+            x_bpt_p0 = (hw.X_BITS*b.xe[0].size )//8
             
             if ib == len(BUNDLES)-1:
                 o_words_b = b.o_int.size
@@ -171,8 +171,8 @@ def export_inference(model, hw):
                 o_wpt_p0  = b_next.xe[0].size
                 o_words_b = o_wpt_p0 + (b_next.r.CP-1)*o_wpt
 
-                o_bpt = (hw.X_BITS*b_next.xe[-1].size + hw.AXI_WIDTH)//8
-                o_bpt_p0 = (hw.X_BITS*b_next.xe[0].size + hw.AXI_WIDTH)//8
+                o_bpt = (hw.X_BITS*b_next.xe[-1].size)//8
+                o_bpt_p0 = (hw.X_BITS*b_next.xe[0].size)//8
                 o_bytes_b = o_bpt_p0 + (b_next.r.CP-1)*o_bpt
 
             xp_words  = b.r.XN * b.r.XL * b.r.XW * (hw.ROWS+b.r.X_PAD)
@@ -223,7 +223,7 @@ def export_inference(model, hw):
             ch.write(     f".ca_nzero={ca_nzero:<3}, .ca_shift={ca_shift:<3}, .ca_pl_scale={ca_pl_scale:<3}, .aa_nzero={aa_nzero:<3}, .aa_shift={aa_shift:<3}, .aa_pl_scale={aa_pl_scale:<3}, .pa_nzero={pa_nzero:<3}, .pa_shift={pa_shift:<3}, .pa_pl_scale={pa_pl_scale:<3}, .softmax_frac={b.softmax_frac:<3}, ")
             ch.write(     f".softmax_max_f={b.softmax_max_f:<15}, ")
             ch.write(     f".csh={b.r.CSH:<3}, .ch={b.r.CYH:<3}, .csh_shift={b.r.CSH_SHIFT:<3}, .pkh={b.r.PKH:<3}, .psh={b.r.PSH:<3}, .ph={b.r.PYH:<3}, .psh_shift={b.r.PSH_SHIFT:<3}, .csw={b.r.CSW:<3}, .cw={b.r.CYW:<3}, .csw_shift={b.r.CSW_SHIFT:<3}, .pkw={b.r.PKW:<3}, .psw={b.r.PSW:<3}, .pw={b.r.PYW:<3}, .psw_shift={b.r.PSW_SHIFT:<3}, .pool={pool_type:<10}, .on={b.r.ON:<3}, .oh={b.r.OH:<3}, .ow={b.r.OW:<3}, .oc={b.r.OC:<4}, ")
-            ch.write(     f".x_header={b.r.x_header_le_p[-1][0]:>23}u, .x_header_p0={b.r.x_header_le_p[0][0]:>23}u, .w_header={b.r.w_header_le_p[-1][0]:>23}u, .w_header_p0={b.r.x_header_le_p[0][0]:>25}u , ")
+            ch.write(     f".header={b.r.header[0]:>23}u, .w_header={b.r.w_header_le_p[-1][0]:>23}u, .w_header_p0={b.r.w_header_le_p[0][0]:>25}u , ")
             ch.write(     f".debug_nhwc_words={b.oe_exp_nhwc.size:<9} }}")
             
             b_words += b.be.size if b.core.b else 0
@@ -280,7 +280,7 @@ def export_inference(model, hw):
                 b_bitstring += b.be.astype(type_d['np'][hw.B_BITS]).tobytes()
             for ip in range(b.r.CP):
                 xe = pack_words_into_bytes(arr=b.xe[ip].flatten(), bits=hw.X_BITS)
-                x_bitstring_b += b.r.x_header_be_p[ip!=0].tobytes() + header_padding + xe.tobytes()
+                x_bitstring_b += xe.tobytes()
                     
                 for it in range(b.r.IT):
                     we = pack_words_into_bytes(arr=b.we[ip][it].flatten(), bits=hw.K_BITS)
@@ -312,17 +312,9 @@ def export_inference(model, hw):
             np.savetxt(f"{hw.DATA_DIR}/{b.ib}_xe.txt", np.concatenate([a.flatten() for a in b.xe]), fmt='%d')
             for ip in range(b.r.CP):
                 CM_p = b.r.CM_0 if ip==0 else b.r.CM
-                x_config = b.r.x_header_le_p[ip!=0][0]
-                x_config = format(x_config, f'#0{hw.AXI_WIDTH}b')
-                x_config_words = [int(x_config[i:i+hw.X_BITS], 2) for i in range(0, len(x_config), hw.X_BITS)]
-                x_config_words.reverse()
-                x_config_words = np.array(x_config_words, dtype=np.uint8)
 
                 xp = b.xe[ip].flatten()
-                xp = np.concatenate([x_config_words, xp], axis=0)
-                # assert xp.shape == (hw.AXI_WIDTH/hw.X_BITS +b.r.XN*b.r.XL*b.r.XW*CM_p*(hw.ROWS+r.XPAD),)
                 np.savetxt(f"{hw.DATA_DIR}/{b.ib}_{ip}_x.txt", xp, fmt='%d')
-
 
                 for it in range(b.r.IT):
                     

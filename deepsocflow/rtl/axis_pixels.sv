@@ -10,6 +10,7 @@ module axis_pixels #(
               WORD_WIDTH         = `X_BITS             ,
               RAM_EDGES_DEPTH    = `RAM_EDGES_DEPTH    , 
               AXI_WIDTH          = `AXI_WIDTH          ,
+              HEADER_WIDTH       = `HEADER_WIDTH       ,
 
   localparam  EDGE_WORDS         =  KH_MAX/2              ,
               IM_SHIFT_REGS      =  ROWS + KH_MAX-1       ,
@@ -26,6 +27,7 @@ module axis_pixels #(
     input  logic s_last ,
     input  logic [AXI_WIDTH/WORD_WIDTH-1:0][WORD_WIDTH-1:0] s_data,
     input  logic [AXI_WIDTH/WORD_WIDTH-1:0] s_keep,
+    input  logic [HEADER_WIDTH:0] s_user,
 
     input  logic m_ready,
     output logic m_valid,
@@ -103,13 +105,15 @@ module axis_pixels #(
   // State machine
   enum {SET, PASS , BLOCK} state;
 
-  logic en_config, en_shift, en_copy, en_kh, en_copy_r, last_kh, last_kh_r, last_clk_kh, last_clk_kh_r, last_clk_ci, last_clk_w, last_l, last_l_r, m_last_reg, m_last, first_l, first_l_r;
+  logic en_config, en_shift, en_copy, en_kh, en_copy_r, last_kh, last_kh_r, last_clk_kh, last_clk_kh_r, last_clk_ci, last_clk_w, last_l, last_l_r, m_last_reg, m_last, first_l, first_l_r, first_p;
   logic [BITS_KH2-1:0] ref_kh2, ref_kh2_in, ref_kh2_in_bounded;
-  logic [BITS_CI -1:0] ref_ci_in;
+  logic [BITS_CI -1:0] ref_ci_in, ref_ci_p0_in, ref_ci_p_in;
   logic [BITS_XW -1:0] ref_w_in ;
   logic [BITS_IM_BLOCKS-1:0] ref_l_in ;
-  localparam BITS_REF = BITS_IM_BLOCKS + BITS_XW + BITS_CI + BITS_KH2;
-  assign {ref_l_in, ref_w_in, ref_ci_in, ref_kh2_in} = BITS_REF'(s_data);
+  localparam BITS_REF = 2*BITS_CI + BITS_IM_BLOCKS + BITS_XW + BITS_KH2 + 1;
+
+  assign {ref_ci_p_in, ref_ci_p0_in, ref_l_in, ref_w_in, ref_kh2_in, first_p} = BITS_REF'(s_user);
+  assign ref_ci_in = first_p ? ref_ci_p0_in : ref_ci_p_in;
 
   wire dw_m_last_beat = i_valid    && i_ready    && i_last;
   wire s_last_beat    = s_valid    && s_ready    && s_last;
@@ -118,9 +122,9 @@ module axis_pixels #(
   wire m_beat         = m_ready    && m_valid;
 
   always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
-    if (!aresetn)                      state <= SET ;
+    if (!aresetn)                      state <= SET ; 
     else case (state)
-      SET   : if (s_valid && s_ready)  state <= PASS;
+      SET   : if (s_valid)             state <= PASS; // During set, read user without giving ready
       PASS  : if (s_last_beat)
                 if (m_last_beat)       state <= SET;
                 else                   state <= BLOCK;
@@ -136,7 +140,7 @@ module axis_pixels #(
 
   always_comb
     if (state == SET) begin 
-      s_ready       = 1;
+      s_ready       = 0;
       {dw_re_s_valid, i_ready, i_data, i_valid, i_last, dw_re_m_ready, dw_ro_m_ready, dw_ro_s_valid} = '0;
     end else begin
 

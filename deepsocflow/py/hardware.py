@@ -28,6 +28,7 @@ class Hardware:
             ram_weights_depth: int = 512, 
             ram_edges_depth: int|None = 288,
             axi_width: int = 64,
+            header_width: int = 64,
             config_baseaddr = "B0000000",
             mem_baseaddr = "20000000",
             axi_max_burst_len: int = 16,
@@ -73,6 +74,7 @@ class Hardware:
         self.XH_MAX, self.XW_MAX = tuple(max_image_size ) if (type(max_image_size ) in [tuple, list]) else (max_image_size , max_image_size )
         self.MAX_N_BUNDLES = max_n_bundles
         self.AXI_WIDTH = axi_width
+        self.HEADER_WIDTH = header_width
         self.CONFIG_BASEADDR = config_baseaddr
         self.MEM_BASEADDR = mem_baseaddr
         self.AXI_MAX_BURST_LEN = axi_max_burst_len
@@ -181,6 +183,7 @@ class Hardware:
 `define DELAY_W_RAM         2            // constant, for now 
 
 `define AXI_WIDTH           {self.AXI_WIDTH          :<10}
+`define HEADER_WIDTH        {self.HEADER_WIDTH       :<10}
 `define AXI_MAX_BURST_LEN   {self.AXI_MAX_BURST_LEN  :<10}
 `define CONFIG_BASEADDR     40'h{self.CONFIG_BASEADDR:<10}
 ''')

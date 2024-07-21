@@ -25,7 +25,7 @@ typedef const struct {
   const i8   ca_nzero, ca_shift, ca_pl_scale, aa_nzero, aa_shift, aa_pl_scale, pa_nzero, pa_shift, pa_pl_scale, softmax_frac;
   const f32  softmax_max_f;
   const i32  csh, ch, csh_shift, pkh, psh, ph, psh_shift, csw, cw, csw_shift, pkw, psw, pw, psw_shift, pool, on, oh, ow, oc;
-  const u64  x_header, x_header_p0, w_header, w_header_p0; // 64 bits (at least)
+  const u64  header, w_header, w_header_p0; // 64 bits (at least)
   const i32  debug_nhwc_words;
 } Bundle_t;
 
@@ -182,18 +182,15 @@ static inline void write_x(i8 val, i8 *p_out_buffer, i32 ib, i32 ixp, i32 ixn, i
 #endif
 
   // Pack bits and store
-  i32 flat_index_with_header = p_offset + flat_index_n2r + (ixp+1)*(AXI_WIDTH/X_BITS);
-  i32 packed_index           = flat_index_with_header / X_WORDS_PER_BYTE;
-  u8 packed_position        = flat_index_with_header % X_WORDS_PER_BYTE; // 0,1,2,3
+  div_t packed_idx = div(p_offset + flat_index_n2r, X_WORDS_PER_BYTE);
+  assert_printf (packed_idx.quot , <, bundles[ib].o_bytes, "write_x", WRITEX_DEBUG_INFO);
 
-  assert_printf (packed_index , <, bundles[ib].o_bytes, "write_x", WRITEX_DEBUG_INFO);
+  u8 packed_val      = ((u8)val & X_BITS_MASK) << (packed_idx.rem * X_BITS);
+  u8 mem_val         = p_out_buffer[packed_idx.quot];
+  u8 mem_val_cleaned = X_POSITION_INVERTED_MASKS[packed_idx.rem] & mem_val;
+  write_flush_u8((u8*)(p_out_buffer + packed_idx.quot), mem_val_cleaned | packed_val);
 
-  u8 packed_val             = ((u8)val & X_BITS_MASK) << (packed_position * X_BITS);
-  u8 mem_val                = p_out_buffer[packed_index];
-  u8 mem_val_cleaned        = X_POSITION_INVERTED_MASKS[packed_position] & mem_val;
-  write_flush_u8((u8*)(p_out_buffer + packed_index), mem_val_cleaned | packed_val);
-
-  // if (ib==1 && packed_index >= 356) debug_printf("index:%d, final_val:%d --- position:%d value:%d packed_val:%d, mem_val:%d, mem_val_cleaned:%d, clean_mask:%d, pos_mask:%d \n", packed_index, mem.debug_packed[packed_index], packed_position, val, packed_val, mem_val, mem_val_cleaned, X_BITS_MASK, X_POSITION_INVERTED_MASKS[packed_position]);
+  // if (ib==1 && packed_idx.quot >= 356) debug_printf("index:%d, final_val:%d --- position:%d value:%d packed_val:%d, mem_val:%d, mem_val_cleaned:%d, clean_mask:%d, pos_mask:%d \n", packed_index, mem.debug_packed[packed_index], packed_position, val, packed_val, mem_val, mem_val_cleaned, X_BITS_MASK, X_POSITION_INVERTED_MASKS[packed_position]);
 }
 
 
@@ -308,20 +305,6 @@ extern EXT_C u8 model_run() {
 
     pb = &bundles[ib];
     p_out_buffer = (i8*)&mem.out_buffers[pb->out_buffer_idx];
-
-    // Init - add headers to out buffer
-    if (ib != N_BUNDLES-1 && pb->ib_out != -1) {
-      Bundle_t *pb_out = &bundles[pb->ib_out];
-      for (int ixp=0; ixp < pb_out->p; ixp++) {
-        i32 offset_words   = (ixp == 0) ? 0 : (pb_out->cm_p0 + (ixp-1)*pb_out->cm)*pb_out->xp_words;
-        i32 offset_bytes   = offset_words/X_WORDS_PER_BYTE + ixp*(AXI_WIDTH/8);
-        u64 *p_header = (u64*)&(p_out_buffer[offset_bytes]);
-        write_flush_u64(p_header+0, ixp == 0 ? pb_out->x_header_p0 : pb_out->x_header);
-        if (AXI_WIDTH == 128)
-          write_flush_u64(p_header+1, (u64)0);
-        // debug_printf("--------ib:%d, ixp:%d offset_bytes:%d\n", ib, ixp, offset_bytes);
-      }
-    }
 
     for (ip = 0; ip < pb->p; ip++) {
       for (it = 0; it < pb->t; it++) {
@@ -671,9 +654,12 @@ extern EXT_C void model_setup(){
     parameters[8*var+2] = bundles[var].x_bpt;     // x_bpt
     parameters[8*var+3] = bundles[var].w_bpt_p0;  // w_bpt0
     parameters[8*var+4] = bundles[var].w_bpt;     // w_bpt
-    parameters[8*var+5] = bundles[var].p;         // max p
-    parameters[8*var+6] = bundles[var].t;         // max t
-    parameters[8*var+7] = 0;                      // blank
+    assert_printf(bundles[var].p, <, 1<<16, "", "P should be less than 2**16 for bundle:%x", var);
+    assert_printf(bundles[var].t, <, 1<<16, "", "T should be less than 2**16 for bundle:%x", var);
+    parameters[8*var+5] = (bundles[var].t << 16) + bundles[var].p; // max p
+
+    parameters[8*var+6] = ((u32*)&bundles[var].header)[0];
+    parameters[8*var+7] = ((u32*)&bundles[var].header)[1];
   }
   for (int var = 0; var < 8*N_BUNDLES; var++){
     set_config(4*(16+var), parameters[var]);

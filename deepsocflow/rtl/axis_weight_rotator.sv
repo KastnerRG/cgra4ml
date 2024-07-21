@@ -15,6 +15,7 @@ module axis_weight_rotator #(
     XH_MAX              = `XH_MAX              ,
     XN_MAX              = `XN_MAX              ,
     AXI_WIDTH           = `AXI_WIDTH           ,
+    HEADER_WIDTH        = `HEADER_WIDTH        , 
     DELAY_W_RAM         = `DELAY_W_RAM         ,
     RAM_WEIGHTS_DEPTH   = `RAM_WEIGHTS_DEPTH   ,
     CONFIG_BEATS        = `CONFIG_BEATS        ,
@@ -44,6 +45,7 @@ module axis_weight_rotator #(
     input  logic                             s_axis_tlast ,
     input  logic [AXI_WIDTH            -1:0] s_axis_tdata ,
     input  logic [AXI_WIDTH/WORD_WIDTH -1:0] s_axis_tkeep ,
+    input  logic [HEADER_WIDTH           :0] s_axis_tuser ,
 
     input  logic    [COLS-1:0]               m_axis_tready,
     output logic    [COLS-1:0]               m_axis_tvalid,
@@ -52,6 +54,10 @@ module axis_weight_rotator #(
     //output logic [1:0] m_rd_state,
     output logic [COLS-1:0][WORD_WIDTH-1:0] m_axis_tdata
   );
+
+  // always @ (posedge aclk)
+  //   if (s_axis_tvalid && s_axis_tready && s_axis_tlast)
+  //     $display("weights: s_axis_tuser = %d", s_axis_tuser);
 
   enum {W_IDLE_S, W_GET_REF_S, W_WRITE_S, W_FILL_1_S, W_FILL_2_S, W_SWITCH_S} state_write;
   typedef enum {R_IDLE_S, R_PASS_CONFIG_S, R_READ_S, R_SWITCH_S} rd_state;
