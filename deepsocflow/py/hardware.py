@@ -212,7 +212,7 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
         print("\n\nCOMPILING...\n\n")
 
         if SIM == 'xsim':
-            assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xsc {self.MODULE_DIR}/c/sim.c --gcc_compile_options -I../').returncode == 0
+            assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xsc {self.MODULE_DIR}/c/sim.c --gcc_compile_options -I../ --gcc_compile_options -DSIM').returncode == 0
             assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xvlog -sv -f ../sources.txt -i ../').returncode == 0
             assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xelab {self.TB_MODULE} --snapshot {self.TB_MODULE} -log elaborate.log --debug typical -sv_lib dpi').returncode == 0
 
@@ -222,7 +222,7 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             assert subprocess.run(cmd).returncode == 0
 
         if SIM == "verilator":
-            cmd = f'{SIM_PATH}verilator --binary -j 0 -O3 --trace --trace-depth 0 --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -I../ {self.MODULE_DIR}/c/sim.c -CFLAGS -g --Mdir ./'
+            cmd = f'{SIM_PATH}verilator --binary -j 0 -O3 --trace --trace-depth 0 --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -DSIM -CFLAGS -I../ {self.MODULE_DIR}/c/sim.c -CFLAGS -g --Mdir ./'
             print(cmd)
             assert subprocess.run(cmd.split(' '), cwd='build').returncode == 0
         
