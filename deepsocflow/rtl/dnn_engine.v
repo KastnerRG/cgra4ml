@@ -15,6 +15,7 @@ module dnn_engine #(
 
                 AXI_WIDTH               = `AXI_WIDTH          ,
                 W_BPT                   = `W_BPT              ,
+                HEADER_WIDTH             = `HEADER_WIDTH        ,
 
                 OUT_ADDR_WIDTH          = 10,
                 OUT_BITS                = 32
@@ -27,12 +28,14 @@ module dnn_engine #(
     input  wire s_axis_pixels_tlast ,
     input  wire [AXI_WIDTH  -1:0]   s_axis_pixels_tdata,
     input  wire [AXI_WIDTH/8-1:0]   s_axis_pixels_tkeep,
+    input  wire [HEADER_WIDTH  :0]   s_axis_pixels_tuser, // header + 1
 
     output wire s_axis_weights_tready,
     input  wire s_axis_weights_tvalid,
     input  wire s_axis_weights_tlast ,
     input  wire [AXI_WIDTH  -1:0]  s_axis_weights_tdata,
     input  wire [AXI_WIDTH/8-1:0]  s_axis_weights_tkeep,
+    input  wire [HEADER_WIDTH  :0]  s_axis_weights_tuser, // header + 1
 
     input  wire m_axis_tready, 
     output wire m_axis_tvalid, m_axis_tlast,
@@ -78,6 +81,7 @@ module dnn_engine #(
     .s_valid(s_axis_pixels_tvalid),
     .s_last (s_axis_pixels_tlast ),
     .s_data (s_axis_pixels_tdata ),
+    .s_user (s_axis_pixels_tuser ),
     .s_keep (s_axis_pixels_tkeep_words),
     .m_valid(pixels_m_valid      ),
     .m_ready(pixels_m_ready      ),
@@ -92,6 +96,7 @@ module dnn_engine #(
     .s_axis_tlast  (s_axis_weights_tlast ), 
     .s_axis_tdata  (s_axis_weights_tdata ),
     .s_axis_tkeep  (s_axis_weights_tkeep_words),
+    .s_axis_tuser  (s_axis_weights_tuser ),
     .m_axis_tready (weights_m_ready      ),      
     .m_axis_tvalid (weights_m_valid      ),   
     .m_axis_tdata  (weights_m_data       ),

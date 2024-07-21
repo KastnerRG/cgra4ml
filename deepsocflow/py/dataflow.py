@@ -111,7 +111,18 @@ def create_headers(hw, r):
         packed_be = np.frombuffer(packed_le.tobytes(), dtype=np.dtype(np.uint64).newbyteorder('>'))
         return packed_le, packed_be # np.arrays
     
-    d = {'w_header_le_p':[], 'x_header_le_p':[], 'w_header_be_p':[], 'x_header_be_p':[]}
+    d = {'w_header_le_p':[],'w_header_be_p':[]}
+
+    d['header'] = pack_bits([
+            (r.KW//2  , hw.BITS_KW2),
+            (r.XW-1   , hw.BITS_COLS_MAX),
+            (r.XL-1   , hw.BITS_BLOCKS_MAX),
+            (r.CM_0-1 , hw.BITS_CIN_MAX),
+            (r.CM-1   , hw.BITS_CIN_MAX),
+            (r.XN-1   , hw.BITS_XN_MAX),
+            (hw.CONFIG_BEATS + r.KH*r.CM_0-1, hw.BITS_RAM_WEIGHTS_ADDR),
+            (hw.CONFIG_BEATS + r.KH*r.CM-1, hw.BITS_RAM_WEIGHTS_ADDR),
+        ], hw.HEADER_WIDTH)[0] # little endian
 
     for ip in range(min(2, r.CP)):
         CM_p = r.CM_0 if ip==0 else r.CM
@@ -129,16 +140,6 @@ def create_headers(hw, r):
         ], hw.AXI_WIDTH-1)
         d['w_header_le_p'] += [w_header_le]
         d['w_header_be_p'] += [w_header_be]
-
-        '''Input Config'''
-        x_header_le, x_header_be = pack_bits([
-            (r.KH//2, hw.BITS_KH2),
-            (CM_p-1 , hw.BITS_CIN_MAX),
-            (r.XW-1 , hw.BITS_COLS_MAX),
-            (r.XL-1 , hw.BITS_BLOCKS_MAX),
-        ], hw.AXI_WIDTH-1)
-        d['x_header_le_p'] += [x_header_le]
-        d['x_header_be_p'] += [x_header_be]
 
     
     n = namedtuple('Runtime', d)(**d)

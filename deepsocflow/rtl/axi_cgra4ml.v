@@ -135,7 +135,7 @@ localparam      OUT_ADDR_WIDTH          = 10,
     // Parameters for controller
                 SRAM_RD_DATA_WIDTH      = 256,
                 SRAM_RD_DEPTH           = `MAX_N_BUNDLES,
-                COUNTER_WIDTH           = 32,
+                COUNTER_WIDTH           = 16,
                 AXI_LEN_WIDTH           = 32,
                 AXIL_BASE_ADDR          = `CONFIG_BASEADDR,
                 TIMEOUT                 = 2, // since 0 gives error
@@ -148,8 +148,8 @@ localparam      OUT_ADDR_WIDTH          = 10,
                 AXIS_ID_ENABLE          = 0,
                 AXIS_DEST_ENABLE        = 0,
                 AXIS_DEST_WIDTH         = 8,
-                AXIS_USER_ENABLE        = 1,
-                AXIS_USER_WIDTH         = 1,
+                HEADER_WIDTH            = `HEADER_WIDTH,
+                AXIS_USER_WIDTH         = HEADER_WIDTH+1,
                 LEN_WIDTH               = 32,
                 TAG_WIDTH               = 8,
                 ENABLE_SG               = 0,
@@ -178,10 +178,12 @@ wire m_os_axis_write_desc_status_valid;
 
 
 wire [AXI_ADDR_WIDTH+AXI_LEN_WIDTH-1:0] m_xd_axis_write_desc_tdata;
+wire [AXIS_USER_WIDTH-1:0] m_xd_axis_write_desc_tuser;
 wire m_xd_axis_write_desc_tvalid;
 wire m_xd_axis_write_desc_tready;
 
 wire [AXI_ADDR_WIDTH+AXI_LEN_WIDTH-1:0] m_wd_axis_write_desc_tdata;
+wire [AXIS_USER_WIDTH-1:0] m_wd_axis_write_desc_tuser;
 wire m_wd_axis_write_desc_tvalid;
 wire m_wd_axis_write_desc_tready;
 
@@ -191,12 +193,15 @@ wire s_axis_pixels_tvalid;
 wire s_axis_pixels_tlast ;
 wire [AXI_WIDTH  -1:0]   s_axis_pixels_tdata;
 wire [AXI_WIDTH/8-1:0]   s_axis_pixels_tkeep;
+wire [AXIS_USER_WIDTH-1:0] s_axis_pixels_tuser;
 
 wire s_axis_weights_tready;
 wire s_axis_weights_tvalid;
 wire s_axis_weights_tlast ;
 wire [AXI_WIDTH  -1:0]  s_axis_weights_tdata;
 wire [AXI_WIDTH/8-1:0]  s_axis_weights_tkeep;
+wire [AXIS_USER_WIDTH-1:0] s_axis_weights_tuser;
+
     // AND, controller monitors the axis output status
 wire m_axis_output_tready; 
 wire m_axis_output_tvalid;
@@ -256,6 +261,7 @@ dma_controller #(
     .SRAM_RD_DEPTH(SRAM_RD_DEPTH),
     .COUNTER_WIDTH(COUNTER_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
+    .AXIS_USER_WIDTH(AXIS_USER_WIDTH),
     .AXI_DATA_WIDTH(AXIL_WIDTH),
     .AXI_LEN_WIDTH(AXI_LEN_WIDTH),
     .AXI_TAG_WIDTH(TAG_WIDTH)
@@ -283,10 +289,12 @@ dma_controller #(
     .m_od_ready(m_od_axis_write_desc_tready),
     .m_od_tag(m_od_axis_write_desc_tag),
     .m_xd_addr(m_xd_axis_write_desc_tdata[AXI_ADDR_WIDTH-1:0]),
+    .m_xd_user(m_xd_axis_write_desc_tuser),
     .m_xd_len(m_xd_axis_write_desc_tdata[AXI_ADDR_WIDTH+AXI_LEN_WIDTH-1:AXI_ADDR_WIDTH]),
     .m_xd_valid(m_xd_axis_write_desc_tvalid),
     .m_xd_ready(m_xd_axis_write_desc_tready),
     .m_wd_addr(m_wd_axis_write_desc_tdata[AXI_ADDR_WIDTH-1:0]),
+    .m_wd_user(m_wd_axis_write_desc_tuser),
     .m_wd_len((m_wd_axis_write_desc_tdata[AXI_ADDR_WIDTH+AXI_LEN_WIDTH-1:AXI_ADDR_WIDTH])),
     .m_wd_valid(m_wd_axis_write_desc_tvalid),
     .m_wd_ready(m_wd_axis_write_desc_tready)
@@ -299,6 +307,7 @@ dnn_engine #(
     .K_BITS(K_BITS),
     .Y_BITS(Y_BITS),
     .Y_OUT_BITS(Y_OUT_BITS),
+    .HEADER_WIDTH(HEADER_WIDTH),
     .M_DATA_WIDTH_HF_CONV(M_DATA_WIDTH_HF_CONV),
     .M_DATA_WIDTH_HF_CONV_DW(M_DATA_WIDTH_HF_CONV_DW),
     .AXI_WIDTH(AXI_WIDTH),
@@ -312,11 +321,13 @@ dnn_engine #(
     .s_axis_pixels_tvalid(s_axis_pixels_tvalid),
     .s_axis_pixels_tlast(s_axis_pixels_tlast),
     .s_axis_pixels_tdata(s_axis_pixels_tdata),
+    .s_axis_pixels_tuser(s_axis_pixels_tuser),
     .s_axis_pixels_tkeep(s_axis_pixels_tkeep),
     .s_axis_weights_tready(s_axis_weights_tready),
     .s_axis_weights_tvalid(s_axis_weights_tvalid),
     .s_axis_weights_tlast(s_axis_weights_tlast),
     .s_axis_weights_tdata(s_axis_weights_tdata),
+    .s_axis_weights_tuser(s_axis_weights_tuser),
     .s_axis_weights_tkeep(s_axis_weights_tkeep),
     .m_axis_tready(m_axis_output_tready),
     .m_axis_tvalid(m_axis_output_tvalid),
@@ -340,7 +351,7 @@ alex_axi_dma_rd #(
     .AXIS_ID_WIDTH(AXIS_ID_WIDTH),
     .AXIS_DEST_ENABLE(AXIS_DEST_ENABLE),
     .AXIS_DEST_WIDTH(AXIS_DEST_WIDTH),
-    .AXIS_USER_ENABLE(AXIS_USER_ENABLE),
+    .AXIS_USER_ENABLE(1),
     .AXIS_USER_WIDTH(AXIS_USER_WIDTH),
     .LEN_WIDTH(LEN_WIDTH),
     .TAG_WIDTH(TAG_WIDTH),
@@ -353,7 +364,7 @@ alex_axi_dma_rd #(
     .s_axis_read_desc_tag({TAG_WIDTH{1'b0}}),
     .s_axis_read_desc_tid({AXI_ID_WIDTH{1'b0}}),
     .s_axis_read_desc_tdest({AXIS_DEST_WIDTH{1'b0}}),
-    .s_axis_read_desc_tuser({AXIS_USER_WIDTH{1'b0}}),
+    .s_axis_read_desc_tuser(m_xd_axis_write_desc_tuser),
     .s_axis_read_desc_tvalid(m_xd_axis_write_desc_tvalid),
     .s_axis_read_desc_tready(m_xd_axis_write_desc_tready),
     .m_axis_read_desc_status_tag(),
@@ -366,7 +377,7 @@ alex_axi_dma_rd #(
     .m_axis_read_data_tlast(s_axis_pixels_tlast),
     .m_axis_read_data_tid(),
     .m_axis_read_data_tdest(),
-    .m_axis_read_data_tuser(),
+    .m_axis_read_data_tuser(s_axis_pixels_tuser),
     .m_axi_arid(m_axi_pixel_arid),
     .m_axi_araddr(m_axi_pixel_araddr),
     .m_axi_arlen(m_axi_pixel_arlen),
@@ -400,7 +411,7 @@ alex_axi_dma_rd #(
     .AXIS_ID_WIDTH(AXIS_ID_WIDTH),
     .AXIS_DEST_ENABLE(AXIS_DEST_ENABLE),
     .AXIS_DEST_WIDTH(AXIS_DEST_WIDTH),
-    .AXIS_USER_ENABLE(AXIS_USER_ENABLE),
+    .AXIS_USER_ENABLE(1),
     .AXIS_USER_WIDTH(AXIS_USER_WIDTH),
     .LEN_WIDTH(LEN_WIDTH),
     .TAG_WIDTH(TAG_WIDTH),
@@ -413,7 +424,7 @@ alex_axi_dma_rd #(
     .s_axis_read_desc_tag({TAG_WIDTH{1'b0}}),
     .s_axis_read_desc_tid({AXI_ID_WIDTH{1'b0}}),
     .s_axis_read_desc_tdest({AXIS_DEST_WIDTH{1'b0}}),
-    .s_axis_read_desc_tuser({AXIS_USER_WIDTH{1'b0}}),
+    .s_axis_read_desc_tuser(m_wd_axis_write_desc_tuser),
     .s_axis_read_desc_tvalid(m_wd_axis_write_desc_tvalid),
     .s_axis_read_desc_tready(m_wd_axis_write_desc_tready),
     .m_axis_read_desc_status_tag(),
@@ -426,7 +437,7 @@ alex_axi_dma_rd #(
     .m_axis_read_data_tlast(s_axis_weights_tlast),
     .m_axis_read_data_tid(),
     .m_axis_read_data_tdest(),
-    .m_axis_read_data_tuser(),
+    .m_axis_read_data_tuser(s_axis_weights_tuser),
     .m_axi_arid(m_axi_weights_arid),
     .m_axi_araddr(m_axi_weights_araddr),
     .m_axi_arlen(m_axi_weights_arlen),
@@ -460,7 +471,7 @@ alex_axi_dma_wr #(
     .AXIS_ID_WIDTH(AXIS_ID_WIDTH),
     .AXIS_DEST_ENABLE(AXIS_DEST_ENABLE),
     .AXIS_DEST_WIDTH(AXIS_DEST_WIDTH),
-    .AXIS_USER_ENABLE(AXIS_USER_ENABLE),
+    .AXIS_USER_ENABLE(0),
     .AXIS_USER_WIDTH(AXIS_USER_WIDTH),
     .LEN_WIDTH(LEN_WIDTH),
     .TAG_WIDTH(TAG_WIDTH),

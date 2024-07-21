@@ -88,8 +88,8 @@ module axi_sys_tb;
   
 
   initial begin
-    //$dumpfile("axi_tb_sys.vcd");
-    //$dumpvars();
+    $dumpfile("axi_tb_sys.vcd");
+    $dumpvars();
 
     rstn = 0;
     repeat(2) @(posedge clk) #10ps;

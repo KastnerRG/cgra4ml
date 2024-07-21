@@ -4,9 +4,10 @@ module dma_controller #(
   parameter
     SRAM_RD_DATA_WIDTH = 32*9,
     SRAM_RD_DEPTH      = 8   , // number of bundles
-    COUNTER_WIDTH      = 32  , // T, P, B counters
+    COUNTER_WIDTH      = 16  , // T, P, B counters
     AXI_ADDR_WIDTH     = 32  ,
     AXI_DATA_WIDTH     = 32  ,
+    AXIS_USER_WIDTH    = 65  ,
     AXI_LEN_WIDTH      = 32  , // WIDTH_BPT
     AXI_TAG_WIDTH      = 8   , // WIDTH_TAG
 
@@ -54,12 +55,14 @@ module dma_controller #(
 
   // DMA pixels descriptor
   (* mark_debug = "true" *) output logic [AXI_ADDR_WIDTH-1:0]  m_xd_addr ,
+  (* mark_debug = "true" *) output logic [AXIS_USER_WIDTH-1:0] m_xd_user ,
   (* mark_debug = "true" *) output logic [AXI_LEN_WIDTH -1:0]  m_xd_len  ,
   (* mark_debug = "true" *) output logic                       m_xd_valid,
   (* mark_debug = "true" *) input  logic                       m_xd_ready,
 
   // DMA weights descriptor
   (* mark_debug = "true" *) output logic [AXI_ADDR_WIDTH-1:0]  m_wd_addr ,
+  (* mark_debug = "true" *) output logic [AXIS_USER_WIDTH-1:0] m_wd_user ,
   (* mark_debug = "true" *) output logic [AXI_LEN_WIDTH -1:0]  m_wd_len  ,
   (* mark_debug = "true" *) output logic                       m_wd_valid,
   (* mark_debug = "true" *) input  logic                       m_wd_ready
@@ -119,9 +122,12 @@ module dma_controller #(
   assign ram_wr_addr = SRAM_WR_ADDR_WIDTH'(reg_wr_addr - 16);
   assign ram_wr_data = reg_wr_data;
 
-  (* mark_debug = "true" *) logic [COUNTER_WIDTH -1:0] ram_max_t, ram_max_p, ram_w_bpt, ram_w_bpt_p0, ram_x_bpt, ram_x_bpt_p0, w_bpt, w_bpt_p0, x_bpt, x_bpt_p0; // ram_ are combinational from ram
-  logic [AXI_ADDR_WIDTH-1:0] ram_xb_base_addr; // ib==0 ? mem.x : mem.out_buffers[bundles[ib].in_buffer_idx]
-  assign {ram_max_t, ram_max_p, ram_w_bpt, ram_w_bpt_p0, ram_x_bpt, ram_x_bpt_p0, ram_xb_base_addr} = 224'(ram_rd_data);
+   // ram_ are combinational from ram
+  (* mark_debug = "true" *) logic [COUNTER_WIDTH-1:0] ram_max_t, ram_max_p;
+  (* mark_debug = "true" *) logic [31:0] ram_w_bpt, ram_w_bpt_p0, ram_x_bpt, ram_x_bpt_p0, w_bpt, w_bpt_p0, x_bpt, x_bpt_p0;
+  logic [AXI_ADDR_WIDTH-1:0] ram_xb_base_addr;
+  logic [63:0] ram_header, x_header, w_header;
+  assign {ram_header, ram_max_t, ram_max_p, ram_w_bpt, ram_w_bpt_p0, ram_x_bpt, ram_x_bpt_p0, ram_xb_base_addr} = 256'(ram_rd_data);
 
   // SRAM rd_en arbitration
   (* mark_debug = "true" *) logic w_ram_rd_en, x_ram_rd_en, w_ram_rd_valid, x_ram_rd_valid;
@@ -170,10 +176,11 @@ module dma_controller #(
   assign m_wd_len      = f_wp ? w_bpt_p0 : w_bpt;
   assign m_wd_valid    = w_state == W_EXEC;
   assign en_wt         = m_wd_valid && m_wd_ready;
+  assign m_wd_user     = {w_header, f_wp};
 
   always_ff @(posedge clk)
-    if (!rstn)               {w_bpt_p0, w_bpt} <= 0;
-    else if (w_ram_rd_valid) {w_bpt_p0, w_bpt} <= {ram_w_bpt_p0, ram_w_bpt};
+    if (!rstn)               {w_header, w_bpt_p0, w_bpt} <= 0;
+    else if (w_ram_rd_valid) {w_header, w_bpt_p0, w_bpt} <= {ram_header, ram_w_bpt_p0, ram_w_bpt};
 
   
 
@@ -208,6 +215,7 @@ module dma_controller #(
   assign m_xd_len      = f_xp ? x_bpt_p0 : x_bpt;
   assign m_xd_valid    = x_state == X_EXEC;
   assign en_xt         = m_xd_valid && m_xd_ready;
+  assign m_xd_user     = {x_header, f_xp};
 
   // Increment m_xd_addr
   always_ff @(posedge clk)
@@ -216,8 +224,8 @@ module dma_controller #(
     else if (lc_xt)          m_xd_addr <= m_xd_addr + AXI_ADDR_WIDTH'(m_xd_len); // increment address every p (after t transfers)
 
   always_ff @(posedge clk)
-    if (!rstn)               {x_bpt_p0, x_bpt} <= 0;
-    else if (x_ram_rd_valid) {x_bpt_p0, x_bpt} <= {ram_x_bpt_p0, ram_x_bpt};
+    if (!rstn)               {x_header, x_bpt_p0, x_bpt} <= 0;
+    else if (x_ram_rd_valid) {x_header, x_bpt_p0, x_bpt} <= {ram_header, ram_x_bpt_p0, ram_x_bpt};
 
   (* mark_debug = "true" *) logic [COUNTER_WIDTH-1:0] count_xt_monitor;
   (* mark_debug = "true" *) logic count_xt_last_monitor;

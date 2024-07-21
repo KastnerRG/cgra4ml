@@ -219,8 +219,8 @@ def product_dict(**kwargs):
                                         config_baseaddr      = ["B0000000"],
                                         mem_baseaddr         = ["20000000"],
                                         target_cpu_int_bits  = [ 32      ],
-                                        valid_prob           = [ 1       ],
-                                        ready_prob           = [ 1       ],
+                                        valid_prob           = [ 0.01       ],
+                                        ready_prob           = [ 0.1       ],
                                         data_dir             = ['vectors'],
                                     )))
 def test_dnn_engine(PARAMS):
