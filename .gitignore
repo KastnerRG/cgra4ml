@@ -9,6 +9,8 @@ run/asic/*
 !deepsocflow/asic/reports
 
 *.pickle
+*.h5
+*.keras
 deepsocflow/test/vectors
 deepsocflow/test/xsim
 deepsocflow/test/dnn_engine_tb.vcd
@@ -29,6 +31,7 @@ run/work_resnet
 run/work_temp
 run/work_ccd
 run/work_dddd
+run/work_llm
 run/work/project_1
 
 

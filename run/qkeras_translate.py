@@ -11,13 +11,14 @@ from keras.utils import to_categorical
 from qkeras.utils import load_qmodel
 import numpy as np
 
+(SIM, SIM_PATH) = ('xsim', "F:/Xilinx/Vivado/2022.2/bin/") if os.name=='nt' else ('verilator', '')
 np.random.seed(42)
 
 '''
 Dataset
 '''
 
-NB_EPOCH = 0
+NB_EPOCH = 3
 BATCH_SIZE = 64
 VALIDATION_SPLIT = 0.1
 NB_CLASSES = 10
@@ -53,7 +54,6 @@ class UserModel(XModel):
                 filters=8,
                 kernel_size=11,
                 strides=(2,1),
-                use_bias=True,
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0)),
             pool=XPool(
                 type='avg',
@@ -69,7 +69,6 @@ class UserModel(XModel):
                 b_int_bits=0,
                 filters=8,
                 kernel_size=1,
-                use_bias=True,
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None)),
             add_act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0.125)
         )
@@ -80,7 +79,6 @@ class UserModel(XModel):
                 b_int_bits=0,
                 filters=8,
                 kernel_size=7,
-                use_bias=False,
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),),
             add_act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0)
         )
@@ -91,7 +89,6 @@ class UserModel(XModel):
                 b_int_bits=0,
                 filters=8,
                 kernel_size=5,
-                use_bias=True,
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),),
             add_act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0)
         )
@@ -102,7 +99,6 @@ class UserModel(XModel):
                 b_int_bits=0,
                 filters=24,
                 kernel_size=3,
-                use_bias=True,
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0),),
         )
 
@@ -112,18 +108,17 @@ class UserModel(XModel):
                 b_int_bits=0,
                 filters=10,
                 kernel_size=1,
-                use_bias=True,
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0),),
             flatten=True
         )
 
         self.b7 = XBundle(
             core=XDense(
-                k_int_bits=1,
-                b_int_bits=1,
+                k_int_bits=0,
+                b_int_bits=0,
                 units=NB_CLASSES,
                 use_bias=False,
-                act=XActivation(sys_bits=sys_bits, o_int_bits=1, type=None),),
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),),
             softmax=True
         )
 
@@ -132,11 +127,11 @@ class UserModel(XModel):
 
         x = x_skip1 = self.b1(x)
         x = x_skip2 = self.b2(x, x_skip1)
-        x = self.b3(x, x_skip2)
-        x = self.b4(x, x_skip1)
-        x = self.b5(x)
-        x = self.b6(x)
-        x = self.b7(x)
+        x =           self.b3(x, x_skip2)
+        x =           self.b4(x, x_skip1)
+        x =           self.b5(x)
+        x =           self.b6(x)
+        x =           self.b7(x)
         return x
 
 x = x_in =  Input(input_shape, name="input")
@@ -207,15 +202,15 @@ hw = Hardware (                          # Alternatively: hw = Hardware.from_jso
         frequency_mhz       = 250      , #  
         bits_input          = 4        , # bit width of input pixels and activations
         bits_weights        = 4        , # bit width of weights
-        bits_sum            = 24       , # bit width of accumulator
-        bits_bias           = 32       , # bit width of bias
+        bits_sum            = 32       , # bit width of accumulator
+        bits_bias           = 16       , # bit width of bias
         max_batch_size      = 64       , # 
         max_channels_in     = 2048     , #
         max_kernel_size     = 13       , #
         max_image_size      = 512      , #
         ram_weights_depth   = 20       , #
         ram_edges_depth     = 288      , #
-        axi_width           = 64       , #
+        axi_width           = 128      , #
         target_cpu_int_bits = 32       , #
         valid_prob          = 1        , # probability in which AXI-Stream s_valid signal should be toggled in simulation
         ready_prob          = 1        , # probability in which AXI-Stream m_ready signal should be toggled in simulation
@@ -223,6 +218,6 @@ hw = Hardware (                          # Alternatively: hw = Hardware.from_jso
      )
 
 export_inference(loaded_model, hw)
-# print(loaded_model.outputs[0].bundle)
-# print(loaded_model.outputs[0].prev.bundle)
+verify_inference(loaded_model, hw, SIM=SIM, SIM_PATH=SIM_PATH)
+
 

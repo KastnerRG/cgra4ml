@@ -228,7 +228,7 @@ set M_OUTPUT_WIDTH_LF  {self.OUT_BITS}
         if SIM == 'icarus':
             subprocess.run(["vvp", "build/a.out"])
         if SIM == 'verilator':
-            subprocess.run([f"./V{self.TB_MODULE}"], cwd="build")
+            assert subprocess.run([f"./V{self.TB_MODULE}"], cwd="build").returncode == 0
 
 
     def export_vivado_tcl(self, board='zcu104', rtl_dir_abspath=None, scripts_dir_abspath=None, board_tcl_abspath=None):

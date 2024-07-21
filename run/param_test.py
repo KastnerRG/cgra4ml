@@ -27,8 +27,8 @@ def product_dict(**kwargs):
                                         ram_edges_depth      = [ 288     ],
                                         axi_width            = [ 128     ],
                                         target_cpu_int_bits  = [ 32      ],
-                                        valid_prob           = [ 0.01    ],
-                                        ready_prob           = [ 0.1     ],
+                                        valid_prob           = [ 1       ],
+                                        ready_prob           = [ 1       ],
                                         data_dir             = ['vectors'],
                                     )))
 def test_dnn_engine(PARAMS):
@@ -45,25 +45,25 @@ def test_dnn_engine(PARAMS):
     1. BUILD MODEL
     '''
     XN = 1
-    input_shape = (XN,18,18,3) # (XN, XH, XW, CI)
+    input_shape = (XN,28,28,1) # (XN, XH, XW, CI)
 
     QINT_BITS = 0
-    kq = f'quantized_bits({hw.K_BITS},{QINT_BITS},False,True,1)'
-    bq = f'quantized_bits({hw.B_BITS},{QINT_BITS},False,True,1)'
-    q1 = f'quantized_relu({hw.X_BITS},{QINT_BITS},negative_slope=0)'    
-    q2 = f'quantized_bits({hw.X_BITS},{QINT_BITS},False,False,1)'       
-    q3 = f'quantized_bits({hw.X_BITS},{QINT_BITS},False,True,1)'        
-    q4 = f'quantized_relu({hw.X_BITS},{QINT_BITS},negative_slope=0.125)'
+    kq = f'quantized_bits({hw.K_BITS},{QINT_BITS},False,1,1)'
+    bq = f'quantized_bits({hw.B_BITS},{QINT_BITS},False,1,1)'
+
+    qr = f'quantized_relu({hw.X_BITS},{QINT_BITS},negative_slope=0)'    
+    qb = f'quantized_bits({hw.X_BITS},{QINT_BITS},False,1,1)'       
+    ql = f'quantized_relu({hw.X_BITS},{QINT_BITS},negative_slope=0.125)'
 
     x = x_in = QInput(shape=input_shape[1:], batch_size=XN, hw=hw, int_bits=QINT_BITS, name='input')
 
-    x = x_skip1 = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':(11,11), 'strides':(2,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':q1}, pool= {'type':'avg', 'size':(3,4), 'strides':(2,3), 'padding':'same', 'act_str':f'quantized_bits({hw.X_BITS},0,False,False,1)'})(x)
-    x = x_skip2 = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':q2}, add = {'act_str':f'quantized_bits({hw.X_BITS},0,False,True,1)'})(x, x_skip1)
-    x =           Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 7, 7), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':False, 'act_str':q3}, add = {'act_str':f'quantized_bits({hw.X_BITS},0,False,True,1)'})(x, x_skip2)
-    x =           Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 5, 5), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':q4}, add = {'act_str':f'quantized_bits({hw.X_BITS},0,False,True,1)'})(x, x_skip1)
-    x =           Bundle( core= {'type':'conv' , 'filters':24, 'kernel_size':( 3, 3), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':q1},)(x)
-    x =           Bundle( core= {'type':'conv' , 'filters':10, 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':q4}, flatten= True)(x)
-    x =           Bundle( core= {'type':'dense', 'units'  :10,                                                           'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':q4}, softmax= True)(x)
+    x = x_skip1 = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':(11,11), 'strides':(2,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr}, pool= {'type':'avg', 'size':(3,4), 'strides':(2,3), 'padding':'same', 'act_str':qb})(x)
+    x = x_skip2 = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':ql})(x, x_skip1)
+    x =           Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 7, 7), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True, 'act_str':qb}, add = {'act_str':qr})(x, x_skip2)
+    x =           Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 5, 5), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x_skip1)
+    x =           Bundle( core= {'type':'conv' , 'filters':24, 'kernel_size':( 3, 3), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr},)(x)
+    x =           Bundle( core= {'type':'conv' , 'filters':10, 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr}, flatten= True)(x)
+    x =           Bundle( core= {'type':'dense', 'units'  :10,                                                           'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':False, 'act_str':qb}, softmax= True)(x)
 
     model = QModel(inputs=x_in.raw, outputs=x)
     model.compile()

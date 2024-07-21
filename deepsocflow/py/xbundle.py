@@ -4,6 +4,7 @@ from tensorflow import keras
 from keras.layers import Flatten, Activation, Layer
 from qkeras import *
 import numpy as np
+from copy import deepcopy
 
 from deepsocflow.py.utils import *
 from deepsocflow.py.xmodel import *
@@ -28,6 +29,7 @@ class XBundle(Layer):
 
         self.out = XTensor(None, None, float_only=True)
         self.softmax_max_f = 0
+        self.softmax_frac = 0
 
         self.ib = None
         self.prev_ib = None
@@ -88,6 +90,8 @@ class XBundle(Layer):
             out = XTensor(tensor=out.itensor.numpy().reshape(out.itensor.shape[0],-1), bits=out.bits, frac=out.frac, from_int=True)
             
         if self.softmax:
+            self.pre_softmax = deepcopy(out)
+            self.softmax_frac = out.frac
             softmax_out = out.ftensor.numpy().astype(np.float32)
             self.softmax_max_f = softmax_out.max()
             exp = np.exp(softmax_out - self.softmax_max_f).astype(np.float32)
@@ -114,12 +118,12 @@ class XBundle(Layer):
             w_int = self.core.w.itensor.numpy().reshape(1,1,CI,CO) # (CI,CO) -> (KH,KW,CI,CO)
             x_int = self.core.x.itensor.numpy().reshape(1,XN,1,CI) # (XN,CI) -> (XN, XH, XW, CI)
             y_int = self.core.y.itensor.numpy().reshape(1,XN,1,CO) # (XN,CI) -> (XN, XH, XW, CI)
-            o_int = self.core.out.itensor.numpy().reshape(1,XN,1,CO)
+            o_int = (self.pre_softmax if self.softmax else self.out).itensor.numpy().reshape(1,XN,1,CO)
         else:
-            y_int = self.core.y.itensor.numpy()
-            o_int = self.core.out.itensor.numpy()
             w_int = self.core.w.itensor.numpy()
             x_int = self.core.x.itensor.numpy()
+            y_int = self.core.y.itensor.numpy()
+            o_int = (self.pre_softmax if self.softmax else self.out).itensor.numpy()
 
         b_int = self.core.b.itensor.numpy() if self.core.b else None
         
