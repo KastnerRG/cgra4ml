@@ -1,5 +1,5 @@
 `include "defines.svh"
-
+`timescale 1ns/1ps
 module axis_out_shift #(
   localparam ROWS                 = `ROWS                 ,
              COLS                 = `COLS                 ,

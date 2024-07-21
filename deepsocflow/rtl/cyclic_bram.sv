@@ -33,12 +33,12 @@ module cyclic_bram #(
     else if (clken && r_en) r_addr <= r_addr == r_addr_max ?  r_addr_min : r_addr + 1;
 
   ram_weights BRAM (
-    .clka   (clk),    
-    .ena    (clken),     
-    .wea    (w_en),  
-    .addra  (w_en ? w_addr : r_addr),  
-    .dina   (s_data),   
-    .douta  (m_data)  
+    .clk   (clk),    
+    .en    (clken),     
+    .we    (w_en),  
+    .addr  (w_en ? w_addr : r_addr),  
+    .di   (s_data),   
+    .dout  (m_data)  
   );
 
 endmodule

@@ -124,7 +124,7 @@ def create_headers(hw, r):
             (r.XL-1 , hw.BITS_BLOCKS_MAX),
             (r.XN-1 , hw.BITS_XN_MAX),
             (hw.CONFIG_BEATS + r.KH*CM_p-1, hw.BITS_RAM_WEIGHTS_ADDR)
-        ], hw.IN_BITS-1)
+        ], hw.AXI_WIDTH-1)
         d['w_header_le_p'] += [w_header_le]
         d['w_header_be_p'] += [w_header_be]
 
@@ -134,7 +134,7 @@ def create_headers(hw, r):
             (CM_p-1 , hw.BITS_CIN_MAX),
             (r.XW-1 , hw.BITS_COLS_MAX),
             (r.XL-1 , hw.BITS_BLOCKS_MAX),
-        ], hw.IN_BITS-1)
+        ], hw.AXI_WIDTH-1)
         d['x_header_le_p'] += [x_header_le]
         d['x_header_be_p'] += [x_header_be]
 

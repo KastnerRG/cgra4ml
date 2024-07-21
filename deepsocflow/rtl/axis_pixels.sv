@@ -9,7 +9,7 @@ module axis_pixels #(
               XH_MAX             = `XH_MAX             ,
               WORD_WIDTH         = `X_BITS             ,
               RAM_EDGES_DEPTH    = `RAM_EDGES_DEPTH    , 
-              S_PIXELS_WIDTH_LF  = `S_PIXELS_WIDTH_LF  ,
+              AXI_WIDTH          = `AXI_WIDTH          ,
 
   localparam  EDGE_WORDS         =  KH_MAX/2              ,
               IM_SHIFT_REGS      =  ROWS + KH_MAX-1       ,
@@ -24,8 +24,8 @@ module axis_pixels #(
     output logic s_ready,
     input  logic s_valid,
     input  logic s_last ,
-    input  logic [S_PIXELS_WIDTH_LF/WORD_WIDTH-1:0][WORD_WIDTH-1:0] s_data,
-    input  logic [S_PIXELS_WIDTH_LF/WORD_WIDTH-1:0] s_keep,
+    input  logic [AXI_WIDTH/WORD_WIDTH-1:0][WORD_WIDTH-1:0] s_data,
+    input  logic [AXI_WIDTH/WORD_WIDTH-1:0] s_keep,
 
     input  logic m_ready,
     output logic m_valid,
@@ -39,11 +39,11 @@ module axis_pixels #(
   logic [ROWS+EDGE_WORDS-1:0][WORD_WIDTH-1:0] i_data, dw_re_m_data, dw_m_data_r;
 
   alex_axis_adapter_any #(
-    .S_DATA_WIDTH  (S_PIXELS_WIDTH_LF),
+    .S_DATA_WIDTH  (AXI_WIDTH),
     .M_DATA_WIDTH  (WORD_WIDTH*(ROWS+EDGE_WORDS)),
     .S_KEEP_ENABLE (1),
     .M_KEEP_ENABLE (1),
-    .S_KEEP_WIDTH  (S_PIXELS_WIDTH_LF/WORD_WIDTH),
+    .S_KEEP_WIDTH  (AXI_WIDTH/WORD_WIDTH),
     .M_KEEP_WIDTH  ((ROWS+EDGE_WORDS)),
     .ID_ENABLE     (0),
     .DEST_ENABLE   (0),
@@ -70,11 +70,11 @@ module axis_pixels #(
   );
 
   alex_axis_adapter_any #(
-    .S_DATA_WIDTH  (S_PIXELS_WIDTH_LF),
+    .S_DATA_WIDTH  (AXI_WIDTH),
     .M_DATA_WIDTH  (WORD_WIDTH*ROWS),
     .S_KEEP_ENABLE (1),
     .M_KEEP_ENABLE (1),
-    .S_KEEP_WIDTH  (S_PIXELS_WIDTH_LF/WORD_WIDTH),
+    .S_KEEP_WIDTH  (AXI_WIDTH/WORD_WIDTH),
     .M_KEEP_WIDTH  (ROWS),
     .ID_ENABLE     (0),
     .DEST_ENABLE   (0),
@@ -185,12 +185,12 @@ module axis_pixels #(
   assign ram_addr_in = ram_wen ? ram_addr_r : ram_addr;
 
   ram_edges RAM (
-    .clka  (aclk),    
-    .ena   (ram_ren || ram_wen),     
-    .wea   (ram_wen),     
-    .addra (ram_addr_in),  
-    .dina  (edge_bot_r),
-    .douta (ram_dout)
+    .clk  (aclk),    
+    .en   (ram_ren || ram_wen),     
+    .we  (ram_wen),     
+    .addr (ram_addr_in),  
+    .di  (edge_bot_r),
+    .dout (ram_dout)
   );
 
   // When ram_wen, read value is lost. This is used to hold that
