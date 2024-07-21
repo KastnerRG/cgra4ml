@@ -1,6 +1,3 @@
-from . import py
-from .py import *
-
 from deepsocflow.py.utils import *
 from deepsocflow.py.dataflow import *
 from deepsocflow.py.xbundle import *

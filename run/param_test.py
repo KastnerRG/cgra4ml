@@ -3,14 +3,200 @@ import pytest
 import itertools
 import sys
 sys.path.append("../../")
-import tensorflow as tf
+from tensorflow import keras
+from keras.layers import Input
+from keras.models import Model, save_model
+from keras.datasets import mnist
+from keras.optimizers import Adam
+from keras.utils import to_categorical
+from qkeras.utils import load_qmodel
+import numpy as np
+# import tensorflow as tf
 #tf.keras.utils.set_random_seed(0)
-from deepsocflow import Bundle, Hardware, QModel, QInput
 
-# Simulator: xsim on windows, verilator otherwise
-#(SIM, SIM_PATH) = ('xsim', "/opt/Xilinx/Vivado/2022.2/bin/") 
-# (SIM, SIM_PATH) = ('verilator', "")
+from deepsocflow import *
+
+
 (SIM, SIM_PATH) = ('xsim', "F:/Xilinx/Vivado/2022.2/bin/") if os.name=='nt' else ('verilator', '')
+np.random.seed(42)
+
+'''
+Dataset
+'''
+
+NB_EPOCH = 0
+BATCH_SIZE = 64
+VALIDATION_SPLIT = 0.1
+NB_CLASSES = 10
+
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+x_train = x_train.astype("float32")[..., np.newaxis] / 256.0
+x_test = x_test.astype("float32")[..., np.newaxis] / 256.0
+
+print(f"train.shape: {x_train.shape}, test.shape: {x_test.shape}")
+print("labels[0:10]: ", y_train[0:10])
+
+y_train = to_categorical(y_train, NB_CLASSES)
+y_test = to_categorical(y_test, NB_CLASSES)
+input_shape = x_train.shape[1:]
+
+
+'''
+Define Model
+'''
+
+sys_bits = SYS_BITS(x=4, k=4, b=16)
+
+@keras.saving.register_keras_serializable()
+class UserModel(XModel):
+    def __init__(self, sys_bits, x_int_bits, *args, **kwargs):
+        super().__init__(sys_bits, x_int_bits, *args, **kwargs)
+
+        self.b1 = XBundle( 
+            core=XConvBN(
+                k_int_bits=0,
+                b_int_bits=0,
+                filters=8,
+                kernel_size=7,
+                strides=(2,1),
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0)),
+            pool=XPool(
+                type='avg',
+                pool_size=(3,4),
+                strides=(2,3),
+                padding='same',
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),)
+            )
+        
+        self.b2 = XBundle( 
+            core=XConvBN(
+                k_int_bits=0,
+                b_int_bits=0,
+                filters=8,
+                kernel_size=1,
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None)),
+            add_act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0.125)
+        )
+        
+        self.b3 = XBundle( 
+            core=XConvBN(
+                k_int_bits=0,
+                b_int_bits=0,
+                filters=8,
+                kernel_size=7,
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),),
+            add_act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0)
+        )
+
+        self.b4 = XBundle( 
+            core=XConvBN(
+                k_int_bits=0,
+                b_int_bits=0,
+                filters=8,
+                kernel_size=5,
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),),
+            add_act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0)
+        )
+
+        self.b5 = XBundle( 
+            core=XConvBN(
+                k_int_bits=0,
+                b_int_bits=0,
+                filters=24,
+                kernel_size=3,
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0),),
+        )
+
+        self.b6 = XBundle( 
+            core=XConvBN(
+                k_int_bits=0,
+                b_int_bits=0,
+                filters=10,
+                kernel_size=1,
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0),),
+            flatten=True
+        )
+
+        self.b7 = XBundle(
+            core=XDense(
+                k_int_bits=0,
+                b_int_bits=0,
+                units=NB_CLASSES,
+                use_bias=False,
+                act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),),
+            softmax=True
+        )
+
+    def call (self, x):
+        x = self.input_quant_layer(x)
+
+        x = x_skip1 = self.b1(x)
+        x = x_skip2 = self.b2(x, x_skip1)
+        x =           self.b3(x, x_skip2)
+        x =           self.b4(x, x_skip1)
+        x =           self.b5(x)
+        x =           self.b6(x)
+        x =           self.b7(x)
+        return x
+
+x = x_in =  Input(input_shape, name="input")
+user_model = UserModel(sys_bits=sys_bits, x_int_bits=0)
+x = user_model(x_in)
+
+model = Model(inputs=[x_in], outputs=[x])
+
+
+'''
+Train Model
+'''
+
+model.compile(loss="categorical_crossentropy", optimizer=Adam(learning_rate=0.0001), metrics=["accuracy"])
+history = model.fit(
+        x_train, 
+        y_train, 
+        batch_size=BATCH_SIZE,
+        epochs=NB_EPOCH, 
+        initial_epoch=1, 
+        verbose=True,
+        validation_split=VALIDATION_SPLIT)
+
+print(model.submodules)
+
+for layer in model.submodules:
+    try:
+        print(layer.summary())
+        for w, weight in enumerate(layer.get_weights()):
+                print(layer.name, w, weight.shape)
+    except:
+        pass
+# print_qstats(model.layers[1])
+
+def summary_plus(layer, i=0):
+    if hasattr(layer, 'layers'):
+        if i != 0: 
+            layer.summary()
+        for l in layer.layers:
+            i += 1
+            summary_plus(l, i=i)
+
+print(summary_plus(model)) # OK 
+model.summary(expand_nested=True)
+
+
+'''
+Save & Reload
+'''
+
+save_model(model, "mnist.h5")
+loaded_model = load_qmodel("mnist.h5")
+
+score = loaded_model.evaluate(x_test, y_test, verbose=0)
+print(f"Test loss:{score[0]}, Test accuracy:{score[1]}")
+
+
+
+
 def product_dict(**kwargs):
     for instance in itertools.product(*(kwargs.values())):
         yield dict(zip(kwargs.keys(), instance))
@@ -38,8 +224,9 @@ def product_dict(**kwargs):
                                         data_dir             = ['vectors'],
                                     )))
 def test_dnn_engine(PARAMS):
+
     '''
-    0. SPECIFY HARDWARE
+    SPECIFY HARDWARE
     '''
     hw = Hardware (**PARAMS)
     hw.export_json()
@@ -47,45 +234,13 @@ def test_dnn_engine(PARAMS):
     hw.export() # Generates: config_hw.svh, config_hw.tcl
     hw.export_vivado_tcl(board='zcu104')
 
-    '''
-    1. BUILD MODEL
-    '''
-    XN = 1
-    input_shape = (XN,28,28,1) # (XN, XH, XW, CI)
-
-    QINT_BITS = 0
-    kq = f'quantized_bits({hw.K_BITS},{QINT_BITS},False,1,1)'
-    bq = f'quantized_bits({hw.B_BITS},{QINT_BITS},False,1,1)'
-
-    qr = f'quantized_relu({hw.X_BITS},{QINT_BITS},negative_slope=0)'    
-    qb = f'quantized_bits({hw.X_BITS},{QINT_BITS},False,1,1)'       
-    ql = f'quantized_relu({hw.X_BITS},{QINT_BITS},negative_slope=0.125)'
-
-    x = x_in = QInput(shape=input_shape[1:], batch_size=XN, hw=hw, int_bits=QINT_BITS, name='input')
-
-    x = x_skip1 = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 7, 7), 'strides':(2,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr}, pool= {'type':'avg', 'size':(3,4), 'strides':(2,3), 'padding':'same', 'act_str':qb})(x)
-    x = x_skip2 = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':ql})(x, x_skip1)
-    x =           Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 7, 7), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True, 'act_str':qb}, add = {'act_str':qr})(x, x_skip2)
-    x =           Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 5, 5), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x_skip1)
-    x =           Bundle( core= {'type':'conv' , 'filters':24, 'kernel_size':( 3, 3), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr},)(x)
-    x =           Bundle( core= {'type':'conv' , 'filters':10, 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr}, flatten= True)(x)
-    x =           Bundle( core= {'type':'dense', 'units'  :10,                                                           'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':False, 'act_str':qb}, softmax= True)(x)
-
-    model = QModel(inputs=x_in.raw, outputs=x)
-    model.compile()
-    model.summary()
 
     '''
-    2. TRAIN MODEL
+    VERIFY & EXPORT
     '''
-    # model.fit(...)
+    export_inference(loaded_model, hw)
+    verify_inference(loaded_model, hw, SIM=SIM, SIM_PATH=SIM_PATH)
 
-    '''
-    3. EXPORT FOR INFERENCE
-    '''
-    model.export_inference(x=model.random_input, hw=hw)
-    model.verify_inference(SIM=SIM, SIM_PATH=SIM_PATH)
-
-    seconds, bytes = model.predict_performance()
+    seconds, bytes = predict_model_performance(hw)
     print(f"Predicted time on hardware: {1000*seconds:.5f} ms")
     print(f"Predicted data movement: {bytes/1000:.5f} kB")
