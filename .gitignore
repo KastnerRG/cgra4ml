@@ -34,6 +34,12 @@ run/work_dddd
 run/work_llm
 run/work/project_1
 
+# Vivado and verilator sim
+run/work/.Xil*
+run/work/xsim/
+run/work/xsim/*
+run/work/verilator-sim/
+run/work/verilator-sim/*
 
 # Distribution / packaging
 .Python

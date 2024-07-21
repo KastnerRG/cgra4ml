@@ -5,6 +5,7 @@ import subprocess
 import glob
 from deepsocflow.py.utils import *
 import deepsocflow
+import time
 
 
 class Hardware:
@@ -23,9 +24,13 @@ class Hardware:
             max_channels_in: int = 512, 
             max_kernel_size: int = 13, 
             max_image_size: int = 32, 
+            max_n_bundles: int = 64,
             ram_weights_depth: int = 512, 
             ram_edges_depth: int|None = 288,
             axi_width: int = 64,
+            config_baseaddr = "B0000000",
+            mem_baseaddr = "20000000",
+            axi_max_burst_len: int = 16,
             target_cpu_int_bits: int = 32,
             async_resetn: bool = True,
             valid_prob: float = 0.01,
@@ -66,7 +71,11 @@ class Hardware:
         self.CI_MAX = max_channels_in
         self.KH_MAX, self.KW_MAX = tuple(max_kernel_size) if (type(max_kernel_size) in [tuple, list]) else (max_kernel_size, max_kernel_size)
         self.XH_MAX, self.XW_MAX = tuple(max_image_size ) if (type(max_image_size ) in [tuple, list]) else (max_image_size , max_image_size )
-        self.IN_BITS = self.OUT_BITS = axi_width
+        self.MAX_N_BUNDLES = max_n_bundles
+        self.AXI_WIDTH = axi_width
+        self.CONFIG_BASEADDR = config_baseaddr
+        self.MEM_BASEADDR = mem_baseaddr
+        self.AXI_MAX_BURST_LEN = axi_max_burst_len
         self.INT_BITS = target_cpu_int_bits
         self.ASYNC_RESETN = async_resetn
         self.VALID_PROB = int(valid_prob * 1000)
@@ -96,12 +105,11 @@ class Hardware:
         self.BITS_XN_MAX           = clog2(self.XN_MAX)
         self.BITS_RAM_WEIGHTS_ADDR = clog2(self.RAM_WEIGHTS_DEPTH)
         self.Y_OUT_BITS            = 2**clog2(self.Y_BITS)
-        self.W_BPT                 = clog2(self.ROWS*self.COLS*self.Y_OUT_BITS/8) + 1 # 1 to allow R*C
+        self.W_BPT                 = 32#clog2(self.ROWS*self.COLS*self.Y_OUT_BITS/8)
 
         self.MODULE_DIR = os.path.normpath(os.path.dirname(deepsocflow.__file__)).replace('\\', '/')
-        self.TB_MODULE = "dnn_engine_tb"
-        self.WAVEFORM = "dnn_engine_tb_behav.wcfg"
-        self.SOURCES = glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.v", recursive=True) + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.sv", recursive=True) + glob.glob(f"{os.getcwd()}/*.svh")
+        self.TB_MODULE = "axi_sys_tb"
+        self.SOURCES = glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + glob.glob(f'{self.MODULE_DIR}/test/sv/**/*.v') + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.v", recursive=True) + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.sv", recursive=True) + glob.glob(f"{os.getcwd()}/*.svh")
         self.DATA_DIR = data_dir
 
     def export_json(self, path='./hardware.json'):
@@ -163,6 +171,7 @@ class Hardware:
 `define XW_MAX              {self.XW_MAX             :<10}  // max of input image width, across layers
 `define XN_MAX              {self.XN_MAX             :<10}  // max of input batch size, across layers
 `define CI_MAX              {self.CI_MAX             :<10}  // max of input channels, across layers
+`define MAX_N_BUNDLES       {self.MAX_N_BUNDLES      :<10}  // max number of bundles in a network
 `define CONFIG_BEATS        {self.CONFIG_BEATS       :<10}  // constant, for now
 `define RAM_WEIGHTS_DEPTH   {self.RAM_WEIGHTS_DEPTH  :<10}  // CONFIG_BEATS + max(KW * CI), across layers
 `define RAM_EDGES_DEPTH     {self.RAM_EDGES_DEPTH    :<10}  // max (KW * CI * XW), across layers when KW != 1
@@ -171,9 +180,9 @@ class Hardware:
 `define DELAY_MUL           3            // constant, for now 
 `define DELAY_W_RAM         2            // constant, for now 
 
-`define S_WEIGHTS_WIDTH_LF  {self.IN_BITS            :<10}  // constant (64), for now
-`define S_PIXELS_WIDTH_LF   {self.IN_BITS            :<10}  // constant (64), for now
-`define M_OUTPUT_WIDTH_LF   {self.OUT_BITS           :<10}  // constant (64), for now
+`define AXI_WIDTH           {self.AXI_WIDTH          :<10}
+`define AXI_MAX_BURST_LEN   {self.AXI_MAX_BURST_LEN  :<10}
+`define CONFIG_BASEADDR     40'h{self.CONFIG_BASEADDR:<10}
 ''')
 
 
@@ -191,9 +200,8 @@ set DELAY_W_RAM        2
 set RAM_WEIGHTS_DEPTH  {self.RAM_WEIGHTS_DEPTH}
 set RAM_EDGES_DEPTH    {self.RAM_EDGES_DEPTH}
 set KH_MAX             {self.KH_MAX}
-set S_WEIGHTS_WIDTH_LF {self.IN_BITS}
-set S_PIXELS_WIDTH_LF  {self.IN_BITS}
-set M_OUTPUT_WIDTH_LF  {self.OUT_BITS}
+set AXI_WIDTH          {self.AXI_WIDTH}
+set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
 ''')
 
 
@@ -214,12 +222,13 @@ set M_OUTPUT_WIDTH_LF  {self.OUT_BITS}
             assert subprocess.run(cmd).returncode == 0
 
         if SIM == "verilator":
-            cmd = f'{SIM_PATH}verilator --binary -j 0 -O3 --trace --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -I../ {self.MODULE_DIR}/c/sim.c --Mdir ./'
+            cmd = f'{SIM_PATH}verilator --binary -j 0 -O3 --trace --trace-depth 0 --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -I../ {self.MODULE_DIR}/c/sim.c -CFLAGS -g --Mdir ./'
             print(cmd)
             assert subprocess.run(cmd.split(' '), cwd='build').returncode == 0
         
 
         print("\n\nSIMULATING...\n\n")
+        start = time.time()
 
         if SIM == 'xsim':
             with open('build/xsim_cfg.tcl', 'w') as f:
@@ -229,6 +238,8 @@ set M_OUTPUT_WIDTH_LF  {self.OUT_BITS}
             subprocess.run(["vvp", "build/a.out"])
         if SIM == 'verilator':
             assert subprocess.run([f"./V{self.TB_MODULE}"], cwd="build").returncode == 0
+        
+        print(f"\n\nSIMULATION TIME: {time.time()-start:.2f} seconds\n\n")
 
 
     def export_vivado_tcl(self, board='zcu104', rtl_dir_abspath=None, scripts_dir_abspath=None, board_tcl_abspath=None):

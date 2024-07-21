@@ -3,11 +3,14 @@ import pytest
 import itertools
 import sys
 sys.path.append("../../")
+import tensorflow as tf
+#tf.keras.utils.set_random_seed(0)
 from deepsocflow import Bundle, Hardware, QModel, QInput
 
 # Simulator: xsim on windows, verilator otherwise
+#(SIM, SIM_PATH) = ('xsim', "/opt/Xilinx/Vivado/2022.2/bin/") 
+# (SIM, SIM_PATH) = ('verilator', "")
 (SIM, SIM_PATH) = ('xsim', "F:/Xilinx/Vivado/2022.2/bin/") if os.name=='nt' else ('verilator', '')
-
 def product_dict(**kwargs):
     for instance in itertools.product(*(kwargs.values())):
         yield dict(zip(kwargs.keys(), instance))
@@ -21,11 +24,14 @@ def product_dict(**kwargs):
                                         bits_bias            = [ 16      ],
                                         max_batch_size       = [ 64      ], 
                                         max_channels_in      = [ 2048    ],
-                                        max_kernel_size      = [ 13      ],
+                                        max_kernel_size      = [ 9       ],
                                         max_image_size       = [ 512     ],
+                                        max_n_bundles        = [ 64      ],
                                         ram_weights_depth    = [ 20      ],
                                         ram_edges_depth      = [ 288     ],
-                                        axi_width            = [ 128     ],
+                                        axi_width            = [ 64      ],
+                                        config_baseaddr      = ["B0000000"],
+                                        mem_baseaddr         = ["20000000"],
                                         target_cpu_int_bits  = [ 32      ],
                                         valid_prob           = [ 1       ],
                                         ready_prob           = [ 1       ],
@@ -57,7 +63,7 @@ def test_dnn_engine(PARAMS):
 
     x = x_in = QInput(shape=input_shape[1:], batch_size=XN, hw=hw, int_bits=QINT_BITS, name='input')
 
-    x = x_skip1 = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':(11,11), 'strides':(2,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr}, pool= {'type':'avg', 'size':(3,4), 'strides':(2,3), 'padding':'same', 'act_str':qb})(x)
+    x = x_skip1 = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 7, 7), 'strides':(2,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qr}, pool= {'type':'avg', 'size':(3,4), 'strides':(2,3), 'padding':'same', 'act_str':qb})(x)
     x = x_skip2 = Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 1, 1), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':ql})(x, x_skip1)
     x =           Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 7, 7), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True, 'act_str':qb}, add = {'act_str':qr})(x, x_skip2)
     x =           Bundle( core= {'type':'conv' , 'filters':8 , 'kernel_size':( 5, 5), 'strides':(1,1), 'padding':'same', 'kernel_quantizer':kq, 'bias_quantizer':bq, 'use_bias':True , 'act_str':qb}, add = {'act_str':qr})(x, x_skip1)

@@ -18,7 +18,7 @@ np.random.seed(42)
 Dataset
 '''
 
-NB_EPOCH = 3
+NB_EPOCH = 0
 BATCH_SIZE = 64
 VALIDATION_SPLIT = 0.1
 NB_CLASSES = 10
@@ -52,7 +52,7 @@ class UserModel(XModel):
                 k_int_bits=0,
                 b_int_bits=0,
                 filters=8,
-                kernel_size=11,
+                kernel_size=7,
                 strides=(2,1),
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0)),
             pool=XPool(
@@ -206,11 +206,14 @@ hw = Hardware (                          # Alternatively: hw = Hardware.from_jso
         bits_bias           = 16       , # bit width of bias
         max_batch_size      = 64       , # 
         max_channels_in     = 2048     , #
-        max_kernel_size     = 13       , #
+        max_kernel_size     = 9        , #
         max_image_size      = 512      , #
+        max_n_bundles       = 64       , #
         ram_weights_depth   = 20       , #
         ram_edges_depth     = 288      , #
-        axi_width           = 128      , #
+        axi_width           = 64       , #
+        config_baseaddr     = "B0000000", #
+        mem_baseaddr        = "20000000", #
         target_cpu_int_bits = 32       , #
         valid_prob          = 1        , # probability in which AXI-Stream s_valid signal should be toggled in simulation
         ready_prob          = 1        , # probability in which AXI-Stream m_ready signal should be toggled in simulation
