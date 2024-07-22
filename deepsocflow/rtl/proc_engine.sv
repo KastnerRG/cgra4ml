@@ -2,7 +2,7 @@
 `include "defines.svh"
 
 module proc_engine #(
-  localparam  COLS                = `COLS                ,
+  parameter   COLS                = `COLS                ,
               ROWS                = `ROWS                ,
               X_BITS              = `X_BITS              ,
               K_BITS              = `K_BITS              ,
@@ -74,9 +74,10 @@ module proc_engine #(
 
   genvar k2, c_1;
   genvar co;
-  for (k2=0; k2 <= KW_MAX/2; k2++) begin
+  generate
+  for (k2=0; k2 <= KW_MAX/2; k2++) begin : lut_k
     localparam k = k2*2+1;
-    for (c_1=0; c_1 <  COLS; c_1++) begin
+    for (c_1=0; c_1 <  COLS; c_1++) begin : lut_c
       localparam c = c_1 + 1;
       assign lut_valid      [k2][c_1] = (c % k == 0);
       assign lut_valid_last [k2][c_1] = ((c % k > k2) || (c % k == 0)) && (c <= (COLS/k)*k);
@@ -86,11 +87,12 @@ module proc_engine #(
     assign lut_bpt [0][k2] = (ROWS * (COLS/k) * 1      * Y_OUT_BITS) / 8;
     assign lut_bpt [1][k2] = (ROWS * (COLS/k) * (k2+1) * Y_OUT_BITS) / 8;
   end
-  for (c_1=0; c_1 < COLS; c_1++) begin
+  for (c_1=0; c_1 < COLS; c_1++) begin : val_mask
     assign valid_mask[c_1] = !acc_m_user[c_1].is_w_first_kw2 && !acc_m_user[c_1].is_config;
     assign s_valid_cols_sel[c_1] = acc_m_user[c_1].is_w_last ? lut_valid_last[acc_m_user[c_1].kw2][c_1] : lut_valid[acc_m_user[c_1].kw2][c_1];
     assign s_last_cols_sel[c_1]  = acc_m_user[c_1].is_w_last ? lut_last_pkt  [acc_m_user[c_1].kw2][c_1] : lut_last [acc_m_user[c_1].kw2][c_1];
   end
+  endgenerate
   
   assign s_ready = clken_mul;
 
@@ -99,7 +101,7 @@ module proc_engine #(
 
 generate
   genvar i;
-  for (i=0; i<COLS; i++) begin
+  for (i=0; i<COLS; i++) begin : pixel_valid_pipe
     // if prev column is not ready, current column pixel valid will either i) be set to 0 or ii) hold its current value, depending on s_ready[i].
     if (i>0) begin
       always_ff@(posedge clk) begin 
@@ -115,7 +117,7 @@ endgenerate
 
   generate
     genvar r,c,kw2,d;
-    for(c=0; c<COLS; c++) begin
+    for(c=0; c<COLS; c++) begin : selshift
       n_delay #(.N(DELAY_MUL), .W(TUSER_WIDTH+2)) MUL_CONTROL (.c(clk), .rng(resetn), .rnl(1'b1), .e(clken_mul[c]), .i({s_axis_tvalid[c], s_last[c], s_user[c]}), .o ({mul_m_valid[c], mul_m_last[c], mul_m_user[c]}));
       
       assign sel_shift_next[c] = mul_m_valid[c] && mul_m_user[c].is_cin_last && (mul_m_user[c].kw2 != 0);
@@ -131,8 +133,9 @@ endgenerate
     for (c=0; c < COLS; c++) begin: Cg
 
       // Lookup table
-      for (kw2=0; kw2 <= KW_MAX/2; kw2++)
+      for (kw2=0; kw2 <= KW_MAX/2; kw2++) begin : lutsumst
         assign lut_sum_start[kw2][c] = c % (kw2*2+1) == 0; // c % 3 < 1 : 0,1
+      end
       
       assign acc_m_sum_start [c] = lut_sum_start[acc_m_user[0].kw2][c];
       assign acc_s_valid     [c] = sel_shift[c] ? ~acc_m_sum_start [c] : mul_m_valid[c];
@@ -238,7 +241,7 @@ endgenerate
           outshift_flag[co] <= 0;
         end
         else begin
-          shift_out_ready_last_col_prev <= shift_out_ready[COLS-1];
+          if (co == COLS-1) shift_out_ready_last_col_prev <= shift_out_ready[COLS-1];
 
           if(shift_out_ready_last_col_prev & ~shift_out_ready[COLS-1]) begin // when last col of out shifter gets data from acc, it is ready to start shifting.
             outshift_flag[co] <= 1;
@@ -270,7 +273,7 @@ endgenerate
         always_ff@(posedge clk `OR_NEGEDGE(resetn)) begin
           if (!resetn) begin 
             shift_out_ready[co] <= '1;
-            m_bytes_per_transfer <= 0;
+            // m_bytes_per_transfer <= 0;
             {shift_data_out[co], shift_valid[co], shift_last[co], shift_last_pkt[co]} <= '0;
           end else  
             if(en_outshift[co]) begin
@@ -280,9 +283,9 @@ endgenerate
               shift_last[co]      <= (sel_outshift[co]) ? shift_last[co-1] :s_last_cols_sel[co];
               shift_out_ready[co] <= (sel_outshift[co]) ? shift_out_ready[co-1] : 1'b0;
               
-              if(co == COLS-1) begin
-                if(~sel_outshift[co]) m_bytes_per_transfer <= lut_bpt[acc_m_user[COLS-1].is_w_last][acc_m_user[COLS-1].kw2];
-              end
+              // if(co == COLS-1) begin
+              //   if(~sel_outshift[co]) m_bytes_per_transfer <= lut_bpt[acc_m_user[COLS-1].is_w_last][acc_m_user[COLS-1].kw2];
+              // end
             end
         end
       end
@@ -304,6 +307,15 @@ endgenerate
       end
     end
 
+    always_ff@(posedge clk `OR_NEGEDGE(resetn)) begin
+      if (!resetn) begin
+          m_bytes_per_transfer <= 0;
+      end
+      else begin
+        if (en_outshift[COLS-1] && ~sel_outshift[COLS-1]) m_bytes_per_transfer <= lut_bpt[acc_m_user[COLS-1].is_w_last][acc_m_user[COLS-1].kw2];
+      end
+    end
+
     assign m_data   = shift_data_out [COLS-1];
     assign m_valid  = shift_valid[COLS-1] & outshift_flag[COLS-1];
     assign m_last   = shift_last [COLS-1];
@@ -313,7 +325,7 @@ endgenerate
 
     //assign en_mac = &(~acc_m_valid | shift_out_ready);
     //assign en[0] = ~acc_m_valid[0] | shift_out_ready[0];
-    for(c=0; c<COLS; c++) begin
+    for(c=0; c<COLS; c++) begin : C
       if(c<COLS-1) begin
         // If current column and next column output shifter regs both have valid data, and accumulator has valid data column gets frozen 
         assign mac_freeze[c] = (acc_m_valid[c] & ~(shift_out_ready[c] & shift_out_ready[c+1]));
@@ -346,37 +358,13 @@ endgenerate
       assign acc_m_valid_next[c] = !sel_shift[c] & mul_m_valid[c] & (mul_m_user[c].is_config | mul_m_user[c].is_cin_last);
 
       always_ff @(posedge clk `OR_NEGEDGE(resetn))
-        if (!resetn)            {acc_m_user, acc_m_last} <= '0;
+        if (!resetn)            {acc_m_user[c], acc_m_last[c]} <= 0;
         else begin
           if (en[c] & mul_m_valid[c]) acc_m_user[c]                <= mul_m_user[c];
           if (en[c])               acc_m_last[c] <= mul_m_last[c];
         end
     
     end
-
-    // always_ff @(posedge clk `OR_NEGEDGE(resetn) `OR_NEGEDGE(~force_en_reset)) begin
-    //   if (!resetn) force_en <= 0;
-    //   else if (force_en_reset) force_en <= 1'b0;
-    //   else if (m_ready & m_valid) force_en <= 1'b1;
-    // end
-
-    // always_ff @(posedge clk `OR_NEGEDGE(resetn)) begin
-    //   if (!resetn) force_en_reset <= 0;
-    //   else force_en_reset <= force_en;
-    // end
-
-    // Pipeline AXI-Stream signals with DELAY_ACC=1
-    // always_ff @(posedge clk `OR_NEGEDGE(resetn))
-    //   if (!resetn)            {acc_m_user, acc_m_last} <= '0;
-    //   else begin
-    //     if (en[0] & mul_m_valid[0]) acc_m_user                <= mul_m_user[0];
-    //     if (en[0])               acc_m_last <= mul_m_last[0];
-    //   end
-
-    // AXI Stream
-    //assign en = m_ready || !m_valid;
-
-    //assign {m_data, m_valid, m_last, m_user} = {acc_m_data, &acc_m_valid, acc_m_last, acc_m_user};
 
   endgenerate
 endmodule

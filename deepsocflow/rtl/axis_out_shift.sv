@@ -1,7 +1,7 @@
 `include "defines.svh"
 `timescale 1ns/1ps
 module axis_out_shift #(
-  localparam ROWS                 = `ROWS                 ,
+  parameter ROWS                 = `ROWS                 ,
              COLS                 = `COLS                 ,
              KW_MAX               = `KW_MAX               ,
              WORD_WIDTH           = `Y_BITS               ,
@@ -28,9 +28,10 @@ module axis_out_shift #(
   logic [COLS-1:0] shift_last, shift_last_pkt, shift_valid;
 
   genvar k2, c_1;
-  for (k2=0; k2 <= KW_MAX/2; k2++) begin
+  generate
+  for (k2=0; k2 <= KW_MAX/2; k2++) begin : lutk
     localparam k = k2*2+1;
-    for (c_1=0; c_1 <  COLS; c_1++) begin
+    for (c_1=0; c_1 <  COLS; c_1++) begin :lutc
       localparam c = c_1 + 1;
       assign lut_valid      [k2][c_1] = (c % k == 0);
       assign lut_valid_last [k2][c_1] = ((c % k > k2) || (c % k == 0)) && (c <= (COLS/k)*k);
@@ -40,6 +41,7 @@ module axis_out_shift #(
     assign lut_bpt [0][k2] = (ROWS * (COLS/k) * 1      * Y_OUT_BITS) / 8;
     assign lut_bpt [1][k2] = (ROWS * (COLS/k) * (k2+1) * Y_OUT_BITS) / 8;
   end
+  endgenerate
 
   wire valid_mask = !s_user.is_w_first_kw2 && !s_user.is_config;
   wire [COLS-1:0] s_valid_cols_sel = s_user.is_w_last ? lut_valid_last[s_user.kw2] : lut_valid[s_user.kw2];

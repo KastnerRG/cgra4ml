@@ -20,7 +20,7 @@ module axis_weight_rotator #(
     RAM_WEIGHTS_DEPTH   = `RAM_WEIGHTS_DEPTH   ,
     CONFIG_BEATS        = `CONFIG_BEATS        ,
 
-  localparam  
+  parameter  
     BITS_KW2            = $clog2((KW_MAX+1)/2) ,
     BITS_KW             = $clog2(KW_MAX      ) ,
     BITS_CI             = $clog2(CI_MAX      ) ,
@@ -147,7 +147,7 @@ module axis_weight_rotator #(
 
   wire dw_m_handshake      = dw_m_valid     && dw_m_ready;
   wire dw_m_last_handshake = dw_m_handshake && dw_m_last;
-  wire and_ready = &m_axis_tready;
+ // wire and_ready = &m_axis_tready;
 
 
   //  STATE MACHINE: WRITE
@@ -164,8 +164,10 @@ module axis_weight_rotator #(
 
 
   //  STATE MACHINE: READ
-  always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
-    for(int col=0; col<COLS; col = col+1) begin
+  genvar col;
+  generate
+  for(col=0; col<COLS; col = col+1) begin : col_read_fsm
+    always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
       if (!aresetn)                                 state_read[col]<= R_IDLE_S;
       else unique case (state_read[col])
         R_IDLE_S        : if (done_write [i_read[col]])  state_read[col] <= CONFIG_BEATS==0 ? (fill_skid_buffer_cntr[col]>=2*DELAY_W_RAM-1 ? R_READ_S : R_IDLE_S) : R_PASS_CONFIG_S;
@@ -173,22 +175,27 @@ module axis_weight_rotator #(
         R_READ_S        : if (m_axis_tlast[col]) state_read[col] <= R_SWITCH_S;
         R_SWITCH_S      :                           state_read[col] <= R_IDLE_S;
       endcase 
-    end
+  end
+  endgenerate
 
   
   // FILL_SKID_BUFFER_CNTR
   // This counter counts cycles for skid buffer to get filled. 
   // The read state machine stays in IDLE state with RAM rden=1 for 2*DELAY_W_RAM cycles so that
   // the skid buffer is completely filled with data when it enters the read state.
-   always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
-    for(int col=0; col<COLS; col = col+1) begin
-      if (!aresetn || state_read[col]==R_SWITCH_S) fill_skid_buffer_cntr[col]<= 0;
+   //genvar col;
+   generate
+   for(col=0; col<COLS; col = col+1) begin : col_fill_sb
+    always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
+      if (!aresetn) fill_skid_buffer_cntr[col]<= 0;
       else begin
-        if (CONFIG_BEATS==0 ? (state_read[col]==R_IDLE_S && done_write [i_read[col]]) : (state_read[col]==R_PASS_CONFIG_S)) begin 
+        if (state_read[col]==R_SWITCH_S) fill_skid_buffer_cntr[col]<= 0; // reset cntr on switch
+        else if (CONFIG_BEATS==0 ? (state_read[col]==R_IDLE_S && done_write [i_read[col]]) : (state_read[col]==R_PASS_CONFIG_S)) begin 
           if (fill_skid_buffer_cntr[col] < 2*DELAY_W_RAM) fill_skid_buffer_cntr[col] <= fill_skid_buffer_cntr[col] + 1;
         end
       end
     end
+   endgenerate
 
   always_comb begin
 
@@ -225,8 +232,9 @@ module axis_weight_rotator #(
       end
     end
 
+  genvar i;
   generate
-    for (genvar i=0; i<2; i++) begin
+    for (i=0; i<2; i++) begin : i0
       //  FSM Output Decoders for indexed signals
       always_comb begin
         bram_resetn     [i] = 1;
@@ -249,7 +257,7 @@ module axis_weight_rotator #(
           endcase 
         end
 
-        for (int j=0; j<COLS; j = j+1) begin
+        for (int j=0; j<COLS; j = j+1) begin :j0
           if (i==i_read[j]) begin
 
             if (CONFIG_BEATS==0 ? (state_read[j]==R_IDLE_S && done_write [i_read[j]] && fill_skid_buffer_cntr[j]<=2*DELAY_W_RAM-1) : (state_read[j]==R_PASS_CONFIG_S && fill_skid_buffer_cntr[j]<=2*DELAY_W_RAM-1)) begin
@@ -267,7 +275,8 @@ module axis_weight_rotator #(
 
       config_st ref_i;
       assign ref_i = ref_config[i];
-      for (genvar j=0; j<COLS; j++) begin
+      genvar j;
+      for (j=0; j<COLS; j++) begin : col_RAM
 
         // always_ff@(posedge aclk `OR_NEGEDGE(aresetn)) begin
         //   if(j!=0) begin
@@ -331,8 +340,9 @@ module axis_weight_rotator #(
     end
   endgenerate
 
+  genvar j;
   generate
-    for (genvar j=0; j<COLS; j++) begin
+    for (j=0; j<COLS; j++) begin : j_skidbuf
       n_delay #(.N(DELAY_W_RAM ), .W(1)) BRAM_VALID (.c(aclk), .rng(aresetn), .rnl(bram_reg_resetn[j]), .e(1'b1), .i(bram_m_ready[i_read[j]][j]), .o(bram_m_valid[j]));
 
       axis_pipeline_register2 # (
@@ -409,16 +419,18 @@ module axis_weight_rotator #(
   wire [COLS-1:0] copy_config;
   config_st [COLS-1:0] ref_i_read;
 
-  for (genvar i=0; i<COLS; i++ ) begin
+  generate
+  for (i=0; i<COLS; i++ ) begin : i1
     assign copy_config[i] = (state_read[i] == R_IDLE_S) && done_write [i_read[i]];
     assign ref_i_read[i] = ref_config[i_read[i]];
   end
+  endgenerate
  
 
   wire [BITS_CONFIG_BEATS-1:0] config_beats_const = CONFIG_BEATS-1;
 
   generate 
-  for (genvar i=0; i<COLS; i++ ) begin
+  for (i=0; i<COLS; i++ ) begin : i_cntr
     wire en_kw       = m_axis_tvalid[i] && m_axis_tready[i] && state_read[i] == R_READ_S;
 
     counter #(.W(BITS_CONFIG_BEATS)) C_CONFIG    (.clk(aclk), .rstn_g(aresetn), .rst_l(copy_config[i]), .en(en_count_config[i]), .max_in(                      config_beats_const     ), .last_clk(lc_config[i]), .last(l_config[i]), .first(),          .count()         );
@@ -473,8 +485,9 @@ module axis_sync #(
   output logic pixels_m_ready
 );
 
+genvar i;
 generate
-for (genvar i=0; i<COLS; i++) begin
+for ( i=0; i<COLS; i++) begin : sync_val
   assign m_axis_tvalid[i]   = weights_m_valid[i];// && (pixels_m_valid_pipe[i] || weights_m_user[i].is_config);
   assign weights_m_ready[i] = m_axis_tready[i]   && (pixels_m_valid_pipe[i] || weights_m_user[i].is_config);
 end

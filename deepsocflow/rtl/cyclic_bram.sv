@@ -7,7 +7,7 @@ module cyclic_bram #(
               W_DATA_WIDTH = 8,
               LATENCY      = 3,
               ABSORB       = 0,
-  localparam  SIZE = R_DEPTH * R_DATA_WIDTH ,
+  parameter  SIZE = R_DEPTH * R_DATA_WIDTH ,
               W_DEPTH =  SIZE / W_DATA_WIDTH,
               W_ADDR_WIDTH = $clog2(W_DEPTH),
               R_ADDR_WIDTH = $clog2(R_DEPTH)

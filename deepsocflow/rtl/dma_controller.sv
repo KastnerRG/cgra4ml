@@ -11,7 +11,7 @@ module dma_controller #(
     AXI_LEN_WIDTH      = 32  , // WIDTH_BPT
     AXI_TAG_WIDTH      = 8   , // WIDTH_TAG
 
-  localparam  
+  parameter  
     SRAM_WR_DEPTH = SRAM_RD_DEPTH * SRAM_RD_DATA_WIDTH / AXI_DATA_WIDTH, // 2048
     SRAM_RD_ADDR_WIDTH  = $clog2(SRAM_RD_DEPTH), // 11
     SRAM_WR_ADDR_WIDTH  = $clog2(SRAM_WR_DEPTH)
@@ -240,7 +240,8 @@ module dma_controller #(
   logic [31:0] ocm_idx, ocm_idx_next; // index of current ocm bank being written by dma
   logic got_o_last;                   // to ensure o_bpt is for the NEXT (new) transfer, not currently ongoing transfer
 
-  assign ocm_idx_next = 32'(!1'(ocm_idx)); // next bank to be written by DMA
+  wire ocm_idx_1 = ocm_idx[0];
+  assign ocm_idx_next = 32'(!ocm_idx_1); // next bank to be written by DMA
   assign m_od_len     = o_bpt;
   assign m_od_tag     = 8'(ocm_idx);
   //wire   o_axi_ok     = o_axi_bvalid && o_axi_bready && (o_axi_bresp == 2'b00); // why? what is the resp during transfer?

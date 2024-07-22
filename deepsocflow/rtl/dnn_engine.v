@@ -65,11 +65,11 @@ module dnn_engine #(
 
   genvar ik, ix;
   generate
-    for (ix=0; ix<AXI_WIDTH/X_BITS; ix=ix+1) begin
+    for (ix=0; ix<AXI_WIDTH/X_BITS; ix=ix+1) begin : px_keep
       assign s_axis_pixels_tkeep_words[ix] = s_axis_pixels_tkeep[ix/(8/X_BITS)];
     end
 
-    for (ik=0; ik<AXI_WIDTH/K_BITS; ik=ik+1) begin
+    for (ik=0; ik<AXI_WIDTH/K_BITS; ik=ik+1) begin : wt_keep
       assign s_axis_weights_tkeep_words[ik] = s_axis_weights_tkeep[ik/(8/K_BITS)];
     end
   endgenerate
@@ -144,7 +144,7 @@ module dnn_engine #(
   wire [Y_OUT_BITS*ROWS-1:0] m_data_padded;
   genvar iy;
   generate
-    for (iy=0; iy<ROWS; iy=iy+1) begin
+    for (iy=0; iy<ROWS; iy=iy+1) begin : R
       // Sign padding: can be done as $signed(), but verilator gives warning for width mismatch
       wire sign_bit = m_data[Y_BITS*(iy+1)-1];
       assign m_data_padded[Y_OUT_BITS*(iy+1)-1:Y_OUT_BITS*iy] = {{Y_PADDING{sign_bit}}, m_data[Y_BITS*(iy+1)-1:Y_BITS*iy]};
