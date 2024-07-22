@@ -88,11 +88,6 @@ typedef struct {
   static inline void flush_cache(void *addr, uint32_t bytes) {
     // Do nothing
   }
-  
-  extern EXT_C u32 to_embedded(void* addr){
-    u64 offset = (u64)addr - (u64)&mem;
-    return (u32)offset + MEM_BASEADDR;
-  }
 
   // Get and set config are done by sv
 	extern EXT_C u32 get_config(u32);
@@ -101,10 +96,6 @@ typedef struct {
 #else
   #define sim_fprintf(...)
   #define mem (*(Memory_st*)MEM_BASEADDR)
-
-  u32 to_embedded(void* addr){
-    return (u32)addr;
-  }
 
   inline volatile u32 get_config(u32 offset){
     return *(volatile u32 *)(CONFIG_BASEADDR + offset);
@@ -128,7 +119,6 @@ typedef struct {
 // Helper functions
 
 static inline void print_output () {
-  flush_cache(&mem.y, sizeof(mem.y));
   for (int i=0; i<O_WORDS; i++){
     printf("y[%d]: %f \n", i, (float)mem.y[i]);
   }
@@ -138,12 +128,6 @@ static inline void write_flush_u8(u8* addr, u8 val) {
   *addr = val;
   flush_cache(addr, 1);
 }
-
-static inline void write_flush_u64(u64* addr, u64 val) {
-  *addr = val;
-  flush_cache(addr, 8);
-}
-
 
 #define flatten_nhwc(in,ih,iw,ic, N,H,W,C, optional_debug_info,...)\
   ((in*H + ih)*W + iw)*C + ic;\
@@ -177,10 +161,8 @@ static inline void write_x(i8 val, i8 *p_out_buffer, i32 ib, i32 ixp, i32 ixn, i
   i32 p_offset       = (ixp == 0) ? 0 : (pb_out->cm_p0 + (ixp-1)*pb_out->cm) * pb_out->xp_words;
   i32 flat_index_n2r = (((ixn*pb_out->l + ixl)*pb_out->w + ixw)*xcm + ixcm)*(PE_ROWS+pb_out->x_pad) + ixr; // multidim_index -> flat_index [n,l,w,cm,r]
 
-  // Debug tiled output
-  i32 flat_index     = p_offset + flat_index_n2r;
-
 #ifdef XDEBUG
+  i32 flat_index     = p_offset + flat_index_n2r;
   mem.debug_tiled[flat_index] = val;
 #endif
 
@@ -333,7 +315,9 @@ DMA_WAIT:
               FILE *fp_raw = fopen(f_path_raw, "a");
               FILE *fp_sum = fopen(f_path_sum, "a");
 #else
-		          while (!get_config(4*(A_DONE_WRITE + ocm_bank))); // in FPGA, wait for write done
+		          while (!get_config(4*(A_DONE_WRITE + ocm_bank))){
+                // in FPGA, wait for write done
+              }; 
               usleep(0);
 #endif
               set_config(4*(A_DONE_WRITE + ocm_bank), 0);
@@ -524,13 +508,13 @@ PROCESS_AND_STORE_DONE:
               fclose(fp_raw);
 #endif
               set_config(4*(A_DONE_READ + ocm_bank), 1);
-              // debug_printf("-------- iw_kw2 0x%x done \n", iw_kw2);
+              debug_printf("-------- iw_kw2 0x%x done \n", iw_kw2);
             } // iw_kw2
             iw_kw2 = 0;
-            // debug_printf("-------- il %x done\n", il);
+            debug_printf("-------- il %x done\n", il);
           } // il
           il = 0;
-          // debug_printf("-------- in %x done\n", in);
+          debug_printf("-------- in %x done\n", in);
         } // in
         in = 0;
         debug_printf("------ it %x done\n", it);
@@ -573,6 +557,7 @@ PROCESS_AND_STORE_DONE:
   } // ib
   ib = 0;
   debug_printf("done all bundles!!\n");  
+  flush_cache(&mem.y, sizeof(mem.y));
 #ifdef SIM
   is_first_call = 1;
 #endif
@@ -596,29 +581,32 @@ extern EXT_C void sim_fill_memory (){
   fclose(fp);
 }
 
-extern EXT_C u64 embdded_to64(u32 addr){
-  return (u64)addr - (u64)MEM_BASEADDR + (u64)&mem;
+extern EXT_C u32 addr_64to32(void* addr){
+  u64 offset = (u64)addr - (u64)&mem;
+  return (u32)offset + 0x20000000;
 }
 
-extern EXT_C u8 get_byte (u64 addr){
-  return *(u8*)addr;
+extern EXT_C u64 sim_addr_32to64(u32 addr){
+  return (u64)addr - (u64)0x20000000 + (u64)&mem;
 }
 
-extern EXT_C u8 get_byte_32 (u32 addr_32){
-  u64 addr = embdded_to64(addr_32);
+extern EXT_C u8 get_byte_a32 (u32 addr_32){
+  u64 addr = sim_addr_32to64(addr_32);
   u8 val = *(u8*)addr;
-  //debug_printf("get_byte_32: addr32:0x%x, addr64:0x%lx, val:0x%x\n", addr_32, addr, val);
+  //debug_printf("get_byte_a32: addr32:0x%x, addr64:0x%lx, val:0x%x\n", addr_32, addr, val);
   return val;
 }
 
-extern EXT_C void set_byte (u64 addr, u8 data){
+extern EXT_C void set_byte_a32 (u32 addr_32, u8 data){
+  u64 addr = sim_addr_32to64(addr_32);
   *(u8*)addr = data;
+}
+#else
+
+u32 addr_64to32 (void* addr){
+  return (u32)addr;
 }
 
-extern EXT_C void set_byte_32 (u32 addr_32, u8 data){
-  u64 addr = embdded_to64(addr_32);
-  *(u8*)addr = data;
-}
 #endif
 
 extern EXT_C void model_setup(){
@@ -634,9 +622,9 @@ extern EXT_C void model_setup(){
   set_config(4*(A_DONE_READ+1), 1);  // Done read ocm bank 1
   set_config(4*(A_DONE_WRITE+0), 0);  // Done write ocm bank 0
   set_config(4*(A_DONE_WRITE+1), 0);  // Done write ocm bank 1
-  set_config(4*(A_OCM_BASE+0), to_embedded(ocm[0]));  // Base addr ocm bank 0
-  set_config(4*(A_OCM_BASE+1), to_embedded(ocm[1]));  // Base addr ocm bank 1
-  set_config(4*A_WEIGHTS_BASE, to_embedded(mem.w));  // Base adddr weights
+  set_config(4*(A_OCM_BASE+0), addr_64to32(ocm[0]));  // Base addr ocm bank 0
+  set_config(4*(A_OCM_BASE+1), addr_64to32(ocm[1]));  // Base addr ocm bank 1
+  set_config(4*A_WEIGHTS_BASE, addr_64to32(mem.w));  // Base adddr weights
   set_config(4*A_BUNDLE_DONE, 1);  // Bundle done (?)
   set_config(4*A_N_BUNDLES_1, N_BUNDLES);  // Number of bundles
   set_config(4*A_W_DONE, 0);  // Weigths done
@@ -646,7 +634,7 @@ extern EXT_C void model_setup(){
   // Write into BRAM the config for controller
   i32 parameters[8*N_BUNDLES];
   for (int var = 0; var < N_BUNDLES; var++){
-    parameters[8*var] = (var == 0) ? to_embedded(mem.x) : to_embedded(mem.out_buffers[bundles[var].in_buffer_idx]);       // x_base address
+    parameters[8*var] = (var == 0) ? addr_64to32(mem.x) : addr_64to32(mem.out_buffers[bundles[var].in_buffer_idx]);       // x_base address
     parameters[8*var+1] = bundles[var].x_bpt_p0;  // x_bpt0
     parameters[8*var+2] = bundles[var].x_bpt;     // x_bpt
     parameters[8*var+3] = bundles[var].w_bpt_p0;  // w_bpt0
