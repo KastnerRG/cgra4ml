@@ -15,7 +15,7 @@
     "max_n_bundles": 64,
     "ram_weights_depth": 20,
     "ram_edges_depth": 288,
-    "axi_width": 64,
+    "axi_width": 32,
     "header_width": 64,
     "config_baseaddr": "B0000000",
     "mem_baseaddr": "20000000",

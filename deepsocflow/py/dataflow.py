@@ -107,12 +107,9 @@ def create_headers(hw, r):
             packed |= val << sum_width
             sum_width += width
         assert sum_width <= total, f"Number of total packed bits {sum_width} is more than input DMA width {total}"
-        packed_le = np.array([packed],dtype=np.uint64)
-        packed_be = np.frombuffer(packed_le.tobytes(), dtype=np.dtype(np.uint64).newbyteorder('>'))
-        return packed_le, packed_be # np.arrays
+        return np.array([packed],dtype=np.uint64)[0]
     
-    d = {'w_header_le_p':[],'w_header_be_p':[]}
-
+    d = {}
     d['header'] = pack_bits([
             (r.KW//2  , hw.BITS_KW2),
             (r.XW-1   , hw.BITS_COLS_MAX),
@@ -122,24 +119,7 @@ def create_headers(hw, r):
             (r.XN-1   , hw.BITS_XN_MAX),
             (hw.CONFIG_BEATS + r.KH*r.CM_0-1, hw.BITS_RAM_WEIGHTS_ADDR),
             (hw.CONFIG_BEATS + r.KH*r.CM-1, hw.BITS_RAM_WEIGHTS_ADDR),
-        ], hw.HEADER_WIDTH)[0] # little endian
-
-    for ip in range(min(2, r.CP)):
-        CM_p = r.CM_0 if ip==0 else r.CM
-        print(f'headers: ip={ip}, CM_p={CM_p}')
-    
-        ''' Weights Config'''
-
-        w_header_le, w_header_be = pack_bits([
-            (r.KW//2, hw.BITS_KW2),
-            (CM_p-1 , hw.BITS_CIN_MAX),
-            (r.XW-1 , hw.BITS_COLS_MAX),
-            (r.XL-1 , hw.BITS_BLOCKS_MAX),
-            (r.XN-1 , hw.BITS_XN_MAX),
-            (hw.CONFIG_BEATS + r.KH*CM_p-1, hw.BITS_RAM_WEIGHTS_ADDR)
-        ], hw.AXI_WIDTH-1)
-        d['w_header_le_p'] += [w_header_le]
-        d['w_header_be_p'] += [w_header_be]
+        ], hw.HEADER_WIDTH)
 
     
     n = namedtuple('Runtime', d)(**d)

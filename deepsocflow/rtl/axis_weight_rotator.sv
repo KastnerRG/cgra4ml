@@ -51,7 +51,7 @@ module axis_weight_rotator #(
     output logic    [COLS-1:0]               m_axis_tvalid,
     output logic    [COLS-1:0]               m_axis_tlast ,
     output tuser_st [COLS-1:0]               m_axis_tuser ,
-    //output logic [1:0] m_rd_state,
+
     output logic [COLS-1:0][WORD_WIDTH-1:0] m_axis_tdata
   );
 
@@ -59,13 +59,12 @@ module axis_weight_rotator #(
   //   if (s_axis_tvalid && s_axis_tready && s_axis_tlast)
   //     $display("weights: s_axis_tuser = %d", s_axis_tuser);
 
-  enum {W_IDLE_S, W_GET_REF_S, W_WRITE_S, W_FILL_1_S, W_FILL_2_S, W_SWITCH_S} state_write;
+  enum {W_IDLE_S, W_WRITE_S, W_FILL_1_S, W_SWITCH_S} state_write;
   typedef enum {R_IDLE_S, R_PASS_CONFIG_S, R_READ_S, R_SWITCH_S} rd_state;
   rd_state state_read [COLS-1:0]; // independent state for each column
   //enum {R_IDLE_S, R_PASS_CONFIG_S, R_READ_S, R_SWITCH_S} state_read;
-  enum {DW_PASS_S, DW_BLOCK_S} state_dw;
 
-  logic i_write, dw_m_ready, dw_m_valid, dw_m_last, dw_s_valid, dw_s_ready;
+  logic i_write, dw_m_ready, dw_m_valid, dw_m_last;
   logic [COLS-1:0] i_read;
   logic      [M_WIDTH-1:0] dw_m_data_flat;
   logic [1:0][M_WIDTH-1:0] bram_m_data;
@@ -79,6 +78,22 @@ module axis_weight_rotator #(
   logic [COLS-1:0][BITS_SB_CNTR-1:0] fill_skid_buffer_cntr; 
   logic [COLS-1:0] en_count_config, l_config, l_kw, l_cin, l_cols, l_blocks, l_xn, f_kw, f_cin, f_cols, lc_config, lc_kw, lc_cin, lc_cols, lc_blocks, lc_xn;
   logic [COLS-1:0]     last_config;
+
+  typedef struct packed {
+    logic [BITS_ADDR        -1:0] addr_p_max;
+    logic [BITS_ADDR        -1:0] addr_p0_max;
+    logic [BITS_XN          -1:0] xn_1;
+    logic [BITS_CI          -1:0] cin_p_1;
+    logic [BITS_CI          -1:0] cin_p0_1;
+    logic [BITS_IM_BLOCKS   -1:0] blocks_1;
+    logic [BITS_XW          -1:0] cols_1;
+    logic [BITS_KW2         -1:0] kw2;
+    logic                         is_first_p;
+  } config_input_st;
+  config_input_st sci;
+  assign sci = config_input_st'(s_axis_tuser);
+
+  localparam BITS_CONFIG = BITS_ADDR + BITS_XN + BITS_IM_BLOCKS + BITS_XW + BITS_CI + BITS_KW2;
   typedef struct packed {
     logic [BITS_ADDR        -1:0] addr_max;
     logic [BITS_XN          -1:0] xn_1;
@@ -87,10 +102,11 @@ module axis_weight_rotator #(
     logic [BITS_CI          -1:0] cin_1;
     logic [BITS_KW2         -1:0] kw2;
   } config_st;
-  config_st s_config;
-  logic [1:0][BITS_ADDR + BITS_XN + BITS_IM_BLOCKS + BITS_XW + BITS_CI + BITS_KW2 -1:0] ref_config;
-  
-  assign s_config = config_st'(s_axis_tdata);
+  config_st s_config, dw_config;
+  assign s_config = {(sci.is_first_p ? sci.addr_p0_max : sci.addr_p_max), sci.xn_1, sci.blocks_1, sci.cols_1, (sci.is_first_p ? sci.cin_p0_1 : sci.cin_p_1), sci.kw2};
+
+  logic [1:0][BITS_ADDR + BITS_XN + BITS_IM_BLOCKS + BITS_XW + BITS_CI + BITS_KW2-1:0] ref_config;
+
   wire s_handshake      = s_axis_tready && s_axis_tvalid;
   wire s_last_handshake = s_handshake   && s_axis_tlast;
   //assign m_rd_state = state_read;
@@ -105,27 +121,28 @@ module axis_weight_rotator #(
     .M_KEEP_WIDTH  (M_WIDTH/WORD_WIDTH),
     .ID_ENABLE     (0),
     .DEST_ENABLE   (0),
-    .USER_ENABLE   (0)
+    .USER_ENABLE   (1),
+    .USER_WIDTH    (BITS_CONFIG)
   ) DW (
     .clk           (aclk       ),
     .rstn          (aresetn    ),
-    .s_axis_tvalid (dw_s_valid  ),
-    .s_axis_tready (dw_s_ready  ),
+    .s_axis_tvalid (s_axis_tvalid),
+    .s_axis_tready (s_axis_tready),
     .s_axis_tdata  (s_axis_tdata),
     .s_axis_tkeep  (s_axis_tkeep),
     .s_axis_tlast  (s_axis_tlast),
+    .s_axis_tuser  (s_config    ),
     .m_axis_tvalid (dw_m_valid     ),
     .m_axis_tready (dw_m_ready     ),
     .m_axis_tdata  (dw_m_data_flat ),
     .m_axis_tlast  (dw_m_last      ),
+    .m_axis_tuser  (dw_config      ),
     // Extras
     .s_axis_tid    ('0),
     .s_axis_tdest  ('0),
-    .s_axis_tuser  ('0),
     .m_axis_tid    (),
     .m_axis_tdest  (),
-    .m_axis_tkeep  (),
-    .m_axis_tuser  ()
+    .m_axis_tkeep  ()
   );
 
   wire dw_m_handshake      = dw_m_valid     && dw_m_ready;
@@ -137,12 +154,13 @@ module axis_weight_rotator #(
   always_ff @(posedge aclk `OR_NEGEDGE(aresetn)) 
     if (!aresetn)                                              state_write <= W_IDLE_S;
     else unique case (state_write)
-      W_IDLE_S    : if (&done_read [i_write]   )               state_write <= W_GET_REF_S;
-      W_GET_REF_S : if (s_handshake && state_dw == DW_BLOCK_S) state_write <= W_WRITE_S;
+      W_IDLE_S    : if (&done_read [i_write]  )                state_write <= W_WRITE_S;
       W_WRITE_S   : if (dw_m_last_handshake   )                state_write <= W_FILL_1_S;    // dw_m_last_handshake and bram_w_full[w_i] should be same
       W_FILL_1_S  :                                            state_write <= W_SWITCH_S;
       W_SWITCH_S  :                                            state_write <= W_IDLE_S;
     endcase 
+  
+  assign dw_m_ready = (state_write == W_WRITE_S);
 
 
   //  STATE MACHINE: READ
@@ -206,28 +224,7 @@ module axis_weight_rotator #(
         if (state_read[col]  == R_SWITCH_S)  i_read[col] <= !i_read[col];
       end
     end
-  
 
-  // State machine DW
-  always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
-    if (!aresetn)                       state_dw <= DW_BLOCK_S;
-    else unique case (state_dw)
-      DW_BLOCK_S: if (s_handshake)      state_dw <= DW_PASS_S;
-      DW_PASS_S : if (s_last_handshake) state_dw <= DW_BLOCK_S;
-    endcase
-
-  always_comb begin
-    dw_m_ready    = (state_write == W_WRITE_S);
-
-    if (state_dw == DW_BLOCK_S) begin
-      dw_s_valid    = 0;
-      s_axis_tready = (state_write == W_GET_REF_S);
-    end
-    else begin
-      dw_s_valid    = s_axis_tvalid;
-      s_axis_tready = dw_s_ready;
-    end
-  end
   generate
     for (genvar i=0; i<2; i++) begin
       //  FSM Output Decoders for indexed signals
@@ -240,16 +237,17 @@ module axis_weight_rotator #(
         done_read_next  [i]    = done_read[i];
         bram_m_ready    [i]    = '0;
 
-        if (i==i_write) 
+        if (i==i_write) begin
+          en_ref          [i] = dw_m_last_handshake;
+          done_write_next [i] = 0;
           case (state_write)
-            W_GET_REF_S : begin
-                            done_write_next [i] = 0;
-                            bram_resetn     [i] = 0;
-                            en_ref          [i] = s_handshake && (state_dw == DW_BLOCK_S);
-                          end
             W_WRITE_S   :   bram_wen        [i] = dw_m_valid;
-            W_SWITCH_S  :   done_write_next [i] = 1;
+            W_SWITCH_S  : begin  
+                            bram_resetn     [i] = 0;
+                            done_write_next [i] = 1;
+                          end
           endcase 
+        end
 
         for (int j=0; j<COLS; j = j+1) begin
           if (i==i_read[j]) begin
@@ -329,7 +327,7 @@ module axis_weight_rotator #(
       // Reference Registers
       always_ff @(posedge aclk `OR_NEGEDGE(aresetn))
         if (!aresetn)       ref_config [i] <= '0;
-        else if (en_ref[i]) ref_config [i] <= s_config;
+        else if (en_ref[i]) ref_config [i] <= dw_config;
     end
   endgenerate
 
