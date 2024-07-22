@@ -32,10 +32,13 @@ typedef const struct {
 typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 
 #include "../../run/work/config_fw.h"
+
 #define X_BITS            (1 << X_BITS_L2)
 #define X_WORDS_PER_BYTE  (8 / X_BITS)
 #define X_BITS_MASK       ((1 << X_BITS) -1)
-
+#ifdef SIM
+  #define XDEBUG
+#endif
 
 typedef struct {
   // These are written often, keep them on OCM
@@ -48,7 +51,7 @@ typedef struct {
   i8     x              [X_BYTES     ]; // keep next to wb. wbx is loaded to w_ptr
   O_TYPE y              [O_WORDS     ];
 
-#ifndef NDEBUG
+#ifdef XDEBUG
   i8     debug_tiled    [O_WORDS_MAX ];
   i32    debug_nhwc     [NHWC_WORDS  ];
 #endif
@@ -113,12 +116,12 @@ typedef struct {
   }
 #endif
 
-#ifdef NDEBUG
-  #define assert_printf(...)
-  #define debug_printf(...)
-#else
+#ifdef XDEBUG
   #define debug_printf printf
   #define assert_printf(v1, op, v2, optional_debug_info,...) ((v1  op v2) || (debug_printf("ASSERT FAILED: \n CONDITION: "), debug_printf("( " #v1 " " #op " " #v2 " )"), debug_printf(", VALUES: ( %d %s %d ), ", v1, #op, v2), debug_printf("DEBUG_INFO: " optional_debug_info), debug_printf(" " __VA_ARGS__), debug_printf("\n\n"), assert(v1 op v2), 0))
+#else
+  #define assert_printf(...)
+  #define debug_printf(...)
 #endif
 
 
@@ -177,7 +180,7 @@ static inline void write_x(i8 val, i8 *p_out_buffer, i32 ib, i32 ixp, i32 ixn, i
   // Debug tiled output
   i32 flat_index     = p_offset + flat_index_n2r;
 
-#ifndef NDEBUG
+#ifdef XDEBUG
   mem.debug_tiled[flat_index] = val;
 #endif
 
@@ -210,7 +213,7 @@ static inline void tile_write( i32 out_val, i8 *p_out_buffer, i32 ib, Bundle_t *
   }
 
   i32 iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, pb->on,pb->oh,pb->ow,pb->oc,,);
-#ifndef NDEBUG
+#ifdef XDEBUG
   mem.debug_nhwc[iy_nhwc] = out_val;
 #endif
  // ------ STORE IN NHWC  ------
@@ -330,18 +333,12 @@ DMA_WAIT:
               FILE *fp_raw = fopen(f_path_raw, "a");
               FILE *fp_sum = fopen(f_path_sum, "a");
 #else
-        		// in FPGA, wait for write done
-		          while (!get_config(4*(A_DONE_WRITE + ocm_bank))){
-              };
-              //while(false);
+		          while (!get_config(4*(A_DONE_WRITE + ocm_bank))); // in FPGA, wait for write done
               usleep(0);
 #endif
               set_config(4*(A_DONE_WRITE + ocm_bank), 0);
-
-#ifdef NDEBUG
-              // Flush the data just written by the PS to the DDR
               flush_cache(&ocm[ocm_bank], PE_ROWS*PE_COLS*sizeof(Y_TYPE)) ;
-#endif
+
               w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
               sram_addr=0;
 
