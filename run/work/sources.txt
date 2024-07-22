@@ -5,13 +5,8 @@ D:\dnn-engine\deepsocflow\test\sv\ext\skidbuffer.v
 D:\dnn-engine\deepsocflow\test\sv\ext\zipcpu_axi2ram.v
 D:\dnn-engine\deepsocflow\rtl\axi_cgra4ml.v
 D:\dnn-engine\deepsocflow\rtl\dnn_engine.v
-D:\dnn-engine\deepsocflow\rtl\ext\alex_axilite_ram.v
-D:\dnn-engine\deepsocflow\rtl\ext\alex_axilite_rd.v
-D:\dnn-engine\deepsocflow\rtl\ext\alex_axilite_wr.v
 D:\dnn-engine\deepsocflow\rtl\ext\alex_axis_pipeline_register.v
 D:\dnn-engine\deepsocflow\rtl\ext\alex_axis_register.v
-D:\dnn-engine\deepsocflow\rtl\ext\alex_axi_dma_rd.v
-D:\dnn-engine\deepsocflow\rtl\ext\alex_axi_dma_wr.v
 D:\dnn-engine\deepsocflow\rtl\ext\xilinx_spwf.v
 D:\dnn-engine\deepsocflow\rtl\axis_out_shift.sv
 D:\dnn-engine\deepsocflow\rtl\axis_pixels.sv
@@ -22,8 +17,13 @@ D:\dnn-engine\deepsocflow\rtl\dma_controller.sv
 D:\dnn-engine\deepsocflow\rtl\n_delay.sv
 D:\dnn-engine\deepsocflow\rtl\proc_engine.sv
 D:\dnn-engine\deepsocflow\rtl\ram.sv
+D:\dnn-engine\deepsocflow\rtl\ext\alex_axilite_ram.sv
+D:\dnn-engine\deepsocflow\rtl\ext\alex_axilite_rd.sv
+D:\dnn-engine\deepsocflow\rtl\ext\alex_axilite_wr.sv
 D:\dnn-engine\deepsocflow\rtl\ext\alex_axis_adapter.sv
 D:\dnn-engine\deepsocflow\rtl\ext\alex_axis_adapter_any.sv
+D:\dnn-engine\deepsocflow\rtl\ext\alex_axi_dma_rd.sv
+D:\dnn-engine\deepsocflow\rtl\ext\alex_axi_dma_wr.sv
 D:\dnn-engine\deepsocflow\rtl\ext\xilinx_sdp.sv
 D:\dnn-engine\run\work\config_hw.svh
 D:\dnn-engine\run\work\config_tb.svh

@@ -210,8 +210,8 @@ wire [AXI_WIDTH   -1:0] m_axis_output_tdata;
 wire [AXI_WIDTH/8 -1:0] m_axis_output_tkeep;
 wire [W_BPT-1:0] m_bytes_per_transfer;
 
-wire [AXI_ADDR_WIDTH-1:0] reg_wr_addr_ctrl = AXI_ADDR_WIDTH'((reg_wr_addr-AXIL_BASE_ADDR) >> 2);
-wire [AXI_ADDR_WIDTH-1:0] reg_rd_addr_ctrl = AXI_ADDR_WIDTH'((reg_rd_addr-AXIL_BASE_ADDR) >> 2);
+wire [AXIL_ADDR_WIDTH-1:0] reg_wr_addr_ctrl = (reg_wr_addr-AXIL_BASE_ADDR) >> 2;
+wire [AXIL_ADDR_WIDTH-1:0] reg_rd_addr_ctrl = (reg_rd_addr-AXIL_BASE_ADDR) >> 2;
 
 
 
@@ -270,11 +270,11 @@ dma_controller #(
     .rstn(rstn),
     .reg_wr_en(reg_wr_en),
     .reg_wr_ack(reg_wr_ack),
-    .reg_wr_addr(reg_wr_addr_ctrl),
+    .reg_wr_addr(reg_wr_addr_ctrl[AXI_ADDR_WIDTH-1:0]),
     .reg_wr_data(reg_wr_data),
     .reg_rd_en(reg_rd_en),
     .reg_rd_ack(reg_rd_ack),
-    .reg_rd_addr(reg_rd_addr_ctrl),
+    .reg_rd_addr(reg_rd_addr_ctrl[AXI_ADDR_WIDTH-1:0]),
     .reg_rd_data(reg_rd_data),
     .o_ready(m_axis_output_tready),
     .o_valid(m_axis_output_tvalid),
