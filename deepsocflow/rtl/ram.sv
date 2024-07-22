@@ -5,7 +5,7 @@ module ram_weights #(
   parameter   DEPTH   = `RAM_WEIGHTS_DEPTH,
               WIDTH   = `K_BITS,
               LATENCY = `DELAY_W_RAM,
-  localparam  ADDR_WIDTH = $clog2(DEPTH)
+  parameter  ADDR_WIDTH = $clog2(DEPTH)
 )(
   input  logic clk ,
   input  logic en  ,
@@ -44,7 +44,7 @@ module ram_edges #(
   parameter   DEPTH   = `RAM_EDGES_DEPTH,
               WIDTH   = `X_BITS * (`KH_MAX/2),
               LATENCY  = 1,
-  localparam  ADDR_WIDTH = $clog2(DEPTH)
+  parameter  ADDR_WIDTH = $clog2(DEPTH)
 )(
   input  logic clk ,
   input  logic en  ,
@@ -83,7 +83,7 @@ module ram_output #(
   parameter   DEPTH    = `COLS * `ROWS,
               WIDTH    = `Y_BITS,
               LATENCY  = 2,
-  localparam  ADDR_WIDTH = $clog2(DEPTH)
+  parameter  ADDR_WIDTH = $clog2(DEPTH)
 )(
   input  logic clk ,
   input  logic en  ,

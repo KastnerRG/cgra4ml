@@ -16,10 +16,13 @@ module n_delay #(
   assign o = data[(N+1)-1];
 
   genvar n;
-  for (n=0 ; n < N; n++)
+  generate 
+  for (n=0 ; n < N; n++) begin : n_dat
     always_ff @(posedge c `OR_NEGEDGE(rng))
       if (!rng)      data [n+1] <= 0;
       else if (!rnl) data [n+1] <= 0;
       else if (e)    data [n+1] <= data [n];
+  end
+  endgenerate
 
 endmodule

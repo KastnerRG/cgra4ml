@@ -12,7 +12,7 @@ module axis_pixels #(
               AXI_WIDTH          = `AXI_WIDTH          ,
               HEADER_WIDTH       = `HEADER_WIDTH       ,
 
-  localparam  EDGE_WORDS         =  KH_MAX/2              ,
+  parameter  EDGE_WORDS         =  KH_MAX/2              ,
               IM_SHIFT_REGS      =  ROWS + KH_MAX-1       ,
               BITS_KH            = $clog2(KH_MAX         ),
               BITS_KH2           = $clog2((KH_MAX+1)/2   ),
