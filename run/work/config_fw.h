@@ -29,7 +29,7 @@ Bundle_t bundles [N_BUNDLES] = {
 #define B_TYPE      int16_t
 #define O_TYPE      float
 #define B_WORDS     98
-#define AXI_WIDTH   32
+#define AXI_WIDTH   128
 #define MEM_BASEADDR    0x20000000
 #define CONFIG_BASEADDR 0xB0000000
 #define DATA_DIR   "../vectors"

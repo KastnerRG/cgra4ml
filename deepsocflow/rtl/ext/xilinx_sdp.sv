@@ -1,6 +1,7 @@
 // Asymmetric port RAM
 // Read Wider than Write. Read Statement in loop
 //asym_ram_sdp_read_wider.v
+`timescale 1ns / 1ps
 
 module asym_ram_sdp_read_wider (
     clkA,
