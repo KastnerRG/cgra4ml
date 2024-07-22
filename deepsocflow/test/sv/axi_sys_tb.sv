@@ -86,11 +86,14 @@ module axi_sys_tb;
           set_byte_32((32'(o_waddr_output) << LSB) + i, o_wdata_output[i*8 +: 8]);
   end
   
-
   initial begin
     $dumpfile("axi_tb_sys.vcd");
     $dumpvars();
+    // #200us;
+    // $finish;
+  end
 
+  initial begin
     rstn = 0;
     repeat(2) @(posedge clk) #10ps;
     rstn = 1;

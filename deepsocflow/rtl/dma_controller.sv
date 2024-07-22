@@ -172,7 +172,7 @@ module dma_controller #(
 
   // State decoding
   assign w_ram_rd_en   = w_state == W_WAIT_RAM && w_state_next == W_WAIT_RAM; // correction: rd should only be high for 1 cycle.
-  assign w_ram_rd_addr = SRAM_RD_ADDR_WIDTH'(cfg[A_N_BUNDLES_1] - 1 - count_wb); // count is decrementing, eg: 10 bundles: 9 - (9,8,7,6...0) = (0,1,2,3...9)
+  assign w_ram_rd_addr = SRAM_RD_ADDR_WIDTH'(cfg[A_N_BUNDLES_1] - 1 - 32'(count_wb)); // count is decrementing, eg: 10 bundles: 9 - (9,8,7,6...0) = (0,1,2,3...9)
   assign m_wd_len      = f_wp ? w_bpt_p0 : w_bpt;
   assign m_wd_valid    = w_state == W_EXEC;
   assign en_wt         = m_wd_valid && m_wd_ready;
@@ -184,8 +184,8 @@ module dma_controller #(
 
   
 
-  counter #(.W(COUNTER_WIDTH)) C_WT (.clk(clk), .rstn_g(rstn), .rst_l(w_ram_rd_valid  ), .en(en_wt), .max_in(COUNTER_WIDTH'(ram_max_t-1         )), .last_clk(lc_wt), .last(), .first(    ), .count(        ));
-  counter #(.W(COUNTER_WIDTH)) C_WP (.clk(clk), .rstn_g(rstn), .rst_l(w_ram_rd_valid  ), .en(lc_wt), .max_in(COUNTER_WIDTH'(ram_max_p-1         )), .last_clk(lc_wp), .last(), .first(f_wp), .count(        ));
+  counter #(.W(COUNTER_WIDTH)) C_WT (.clk(clk), .rstn_g(rstn), .rst_l(w_ram_rd_valid  ), .en(en_wt), .max_in(COUNTER_WIDTH'(32'(ram_max_t)-1    )), .last_clk(lc_wt), .last(), .first(    ), .count(        ));
+  counter #(.W(COUNTER_WIDTH)) C_WP (.clk(clk), .rstn_g(rstn), .rst_l(w_ram_rd_valid  ), .en(lc_wt), .max_in(COUNTER_WIDTH'(32'(ram_max_p)-1    )), .last_clk(lc_wp), .last(), .first(f_wp), .count(        ));
   counter #(.W(COUNTER_WIDTH)) C_WB (.clk(clk), .rstn_g(rstn), .rst_l(1'(cfg[A_START])), .en(lc_wp), .max_in(COUNTER_WIDTH'(cfg[A_N_BUNDLES_1]-1)), .last_clk(lc_wb), .last(), .first(    ), .count(count_wb));
 
 
@@ -211,7 +211,7 @@ module dma_controller #(
 
   // State decoding
   assign x_ram_rd_en   = x_state == X_WAIT_RAM && x_state_next == X_WAIT_RAM;
-  assign x_ram_rd_addr = SRAM_RD_ADDR_WIDTH'(cfg[A_N_BUNDLES_1] - 1 - count_xb); // eg: 10 bundles: 9 - (9,8,7,6...0) = (0,1,2,3...9)
+  assign x_ram_rd_addr = SRAM_RD_ADDR_WIDTH'(cfg[A_N_BUNDLES_1] - 1 - 32'(count_xb)); // eg: 10 bundles: 9 - (9,8,7,6...0) = (0,1,2,3...9)
   assign m_xd_len      = f_xp ? x_bpt_p0 : x_bpt;
   assign m_xd_valid    = x_state == X_EXEC;
   assign en_xt         = m_xd_valid && m_xd_ready;
@@ -230,8 +230,8 @@ module dma_controller #(
   (* mark_debug = "true" *) logic [COUNTER_WIDTH-1:0] count_xt_monitor;
   (* mark_debug = "true" *) logic count_xt_last_monitor;
 
-  counter #(.W(COUNTER_WIDTH)) C_XT (.clk(clk), .rstn_g(rstn), .rst_l(x_ram_rd_valid  ), .en(en_xt), .max_in(COUNTER_WIDTH'(ram_max_t          - 1)), .last_clk(lc_xt), .last(count_xt_last_monitor), .first(    ), .count(count_xt_monitor));
-  counter #(.W(COUNTER_WIDTH)) C_XP (.clk(clk), .rstn_g(rstn), .rst_l(x_ram_rd_valid  ), .en(lc_xt), .max_in(COUNTER_WIDTH'(ram_max_p          - 1)), .last_clk(lc_xp), .last(),                      .first(f_xp), .count(        ));
+  counter #(.W(COUNTER_WIDTH)) C_XT (.clk(clk), .rstn_g(rstn), .rst_l(x_ram_rd_valid  ), .en(en_xt), .max_in(COUNTER_WIDTH'(32'(ram_max_t)     - 1)), .last_clk(lc_xt), .last(count_xt_last_monitor), .first(    ), .count(count_xt_monitor));
+  counter #(.W(COUNTER_WIDTH)) C_XP (.clk(clk), .rstn_g(rstn), .rst_l(x_ram_rd_valid  ), .en(lc_xt), .max_in(COUNTER_WIDTH'(32'(ram_max_p)     - 1)), .last_clk(lc_xp), .last(),                      .first(f_xp), .count(        ));
   counter #(.W(COUNTER_WIDTH)) C_XB (.clk(clk), .rstn_g(rstn), .rst_l(1'(cfg[A_START])), .en(lc_xp), .max_in(COUNTER_WIDTH'(cfg[A_N_BUNDLES_1] - 1)), .last_clk(lc_xb), .last(),                      .first(    ), .count(count_xb));
 
 
