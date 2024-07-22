@@ -12,6 +12,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#define MEM_BASEADDR 0x20000000
+
 #ifdef NDEBUG
   #define debug_xil_printf(...)
 #else

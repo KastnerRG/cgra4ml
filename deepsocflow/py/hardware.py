@@ -30,7 +30,6 @@ class Hardware:
             axi_width: int = 64,
             header_width: int = 64,
             config_baseaddr = "B0000000",
-            mem_baseaddr = "20000000",
             axi_max_burst_len: int = 16,
             target_cpu_int_bits: int = 32,
             async_resetn: bool = True,
@@ -76,7 +75,6 @@ class Hardware:
         self.AXI_WIDTH = axi_width
         self.HEADER_WIDTH = header_width
         self.CONFIG_BASEADDR = config_baseaddr
-        self.MEM_BASEADDR = mem_baseaddr
         self.AXI_MAX_BURST_LEN = axi_max_burst_len
         self.INT_BITS = target_cpu_int_bits
         self.ASYNC_RESETN = async_resetn
