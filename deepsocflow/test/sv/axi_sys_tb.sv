@@ -60,14 +60,14 @@ module axi_sys_tb;
 
 
   function automatic int get_config(input int offset);
-    if (offset < 16*4)  return dut.OC_TOP.CONTROLLER.cfg[offset/4];
-    else                return dut.OC_TOP.CONTROLLER.sdp_ram.RAM[offset/4-16];
+    if (offset < 16)  return dut.OC_TOP.CONTROLLER.cfg        [offset   ];
+    else              return dut.OC_TOP.CONTROLLER.sdp_ram.RAM[offset-16];
   endfunction
 
 
   function automatic set_config(input int offset, input int data);
-    if (offset < 16*4) dut.OC_TOP.CONTROLLER.cfg[offset/4] <= data;
-    else               dut.OC_TOP.CONTROLLER.sdp_ram.RAM[offset/4-16] <= data;
+    if (offset < 16) dut.OC_TOP.CONTROLLER.cfg        [offset   ] <= data;
+    else             dut.OC_TOP.CONTROLLER.sdp_ram.RAM[offset-16] <= data;
   endfunction
 
 
