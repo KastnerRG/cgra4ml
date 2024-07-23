@@ -14,20 +14,11 @@
 
 #define MEM_BASEADDR 0x20000000
 
-#ifdef NDEBUG
-  #define debug_xil_printf(...)
-#else
-  #define debug_xil_printf xil_printf
-#endif
-
 static inline void flush_cache(void *addr, uint32_t bytes) {
   Xil_DCacheFlushRange((INTPTR)addr, bytes);
 }
 
-// RUNTIME.H 
-//#define printf xil_printf
 #include "runtime.h"
-//#undef printf
 
 static inline void hardware_setup(){
   init_platform();
