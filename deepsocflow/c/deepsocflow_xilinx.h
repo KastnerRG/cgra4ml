@@ -39,11 +39,12 @@ static inline void hardware_cleanup(){
   cleanup_platform();
 }
 
-static inline void model_run_timed(){
+static inline void model_run_timed(int n){
   XTime time_start, time_end;
   XTime_GetTime(&time_start);
-  model_run();
+  for (int i=0; i<n; i++)
+    model_run();
   XTime_GetTime(&time_end);
-  printf("Done inference! time taken: %.5f ms \n", 1000.0*(float)(time_end-time_start)/COUNTS_PER_SECOND);
+  printf("Done inference! time taken: %.5f ms \n", 1000.0*(float)(time_end-time_start)/COUNTS_PER_SECOND/n);
 }
 

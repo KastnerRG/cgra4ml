@@ -249,19 +249,19 @@ module dma_controller #(
 
   always_ff @(posedge clk) // All cfg written in this always block
     if (!rstn) begin 
-      cfg[A_START] <= 0; 
-      cfg[A_DONE_READ+0] <= 32'd1;
-      cfg[A_DONE_READ+1] <= 32'd1;
+      cfg[A_START       ] <= 0; 
+      cfg[A_DONE_READ +0] <= 32'd1;
+      cfg[A_DONE_READ +1] <= 32'd1;
       cfg[A_DONE_WRITE+0] <= 32'd0;
       cfg[A_DONE_WRITE+1] <= 32'd0;
-      cfg[A_OCM_BASE+0] <= 32'd0;
-      cfg[A_OCM_BASE+1] <= 32'd0;
+      cfg[A_OCM_BASE  +0] <= 32'd0;
+      cfg[A_OCM_BASE  +1] <= 32'd0;
       cfg[A_WEIGHTS_BASE] <= 32'd0;
-      cfg[A_BUNDLE_DONE] <= 32'd1;
-      cfg[A_N_BUNDLES_1] <= 32'd0;
-      cfg[A_W_DONE] <= 32'd0;
-      cfg[A_X_DONE] <= 32'd0;
-      cfg[A_O_DONE] <= 32'd0;
+      cfg[A_BUNDLE_DONE ] <= 32'd1;
+      cfg[A_N_BUNDLES_1 ] <= 32'd0;
+      cfg[A_W_DONE      ] <= 32'd0;
+      cfg[A_X_DONE      ] <= 32'd0;
+      cfg[A_O_DONE      ] <= 32'd0;
 
       ocm_idx     <= 1; // before first transfer idx = 1, so first idx = 0
       m_od_addr   <= 0;
