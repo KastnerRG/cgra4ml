@@ -54,76 +54,51 @@ class UserModel(XModel):
         super().__init__(sys_bits, x_int_bits, *args, **kwargs)
 
         self.b1 = XBundle( 
-            core=XConvBN(
-                k_int_bits=0,
-                b_int_bits=0,
-                filters=8,
-                kernel_size=7,
-                strides=(2,1),
+            core=XConvBN( 
+                k_int_bits=0, b_int_bits=0, filters=8, kernel_size=7, strides=(2,1),
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0)),
             pool=XPool(
-                type='avg',
-                pool_size=(3,4),
-                strides=(2,3),
-                padding='same',
+                type='avg', pool_size=(3,4), strides=(2,3), padding='same',
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),)
             )
         
         self.b2 = XBundle( 
             core=XConvBN(
-                k_int_bits=0,
-                b_int_bits=0,
-                filters=8,
-                kernel_size=1,
+                k_int_bits=0, b_int_bits=0, filters=8, kernel_size=1,
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None)),
             add_act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0.125)
         )
         
         self.b3 = XBundle( 
-            core=XConvBN(
-                k_int_bits=0,
-                b_int_bits=0,
-                filters=8,
-                kernel_size=7,
+            core=XConvBN( 
+                k_int_bits=0, b_int_bits=0, filters=8, kernel_size=7,
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),),
             add_act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0)
         )
 
         self.b4 = XBundle( 
-            core=XConvBN(
-                k_int_bits=0,
-                b_int_bits=0,
-                filters=8,
-                kernel_size=5,
+            core=XConvBN( 
+                k_int_bits=0, b_int_bits=0, filters=8, kernel_size=5,
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),),
             add_act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0)
         )
 
         self.b5 = XBundle( 
             core=XConvBN(
-                k_int_bits=0,
-                b_int_bits=0,
-                filters=24,
-                kernel_size=3,
+                k_int_bits=0, b_int_bits=0, filters=24, kernel_size=3,
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0),),
         )
 
         self.b6 = XBundle( 
             core=XConvBN(
-                k_int_bits=0,
-                b_int_bits=0,
-                filters=10,
-                kernel_size=1,
+                k_int_bits=0, b_int_bits=0, filters=10, kernel_size=1,
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0),),
             flatten=True
         )
 
         self.b7 = XBundle(
             core=XDense(
-                k_int_bits=0,
-                b_int_bits=0,
-                units=NB_CLASSES,
-                use_bias=False,
+                k_int_bits=0, b_int_bits=0, units=NB_CLASSES, use_bias=False,
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),),
             softmax=True
         )

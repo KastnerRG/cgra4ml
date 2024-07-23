@@ -86,25 +86,21 @@ typedef struct {
 
   Memory_st mem;
 
-  static inline void flush_cache(void *addr, uint32_t bytes) {
-    // Do nothing
-  }
-
   // Get and set config are done by sv
 	extern EXT_C u32 get_config(u32);
 	extern EXT_C void set_config(u32, u32);
+  static inline void flush_cache(void *addr, uint32_t bytes) {} // Do nothing
 
 #else
   #define sim_fprintf(...)
   #define mem (*(Memory_st* restrict)MEM_BASEADDR)
 
   inline volatile u32 get_config(u32 offset){
-    return *(volatile u32 *)(CONFIG_BASEADDR + offset);
+    return *(volatile u32 *)(CONFIG_BASEADDR + offset*4);
   }
 
   inline void set_config(u32 offset, u32 data){	
-    volatile u32 *Addr = (volatile u32 *restrict)(CONFIG_BASEADDR + offset);
-    *Addr = data;
+    *(volatile u32 *restrict)(CONFIG_BASEADDR + offset*4) = data;
   }
 #endif
 
@@ -120,6 +116,7 @@ typedef struct {
 // Helper functions
 
 static inline void print_output () {
+  flush_cache(&mem.y, sizeof(mem.y));
   for (int i=0; i<O_WORDS; i++){
     printf("y[%d]: %f \n", i, (float)mem.y[i]);
   }
@@ -161,22 +158,20 @@ static inline void write_x(i8 val, i8 *restrict p_out_buffer, i32 ib, i32 ixp, i
 
   i32 p_offset       = (ixp == 0) ? 0 : (pb_out->cm_p0 + (ixp-1)*pb_out->cm) * pb_out->xp_words;
   i32 flat_index_n2r = (((ixn*pb_out->l + ixl)*pb_out->w + ixw)*xcm + ixcm)*(PE_ROWS+pb_out->x_pad) + ixr; // multidim_index -> flat_index [n,l,w,cm,r]
+  i32 flat_index     = p_offset + flat_index_n2r;
 
 #ifdef XDEBUG
-  i32 flat_index     = p_offset + flat_index_n2r;
   mem.debug_tiled[flat_index] = val;
 #endif
 
   // Pack bits and store
-  div_t packed_idx = div(p_offset + flat_index_n2r, X_WORDS_PER_BYTE);
+  div_t packed_idx = div(flat_index, X_WORDS_PER_BYTE);
   assert_printf (packed_idx.quot , <, bundles[ib].o_bytes, "write_x", WRITEX_DEBUG_INFO);
 
   u8 packed_val      = ((u8)val & X_BITS_MASK) << (packed_idx.rem * X_BITS);
   u8 mem_val         = p_out_buffer[packed_idx.quot];
   u8 mem_val_cleaned = X_POSITION_INVERTED_MASKS[packed_idx.rem] & mem_val;
   write_flush_u8((u8*)(p_out_buffer + packed_idx.quot), mem_val_cleaned | packed_val);
-
-  // if (ib==1 && packed_idx.quot >= 356) debug_printf("index:%d, final_val:%d --- position:%d value:%d packed_val:%d, mem_val:%d, mem_val_cleaned:%d, clean_mask:%d, pos_mask:%d \n", packed_index, mem.debug_packed[packed_index], packed_position, val, packed_val, mem_val, mem_val_cleaned, X_BITS_MASK, X_POSITION_INVERTED_MASKS[packed_position]);
 }
 
 
@@ -285,7 +280,7 @@ extern EXT_C u8 model_run() {
 #endif
 
   debug_printf("Starting model_run()\n");
-  set_config(4*A_START, 1); 
+  set_config(A_START, 1); 
 
   for (ib = 0; ib < N_BUNDLES; ib++) {
 
@@ -307,7 +302,7 @@ extern EXT_C u8 model_run() {
 #ifdef SIM
 DMA_WAIT:
               // if sim return, so SV can pass time, and call again, which will jump to DMA_WAIT again
-	            if (!get_config(4*(A_DONE_WRITE + ocm_bank))) 
+	            if (!get_config(A_DONE_WRITE + ocm_bank)) 
 	              return 1; 
 
               char f_path_raw [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
@@ -316,13 +311,13 @@ DMA_WAIT:
               FILE *fp_raw = fopen(f_path_raw, "a");
               FILE *fp_sum = fopen(f_path_sum, "a");
 #else
-		          while (!get_config(4*(A_DONE_WRITE + ocm_bank))){
+		          while (!get_config(A_DONE_WRITE + ocm_bank)){
                 // in FPGA, wait for write done
               }; 
+              flush_cache(&ocm[ocm_bank], PE_ROWS*PE_COLS*sizeof(Y_TYPE)) ;
               usleep(0);
 #endif
-              set_config(4*(A_DONE_WRITE + ocm_bank), 0);
-              flush_cache(&ocm[ocm_bank], PE_ROWS*PE_COLS*sizeof(Y_TYPE)) ;
+              set_config(A_DONE_WRITE + ocm_bank, 0);
 
               w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
               sram_addr=0;
@@ -508,24 +503,17 @@ PROCESS_AND_STORE_DONE:
               fclose(fp_sum);
               fclose(fp_raw);
 #endif
-              set_config(4*(A_DONE_READ + ocm_bank), 1);
+              set_config(A_DONE_READ + ocm_bank, 1);
               debug_printf("-------- iw_kw2 0x%x done \n", iw_kw2);
             } // iw_kw2
-            iw_kw2 = 0;
             debug_printf("-------- il %x done\n", il);
           } // il
-          il = 0;
           debug_printf("-------- in %x done\n", in);
         } // in
-        in = 0;
         debug_printf("------ it %x done\n", it);
       } // it
-      it = 0;
       debug_printf("--- ip %x done\n", ip);
     } // ip
-    
-    ip = 0;
-
     debug_printf("- done bundle!! ib:%x\n", ib);
 
 #ifdef SIM
@@ -554,11 +542,9 @@ PROCESS_AND_STORE_DONE:
       fclose(fp_packed);
     }
 #endif
-  set_config(4*A_BUNDLE_DONE, 1);
+  set_config(A_BUNDLE_DONE, 1);
   } // ib
-  ib = 0;
   debug_printf("done all bundles!!\n");  
-  flush_cache(&mem.y, sizeof(mem.y));
 #ifdef SIM
   is_first_call = 1;
 #endif
@@ -568,19 +554,6 @@ PROCESS_AND_STORE_DONE:
 
 // Rest of the helper functions used in simulation.
 #ifdef SIM
-
-extern EXT_C void sim_fill_memory (){
-  FILE *fp;
-  char f_path [1000];
-
-  sprintf(f_path, "%s/wbx.bin", DATA_DIR);
-  fp = fopen(f_path, "rb");
-  debug_printf("DEBUG: Reading from file %s \n", f_path);
-  if(!fp)
-    debug_printf("ERROR! File not found: %s \n", f_path);
-  int bytes = fread(mem.w, 1, WB_BYTES+X_BYTES, fp);
-  fclose(fp);
-}
 
 extern EXT_C u32 addr_64to32(void* restrict addr){
   u64 offset = (u64)addr - (u64)&mem;
@@ -613,24 +586,31 @@ u32 addr_64to32 (void* addr){
 extern EXT_C void model_setup(){
 
 #ifdef SIM
-  sim_fill_memory();
+  FILE *fp;
+  char f_path [1000];
+  sprintf(f_path, "%s/wbx.bin", DATA_DIR);
+  fp = fopen(f_path, "rb");
+  debug_printf("DEBUG: Reading from file %s \n", f_path);
+  if(!fp) debug_printf("ERROR! File not found: %s \n", f_path);
+  int bytes = fread(mem.w, 1, WB_BYTES+X_BYTES, fp);
+  fclose(fp);
 #endif
   flush_cache(&mem.w, WB_BYTES+X_BYTES);  // force transfer to DDR, starting addr & length
 
   // Write registers in controller
-  set_config(4*A_START, 0);  // Start
-  set_config(4*(A_DONE_READ+0), 1);  // Done read ocm bank 0
-  set_config(4*(A_DONE_READ+1), 1);  // Done read ocm bank 1
-  set_config(4*(A_DONE_WRITE+0), 0);  // Done write ocm bank 0
-  set_config(4*(A_DONE_WRITE+1), 0);  // Done write ocm bank 1
-  set_config(4*(A_OCM_BASE+0), addr_64to32(ocm[0]));  // Base addr ocm bank 0
-  set_config(4*(A_OCM_BASE+1), addr_64to32(ocm[1]));  // Base addr ocm bank 1
-  set_config(4*A_WEIGHTS_BASE, addr_64to32(mem.w));  // Base adddr weights
-  set_config(4*A_BUNDLE_DONE, 1);  // Bundle done (?)
-  set_config(4*A_N_BUNDLES_1, N_BUNDLES);  // Number of bundles
-  set_config(4*A_W_DONE, 0);  // Weigths done
-  set_config(4*A_X_DONE, 0);  // Bundle done
-  set_config(4*A_O_DONE, 0);  // Output done
+  set_config(A_START       , 0);  // Start
+  set_config(A_DONE_READ +0, 1);  // Done read ocm bank 0
+  set_config(A_DONE_READ +1, 1);  // Done read ocm bank 1
+  set_config(A_DONE_WRITE+0, 0);  // Done write ocm bank 0
+  set_config(A_DONE_WRITE+1, 0);  // Done write ocm bank 1
+  set_config(A_OCM_BASE  +0, addr_64to32(ocm[0]));  // Base addr ocm bank 0
+  set_config(A_OCM_BASE  +1, addr_64to32(ocm[1]));  // Base addr ocm bank 1
+  set_config(A_WEIGHTS_BASE, addr_64to32(mem.w));  // Base adddr weights
+  set_config(A_BUNDLE_DONE , 1);  // Bundle done writing (pixel dma waits for this)
+  set_config(A_N_BUNDLES_1 , N_BUNDLES);  // Number of bundles
+  set_config(A_W_DONE      , 0);  // Weigths done
+  set_config(A_X_DONE      , 0);  // Bundle done
+  set_config(A_O_DONE      , 0);  // Output done
 
   // Write into BRAM the config for controller
   i32 parameters[8*N_BUNDLES];
@@ -640,14 +620,14 @@ extern EXT_C void model_setup(){
     parameters[8*var+2] = bundles[var].x_bpt;     // x_bpt
     parameters[8*var+3] = bundles[var].w_bpt_p0;  // w_bpt0
     parameters[8*var+4] = bundles[var].w_bpt;     // w_bpt
+
     assert_printf(bundles[var].p, <, 1<<16, "", "P should be less than 2**16 for bundle:%x", var);
     assert_printf(bundles[var].t, <, 1<<16, "", "T should be less than 2**16 for bundle:%x", var);
     parameters[8*var+5] = (bundles[var].t << 16) + bundles[var].p; // max p
-
     parameters[8*var+6] = ((u32*)&bundles[var].header)[0];
     parameters[8*var+7] = ((u32*)&bundles[var].header)[1];
   }
   for (int var = 0; var < 8*N_BUNDLES; var++){
-    set_config(4*(16+var), parameters[var]);
+    set_config(16+var, parameters[var]);
   }
 }
