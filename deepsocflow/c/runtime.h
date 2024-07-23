@@ -17,15 +17,14 @@ typedef float    f32;
 typedef double   f64;
 
 typedef const struct {
-  const i32  n, l, kw, coe, coe_tl, r_ll, h, w, ci, co, w_kw2, t, p, cm, cm_p0, xp_words, ib_out;
-  const i32  w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes, x_pad; // bytes per transfer
-  const i8   in_buffer_idx, out_buffer_idx, add_out_buffer_idx, add_in_buffer_idx;
+  const u16  n, l, kw, coe, h, w, ci, co, w_kw2, t, p, cm, cm_p0, on, oh, ow, oc, ch, ph, cw, pw;
+  const i32  xp_words, b_offset, w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes;
+  const i8   ib_out, in_buffer_idx, out_buffer_idx, add_out_buffer_idx, add_in_buffer_idx;
   const i8   is_bias, is_pool, is_flatten, is_softmax;
-  const i32  b_offset, b_val_shift, b_bias_shift;
-  const i8   ca_nzero, ca_shift, ca_pl_scale, aa_nzero, aa_shift, aa_pl_scale, pa_nzero, pa_shift, pa_pl_scale, softmax_frac;
+  const i8   x_pad, b_val_shift, b_bias_shift, ca_nzero, ca_shift, ca_pl_scale, aa_nzero, aa_shift, aa_pl_scale, pa_nzero, pa_shift, pa_pl_scale, softmax_frac;
+  const i8   csh, csh_shift, pkh, psh, psh_shift, csw, csw_shift, pkw, psw, psw_shift, pool;
   const f32  softmax_max_f;
-  const i32  csh, ch, csh_shift, pkh, psh, ph, psh_shift, csw, cw, csw_shift, pkw, psw, pw, psw_shift, pool, on, oh, ow, oc;
-  const u64  header, w_header, w_header_p0; // 64 bits (at least)
+  const u64  header;
   const i32  debug_nhwc_words;
 } Bundle_t;
 
@@ -252,14 +251,12 @@ extern EXT_C u8 model_run() {
   static i32 ib=0, ip=0, it=0, in=0, il=0, iw_kw2=0;
   static i8  *restrict p_out_buffer = (i8*)&mem.out_buffers[0];
 
-  i32   iy_nhwc;
+  i32   iy_nhwc, w_last, o_bpt;
   div_t div_ch, div_cw, div_ixh, div_ixw;
   i32   ph_end, ph_beg_const, ixh_beg, xh_sweep;
   i32   pw_end, pw_beg_const, ixw_beg, xw_sweep;
 
   static i8 ocm_bank = 1; // We flip the bank at the beginning of loop. starting from bank 0
-  i32 w_last, sram_addr;
-
 
   /**
    * ---------- WAIT FOR S2MM DMA DONE ----------
@@ -298,6 +295,7 @@ extern EXT_C u8 model_run() {
               
               ocm_bank = !ocm_bank;
               w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
+              o_bpt = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
 
 #ifdef SIM
 DMA_WAIT:
@@ -319,9 +317,7 @@ DMA_WAIT:
 #endif
               set_config(A_DONE_WRITE + ocm_bank, 0);
 
-              w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
-              sram_addr=0;
-
+              i32 sram_addr=0;
               for (i32 icoe=0; icoe < pb->coe; icoe++) {
                 i32 i_bias = it_bias + icoe;
 
