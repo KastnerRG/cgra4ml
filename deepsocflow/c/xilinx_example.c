@@ -1,4 +1,4 @@
-#define XDEBUG
+//#define XDEBUG
 #include "platform.h"
 #include "deepsocflow_xilinx.h"
 

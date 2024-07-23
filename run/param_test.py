@@ -17,7 +17,7 @@ import numpy as np
 from deepsocflow import *
 
 
-(SIM, SIM_PATH) = ('xsim', "F:/Xilinx/Vivado/2022.2/bin/") if os.name=='nt' else ('verilator', '')
+(SIM, SIM_PATH) = ('xsim', "/opt/Xilinx/Vivado/2022.2/bin/") if os.name=='nt' else ('verilator', '')
 np.random.seed(42)
 
 '''
