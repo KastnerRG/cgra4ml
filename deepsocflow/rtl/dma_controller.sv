@@ -2,7 +2,7 @@
 
 module dma_controller #(
   parameter
-    SRAM_RD_DATA_WIDTH = 32*9,
+    SRAM_RD_DATA_WIDTH = 32*8,
     SRAM_RD_DEPTH      = 8   , // number of bundles
     COUNTER_WIDTH      = 16  , // T, P, B counters
     AXI_ADDR_WIDTH     = 32  ,

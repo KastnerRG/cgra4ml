@@ -25,9 +25,9 @@ static inline void flush_cache(void *addr, uint32_t bytes) {
 }
 
 // RUNTIME.H 
-#define printf xil_printf
+//#define printf xil_printf
 #include "runtime.h"
-#undef printf
+//#undef printf
 
 static inline void hardware_setup(){
   init_platform();
