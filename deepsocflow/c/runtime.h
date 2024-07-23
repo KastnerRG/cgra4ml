@@ -73,6 +73,7 @@ typedef struct {
 
 #ifdef __cplusplus
   #define EXT_C "C"
+  #define restrict __restrict__ 
 #else
   #define EXT_C
 #endif
@@ -95,14 +96,14 @@ typedef struct {
 
 #else
   #define sim_fprintf(...)
-  #define mem (*(Memory_st*)MEM_BASEADDR)
+  #define mem (*(Memory_st* restrict)MEM_BASEADDR)
 
   inline volatile u32 get_config(u32 offset){
     return *(volatile u32 *)(CONFIG_BASEADDR + offset);
   }
 
   inline void set_config(u32 offset, u32 data){	
-    volatile u32 *Addr = (volatile u32 *)(CONFIG_BASEADDR + offset);
+    volatile u32 *Addr = (volatile u32 *restrict)(CONFIG_BASEADDR + offset);
     *Addr = data;
   }
 #endif
@@ -124,7 +125,7 @@ static inline void print_output () {
   }
 }
 
-static inline void write_flush_u8(u8* addr, u8 val) {
+static inline void write_flush_u8(u8*restrict addr, u8 val) {
   *addr = val;
   flush_cache(addr, 1);
 }
@@ -148,7 +149,7 @@ static inline i32 quant_lrelu(i32 x, i8 nzero, i8 shift, i8 pl_scale){
 }
 
 
-static inline void write_x(i8 val, i8 *p_out_buffer, i32 ib, i32 ixp, i32 ixn, i32 ixl, i32 ixw, i32 ixcm, i32 ixr, Bundle_t *pb_out, i32 xcm ){
+static inline void write_x(i8 val, i8 *restrict p_out_buffer, i32 ib, i32 ixp, i32 ixn, i32 ixl, i32 ixw, i32 ixcm, i32 ixr, Bundle_t *restrict pb_out, i32 xcm ){
 
   #define WRITEX_DEBUG_INFO "--- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n",ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm
   assert_printf (ixr , <, PE_ROWS+pb_out->x_pad, "write_x", WRITEX_DEBUG_INFO);
@@ -179,7 +180,7 @@ static inline void write_x(i8 val, i8 *p_out_buffer, i32 ib, i32 ixp, i32 ixn, i
 }
 
 
-static inline void tile_write( i32 out_val, i8 *p_out_buffer, i32 ib, Bundle_t *pb, i32 i_yn, i32 i_yh, i32 i_yw, i32 i_yc, i32 yn, i32 yh, i32 yw, i32 yc ) {
+static inline void tile_write( i32 out_val, i8 *restrict p_out_buffer, i32 ib, Bundle_t *restrict pb, i32 i_yn, i32 i_yh, i32 i_yw, i32 i_yc, i32 yn, i32 yh, i32 yw, i32 yc ) {
 
   // ------ FLATTEN ------
   if (pb->is_flatten) {
@@ -210,7 +211,7 @@ static inline void tile_write( i32 out_val, i8 *p_out_buffer, i32 ib, Bundle_t *
     mem.add_buffers[pb->add_out_buffer_idx][iy_nhwc] = (i8)out_val;
 
   // If output only goes to residual add, early return
-  Bundle_t* pb_out;
+  Bundle_t*restrict pb_out;
   if (pb->ib_out == -1)
     return;
   else
@@ -251,10 +252,10 @@ static inline void tile_write( i32 out_val, i8 *p_out_buffer, i32 ib, Bundle_t *
 
 extern EXT_C u8 model_run() {
 
-  static Bundle_t *pb = &bundles[0];
+  static Bundle_t *restrict pb = &bundles[0];
   static i32 it_bias=0;
   static i32 ib=0, ip=0, it=0, in=0, il=0, iw_kw2=0;
-  static i8  *p_out_buffer = (i8*)&mem.out_buffers[0];
+  static i8  *restrict p_out_buffer = (i8*)&mem.out_buffers[0];
 
   i32   iy_nhwc;
   div_t div_ch, div_cw, div_ixh, div_ixw;
@@ -581,7 +582,7 @@ extern EXT_C void sim_fill_memory (){
   fclose(fp);
 }
 
-extern EXT_C u32 addr_64to32(void* addr){
+extern EXT_C u32 addr_64to32(void* restrict addr){
   u64 offset = (u64)addr - (u64)&mem;
   return (u32)offset + 0x20000000;
 }
@@ -592,14 +593,14 @@ extern EXT_C u64 sim_addr_32to64(u32 addr){
 
 extern EXT_C u8 get_byte_a32 (u32 addr_32){
   u64 addr = sim_addr_32to64(addr_32);
-  u8 val = *(u8*)addr;
+  u8 val = *(u8*restrict)addr;
   //debug_printf("get_byte_a32: addr32:0x%x, addr64:0x%lx, val:0x%x\n", addr_32, addr, val);
   return val;
 }
 
 extern EXT_C void set_byte_a32 (u32 addr_32, u8 data){
   u64 addr = sim_addr_32to64(addr_32);
-  *(u8*)addr = data;
+  *(u8*restrict)addr = data;
 }
 #else
 
