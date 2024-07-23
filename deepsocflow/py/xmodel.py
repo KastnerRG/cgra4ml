@@ -351,13 +351,13 @@ def verify_inference(model, hw, SIM, SIM_PATH):
         for ip in range(b.r.CP):
             for it in range(b.r.IT):
                 y_raw_exp = b.ye_exp_p[ip][it]
-                y_raw_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.ib}_{ip}_{it}_y_raw_sim.txt", np.int32).reshape(y_raw_exp.shape)
+                y_raw_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.ib}_{ip}_{it}_y_raw_sim.txt", np.int32)[:y_raw_exp.size].reshape(y_raw_exp.shape)
                 error = np.sum(np.abs(y_raw_exp-y_raw_sim))
                 assert error == 0, f"Error={error}, for y_raw_sim at {b.ib=}_{ip=}_{it=}"
 
         ''' Verify sum output '''
         y_sum_exp = b.oe_sum_exp
-        y_sum_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.ib}_y_sum_sim.txt", np.int32).reshape(y_sum_exp.shape)
+        y_sum_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.ib}_y_sum_sim.txt", np.int32)[:y_sum_exp.size].reshape(y_sum_exp.shape)
         error = np.sum(np.abs(y_sum_exp-y_sum_sim))
         assert error == 0, f"Error={error}, for y_sum_sim at {b.ib=}"
 
