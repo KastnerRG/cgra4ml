@@ -157,7 +157,7 @@ def reorder_b_q2e_conv(b, hw, r):
 
 
 def reorder_w_q2e_conv(w, hw, r):
-
+    # (KH, KW, Ci, CO)
     w = np.pad(w, ((0,0),(0,0),(0,0),(0,r.CO_PAD-r.CO)))        # (KH, KW, CI, CO_PAD)
     w = w.reshape(r.KH, r.KW, r.CI, r.IT, r.CO_PRL)             # (KH, KW, CI, IT, CO_PRL)
     w = np.flip(w, axis=4)                                      # cuz we shift outputs towards right in PE array and read from high col

@@ -318,8 +318,8 @@ def export_inference(model, hw):
                     np.savetxt(f"{hw.DATA_DIR}/{b.ib}_{ip}_{it}_w.txt", wp, fmt='%d')
                     np.savetxt(f"{hw.DATA_DIR}/{b.ib}_{ip}_{it}_y_exp.txt", b.ye_exp_p[ip][it].flatten(), fmt='%d')
         
-        y_exp = BUNDLES[-1].o_int.flatten()
-        np.savetxt(f"{hw.DATA_DIR}/y_exp.txt", y_exp, fmt= '%f' if BUNDLES[-1].softmax else '%d')
+        y_exp = (b.out.ftensor.numpy() if b.softmax else b.o_int).flatten() 
+        np.savetxt(f"{hw.DATA_DIR}/y_exp.txt", y_exp, fmt= '%f' if b.softmax else '%d')
         for i in range(len(y_exp)):
             if (i < 20 or len(y_exp)-i < 20):
                 print(f"y_exp {i}: {y_exp[i]}")
