@@ -55,17 +55,19 @@ module axi_sys_tb;
   export "DPI-C" function set_config;
   import "DPI-C" context function byte get_byte_a32 (int unsigned addr);
   import "DPI-C" context function void set_byte_a32 (int unsigned addr, byte data);
-  import "DPI-C" context function void model_setup();
-  import "DPI-C" context function bit  model_run();
+  import "DPI-C" context function chandle get_mp ();
+  import "DPI-C" context function void print_output (chandle mpv);
+  import "DPI-C" context function void model_setup(chandle mpv, chandle p_config);
+  import "DPI-C" context function bit  model_run(chandle mpv, chandle p_config);
 
 
-  function automatic int get_config(input int offset);
+  function automatic int get_config(chandle config_base, input int offset);
     if (offset < 16)  return dut.OC_TOP.CONTROLLER.cfg        [offset   ];
     else              return dut.OC_TOP.CONTROLLER.sdp_ram.RAM[offset-16];
   endfunction
 
 
-  function automatic set_config(input int offset, input int data);
+  function automatic set_config(chandle config_base, input int offset, input int data);
     if (offset < 16) dut.OC_TOP.CONTROLLER.cfg        [offset   ] <= data;
     else             dut.OC_TOP.CONTROLLER.sdp_ram.RAM[offset-16] <= data;
   endfunction
@@ -93,15 +95,19 @@ module axi_sys_tb;
     // $finish;
   end
 
+  chandle mpv, cp;
   initial begin
     rstn = 0;
     repeat(2) @(posedge clk) #10ps;
     rstn = 1;
+    mpv = get_mp();
     
-    model_setup();
+    model_setup(mpv, cp);
     repeat(2) @(posedge clk) #10ps;
 
-    while (model_run()) @(posedge clk) #10ps;
+    while (model_run(mpv, cp)) @(posedge clk) #10ps;
+
+    print_output(mpv);
     $finish;
   end
 

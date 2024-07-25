@@ -16,15 +16,13 @@ import numpy as np
 
 from deepsocflow import *
 
-
-(SIM, SIM_PATH) = ('xsim', "/opt/Xilinx/Vivado/2022.2/bin/") if os.name=='nt' else ('verilator', '')
-np.random.seed(42)
+(SIM, SIM_PATH) = ('xsim', "F:/Xilinx/Vivado/2022.2/bin/") if os.name=='nt' else ('verilator', '')
 
 '''
 Dataset
 '''
 
-NB_EPOCH = 2
+NB_EPOCH = 0
 BATCH_SIZE = 64
 VALIDATION_SPLIT = 0.1
 NB_CLASSES = 10
@@ -193,8 +191,8 @@ def product_dict(**kwargs):
                                         axi_width            = [ 128      ],
                                         config_baseaddr      = ["B0000000"],
                                         target_cpu_int_bits  = [ 32       ],
-                                        valid_prob           = [ 1       ],
-                                        ready_prob           = [ 1       ],
+                                        valid_prob           = [ 0.1       ],
+                                        ready_prob           = [ 0.01       ],
                                         data_dir             = ['vectors'],
                                     )))
 def test_dnn_engine(PARAMS):

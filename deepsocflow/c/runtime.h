@@ -57,8 +57,6 @@ typedef struct {
   i8     add_buffers    [N_ADD_BUF   ][NHWC_WORDS  ]; // should be last, since N_ADD_BUF can be empty
 } Memory_st;
 
-#define ocm (mem.ocm)
-
 #define A_START        0x0
 #define A_DONE_READ    0x1 // 2
 #define A_DONE_WRITE   0x3 // 2
@@ -81,25 +79,22 @@ typedef struct {
   #include <stdio.h>
   #define sim_fprintf fprintf
   #include <stdbool.h>
-  // Simulation is in 32 bit mode.
 
-  Memory_st mem;
-
-  // Get and set config are done by sv
-	extern EXT_C u32 get_config(u32);
-	extern EXT_C void set_config(u32, u32);
+  Memory_st mem_phy;
+	extern EXT_C u32 get_config(void*, u32);
+	extern EXT_C void set_config(void*, u32, u32);
   static inline void flush_cache(void *addr, uint32_t bytes) {} // Do nothing
 
 #else
   #define sim_fprintf(...)
-  #define mem (*(Memory_st* restrict)MEM_BASEADDR)
+  #define mem_phy (*(Memory_st* restrict)MEM_BASEADDR)
 
-  inline volatile u32 get_config(u32 offset){
-    return *(volatile u32 *)(CONFIG_BASEADDR + offset*4);
+  inline volatile u32 get_config(void *config_base, u32 offset){
+    return *(volatile u32 *)(config_base + offset*4);
   }
 
-  inline void set_config(u32 offset, u32 data){	
-    *(volatile u32 *restrict)(CONFIG_BASEADDR + offset*4) = data;
+  inline void set_config(void *config_base, u32 offset, u32 data){	
+    *(volatile u32 *restrict)(config_base + offset*4) = data;
   }
 #endif
 
@@ -113,13 +108,6 @@ typedef struct {
 
 
 // Helper functions
-
-static inline void print_output () {
-  flush_cache(&mem.y, sizeof(mem.y));
-  for (int i=0; i<O_WORDS; i++){
-    printf("y[%d]: %f \n", i, (float)mem.y[i]);
-  }
-}
 
 static inline void write_flush_u8(u8*restrict addr, u8 val) {
   *addr = val; // Leave flushing to the end of bundle
@@ -144,7 +132,7 @@ static inline i32 quant_lrelu(i32 x, i8 nzero, i8 shift, i8 pl_scale){
 }
 
 
-static inline void write_x(i8 val, i8 *restrict p_out_buffer, i32 ib, i32 ixp, i32 ixn, i32 ixl, i32 ixw, i32 ixcm, i32 ixr, Bundle_t *restrict pb_out, i32 xcm ){
+static inline void write_x(i8 val, i8 *restrict p_out_buffer, Memory_st *restrict mp, i32 ib, i32 ixp, i32 ixn, i32 ixl, i32 ixw, i32 ixcm, i32 ixr, Bundle_t *restrict pb_out, i32 xcm) {
 
   #define WRITEX_DEBUG_INFO "--- ib:%d ixp:%d ixn:%d ixl:%d ixw:%d ixcm:%d ixr:%d xcm :%d \n",ib,ixp,ixn,ixl,ixw,ixcm,ixr,xcm
   assert_printf (ixr , <, PE_ROWS+pb_out->x_pad, "write_x", WRITEX_DEBUG_INFO);
@@ -159,7 +147,7 @@ static inline void write_x(i8 val, i8 *restrict p_out_buffer, i32 ib, i32 ixp, i
   i32 flat_index     = p_offset + flat_index_n2r;
 
 #ifdef XDEBUG
-  mem.debug_tiled[flat_index] = val;
+  mp->debug_tiled[flat_index] = val;
 #endif
 
   // Pack bits and store
@@ -173,7 +161,7 @@ static inline void write_x(i8 val, i8 *restrict p_out_buffer, i32 ib, i32 ixp, i
 }
 
 
-static inline void tile_write( i32 out_val, i8 *restrict p_out_buffer, i32 ib, Bundle_t *restrict pb, i32 i_yn, i32 i_yh, i32 i_yw, i32 i_yc, i32 yn, i32 yh, i32 yw, i32 yc ) {
+static inline void tile_write( i32 out_val, i8 *restrict p_out_buffer, i32 ib, Bundle_t *restrict pb, Memory_st *restrict mp, i32 i_yn, i32 i_yh, i32 i_yw, i32 i_yc, i32 yn, i32 yh, i32 yw, i32 yc ) {
 
   // ------ FLATTEN ------
   if (pb->is_flatten) {
@@ -190,18 +178,18 @@ static inline void tile_write( i32 out_val, i8 *restrict p_out_buffer, i32 ib, B
 
   i32 iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, pb->on,pb->oh,pb->ow,pb->oc,,);
 #ifdef XDEBUG
-  mem.debug_nhwc[iy_nhwc] = out_val;
+  mp->debug_nhwc[iy_nhwc] = out_val;
 #endif
  // ------ STORE IN NHWC  ------
 
   if (ib == N_BUNDLES-1) {
-    mem.y[iy_nhwc] = out_val; // Last bundle: save as NHWC
+    mp->y[iy_nhwc] = out_val; // Last bundle: save as NHWC
     return;
   }
 
   // Store for residual add
   if (pb->add_out_buffer_idx != -1)
-    mem.add_buffers[pb->add_out_buffer_idx][iy_nhwc] = (i8)out_val;
+    mp->add_buffers[pb->add_out_buffer_idx][iy_nhwc] = (i8)out_val;
 
   // If output only goes to residual add, early return
   Bundle_t*restrict pb_out;
@@ -230,27 +218,27 @@ static inline void tile_write( i32 out_val, i8 *restrict p_out_buffer, i32 ib, B
   i32 yr_sweep = i_yh==yh-1 ? PE_ROWS : i_yr + 1;
 
   for (i32 i_yr_dest = i_yr; i_yr_dest < yr_sweep; i_yr_dest++) {
-    write_x(out_val, p_out_buffer, ib, i_yp, i_yn, i_yl, i_yw, i_ycm, i_yr_dest,   pb_out, ycm);
+    write_x(out_val, p_out_buffer, mp, ib, i_yp, i_yn, i_yl, i_yw, i_ycm, i_yr_dest,   pb_out, ycm);
 
     // --- PADDING: the [bottom x_pad rows of previous block (l-1)] with [first x_pad rows of this block (l)]
     if (i_yr_dest < pb_out->x_pad) {
       i32 pad_val = (i_yl == 0) ? 0         : out_val;
       i32 dest_yl = (i_yl == 0) ? pb_out->l-1 : i_yl-1;
-      write_x(pad_val, p_out_buffer, ib, i_yp, i_yn, dest_yl, i_yw, i_ycm, i_yr_dest+PE_ROWS,   pb_out, ycm);
+      write_x(pad_val, p_out_buffer, mp, ib, i_yp, i_yn, dest_yl, i_yw, i_ycm, i_yr_dest+PE_ROWS,   pb_out, ycm);
     }
     out_val = 0;
   }
   
 }
 
-extern EXT_C u8 model_run() {
+extern EXT_C u8 model_run(Memory_st *restrict mp, void *p_config) {
 
   static Bundle_t *restrict pb = &bundles[0];
-  static i32 it_bias=0;
+  static i32 it_bias=0, w_last, o_bpt;
   static i32 ib=0, ip=0, it=0, in=0, il=0, iw_kw2=0;
-  static i8  *restrict p_out_buffer = (i8*)&mem.out_buffers[0];
+  static i8 *restrict p_out_buffer = 0;
 
-  i32   iy_nhwc, w_last, o_bpt;
+  i32   iy_nhwc;
   div_t div_ch, div_cw, div_ixh, div_ixw;
   i32   ph_end, ph_beg_const, ixh_beg, xh_sweep;
   i32   pw_end, pw_beg_const, ixw_beg, xw_sweep;
@@ -272,16 +260,15 @@ extern EXT_C u8 model_run() {
   static char is_first_call = 1;
   if (is_first_call)  is_first_call = 0;
   else                goto DMA_WAIT;
-
 #endif
 
   debug_printf("Starting model_run()\n");
-  set_config(A_START, 1); 
+  set_config(p_config, A_START, 1); 
 
   for (ib = 0; ib < N_BUNDLES; ib++) {
 
     pb = &bundles[ib];
-    p_out_buffer = (i8*)&mem.out_buffers[pb->out_buffer_idx];
+    p_out_buffer = (i8*)&(mp->out_buffers[pb->out_buffer_idx]);
 
     for (ip = 0; ip < pb->p; ip++) {
       for (it = 0; it < pb->t; it++) {
@@ -299,7 +286,7 @@ extern EXT_C u8 model_run() {
 #ifdef SIM
 DMA_WAIT:
               // if sim return, so SV can pass time, and call again, which will jump to DMA_WAIT again
-	            if (!get_config(A_DONE_WRITE + ocm_bank)) 
+	            if (!get_config(p_config, A_DONE_WRITE + ocm_bank)) 
 	              return 1; 
 
               char f_path_raw [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
@@ -308,13 +295,13 @@ DMA_WAIT:
               FILE *fp_raw = fopen(f_path_raw, "a");
               FILE *fp_sum = fopen(f_path_sum, "a");
 #else
-		          while (!get_config(A_DONE_WRITE + ocm_bank)){
+		          while (!get_config(p_config, A_DONE_WRITE + ocm_bank)){
                 // in FPGA, wait for write done
               }; 
-              flush_cache(&ocm[ocm_bank], o_bpt);
+              flush_cache(&(mp->ocm[ocm_bank]), o_bpt);
               usleep(0);
 #endif
-              set_config(A_DONE_WRITE + ocm_bank, 0);
+              set_config(p_config, A_DONE_WRITE + ocm_bank, 0);
 
               i32 sram_addr=0;
               for (i32 icoe=0; icoe < pb->coe; icoe++) {
@@ -347,7 +334,7 @@ DMA_WAIT:
                       goto PROCESS_AND_STORE_DONE;
                     }
 
-                    raw_val = ocm[ocm_bank][sram_addr];
+                    raw_val = mp->ocm[ocm_bank][sram_addr];
                     out_val = raw_val;
 
 //PROCESS_START:
@@ -357,12 +344,12 @@ DMA_WAIT:
 
                     if (pb->p == 1) {          // only p  : proceed with value
                     } else if (ip == pb->p-1) {// last p  : read, add, proceed
-                      out_val += mem.nhwc[iy_nhwc];
+                      out_val += mp->nhwc[iy_nhwc];
                     } else if (ip == 0) {            // first p : overwrite memory, return
-                      mem.nhwc[iy_nhwc] = out_val;
+                      mp->nhwc[iy_nhwc] = out_val;
                       goto PROCESS_AND_STORE_DONE;
                     } else {                         // middle p: read, add, store, return
-                      mem.nhwc[iy_nhwc] += out_val;
+                      mp->nhwc[iy_nhwc] += out_val;
                       goto PROCESS_AND_STORE_DONE;
                     }
                     sim_fprintf(fp_sum,"%d\n", out_val); // Save summed output
@@ -381,7 +368,7 @@ DMA_WAIT:
 
                     // ------ ADD BIAS ------
                     if (pb->is_bias)
-                      out_val = (out_val << pb->b_val_shift) + (mem.b[i_bias] << pb->b_bias_shift);
+                      out_val = (out_val << pb->b_val_shift) + (mp->b[i_bias] << pb->b_bias_shift);
 
 
                     // ------ CORE ACT ------
@@ -391,7 +378,7 @@ DMA_WAIT:
 
                     if (pb->add_in_buffer_idx != -1) {
                       iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc, "Before add", DEBUG_INFO);// store as nhwc for pooling
-                      out_val += mem.add_buffers[pb->add_in_buffer_idx][iy_nhwc];
+                      out_val += mp->add_buffers[pb->add_in_buffer_idx][iy_nhwc];
                       out_val = quant_lrelu(out_val, pb->aa_nzero, pb->aa_shift, pb->aa_pl_scale);
                     }
 
@@ -404,18 +391,18 @@ DMA_WAIT:
                       val = val / (f32)(1 << pb->softmax_frac);
                       val = val - pb->softmax_max_f;
                       val = (f32)exp(val);
-                      mem.y[iy_nhwc] = val;
+                      mp->y[iy_nhwc] = val;
 
                       if (i_yc == pb->co-1) {
                         f32 sum = 0;
                         i32 iy_nhwc;
                         for (int i=0; i<pb->co; i++){
                           iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i, yn,yh,yw,yc, "Before softmax sum", DEBUG_INFO);
-                          sum += mem.y[iy_nhwc];
+                          sum += mp->y[iy_nhwc];
                         }
                         for (int i=0; i<pb->co; i++){
                           iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i, yn,yh,yw,yc, "After softmax sum", DEBUG_INFO);
-                          mem.y[iy_nhwc] = mem.y[iy_nhwc] / sum;
+                          mp->y[iy_nhwc] = mp->y[iy_nhwc] / sum;
                         }
                       }
                       goto PROCESS_AND_STORE_DONE;
@@ -424,12 +411,12 @@ DMA_WAIT:
                     // ------ MAX/AVG POOL ---
 
                     if (pb->pool == POOL_NONE) {
-                      tile_write(out_val, p_out_buffer, ib, pb, i_yn, i_yh, i_yw, i_yc, yn, yh, yw, yc);
+                      tile_write(out_val, p_out_buffer, ib, pb, mp, i_yn, i_yh, i_yw, i_yc, yn, yh, yw, yc);
                       goto PROCESS_AND_STORE_DONE;
                     }
 
                     iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc, "Before maxpool", DEBUG_INFO);// store as nhwc for pooling
-                    mem.nhwc[iy_nhwc] = out_val;
+                    mp->nhwc[iy_nhwc] = out_val;
 
                     div_ixh = div(i_yh+pb->psh_shift-pb->pkh+1, pb->psh);
                     div_ixw = div(i_yw+pb->psw_shift-pb->pkw+1, pb->psw);
@@ -468,7 +455,7 @@ DMA_WAIT:
                           for (i32 ipyw = pw_end; ipyw > pw_beg; ipyw--){
 
                             i32 read_idx = flatten_nhwc(i_yn, ipyh, ipyw, i_yc,    yn, yh, yw, yc, "Inside pool window", DEBUG_INFO);
-                            i32 read_val = mem.nhwc[read_idx];
+                            i32 read_val = mp->nhwc[read_idx];
                             result = pb->pool==POOL_MAX ? max(result, read_val) : (result + read_val);
                           }
                         }
@@ -480,7 +467,7 @@ DMA_WAIT:
                           out_val = quant_lrelu(out_val, pb->pa_nzero, pb->pa_shift, pb->pa_pl_scale);
                         }
 
-                        tile_write(result, p_out_buffer, ib, pb,   i_yn, ixh, ixw, i_yc,  yn, pb->ph, pb->pw, yc); // Write
+                        tile_write(result, p_out_buffer, ib, pb, mp,   i_yn, ixh, ixw, i_yc,  yn, pb->ph, pb->pw, yc); // Write
                       }
                     }
                     yh = pb->ph;
@@ -498,7 +485,7 @@ PROCESS_AND_STORE_DONE:
               fclose(fp_sum);
               fclose(fp_raw);
 #endif
-              set_config(A_DONE_READ + ocm_bank, 1);
+              set_config(p_config, A_DONE_READ + ocm_bank, 1);
               debug_printf("-------- iw_kw2 0x%x done \n", iw_kw2);
             } // iw_kw2
             debug_printf("-------- il %x done\n", il);
@@ -516,7 +503,7 @@ PROCESS_AND_STORE_DONE:
     sprintf(f_path_debug, "%s/%0d_y_nhwc_sim.txt", DATA_DIR, ib);
     FILE *fp_debug = fopen(f_path_debug, "w");
     for (i32 i=0; i<pb->debug_nhwc_words; i++)
-      sim_fprintf(fp_debug,"%d\n", mem.debug_nhwc[i]);
+      sim_fprintf(fp_debug,"%d\n", mp->debug_nhwc[i]);
     fclose(fp_debug);
 
     char f_path_tiled [1000];
@@ -524,9 +511,9 @@ PROCESS_AND_STORE_DONE:
     FILE *fp_tiled = fopen(f_path_tiled, "w");
     for (i32 i=0; i<pb->o_words; i++)
       if (ib == N_BUNDLES-1)
-        if (pb->is_softmax) sim_fprintf(fp_tiled,"%f\n", (f32  )mem.y[i]);
-        else                sim_fprintf(fp_tiled,"%d\n", (i32)mem.y[i]);
-      else sim_fprintf(fp_tiled,"%d\n", mem.debug_tiled[i]);
+        if (pb->is_softmax) sim_fprintf(fp_tiled,"%f\n", (f32  )mp->y[i]);
+        else                sim_fprintf(fp_tiled,"%d\n", (i32)mp->y[i]);
+      else sim_fprintf(fp_tiled,"%d\n", mp->debug_tiled[i]);
     fclose(fp_tiled);
 
     if (ib != N_BUNDLES-1){
@@ -538,7 +525,7 @@ PROCESS_AND_STORE_DONE:
     }
 #endif
   flush_cache(p_out_buffer, pb->o_bytes);
-  set_config(A_BUNDLE_DONE, 1);
+  set_config(p_config, A_BUNDLE_DONE, 1);
   } // ib
   debug_printf("done all bundles!!\n");  
 #ifdef SIM
@@ -552,12 +539,12 @@ PROCESS_AND_STORE_DONE:
 #ifdef SIM
 
 extern EXT_C u32 addr_64to32(void* restrict addr){
-  u64 offset = (u64)addr - (u64)&mem;
+  u64 offset = (u64)addr - (u64)&mem_phy;
   return (u32)offset + 0x20000000;
 }
 
 extern EXT_C u64 sim_addr_32to64(u32 addr){
-  return (u64)addr - (u64)0x20000000 + (u64)&mem;
+  return (u64)addr - (u64)0x20000000 + (u64)&mem_phy;
 }
 
 extern EXT_C u8 get_byte_a32 (u32 addr_32){
@@ -571,6 +558,10 @@ extern EXT_C void set_byte_a32 (u32 addr_32, u8 data){
   u64 addr = sim_addr_32to64(addr_32);
   *(u8*restrict)addr = data;
 }
+
+extern EXT_C void *get_mp(){
+  return &mem_phy;
+}
 #else
 
 u32 addr_64to32 (void* addr){
@@ -579,7 +570,7 @@ u32 addr_64to32 (void* addr){
 
 #endif
 
-extern EXT_C void model_setup(){
+extern EXT_C void model_setup(Memory_st *restrict mp, void *p_config) {
 
 #ifdef SIM
   FILE *fp;
@@ -588,30 +579,30 @@ extern EXT_C void model_setup(){
   fp = fopen(f_path, "rb");
   debug_printf("DEBUG: Reading from file %s \n", f_path);
   if(!fp) debug_printf("ERROR! File not found: %s \n", f_path);
-  int bytes = fread(mem.w, 1, WB_BYTES+X_BYTES, fp);
+  int bytes = fread(mp->w, 1, WB_BYTES+X_BYTES, fp);
   fclose(fp);
 #endif
-  flush_cache(&mem.w, WB_BYTES+X_BYTES);  // force transfer to DDR, starting addr & length
+  flush_cache(mp->w, WB_BYTES+X_BYTES);  // force transfer to DDR, starting addr & length
 
   // Write registers in controller
-  set_config(A_START       , 0);  // Start
-  set_config(A_DONE_READ +0, 1);  // Done read ocm bank 0
-  set_config(A_DONE_READ +1, 1);  // Done read ocm bank 1
-  set_config(A_DONE_WRITE+0, 0);  // Done write ocm bank 0
-  set_config(A_DONE_WRITE+1, 0);  // Done write ocm bank 1
-  set_config(A_OCM_BASE  +0, addr_64to32(ocm[0]));  // Base addr ocm bank 0
-  set_config(A_OCM_BASE  +1, addr_64to32(ocm[1]));  // Base addr ocm bank 1
-  set_config(A_WEIGHTS_BASE, addr_64to32(mem.w));  // Base adddr weights
-  set_config(A_BUNDLE_DONE , 1);  // Bundle done writing (pixel dma waits for this)
-  set_config(A_N_BUNDLES_1 , N_BUNDLES);  // Number of bundles
-  set_config(A_W_DONE      , 0);  // Weigths done
-  set_config(A_X_DONE      , 0);  // Bundle done
-  set_config(A_O_DONE      , 0);  // Output done
+  set_config(p_config, A_START       , 0);  // Start
+  set_config(p_config, A_DONE_READ +0, 1);  // Done read mp->ocm bank 0
+  set_config(p_config, A_DONE_READ +1, 1);  // Done read mp->ocm bank 1
+  set_config(p_config, A_DONE_WRITE+0, 0);  // Done write mp->ocm bank 0
+  set_config(p_config, A_DONE_WRITE+1, 0);  // Done write mp->ocm bank 1
+  set_config(p_config, A_OCM_BASE  +0, addr_64to32(mem_phy.ocm[0]));  // Base addr mp->ocm bank 0
+  set_config(p_config, A_OCM_BASE  +1, addr_64to32(mem_phy.ocm[1]));  // Base addr mp->ocm bank 1
+  set_config(p_config, A_WEIGHTS_BASE, addr_64to32(mem_phy.w));  // Base adddr weights
+  set_config(p_config, A_BUNDLE_DONE , 1);  // Bundle done writing (pixel dma waits for this)
+  set_config(p_config, A_N_BUNDLES_1 , N_BUNDLES);  // Number of bundles
+  set_config(p_config, A_W_DONE      , 0);  // Weigths done
+  set_config(p_config, A_X_DONE      , 0);  // Bundle done
+  set_config(p_config, A_O_DONE      , 0);  // Output done
 
   // Write into BRAM the config for controller
   i32 parameters[8*N_BUNDLES];
   for (int var = 0; var < N_BUNDLES; var++){
-    parameters[8*var] = (var == 0) ? addr_64to32(mem.x) : addr_64to32(mem.out_buffers[bundles[var].in_buffer_idx]);       // x_base address
+    parameters[8*var] = (var == 0) ? addr_64to32(mem_phy.x) : addr_64to32(mem_phy.out_buffers[bundles[var].in_buffer_idx]);       // x_base address
     parameters[8*var+1] = bundles[var].x_bpt_p0;  // x_bpt0
     parameters[8*var+2] = bundles[var].x_bpt;     // x_bpt
     parameters[8*var+3] = bundles[var].w_bpt_p0;  // w_bpt0
@@ -624,6 +615,13 @@ extern EXT_C void model_setup(){
     parameters[8*var+7] = ((u32*)&bundles[var].header)[1];
   }
   for (int var = 0; var < 8*N_BUNDLES; var++){
-    set_config(16+var, parameters[var]);
+    set_config(p_config, 16+var, parameters[var]);
+  }
+}
+
+extern EXT_C void print_output (Memory_st *restrict mp) {
+  flush_cache(mp->y, sizeof(mp->y));
+  for (int i=0; i<O_WORDS; i++){
+    printf("y[%d]: %f \n", i, (float)mp->y[i]);
   }
 }
