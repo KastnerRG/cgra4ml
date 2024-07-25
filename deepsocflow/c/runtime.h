@@ -122,8 +122,7 @@ static inline void print_output () {
 }
 
 static inline void write_flush_u8(u8*restrict addr, u8 val) {
-  *addr = val;
-  flush_cache(addr, 1);
+  *addr = val; // Leave flushing to the end of bundle
 }
 
 #define flatten_nhwc(in,ih,iw,ic, N,H,W,C, optional_debug_info,...)\
@@ -312,7 +311,7 @@ DMA_WAIT:
 		          while (!get_config(A_DONE_WRITE + ocm_bank)){
                 // in FPGA, wait for write done
               }; 
-              flush_cache(&ocm[ocm_bank], PE_ROWS*PE_COLS*sizeof(Y_TYPE)) ;
+              flush_cache(&ocm[ocm_bank], o_bpt);
               usleep(0);
 #endif
               set_config(A_DONE_WRITE + ocm_bank, 0);
@@ -538,6 +537,7 @@ PROCESS_AND_STORE_DONE:
       fclose(fp_packed);
     }
 #endif
+  flush_cache(p_out_buffer, pb->o_bytes);
   set_config(A_BUNDLE_DONE, 1);
   } // ib
   debug_printf("done all bundles!!\n");  
