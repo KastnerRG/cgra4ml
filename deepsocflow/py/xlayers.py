@@ -1,6 +1,6 @@
 import tensorflow as tf 
 from tensorflow import keras
-from keras.layers import Layer, Add
+from keras.layers import Layer, Add, MaxPooling2D
 from qkeras import *
 import numpy as np
 import math
@@ -17,10 +17,10 @@ class XActivation(QActivation):
         self.o_int_bits = o_int_bits
         self.type = type
 
-        self.slope = slope
-        self.non_zero = 1*(slope != 0)
-        self.log_slope = np.log2(slope) if self.non_zero else 0
-        assert int(self.log_slope) == self.log_slope and self.log_slope <= 0, f"Error: negative_slope:{slope} of leaky_relu has to be a negative power of two. eg.0.125"
+        self.slope = 1 if type == None else slope
+        self.non_zero = 1*(self.slope != 0)
+        self.log_slope = np.log2(self.slope) if self.non_zero else 0
+        assert int(self.log_slope) == self.log_slope and self.log_slope <= 0, f"Error: negative_slope:{self.slope} of leaky_relu has to be a negative power of two. eg.0.125"
         self.plog_slope = -int(self.log_slope)
         self.shift_bits = None
 
@@ -53,9 +53,8 @@ class XActivation(QActivation):
         x = np.clip(x, -2**(self.out.bits - self.plog_slope - 1), 2**(self.out.bits-1)-1).astype(int)
 
         out = XTensor(tensor=x, bits=self.out.bits, frac=self.out.frac, from_int=True)
-
         assert np.allclose(out.ftensor, self.out.ftensor), \
-            f"Activation output does not match. \nout:{out.ftensor.numpy().flatten()[:100]}, \nself.out:{self.out.ftensor.numpy().flatten()[:100]}"
+            f"Activation output does not match. {(out.ftensor.shape, self.out.ftensor.shape)} \nout:{out.ftensor.numpy().flatten()}, \nself.out:{self.out.ftensor.numpy().flatten()}, \nsub:{out.ftensor.numpy().flatten()-self.out.ftensor.numpy().flatten()}"
         self.out = out
         return out
 
@@ -118,9 +117,6 @@ class XConvBN(QConv2DBatchnorm):
         '''
         Add Bias
         '''
-
-        print(f"{self.use_bias}, {self.bias_quantizer_internal}")
-        print(f"{self.get_folded_weights()[1]}")
 
         out, (self.bias_val_shift, self.bias_b_shift) = out.add_val_shift(self.b)
         assert out.bits <= hw.INT_BITS, \
