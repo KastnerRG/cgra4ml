@@ -58,6 +58,9 @@ class XBundle(Layer):
 
             x = self.add([x, x_add])
             x = self.add.act(x)
+        elif self.add is not None:
+                raise ValueError("A Bundle initialized with add_act(), should have the add tensor passed")
+
         if self.pool:
             x = self.pool(x)
             x = self.pool.act(x)
@@ -79,6 +82,7 @@ class XBundle(Layer):
         out = self.core.act.call_int(out, hw)
 
         if self.add:
+            print(f"Bundle {self.ib} source_ib: {self.add.source_ib}")
             out = self.add.call_int(out, hw)
             out = self.add.act.call_int(out, hw)
 
