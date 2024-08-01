@@ -91,8 +91,8 @@ module axi_sys_tb;
   initial begin
     $dumpfile("axi_tb_sys.vcd");
     $dumpvars();
-    // #200us;
-    // $finish;
+    #2000us;
+    $finish;
   end
 
   chandle mpv, cp;

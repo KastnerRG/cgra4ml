@@ -447,7 +447,7 @@ class UserModel(XModel):
         x = x_skip15 = self.sk15(x, x_skip14) # 39
         x = self.b26(x) # 40
         x = self.b27(x) # 41
-        x = x_skip16 = self.sk16(x, x_skip15) # 42
+        x = self.sk16(x, x_skip15) # 42
         x_skip17 = self.sk17(x) # 43
         x = self.b28(x) # 44
         x = self.b29(x) # 45
@@ -459,7 +459,6 @@ class UserModel(XModel):
         x = self.b33(x) # 51
         x = x_skip20 = self.sk20(x, x_skip19) # 52
         x = self.b34(x) # 53
-        exit()
         return x
 
 x = x_in =  Input(input_shape, name="input")
