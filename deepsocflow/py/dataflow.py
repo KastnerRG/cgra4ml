@@ -309,16 +309,43 @@ def predict_bundle_performance(hw, r):
     clocks    = clocks_p0 + (r.CP-1)*clocks_p
     mem_bits  = mem_bits_p0 + (r.CP-1)*mem_bits_p
 
-    return clocks, mem_bits
+    operations = (r.XN * r.XH * r.XW * r.CI) * (r.KH * r.KW * r.CO)
+    utilization = operations / (hw.ROWS * hw.COLS * clocks)
+
+
+    return clocks, mem_bits, utilization
 
 
 def predict_model_performance(hw):
 
-    clocks_total = 0
+    d_out = {
+        'clocks_total': 0,
+        'mem_bytes_total': 0,
+        'utilization_all': [],
+        'clocks_all': [],
+        'mem_bytes_all': [],
+    }
     for b in BUNDLES:
-        clocks, mem_bits = predict_bundle_performance(hw=hw, r=b.r)
-        clocks_total += clocks
+        clocks, mem_bits, utilization = predict_bundle_performance(hw=hw, r=b.r)
+        d_out['clocks_total'] += clocks
+        d_out['mem_bytes_total'] += mem_bits/8
 
-    time = clocks_total / (hw.FREQ * 1e6)
-    mem_bytes = mem_bits / 8
-    return time, mem_bytes
+        d_out['utilization_all'] += [utilization]
+        d_out['clocks_all'] += [clocks]
+        d_out['mem_bytes_all'] += [mem_bits/8]
+
+        print(f'---{b.ib}: util:{100*utilization:.2f} mem_mb:{mem_bits/1024**2:.2f} {b.r.XN=} {b.r.XH=} {b.r.XW=} {b.r.CI=} {b.r.CO=} {b.r.KH=} {b.r.KW=}')
+
+    d_out['seconds_per_batch'] = d_out['clocks_total'] / (hw.FREQ * 1e6)
+    d_out['frames_per_sec'] = hw.ROWS / d_out['seconds_per_batch']
+    d_out['ms_per_frame'] = 1000 / d_out['frames_per_sec']
+
+    with open('util.txt', 'w') as f:
+        for line in d_out['utilization_all']:
+            f.write(f"{line}\n")
+
+    with open('mem_bytes.txt', 'w') as f:
+        for line in d_out['mem_bytes_all']:
+            f.write(f"{line}\n")
+
+    return d_out
