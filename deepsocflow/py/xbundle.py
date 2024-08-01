@@ -47,6 +47,8 @@ class XBundle(Layer):
             self.prev_ib = x.ib
             BUNDLES[self.prev_ib].next_ibs += [self.ib]
 
+        print(f"{self.ib} x: {x.shape}, prev:{self.prev_ib}")
+
         x = self.core(x)
         x = self.core.act(x)
 

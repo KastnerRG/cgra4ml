@@ -39,7 +39,7 @@ class XModel(Layer):
     
 
 
-def export_inference(model, hw):
+def export_inference(model, hw, batch_size=1):
     
     for b in BUNDLES:
         b.next_ibs.clear()
@@ -47,7 +47,7 @@ def export_inference(model, hw):
     BUNDLES.clear()
         
     user_model = model.layers[1]
-    input_shape = (hw.ROWS, *model.inputs[0].shape[1:])
+    input_shape = (batch_size, *model.inputs[0].shape[1:])
     x_keras = tf.random.uniform(input_shape)
     x_qtensor = user_model.input_quant_layer(x_keras)
     out_keras = model(x_keras)

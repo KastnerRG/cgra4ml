@@ -226,9 +226,6 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             cmd = f'{SIM_PATH}verilator --binary -j 0 -O3 --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -DSIM -CFLAGS -I../ {self.MODULE_DIR}/c/sim.c -CFLAGS -g --Mdir ./'
             print(cmd)
             assert subprocess.run(cmd.split(' '), cwd='build').returncode == 0
-        
-        exit()
-        
         print("\n\nSIMULATING...\n\n")
         start = time.time()
 
