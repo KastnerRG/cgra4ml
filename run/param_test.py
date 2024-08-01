@@ -11,12 +11,12 @@ from keras.optimizers import Adam
 from keras.utils import to_categorical
 from qkeras.utils import load_qmodel
 import numpy as np
-# import tensorflow as tf
-#tf.keras.utils.set_random_seed(0)
+import tensorflow as tf
+tf.keras.utils.set_random_seed(0)
 
 from deepsocflow import *
 
-(SIM, SIM_PATH) = ('xsim', "F:/Xilinx/Vivado/2022.2/bin/") if os.name=='nt' else ('verilator', '')
+(SIM, SIM_PATH) = ('xsim', "E:/Vivado/2023.2/bin/") if os.name=='nt' else ('verilator', '')
 
 '''
 Dataset
@@ -175,24 +175,24 @@ def product_dict(**kwargs):
         yield dict(zip(kwargs.keys(), instance))
 
 @pytest.mark.parametrize("PARAMS", list(product_dict(
-                                        processing_elements  = [(8,24)   ],
+                                        processing_elements  = [(32,64)   ],
                                         frequency_mhz        = [ 250     ],
                                         bits_input           = [ 4       ],
                                         bits_weights         = [ 4       ],
-                                        bits_sum             = [ 32      ],
+                                        bits_sum             = [ 20      ],
                                         bits_bias            = [ 16      ],
                                         max_batch_size       = [ 64      ], 
                                         max_channels_in      = [ 2048    ],
                                         max_kernel_size      = [ 9       ],
                                         max_image_size       = [ 512     ],
                                         max_n_bundles        = [ 64      ],
-                                        ram_weights_depth    = [ 20      ],
+                                        ram_weights_depth    = [ 512      ],
                                         ram_edges_depth      = [ 288     ],
-                                        axi_width            = [ 128      ],
+                                        axi_width            = [ 64      ],
                                         config_baseaddr      = ["B0000000"],
                                         target_cpu_int_bits  = [ 32       ],
-                                        valid_prob           = [ 0.1       ],
-                                        ready_prob           = [ 0.01       ],
+                                        valid_prob           = [ 1       ],
+                                        ready_prob           = [ 1       ],
                                         data_dir             = ['vectors'],
                                     )))
 def test_dnn_engine(PARAMS):

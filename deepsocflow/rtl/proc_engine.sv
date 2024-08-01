@@ -67,9 +67,8 @@ module proc_engine #(
 
   logic [COLS-1:0] en_outshift, sel_outshift, outshift_flag;
   logic shift_out_ready_last_col_prev;
-  logic [BITS_COLS-1:0] count_outshift;
-  logic cnt_en;
-
+  logic [BITS_COLS-1:0] cnt_outshift, cnt_acc;
+  logic cnt_outshift_valid, cnt_acc_valid;
   logic [COLS-1:0] s_axis_tvalid;
 
   genvar k2, c_1;
@@ -322,9 +321,63 @@ endgenerate
     assign m_last_pkt = shift_last_pkt [COLS-1];
 
     // -------------- OUTPUT SHIFTER ----------------      
+    //logic [BITS_COLS-1:0] highest_acc, lowest_outshift;
+    //logic cnt_acc_valid_next, cnt_outshift_valid_next;
+    // integer a, b;
+    // always_comb begin // priority encoder - used to find highest acc.
+    //   highest_acc = 0;
+    //   cnt_acc_valid_next = 0;
+    //   for (a = 0; a < COLS-1; a++) begin
+    //     if(acc_m_valid_next[a] == 1) begin
+    //       highest_acc = a;
+    //       cnt_acc_valid_next = 1;
+    //       break;
+    //     end
+    //   end
+    // end
 
-    //assign en_mac = &(~acc_m_valid | shift_out_ready);
-    //assign en[0] = ~acc_m_valid[0] | shift_out_ready[0];
+    // always_comb begin //TODO priority encoder - used to find lowest outshift.
+    //   lowest_outshift = 0;
+    //   cnt_outshift_valid_next = 0;
+    //   for (b = 0; b < COLS-1; b++) begin
+    //     if(~shift_out_ready[b]) begin
+    //       lowest_outshift = b;
+    //       cnt_outshift_valid_next = 1;
+    //       break;
+    //     end
+    //   end
+    // end
+    
+    always@(posedge clk `OR_NEGEDGE(resetn))begin
+      if(!resetn) begin
+        {cnt_acc_valid, cnt_outshift_valid, cnt_acc, cnt_outshift} <= 0;
+      end
+      else begin
+        if(en[0] && acc_m_valid_next[0]) cnt_acc_valid <= 1;
+        else if (shift_out_ready[COLS-1] && acc_m_valid[COLS-1]) cnt_acc_valid <= 0; // reset condition
+        
+        if (cnt_acc_valid && en[0]) begin 
+          if (cnt_acc==COLS-1) cnt_acc <=  0;
+          else cnt_acc <= cnt_acc + 1;
+        end
+
+        // cnt_acc_valid <= cnt_acc_valid_next;
+        // cnt_acc <= highest_acc;
+
+        // cnt_outshift_valid <= cnt_outshift_valid_next;
+        // cnt_outshift <= lowest_outshift;
+        if(~sel_outshift[0]) cnt_outshift_valid <= 1;
+        
+        if (m_ready & outshift_flag[COLS-1]) begin 
+          if (cnt_outshift==COLS-1) cnt_outshift <= 0;
+          else cnt_outshift <= cnt_outshift + 1;
+        end
+      end
+    end
+
+    wire freeze;
+    assign freeze = ((cnt_outshift <= cnt_acc) && cnt_acc_valid && cnt_outshift_valid);
+    
     for(c=0; c<COLS; c++) begin : C
       if(c<COLS-1) begin
         // If current column and next column output shifter regs both have valid data, and accumulator has valid data column gets frozen 
@@ -340,7 +393,7 @@ endgenerate
           end
       end
       else begin // Final Column
-        assign mac_freeze[c] = (acc_m_valid[c] & ~shift_out_ready[c]);
+        //assign mac_freeze[c] = (acc_m_valid[c] & ~shift_out_ready[c]);
         //assign en[c] = (~acc_m_valid[c] | shift_out_ready[c]);
         always_ff @(posedge clk `OR_NEGEDGE(resetn))
           if (!resetn) begin            
@@ -353,8 +406,8 @@ endgenerate
       end
 
       //assign en[c] = &(~mac_freeze);
-      assign en[c] = &(~mac_freeze[COLS-1:c]);  // all cols to the left of frozen column should freeze.
-
+      //assign en[c] = &(~mac_freeze[COLS-1:c]);  // all cols to the left of frozen column should freeze.
+      assign en[c] = ~(freeze && (c <= cnt_acc));
       assign acc_m_valid_next[c] = !sel_shift[c] & mul_m_valid[c] & (mul_m_user[c].is_config | mul_m_user[c].is_cin_last);
 
       always_ff @(posedge clk `OR_NEGEDGE(resetn))
