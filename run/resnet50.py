@@ -11,6 +11,7 @@ from keras.optimizers import Adam
 from keras.utils import to_categorical
 from qkeras.utils import load_qmodel
 import numpy as np
+import pprint
 # import tensorflow as tf
 #tf.keras.utils.set_random_seed(0)
 
@@ -404,60 +405,61 @@ class UserModel(XModel):
 
     def call (self, x):
         x = self.input_quant_layer(x)
-        x = self.b1(x)
-        x_skip1 = self.sk1(x)
-        x = self.b2(x)
-        x = self.b3(x)
-        x = x_skip2 = self.sk2(x, x_skip1)
-        x = self.b4(x)
-        x = self.b5(x)
-        x = x_skip3 = self.sk3(x, x_skip2)
-        x = self.b6(x)
-        x = self.b7(x)
-        x = x_skip4 = self.sk4(x, x_skip3)
-        x_skip5 = self.sk5(x)
-        x = self.b8(x)
-        x = self.b9(x)
-        x = x_skip6 = self.sk6(x, x_skip5)
-        x = self.b10(x)
-        x = self.b11(x)
-        x = x_skip7 = self.sk7(x, x_skip6)
-        x = self.b12(x)
-        x = self.b13(x)
-        x = x_skip8 = self.sk8(x, x_skip7)
-        x = self.b14(x)
-        x = self.b15(x)
-        x = x_skip9 = self.sk9(x, x_skip8)
-        x_skip10  = self.sk10(x)
-        x = self.b16(x)
-        x = self.b17(x)
-        x = x_skip11 = self.sk11(x, x_skip10)
-        x = self.b18(x)
-        x = self.b19(x)
-        x = x_skip12 = self.sk12(x, x_skip11)
-        x = self.b20(x)
-        x = self.b21(x)
-        x = x_skip13 = self.sk13(x, x_skip12)
-        x = self.b22(x)
-        x = self.b23(x)
-        x = x_skip14 = self.sk14(x, x_skip13)
-        x = self.b24(x)
-        x = self.b25(x)
-        x = x_skip15 = self.sk15(x, x_skip14)
-        x = self.b26(x)
-        x = self.b27(x)
-        x = x_skip16 = self.sk16(x, x_skip15)
-        x_skip17 = self.sk17(x)
-        x = self.b28(x)
-        x = self.b29(x)
-        x = x_skip18 = self.sk18(x, x_skip17)
-        x = self.b30(x)
-        x = self.b31(x)
-        x = x_skip19 = self.sk19(x, x_skip18)
-        x = self.b32(x)
-        x = self.b33(x)
-        x = x_skip20 = self.sk20(x, x_skip19)
-        x = self.b34(x)
+        x = self.b1(x) # 0
+        x_skip1 = self.sk1(x) # 1
+        x = self.b2(x) # 2
+        x = self.b3(x) # 3
+        x = x_skip2 = self.sk2(x, x_skip1) # 4
+        x = self.b4(x) # 5
+        x = self.b5(x) # 6
+        x = x_skip3 = self.sk3(x, x_skip2) # 7
+        x = self.b6(x) # 8
+        x = self.b7(x) # 9
+        x = x_skip4 = self.sk4(x, x_skip3) # 10
+        x_skip5 = self.sk5(x) # 11
+        x = self.b8(x) # 12
+        x = self.b9(x) # 13
+        x = x_skip6 = self.sk6(x, x_skip5) # 14
+        x = self.b10(x) # 15
+        x = self.b11(x) # 16 
+        x = x_skip7 = self.sk7(x, x_skip6) # 17
+        x = self.b12(x) # 18
+        x = self.b13(x) # 19
+        x = x_skip8 = self.sk8(x, x_skip7) # 20
+        x = self.b14(x) # 21
+        x = self.b15(x) # 22
+        x = x_skip9 = self.sk9(x, x_skip8) # 23
+        x_skip10  = self.sk10(x) # 24
+        x = self.b16(x) # 25
+        x = self.b17(x) # 26
+        x = x_skip11 = self.sk11(x, x_skip10) # 27
+        x = self.b18(x) # 28
+        x = self.b19(x) # 29
+        x = x_skip12 = self.sk12(x, x_skip11) # 30
+        x = self.b20(x) # 31
+        x = self.b21(x) # 32
+        x = x_skip13 = self.sk13(x, x_skip12) # 33
+        x = self.b22(x) # 34
+        x = self.b23(x) # 35
+        x = x_skip14 = self.sk14(x, x_skip13) # 36
+        x = self.b24(x) # 37
+        x = self.b25(x) # 38
+        x = x_skip15 = self.sk15(x, x_skip14) # 39
+        x = self.b26(x) # 40
+        x = self.b27(x) # 41
+        x = x_skip16 = self.sk16(x, x_skip15) # 42
+        x_skip17 = self.sk17(x) # 43
+        x = self.b28(x) # 44
+        x = self.b29(x) # 45
+        x = x_skip18 = self.sk18(x, x_skip17) # 46
+        x = self.b30(x) # 47
+        x = self.b31(x) # 48
+        x = x_skip19 = self.sk19(x, x_skip18) # 49
+        x = self.b32(x) # 50
+        x = self.b33(x) # 51
+        x = x_skip20 = self.sk20(x, x_skip19) # 52
+        x = self.b34(x) # 53
+        exit()
         return x
 
 x = x_in =  Input(input_shape, name="input")
@@ -537,8 +539,8 @@ def product_dict(**kwargs):
                                         axi_width            = [ 128      ],
                                         config_baseaddr      = ["B0000000"],
                                         target_cpu_int_bits  = [ 32       ],
-                                        valid_prob           = [ 0.1       ],
-                                        ready_prob           = [ 0.01       ],
+                                        valid_prob           = [ 1       ],
+                                        ready_prob           = [ 1       ],
                                         data_dir             = ['vectors'],
                                     )))
 def test_dnn_engine(PARAMS):
@@ -556,9 +558,10 @@ def test_dnn_engine(PARAMS):
     '''
     VERIFY & EXPORT
     '''
-    export_inference(loaded_model, hw)
+    export_inference(loaded_model, hw, batch_size=1)
     verify_inference(loaded_model, hw, SIM=SIM, SIM_PATH=SIM_PATH)
 
-    seconds, bytes = predict_model_performance(hw)
-    print(f"Predicted time on hardware: {1000*seconds:.5f} ms")
-    print(f"Predicted data movement: {bytes/1000:.5f} kB")
+    d_perf = predict_model_performance(hw)
+    pp = pprint.PrettyPrinter(indent=4)
+    print(f"Predicted Performance")
+    pp.pprint(d_perf)
