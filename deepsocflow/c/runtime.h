@@ -17,12 +17,12 @@ typedef float    f32;
 typedef double   f64;
 
 typedef const struct {
-  const u16  n, l, kw, coe, h, w, ci, co, w_kw2, t, p, cm, cm_p0, on, oh, ow, oc, ch, ph, cw, pw;
+  const u16  n, l, kw, coe, h, w, ci, co, w_kw2, t, p, cm, cm_p0, on, oh, ow, oc, ch, ph, cw, pw, pkh, psh, pkw, psw;
   const i32  xp_words, b_offset, w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes;
   const i8   ib_out, in_buffer_idx, out_buffer_idx, add_out_buffer_idx, add_in_buffer_idx;
   const i8   is_bias, is_pool, is_flatten, is_softmax;
   const i8   x_pad, b_val_shift, b_bias_shift, ca_nzero, ca_shift, ca_pl_scale, aa_nzero, aa_shift, aa_pl_scale, pa_nzero, pa_shift, pa_pl_scale, softmax_frac;
-  const i8   csh, csh_shift, pkh, psh, psh_shift, csw, csw_shift, pkw, psw, psw_shift, pool;
+  const i8   csh, csh_shift, psh_shift, csw, csw_shift, psw_shift, pool;
   const f32  softmax_max_f;
   const u64  header;
   const i32  debug_nhwc_words;
@@ -30,7 +30,7 @@ typedef const struct {
 
 typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 
-#include "../../run/work/config_fw.h"
+#include "config_fw.h"
 
 #define X_BITS            (1 << X_BITS_L2)
 #define X_WORDS_PER_BYTE  (8 / X_BITS)
@@ -486,17 +486,17 @@ PROCESS_AND_STORE_DONE:
               fclose(fp_raw);
 #endif
               set_config(p_config, A_DONE_READ + ocm_bank, 1);
-              debug_printf("-------- iw_kw2 0x%x done \n", iw_kw2);
+              debug_printf("%d-------- iw_kw2 %d done \n", ib, iw_kw2);
             } // iw_kw2
-            debug_printf("-------- il %x done\n", il);
+            debug_printf("%d-------- il %d done\n", ib, il);
           } // il
-          debug_printf("-------- in %x done\n", in);
+          debug_printf("%d-------- in %d done\n", ib, in);
         } // in
-        debug_printf("------ it %x done\n", it);
+        debug_printf("%d------ it %d done\n", ib, it);
       } // it
-      debug_printf("--- ip %x done\n", ip);
+      debug_printf("%d--- ip %d done\n", ib, ip);
     } // ip
-    debug_printf("- done bundle!! ib:%x\n", ib);
+    debug_printf("%d- done bundle!! ib:%d\n", ib, ib);
 
 #ifdef SIM
     char f_path_debug [1000];

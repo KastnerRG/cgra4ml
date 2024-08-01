@@ -227,7 +227,8 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             print(cmd)
             assert subprocess.run(cmd.split(' '), cwd='build').returncode == 0
         
-
+        exit()
+        
         print("\n\nSIMULATING...\n\n")
         start = time.time()
 
