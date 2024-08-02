@@ -231,33 +231,50 @@ endgenerate
     
     //assign cnt_en = m_ready & ~shift_out_ready[COLS-1] & (outshift_flag[COLS-1-count_outshift] == 1);
 
+    always_ff@(posedge clk `OR_NEGEDGE(resetn)) begin
+        if (!resetn) begin 
+          outshift_flag <= 0;
+        end
+        else begin
+          shift_out_ready_last_col_prev <= shift_out_ready[COLS-1];
+
+          if(shift_out_ready_last_col_prev & ~shift_out_ready[COLS-1]) begin // when last col of out shifter gets data from acc, it is ready to start shifting.
+            outshift_flag <= '1;
+          end
+          else begin
+          //else if ((count_outshift == (COLS-1)-co) && en_outshift[co]) begin
+          if (m_ready && ~shift_out_ready[COLS-1]) outshift_flag <= (outshift_flag << 1);
+          end
+        end
+      end
+    
     for (co=0; co<COLS; co=co+1) begin : Cs
 
       // outshift_flag is used to decide whether the column should be shifted out or not
       // outshift_flag is set to 1 for all cols when the last col of out shifter gets valid data
       // it is set to 0 when shift_out_ready[co] = 0 i.e. the data from that col has been shifted out.
-      always_ff@(posedge clk `OR_NEGEDGE(resetn)) begin
-        if (!resetn) begin 
-          outshift_flag[co] <= 0;
-        end
-        else begin
-          if (co == COLS-1) shift_out_ready_last_col_prev <= shift_out_ready[COLS-1];
+      // always_ff@(posedge clk `OR_NEGEDGE(resetn)) begin
+      //   if (!resetn) begin 
+      //     outshift_flag[co] <= 0;
+      //   end
+      //   else begin
+      //     if (co == COLS-1) shift_out_ready_last_col_prev <= shift_out_ready[COLS-1];
 
-          if(shift_out_ready_last_col_prev & ~shift_out_ready[COLS-1]) begin // when last col of out shifter gets data from acc, it is ready to start shifting.
-            outshift_flag[co] <= 1;
-          end
-          else begin
-          //else if ((count_outshift == (COLS-1)-co) && en_outshift[co]) begin
-            if (co < COLS-1) begin
-              if (shift_out_ready[co]) begin
-                outshift_flag[co] <= 0;
-              end
-            end
-            else if (shift_out_ready[co]) outshift_flag[co] <= 0; // for last column
+      //     if(shift_out_ready_last_col_prev & ~shift_out_ready[COLS-1]) begin // when last col of out shifter gets data from acc, it is ready to start shifting.
+      //       outshift_flag[co] <= 1;
+      //     end
+      //     else begin
+      //     //else if ((count_outshift == (COLS-1)-co) && en_outshift[co]) begin
+      //       if (co < COLS-1) begin
+      //         if (shift_out_ready[co]) begin
+      //           outshift_flag[co] <= 0;
+      //         end
+      //       end
+      //       else if (shift_out_ready[co]) outshift_flag[co] <= 0; // for last column
 
-          end
-        end
-      end
+      //     end
+      //   end
+      // end
       
       // en_outshift enables the output shifter register. The first condition is to shift data out,
       // and the second condition is for the accumulator to write to the output shifter.
