@@ -557,7 +557,7 @@ def test_dnn_engine(PARAMS):
     '''
     VERIFY & EXPORT
     '''
-    export_inference(loaded_model, hw, batch_size=1)
+    export_inference(loaded_model, hw, batch_size=hw.ROWS)
     verify_inference(loaded_model, hw, SIM=SIM, SIM_PATH=SIM_PATH)
 
     d_perf = predict_model_performance(hw)
