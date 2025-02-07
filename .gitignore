@@ -32,6 +32,9 @@ run/work_temp
 run/work_ccd
 run/work_dddd
 run/work_llm
+run/work_example
+run/work_resnet18
+run/work_pointnet
 run/work/project_1
 
 # Vivado and verilator sim

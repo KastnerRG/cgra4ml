@@ -17,7 +17,7 @@ import pprint
 
 from deepsocflow import *
 
-(SIM, SIM_PATH) = ('xsim', "E:/Vivado/2023.2/bin/") if os.name=='nt' else ('verilator', '')
+(SIM, SIM_PATH) = ('xsim', "F:/Xilinx/Vivado/2022.2/bin/") if os.name=='nt' else ('verilator', '')
 
 '''
 Dataset
@@ -176,20 +176,20 @@ def product_dict(**kwargs):
         yield dict(zip(kwargs.keys(), instance))
 
 @pytest.mark.parametrize("PARAMS", list(product_dict(
-                                        processing_elements  = [(32,32)  ],
-                                        frequency_mhz        = [ 250     ],
+                                        processing_elements  = [(7,96)   ],
+                                        frequency_mhz        = [ 150     ],
                                         bits_input           = [ 4       ],
                                         bits_weights         = [ 4       ],
                                         bits_sum             = [ 20      ],
                                         bits_bias            = [ 16      ],
                                         max_batch_size       = [ 64      ], 
-                                        max_channels_in      = [ 2048    ],
+                                        max_channels_in      = [ 512     ],
                                         max_kernel_size      = [ 9       ],
                                         max_image_size       = [ 512     ],
                                         max_n_bundles        = [ 64      ],
                                         ram_weights_depth    = [ 512     ],
-                                        ram_edges_depth      = [ 288     ],
-                                        axi_width            = [ 64      ],
+                                        ram_edges_depth      = [ 3584    ],
+                                        axi_width            = [ 128      ],
                                         config_baseaddr      = ["B0000000"],
                                         target_cpu_int_bits  = [ 32       ],
                                         valid_prob           = [ 1       ],
