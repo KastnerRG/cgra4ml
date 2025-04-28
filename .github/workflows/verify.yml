@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Cache modules
       id: cache-verify
@@ -22,6 +22,11 @@ jobs:
           ${{ runner.os }}-build-${{ env.cache-name }}-
           ${{ runner.os }}-build-
           ${{ runner.os }}-
+
+    - name: Set up Python 3.11.5
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11.5'
 
     - name: Install Verilator
       run: |
@@ -38,6 +43,7 @@ jobs:
 
     - name: Install DeepSoCFlow
       run: |
+        python -m pip install --upgrade pip
         pip install .
 
     - name: Verify Full Design
