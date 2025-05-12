@@ -81,8 +81,14 @@ typedef struct {
   #include <stdbool.h>
 
   Memory_st mem_phy;
-	extern EXT_C u32 get_config(void*, u32);
-	extern EXT_C void set_config(void*, u32, u32);
+	extern EXT_C u32 _get_config(u32, u32);
+	extern EXT_C void _set_config(u32, u32, u32);
+	u32 get_config(void*base, u32 offset) {
+    return _get_config((u32)(u64)base, offset);
+  }
+	void set_config(void* base, u32 offset, u32 data) {
+    _set_config((u32)(u64)base, offset, data);
+  }
   static inline void flush_cache(void *addr, uint32_t bytes) {} // Do nothing
 
 #else
@@ -561,6 +567,9 @@ extern EXT_C void set_byte_a32 (u32 addr_32, u8 data){
 
 extern EXT_C void *get_mp(){
   return &mem_phy;
+}
+extern EXT_C void *get_cp(){
+  return (void*)CONFIG_BASEADDR;
 }
 #else
 

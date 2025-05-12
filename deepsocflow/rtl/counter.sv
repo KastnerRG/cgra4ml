@@ -4,11 +4,11 @@
 module counter #(parameter W = 8)(
   input  logic clk, rstn_g, rst_l, en,
   input  logic [W-1:0] max_in,
-  output logic [W-1:0] count,
+  output logic [W-1:0] count, count_next,
   output logic last, last_clk, first
 );
   logic [W-1:0] max;
-  wire  [W-1:0] count_next = last ? max : count - 1;
+  assign count_next = last ? max : count - 1;
 
   always_ff @(posedge clk `OR_NEGEDGE(rstn_g))
     if (!rstn_g)

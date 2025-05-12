@@ -43,6 +43,7 @@ run/work/xsim/
 run/work/xsim/*
 run/work/verilator-sim/
 run/work/verilator-sim/*
+run/work**/*.txt
 
 # Distribution / packaging
 .Python

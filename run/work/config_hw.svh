@@ -29,3 +29,4 @@
 `define HEADER_WIDTH        64        
 `define AXI_MAX_BURST_LEN   16        
 `define CONFIG_BASEADDR     40'hB0000000  
+`define VEC_ENGINE_BASEADDR     40'hC0000000  

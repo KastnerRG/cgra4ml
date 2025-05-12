@@ -35,6 +35,26 @@ module axi_sys_tb;
   logic                      s_axil_rvalid;
   logic                      s_axil_rready;
 
+  logic [ADDR_WIDTH-1:0]     s_axil_1_awaddr;
+  logic [2:0]                s_axil_1_awprot;
+  logic                      s_axil_1_awvalid;
+  logic                      s_axil_1_awready;
+  logic [DATA_WR_WIDTH-1:0]  s_axil_1_wdata;
+  logic [STRB_WIDTH-1:0]     s_axil_1_wstrb;
+  logic                      s_axil_1_wvalid;
+  logic                      s_axil_1_wready;
+  logic [1:0]                s_axil_1_bresp;
+  logic                      s_axil_1_bvalid;
+  logic                      s_axil_1_bready;
+  logic [ADDR_WIDTH-1:0]     s_axil_1_araddr;
+  logic [2:0]                s_axil_1_arprot;
+  logic                      s_axil_1_arvalid;
+  logic                      s_axil_1_arready;
+  logic [DATA_RD_WIDTH-1:0]  s_axil_1_rdata;
+  logic [1:0]                s_axil_1_rresp;
+  logic                      s_axil_1_rvalid;
+  logic                      s_axil_1_rready;
+
   logic                              o_rd_pixel;
   logic [C_S_AXI_ADDR_WIDTH-LSB-1:0] o_raddr_pixel;
   logic [C_S_AXI_DATA_WIDTH    -1:0] i_rdata_pixel;
@@ -51,25 +71,37 @@ module axi_sys_tb;
   logic clk = 0;
   initial forever #(`CLK_PERIOD/2) clk = ~clk;
 
-  export "DPI-C" function get_config;
-  export "DPI-C" function set_config;
+  export "DPI-C" function _get_config;
+  export "DPI-C" function _set_config;
   import "DPI-C" context function byte get_byte_a32 (int unsigned addr);
   import "DPI-C" context function void set_byte_a32 (int unsigned addr, byte data);
   import "DPI-C" context function chandle get_mp ();
+  import "DPI-C" context function chandle get_cp ();
   import "DPI-C" context function void print_output (chandle mpv);
   import "DPI-C" context function void model_setup(chandle mpv, chandle p_config);
   import "DPI-C" context function bit  model_run(chandle mpv, chandle p_config);
 
 
-  function automatic int get_config(chandle config_base, input int offset);
-    if (offset < 16)  return dut.OC_TOP.CONTROLLER.cfg        [offset   ];
-    else              return dut.OC_TOP.CONTROLLER.sdp_ram.RAM[offset-16];
+  function automatic int _get_config(input int base, input int offset);
+    if (base == 32'(`CONFIG_BASEADDR)) begin
+      if (offset < 16)  return dut.OC_TOP.CONTROLLER.cfg        [offset   ];
+      else              return dut.OC_TOP.CONTROLLER.sdp_ram.RAM[offset-16];
+    end else if (base == 32'(`VEC_ENGINE_BASEADDR)) begin
+      if (offset < 16)  return dut.OC_TOP.VEC_ENGINE.cfg        [offset   ];
+      else              return dut.OC_TOP.VEC_ENGINE.sdp_ram.RAM[offset-16];
+    end
   endfunction
 
 
-  function automatic set_config(chandle config_base, input int offset, input int data);
-    if (offset < 16) dut.OC_TOP.CONTROLLER.cfg        [offset   ] <= data;
-    else             dut.OC_TOP.CONTROLLER.sdp_ram.RAM[offset-16] <= data;
+  function automatic _set_config(input int base, input int offset, input int data);
+    if (base == 32'(`CONFIG_BASEADDR)) begin
+      if (offset < 16) dut.OC_TOP.CONTROLLER.cfg        [offset   ] <= data;
+      else             dut.OC_TOP.CONTROLLER.sdp_ram.RAM[offset-16] <= data;
+    end else if (base == 32'(`VEC_ENGINE_BASEADDR)) begin
+      if (offset < 16) dut.OC_TOP.VEC_ENGINE.cfg        [offset   ] <= data;
+      else             dut.OC_TOP.VEC_ENGINE.sdp_ram.RAM[offset-16] <= data;
+    end
+
   endfunction
 
 
@@ -101,6 +133,7 @@ module axi_sys_tb;
     repeat(2) @(posedge clk) #10ps;
     rstn = 1;
     mpv = get_mp();
+    cp = get_cp();
     
     model_setup(mpv, cp);
     repeat(2) @(posedge clk) #10ps;
