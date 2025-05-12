@@ -30,6 +30,7 @@ class Hardware:
             axi_width: int = 64,
             header_width: int = 64,
             config_baseaddr = "B0000000",
+            vec_engine_baseaddr = "C0000000",
             axi_max_burst_len: int = 16,
             target_cpu_int_bits: int = 32,
             async_resetn: bool = True,
@@ -75,6 +76,7 @@ class Hardware:
         self.AXI_WIDTH = axi_width
         self.HEADER_WIDTH = header_width
         self.CONFIG_BASEADDR = config_baseaddr
+        self.VEC_ENGINE_BASEADDR = vec_engine_baseaddr
         self.AXI_MAX_BURST_LEN = axi_max_burst_len
         self.INT_BITS = target_cpu_int_bits
         self.ASYNC_RESETN = async_resetn
@@ -184,6 +186,7 @@ class Hardware:
 `define HEADER_WIDTH        {self.HEADER_WIDTH       :<10}
 `define AXI_MAX_BURST_LEN   {self.AXI_MAX_BURST_LEN  :<10}
 `define CONFIG_BASEADDR     40'h{self.CONFIG_BASEADDR:<10}
+`define VEC_ENGINE_BASEADDR     40'h{self.VEC_ENGINE_BASEADDR:<10}
 ''')
 
 
@@ -203,6 +206,7 @@ set RAM_EDGES_DEPTH    {self.RAM_EDGES_DEPTH}
 set KH_MAX             {self.KH_MAX}
 set AXI_WIDTH          {self.AXI_WIDTH}
 set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
+set VEC_ENGINE_BASEADDR    0x{self.VEC_ENGINE_BASEADDR}
 ''')
 
 

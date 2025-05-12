@@ -71,6 +71,28 @@ module axi_cgra4ml #(
     output wire                   s_axil_rvalid,
     input  wire                   s_axil_rready,
     /*
+     * AXI-Lite slave interface for vector engine
+     */
+    input  wire [AXIL_ADDR_WIDTH-1:0]  s_axil_1_awaddr,
+    input  wire [2:0]                  s_axil_1_awprot,
+    input  wire                        s_axil_1_awvalid,
+    output wire                        s_axil_1_awready,
+    input  wire [AXIL_WIDTH-1:0]       s_axil_1_wdata,
+    input  wire [STRB_WIDTH-1:0]       s_axil_1_wstrb,
+    input  wire                        s_axil_1_wvalid,
+    output wire                        s_axil_1_wready,
+    output wire [1:0]                  s_axil_1_bresp,
+    output wire                        s_axil_1_bvalid,
+    input  wire                        s_axil_1_bready,
+    input  wire [AXIL_ADDR_WIDTH-1:0]  s_axil_1_araddr,
+    input  wire [2:0]                  s_axil_1_arprot,
+    input  wire                        s_axil_1_arvalid,
+    output wire                        s_axil_1_arready,
+    output wire [AXIL_WIDTH-1:0]       s_axil_1_rdata,
+    output wire [1:0]                  s_axil_1_rresp,
+    output wire                        s_axil_1_rvalid,
+    input  wire                        s_axil_1_rready,
+    /*
         * AXI 4 Master interface
     */
     // Pixel
@@ -137,7 +159,8 @@ localparam      OUT_ADDR_WIDTH          = 10,
                 SRAM_RD_DEPTH           = `MAX_N_BUNDLES,
                 COUNTER_WIDTH           = 16,
                 AXI_LEN_WIDTH           = 32,
-                AXIL_BASE_ADDR          = `CONFIG_BASEADDR,
+                CONFIG_BASE_ADDR        = `CONFIG_BASEADDR,
+                VEC_ENGINE_BASE_ADDR    = `VEC_ENGINE_BASEADDR,
                 TIMEOUT                 = 2, // since 0 gives error
 
     // Alex AXI DMA RD                
@@ -166,6 +189,16 @@ wire [AXIL_ADDR_WIDTH-1:0] reg_rd_addr;
 wire reg_rd_en;
 wire [AXIL_WIDTH-1:0] reg_rd_data;
 wire reg_rd_ack;
+
+wire [AXIL_ADDR_WIDTH-1:0] reg_1_wr_addr;
+wire [AXIL_WIDTH     -1:0] reg_1_wr_data;
+wire [STRB_WIDTH     -1:0] reg_1_wr_strb;
+wire                       reg_1_wr_en;
+wire                       reg_1_wr_ack;
+wire [AXIL_ADDR_WIDTH-1:0] reg_1_rd_addr;
+wire                       reg_1_rd_en;
+wire [AXIL_WIDTH-1:0]      reg_1_rd_data;
+wire                       reg_1_rd_ack;
 
 // Controller with Alex DMAs: desc signals (including od tag) and status signals
 wire [AXI_ADDR_WIDTH+AXI_LEN_WIDTH-1:0] m_od_axis_write_desc_tdata;
@@ -210,8 +243,6 @@ wire [AXI_WIDTH   -1:0] m_axis_output_tdata;
 wire [AXI_WIDTH/8 -1:0] m_axis_output_tkeep;
 wire [W_BPT-1:0] m_bytes_per_transfer;
 
-wire [AXIL_ADDR_WIDTH-1:0] reg_wr_addr_ctrl = (reg_wr_addr-AXIL_BASE_ADDR) >> 2;
-wire [AXIL_ADDR_WIDTH-1:0] reg_rd_addr_ctrl = (reg_rd_addr-AXIL_BASE_ADDR) >> 2;
 
 
 
@@ -255,6 +286,80 @@ alex_axilite_ram #(
     .reg_rd_wait(1'b0),
     .reg_rd_ack(reg_rd_ack)
 );
+
+wire [AXIL_ADDR_WIDTH-1:0] reg_wr_addr_ctrl = (reg_wr_addr-CONFIG_BASE_ADDR) >> 2;
+wire [AXIL_ADDR_WIDTH-1:0] reg_rd_addr_ctrl = (reg_rd_addr-CONFIG_BASE_ADDR) >> 2;
+
+alex_axilite_ram #(
+    .DATA_WR_WIDTH(AXIL_WIDTH),
+    .DATA_RD_WIDTH(AXIL_WIDTH),
+    .ADDR_WIDTH(AXIL_ADDR_WIDTH),
+    .STRB_WIDTH(STRB_WIDTH),
+    .TIMEOUT(TIMEOUT)
+) AXIL2RAM_1 (
+    .clk(clk),
+    .rstn(rstn),
+    .s_axil_awaddr (s_axil_1_awaddr),
+    .s_axil_awprot (s_axil_1_awprot),
+    .s_axil_awvalid(s_axil_1_awvalid),
+    .s_axil_awready(s_axil_1_awready),
+    .s_axil_wdata  (s_axil_1_wdata),
+    .s_axil_wstrb  (s_axil_1_wstrb),
+    .s_axil_wvalid (s_axil_1_wvalid),
+    .s_axil_wready (s_axil_1_wready),
+    .s_axil_bresp  (s_axil_1_bresp),
+    .s_axil_bvalid (s_axil_1_bvalid),
+    .s_axil_bready (s_axil_1_bready),
+    .s_axil_araddr (s_axil_1_araddr),
+    .s_axil_arprot (s_axil_1_arprot),
+    .s_axil_arvalid(s_axil_1_arvalid),
+    .s_axil_arready(s_axil_1_arready),
+    .s_axil_rdata  (s_axil_1_rdata),
+    .s_axil_rresp  (s_axil_1_rresp),
+    .s_axil_rvalid (s_axil_1_rvalid),
+    .s_axil_rready (s_axil_1_rready),
+    .reg_wr_addr   (reg_1_wr_addr),
+    .reg_wr_data   (reg_1_wr_data),
+    .reg_wr_strb   (reg_1_wr_strb),
+    .reg_wr_en     (reg_1_wr_en),
+    .reg_wr_wait   (1'b0),
+    .reg_wr_ack    (reg_1_wr_ack),
+    .reg_rd_addr   (reg_1_rd_addr),
+    .reg_rd_en     (reg_1_rd_en),
+    .reg_rd_data   (reg_1_rd_data),
+    .reg_rd_wait   (1'b0),
+    .reg_rd_ack    (reg_1_rd_ack)
+);
+
+wire [AXIL_ADDR_WIDTH-1:0] reg_1_wr_addr_ctrl = (reg_1_wr_addr-VEC_ENGINE_BASE_ADDR) >> 2;
+wire [AXIL_ADDR_WIDTH-1:0] reg_1_rd_addr_ctrl = (reg_1_rd_addr-VEC_ENGINE_BASE_ADDR) >> 2;
+
+vector_engine #(
+    .SRAM_RD_DATA_WIDTH(SRAM_RD_DATA_WIDTH),
+    .SRAM_RD_DEPTH(SRAM_RD_DEPTH),
+    .CW(COUNTER_WIDTH),
+    .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
+    .AXIS_USER_WIDTH(AXIS_USER_WIDTH),
+    .AXI_DATA_WIDTH(AXIL_WIDTH),
+    .AXI_LEN_WIDTH(AXI_LEN_WIDTH),
+    .AXI_TAG_WIDTH(TAG_WIDTH)
+) VEC_ENGINE (
+  .clk        (clk          ),
+  .rstn       (rstn         ),
+  .reg_wr_en  (reg_1_wr_en  ),
+  .reg_wr_ack (reg_1_wr_ack ),
+  .reg_wr_addr(reg_1_wr_addr_ctrl[AXI_ADDR_WIDTH-1:0]),
+  .reg_wr_data(reg_1_wr_data),
+  .reg_rd_en  (reg_1_rd_en  ),
+  .reg_rd_ack (reg_1_rd_ack ),
+  .reg_rd_addr(reg_1_rd_addr_ctrl[AXI_ADDR_WIDTH-1:0]), 
+  .reg_rd_data(reg_1_rd_data),
+  .o_ready    (m_axis_output_tready),
+  .o_valid    (m_axis_output_tvalid),
+  .o_last     (m_axis_output_tlast),
+  .o_bpt      (m_bytes_per_transfer)
+);
+
 
 dma_controller #(
     .SRAM_RD_DATA_WIDTH(SRAM_RD_DATA_WIDTH),
