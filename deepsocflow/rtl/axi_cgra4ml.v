@@ -30,6 +30,7 @@ module axi_cgra4ml #(
                 Y_OUT_BITS              = `Y_OUT_BITS         ,
                 M_DATA_WIDTH_HF_CONV    = COLS  * ROWS  * Y_BITS,
                 M_DATA_WIDTH_HF_CONV_DW = ROWS  * Y_BITS,
+                MAX_N_BUNDLES           = `MAX_N_BUNDLES      ,
 
                 // Full AXI
                 AXI_WIDTH               = `AXI_WIDTH   ,
@@ -335,8 +336,7 @@ wire [AXIL_ADDR_WIDTH-1:0] reg_1_wr_addr_ctrl = (reg_1_wr_addr-VEC_ENGINE_BASE_A
 wire [AXIL_ADDR_WIDTH-1:0] reg_1_rd_addr_ctrl = (reg_1_rd_addr-VEC_ENGINE_BASE_ADDR) >> 2;
 
 vector_engine #(
-    .SRAM_RD_DATA_WIDTH(SRAM_RD_DATA_WIDTH),
-    .SRAM_RD_DEPTH(SRAM_RD_DEPTH),
+    .MAX_N_BUNDLES(MAX_N_BUNDLES),
     .CW(COUNTER_WIDTH),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
     .AXIS_USER_WIDTH(AXIS_USER_WIDTH),

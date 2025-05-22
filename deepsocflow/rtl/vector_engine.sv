@@ -1,9 +1,24 @@
 `timescale 1ns/1ps
 
+typedef struct packed {
+  logic [15:0]  n, l, kw, coe, h, w, ci, co, w_kw2, t, p, cm, cm_p0, on, oh, ow, oc, ch, ph, cw, pw, pkh, psh, pkw, psw;
+  logic [31:0]  xp_words, b_offset, w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes;
+  logic [7 :0]  ib_out, in_buffer_idx, out_buffer_idx, add_out_buffer_idx, add_in_buffer_idx;
+  logic [7 :0]  is_bias, is_pool, is_flatten, is_softmax;
+  logic [7 :0]  x_pad, b_val_shift, b_bias_shift, ca_nzero, ca_shift, ca_pl_scale, aa_nzero, aa_shift, aa_pl_scale, pa_nzero, pa_shift, pa_pl_scale, softmax_frac;
+  logic [7 :0]  csh, csh_shift, psh_shift, csw, csw_shift, psw_shift, pool;
+  logic [31:0]  softmax_max_f;
+  logic [63:0]  header;
+  logic [31:0]  debug_nhwc_words;
+} bundle_t;
+
+typedef struct packed {
+  logic [31:0] start, read_done, write_done, n_bundles_1, i_wlast, i_coe, i_w_kw2, i_l, i_n, i_t, i_p, i_b;
+} regs_st;
+
 module vector_engine #(
   parameter
-    SRAM_RD_DATA_WIDTH = 32*8,
-    SRAM_RD_DEPTH      = 8   , // number of bundles
+    MAX_N_BUNDLES      = 16  ,
     CW                 = 16  , // T, P, B counters
     AXI_ADDR_WIDTH     = 32  ,
     AXI_DATA_WIDTH     = 32  ,
@@ -11,8 +26,10 @@ module vector_engine #(
     AXI_LEN_WIDTH      = 32  , // WIDTH_BPT
     AXI_TAG_WIDTH      = 8   , // WIDTH_TAG
 
-  parameter  
-    SRAM_WR_DEPTH = SRAM_RD_DEPTH * SRAM_RD_DATA_WIDTH / AXI_DATA_WIDTH, // 2048
+  localparam  
+    SRAM_RD_DATA_WIDTH  = $bits(bundle_t),
+    SRAM_RD_DEPTH       = MAX_N_BUNDLES, // number of bundles
+    SRAM_WR_DEPTH       = SRAM_RD_DEPTH * SRAM_RD_DATA_WIDTH / AXI_DATA_WIDTH, // 2048
     SRAM_RD_ADDR_WIDTH  = $clog2(SRAM_RD_DEPTH), // 11
     SRAM_WR_ADDR_WIDTH  = $clog2(SRAM_WR_DEPTH)
 )(
@@ -36,32 +53,16 @@ module vector_engine #(
   input  logic [AXI_LEN_WIDTH -1:0] o_bpt
 );
 
-  localparam N_REG = 16;
+  localparam N_REG = 32;
 
-  localparam
-    A_START        = 'h0,
-    A_N_BUNDLES_1  = 'h1
-    ; // Max 16 registers
-  logic [N_REG-1:0][AXI_DATA_WIDTH-1:0] cfg;
+  union packed {
+    logic [$bits(regs_st)/32-1:0][31:0] a ;  // Access as array of 32-bit words
+    regs_st s;
+  } c;
 
   always_ff @(posedge clk)  // PS READ (1 clock latency)
     if (!rstn)          reg_rd_data <= '0;
-    else if (reg_rd_en) reg_rd_data <= cfg[reg_rd_addr];
-
-  wire start = 1'(cfg[A_START]);
-  wire [CW-1:0] n_bundles_1 = CW'(cfg[A_N_BUNDLES_1]);
-
-  typedef struct packed {
-    logic [15:0]  n, l, kw, coe, h, w, ci, co, w_kw2, t, p, cm, cm_p0, on, oh, ow, oc, ch, ph, cw, pw, pkh, psh, pkw, psw;
-    logic [31:0]  xp_words, b_offset, w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes;
-    logic [7 :0]  ib_out, in_buffer_idx, out_buffer_idx, add_out_buffer_idx, add_in_buffer_idx;
-    logic [7 :0]  is_bias, is_pool, is_flatten, is_softmax;
-    logic [7 :0]  x_pad, b_val_shift, b_bias_shift, ca_nzero, ca_shift, ca_pl_scale, aa_nzero, aa_shift, aa_pl_scale, pa_nzero, pa_shift, pa_pl_scale, softmax_frac;
-    logic [7 :0]  csh, csh_shift, psh_shift, csw, csw_shift, psw_shift, pool;
-    logic [31:0]  softmax_max_f;
-    logic [63:0]  header;
-    logic [31:0]  debug_nhwc_words;
-  } bundle_t;
+    else if (reg_rd_en) reg_rd_data <= c.a[reg_rd_addr];
 
   bundle_t ram_rd, max;
 
@@ -113,14 +114,14 @@ module vector_engine #(
   logic [CW-1:0] i_b, i_p, i_t, i_n, i_l, i_w_kw2, i_w_kw2_next, i_coe, i_wlast;
 
 
-  counter #(.W(CW)) C_WLAST (.clk(clk), .rstn_g(rstn), .rst_l(en_w_kw2), .en(en_wlast), .max_in(max_wlast               ), .last_clk(lc_wlast), .last(       ), .first( ), .count(i_wlast), .count_next());
-  counter #(.W(CW)) C_COE   (.clk(clk), .rstn_g(rstn), .rst_l(ram_v   ), .en(lc_wlast), .max_in(CW'(32'(ram_rd.coe  )-1)), .last_clk(lc_coe  ), .last(       ), .first( ), .count(i_coe  ), .count_next());
-  counter #(.W(CW)) C_W_KW2 (.clk(clk), .rstn_g(rstn), .rst_l(ram_v   ), .en(lc_coe  ), .max_in(CW'(32'(ram_rd.w_kw2)-1)), .last_clk(lc_w_kw2), .last(l_w_kw2), .first( ), .count(i_w_kw2), .count_next(i_w_kw2_next));
-  counter #(.W(CW)) C_L     (.clk(clk), .rstn_g(rstn), .rst_l(ram_v   ), .en(lc_w_kw2), .max_in(CW'(32'(ram_rd.l    )-1)), .last_clk(lc_l    ), .last(       ), .first( ), .count(i_l    ), .count_next());
-  counter #(.W(CW)) C_N     (.clk(clk), .rstn_g(rstn), .rst_l(ram_v   ), .en(lc_l    ), .max_in(CW'(32'(ram_rd.n    )-1)), .last_clk(lc_n    ), .last(       ), .first( ), .count(i_n    ), .count_next());
-  counter #(.W(CW)) C_T     (.clk(clk), .rstn_g(rstn), .rst_l(ram_v   ), .en(lc_n    ), .max_in(CW'(32'(ram_rd.t    )-1)), .last_clk(lc_t    ), .last(       ), .first( ), .count(i_t    ), .count_next());
-  counter #(.W(CW)) C_P     (.clk(clk), .rstn_g(rstn), .rst_l(ram_v   ), .en(lc_t    ), .max_in(CW'(32'(ram_rd.p    )-1)), .last_clk(lc_p    ), .last(       ), .first( ), .count(i_p    ), .count_next());
-  counter #(.W(CW)) C_B     (.clk(clk), .rstn_g(rstn), .rst_l(start   ), .en(lc_p    ), .max_in(n_bundles_1             ), .last_clk(lc_b    ), .last(       ), .first( ), .count(i_b    ), .count_next());
+  counter #(.W(CW)) C_WLAST (.clk(clk), .rstn_g(rstn), .rst_l(en_w_kw2     ), .en(en_wlast), .max_in(max_wlast               ), .last_clk(lc_wlast), .last(       ), .first( ), .count(i_wlast), .count_next());
+  counter #(.W(CW)) C_COE   (.clk(clk), .rstn_g(rstn), .rst_l(ram_v        ), .en(lc_wlast), .max_in(CW'(32'(ram_rd.coe  )-1)), .last_clk(lc_coe  ), .last(       ), .first( ), .count(i_coe  ), .count_next());
+  counter #(.W(CW)) C_W_KW2 (.clk(clk), .rstn_g(rstn), .rst_l(ram_v        ), .en(lc_coe  ), .max_in(CW'(32'(ram_rd.w_kw2)-1)), .last_clk(lc_w_kw2), .last(l_w_kw2), .first( ), .count(i_w_kw2), .count_next(i_w_kw2_next));
+  counter #(.W(CW)) C_L     (.clk(clk), .rstn_g(rstn), .rst_l(ram_v        ), .en(lc_w_kw2), .max_in(CW'(32'(ram_rd.l    )-1)), .last_clk(lc_l    ), .last(       ), .first( ), .count(i_l    ), .count_next());
+  counter #(.W(CW)) C_N     (.clk(clk), .rstn_g(rstn), .rst_l(ram_v        ), .en(lc_l    ), .max_in(CW'(32'(ram_rd.n    )-1)), .last_clk(lc_n    ), .last(       ), .first( ), .count(i_n    ), .count_next());
+  counter #(.W(CW)) C_T     (.clk(clk), .rstn_g(rstn), .rst_l(ram_v        ), .en(lc_n    ), .max_in(CW'(32'(ram_rd.t    )-1)), .last_clk(lc_t    ), .last(       ), .first( ), .count(i_t    ), .count_next());
+  counter #(.W(CW)) C_P     (.clk(clk), .rstn_g(rstn), .rst_l(ram_v        ), .en(lc_t    ), .max_in(CW'(32'(ram_rd.p    )-1)), .last_clk(lc_p    ), .last(       ), .first( ), .count(i_p    ), .count_next());
+  counter #(.W(CW)) C_B     (.clk(clk), .rstn_g(rstn), .rst_l(1'(c.s.start)), .en(lc_p    ), .max_in(CW'(c.s.n_bundles_1)    ), .last_clk(lc_b    ), .last(       ), .first( ), .count(i_b    ), .count_next());
 
 
   always_ff @(posedge clk)

@@ -28,6 +28,10 @@ typedef const struct {
   const i32  debug_nhwc_words;
 } Bundle_t;
 
+typedef struct {
+  u32 start, read_done, write_done, n_bundles_1, i_wlast, i_coe, i_w_kw2, i_l, i_n, i_t, i_p, i_b;
+} regs_st;
+
 typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 
 #include "config_fw.h"
