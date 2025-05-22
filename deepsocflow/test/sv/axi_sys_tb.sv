@@ -87,7 +87,7 @@ module axi_sys_tb;
       if (offset < 16)  return dut.OC_TOP.CONTROLLER.cfg        [offset   ];
       else              return dut.OC_TOP.CONTROLLER.sdp_ram.RAM[offset-16];
     end else if (base == 32'(`VEC_ENGINE_BASEADDR)) begin
-      if (offset < 16)  return dut.OC_TOP.VEC_ENGINE.cfg        [offset   ];
+      if (offset < 16)  return dut.OC_TOP.VEC_ENGINE.c.a        [offset   ];
       else              return dut.OC_TOP.VEC_ENGINE.sdp_ram.RAM[offset-16];
     end
   endfunction
@@ -98,7 +98,7 @@ module axi_sys_tb;
       if (offset < 16) dut.OC_TOP.CONTROLLER.cfg        [offset   ] <= data;
       else             dut.OC_TOP.CONTROLLER.sdp_ram.RAM[offset-16] <= data;
     end else if (base == 32'(`VEC_ENGINE_BASEADDR)) begin
-      if (offset < 16) dut.OC_TOP.VEC_ENGINE.cfg        [offset   ] <= data;
+      if (offset < 32) dut.OC_TOP.VEC_ENGINE.c.a        [offset   ] <= data;
       else             dut.OC_TOP.VEC_ENGINE.sdp_ram.RAM[offset-16] <= data;
     end
 
