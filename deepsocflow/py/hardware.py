@@ -207,7 +207,7 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
 
 
 
-    def simulate(self, SIM='verilator', SIM_PATH=''):
+    def simulate(self, SIM='verilator', SIM_PATH='', TRACE=False):
 
         os.makedirs('build', exist_ok=True)
         print("\n\nCOMPILING...\n\n")
@@ -223,7 +223,8 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             assert subprocess.run(cmd).returncode == 0
 
         if SIM == "verilator":
-            cmd = f'{SIM_PATH}verilator --binary -j 0 -O3 --trace --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -DSIM -CFLAGS -I../ {self.MODULE_DIR}/c/sim.c -CFLAGS -g --Mdir ./'
+            trace = '--trace' if TRACE else ''
+            cmd = f'{SIM_PATH}verilator --binary -j 0 -O3 {trace} --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -DSIM -CFLAGS -I../ {self.MODULE_DIR}/c/sim.c -CFLAGS -g --Mdir ./'
             print(cmd)
             assert subprocess.run(cmd.split(' '), cwd='build').returncode == 0
         print("\n\nSIMULATING...\n\n")
