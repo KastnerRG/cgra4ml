@@ -4,6 +4,7 @@ __pycache__
 temp/
 
 run/fpga/*
+run/work*
 
 run/asic/*
 !deepsocflow/asic/reports
