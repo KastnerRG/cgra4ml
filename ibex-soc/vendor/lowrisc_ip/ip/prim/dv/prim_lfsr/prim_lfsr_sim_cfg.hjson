@@ -1,0 +1,114 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+{
+  // Name of the sim cfg - typically same as the name of the DUT.
+  name: prim_lfsr
+
+  // Top level dut name (sv module).
+  dut: prim_lfsr
+
+  // Top level testbench name (sv module).
+  tb: prim_lfsr_tb
+
+  // Simulator used to sign off this block
+  tool: vcs
+
+  // Fusesoc core file used for building the file list.
+  fusesoc_core: lowrisc:dv:prim_lfsr_sim:0.1
+
+  // Import additional common sim cfg files.
+  import_cfgs: ["{proj_root}/hw/dv/tools/dvsim/common_sim_cfg.hjson"]
+
+  // Default iterations for all tests - each test entry can override this.
+  reseed: 50
+
+  // Enable cdc instrumentation
+  run_opts: ["+cdc_instrumentation_enabled=1"]
+
+  // Add PRIM_LSFR specific exclusion files.
+  vcs_cov_excl_files: ["{proj_root}/hw/ip/prim/dv/prim_lfsr/data/prim_lfsr_cov_excl.el"]
+
+  build_modes: [
+    {
+      name: prim_lfsr_dw_8_gal
+      build_opts: ["+define+MAX_LFSR_DW=8"]
+    }
+    {
+      name: prim_lfsr_dw_8_fib
+      build_opts: ["+define+MAX_LFSR_DW=8",
+                   "+define+LFSR_FIB_TYPE"]
+    }
+    {
+      name: prim_lfsr_dw_24_gal
+      build_opts: ["+define+MAX_LFSR_DW=24"]
+    }
+    {
+      name: prim_lfsr_dw_24_fib
+      build_opts: ["+define+MAX_LFSR_DW=24",
+                   "+define+LFSR_FIB_TYPE"]
+    }
+  ]
+
+  // Since none of the tests use the "default" build mode, we need to indicate which build is the
+  // main build mode.
+  primary_build_mode: prim_lfsr_dw_8_gal
+
+  // Always randomize the initial seed of the LFSR.
+  //
+  // For this block level, the DefaultSeed is ignored and a random value is picked instead. This is
+  // facilitated by the plusarg below. At the chip level, this plusarg is not set, so prim_lfsr
+  // randomly picks between the DefaultSeed value and a random value.
+  run_opts: ["+prim_lfsr_use_default_seed=0"]
+
+  // dw_8 is only used for "smoke" sims, so coverage collection is not needed.
+  prim_lfsr_dw_8_gal_vcs_cov_cfg_file: "-cm_hier {proj_root}/hw/ip/prim/dv/prim_lfsr/data/prim_lfsr_cover.cfg"
+  prim_lfsr_dw_8_fib_vcs_cov_cfg_file: "-cm_hier {proj_root}/hw/ip/prim/dv/prim_lfsr/data/prim_lfsr_cover.cfg"
+  prim_lfsr_dw_24_gal_vcs_cov_cfg_file: "-cm_hier {proj_root}/hw/ip/prim/dv/prim_lfsr/data/prim_lfsr_cover.cfg"
+  prim_lfsr_dw_24_fib_vcs_cov_cfg_file: "-cm_hier {proj_root}/hw/ip/prim/dv/prim_lfsr/data/prim_lfsr_cover.cfg"
+
+  prim_lfsr_dw_8_gal_xcelium_cov_cfg_file: ""
+  prim_lfsr_dw_8_fib_xcelium_cov_cfg_file: ""
+  prim_lfsr_dw_24_gal_xcelium_cov_cfg_file: ""
+  prim_lfsr_dw_24_fib_xcelium_cov_cfg_file: ""
+
+  // List of test specifications.
+  tests: [
+    {
+      name: prim_lfsr_gal_smoke
+      // limit max lfsr length to reduce private CI runtime.
+      build_mode: prim_lfsr_dw_8_gal
+    }
+    {
+      name: prim_lfsr_fib_smoke
+      // limit max lfsr length to reduce private CI runtime.
+      build_mode: prim_lfsr_dw_8_fib
+    }
+    {
+      name: prim_lfsr_gal_test
+      build_mode: prim_lfsr_dw_24_gal
+      run_timeout_mins: 120
+    }
+    {
+      name: prim_lfsr_fib_test
+      build_mode: prim_lfsr_dw_24_fib
+      run_timeout_mins: 120
+    }
+  ]
+
+  // List of regressions.
+  regressions: [
+    {
+      name: smoke
+      tests: ["prim_lfsr_gal_smoke",
+              "prim_lfsr_fib_smoke"]
+    }
+    {
+      name: nightly
+      tests:["prim_lfsr_gal_smoke",
+             "prim_lfsr_fib_smoke",
+             "prim_lfsr_gal_test",
+             "prim_lfsr_fib_test"]
+    }
+  ]
+}

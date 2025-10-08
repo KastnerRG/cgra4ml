@@ -39,7 +39,7 @@ module axi_cgra4ml #(
                 AXI_ADDR_WIDTH          = 32,
                 // AXI-Lite
                 AXIL_WIDTH              = 32,
-                AXIL_ADDR_WIDTH              = 40,
+                AXIL_ADDR_WIDTH         = 32,
                 STRB_WIDTH              = 4,
                 W_BPT                   = `W_BPT              
 
@@ -141,7 +141,7 @@ localparam      OUT_ADDR_WIDTH          = 10,
                 TIMEOUT                 = 2, // since 0 gives error
 
     // Alex AXI DMA RD                
-                AXIS_ID_WIDTH           = 6,
+                AXIS_ID_WIDTH           = AXI_ID_WIDTH,
                 AXIS_KEEP_ENABLE        = 1,//(AXI_WIDTH>8),
                 AXIS_KEEP_WIDTH         = (AXI_WIDTH/8),//(AXI_WIDTH/8),
                 AXIS_LAST_ENABLE        = 1,

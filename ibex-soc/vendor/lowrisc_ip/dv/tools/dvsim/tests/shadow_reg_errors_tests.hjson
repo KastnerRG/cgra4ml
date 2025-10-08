@@ -1,0 +1,44 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+
+// this hjson should be imported by all IPs containing shadowed CSRs
+{
+  build_modes: [
+    {
+      name: cover_reg_top
+    }
+  ]
+
+  run_modes: [
+    {
+      name: csr_tests_mode
+      uvm_test_seq: "{name}_common_vseq"
+      run_opts: ["+en_scb=0"]
+    }
+  ]
+
+  tests: [
+    {
+      name: "{name}_shadow_reg_errors"
+      build_mode: "cover_reg_top"
+      run_opts: ["+run_shadow_reg_errors"]
+      en_run_modes: ["csr_tests_mode"]
+      reseed: 20
+    }
+    {
+      name: "{name}_shadow_reg_errors_with_csr_rw"
+      build_mode: "cover_reg_top"
+      run_opts: ["+run_shadow_reg_errors_with_csr_rw"]
+      en_run_modes: ["csr_tests_mode"]
+      reseed: 20
+    }
+  ]
+
+  regressions: [
+    {
+      name: sw_access
+      tests: ["{name}_shadow_reg_errors"]
+    }
+  ]
+}

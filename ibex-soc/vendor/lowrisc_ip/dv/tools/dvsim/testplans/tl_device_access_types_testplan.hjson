@@ -1,0 +1,33 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+{
+  import_testplans: ["hw/dv/tools/dvsim/testplans/tl_device_access_types_wo_intg_testplan.hjson"]
+  testpoints: [
+    {
+      name: tl_intg_err
+      desc: ''' Verify that the data integrity check violation generates an alert.
+
+            - Randomly inject errors on the control, data, or the ECC bits during CSR accesses.
+              Verify that triggers the correct fatal alert.
+            - Inject a fault at the onehot check in `u_reg.u_prim_reg_we_check` and verify the
+              corresponding fatal alert occurs'''
+      stage: V2S
+      tests: ["{name}_tl_intg_err", "{name}_sec_cm"]
+    }
+  ]
+  covergroups: [
+    {
+      name: tl_intg_err_cg
+      desc: '''Cover all kinds of integrity errors (command, data or both) and cover number of
+               error bits on each integrity check.
+
+               Cover the kinds of integrity errors with byte enabled write on memory if applicable:
+               Some memories store the integrity values. When there is a subword write, design
+               re-calculate the integrity with full word data and update integrity in the memory.
+               This coverage ensures that memory byte write has been issued and the related design
+               logic has been verfied.
+            '''
+    }
+  ]
+}

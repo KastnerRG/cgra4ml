@@ -25,7 +25,7 @@
 `define DELAY_MUL           3            // constant, for now 
 `define DELAY_W_RAM         2            // constant, for now 
 
-`define AXI_WIDTH           128       
+`define AXI_WIDTH           32        
 `define HEADER_WIDTH        64        
 `define AXI_MAX_BURST_LEN   16        
-`define CONFIG_BASEADDR     40'hB0000000  
+`define CONFIG_BASEADDR     32'h40000     

@@ -4,7 +4,7 @@
 `include "config_tb.svh"
 
 module axi_sys_tb;
-  localparam  ADDR_WIDTH          = 40,
+  localparam  ADDR_WIDTH          = 32,
               DATA_WR_WIDTH       = 32,
               STRB_WIDTH          = 4,
               DATA_RD_WIDTH       = 32,
