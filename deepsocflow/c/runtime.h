@@ -1,9 +1,11 @@
-#include <assert.h>
-#include <stdlib.h>
+#ifndef RISCV
+  #include <assert.h>
+  #include <stdlib.h>
+  #include <stdio.h>
+  #include <math.h>
+#endif
 #include <limits.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <math.h>
 
 typedef int8_t   i8 ;
 typedef int16_t  i16;
@@ -15,6 +17,14 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 typedef float    f32;
 typedef double   f64;
+
+typedef struct { int quot; int rem; } idiv_t;
+static inline idiv_t idiv(int numer, int denom) {
+  idiv_t r; 
+  r.quot = numer / denom; 
+  r.rem = numer % denom; 
+  return r;
+}
 
 typedef const struct {
   const u16  n, l, kw, coe, h, w, ci, co, w_kw2, t, p, cm, cm_p0, on, oh, ow, oc, ch, ph, cw, pw, pkh, psh, pkw, psw;
@@ -76,7 +86,6 @@ typedef struct {
 #endif
 
 #ifdef SIM
-  #include <stdio.h>
   #define sim_fprintf fprintf
   #include <stdbool.h>
 
@@ -87,7 +96,12 @@ typedef struct {
 
 #else
   #define sim_fprintf(...)
-  #define mem_phy (*(Memory_st* restrict)MEM_BASEADDR)
+
+  #ifdef RISCV
+    Memory_st mem_phy;
+  #else
+    #define mem_phy (*(Memory_st* restrict)MEM_BASEADDR)
+  #endif
 
   inline volatile u32 get_config(void *config_base, u32 offset){
     return *(volatile u32 *)(config_base + offset*4);
@@ -151,7 +165,7 @@ static inline void write_x(i8 val, i8 *restrict p_out_buffer, Memory_st *restric
 #endif
 
   // Pack bits and store
-  div_t packed_idx = div(flat_index, X_WORDS_PER_BYTE);
+  idiv_t packed_idx = idiv(flat_index, X_WORDS_PER_BYTE);
   assert_printf (packed_idx.quot , <, bundles[ib].o_bytes, "write_x", WRITEX_DEBUG_INFO);
 
   u8 packed_val      = ((u8)val & X_BITS_MASK) << (packed_idx.rem * X_BITS);
@@ -204,11 +218,11 @@ static inline void tile_write( i32 out_val, i8 *restrict p_out_buffer, i32 ib, B
 
   i8 yp_first  = i_yc < pb_out->cm_p0;
 
-  div_t div_oh  = div(i_yh, PE_ROWS);
+  idiv_t div_oh  = idiv(i_yh, PE_ROWS);
   i32   i_yr    = div_oh.rem;
   i32   i_yl    = div_oh.quot;
 
-  div_t div_oc    = div(i_yc-pb_out->cm_p0, pb_out->cm);
+  idiv_t div_oc    = idiv(i_yc-pb_out->cm_p0, pb_out->cm);
   i32   i_yp      = yp_first ? 0             : div_oc.quot + 1;
   i32   i_ycm     = yp_first ? i_yc          : div_oc.rem;
   i32   ycm       = yp_first ? pb_out->cm_p0 : pb_out->cm  ;
@@ -239,7 +253,7 @@ extern EXT_C u8 model_run(Memory_st *restrict mp, void *p_config) {
   static i8 *restrict p_out_buffer = 0;
 
   i32   iy_nhwc;
-  div_t div_ch, div_cw, div_ixh, div_ixw;
+  idiv_t div_ch, div_cw, div_ixh, div_ixw;
   i32   ph_end, ph_beg_const, ixh_beg, xh_sweep;
   i32   pw_end, pw_beg_const, ixw_beg, xw_sweep;
 
@@ -355,8 +369,8 @@ DMA_WAIT:
                     sim_fprintf(fp_sum,"%d\n", out_val); // Save summed output
 
                     // ------ CONV STRIDING ------
-                    div_ch = div(i_yh-pb->csh_shift, pb->csh);
-                    div_cw = div(i_yw-pb->csw_shift, pb->csw);
+                    div_ch = idiv(i_yh-pb->csh_shift, pb->csh);
+                    div_cw = idiv(i_yw-pb->csw_shift, pb->csw);
 
                     if (div_ch.rem != 0 || div_cw.rem != 0)
                       goto PROCESS_AND_STORE_DONE;
@@ -418,8 +432,8 @@ DMA_WAIT:
                     iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc, "Before maxpool", DEBUG_INFO);// store as nhwc for pooling
                     mp->nhwc[iy_nhwc] = out_val;
 
-                    div_ixh = div(i_yh+pb->psh_shift-pb->pkh+1, pb->psh);
-                    div_ixw = div(i_yw+pb->psw_shift-pb->pkw+1, pb->psw);
+                    div_ixh = idiv(i_yh+pb->psh_shift-pb->pkh+1, pb->psh);
+                    div_ixw = idiv(i_yw+pb->psw_shift-pb->pkw+1, pb->psw);
                     ixh_beg = div_ixh.quot; // ix(hw) that corresponds to the pooling window
                     ixw_beg = div_ixw.quot;
 
@@ -541,6 +555,7 @@ PROCESS_AND_STORE_DONE:
 extern EXT_C u32 addr_64to32(void* restrict addr){
   u64 offset = (u64)addr - (u64)&mem_phy;
   return (u32)offset + 0x20000000;
+  // return (u32)((uintptr_t)addr);
 }
 
 extern EXT_C u64 sim_addr_32to64(u32 addr){

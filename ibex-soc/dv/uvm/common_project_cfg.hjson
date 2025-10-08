@@ -1,0 +1,24 @@
+// Copyright lowRISC contributors.
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+{
+  project:          ibex
+
+  // These keys are expected by dvsim.py, so we have to set them to something.
+  book:              bogus.book.domain
+  doc_server:        bogus.doc.server
+  results_server:    bogus.results.server
+  results_html_name: report.html
+
+  // Default directory structure for the output
+  scratch_base_path:  "{scratch_root}/{dut}.{flow}.{tool}"
+  scratch_path:       "{scratch_base_path}/{branch}"
+  tool_srcs_dir:      "{scratch_path}/{tool}"
+
+  // Common DVSIM data structures
+  build_pass_patterns: []
+  build_fail_patterns: []
+
+  // The current design level
+  design_level:  "ip"
+}

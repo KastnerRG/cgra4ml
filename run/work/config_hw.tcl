@@ -11,5 +11,5 @@ set DELAY_W_RAM        2
 set RAM_WEIGHTS_DEPTH  512
 set RAM_EDGES_DEPTH    3584
 set KH_MAX             9
-set AXI_WIDTH          128
-set CONFIG_BASEADDR    0xB0000000
+set AXI_WIDTH          32
+set CONFIG_BASEADDR    0x40000

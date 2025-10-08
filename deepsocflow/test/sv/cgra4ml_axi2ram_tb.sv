@@ -44,7 +44,7 @@ module cgra4ml_axi2ram_tb #(
     // Parameters for axilite to ram
                 DATA_WR_WIDTH           = 32,
                 DATA_RD_WIDTH           = 32,
-                AXIL_ADDR_WIDTH              = 40,
+                AXIL_ADDR_WIDTH         = 32,
                 STRB_WIDTH              = 4,
                 TIMEOUT                 = 2,
 

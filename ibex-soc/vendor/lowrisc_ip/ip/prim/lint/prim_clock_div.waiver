@@ -1,0 +1,14 @@
+# Copyright lowRISC contributors (OpenTitan project).
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+#
+# waiver file for prim_clock_div
+
+waive -rules {STAR_PORT_CONN_USE} -location {prim_clock_div.sv} -regexp {.*wild card port connection encountered on instance.*} \
+      -comment "Generated prims may have wildcard connections."
+
+waive -rules CLOCK_MUX -location {prim_clock_div.sv} -regexp {.*reaches a multiplexer here, used as a clock.*} \
+      -comment "A mux is used during scan bypass, and for switching between div by 2 and div by 1 clocks"
+
+waive -rules {SAME_NAME_TYPE} -location {prim_clock_div.sv} -regexp {'ResetValue' is used as a parameter here, and as an enumeration value at prim.*} \
+      -comment "Parameter name reuse."

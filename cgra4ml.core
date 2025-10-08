@@ -1,0 +1,57 @@
+CAPI=2:
+
+name: vendor:sa:cgra4ml:1.0
+description: CGRA4ML for Ibex
+
+filesets:
+  rtl_sv:
+    files:
+      - deepsocflow/test/sv/ext/axi_addr.v
+      - deepsocflow/test/sv/ext/skidbuffer.v
+      - deepsocflow/test/sv/ext/zipcpu_axi2ram.v
+      - deepsocflow/rtl/dnn_engine.v
+      - deepsocflow/rtl/ext/alex_axis_pipeline_register.v
+      - deepsocflow/rtl/ext/alex_axis_register.v
+      - deepsocflow/rtl/ext/xilinx_spwf.v
+      - deepsocflow/rtl/axis_out_shift.sv
+      - deepsocflow/rtl/cyclic_bram.sv
+      - deepsocflow/rtl/n_delay.sv
+      - deepsocflow/rtl/proc_engine.sv
+      - deepsocflow/rtl/ram.sv
+      - deepsocflow/rtl/axis_pixels.sv
+      - deepsocflow/rtl/axis_weight_rotator.sv
+      - deepsocflow/rtl/counter.sv
+      - deepsocflow/rtl/dma_controller.sv
+      - deepsocflow/rtl/ext/alex_axi_dma_rd.sv
+      - deepsocflow/rtl/ext/alex_axi_dma_wr.sv
+      - deepsocflow/rtl/ext/alex_axilite_ram.sv
+      - deepsocflow/rtl/ext/alex_axilite_rd.sv
+      - deepsocflow/rtl/ext/alex_axilite_wr.sv
+      - deepsocflow/rtl/ext/alex_axis_adapter.sv
+      - deepsocflow/rtl/ext/alex_axis_adapter_any.sv
+      - deepsocflow/rtl/ext/xilinx_sdp.sv
+      - deepsocflow/rtl/ext/arbiter.sv
+      - deepsocflow/rtl/ext/axi_crossbar.sv
+      - deepsocflow/rtl/ext/axi_crossbar_addr.sv
+      - deepsocflow/rtl/ext/axi_crossbar_rd.sv
+      - deepsocflow/rtl/ext/axi_crossbar_wr.sv
+      - deepsocflow/rtl/ext/axi_register_rd.sv
+      - deepsocflow/rtl/ext/axi_register_wr.sv
+      - deepsocflow/rtl/ext/priority_encoder.sv
+      - deepsocflow/rtl/sys/saxi_to_host.sv
+      - deepsocflow/rtl/sys/dev_to_maxil.sv
+      - deepsocflow/rtl/sys/cgra4ml_for_ibex.sv
+      - deepsocflow/rtl/defines.svh: { is_include_file: true }
+      - run/work/config_hw.svh: { is_include_file: true }
+    file_type: systemVerilogSource
+
+  rtl_v:
+    files:
+      - deepsocflow/rtl/sys/top_axi_int.v
+      - deepsocflow/rtl/axi_cgra4ml.v
+    file_type: verilogSource
+
+targets:
+  default:
+    filesets: [rtl_sv, rtl_v]
+    toplevel: cgra4ml

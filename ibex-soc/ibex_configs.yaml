@@ -1,0 +1,194 @@
+# Copyright lowRISC contributors.
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+
+# Ibex named configurations, each configuration must specify the same set of
+# parameters.
+
+# ============================
+# * SUPPORTED CONFIGURATIONS *
+# ============================
+#
+# Supported configurations are those that verification (such as nightly
+# regression) and design effort is focussed on. Currently only the 'opentitan'
+# configuration has nightly regressions but this will be expanded to all
+# supported configurations.
+
+# Two-stage pipeline without additional branch target ALU and 3 cycle multiplier
+# (4 cycles for mulh), resulting in 2 stall cycles for mul (3 for mulh)
+small:
+  RV32E                    : 0
+  RV32M                    : "ibex_pkg::RV32MFast"
+  RV32B                    : "ibex_pkg::RV32BNone"
+  RegFile                  : "ibex_pkg::RegFileFF"
+  BranchTargetALU          : 0
+  WritebackStage           : 0
+  ICache                   : 0
+  ICacheECC                : 0
+  ICacheScramble           : 0
+  BranchPredictor          : 0
+  DbgTriggerEn             : 0
+  SecureIbex               : 0
+  PMPEnable                : 0
+  PMPGranularity           : 0
+  PMPNumRegions            : 4
+  MHPMCounterNum           : 0
+  MHPMCounterWidth         : 40
+
+# Configuration to match that used in the OpenTitan project
+opentitan:
+  RV32E                    : 0
+  RV32M                    : "ibex_pkg::RV32MSingleCycle"
+  RV32B                    : "ibex_pkg::RV32BOTEarlGrey"
+  RegFile                  : "ibex_pkg::RegFileFF"
+  BranchTargetALU          : 1
+  WritebackStage           : 1
+  ICache                   : 1
+  ICacheECC                : 1
+  ICacheScramble           : 1
+  BranchPredictor          : 0
+  DbgTriggerEn             : 1
+  SecureIbex               : 1
+  PMPEnable                : 1
+  PMPGranularity           : 0
+  PMPNumRegions            : 16
+  MHPMCounterNum           : 10
+  MHPMCounterWidth         : 32
+
+# Three-stage pipeline with additional branch traget ALU and 1 cycle multiplier
+# (2 cycles for mulh) so mul does not stall (mulh stall 1 cycles). This is the
+# maximum performance configuration ignoring the branch predictor (which isn't
+# yet fully verified)
+maxperf:
+  RV32E                    : 0
+  RV32M                    : "ibex_pkg::RV32MSingleCycle"
+  RV32B                    : "ibex_pkg::RV32BNone"
+  RegFile                  : "ibex_pkg::RegFileFF"
+  BranchTargetALU          : 1
+  WritebackStage           : 1
+  ICache                   : 0
+  ICacheECC                : 0
+  ICacheScramble           : 0
+  BranchPredictor          : 0
+  DbgTriggerEn             : 0
+  SecureIbex               : 0
+  PMPEnable                : 0
+  PMPGranularity           : 0
+  PMPNumRegions            : 4
+  MHPMCounterNum           : 0
+  MHPMCounterWidth         : 40
+
+# maxperf config above with balanced bitmanip extension and PMP
+maxperf-pmp-bmbalanced:
+  RV32E                    : 0
+  RV32M                    : "ibex_pkg::RV32MSingleCycle"
+  RV32B                    : "ibex_pkg::RV32BBalanced"
+  RegFile                  : "ibex_pkg::RegFileFF"
+  BranchTargetALU          : 1
+  WritebackStage           : 1
+  ICache                   : 0
+  ICacheECC                : 0
+  ICacheScramble           : 0
+  BranchPredictor          : 0
+  DbgTriggerEn             : 0
+  SecureIbex               : 0
+  PMPEnable                : 1
+  PMPGranularity           : 0
+  PMPNumRegions            : 16
+  MHPMCounterNum           : 0
+  MHPMCounterWidth         : 40
+
+# ========================
+# * OTHER CONFIGURATIONS *
+# ========================
+
+# Configurations that may be useful but aren't supported configurations.
+
+# maxperf config above plus PMP enabled with 16 regions.
+maxperf-pmp:
+  RV32E                    : 0
+  RV32M                    : "ibex_pkg::RV32MSingleCycle"
+  RV32B                    : "ibex_pkg::RV32BNone"
+  RegFile                  : "ibex_pkg::RegFileFF"
+  BranchTargetALU          : 1
+  WritebackStage           : 1
+  ICache                   : 0
+  ICacheECC                : 0
+  ICacheScramble           : 0
+  BranchPredictor          : 0
+  DbgTriggerEn             : 0
+  SecureIbex               : 0
+  PMPEnable                : 1
+  PMPGranularity           : 0
+  PMPNumRegions            : 16
+  MHPMCounterNum           : 0
+  MHPMCounterWidth         : 40
+
+
+# maxperf-pmp config above with full bitmanip extension
+maxperf-pmp-bmfull:
+  RV32E                    : 0
+  RV32M                    : "ibex_pkg::RV32MSingleCycle"
+  RV32B                    : "ibex_pkg::RV32BFull"
+  RegFile                  : "ibex_pkg::RegFileFF"
+  BranchTargetALU          : 1
+  WritebackStage           : 1
+  ICache                   : 0
+  ICacheECC                : 0
+  ICacheScramble           : 0
+  BranchPredictor          : 0
+  DbgTriggerEn             : 0
+  SecureIbex               : 0
+  PMPEnable                : 1
+  PMPGranularity           : 0
+  PMPNumRegions            : 16
+  MHPMCounterNum           : 0
+  MHPMCounterWidth         : 40
+
+# maxperf-pmp-bmfull config above with icache enabled
+maxperf-pmp-bmfull-icache:
+  RV32E                    : 0
+  RV32M                    : "ibex_pkg::RV32MSingleCycle"
+  RV32B                    : "ibex_pkg::RV32BFull"
+  RegFile                  : "ibex_pkg::RegFileFF"
+  BranchTargetALU          : 1
+  WritebackStage           : 1
+  ICache                   : 1
+  ICacheECC                : 1
+  ICacheScramble           : 0
+  BranchPredictor          : 0
+  DbgTriggerEn             : 0
+  SecureIbex               : 0
+  PMPEnable                : 1
+  PMPGranularity           : 0
+  PMPNumRegions            : 16
+  MHPMCounterNum           : 0
+  MHPMCounterWidth         : 40
+
+
+# ===============================
+# * EXPERIMENTAL CONFIGURATIONS *
+# ===============================
+
+# Configurations using experimental features that aren't yet verified and/or
+# known to have issues.
+
+experimental-branch-predictor:
+  RV32E                    : 0
+  RV32M                    : "ibex_pkg::RV32MSingleCycle"
+  RV32B                    : "ibex_pkg::RV32BNone"
+  RegFile                  : "ibex_pkg::RegFileFF"
+  BranchTargetALU          : 1
+  WritebackStage           : 1
+  ICache                   : 0
+  ICacheECC                : 0
+  ICacheScramble           : 0
+  BranchPredictor          : 1
+  DbgTriggerEn             : 0
+  SecureIbex               : 0
+  PMPEnable                : 0
+  PMPGranularity           : 0
+  PMPNumRegions            : 4
+  MHPMCounterNum           : 0
+  MHPMCounterWidth         : 40
+

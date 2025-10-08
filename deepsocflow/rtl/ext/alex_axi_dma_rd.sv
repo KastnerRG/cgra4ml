@@ -27,7 +27,7 @@ THE SOFTWARE.
 `resetall
 `timescale 1ns / 1ps
 
-`include "../defines.svh"
+`include "defines.svh"
 
 /*
  * AXI4 DMA

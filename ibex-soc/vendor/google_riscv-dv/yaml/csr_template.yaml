@@ -1,0 +1,120 @@
+# Copyright 2019 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#
+# Base CSR template that should be followed when describing all processor supported CSRs to enable correct generation of directed test sequences
+#- csr: CSR_NAME
+#  description: >
+#    BRIEF_DESCRIPTION
+#  address: 0x###
+#  privilege_mode: MODE (D/M/S/H/U)
+#  rv32:
+#    - MSB_FIELD_NAME:
+#      - description: >
+#          BRIEF_DESCRIPTION
+#      - type: TYPE (WPRI/WLRL/WARL/R)
+#      - reset_val: RESET_VAL
+#      - msb: MSB_POS
+#      - lsb: LSB_POS
+#    - ...
+#    - ...
+#    - LSB_FIELD_NAME:
+#      - description: ...
+#      - type: ...
+#      - ...
+#  rv64:
+#    - MSB_FIELD_NAME:
+#      - description: >
+#          BRIEF_DESCRIPTION
+#      - type: TYPE (WPRI/WLRL/WARL/R)
+#      - reset_val: RESET_VAL
+#      - msb: MSB_POS
+#      - lsb: LSB_POS
+#    - ...
+#    - ...
+#    - LSB_FIELD_NAME:
+#      - description: ...
+#      - type: ...
+#      - ...
+# For WARL fields an additional 'warl_legalize' option can be added. This
+# provides a fragment of python in a string. This python transforms values into
+# legal values for that field. The 'val_in' variable contains the value to
+# legalize and 'val_out' should be written with the legalized value. 'val_orig'
+# contains the value that is currently in the CSR. See the examples below.
+
+
+# Example template, using the CSR misa
+# Note: assume the processor supports only the RISC-V I/C extensions
+- csr: misa
+  description: >
+    Machine ISA Register
+  address: 0x301
+  privilege_mode: M
+  rv32:
+    - field_name: MXL
+      description: >
+        Encodes native base ISA width
+      type: WARL
+      reset_val: 1
+      msb: 31
+      lsb: 30
+    - field_name: Extensions
+      description: >
+          Encodes all supported ISA extensions
+      type: WARL
+      reset_val: 0x104
+      msb: 25
+      lsb: 0
+      warl_legalize: |
+        # I bit remains 1, C bit can be toggled, all other bits are 0
+        val_out = (val_in & 0x4) | 0x100
+  rv64:
+    - field_name: MXL
+      description: >
+        Encodes native base ISA width
+      type: WARL
+      reset_val: 2
+      msb: 63
+      lsb: 62
+    - field_name: Extensions
+      description: >
+        Encodes all supported ISA extensions
+      type: WARL
+      reset_val: 0x104
+      msb: 25
+      lsb: 0
+      warl_legalize: |
+        # I bit remains 1, C bit can be toggled, all other bits are 0
+        val_out = (val_in & 0x4) | 0x100
+
+- csr: mwarlexample
+  description: >
+    Example of WARL field
+  address: 0x100
+  privilege_mode: M
+  rv32:
+    - field_name: WARLTest
+      description: >
+        Demonstrates more advanced WARL legalization
+      type: WARL
+      reset_val: 0xf
+      msb: 31
+      lsb: 0
+      warl_legalize: |
+        # Top 16 bits can be any value, bottom 16 bits can only be 0xf000 or
+        # 0x000f retain existing bottom bits if new value isn't legal
+        bottom_half = val_in & 0xffff
+        if bottom_half != 0x000f and bottom_half != 0xf000:
+          bottom_half = val_orig & 0xffff
+        val_out = (val_in & 0xffff0000) | bottom_half
