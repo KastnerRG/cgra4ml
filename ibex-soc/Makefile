@@ -18,9 +18,12 @@ print:
 wave:
 	gtkwave sim.fst &
 
+# 	srec_cat ../run/work/vectors/wbx.bin -binary -offset 0x1000 -o wbx.vmem -vmem 32
 run: sw-simple-hello | $(Vibex_simple_system)
+	srec_cat ../run/work/vectors/wbx.bin -binary -offset 0x1000 -o wbx.vmem -vmem 8
 	build/lowrisc_ibex_ibex_simple_system_0/sim-verilator/Vibex_simple_system -t \
-		--raminit=$(simple-system-program)
+		--meminit=ram,$(simple-system-program) \
+		--meminit=ram,wbx.vmem
 	cat ibex_simple_system.log
 
 build:
@@ -35,6 +38,7 @@ $(simple-system-program): $(SYSTEM_DIR)/hello_test.c $(SYSTEM_DIR)/sa.h
 run-clean:
 	$(MAKE) -C $(SYSTEM_DIR) clean
 	rm -f ibex_simple_system.log
+	rm -f wbx.vmem
 
 .PHONY: build $(simple-system-program) run print
 
@@ -119,3 +123,5 @@ python-lint:
 clean:
 	rm -rf build
 	$(MAKE) -C examples/sw/simple_system/hello_test clean
+	rm -f ibex_simple_system.log
+	rm -f wbx.vmem

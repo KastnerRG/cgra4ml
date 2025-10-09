@@ -6,8 +6,12 @@
 #include <stdarg.h>
 #include <stdint.h>
 
+#define MEM_BASEADDR 0x00104000
 #include "firmware_helpers.h"
 #include "runtime.h"
+
+volatile uint32_t * const p_config = (volatile uint32_t *)CONFIG_BASEADDR;
+Memory_st *p_mem = &mem_phy;
 
 int main(int argc, char **argv) {
   pcount_enable(0);
@@ -17,10 +21,6 @@ int main(int argc, char **argv) {
   puts("\n\nHello from Ibex!\n\n"); 
   printf("Welcome to CGRA4ML!\n Store wbx at: %p; y:%p; buffers {0:%p,1:%p};\n", &p_mem->w, &p_mem->y, &p_mem->out_buffers[0], &p_mem->out_buffers[1]);
 
-  volatile uint32_t * const p_config = (volatile uint32_t *)CONFIG_BASEADDR;
-  Memory_st *p_mem = &mem_phy;
-  
-
   // Test read/write to config regs
   volatile uint32_t * const p_addr = &p_config[A_WEIGHTS_BASE];
   puts("Addr:"); puthex((uintptr_t)p_addr); putchar('\n');
@@ -29,7 +29,15 @@ int main(int argc, char **argv) {
   uint32_t val = *p_addr;
   puts("Val:"); puthex(val); putchar('\n');
 
-  // // Run the test
+  volatile uint32_t *p = (volatile uint32_t *)MEM_BASEADDR;
+  for (int i = 0; i < 10; ++i) {
+    puthex((uint32_t)(uintptr_t)(p + i));
+    putchar(':'); putchar(' ');
+    puthex(p[i]);
+    putchar('\n');
+  }
+
+  // Run the test
   // model_setup((void*)p_mem, (void*)p_config);
   // model_run((void*)p_mem, (void*)p_config);    // run model and measure time
   // print_output(p_mem);
