@@ -49,16 +49,17 @@ typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 #endif
 
 typedef struct {
-  // These are written often, keep them on OCM
-  Y_TYPE ocm            [2][PE_COLS*PE_ROWS];
-  i32    nhwc           [NHWC_WORDS  ];
-  i8     out_buffers    [N_OUT_BUF   ][O_BYTES_MAX ];
   // These can be kept in DDR
   i8     w              [W_BYTES     ];
   B_TYPE b              [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
   i8     x              [X_BYTES     ]; // keep next to wb. wbx is loaded to w_ptr
   O_TYPE y              [O_WORDS     ];
-
+  
+  // These are written often, keep them on OCM
+  Y_TYPE ocm            [2][PE_COLS*PE_ROWS];
+  i32    nhwc           [NHWC_WORDS  ];
+  i8     out_buffers    [N_OUT_BUF   ][O_BYTES_MAX ];
+  
 #ifdef XDEBUG
   i8     debug_tiled    [O_WORDS_MAX ];
   i32    debug_nhwc     [NHWC_WORDS  ];
@@ -116,7 +117,7 @@ typedef struct {
   #define assert_printf(v1, op, v2, optional_debug_info,...) ((v1  op v2) || (debug_printf("ASSERT FAILED: \n CONDITION: "), debug_printf("( " #v1 " " #op " " #v2 " )"), debug_printf(", VALUES: ( %d %s %d ), ", v1, #op, v2), debug_printf("DEBUG_INFO: " optional_debug_info), debug_printf(" " __VA_ARGS__), debug_printf("\n\n"), assert(v1 op v2), 0))
 #else
   #define assert_printf(...)
-  #define debug_printf(...)
+  // #define debug_printf(...)
 #endif
 
 

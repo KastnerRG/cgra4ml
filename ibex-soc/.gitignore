@@ -8,6 +8,8 @@ build
 .sw[a-p]
 tags
 *~
+*.elf
+*.vmem
 
 # ibex_tracer log file
 trace_core_*.log

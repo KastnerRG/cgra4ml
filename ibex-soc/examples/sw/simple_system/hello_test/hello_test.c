@@ -6,6 +6,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 
+#define debug_printf printf
 #define MEM_BASEADDR 0x00104000
 #include "firmware_helpers.h"
 #include "runtime.h"
@@ -30,8 +31,8 @@ int main(int argc, char **argv) {
   puts("Val:"); puthex(val); putchar('\n');
 
   volatile uint32_t *p = (volatile uint32_t *)MEM_BASEADDR;
-  for (int i = 0; i < 10; ++i) {
-    puthex((uint32_t)(uintptr_t)(p + i));
+  for (int i = 0; i < 32; ++i) {
+    puthex((uint32_t)(p + i));
     putchar(':'); putchar(' ');
     puthex(p[i]);
     putchar('\n');
