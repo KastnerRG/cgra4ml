@@ -6,9 +6,6 @@ description: CGRA4ML for Ibex
 filesets:
   rtl_sv:
     files:
-      - deepsocflow/test/sv/ext/axi_addr.v
-      - deepsocflow/test/sv/ext/skidbuffer.v
-      - deepsocflow/test/sv/ext/zipcpu_axi2ram.v
       - deepsocflow/rtl/dnn_engine.v
       - deepsocflow/rtl/ext/alex_axis_pipeline_register.v
       - deepsocflow/rtl/ext/alex_axis_register.v

@@ -369,12 +369,12 @@ def verify_inference(model, hw, SIM, SIM_PATH='', TRACE=False):
         if (ib == len(BUNDLES)-1):
             if b.softmax:
                 y_tiled_exp = b.out.ftensor.numpy().reshape(1,b.r.XN,1,b.r.CO)
-                y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.ib}_y_tiled_sim.txt", np.float32).reshape(y_tiled_exp.shape)/100000
+                y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.ib}_y_tiled_sim.txt", np.float32).reshape(y_tiled_exp.shape)/2**17
                 error = np.max(np.abs(y_tiled_sim-y_tiled_exp))
                 assert np.allclose(y_tiled_sim, y_tiled_exp, atol=0.5), f"Error={error}, \nsub:\n{y_tiled_sim-y_tiled_exp} for y_tiled_sim at {b.ib=}. \n y_tiled_sim=\n{y_tiled_sim} \n y_tiled_exp=\n{y_tiled_exp}\n \npre_softmax=\n{b.pre_softmax}"
             else:
                 y_tiled_exp = b.o_int
-                y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.ib}_y_tiled_sim.txt", np.float32).reshape(y_tiled_exp.shape)/100000
+                y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.ib}_y_tiled_sim.txt", np.float32).reshape(y_tiled_exp.shape)/2**17
                 error = np.sum(np.abs(y_tiled_sim-y_tiled_exp))
                 assert error == 0, f"Error={error}, for y_tiled_sim at {b.ib=}"
         else:

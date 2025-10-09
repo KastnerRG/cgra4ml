@@ -402,7 +402,7 @@ DMA_WAIT:
 
                       f32 val = (f32)out_val;
                       val = val / (f32)(1 << pb->softmax_frac);
-                      val = val - ((f32)pb->softmax_max_i)/100000;
+                      val = val - ((f32)pb->softmax_max_i)/(1 << 17);
                       val = (f32)exp(val);
                       mp->y[iy_nhwc] = val;
 
@@ -523,7 +523,7 @@ PROCESS_AND_STORE_DONE:
     sprintf(f_path_tiled, "%s/%0d_y_tiled_sim.txt", DATA_DIR, ib);
     FILE *fp_tiled = fopen(f_path_tiled, "w");
     for (i32 i=0; i<pb->o_words; i++)
-      if (ib == N_BUNDLES-1) sim_fprintf(fp_tiled,"%d\n", (i32)(100000 * mp->y[i]));
+      if (ib == N_BUNDLES-1) sim_fprintf(fp_tiled,"%d\n", (i32)(mp->y[i] * (1 << 17)));
       else sim_fprintf(fp_tiled,"%d\n", mp->debug_tiled[i]);
     fclose(fp_tiled);
 
