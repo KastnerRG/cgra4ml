@@ -623,8 +623,9 @@ extern EXT_C void model_setup(Memory_st *restrict mp, void *p_config) {
     assert_printf(bundles[var].p, <, 1<<16, "", "P should be less than 2**16 for bundle:%x", var);
     assert_printf(bundles[var].t, <, 1<<16, "", "T should be less than 2**16 for bundle:%x", var);
     parameters[8*var+5] = (bundles[var].t << 16) + bundles[var].p; // max p
-    parameters[8*var+6] = ((u32*)&bundles[var].header)[0];
-    parameters[8*var+7] = ((u32*)&bundles[var].header)[1];
+    uint64_t h = bundles[var].header;
+    parameters[8*var + 6] = (uint32_t)(h & 0xFFFFFFFFu);
+    parameters[8*var + 7] = (uint32_t)(h >> 32);
   }
   for (int var = 0; var < 8*N_BUNDLES; var++){
     set_config(p_config, 16+var, parameters[var]);
