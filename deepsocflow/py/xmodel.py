@@ -224,7 +224,7 @@ def export_inference(model, hw, batch_size=1):
             ch.write(     f".is_bias={1*(b.core.b is not None):<3}, .is_flatten={1*(b.flatten is not None):<3}, .is_softmax={1*(b.softmax is not None):<3}, ")
             ch.write(     f".x_pad={b.r.X_PAD:<3}, .b_val_shift={b.core.bias_val_shift:<3}, .b_bias_shift={b.core.bias_b_shift:<3}, .ca_nzero={ca_nzero:<3}, .ca_shift={ca_shift:<3}, .ca_pl_scale={ca_pl_scale:<3}, .aa_nzero={aa_nzero:<3}, .aa_shift={aa_shift:<3}, .aa_pl_scale={aa_pl_scale:<3}, .pa_nzero={pa_nzero:<3}, .pa_shift={pa_shift:<3}, .pa_pl_scale={pa_pl_scale:<3}, .softmax_frac={b.softmax_frac:<3}, ")
             ch.write(     f".csh={b.r.CSH:<3}, .csh_shift={b.r.CSH_SHIFT:<3}, .psh_shift={b.r.PSH_SHIFT:<3}, .csw={b.r.CSW:<3}, .csw_shift={b.r.CSW_SHIFT:<3}, .psw_shift={b.r.PSW_SHIFT:<3}, .pool={pool_type:<10}, ")
-            ch.write(     f".softmax_max_f={b.softmax_max_f:<15}, ")
+            ch.write(     f".softmax_max_i={b.softmax_max_i:<15}, ")
             ch.write(     f".header={b.r.header:>23}u, ")
             ch.write(     f".debug_nhwc_words={b.oe_exp_nhwc.size:<9} }}")
             
@@ -369,12 +369,12 @@ def verify_inference(model, hw, SIM, SIM_PATH='', TRACE=False):
         if (ib == len(BUNDLES)-1):
             if b.softmax:
                 y_tiled_exp = b.out.ftensor.numpy().reshape(1,b.r.XN,1,b.r.CO)
-                y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.ib}_y_tiled_sim.txt", np.float32).reshape(y_tiled_exp.shape)
+                y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.ib}_y_tiled_sim.txt", np.float32).reshape(y_tiled_exp.shape)/100000
                 error = np.max(np.abs(y_tiled_sim-y_tiled_exp))
                 assert np.allclose(y_tiled_sim, y_tiled_exp, atol=0.5), f"Error={error}, \nsub:\n{y_tiled_sim-y_tiled_exp} for y_tiled_sim at {b.ib=}. \n y_tiled_sim=\n{y_tiled_sim} \n y_tiled_exp=\n{y_tiled_exp}\n \npre_softmax=\n{b.pre_softmax}"
             else:
                 y_tiled_exp = b.o_int
-                y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.ib}_y_tiled_sim.txt", np.float32).reshape(y_tiled_exp.shape)
+                y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.ib}_y_tiled_sim.txt", np.float32).reshape(y_tiled_exp.shape)/100000
                 error = np.sum(np.abs(y_tiled_sim-y_tiled_exp))
                 assert error == 0, f"Error={error}, for y_tiled_sim at {b.ib=}"
         else:

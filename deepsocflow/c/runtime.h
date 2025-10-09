@@ -15,8 +15,6 @@ typedef uint8_t  u8 ;
 typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
-typedef float    f32;
-typedef double   f64;
 
 typedef struct { int quot; int rem; } idiv_t;
 static inline idiv_t idiv(int numer, int denom) {
@@ -33,7 +31,7 @@ typedef const struct {
   const i8   is_bias, is_pool, is_flatten, is_softmax;
   const i8   x_pad, b_val_shift, b_bias_shift, ca_nzero, ca_shift, ca_pl_scale, aa_nzero, aa_shift, aa_pl_scale, pa_nzero, pa_shift, pa_pl_scale, softmax_frac;
   const i8   csh, csh_shift, psh_shift, csw, csw_shift, psw_shift, pool;
-  const f32  softmax_max_f;
+  const i32  softmax_max_i;
   const u64  header;
   const i32  debug_nhwc_words;
 } Bundle_t;
@@ -42,6 +40,7 @@ typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 
 #include "config_fw.h"
 
+#define f32 O_TYPE
 #define X_BITS            (1 << X_BITS_L2)
 #define X_WORDS_PER_BYTE  (8 / X_BITS)
 #define X_BITS_MASK       ((1 << X_BITS) -1)
@@ -403,7 +402,7 @@ DMA_WAIT:
 
                       f32 val = (f32)out_val;
                       val = val / (f32)(1 << pb->softmax_frac);
-                      val = val - pb->softmax_max_f;
+                      val = val - ((f32)pb->softmax_max_i)/100000;
                       val = (f32)exp(val);
                       mp->y[iy_nhwc] = val;
 
@@ -524,9 +523,7 @@ PROCESS_AND_STORE_DONE:
     sprintf(f_path_tiled, "%s/%0d_y_tiled_sim.txt", DATA_DIR, ib);
     FILE *fp_tiled = fopen(f_path_tiled, "w");
     for (i32 i=0; i<pb->o_words; i++)
-      if (ib == N_BUNDLES-1)
-        if (pb->is_softmax) sim_fprintf(fp_tiled,"%f\n", (f32  )mp->y[i]);
-        else                sim_fprintf(fp_tiled,"%d\n", (i32)mp->y[i]);
+      if (ib == N_BUNDLES-1) sim_fprintf(fp_tiled,"%d\n", (i32)(100000 * mp->y[i]));
       else sim_fprintf(fp_tiled,"%d\n", mp->debug_tiled[i]);
     fclose(fp_tiled);
 
@@ -637,6 +634,7 @@ extern EXT_C void model_setup(Memory_st *restrict mp, void *p_config) {
 extern EXT_C void print_output (Memory_st *restrict mp) {
   flush_cache(mp->y, sizeof(mp->y));
   for (int i=0; i<O_WORDS; i++){
-    printf("y[%d]: %f \n", i, (float)mp->y[i]);
+    int val_1000 = (int)(1000 * mp->y[i]);
+    printf("y[%d]: %d/1000 \n", i, val_1000);
   }
 }
