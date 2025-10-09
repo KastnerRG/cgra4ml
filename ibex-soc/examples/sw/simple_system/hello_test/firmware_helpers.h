@@ -74,48 +74,7 @@ static inline void __assert_fail(const char* expr, const char* file, int line){
 
 static inline void flush_cache(void *addr, uint32_t bytes) {} // Do nothing
 
-static inline int64_t exp(int64_t x)
-{
-    // /* Constants for range reduction: x ≈ k*ln2 + r */
-    // const double INV_LN2 = 1.4426950408889634073599;   /* 1/ln(2) */
-    // const double LN2     = 0.6931471805599453094172;   /* ln(2)   */
-
-    // /* Compute k = round(x / ln2) without <math.h> */
-    // int k;
-    // if (x >= 0.0) k = (int)(x * INV_LN2 + 0.5);
-    // else          k = (int)(x * INV_LN2 - 0.5);
-
-    // /* Reduced argument r = x - k*ln(2) (single-constant version is fine here) */
-    // double r = x - (double)k * LN2;
-
-    // /* 5th-order Taylor for exp(r):
-    //    e^r ≈ 1 + r + r^2/2! + r^3/3! + r^4/4! + r^5/5!
-    //    Horner form for fewer mults. */
-    // double p = 1.0 +
-    //            r * (1.0 +
-    //            r * (0.5 +
-    //            r * (1.0/6.0 +
-    //            r * (1.0/24.0 +
-    //            r * (1.0/120.0)))));
-
-    // /* Scale by 2^k using multiplies/divides only (no ldexp/scalbn). */
-    // if (k > 0) {
-    //     /* jump in chunks to keep loop short */
-    //     while (k >= 16) { p *= 65536.0; k -= 16; }
-    //     while (k--)     { p *= 2.0; }
-    // } else if (k < 0) {
-    //     while (k <= -16) { p *= 1.0/65536.0; k += 16; }
-    //     while (k++)      { p *= 0.5; }
-    // }
-    // return p;
-    return 0;
-}
-
-typedef struct { int quot; int rem; } div_t;
-
-static inline div_t div(int numer, int denom) {
-    div_t r; r.quot = numer / denom; r.rem = numer % denom; return r;
-}
+static inline int32_t exp(int32_t x) { return x; } // Exp is only used in softmax. We run models without softmax in ibex
 
 static inline int abs(int x) { return x < 0 ? -x : x; }
 
