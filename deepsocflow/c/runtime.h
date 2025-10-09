@@ -96,11 +96,11 @@ typedef struct {
 #else
   #define sim_fprintf(...)
 
-  #ifdef RISCV
-    Memory_st mem_phy;
-  #else
+  // #ifdef RISCV
+  //   Memory_st mem_phy;
+  // #else
     #define mem_phy (*(Memory_st* restrict)MEM_BASEADDR)
-  #endif
+  // #endif
 
   inline volatile u32 get_config(void *config_base, u32 offset){
     return *(volatile u32 *)(config_base + offset*4);
