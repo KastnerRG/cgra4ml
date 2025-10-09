@@ -3,8 +3,8 @@
                     
 `define OR_NEGEDGE(RSTN)    or negedge RSTN
 
-`define ROWS                7           // PE rows, constrained by resources
-`define COLS                96          // PE cols, constrained by resources
+`define ROWS                8           // PE rows, constrained by resources
+`define COLS                12          // PE cols, constrained by resources
 `define X_BITS              4           // Bits per word in input
 `define K_BITS              4           // Bits per word in input
 `define Y_BITS              20          // Bits per word in output of conv
