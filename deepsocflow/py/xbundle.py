@@ -28,7 +28,7 @@ class XBundle(Layer):
         self.softmax = Activation("softmax") if softmax else None
 
         self.out = XTensor(None, None, float_only=True)
-        self.softmax_max_f = 0
+        self.softmax_max_i = 0
         self.softmax_frac = 0
 
         self.ib = None
@@ -99,8 +99,9 @@ class XBundle(Layer):
             self.pre_softmax = deepcopy(out)
             self.softmax_frac = out.frac
             softmax_out = out.ftensor.numpy().astype(np.float32)
-            self.softmax_max_f = softmax_out.max()
-            exp = np.exp(softmax_out - self.softmax_max_f).astype(np.float32)
+            factor = 100000
+            self.softmax_max_i = int(softmax_out.max()*factor)
+            exp = np.exp(softmax_out - self.softmax_max_i/factor).astype(np.float32)
             softmax_out = exp/np.sum(exp, axis=1, dtype=np.float32)[0]
 
             assert np.all(np.argmax(self.out.ftensor, axis=-1) == np.argmax(softmax_out, axis=-1)), \

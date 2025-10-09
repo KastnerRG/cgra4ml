@@ -99,7 +99,7 @@ class UserModel(XModel):
             core=XDense(
                 k_int_bits=0, b_int_bits=0, units=NB_CLASSES, use_bias=False,
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type=None),),
-            softmax=True
+            softmax=False
         )
 
     def call (self, x):
