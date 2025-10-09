@@ -99,7 +99,7 @@ class XBundle(Layer):
             self.pre_softmax = deepcopy(out)
             self.softmax_frac = out.frac
             softmax_out = out.ftensor.numpy().astype(np.float32)
-            factor = 100000
+            factor = 2**17
             self.softmax_max_i = int(softmax_out.max()*factor)
             exp = np.exp(softmax_out - self.softmax_max_i/factor).astype(np.float32)
             softmax_out = exp/np.sum(exp, axis=1, dtype=np.float32)[0]
