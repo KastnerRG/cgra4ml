@@ -2,8 +2,8 @@
 # Written from Hardware.export()
 
 set FREQ               150
-set ROWS               7
-set COLS               96
+set ROWS               8
+set COLS               12
 set X_BITS             4
 set K_BITS             4
 set Y_BITS             20

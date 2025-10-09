@@ -1,7 +1,7 @@
 {
     "processing_elements": [
-        7,
-        96
+        8,
+        12
     ],
     "frequency_mhz": 150,
     "bits_input": 4,
