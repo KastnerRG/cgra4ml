@@ -39,9 +39,9 @@ int main(int argc, char **argv) {
   }
 
   // Run the test
-  // model_setup((void*)p_mem, (void*)p_config);
-  // model_run((void*)p_mem, (void*)p_config);    // run model and measure time
-  // print_output(p_mem);
+  model_setup((void*)p_mem, (void*)p_config);
+  model_run((void*)p_mem, (void*)p_config);    // run model and measure time
+  print_output(p_mem);
 
   pcount_enable(0);
   return 0;
