@@ -191,6 +191,7 @@ def product_dict(**kwargs):
                                         ram_edges_depth      = [ 3584    ],
                                         axi_width            = [ 32      ],
                                         config_baseaddr      = ["40000"  ],
+                                        axi_max_burst_len    = [ 1       ],
                                         target_cpu_int_bits  = [ 32      ],
                                         valid_prob           = [ 1       ],
                                         ready_prob           = [ 1       ],

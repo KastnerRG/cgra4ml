@@ -136,6 +136,8 @@ module alex_axi_dma_rd #
     input  wire                       enable
 );
 
+initial $display("%m AXI_MAX_BURST_LEN=%0d", AXI_MAX_BURST_LEN);
+
 localparam AXI_WORD_WIDTH = AXI_STRB_WIDTH;
 localparam AXI_WORD_SIZE = AXI_DATA_WIDTH/AXI_WORD_WIDTH;
 localparam AXI_BURST_SIZE = $clog2(AXI_STRB_WIDTH);

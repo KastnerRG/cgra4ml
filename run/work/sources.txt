@@ -21,6 +21,7 @@
 /mnt/d/dnn-engine/deepsocflow/rtl/n_delay.sv
 /mnt/d/dnn-engine/deepsocflow/rtl/proc_engine.sv
 /mnt/d/dnn-engine/deepsocflow/rtl/ram.sv
+/mnt/d/dnn-engine/deepsocflow/rtl/skid_buffer.sv
 /mnt/d/dnn-engine/deepsocflow/rtl/ext/alex_axilite_ram.sv
 /mnt/d/dnn-engine/deepsocflow/rtl/ext/alex_axilite_rd.sv
 /mnt/d/dnn-engine/deepsocflow/rtl/ext/alex_axilite_wr.sv

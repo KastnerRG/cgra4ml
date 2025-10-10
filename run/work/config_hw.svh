@@ -27,5 +27,5 @@
 
 `define AXI_WIDTH           32        
 `define HEADER_WIDTH        64        
-`define AXI_MAX_BURST_LEN   16        
+`define AXI_MAX_BURST_LEN   1         
 `define CONFIG_BASEADDR     32'h40000     
