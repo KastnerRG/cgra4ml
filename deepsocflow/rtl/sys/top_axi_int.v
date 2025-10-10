@@ -11,7 +11,6 @@ module top_axi_int #(
       AXI_ID_WIDTH            = 6,
       DMA_ID_WIDTH            = 6-$clog2(4),
       AXI_STRB_WIDTH          = (AXI_WIDTH/8),
-      AXI_MAX_BURST_LEN       = 32,
       AXI_ADDR_WIDTH          = 32,
       AXIS_USER_WIDTH         = 8,         
       // AXI-Lite
