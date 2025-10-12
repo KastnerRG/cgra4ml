@@ -17,7 +17,7 @@ import pprint
 
 from deepsocflow import *
 
-(SIM, SIM_PATH) = ('xsim', "F:/Xilinx/Vivado/2022.2/bin/") if os.name=='nt' else ('vcs', '')
+(SIM, SIM_PATH) = ('xsim', "F:/Xilinx/Vivado/2022.2/bin/") if os.name=='nt' else ('verilator', '')
 
 '''
 Dataset

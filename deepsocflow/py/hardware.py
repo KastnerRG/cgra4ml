@@ -109,41 +109,9 @@ class Hardware:
 
         self.MODULE_DIR = os.path.normpath(os.path.dirname(deepsocflow.__file__)).replace('\\', '/')
         self.TB_MODULE = "axi_sys_tb"
-        # Clean this after PnR
-        #self.SOURCES = glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + glob.glob(f'{self.MODULE_DIR}/test/sv/**/*.v') + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.v", recursive=True) + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.sv", recursive=True) + glob.glob(f"{os.getcwd()}/*.svh")
+        self.SOURCES = glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + glob.glob(f'{self.MODULE_DIR}/test/sv/**/*.v') + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.v", recursive=True) + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.sv", recursive=True) + glob.glob(f"{os.getcwd()}/*.svh")
         self.DATA_DIR = data_dir
 
-        ########################
-        self.TB_C_SIM = glob.glob(f'{self.MODULE_DIR}/c/sim.c')
-        self.TB_C_HEADER = glob.glob(f'{self.MODULE_DIR}/c')
-        self.INC_DIR_DEFINE = glob.glob(f'{self.MODULE_DIR}/rtl')
-        self.INC_DIR_CONFIG = "../"
-        self.INC_DIR_SRAMS = "../../asic/srams/"
-        self.INC_DIR_SDF = "../../asic/outputs/"
-
-        self.SOURCES = glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_pipeline_register.v") + \
-        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_register.v") + \
-        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axi_dma_rd.sv") + \
-        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axi_dma_wr.sv") + \            
-        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axilite_ram.sv") + \
-        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axilite_rd.sv") + \
-        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axilite_wr.sv") + \            
-        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_adapter_any.sv") + \
-        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_adapter.sv") + \
-        glob.glob(f"{self.MODULE_DIR}/rtl/ext/xilinx_sdp.sv") + \
-        glob.glob(f"{self.MODULE_DIR}/rtl/ext/xilinx_spwf.sv") + \
-        glob.glob(f'{self.MODULE_DIR}/test/sv/**/*.sv', recursive=True) + \
-        glob.glob(f"{self.MODULE_DIR}/rtl/*.v", recursive=True) + \
-        glob.glob(f"{self.MODULE_DIR}/rtl/*.sv", recursive=True) + \
-        glob.glob(f"{os.getcwd()}/*.svh")
-
-        self.SOURCES_SRAM = ["../../asic/srams/*.v", "../../asic/srams/ram_asic.sv"] + glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.v", recursive=True) + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.sv", recursive=True) + glob.glob(f"{os.getcwd()}/*.svh")
-
-        self.SOURCES_GLS = ["../../asic/srams/*.v", "../../asic/outputs/dnn_engine.pnr.v", "../../asic/pdk/tsmc65lp/verilog/sc12mcpp140z_cln28ht_base_svt_c35.v"] + glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + glob.glob(f"{os.getcwd()}/*.svh")
-
-        self.SOURCE_SDF = "../../asic/outputs/dnn_engine.pnr.sdf"
-        ############################
-        
     def export_json(self, path='./hardware.json'):
         '''
         Exports the hardware parameters to a JSON file.
@@ -261,22 +229,6 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             assert subprocess.run(cmd.split(' '), cwd='build').returncode == 0
         print("\n\nSIMULATING...\n\n")
         start = time.time()
-
-        ################################################
-        if SIM == 'vcs':
-            cmd_c_comp = ["gcc", "-std=c99", "-shared", "-fPIC"] + ["-I" + self.TB_C_HEADER[0]] + ["-I" + "../"] +["-o", "dpi_compiled.so"] + self.TB_C_SIM
-            cmd_vcs = [ "vcs", "-sverilog", "-full64", "-kdb", "-debug_access+all"] + ["+incdir+" + self.INC_DIR_DEFINE[0] + "+" + self.INC_DIR_CONFIG] + ["-top", self.TB_MODULE] + self.SOURCES + ["-l", "VCS_Comp.log"] # RTL Simulation with Raw Ram
-            #cmd_vcs = [ "vcs", "-sverilog", "-full64", "-kdb", "-debug_access+all"] + ["+define+ARM_UD_MODEL+INITIALIZE_MEMORY"] + ["+incdir+" + self.INC_DIR_DEFINE[0] + "+" + self.INC_DIR_CONFIG + "+" + self.INC_DIR_SRAMS] + ["-top", self.TB_MODULE] + self.SOURCES_SRAM + ["-l", "VCS_Comp.log"] #RTL Simulation with Asic SRAMs
-            #cmd_vcs = [ "vcs", "-sverilog", "-full64", "-kdb", "-debug_access+all", "-timescale=1ns/1ps"] + ["+define+ARM_UD_MODEL+INITIALIZE_MEMORY"] + ["+incdir+" + self.INC_DIR_DEFINE[0] + "+" + self.INC_DIR_CONFIG] + ["-top", self.TB_MODULE] + self.SOURCES_GLS + ["-l", "VCS_Comp.log"] # Gate Level Simulation with ARM UD Model
-            #cmd_vcs = [ "vcs", "-sverilog", "-full64", "-kdb", "-debug_access+all", "-timescale=1ns/1ps"]  + ["+define+INITIALIZE_MEMORY"] + ["+incdir+" + self.INC_DIR_DEFINE[0] + "+" + self.INC_DIR_CONFIG + "+" + self.INC_DIR_SDF] + ["-top", self.TB_MODULE] + ["-sdf", "min:dnn_engine:" + self.SOURCE_SDF, "+neg_tchk", "-negdelay"] + self.SOURCES_GLS + ["+sdfverbose", "-l", "VCS_Comp.log"] # Gate Level Simulation with SDF
-            #cmd_vcs = [ "vcs", "-sverilog", "-full64", "-kdb", "-debug_access+all", "-timescale=1ns/1ps"]  + ["+define+INITIALIZE_MEMORY+ARM_POWER_AWARE"] + ["+incdir+" + self.INC_DIR_DEFINE[0] + "+" + self.INC_DIR_CONFIG + "+" + self.INC_DIR_SDF] + ["-top", self.TB_MODULE] + ["-sdf", "typ:dnn_engine:" + self.SOURCE_SDF] + self.SOURCES_GLS + ["+sdfverbose", "-l", "VCS_Comp.log"] # Gate Level Simulation with SDF
-            print(" ".join(cmd_c_comp))
-            assert subprocess.run(cmd_c_comp, cwd="build")
-            print(" ".join(cmd_vcs))
-            assert subprocess.run(cmd_vcs, cwd="build")
-        if SIM == 'vcs':
-            subprocess.run(["./simv", "-l", "VCS_Sim.log", "-sv_lib", "dpi_compiled"], cwd='build')
-        ################################################
 
         if SIM == 'xsim':
             with open('build/xsim_cfg.tcl', 'w') as f:
