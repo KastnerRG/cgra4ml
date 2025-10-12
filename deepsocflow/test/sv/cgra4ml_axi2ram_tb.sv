@@ -11,8 +11,8 @@
 */
 `timescale 1ns/1ps
 `define VERILOG
-`include "../../rtl/defines.svh"
-`include "config_tb.svh"
+// `include "../../rtl/defines.svh"  this need to be removed for vcs
+// `include "config_tb.svh"  this need to be removed for vcs
 `undef  VERILOG
 
 module cgra4ml_axi2ram_tb #(
