@@ -124,10 +124,10 @@ class Hardware:
         self.SOURCES = glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_pipeline_register.v") + \
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_register.v") + \
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axi_dma_rd.sv") + \
-        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axi_dma_wr.sv") + \            
+        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axi_dma_wr.sv") + \
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axilite_ram.sv") + \
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axilite_rd.sv") + \
-        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axilite_wr.sv") + \            
+        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axilite_wr.sv") + \
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_adapter_any.sv") + \
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_adapter.sv") + \
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/xilinx_sdp.sv") + \
@@ -259,8 +259,8 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             cmd = f'{SIM_PATH}verilator --binary -j 0 -O3 {trace} --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -DSIM -CFLAGS -I../ {self.MODULE_DIR}/c/sim.c -CFLAGS -g --Mdir ./'
             print(cmd)
             assert subprocess.run(cmd.split(' '), cwd='build').returncode == 0
-        print("\n\nSIMULATING...\n\n")
-        start = time.time()
+        # print("\n\nSIMULATING...\n\n")
+        # start = time.time()
 
         ################################################
         if SIM == 'vcs':
@@ -274,6 +274,8 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             assert subprocess.run(cmd_c_comp, cwd="build")
             print(" ".join(cmd_vcs))
             assert subprocess.run(cmd_vcs, cwd="build")
+        print("\n\nSIMULATING...\n\n")
+        start = time.time()
         if SIM == 'vcs':
             subprocess.run(["./simv", "-l", "VCS_Sim.log", "-sv_lib", "dpi_compiled"], cwd='build')
         ################################################
