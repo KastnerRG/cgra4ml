@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`include "defines.svh"
+// `include "../defines.svh" this need to be remove for vcs
 
 module n_delay #(
   parameter N = 1,

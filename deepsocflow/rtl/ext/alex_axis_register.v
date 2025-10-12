@@ -26,7 +26,7 @@ THE SOFTWARE.
 
 `timescale 1ns / 1ps
 `define VERILOG
-`include "../defines.svh"
+// `include "../defines.svh" this need to be remove for vcs
 `undef  VERILOG
 
 /*

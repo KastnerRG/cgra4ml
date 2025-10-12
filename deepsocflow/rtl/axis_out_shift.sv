@@ -1,4 +1,4 @@
-`include "defines.svh"
+// `include "../defines.svh" this need to be remove for vcs
 `timescale 1ns/1ps
 module axis_out_shift #(
   parameter ROWS                 = `ROWS                 ,

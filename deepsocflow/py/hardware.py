@@ -121,7 +121,9 @@ class Hardware:
         self.INC_DIR_SRAMS = "../../asic/srams/"
         self.INC_DIR_SDF = "../../asic/outputs/"
 
-        self.SOURCES = glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_pipeline_register.v") + \
+        self.SOURCES = glob.glob(f"{os.getcwd()}/*.svh") + \
+        glob.glob(f"{self.MODULE_DIR}/rtl/defines.svh") + \
+        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_pipeline_register.v") + \
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_register.v") + \
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axi_dma_rd.sv") + \
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axi_dma_wr.sv") + \
@@ -134,8 +136,7 @@ class Hardware:
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/xilinx_spwf.sv") + \
         glob.glob(f'{self.MODULE_DIR}/test/sv/**/*.sv', recursive=True) + \
         glob.glob(f"{self.MODULE_DIR}/rtl/*.v", recursive=True) + \
-        glob.glob(f"{self.MODULE_DIR}/rtl/*.sv", recursive=True) + \
-        glob.glob(f"{os.getcwd()}/*.svh")
+        glob.glob(f"{self.MODULE_DIR}/rtl/*.sv", recursive=True)
 
         self.SOURCES_SRAM = ["../../asic/srams/*.v", "../../asic/srams/ram_asic.sv"] + glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.v", recursive=True) + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.sv", recursive=True) + glob.glob(f"{os.getcwd()}/*.svh")
 

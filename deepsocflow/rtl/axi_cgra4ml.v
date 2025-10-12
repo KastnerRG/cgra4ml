@@ -17,7 +17,7 @@
 */
 `timescale 1ns/1ps
 `define VERILOG
-`include "defines.svh"
+// `include "../defines.svh" this need to be remove for vcs
 `undef  VERILOG
 
 module axi_cgra4ml #(

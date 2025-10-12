@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`include "defines.svh"
+// `include "../defines.svh" this need to be remove for vcs
 
 module counter #(parameter W = 8)(
   input  logic clk, rstn_g, rst_l, en,
