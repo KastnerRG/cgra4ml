@@ -134,7 +134,8 @@ class Hardware:
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_adapter.sv") + \
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/xilinx_sdp.sv") + \
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/xilinx_spwf.sv") + \
-        glob.glob(f'{self.MODULE_DIR}/test/sv/**/*.sv', recursive=True) + \
+        glob.glob(f'{self.MODULE_DIR}/test/sv/ext/*.v', recursive=True) + \
+        glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv', recursive=True) + \
         glob.glob(f"{self.MODULE_DIR}/rtl/*.v", recursive=True) + \
         glob.glob(f"{self.MODULE_DIR}/rtl/*.sv", recursive=True)
 
