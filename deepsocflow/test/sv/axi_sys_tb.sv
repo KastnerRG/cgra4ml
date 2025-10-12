@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 
-`include "../../rtl/defines.svh"
-`include "config_tb.svh"
+// `include "../../rtl/defines.svh"  this need to be removed for vcs
+// `include "config_tb.svh" this need to be removed for vcs
 
 module axi_sys_tb;
   localparam  ADDR_WIDTH          = 40,
