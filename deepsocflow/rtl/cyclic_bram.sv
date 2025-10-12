@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-`include "defines.svh"
+// `include "../defines.svh" this need to be remove for vcs
 
 module cyclic_bram #(
   parameter   R_DEPTH      = 8,

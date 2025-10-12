@@ -29,7 +29,7 @@ THE SOFTWARE.
  * AXI lite register interface module (write)
  */
  `timescale 1ns / 1ps
-`include "../defines.svh"
+// `include "../defines.svh" this need to be remove for vcs
 
 module alex_axilite_wr #
 (
