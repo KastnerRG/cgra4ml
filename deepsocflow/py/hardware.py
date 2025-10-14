@@ -132,14 +132,28 @@ class Hardware:
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axilite_wr.sv") + \
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_adapter_any.sv") + \
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_adapter.sv") + \
-        glob.glob(f"{self.MODULE_DIR}/rtl/ext/xilinx_sdp.sv") + \
         glob.glob(f"{self.MODULE_DIR}/rtl/ext/xilinx_spwf.v") + \
         glob.glob(f'{self.MODULE_DIR}/test/sv/ext/*.v', recursive=True) + \
         glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv', recursive=True) + \
         glob.glob(f"{self.MODULE_DIR}/rtl/*.v", recursive=True) + \
         glob.glob(f"{self.MODULE_DIR}/rtl/*.sv", recursive=True)
 
-        self.SOURCES_SRAM = ["../../asic/srams/*.v", "../../asic/srams/ram_asic.sv"] + glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.v", recursive=True) + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.sv", recursive=True) + glob.glob(f"{os.getcwd()}/*.svh")
+        self.SOURCES_SRAM = glob.glob(f"{os.getcwd()}/*.svh") + \
+        glob.glob(f"{self.MODULE_DIR}/rtl/defines.svh") + \
+        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_pipeline_register.v") + \
+        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_register.v") + \
+        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axi_dma_rd.sv") + \
+        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axi_dma_wr.sv") + \
+        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axilite_ram.sv") + \
+        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axilite_rd.sv") + \
+        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axilite_wr.sv") + \
+        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_adapter_any.sv") + \
+        glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_adapter.sv") + \
+        glob.glob(f'{self.MODULE_DIR}/test/sv/ext/*.v', recursive=True) + \
+        glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv', recursive=True) + \
+        glob.glob(f"{self.MODULE_DIR}/rtl/*.v", recursive=True) + \
+        glob.glob(f"{self.MODULE_DIR}/rtl/*.sv", recursive=True) + \
+        ["../../asic/srams/*.v"]
 
         self.SOURCES_GLS = ["../../asic/srams/*.v", "../../asic/outputs/dnn_engine.pnr.v", "../../asic/pdk/tsmc65lp/verilog/sc12mcpp140z_cln28ht_base_svt_c35.v"] + glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + glob.glob(f"{os.getcwd()}/*.svh")
 
@@ -212,7 +226,7 @@ class Hardware:
 `define W_BPT               {self.W_BPT              :<10}  // Width of output integer denoting bytes per transfer
 
 `define DELAY_MUL           3            // constant, for now 
-`define DELAY_W_RAM         2            // constant, for now 
+`define DELAY_W_RAM         1            // constant, for now 
 
 `define AXI_WIDTH           {self.AXI_WIDTH          :<10}
 `define HEADER_WIDTH        {self.HEADER_WIDTH       :<10}
@@ -231,7 +245,7 @@ set COLS               {self.COLS}
 set X_BITS             {self.X_BITS}
 set K_BITS             {self.K_BITS}
 set Y_BITS             {self.Y_BITS}
-set DELAY_W_RAM        2
+set DELAY_W_RAM        1
 set RAM_WEIGHTS_DEPTH  {self.RAM_WEIGHTS_DEPTH}
 set RAM_EDGES_DEPTH    {self.RAM_EDGES_DEPTH}
 set KH_MAX             {self.KH_MAX}
