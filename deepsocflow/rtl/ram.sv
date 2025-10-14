@@ -196,7 +196,11 @@ module asym_ram_sdp_read_wider (
       3'b111: begin
           wrData = {diA, minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0)};
           bitMaskEN = {minWIDTH'(1), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0)};
-      end      
+      end
+      default: begin
+          wrData = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), diA};
+          bitMaskEN = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(1)};
+      end     
     endcase
     addrWR = addrA >> log2RATIO;
   end
