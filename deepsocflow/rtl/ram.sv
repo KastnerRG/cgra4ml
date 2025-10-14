@@ -161,6 +161,7 @@ module asym_ram_sdp_read_wider (
   reg [maxWIDTH-1:0] wrData;
   reg [maxWIDTH-1:0] bitMaskEN;
   reg [WIDTHB-1:0] readB;
+  reg [ADDRWIDTHB-1:0] addrWR;
 
   always_comb begin
     unique case (addrA[log2RATIO-1:0])
@@ -197,12 +198,12 @@ module asym_ram_sdp_read_wider (
           bitMaskEN = {minWIDTH'(1), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0)};
       end      
     endcase
-    addrram = addrA >> log2RATIO;
+    addrWR = addrA >> log2RATIO;
   end
 
   always @(posedge clkA) begin : ramwrite
     if (enaA) begin
-      if (weA) RAM[addrram] <= wrData & bitMaskEN; // bitwise and
+      if (weA) RAM[addrWR] <= wrData & bitMaskEN; // bitwise and
     end
   end
 
@@ -285,4 +286,4 @@ module ram_edges #(
   );
 endmodule
 
-`endif FPGA
+`endif

@@ -153,7 +153,7 @@ Specify Hardware
 '''
 hw = Hardware (                          # Alternatively: hw = Hardware.from_json('hardware.json')
         processing_elements = (8, 24)  , # (rows, columns) of multiply-add units
-        frequency_mhz       = 250      , #  
+        frequency_mhz       = 1000     , #  
         bits_input          = 4        , # bit width of input pixels and activations
         bits_weights        = 4        , # bit width of weights
         bits_sum            = 20       , # bit width of accumulator
