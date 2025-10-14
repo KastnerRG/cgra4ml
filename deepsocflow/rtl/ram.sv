@@ -166,40 +166,40 @@ module asym_ram_sdp_read_wider (
   always_comb begin
     unique case (addrA[log2RATIO-1:0])
       3'b000: begin
-          wrData = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), diA};
-          bitMaskEN = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), {minWIDTH{1}}};
+          wrData = {minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, diA};
+          bitMaskEN = {minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, {minWIDTH{1'b1}}};
       end 
       3'b001: begin
-          wrData = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), diA, minWIDTH'(0)};
-          bitMaskEN = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), {minWIDTH{1}}, minWIDTH'(0)};
+          wrData = {minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, diA, minWIDTH{1'b0}};
+          bitMaskEN = {minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, {minWIDTH{1'b1}}, minWIDTH{1'b0}};
       end 
       3'b010: begin
-          wrData = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), diA, minWIDTH'(0), minWIDTH'(0)};
-          bitMaskEN = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), {minWIDTH{1}}, minWIDTH'(0), minWIDTH'(0)};
+          wrData = {minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, diA, minWIDTH{1'b0}, minWIDTH{1'b0}};
+          bitMaskEN = {minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, {minWIDTH{1'b1}}, minWIDTH{1'b0}, minWIDTH{1'b0}};
       end 
       3'b011: begin
-          wrData = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), diA, minWIDTH'(0), minWIDTH'(0), minWIDTH'(0)};
-          bitMaskEN = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), {minWIDTH{1}}, minWIDTH'(0), minWIDTH'(0), minWIDTH'(0)};
+          wrData = {minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, diA, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}};
+          bitMaskEN = {minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, {minWIDTH{1'b1}}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}};
       end 
       3'b100: begin
-          wrData = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), diA, minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0)};
-          bitMaskEN = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), {minWIDTH{1}}, minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0)};
+          wrData = {minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, diA, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}};
+          bitMaskEN = {minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, {minWIDTH{1'b1}}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}};
       end 
       3'b101: begin
-          wrData = {minWIDTH'(0), minWIDTH'(0), diA, minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0)};
-          bitMaskEN = {minWIDTH'(0), minWIDTH'(0), {minWIDTH{1}}, minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0)};
+          wrData = {minWIDTH{1'b0}, minWIDTH{1'b0}, diA, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}};
+          bitMaskEN = {minWIDTH{1'b0}, minWIDTH{1'b0}, {minWIDTH{1'b1}}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}};
       end 
       3'b110: begin
-          wrData = {minWIDTH'(0), diA, minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0)};
-          bitMaskEN = {minWIDTH'(0), {minWIDTH{1}}, minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0)};
+          wrData = {minWIDTH{1'b0}, diA, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}};
+          bitMaskEN = {minWIDTH{1'b0}, {minWIDTH{1'b1}}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}};
       end 
       3'b111: begin
-          wrData = {diA, minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0)};
-          bitMaskEN = {{minWIDTH{1}}, minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0)};
+          wrData = {diA, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}};
+          bitMaskEN = {{minWIDTH{1'b1}}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}};
       end
       default: begin
-          wrData = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), diA};
-          bitMaskEN = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), {minWIDTH{1}}};
+          wrData = {minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, diA};
+          bitMaskEN = {minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, minWIDTH{1'b0}, {minWIDTH{1'b1}}};
       end     
     endcase
     addrWR = addrA >> log2RATIO;
