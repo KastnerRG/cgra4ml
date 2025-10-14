@@ -230,7 +230,11 @@ module ram_weights #(
   output logic [WIDTH        -1:0] dout
 );
   logic [WIDTH-1:0] dout_ram;
-  sp_sram_weights RAM_WH (
+  rams_sp_wf #(
+    .WIDTH      (WIDTH  ),
+    .DEPTH      (DEPTH  ),
+    .ADDR_WIDTH (ADDR_WIDTH)
+  ) RAM (
     .clk  (clk ),
     .en   (en  ),
     .we   (we  ),
@@ -265,7 +269,11 @@ module ram_edges #(
   output logic [WIDTH        -1:0] dout
 );
   logic [WIDTH-1:0] dout_ram;
-  sp_sram_edges RAM_EG (
+  rams_sp_wf #(
+    .WIDTH      (WIDTH  ),
+    .DEPTH      (DEPTH  ),
+    .ADDR_WIDTH (ADDR_WIDTH)
+  ) RAM (
     .clk  (clk ),
     .en   (en  ),
     .we   (we  ),
