@@ -181,7 +181,7 @@ module asym_ram_sdp_read_wider (
           wrData = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), diA, minWIDTH'(0), minWIDTH'(0), minWIDTH'(0)};
           bitMaskEN = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), {minWIDTH{1}}, minWIDTH'(0), minWIDTH'(0), minWIDTH'(0)};
       end 
-      3'b100: beginminWIDTH'(0)
+      3'b100: begin
           wrData = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), diA, minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0)};
           bitMaskEN = {minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), {minWIDTH{1}}, minWIDTH'(0), minWIDTH'(0), minWIDTH'(0), minWIDTH'(0)};
       end 
