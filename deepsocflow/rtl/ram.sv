@@ -390,7 +390,7 @@ module asym_ram_sdp_read_wider (
     .CENA(~enaB),
     .AA(addrB),
     .CLKB(clkA),
-    .CENB(~(enaA & weA))
+    .CENB(~(enaA & weA)),
     .WENB(bitMaskEN),
     .AB(addrWR),
     .DB(wrData),
