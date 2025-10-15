@@ -33,7 +33,7 @@ module ram_test;
         .addrA(addrA),
         .addrB(addrB),
         .diA(diA),
-        .diB(diB)
+        .doB(doB)
     );
     //---------------------------------------------------------------------------//
     // Clock Generation
