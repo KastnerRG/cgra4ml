@@ -1,3 +1,4 @@
+/mnt/d/dnn-engine/deepsocflow/test/sv/axi_int_reg_tb.sv
 /mnt/d/dnn-engine/deepsocflow/test/sv/axi_sys_tb.sv
 /mnt/d/dnn-engine/deepsocflow/test/sv/cgra4ml_axi2ram_tb.sv
 /mnt/d/dnn-engine/deepsocflow/test/sv/ext/skidbuffer.v
@@ -38,6 +39,7 @@
 /mnt/d/dnn-engine/deepsocflow/rtl/ext/axi_register_wr.sv
 /mnt/d/dnn-engine/deepsocflow/rtl/ext/priority_encoder.sv
 /mnt/d/dnn-engine/deepsocflow/rtl/ext/xilinx_sdp.sv
+/mnt/d/dnn-engine/deepsocflow/rtl/sys/axi_int_reg_cgra4ml.sv
 /mnt/d/dnn-engine/deepsocflow/rtl/sys/cgra4ml_for_ibex.sv
 /mnt/d/dnn-engine/deepsocflow/rtl/sys/dev_to_maxil.sv
 /mnt/d/dnn-engine/deepsocflow/rtl/sys/saxi_to_host.sv

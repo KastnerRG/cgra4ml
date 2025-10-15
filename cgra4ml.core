@@ -13,6 +13,7 @@ filesets:
       - deepsocflow/rtl/axis_out_shift.sv
       - deepsocflow/rtl/cyclic_bram.sv
       - deepsocflow/rtl/n_delay.sv
+      - deepsocflow/rtl/skid_buffer.sv
       - deepsocflow/rtl/proc_engine.sv
       - deepsocflow/rtl/ram.sv
       - deepsocflow/rtl/axis_pixels.sv
@@ -36,7 +37,7 @@ filesets:
       - deepsocflow/rtl/ext/axi_register_wr.sv
       - deepsocflow/rtl/ext/priority_encoder.sv
       - deepsocflow/rtl/sys/saxi_to_host.sv
-      - deepsocflow/rtl/sys/dev_to_maxil.sv
+      - deepsocflow/rtl/sys/axi_int_reg_cgra4ml.sv
       - deepsocflow/rtl/sys/cgra4ml_for_ibex.sv
       - deepsocflow/rtl/defines.svh: { is_include_file: true }
       - run/work/config_hw.svh: { is_include_file: true }
@@ -44,7 +45,6 @@ filesets:
 
   rtl_v:
     files:
-      - deepsocflow/rtl/sys/top_axi_int.v
       - deepsocflow/rtl/axi_cgra4ml.v
     file_type: verilogSource
 

@@ -193,9 +193,10 @@ def product_dict(**kwargs):
                                         config_baseaddr      = ["40000"  ],
                                         axi_max_burst_len    = [ 1       ],
                                         target_cpu_int_bits  = [ 32      ],
-                                        valid_prob           = [ 1       ],
-                                        ready_prob           = [ 1       ],
+                                        valid_prob           = [ 0.01    ],
+                                        ready_prob           = [ 0.1     ],
                                         data_dir             = ['vectors'],
+                                        tb_module            = ["axi_int_reg_tb"],
                                     )))
 def test_dnn_engine(PARAMS):
 
@@ -213,7 +214,7 @@ def test_dnn_engine(PARAMS):
     VERIFY & EXPORT
     '''
     export_inference(loaded_model, hw, batch_size=1)
-    verify_inference(loaded_model, hw, SIM=SIM)
+    verify_inference(loaded_model, hw, SIM=SIM, TRACE=True)
 
     d_perf = predict_model_performance(hw)
     pp = pprint.PrettyPrinter(indent=4)

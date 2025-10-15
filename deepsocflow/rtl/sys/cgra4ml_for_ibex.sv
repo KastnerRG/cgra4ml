@@ -37,24 +37,15 @@ module cgra4ml_for_ibex #(
   input  logic [31:0] host_rdata_i
 );
 
-  // ---------------- AXI-Lite wires (dev_to_maxil -> SA "top") ----------------
-  logic [AXIL_ADDR_WIDTH-1:0]  axil_awaddr;
-  logic                        axil_awvalid;
-  logic                        axil_awready;
-  logic [AXIL_WIDTH-1:0]       axil_wdata;
-  logic [STRB_WIDTH-1:0]       axil_wstrb;
-  logic                        axil_wvalid;
-  logic                        axil_wready;
-  logic [1:0]                  axil_bresp;
-  logic                        axil_bvalid;
-  logic                        axil_bready;
-  logic [AXIL_ADDR_WIDTH-1:0]  axil_araddr;
-  logic                        axil_arvalid;
-  logic                        axil_arready;
-  logic [AXIL_WIDTH-1:0]       axil_rdata;
-  logic [1:0]                  axil_rresp;
-  logic                        axil_rvalid;
-  logic                        axil_rready;
+  // ---------------- Reg wires (dev_to_maxil -> SA "top") ----------------
+  logic reg_wr_en;
+  logic reg_wr_ack;
+  logic [AXI_ADDR_WIDTH-1:0] reg_wr_addr;
+  logic [AXI_WIDTH-1:0] reg_wr_data;
+  logic reg_rd_en;
+  logic reg_rd_ack;
+  logic [AXI_ADDR_WIDTH-1:0] reg_rd_addr; 
+  logic [AXI_WIDTH-1:0] reg_rd_data;
 
   // ---------------- AXI4 wires (SA masters -> host bridges) ----------------
   localparam int DW   = AXI_WIDTH;
@@ -81,36 +72,8 @@ module cgra4ml_for_ibex #(
   logic [1:0]                   axi_bresp;
   logic                         axi_bvalid, axi_bready;
 
-  // Make local offset addresses for AXI-Lite
-  logic [AXIL_ADDR_WIDTH-1:0]  axil_awaddr_off, axil_araddr_off;
-  assign axil_awaddr_off = axil_awaddr;
-  assign axil_araddr_off = axil_araddr;
-
   // ---------------- Instantiate SA core ----------------
-  top_axi_int u_sa (
-    .clk  (clk),
-    .rstn (rstn),
-
-    .s_axil_awaddr (axil_awaddr_off),
-    .s_axil_awprot (3'b000),
-    .s_axil_awvalid(axil_awvalid),
-    .s_axil_awready(axil_awready),
-    .s_axil_wdata  (axil_wdata),
-    .s_axil_wstrb  (axil_wstrb),
-    .s_axil_wvalid (axil_wvalid),
-    .s_axil_wready (axil_wready),
-    .s_axil_bresp  (axil_bresp),
-    .s_axil_bvalid (axil_bvalid),
-    .s_axil_bready (axil_bready),
-    .s_axil_araddr (axil_araddr_off),
-    .s_axil_arprot (3'b000),
-    .s_axil_arvalid(axil_arvalid),
-    .s_axil_arready(axil_arready),
-    .s_axil_rdata  (axil_rdata),
-    .s_axil_rresp  (axil_rresp),
-    .s_axil_rvalid (axil_rvalid),
-    .s_axil_rready (axil_rready),
-
+  axi_int_reg_cgra4ml u_sa (
     .m_axi_arid    (axi_arid),
     .m_axi_araddr  (axi_araddr),
     .m_axi_arlen   (axi_arlen),
@@ -145,51 +108,26 @@ module cgra4ml_for_ibex #(
     .m_axi_bid     (axi_bid),
     .m_axi_bresp   (axi_bresp),
     .m_axi_bvalid  (axi_bvalid),
-    .m_axi_bready  (axi_bready)
+    .m_axi_bready  (axi_bready),
+    .*
   );
 
-  // ---------------- dev_to_maxil: Ibex device -> AXI-Lite master ----------------
-  dev_to_maxil #(
-    .AXI_ADDR_WIDTH(AXIL_ADDR_WIDTH),
-    .AXI_DATA_WIDTH(AXIL_WIDTH)
-  ) u_cfg (
-    .clk   (clk),
-    .rst_n (rstn),
+  // ---------------- dev_to_reg: Ibex device -> AXI-Lite master ---------------
 
-    // Ibex device-side
-    .data_req_i    (dev_req_i),
-    .data_addr_i   (dev_addr_i),
-    .data_we_i     (dev_we_i),
-    .data_be_i     (dev_be_i),
-    .data_wdata_i  (dev_wdata_i),
-    .data_gnt_o    (dev_gnt_o),
-    .data_rvalid_o (dev_rvalid_o),
-    .data_err_o    (dev_err_o),
-    .data_rdata_o  (dev_rdata_o),
+  assign dev_gnt_o = dev_req_i;
+  assign dev_err_o = 1'b0;
 
-    // AXI-Lite master
-    .M_AXI_AWADDR  (axil_awaddr),
-    .M_AXI_AWVALID (axil_awvalid),
-    .M_AXI_AWREADY (axil_awready),
+  assign reg_rd_addr = dev_addr_i;
+  assign reg_rd_en = dev_req_i && (dev_we_i == 0);
 
-    .M_AXI_WDATA   (axil_wdata),
-    .M_AXI_WSTRB   (axil_wstrb),
-    .M_AXI_WVALID  (axil_wvalid),
-    .M_AXI_WREADY  (axil_wready),
+  always_ff @(posedge clk) begin
+    dev_rdata_o  <= reg_rd_data;
+    dev_rvalid_o <= dev_req_i;
+  end
 
-    .M_AXI_BRESP   (axil_bresp),
-    .M_AXI_BVALID  (axil_bvalid),
-    .M_AXI_BREADY  (axil_bready),
-
-    .M_AXI_ARADDR  (axil_araddr),
-    .M_AXI_ARVALID (axil_arvalid),
-    .M_AXI_ARREADY (axil_arready),
-
-    .M_AXI_RDATA   (axil_rdata),
-    .M_AXI_RRESP   (axil_rresp),
-    .M_AXI_RVALID  (axil_rvalid),
-    .M_AXI_RREADY  (axil_rready)
-  );
+  assign reg_wr_addr = dev_addr_i;
+  assign reg_wr_data = dev_wdata_i;
+  assign reg_wr_en   = dev_req_i && (dev_we_i == 1);
 
   // ---------------- saxi_to_host instances ----------------
 

@@ -72,7 +72,8 @@ module alex_axi_dma_wr #
     // (multiple descriptors per AXI stream frame)
     parameter ENABLE_SG = 0,
     // Enable support for unaligned transfers
-    parameter ENABLE_UNALIGNED = 1
+    parameter ENABLE_UNALIGNED = 1,
+    parameter logic [AXI_ID_WIDTH-1:0] AXI_ID = 0
 )
 (
     input  wire                       clk,
@@ -330,7 +331,7 @@ assign m_axis_write_desc_status_valid = m_axis_write_desc_status_valid_reg;
 
 assign s_axis_write_data_tready = s_axis_write_data_tready_reg;
 
-assign m_axi_awid = {AXI_ID_WIDTH{1'b0}};
+assign m_axi_awid = AXI_ID;
 assign m_axi_awaddr = m_axi_awaddr_reg;
 assign m_axi_awlen = m_axi_awlen_reg;
 assign m_axi_awsize = 3'(AXI_BURST_SIZE);
