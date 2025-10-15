@@ -196,26 +196,18 @@ module asym_ram_sdp_read_wider (
       3'b111: begin
           wrData = {diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
           bitMaskEN = {{minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-      end    
+      end
+      default: begin
+          wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA};
+          bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}};
+      end     
     endcase
     addrWR = addrA >> log2RATIO;
   end
 
   always @(posedge clkA) begin : ramwrite
     if (enaA) begin
-      if (weA) begin
-        unique case (addrA[log2RATIO-1:0])
-          3'b000: RAM[addrWR][31:0] <= wrData;
-          3'b001: RAM[addrWR][63:32] <= wrData; 
-          3'b010: RAM[addrWR][95:64] <= wrData; 
-          3'b011: RAM[addrWR][127:96] <= wrData;  
-          3'b100: RAM[addrWR][159:128] <= wrData;  
-          3'b101: RAM[addrWR][191:160] <= wrData;  
-          3'b110: RAM[addrWR][223:192] <= wrData;  
-          3'b111: RAM[addrWR][255:224] <= wrData;  
-        endcase
-      end
-      // RAM[addrWR] <= wrData & bitMaskEN; // bitwise and use in TSMC Dual Port RAM
+      if (weA) RAM[addrWR] <= (wrData & bitMaskEN) | RAM[addrWR]; // bitwise and
     end
   end
 
