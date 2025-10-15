@@ -30,12 +30,15 @@ int main(int argc, char **argv) {
   uint32_t val = *p_addr;
   puts("Val:"); puthex(val); putchar('\n');
 
-  volatile uint32_t *p = (volatile uint32_t *)MEM_BASEADDR;
-  for (int i = 0; i < 32; ++i) {
-    puthex((uint32_t)(p + i));
-    putchar(':'); putchar(' ');
-    puthex(p[i]);
-    putchar('\n');
+  int32_t *w = (int32_t *)p_mem;
+  const int n_words = sizeof(*p_mem) / 4;
+
+  puts("Checking if mem_st is read/writable:\n");
+  for (int i = 0; i < 16; ++i) {
+    printf("[%p]:%d \n", (void*)&w[i], w[i]);
+  }
+  for (int i = n_words - 16; i < n_words; ++i) {
+    printf("[%p]:%d -> ", (void*)&w[i], w[i]); w[i] = 1234; printf("%d\n", w[i]);
   }
 
   // Run the test
