@@ -153,7 +153,7 @@ class Hardware:
         glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv', recursive=True) + \
         glob.glob(f"{self.MODULE_DIR}/rtl/*.v", recursive=True) + \
         glob.glob(f"{self.MODULE_DIR}/rtl/*.sv", recursive=True) + \
-        ["../asic/srams/*.v"]
+        ["../../asic/srams/rf_2p_hsc.v", "../../asic/srams/sp_sram_edges.v", "../../asic/srams/sp_sram_weights.v"]
 
         self.SOURCES_GLS = ["../../asic/srams/*.v", "../../asic/outputs/dnn_engine.pnr.v", "../../asic/pdk/tsmc65lp/verilog/sc12mcpp140z_cln28ht_base_svt_c35.v"] + glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + glob.glob(f"{os.getcwd()}/*.svh")
 
