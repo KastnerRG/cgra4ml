@@ -35,7 +35,8 @@ class Hardware:
             async_resetn: bool = True,
             valid_prob: float = 0.01,
             ready_prob: float = 0.1,
-            data_dir: str = 'vectors/'
+            data_dir: str = 'vectors/',
+            tb_module: str = 'axi_sys_tb',
             ):
         """
         Args:
@@ -108,7 +109,7 @@ class Hardware:
         self.W_BPT                 = 32#clog2(self.ROWS*self.COLS*self.Y_OUT_BITS/8)
 
         self.MODULE_DIR = os.path.normpath(os.path.dirname(deepsocflow.__file__)).replace('\\', '/')
-        self.TB_MODULE = "axi_sys_tb"
+        self.TB_MODULE = tb_module
         self.SOURCES = glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + glob.glob(f'{self.MODULE_DIR}/test/sv/**/*.v') + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.v", recursive=True) + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.sv", recursive=True) + glob.glob(f"{os.getcwd()}/*.svh")
         self.DATA_DIR = data_dir
 
@@ -214,7 +215,7 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
 
         if SIM == 'xsim':
             assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xsc {self.MODULE_DIR}/c/sim.c --gcc_compile_options -I../ --gcc_compile_options -DSIM').returncode == 0
-            assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xvlog -sv -f ../sources.txt -i ../').returncode == 0
+            assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xvlog -sv -f ../sources.txt -i ../ -i {self.MODULE_DIR}/rtl').returncode == 0
             assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xelab {self.TB_MODULE} --snapshot {self.TB_MODULE} -log elaborate.log --debug typical -sv_lib dpi').returncode == 0
 
         if SIM == 'icarus':
