@@ -79,6 +79,7 @@
 //
 
 // }}}
+`timescale 1ns/1ps
 module skidbuffer #(
 		// {{{
 		parameter	[0:0]	OPT_LOWPOWER = 0,
