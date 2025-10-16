@@ -118,7 +118,12 @@ module ram_output #(
     .o   (dout)
   );
 endmodule
-`elsif ASIC_RTL
+// `elsif ASIC_RTL
+`else
+// Asymmetric port RAM
+// Read Wider than Write. Read Statement in loop
+//asym_ram_sdp_read_wider.v
+`timescale 1ns / 1ps
 
 module asym_ram_sdp_read_wider (
     clkA,
@@ -150,75 +155,174 @@ module asym_ram_sdp_read_wider (
   `define min(a, b) ((a) < (b) ? (a) : (b))
 
   localparam maxSIZE = `max(SIZEA, SIZEB);
-  localparam minSIZE = `min(SIZEA, SIZEB);
   localparam maxWIDTH = `max(WIDTHA, WIDTHB);
   localparam minWIDTH = `min(WIDTHA, WIDTHB);
 
   localparam RATIO = maxWIDTH / minWIDTH;
   localparam log2RATIO = $clog2(RATIO);
 
-  reg [maxWIDTH-1:0] RAM[0:minSIZE-1];
-  reg [maxWIDTH-1:0] wrData;
-  reg [maxWIDTH-1:0] bitMaskEN;
+  reg [minWIDTH-1:0] RAM_0 [0:minSIZE-1];
+  reg [minWIDTH-1:0] RAM_1 [0:minSIZE-1];
+  reg [minWIDTH-1:0] RAM_2 [0:minSIZE-1];
+  reg [minWIDTH-1:0] RAM_3 [0:minSIZE-1];
+  reg [minWIDTH-1:0] RAM_4 [0:minSIZE-1];
+  reg [minWIDTH-1:0] RAM_5 [0:minSIZE-1];
+  reg [minWIDTH-1:0] RAM_6 [0:minSIZE-1];
+  reg [minWIDTH-1:0] RAM_7 [0:minSIZE-1];
+  reg [ADDRWIDTHB-1:0] addrWR;
+  
+  reg enaA_0, enaA_1, enaA_2, enaA_3, enaA_4, enaA_5, enaA_6, enaA_7;
   reg [WIDTHB-1:0] readB;
-  reg [ADDRWIDTHB-1:0] addrWR;
 
   always_comb begin
     unique case (addrA[log2RATIO-1:0])
-      3'b000: begin
-          wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA};
-          bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}};
-      end 
-      3'b001: begin
-          wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}};
-          bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}};
-      end 
-      3'b010: begin
-          wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-          bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-      end 
-      3'b011: begin
-          wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-          bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-      end 
-      3'b100: begin
-          wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-          bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-      end 
-      3'b101: begin
-          wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-          bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-      end 
-      3'b110: begin
-          wrData = {{minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-          bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-      end 
-      3'b111: begin
-          wrData = {diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-          bitMaskEN = {{minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-      end
-      default: begin
-          wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA};
-          bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}};
-      end     
+      3'b000: enaA_0 <= enaA;
+      3'b001: enaA_1 <= enaA;
+      3'b010: enaA_2 <= enaA;
+      3'b011: enaA_3 <= enaA;
+      3'b100: enaA_4 <= enaA;
+      3'b101: enaA_5 <= enaA;
+      3'b110: enaA_6 <= enaA;
+      3'b111: enaA_7 <= enaA; 
     endcase
-    addrWR = addrA >> log2RATIO;
   end
+  assign addrWR = addrA >> log2RATIO;
 
-  always @(posedge clkA) begin : ramwrite
-    if (enaA) begin
-      if (weA) RAM[addrWR] <= (wrData & bitMaskEN) | RAM[addrWR]; // bitwise and
+  always @(posedge clkA) begin
+    if (enaA_0) begin
+      if (weA) RAM_0 [addrWR] <= diA;
+    end
+    if (enaA_1) begin
+      if (weA) RAM_1 [addrWR] <= diA;
+    end
+    if (enaA_2) begin
+      if (weA) RAM_2 [addrWR] <= diA;
+    end
+    if (enaA_3) begin
+      if (weA) RAM_3 [addrWR] <= diA;
+    end
+    if (enaA_4) begin
+      if (weA) RAM_4 [addrWR] <= diA;
+    end
+    if (enaA_5) begin
+      if (weA) RAM_5 [addrWR] <= diA;
+    end
+    if (enaA_6) begin
+      if (weA) RAM_6 [addrWR] <= diA;
+    end
+    if (enaA_7) begin
+      if (weA) RAM_7 [addrWR] <= diA;
     end
   end
 
-  always @(posedge clkB) begin : ramread
+  always @(posedge clkB) begin
     if (enaB) begin
-      readB <= RAM[addrB];
+      doB <= {RAM_7[addrB], RAM_6[addrB], RAM_5[addrB], RAM_4[addrB], RAM_3[addrB], RAM_2[addrB], RAM_1[addrB], RAM_0[addrB]};
     end
   end
-  assign doB = readB;
 
 endmodule
+
+
+// module asym_ram_sdp_read_wider (
+//     clkA,
+//     clkB,
+//     enaA,
+//     weA,
+//     enaB,
+//     addrA,
+//     addrB,
+//     diA,
+//     doB
+// );
+//   parameter WIDTHA = 4;
+//   parameter SIZEA = 1024;
+//   parameter ADDRWIDTHA = 10;
+
+//   parameter WIDTHB = 16;
+//   parameter SIZEB = 256;
+//   parameter ADDRWIDTHB = 8;
+//   input clkA;
+//   input clkB;
+//   input weA;
+//   input enaA, enaB;
+//   input [ADDRWIDTHA-1:0] addrA;
+//   input [ADDRWIDTHB-1:0] addrB;
+//   input [WIDTHA-1:0] diA;
+//   output [WIDTHB-1:0] doB;
+//   `define max(a, b) ((a) > (b) ? (a) : (b))
+//   `define min(a, b) ((a) < (b) ? (a) : (b))
+
+//   localparam maxSIZE = `max(SIZEA, SIZEB);
+//   localparam minSIZE = `min(SIZEA, SIZEB);
+//   localparam maxWIDTH = `max(WIDTHA, WIDTHB);
+//   localparam minWIDTH = `min(WIDTHA, WIDTHB);
+
+//   localparam RATIO = maxWIDTH / minWIDTH;
+//   localparam log2RATIO = $clog2(RATIO);
+
+//   reg [maxWIDTH-1:0] RAM[0:minSIZE-1];
+//   reg [maxWIDTH-1:0] wrData;
+//   reg [maxWIDTH-1:0] bitMaskEN;
+//   reg [WIDTHB-1:0] readB;
+//   reg [ADDRWIDTHB-1:0] addrWR;
+
+//   always_comb begin
+//     unique case (addrA[log2RATIO-1:0])
+//       3'b000: begin
+//           wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA};
+//           bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}};
+//       end 
+//       3'b001: begin
+//           wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}};
+//           bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}};
+//       end 
+//       3'b010: begin
+//           wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//           bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//       end 
+//       3'b011: begin
+//           wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//           bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//       end 
+//       3'b100: begin
+//           wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//           bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//       end 
+//       3'b101: begin
+//           wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//           bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//       end 
+//       3'b110: begin
+//           wrData = {{minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//           bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//       end 
+//       3'b111: begin
+//           wrData = {diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//           bitMaskEN = {{minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//       end
+//       default: begin
+//           wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA};
+//           bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}};
+//       end     
+//     endcase
+//     addrWR = addrA >> log2RATIO;
+//   end
+
+//   always @(posedge clkA) begin : ramwrite
+//     if (enaA) begin
+//       if (weA) RAM[addrWR] <= (wrData & bitMaskEN) | RAM[addrWR]; // bitwise and
+//     end
+//   end
+
+//   always @(posedge clkB) begin : ramread
+//     if (enaB) begin
+//       readB <= RAM[addrB];
+//     end
+//   end
+//   assign doB = readB;
+
+// endmodule
 
 module ram_weights #(
   parameter   DEPTH   = `RAM_WEIGHTS_DEPTH,
@@ -298,197 +402,197 @@ module ram_edges #(
   );
 endmodule
 
-`else 
+// `else 
 
-module asym_ram_sdp_read_wider (
-    clkA,
-    clkB,
-    enaA,
-    weA,
-    enaB,
-    addrA,
-    addrB,
-    diA,
-    doB
-);
-  parameter WIDTHA = 4;
-  parameter SIZEA = 1024;
-  parameter ADDRWIDTHA = 10;
+// module asym_ram_sdp_read_wider (
+//     clkA,
+//     clkB,
+//     enaA,
+//     weA,
+//     enaB,
+//     addrA,
+//     addrB,
+//     diA,
+//     doB
+// );
+//   parameter WIDTHA = 4;
+//   parameter SIZEA = 1024;
+//   parameter ADDRWIDTHA = 10;
 
-  parameter WIDTHB = 16;
-  parameter SIZEB = 256;
-  parameter ADDRWIDTHB = 8;
-  input clkA;
-  input clkB;
-  input weA;
-  input enaA, enaB;
-  input [ADDRWIDTHA-1:0] addrA;
-  input [ADDRWIDTHB-1:0] addrB;
-  input [WIDTHA-1:0] diA;
-  output [WIDTHB-1:0] doB;
-  `define max(a, b) ((a) > (b) ? (a) : (b))
-  `define min(a, b) ((a) < (b) ? (a) : (b))
+//   parameter WIDTHB = 16;
+//   parameter SIZEB = 256;
+//   parameter ADDRWIDTHB = 8;
+//   input clkA;
+//   input clkB;
+//   input weA;
+//   input enaA, enaB;
+//   input [ADDRWIDTHA-1:0] addrA;
+//   input [ADDRWIDTHB-1:0] addrB;
+//   input [WIDTHA-1:0] diA;
+//   output [WIDTHB-1:0] doB;
+//   `define max(a, b) ((a) > (b) ? (a) : (b))
+//   `define min(a, b) ((a) < (b) ? (a) : (b))
 
-  localparam maxSIZE = `max(SIZEA, SIZEB);
-  localparam minSIZE = `min(SIZEA, SIZEB);
-  localparam maxWIDTH = `max(WIDTHA, WIDTHB);
-  localparam minWIDTH = `min(WIDTHA, WIDTHB);
+//   localparam maxSIZE = `max(SIZEA, SIZEB);
+//   localparam minSIZE = `min(SIZEA, SIZEB);
+//   localparam maxWIDTH = `max(WIDTHA, WIDTHB);
+//   localparam minWIDTH = `min(WIDTHA, WIDTHB);
 
-  localparam RATIO = maxWIDTH / minWIDTH;
-  localparam log2RATIO = $clog2(RATIO);
+//   localparam RATIO = maxWIDTH / minWIDTH;
+//   localparam log2RATIO = $clog2(RATIO);
 
-  reg [maxWIDTH-1:0] RAM[0:minSIZE-1];
-  reg [maxWIDTH-1:0] wrData;
-  reg [maxWIDTH-1:0] bitMaskEN;
-  reg [ADDRWIDTHB-1:0] addrWR;
+//   reg [maxWIDTH-1:0] RAM[0:minSIZE-1];
+//   reg [maxWIDTH-1:0] wrData;
+//   reg [maxWIDTH-1:0] bitMaskEN;
+//   reg [ADDRWIDTHB-1:0] addrWR;
 
-  always_comb begin
-    unique case (addrA[log2RATIO-1:0])
-      3'b000: begin
-          wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA};
-          bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}};
-      end 
-      3'b001: begin
-          wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}};
-          bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}};
-      end 
-      3'b010: begin
-          wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-          bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-      end 
-      3'b011: begin
-          wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-          bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-      end 
-      3'b100: begin
-          wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-          bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-      end 
-      3'b101: begin
-          wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-          bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-      end 
-      3'b110: begin
-          wrData = {{minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-          bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-      end 
-      3'b111: begin
-          wrData = {diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-          bitMaskEN = {{minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
-      end
-      default: begin
-          wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA};
-          bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}};
-      end     
-    endcase
-    addrWR = addrA >> log2RATIO;
-  end
+//   always_comb begin
+//     unique case (addrA[log2RATIO-1:0])
+//       3'b000: begin
+//           wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA};
+//           bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}};
+//       end 
+//       3'b001: begin
+//           wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}};
+//           bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}};
+//       end 
+//       3'b010: begin
+//           wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//           bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//       end 
+//       3'b011: begin
+//           wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//           bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//       end 
+//       3'b100: begin
+//           wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//           bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//       end 
+//       3'b101: begin
+//           wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//           bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//       end 
+//       3'b110: begin
+//           wrData = {{minWIDTH{1'b0}}, diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//           bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//       end 
+//       3'b111: begin
+//           wrData = {diA, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//           bitMaskEN = {{minWIDTH{1'b1}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}};
+//       end
+//       default: begin
+//           wrData = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, diA};
+//           bitMaskEN = {{minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b0}}, {minWIDTH{1'b1}}};
+//       end     
+//     endcase
+//     addrWR = addrA >> log2RATIO;
+//   end
 
-  rf_2p_hsc dp_sram_dma (
-    .QA(doB),
-    .CLKA(clkB),
-    .CENA(~enaB),
-    .AA(addrB),
-    .CLKB(clkA),
-    .CENB(~(enaA & weA)),
-    .WENB(bitMaskEN),
-    .AB(addrWR),
-    .DB(wrData),
-    .STOV(1'b0),
-    .EMAA(3'b000),
-    .EMASA(1'b0),
-    .EMAB(3'b000),
-    .RET(1'b1), 
-    .QNAPA(1'b0),
-    .QNAPB(1'b0)
-  );
+//   rf_2p_hsc dp_sram_dma (
+//     .QA(doB),
+//     .CLKA(clkB),
+//     .CENA(~enaB),
+//     .AA(addrB),
+//     .CLKB(clkA),
+//     .CENB(~(enaA & weA)),
+//     .WENB(bitMaskEN),
+//     .AB(addrWR),
+//     .DB(wrData),
+//     .STOV(1'b0),
+//     .EMAA(3'b000),
+//     .EMASA(1'b0),
+//     .EMAB(3'b000),
+//     .RET(1'b1), 
+//     .QNAPA(1'b0),
+//     .QNAPB(1'b0)
+//   );
 
-endmodule
+// endmodule
 
-module ram_weights #(
-  parameter   DEPTH   = `RAM_WEIGHTS_DEPTH,
-              WIDTH   = `K_BITS,
-              LATENCY = `DELAY_W_RAM,
-  parameter  ADDR_WIDTH = $clog2(DEPTH)
-)(
-  input  logic clk ,
-  input  logic en  ,
-  input  logic we  ,
-  input  logic [ADDR_WIDTH   -1:0] addr,
-  input  logic [WIDTH        -1:0] di ,
-  output logic [WIDTH        -1:0] dout
-);
-  logic [WIDTH-1:0] dout_ram;
+// module ram_weights #(
+//   parameter   DEPTH   = `RAM_WEIGHTS_DEPTH,
+//               WIDTH   = `K_BITS,
+//               LATENCY = `DELAY_W_RAM,
+//   parameter  ADDR_WIDTH = $clog2(DEPTH)
+// )(
+//   input  logic clk ,
+//   input  logic en  ,
+//   input  logic we  ,
+//   input  logic [ADDR_WIDTH   -1:0] addr,
+//   input  logic [WIDTH        -1:0] di ,
+//   output logic [WIDTH        -1:0] dout
+// );
+//   logic [WIDTH-1:0] dout_ram;
 
-  sp_sram_weights RAM_WTS (
-    .Q(dout_ram),
-    .CLK(clk),
-    .CEN(~en),
-    .GWEN(~we),
-    .A(addr),
-    .D(di),
-    .STOV(1'b0),
-    .EMA(3'b000),
-    .EMAW(2'b00),
-    .EMAS(1'b0),
-    .RET(1'b1),
-    .QNAP(1'b0)
-  );
+//   sp_sram_weights RAM_WTS (
+//     .Q(dout_ram),
+//     .CLK(clk),
+//     .CEN(~en),
+//     .GWEN(~we),
+//     .A(addr),
+//     .D(di),
+//     .STOV(1'b0),
+//     .EMA(3'b000),
+//     .EMAW(2'b00),
+//     .EMAS(1'b0),
+//     .RET(1'b1),
+//     .QNAP(1'b0)
+//   );
 
-  n_delay #(
-    .N (LATENCY-1),
-    .W (WIDTH)
-  ) DELAY (
-    .c   (clk),
-    .e   (en),
-    .rng (1'b1),
-    .rnl (1'b1),
-    .i   (dout_ram),
-    .o   (dout)
-  );
-endmodule
+//   n_delay #(
+//     .N (LATENCY-1),
+//     .W (WIDTH)
+//   ) DELAY (
+//     .c   (clk),
+//     .e   (en),
+//     .rng (1'b1),
+//     .rnl (1'b1),
+//     .i   (dout_ram),
+//     .o   (dout)
+//   );
+// endmodule
 
-module ram_edges #(
-  parameter   DEPTH   = `RAM_EDGES_DEPTH,
-              WIDTH   = `X_BITS * (`KH_MAX/2),
-              LATENCY  = 1,
-  parameter  ADDR_WIDTH = $clog2(DEPTH)
-)(
-  input  logic clk ,
-  input  logic en  ,
-  input  logic we  ,
-  input  logic [ADDR_WIDTH   -1:0] addr,
-  input  logic [WIDTH        -1:0] di ,
-  output logic [WIDTH        -1:0] dout
-);
-  logic [WIDTH-1:0] dout_ram;
+// module ram_edges #(
+//   parameter   DEPTH   = `RAM_EDGES_DEPTH,
+//               WIDTH   = `X_BITS * (`KH_MAX/2),
+//               LATENCY  = 1,
+//   parameter  ADDR_WIDTH = $clog2(DEPTH)
+// )(
+//   input  logic clk ,
+//   input  logic en  ,
+//   input  logic we  ,
+//   input  logic [ADDR_WIDTH   -1:0] addr,
+//   input  logic [WIDTH        -1:0] di ,
+//   output logic [WIDTH        -1:0] dout
+// );
+//   logic [WIDTH-1:0] dout_ram;
 
-  sp_sram_edges RAM_EDS (
-    .Q(dout_ram),
-    .CLK(clk),
-    .CEN(~en),
-    .GWEN(~we),
-    .A(addr),
-    .D(di),
-    .STOV(1'b0),
-    .EMA(3'b000),
-    .EMAW(2'b00),
-    .EMAS(1'b0),
-    .RET(1'b1),
-    .QNAP(1'b0)
-  );
+//   sp_sram_edges RAM_EDS (
+//     .Q(dout_ram),
+//     .CLK(clk),
+//     .CEN(~en),
+//     .GWEN(~we),
+//     .A(addr),
+//     .D(di),
+//     .STOV(1'b0),
+//     .EMA(3'b000),
+//     .EMAW(2'b00),
+//     .EMAS(1'b0),
+//     .RET(1'b1),
+//     .QNAP(1'b0)
+//   );
 
-  n_delay #(
-    .N (LATENCY-1),
-    .W (WIDTH)
-  ) DELAY (
-    .c   (clk),
-    .e   (en),
-    .rng (1'b1),
-    .rnl (1'b1),
-    .i   (dout_ram),
-    .o   (dout)
-  );
-endmodule
+//   n_delay #(
+//     .N (LATENCY-1),
+//     .W (WIDTH)
+//   ) DELAY (
+//     .c   (clk),
+//     .e   (en),
+//     .rng (1'b1),
+//     .rnl (1'b1),
+//     .i   (dout_ram),
+//     .o   (dout)
+//   );
+// endmodule
 
 `endif
