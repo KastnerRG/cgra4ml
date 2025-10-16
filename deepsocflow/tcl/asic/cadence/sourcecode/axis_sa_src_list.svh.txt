@@ -1,0 +1,3 @@
+// List your RTL files here
+config_hw.svh
+defines.svh

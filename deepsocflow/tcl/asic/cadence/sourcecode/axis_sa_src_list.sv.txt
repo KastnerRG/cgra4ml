@@ -1,0 +1,18 @@
+// List your RTL files here
+alex_axi_dma_rd.sv
+alex_axi_dma_wr.sv
+alex_axilite_ram.sv
+alex_axilite_rd.sv
+alex_axilite_wr.sv
+alex_axis_adapter_any.sv
+alex_axis_adapter.sv
+axis_out_shift.sv
+axis_pixels.sv
+axis_weight_rotator.sv
+counter.sv
+cyclic_bram.sv
+dma_controller.sv
+n_delay.sv
+proc_engine.sv
+ram.sv
+

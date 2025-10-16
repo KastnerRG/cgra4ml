@@ -1,0 +1,4 @@
+libraries.<process>.tcl - extractions and techlef
+libraries.<std_cells>.tcl - lib lef
+libraries.<IO>.tcl
+libraries.<SRAM>.tcl
