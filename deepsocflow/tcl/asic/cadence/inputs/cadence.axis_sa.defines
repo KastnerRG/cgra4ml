@@ -1,0 +1,192 @@
+################################################
+#               Initial Tcl Settings
+################################################
+####### Hierarchy
+set design(FULLCHIP_OR_MACRO) "MACRO";
+set design(HAS_SCAN)          "no";
+
+set mmmc_or_simple "mmmc";         # "simple"    - using "read_lib"
+                                   # "mmmc"      - using "read_mmmc"
+set phys_synth_type "lef" ;  # "none"      - don't read any tech files
+                                   # "lef"       - only read lef - RTL Floorplaning Flow
+                                   # "floorplan" - read in DEF - iSpatial Flow
+set timing_lib_type "nldm";        # "nldm"      - Non Linear Model Libs 
+                                   # "ccs_ocv"   - CCS and OCV libs
+
+################################################
+#               Technology Definition
+################################################
+set TECHNOLOGY            "TSMC28"
+set SC_TECHNOLOGY         "TSMC28_SC"
+set SRAM_TECHNOLOGY       "None"
+set IO_TECHNOLOGY         "None"
+
+################################################
+#               Port Definition (From Verilog)
+################################################
+######  Clocks
+set design(MULTI_CLOCK_DESIGN) "no"
+
+set design(CLK_NAME)    "CLK"
+    set design(clock_list)  [list $design(CLK_NAME)]
+set design(CLK_PORT)    "clk"
+    set design(clock_port_list) [list $design(CLK_PORT)]
+set design(CLK_PERIOD)  2.0
+    set design(clock_period_list) [list $design(CLK_PERIOD)]
+
+######  Reset
+set design(RST_PORT)    "rstn"
+
+######  Scan
+if {$design(HAS_SCAN) == "no"} {
+    set design(SCAN_MODE_PORT) ""
+}
+
+################################################
+#               SDC Settings
+################################################
+# IO Constraints
+set design(INPUT_DELAY)     [expr $design(CLK_PERIOD)/4.0]
+set design(OUTPUT_DELAY)     [expr $design(CLK_PERIOD)/4.0]
+set design(INPUT_TRANSITION)     [expr $design(CLK_PERIOD)/5.0] ; # Maximum Transition Time according Liberty Data sheet = min(20% of Clock, Max transition characterized on Table)
+
+# Clock Constraints
+set design(CLOCK_UNCERTAINTY)     0.125 ; # In ns for SDC (will appear in ps for get_db)
+set design(CLOCK_MAX_TRANSITION)  0.250 ; # In ns for SDC (will appear in ps for get_db)
+set design(CLOCK_MAX_FANOUT)      20
+set design(CLOCK_MAX_CAPACITANCE) 0.100 ; # In pF for SDC (will appear in fF for get_db)
+
+# DRV Constraints
+# set design(MAX_FANOUT)     16
+# set design(MAX_TRANSITION) 0.35 ; # In ns for SDC (will appear in ps for get_db)
+# set design(MAX_CAPACITANCE) ; # In pF for SDC (will appear in fF for get_db)
+
+# Routing Constraints
+set design(MIN_ROUTE_LAYER) M1
+set design(MAX_ROUTE_LAYER) M8
+
+################################################
+#               Files and Paths
+################################################
+set design(workdir)                              $env(PWD)
+set design(project_root)                         "$env(PWD)/../../deepsocflow"
+set design(asic_root)                            "$design(project_root)/tcl/asic"
+set design(inputs_dir)                           "$design(asic_root)/inputs"
+set design(libraries_dir)                        "$design(asic_root)/libraries"
+set design(sourcecode_dir)                       "$design(asic_root)/sourcecode"
+set design(hdl_search_paths)                     [list $env(PWD) "$design(project_root)/rtl" "$design(project_root)/rtl/ext"]
+set design(read_svh_hdl_list)                    "$design(sourcecode_dir)/$design(TOPLEVEL)_src_list.svh.txt"
+set design(read_sv_hdl_list)                     "$design(sourcecode_dir)/$design(TOPLEVEL)_src_list.sv.txt"
+set design(read_v_hdl_list)                      "$design(sourcecode_dir)/$design(TOPLEVEL)_src_list.v.txt"
+set design(testbench_dir)                        "$design(project_root)/tb"
+set design(scripts_dir)                          "$design(asic_root)/scripts"
+set design(export_dir)                           "$design(asic_root)/exports"
+set design(reports_dir)                          "$design(asic_root)/reports/cadence"
+set design(dbs_dir)                              "$design(asic_root)/dbs/cadence"
+set design(synthesis_reports)                    "$design(reports_dir)/synthesis"
+set design(pnr_reports)                          "$design(reports_dir)/pnr"
+set design(functional_sdc)                       "$design(inputs_dir)/cadence.$design(TOPLEVEL).sdc"
+
+set design(postsyn_netlist_ispatial)             "$design(export_dir)/cadence/$design(TOPLEVEL)_ispatial.postsyn.v"
+set design(postsyn_db_base_name_ispatial)        "$design(dbs_dir)/synthesis/2_post_synth_ispatial/$design(TOPLEVEL)"
+set design(postsyn_db_ispatial)                  "$design(postsyn_db_base_name_ispatial)_ispatial.stylus.enc"
+set design(postsyn_sdf_ispatial)                 "$design(export_dir)/cadence/$design(TOPLEVEL)_ispatial.postsyn.sdf"
+set design(postsyn_netlist_rtl_flow)             "$design(export_dir)/cadence/$design(TOPLEVEL)_rtl_flow.postsyn.v"
+set design(postsyn_db_base_name_rtl_flow)        "$design(dbs_dir)/synthesis/2_post_synth_rtl_flow/$design(TOPLEVEL)"
+set design(postsyn_db_rtl_flow)                  "$design(postsyn_db_base_name_rtl_flow)_rtl_flow.stylus.enc"
+set design(postsyn_sdf_rtl_flow)                 "$design(export_dir)/cadence/$design(TOPLEVEL)_rtl_flow.postsyn.sdf"
+
+set design(floorplan_def)                        "$design(export_dir)/cadence/$design(TOPLEVEL).floorplan.def"
+set design(postroute_netlist)                    "$design(export_dir)/cadence/$design(TOPLEVEL).final.v"
+set design(postroute_sdf)                        "$design(export_dir)/cadence/$design(TOPLEVEL).final.sdf"
+set design(mmmc_nldm_view_file)                  "$design(inputs_dir)/cadence.$design(TOPLEVEL).nldm.mmmc"
+set design(mmmc_ocv_view_file)                   "$design(inputs_dir)/cadence.$design(TOPLEVEL).ocv.mmmc"
+set design(clock_tree_spec)                      "$design(inputs_dir)/cadence.$design(TOPLEVEL).ccopt"
+# set design(io_file)                            "$design(inputs_dir)/$design(TOPLEVEL).io"
+# set design(UPF_file)                           "$design(inputs_dir)/$design(TOPLEVEL).upf"
+# set design(CPF_file)                           "$design(inputs_dir)/$design(TOPLEVEL).cpf"
+# set design(dont_use_file)                      "$design(inputs_dir)/$design(TOPLEVEL).dont_use"
+# set design(size_only_file)                     "$design(inputs_dir)/$design(TOPLEVEL).size_only"
+
+################################################
+#               MMMC
+################################################
+if { $runtype == "synthesis" } {
+    set design(selected_setup_analysis_views) wc_analysis_view
+    set design(selected_hold_analysis_views)  bc_analysis_view
+} elseif { $runtype == "pnr" } {
+    set design(selected_setup_analysis_views) "wc_analysis_view tc_analysis_view"
+    set design(selected_hold_analysis_views)  "bc_analysis_view tc_analysis_view"
+}
+
+set design(selected_power_analysis_views) "wc_analysis_view"
+
+################################################
+#               Global Nets
+################################################
+set design(digital_gnd) "GND"
+set design(all_ground_nets) $design(digital_gnd)
+set design(digital_vdd) "VDD"
+set design(all_power_nets) $design(digital_vdd)
+
+if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
+    set design(io_gnd) "gnd"
+    lappend design(all_ground_nets) $design(io_gnd)
+    set design(io_vdd) "vddio"
+    lappend design(all_power_nets) $design(io_vdd)
+}
+
+################################################
+#               PnR Rules
+################################################
+set design(WELLTAP_RULE) 15
+
+################################################
+#               Simulation and Backannotation
+################################################
+set design(backannotation_tb) "$design(testbench_dir)/$design(TOPLEVEL)_tb.v"
+set design(tb_name) "$design(TOPLEVEL)_tb"
+set design(dut_name) "DUT"
+
+# For Backannotation and Power Reporting
+set design(backannotation_script) "$design(inputs_dir)/$design(TOPLEVEL).backannotation.tcl"
+set design(tcf_file)              "$design(export_dir)/cadence/$design(tb_name).tcf"
+set design(vcd_file)              "$design(export_dir)/cadence/$design(tb_name).vcd"
+set design(power_report_flow)     "vcd" ; # "vcd" or "tcf"
+set design(power_report_period)     2
+set design(power_report_start_time) 0
+set design(power_report_end_time)   1500
+
+################################################
+#               Get rid of annoying messages
+################################################
+set design(DESIGN_SUPPRESS_MESSAGES_GENUS) "ST-110 ST-112 CFM-5 CFM-1"
+# Stop reporting elaboration of multi-dimensional array
+lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-250"
+# Stop reporting implementation inference (chipWare)
+lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) {*} "CWD-19 CWD-36"
+# Stop reporting Replaced logic with a constant value
+lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-771"
+# Stop reporting unreachable case statements
+lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-472"
+
+# set design(DESIGN_SUPPRESS_MESSAGES_INNOVUS) ""
+# Stop reporting mismatch in voltage between IOs and sta...
+# lappend design(DESIGN_SUPPRESS_MESSAGES_INNOVUS) "TMPMSM.."
+
+################################################
+#               Print values to debug file
+################################################
+set df [open $debug_file w]
+puts $df "\n****************************************************"
+puts $df "* Values loaded from $design(TOPLEVEL).defines.tcl *"
+puts $df "\n****************************************************"
+foreach var {TECHNOLOGY SC_TECHNOLOGY SRAM_TECHNOLOGY IO_TECHNOLOGY} {
+    puts $df "$var = \t[set $var]"
+}
+
+foreach dic {design} {
+    foreach key [array names $dic] {
+        puts $df "${dic}(${key}) = \t [set ${dic}([set key])]"  
+    }
+}

@@ -1,0 +1,86 @@
+VERIFY_CONNECTIVITY use new engine.
+
+******** Start: VERIFY CONNECTIVITY ********
+Start Time: Fri Jun 27 10:51:45 2025
+
+Design Name: axis_sa
+Database Units: 2000
+Design Boundary: (0.0000, 0.0000) (200.2000, 159.7400)
+Error Limit = 1000; Warning Limit = 50
+Check all nets
+Use 8 pthreads
+Net n_3831: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net cts_opt_net_FE_OFN85_place_opt_net_FE_OFN45_n_2946: has an unconnected terminal, has regular routing with opens.
+Net n_5766: has an unconnected terminal, has regular routing with opens.
+Net cts_opt_net_FE_OFN77_place_opt_net_FE_OFN45_n_2946: has an unconnected terminal, has regular routing with opens.
+Net n_5767: has an unconnected terminal, has regular routing with opens.
+Net n_5768: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net place_opt_net_FE_OFN23_MR_3__MC_6__MUL_mul_15_35_n_0: has an unconnected terminal, has regular routing with opens.
+Net cts_opt_net_FE_OFN93_n_5: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net s_ready: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net sx_data[1][2]: Found a geometry with bounding box (94.00,159.58) (94.05,159.77) outside the design boundary.
+Violations for such geometries will be reported.
+Net place_opt_net_FE_OFN40_n_203: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net cts_opt_net_FE_OFN74_place_opt_net_FE_OFN45_n_2946: has an unconnected terminal, has regular routing with opens.
+Net cts_opt_net_FE_OFN81_place_opt_net_FE_OFN45_n_2946: has an unconnected terminal, has regular routing with opens.
+Net cts_opt_net_FE_OFN88_place_opt_net_FE_OFN23_MR_3__MC_6__MUL_mul_15_35_n_0: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net cts_opt_net_FE_OFN79_place_opt_net_FE_OFN45_n_2946: has an unconnected terminal, has regular routing with opens.
+Net cts_opt_net_FE_OFN80_place_opt_net_FE_OFN45_n_2946: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net cts_opt_net_FE_OFN87_place_opt_net_FE_OFN45_n_2946: has an unconnected terminal, has regular routing with opens.
+Net CTS_6: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net place_opt_net_FE_OFN45_n_2946: has an unconnected terminal, has regular routing with opens.
+Net CTS_5: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net cts_opt_net_FE_OFN78_place_opt_net_FE_OFN45_n_2946: has an unconnected terminal, has regular routing with opens.
+Net cts_opt_net_FE_OFN86_place_opt_net_FE_OFN45_n_2946: has an unconnected terminal, has regular routing with opens.
+Net cts_opt_net_FE_OFN82_place_opt_net_FE_OFN45_n_2946: has an unconnected terminal, has regular routing with opens.
+Net cts_opt_net_FE_OFN97_n_5768: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net rstn: Found a geometry with bounding box (82.00,139.18) (82.05,159.77) outside the design boundary.
+Violations for such geometries will be reported.
+Net cts_opt_net_FE_OFN96_n_5767: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net s_valid: Found a geometry with bounding box (116.00,139.43) (116.05,159.77) outside the design boundary.
+Violations for such geometries will be reported.
+Net cts_opt_net_FE_OFN95_n_5766: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net s_last: Found a geometry with bounding box (118.00,134.53) (118.05,159.77) outside the design boundary.
+Violations for such geometries will be reported.
+Net cts_opt_net_FE_OFN94_n_264: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net m_ready: Found a geometry with bounding box (163.59,17.98) (200.22,18.03) outside the design boundary.
+Violations for such geometries will be reported.
+Net a_valid[4]: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net cts_opt_net_FE_OFN90_s_ready: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net sx_data[0][3]: Found a geometry with bounding box (84.00,138.22) (84.05,159.77) outside the design boundary.
+Violations for such geometries will be reported.
+Net ki[3][7][3]: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net ki[3][7][2]: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net xi[3][7][3]: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net ki[3][7][0]: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net xi[3][7][1]: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net xi[3][7][0]: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net MR[3].MC[7].MUL_mul_15_35_n_30: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net MR[3].MC[7].MUL_mul_15_35_n_14: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net n_5: has an unconnected terminal, has regular routing with opens.
+Net n_264: has an unconnected terminal, has regular routing with opens.
+Net cts_opt_net_FE_OFN75_place_opt_net_FE_OFN45_n_2946: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net cts_opt_net_FE_OFN83_place_opt_net_FE_OFN45_n_2946: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net cts_opt_net_FE_OFN84_place_opt_net_FE_OFN45_n_2946: has an unconnected terminal, has regular routing with opens.
+Net cts_opt_net_FE_OFN76_place_opt_net_FE_OFN45_n_2946: has an unconnected terminal, has regular routing with opens.
+Net m_last: Found a geometry with bounding box (162.09,13.97) (200.22,14.03) outside the design boundary.
+Violations for such geometries will be reported.
+Net CTS_97: has an unconnected terminal, has regular routing with opens, dangling Wire.
+Net m_valid: Found a geometry with bounding box (164.69,15.97) (200.22,16.02) outside the design boundary.
+Violations for such geometries will be reported.
+Net MR[3].MC[7].MUL_mul_15_35_n_2: has an unconnected terminal, has regular routing with opens, dangling Wire.
+
+Begin Summary 
+    59 Problem(s) (IMPVFC-96): Terminal(s) are not connected.
+    44 Problem(s) (IMPVFC-92): Pieces of the net are not connected together.
+    30 Problem(s) (IMPVFC-94): The net has dangling wire(s).
+    133 total info(s) created.
+End Summary
+
+End Time: Fri Jun 27 10:51:45 2025
+Time Elapsed: 0:00:00.0
+
+******** End: VERIFY CONNECTIVITY ********
+  Verification Complete : 133 Viols.  0 Wrngs.
+  (CPU Time: 0:00:00.6  MEM: 16.000M)
+
