@@ -155,6 +155,7 @@ module asym_ram_sdp_read_wider (
   `define min(a, b) ((a) < (b) ? (a) : (b))
 
   localparam maxSIZE = `max(SIZEA, SIZEB);
+  localparam minSIZE = `min(SIZEA, SIZEB);
   localparam maxWIDTH = `max(WIDTHA, WIDTHB);
   localparam minWIDTH = `min(WIDTHA, WIDTHB);
 
