@@ -70,7 +70,7 @@ set design(MAX_ROUTE_LAYER) M8
 ################################################
 set design(workdir)                              $env(PWD)
 set design(project_root)                         "$env(PWD)/../../deepsocflow"
-set design(asic_root)                            "$design(project_root)/tcl/asic"
+set design(asic_root)                            "$design(project_root)/tcl/asic/cadence"
 set design(inputs_dir)                           "$design(asic_root)/inputs"
 set design(libraries_dir)                        "$design(asic_root)/libraries"
 set design(sourcecode_dir)                       "$design(asic_root)/sourcecode"
