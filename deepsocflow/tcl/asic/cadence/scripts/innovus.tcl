@@ -22,7 +22,8 @@ source ../../tcl/asic/inputs/cadence.$design(TOPLEVEL).defines -quiet
 # Load the library paths and definitions for this technology files
 source ../../tcl/asic/libraries/cadence.libraries.$TECHNOLOGY.tcl -quiet
 source ../../tcl/asic/libraries/cadence.libraries.$SC_TECHNOLOGY.tcl -quiet
-
+source ../../tcl/asic/libraries/cadence.srams.$TECHNOLOGY.tcl -quiet
+source ../../tcl/asic/libraries/cadence.srams.$SC_TECHNOLOGY.tcl -quiet
 if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
     source $design(libraries_dir)/libraries.$IO_TECHNOLOGY.tcl -quiet
 }
@@ -123,6 +124,36 @@ if {$phys_synth_type == "floorplan"} {
     gui_fit
 
     ####################################################
+    # Place Pins/IO Pads
+    ####################################################
+    # Set up pads (for fullchip) or pins (for macro)
+    if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
+        # Reload the IO file after resizing the floorplan
+        read_io_file $design(io_file)
+        # Add IO Fillers
+        add_io_fillers -cells $tech(IO_FILLERS) -prefix IOFILLER
+        # Connect Pad Rings
+        route_special -connect {pad_ring} -nets "$design(digital_gnd) $design(digital_vdd) \
+                                $design(io_gnd) $design(io_vdd)"
+    } elseif {$design(FULLCHIP_OR_MACRO) == "MACRO"} {
+        # Spread pins
+        set pins_to_spread [get_db ports .name]
+        edit_pin -spread_direction clockwise -spread_type center \
+                -layer M5 -side Top -fix_overlap 1 -spacing 2 \
+                -pin $design(CLOCK_PIN)
+        edit_pin -spread_direction clockwise -spread_type center \
+                -layer M3 -side Top -fix_overlap 1 -spacing 2 \
+                -pin $design(TOP_INPUT_PINS)
+        edit_pin -spread_direction clockwise -spread_type center \
+                -layer M4 -side Left -fix_overlap 1 -spacing 2 \
+                -pin $design(LEFT_INPUT_PINS)
+        edit_pin -spread_direction clockwise -spread_type center \
+                -layer M4 -side Right -fix_overlap 1 -spacing 2 \
+                -pin $design(RIGHT_OUTPUT_PINS)       
+    }
+    gui_redraw
+
+    ####################################################
     # Place Hard Macros
     ####################################################
     # Place memories
@@ -152,50 +183,11 @@ if {$phys_synth_type == "floorplan"} {
     # NOTE: snap_to_site flag is important here. otherwise there will be a potential follow pins discontinuity
     deselect_obj -all
     select_obj $imem0_name
-    add_rings -around selected -type block_rings -nets "$design(digital_gnd) $design(digital_vdd)" \
-            -layer {bottom M1 top M1 right M2 left M2} -width 3 -spacing 0.5
     create_place_halo -halo_deltas {10 10 10 10} insts $imem0_name -snap_to_site
 
     deselect_obj -all
     select_obj $imem1_name
-    add_rings -around selected -type block_rings -nets "$design(digital_gnd) $design(digital_vdd)" \
-            -layer {bottom M1 top M1 right M2 left M2} -width 3 -spacing 0.5
     create_place_halo -halo_deltas {10 10 10 10} insts $imem1_name -snap_to_site
-
-    # Connect VDD?GND connections on macros to rings
-    # NOTE: block_pin = on_boundary flag is required in order to connect to all power pins of the memories
-    route_special -connect {block_pin} -nets "$design(digital_gnd) $design(digital_vdd)" \
-            -block_pin_layer_range {1 4} \
-            -block_pin on_boundary \
-            -detailed_log
-
-
-    # Set up pads (for fullchip) or pins (for macro)
-    if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
-        # Reload the IO file after resizing the floorplan
-        read_io_file $design(io_file)
-        # Add IO Fillers
-        add_io_fillers -cells $tech(IO_FILLERS) -prefix IOFILLER
-        # Connect Pad Rings
-        route_special -connect {pad_ring} -nets "$design(digital_gnd) $design(digital_vdd) \
-                                $design(io_gnd) $design(io_vdd)"
-    } elseif {$design(FULLCHIP_OR_MACRO) == "MACRO"} {
-        # Spread pins
-        set pins_to_spread [get_db ports .name]
-        edit_pin -spread_direction clockwise -spread_type center \
-                -layer M5 -side Top -fix_overlap 1 -spacing 2 \
-                -pin $design(CLOCK_PIN)
-        edit_pin -spread_direction clockwise -spread_type center \
-                -layer M3 -side Top -fix_overlap 1 -spacing 2 \
-                -pin $design(TOP_INPUT_PINS)
-        edit_pin -spread_direction clockwise -spread_type center \
-                -layer M4 -side Left -fix_overlap 1 -spacing 2 \
-                -pin $design(LEFT_INPUT_PINS)
-        edit_pin -spread_direction clockwise -spread_type center \
-                -layer M4 -side Right -fix_overlap 1 -spacing 2 \
-                -pin $design(RIGHT_OUTPUT_PINS)       
-    }
-    gui_redraw
 
     ####################################################
     # Connect Power
