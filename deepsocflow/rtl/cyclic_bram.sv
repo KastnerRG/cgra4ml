@@ -7,7 +7,7 @@ module cyclic_bram #(
               W_DATA_WIDTH = 8,
               LATENCY      = 3,
               ABSORB       = 0,
-  parameter  SIZE = R_DEPTH * R_DATA_WIDTH ,
+  localparam  SIZE = R_DEPTH * R_DATA_WIDTH ,
               W_DEPTH =  SIZE / W_DATA_WIDTH,
               W_ADDR_WIDTH = $clog2(W_DEPTH),
               R_ADDR_WIDTH = $clog2(R_DEPTH)
@@ -33,12 +33,12 @@ module cyclic_bram #(
     else if (clken && r_en) r_addr <= r_addr == r_addr_max ?  r_addr_min : r_addr + 1;
 
   ram_weights BRAM (
-    .clk   (clk),    
-    .en    (clken),     
-    .we    (w_en),  
-    .addr  (w_en ? w_addr : r_addr),  
-    .di   (s_data),   
-    .dout  (m_data)  
+    .clka   (clk),    
+    .ena    (clken),     
+    .wea    (w_en),  
+    .addra  (w_en ? w_addr : r_addr),  
+    .dina   (s_data),   
+    .douta  (m_data)  
   );
 
 endmodule

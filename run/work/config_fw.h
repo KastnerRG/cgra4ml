@@ -1,36 +1,32 @@
-#define N_BUNDLES 7
+#define N_BUNDLES 3
 Bundle_t bundles [N_BUNDLES] = {
-   {.n=1  , .l=4  , .kw=7  , .coe=13 , .h=28 , .w=28 , .ci=1   , .co=8   , .w_kw2=25 , .t=1  , .p=1  , .cm=73 , .cm_p0=1  , .on=1  , .oh=7  , .ow=10 , .oc=8   , .ch=14 , .ph=7  , .cw=28 , .pw=10 , .pkh=3  , .psh=2  , .pkw=4  , .psw=3  , .xp_words=1232  , .b_offset=0    , .w_bpt=336  , .w_bpt_p0=336  , .x_bpt=616     , .x_bpt_p0=616     , .o_words=560     , .o_bytes=280     , .ib_out=1   , .in_buffer_idx=-1 , .out_buffer_idx=0  , .add_out_buffer_idx=0 , .add_in_buffer_idx=-1, .is_bias=1  , .is_flatten=0  , .is_softmax=0  , .x_pad=4  , .b_val_shift=9  , .b_bias_shift=0  , .ca_nzero=0  , .ca_shift=12 , .ca_pl_scale=0  , .aa_nzero=0  , .aa_shift=0  , .aa_pl_scale=0  , .pa_nzero=1  , .pa_shift=0  , .pa_pl_scale=0  , .softmax_frac=0  , .csh=2  , .csh_shift=1  , .psh_shift=0  , .csw=1  , .csw_shift=0  , .psw_shift=1  , .pool=POOL_AVG  , .softmax_max_f=0              , .header=    2296888605844451547u, .debug_nhwc_words=560       },
-   {.n=1  , .l=1  , .kw=1  , .coe=96 , .h=7  , .w=10 , .ci=8   , .co=8   , .w_kw2=10 , .t=1  , .p=1  , .cm=512, .cm_p0=8  , .on=1  , .oh=7  , .ow=10 , .oc=8   , .ch=7  , .ph=7  , .cw=10 , .pw=10 , .pkh=1  , .psh=1  , .pkw=1  , .psw=1  , .xp_words=70    , .b_offset=13   , .w_bpt=384  , .w_bpt_p0=384  , .x_bpt=280     , .x_bpt_p0=280     , .o_words=880     , .o_bytes=440     , .ib_out=2   , .in_buffer_idx=0  , .out_buffer_idx=1  , .add_out_buffer_idx=1 , .add_in_buffer_idx=0 , .is_bias=1  , .is_flatten=0  , .is_softmax=0  , .x_pad=0  , .b_val_shift=9  , .b_bias_shift=0  , .ca_nzero=1  , .ca_shift=12 , .ca_pl_scale=0  , .aa_nzero=1  , .aa_shift=3  , .aa_pl_scale=3  , .pa_nzero=0  , .pa_shift=0  , .pa_pl_scale=0  , .softmax_frac=0  , .csh=1  , .csh_shift=0  , .psh_shift=0  , .csw=1  , .csw_shift=0  , .psw_shift=0  , .pool=POOL_NONE , .softmax_max_f=0              , .header=    2301401119411667016u, .debug_nhwc_words=560       },
-   {.n=1  , .l=1  , .kw=7  , .coe=13 , .h=7  , .w=10 , .ci=8   , .co=8   , .w_kw2=7  , .t=1  , .p=1  , .cm=73 , .cm_p0=8  , .on=1  , .oh=7  , .ow=10 , .oc=8   , .ch=7  , .ph=7  , .cw=10 , .pw=10 , .pkh=1  , .psh=1  , .pkw=1  , .psw=1  , .xp_words=110   , .b_offset=109  , .w_bpt=2688 , .w_bpt_p0=2688 , .x_bpt=440     , .x_bpt_p0=440     , .o_words=880     , .o_bytes=440     , .ib_out=3   , .in_buffer_idx=1  , .out_buffer_idx=0  , .add_out_buffer_idx=-1, .add_in_buffer_idx=1 , .is_bias=1  , .is_flatten=0  , .is_softmax=0  , .x_pad=4  , .b_val_shift=9  , .b_bias_shift=0  , .ca_nzero=1  , .ca_shift=12 , .ca_pl_scale=0  , .aa_nzero=0  , .aa_shift=0  , .aa_pl_scale=0  , .pa_nzero=0  , .pa_shift=0  , .pa_pl_scale=0  , .softmax_frac=0  , .csh=1  , .csh_shift=0  , .psh_shift=0  , .csw=1  , .csw_shift=0  , .psw_shift=0  , .pool=POOL_NONE , .softmax_max_f=0              , .header=    2297319614406197323u, .debug_nhwc_words=560       },
-   {.n=1  , .l=1  , .kw=5  , .coe=19 , .h=7  , .w=10 , .ci=8   , .co=8   , .w_kw2=8  , .t=1  , .p=1  , .cm=102, .cm_p0=8  , .on=1  , .oh=7  , .ow=10 , .oc=8   , .ch=7  , .ph=7  , .cw=10 , .pw=10 , .pkh=1  , .psh=1  , .pkw=1  , .psw=1  , .xp_words=110   , .b_offset=122  , .w_bpt=1920 , .w_bpt_p0=1920 , .x_bpt=440     , .x_bpt_p0=440     , .o_words=880     , .o_bytes=440     , .ib_out=4   , .in_buffer_idx=0  , .out_buffer_idx=1  , .add_out_buffer_idx=-1, .add_in_buffer_idx=0 , .is_bias=1  , .is_flatten=0  , .is_softmax=0  , .x_pad=4  , .b_val_shift=9  , .b_bias_shift=0  , .ca_nzero=1  , .ca_shift=12 , .ca_pl_scale=0  , .aa_nzero=0  , .aa_shift=0  , .aa_pl_scale=0  , .pa_nzero=0  , .pa_shift=0  , .pa_pl_scale=0  , .softmax_frac=0  , .csh=1  , .csh_shift=0  , .psh_shift=0  , .csw=1  , .csw_shift=0  , .psw_shift=0  , .pool=POOL_NONE , .softmax_max_f=0              , .header=    2292675285075099722u, .debug_nhwc_words=560       },
-   {.n=1  , .l=1  , .kw=3  , .coe=32 , .h=7  , .w=10 , .ci=8   , .co=24  , .w_kw2=9  , .t=1  , .p=1  , .cm=170, .cm_p0=8  , .on=1  , .oh=7  , .ow=10 , .oc=24  , .ch=7  , .ph=7  , .cw=10 , .pw=10 , .pkh=1  , .psh=1  , .pkw=1  , .psw=1  , .xp_words=110   , .b_offset=141  , .w_bpt=1152 , .w_bpt_p0=1152 , .x_bpt=440     , .x_bpt_p0=440     , .o_words=1680    , .o_bytes=840     , .ib_out=5   , .in_buffer_idx=1  , .out_buffer_idx=0  , .add_out_buffer_idx=-1, .add_in_buffer_idx=-1, .is_bias=1  , .is_flatten=0  , .is_softmax=0  , .x_pad=4  , .b_val_shift=9  , .b_bias_shift=0  , .ca_nzero=0  , .ca_shift=12 , .ca_pl_scale=0  , .aa_nzero=0  , .aa_shift=0  , .aa_pl_scale=0  , .pa_nzero=0  , .pa_shift=0  , .pa_pl_scale=0  , .softmax_frac=0  , .csh=1  , .csh_shift=0  , .psh_shift=0  , .csw=1  , .csw_shift=0  , .psw_shift=0  , .pool=POOL_NONE , .softmax_max_f=0              , .header=    2292534565840355401u, .debug_nhwc_words=1680      },
-   {.n=1  , .l=1  , .kw=1  , .coe=96 , .h=7  , .w=10 , .ci=24  , .co=10  , .w_kw2=10 , .t=1  , .p=1  , .cm=512, .cm_p0=24 , .on=1  , .oh=1  , .ow=1  , .oc=700 , .ch=7  , .ph=7  , .cw=10 , .pw=10 , .pkh=1  , .psh=1  , .pkw=1  , .psw=1  , .xp_words=70    , .b_offset=173  , .w_bpt=1152 , .w_bpt_p0=1152 , .x_bpt=840     , .x_bpt_p0=840     , .o_words=4900    , .o_bytes=2450    , .ib_out=6   , .in_buffer_idx=0  , .out_buffer_idx=1  , .add_out_buffer_idx=-1, .add_in_buffer_idx=-1, .is_bias=1  , .is_flatten=1  , .is_softmax=0  , .x_pad=0  , .b_val_shift=9  , .b_bias_shift=0  , .ca_nzero=0  , .ca_shift=12 , .ca_pl_scale=0  , .aa_nzero=0  , .aa_shift=0  , .aa_pl_scale=0  , .pa_nzero=0  , .pa_shift=0  , .pa_pl_scale=0  , .softmax_frac=0  , .csh=1  , .csh_shift=0  , .psh_shift=0  , .csw=1  , .csw_shift=0  , .psw_shift=0  , .pool=POOL_NONE , .softmax_max_f=0              , .header=    2301541856908410952u, .debug_nhwc_words=700       },
-   {.n=1  , .l=1  , .kw=1  , .coe=96 , .h=1  , .w=1  , .ci=700 , .co=10  , .w_kw2=1  , .t=1  , .p=2  , .cm=512, .cm_p0=188, .on=1  , .oh=1  , .ow=1  , .oc=10  , .ch=1  , .ph=1  , .cw=1  , .pw=1  , .pkh=1  , .psh=1  , .pkw=1  , .psw=1  , .xp_words=7     , .b_offset=269  , .w_bpt=24576, .w_bpt_p0=9024 , .x_bpt=1792    , .x_bpt_p0=658     , .o_words=10      , .o_bytes=40      , .ib_out=-1  , .in_buffer_idx=1  , .out_buffer_idx=-1 , .add_out_buffer_idx=-1, .add_in_buffer_idx=-1, .is_bias=0  , .is_flatten=0  , .is_softmax=1  , .x_pad=0  , .b_val_shift=0  , .b_bias_shift=0  , .ca_nzero=1  , .ca_shift=3  , .ca_pl_scale=0  , .aa_nzero=0  , .aa_shift=0  , .aa_pl_scale=0  , .pa_nzero=0  , .pa_shift=0  , .pa_pl_scale=0  , .softmax_frac=3  , .csh=1  , .csh_shift=0  , .psh_shift=0  , .csw=1  , .csw_shift=0  , .psw_shift=0  , .pool=POOL_NONE , .softmax_max_f=0.875          , .header=    2302984416250036224u, .debug_nhwc_words=10        }
+   {.n=8  , .l=3  , .kw=3  , .coe=8  , .coe_tl=8  , .r_ll=2  , .h=18 , .w=18 , .ci=3   , .co=24  , .w_kw2=17 , .t=3  , .p=1  , .cm=170, .cm_p0=3  , .xp_words=4752  , .ib_out=1   , .w_bpt=124  , .w_bpt_p0=124  , .x_bpt=7144    , .x_bpt_p0=7144    , .o_words=114048  , .o_bytes=57040   , .in_buffer_idx=-1 , .out_buffer_idx=0  , .add_out_buffer_idx=-1, .add_in_buffer_idx=-1, .is_bias=1  , .is_flatten=0  , .is_softmax=0  , .b_offset=0    , .b_val_shift=9  , .b_bias_shift=0  , .ca_nzero=0  , .ca_shift=12 , .ca_pl_scale=0  , .aa_nzero=0  , .aa_shift=0  , .aa_pl_scale=0  , .pa_nzero=0  , .pa_shift=0  , .pa_pl_scale=0  , .softmax_frac=0  , .softmax_max_f=0              , .csh=1  , .ch=18 , .csh_shift=0  , .pkh=1  , .psh=1  , .ph=18 , .psh_shift=0  , .csw=1  , .cw=18 , .csw_shift=0  , .pkw=1  , .psw=1  , .pw=18 , .psw_shift=0  , .pool=POOL_NONE , .on=8  , .oh=18 , .ow=18 , .oc=24  , .x_header=                8527881u, .x_header_p0=                8527881u, .w_header=           139326529545u, .w_header_p0=                  8527881u , .debug_nhwc_words=62208     },
+   {.n=8  , .l=3  , .kw=1  , .coe=24 , .coe_tl=0  , .r_ll=2  , .h=18 , .w=18 , .ci=24  , .co=10  , .w_kw2=18 , .t=1  , .p=1  , .cm=512, .cm_p0=24 , .xp_words=4752  , .ib_out=2   , .w_bpt=304  , .w_bpt_p0=304  , .x_bpt=57040   , .x_bpt_p0=57040   , .o_words=35640   , .o_bytes=17932   , .in_buffer_idx=0  , .out_buffer_idx=1  , .add_out_buffer_idx=-1, .add_in_buffer_idx=-1, .is_bias=1  , .is_flatten=1  , .is_softmax=0  , .b_offset=24   , .b_val_shift=9  , .b_bias_shift=0  , .ca_nzero=1  , .ca_shift=15 , .ca_pl_scale=3  , .aa_nzero=0  , .aa_shift=0  , .aa_pl_scale=0  , .pa_nzero=0  , .pa_shift=0  , .pa_pl_scale=0  , .softmax_frac=0  , .softmax_max_f=0              , .csh=1  , .ch=18 , .csh_shift=0  , .pkh=1  , .psh=1  , .ph=18 , .psh_shift=0  , .csw=1  , .cw=18 , .csw_shift=0  , .pkw=1  , .psw=1  , .pw=18 , .psw_shift=0  , .pool=POOL_NONE , .on=1  , .oh=8  , .ow=1  , .oc=3240, .x_header=                8527964u, .x_header_p0=                8527964u, .w_header=           397024567388u, .w_header_p0=                  8527964u , .debug_nhwc_words=25920     },
+   {.n=1  , .l=1  , .kw=1  , .coe=24 , .coe_tl=0  , .r_ll=8  , .h=8  , .w=1  , .ci=3240, .co=10  , .w_kw2=1  , .t=1  , .p=7  , .cm=512, .cm_p0=168, .xp_words=11    , .ib_out=-1  , .w_bpt=6160 , .w_bpt_p0=2032 , .x_bpt=2832    , .x_bpt_p0=940     , .o_words=80      , .o_bytes=320     , .in_buffer_idx=1  , .out_buffer_idx=-1 , .add_out_buffer_idx=-1, .add_in_buffer_idx=-1, .is_bias=1  , .is_flatten=0  , .is_softmax=1  , .b_offset=48   , .b_val_shift=9  , .b_bias_shift=0  , .ca_nzero=1  , .ca_shift=15 , .ca_pl_scale=3  , .aa_nzero=0  , .aa_shift=0  , .aa_pl_scale=0  , .pa_nzero=0  , .pa_shift=0  , .pa_pl_scale=0  , .softmax_frac=3  , .softmax_max_f=0.875          , .csh=1  , .ch=8  , .csh_shift=0  , .pkh=1  , .psh=1  , .ph=8  , .psh_shift=0  , .csw=1  , .cw=1  , .csw_shift=0  , .pkw=1  , .psw=1  , .pw=1  , .psw_shift=0  , .pool=POOL_NONE , .on=1  , .oh=8  , .ow=1  , .oc=10  , .x_header=                   2044u, .x_header_p0=                    668u, .w_header=          8778913155068u, .w_header_p0=                      668u , .debug_nhwc_words=80        }
 };
 
 #define X_BITS_L2   2
 #define W_BITS_L2   2
-#define KH_MAX      9
-#define PE_ROWS     7
-#define PE_COLS     96
+#define X_PAD       3
+#define KH_MAX      7
+#define PE_ROWS     8
+#define PE_COLS     24
 
 #define N_OUT_BUF   2
-#define N_ADD_BUF   2
-#define WB_BYTES    41770
-#define W_BYTES     41232
-#define X_BYTES     616
-#define O_WORDS     10
-#define O_WORDS_MAX 4900
-#define O_BYTES_MAX 2450
-#define X_BYTES_ALL 5506
-#define NHWC_WORDS  6272
+#define N_ADD_BUF   
+#define WB_BYTES    39812
+#define W_BYTES     39668
+#define X_BYTES     7144
+#define O_WORDS     80
+#define O_WORDS_MAX 114048
+#define O_BYTES_MAX 57040
+#define X_BYTES_ALL 82116
+#define NHWC_WORDS  62208
 #define Y_TYPE      int32_t
 #define B_TYPE      int16_t
 #define O_TYPE      float
-#define B_WORDS     269
+#define B_WORDS     72
 #define AXI_WIDTH   128
-#define CONFIG_BASEADDR 0xB0000000
 #define DATA_DIR   "../vectors"
 
 static const uint8_t X_POSITION_INVERTED_MASKS [] = { 240, 15 };
