@@ -81,7 +81,7 @@ if {$phys_synth_type == "floorplan"} {
 init_design
 
 # Load general settings
-source ../../tcl/asic/scripts/cadence.settings.tcl -quiet
+source ../../deepsocflow/tcl/asic/cadence/scripts/cadence.settings.tcl -quiet
 
 # Create cost groups
 uom_default_cost_groups
@@ -111,7 +111,7 @@ uom_create_stage_reports -write_db yes
 # Floorplan
 ####################################################
 uom_start_stage "2_floorplan"
-source ../../tcl/asic/inputs/cadence.$design(TOPLEVEL).floorplan.defines -quiet
+source ../../deepsocflow/tcl/asic/cadence/inputs/cadence.$design(TOPLEVEL).floorplan.defines -quiet
 
 if {$phys_synth_type == "floorplan"} {
     # You need to read a .def file for the floorplan to enable physical synthesis
