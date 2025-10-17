@@ -1,0 +1,23 @@
+VERIFY_CONNECTIVITY use new engine.
+
+******** Start: VERIFY CONNECTIVITY ********
+Start Time: Fri Jun 27 10:56:29 2025
+
+Design Name: axis_sa
+Database Units: 2000
+Design Boundary: (0.0000, 0.0000) (200.2000, 159.7400)
+Error Limit = 1000; Warning Limit = 50
+Check all nets
+Use 8 pthreads
+
+Begin Summary 
+  Found no problems or warnings.
+End Summary
+
+End Time: Fri Jun 27 10:56:29 2025
+Time Elapsed: 0:00:00.0
+
+******** End: VERIFY CONNECTIVITY ********
+  Verification Complete : 0 Viols.  0 Wrngs.
+  (CPU Time: 0:00:00.7  MEM: 16.000M)
+
