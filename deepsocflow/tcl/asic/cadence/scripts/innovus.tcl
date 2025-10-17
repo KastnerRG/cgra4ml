@@ -122,6 +122,54 @@ if {$phys_synth_type == "floorplan"} {
         -core_density_size $design(floorplan_ratio) $design(floorplan_utilization) {*}$design(floorplan_space_to_core)
     gui_fit
 
+    ####################################################
+    # Place Hard Macros
+    ####################################################
+    # Place memories
+    set_obj_floorplan_box Instance $design(imem0) 182 166 787 760
+
+    # Relative Floorplanning
+    # ----------------------
+    # Note that edges are as follows:
+    #       0 - Bottom
+    #       1 - Left
+    #       2 - Top
+    #       3 - Right
+    #       Syntax: { ref_edge offset target_edge }
+    delete_relative_floorplan -all
+
+    set imem0_name [get_db [get_db insts $design(imem0)] .name]
+    # Place the imem0 macro 35u from the bottom and 25u from the left of the core boundry
+    create_relative_floorplan -ref_type core_boundary -ref $design(TOPLEVEL) -place $imem0_name \
+            -horizontal_edge_separate { 0 25 0 } -vertical_edge_separate { 1 25 1 } -orient MX
+
+    set imem1_name [get_db [get_db insts $design(imem1)] .name]
+    # Place the imem0 macro 35u from the bottom and 25u from the left of the core boundry
+    create_relative_floorplan -ref_type core_boundary -ref $design(TOPLEVEL) -place $imem1_name \
+            -horizontal_edge_separate { 1 25 1 } -vertical_edge_separate { 1 25 1 } -orient R0
+
+    # Add rings and halos around macros
+    # NOTE: snap_to_site flag is important here. otherwise there will be a potential follow pins discontinuity
+    deselect_obj -all
+    select_obj $imem0_name
+    add_rings -around selected -type block_rings -nets "$design(digital_gnd) $design(digital_vdd)" \
+            -layer {bottom M1 top M1 right M2 left M2} -width 3 -spacing 0.5
+    create_place_halo -halo_deltas {10 10 10 10} insts $imem0_name -snap_to_site
+
+    deselect_obj -all
+    select_obj $imem1_name
+    add_rings -around selected -type block_rings -nets "$design(digital_gnd) $design(digital_vdd)" \
+            -layer {bottom M1 top M1 right M2 left M2} -width 3 -spacing 0.5
+    create_place_halo -halo_deltas {10 10 10 10} insts $imem1_name -snap_to_site
+
+    # Connect VDD?GND connections on macros to rings
+    # NOTE: block_pin = on_boundary flag is required in order to connect to all power pins of the memories
+    route_special -connect {block_pin} -nets "$design(digital_gnd) $design(digital_vdd)" \
+            -block_pin_layer_range {1 4} \
+            -block_pin on_boundary \
+            -detailed_log
+
+
     # Set up pads (for fullchip) or pins (for macro)
     if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
         # Reload the IO file after resizing the floorplan
