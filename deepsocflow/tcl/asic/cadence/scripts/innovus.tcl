@@ -12,18 +12,18 @@ set debug_file "debug.innovus.txt"
 # Starting Stage - Load defines and technology
 ####################################################
 # Load general procedures
-source ../../deepsocflow/tcl/asic/scripts/cadence.procedures.tcl -quiet
+source ../../deepsocflow/tcl/asic/cadence/scripts/cadence.procedures.tcl -quiet
 
 uom_start_stage "loading_basic_settings"
 
 # Load the specific definitions for this project
-source ../../deepsocflow/tcl/asic/inputs/cadence.$design(TOPLEVEL).defines -quiet
+source ../../deepsocflow/tcl/asic/cadence/inputs/cadence.$design(TOPLEVEL).defines -quiet
 
 # Load the library paths and definitions for this technology files
-source ../../deepsocflow/tcl/asic/libraries/cadence.libraries.$TECHNOLOGY.tcl -quiet
-source ../../deepsocflow/tcl/asic/libraries/cadence.libraries.$SC_TECHNOLOGY.tcl -quiet
-source ../../deepsocflow/tcl/asic/libraries/cadence.srams.$TECHNOLOGY.tcl -quiet
-source ../../deepsocflow/tcl/asic/libraries/cadence.srams.$SC_TECHNOLOGY.tcl -quiet
+source ../../deepsocflow/tcl/asic/cadence/libraries/cadence.libraries.$TECHNOLOGY.tcl -quiet
+source ../../deepsocflow/tcl/asic/cadence/libraries/cadence.libraries.$SC_TECHNOLOGY.tcl -quiet
+source ../../deepsocflow/tcl/asic/cadence/libraries/cadence.srams.$TECHNOLOGY.tcl -quiet
+source ../../deepsocflow/tcl/asic/cadence/libraries/cadence.srams.$SC_TECHNOLOGY.tcl -quiet
 if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
     source $design(libraries_dir)/libraries.$IO_TECHNOLOGY.tcl -quiet
 }
