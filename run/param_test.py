@@ -14,7 +14,7 @@ def product_dict(**kwargs):
 
 @pytest.mark.parametrize("PARAMS", list(product_dict(
                                         processing_elements  = [(8,24)   ],
-                                        frequency_mhz        = [ 250    ],
+                                        frequency_mhz        = [ 500    ],
                                         bits_input           = [ 4       ],
                                         bits_weights         = [ 4       ],
                                         bits_sum             = [ 24      ],
