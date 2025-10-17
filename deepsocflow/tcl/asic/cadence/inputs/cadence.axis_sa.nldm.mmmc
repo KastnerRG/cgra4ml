@@ -1,0 +1,104 @@
+# Version:1.0 MMMC View Definition File
+# Do Not Remove Above Line
+
+######################## MMMC Hierarchy #################################################################################
+#
+#   Setup Analysis View |                    | --> Constraint Corner --> SDC File
+#                       | --> Analysis View  |
+#   Hold Analysis View  |                    |                    | --> Timing Condition --> Library Set --> LIB File
+#                                            | --> Delay Corners  |
+#                                                                 | --> RC Corner --> Captbl File
+#########################################################################################################################
+
+# Constraint Modes #
+# ---------------- #
+create_constraint_mode \
+    -name functional_mode \
+    -sdc_files $design(functional_sdc)
+
+# Library Sets #
+# ------------ #
+create_library_set \
+    -name bc_libset \
+    -timing $tech_files(ALL_BC_LIBS)
+
+create_library_set \
+    -name tc_libset \
+    -timing $tech_files(ALL_TC_LIBS)
+
+create_library_set \
+    -name wc_libset \
+    -timing $tech_files(ALL_WC_LIBS)
+
+# Timing Conditions #
+# ----------------- #
+create_timing_condition \
+    -name        bc_timing_condition \
+    -library_sets bc_libset
+
+create_timing_condition \
+    -name        tc_timing_condition \
+    -library_sets tc_libset
+
+create_timing_condition \
+    -name        wc_timing_condition \
+    -library_sets wc_libset
+
+# RC Corners #
+# ---------- #
+create_rc_corner \
+    -name bc_rc_corner \
+    -temperature $tech(TEMPERATURE_BC) \
+    -cap_table $tech_files(CAPTABLE_BC)
+
+create_rc_corner \
+    -name tc_rc_corner \
+    -temperature $tech(TEMPERATURE_TC) \
+    -cap_table $tech_files(CAPTABLE_TC)
+
+create_rc_corner \
+    -name wc_rc_corner \
+    -temperature $tech(TEMPERATURE_WC) \
+    -cap_table $tech_files(CAPTABLE_WC)
+
+# Delay Corners #
+# ------------- #
+create_delay_corner \
+    -name bc_dly_corner \
+    -timing_condition bc_timing_condition \
+    -rc_corner bc_rc_corner
+
+create_delay_corner \
+    -name tc_dly_corner \
+    -timing_condition tc_timing_condition \
+    -rc_corner tc_rc_corner
+
+create_delay_corner \
+    -name wc_dly_corner \
+    -timing_condition wc_timing_condition \
+    -rc_corner wc_rc_corner
+
+# Analysis Views #
+# -------------- #
+create_analysis_view \
+    -name bc_analysis_view \
+    -constraint_mode functional_mode \
+    -delay_corner bc_dly_corner
+
+create_analysis_view \
+    -name tc_analysis_view \
+    -constraint_mode functional_mode \
+    -delay_corner tc_dly_corner
+
+create_analysis_view \
+    -name wc_analysis_view \
+    -constraint_mode functional_mode \
+    -delay_corner wc_dly_corner
+
+# Selected Analysis Views #
+# ----------------------- #
+set_analysis_view \
+    -setup $design(selected_setup_analysis_views) \
+    -hold  $design(selected_hold_analysis_views)
+#    -leakge $design(selected_leakage_analysis_views)
+#    -dynamic $design(selected_dynamic_power_analysis_views)
