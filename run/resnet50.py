@@ -47,7 +47,7 @@ input_shape = (224, 224,3)
 Define Model
 '''
 
-sys_bits = SYS_BITS(x=4, k=4, b=16)
+sys_bits = SYS_BITS(x=8, k=4, b=16)
 
 @keras.saving.register_keras_serializable()
 class UserModel(XModel):
@@ -523,10 +523,10 @@ def product_dict(**kwargs):
 
 @pytest.mark.parametrize("PARAMS", list(product_dict(
                                         processing_elements  = [(7,96)   ],
-                                        frequency_mhz        = [ 150     ],
-                                        bits_input           = [ 4       ],
+                                        frequency_mhz        = [ 200     ],
+                                        bits_input           = [ 8       ],
                                         bits_weights         = [ 4       ],
-                                        bits_sum             = [ 20      ],
+                                        bits_sum             = [ 24      ],
                                         bits_bias            = [ 16      ],
                                         max_batch_size       = [ 64      ], 
                                         max_channels_in      = [ 512     ],
