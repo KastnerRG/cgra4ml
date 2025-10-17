@@ -29,13 +29,13 @@ set design(MULTI_CLOCK_DESIGN) "no"
 
 set design(CLK_NAME)    "CLK"
     set design(clock_list)  [list $design(CLK_NAME)]
-set design(CLK_PORT)    "clk"
+set design(CLK_PORT)    "aclk"
     set design(clock_port_list) [list $design(CLK_PORT)]
 set design(CLK_PERIOD)  2.0
     set design(clock_period_list) [list $design(CLK_PERIOD)]
 
 ######  Reset
-set design(RST_PORT)    "rstn"
+set design(RST_PORT)    "aresetn"
 
 ######  Scan
 if {$design(HAS_SCAN) == "no"} {
