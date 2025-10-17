@@ -11,23 +11,23 @@ set debug_file "debug.genus.txt"
 #################################################################
 
 # Load General Procedures
-source ../../tcl/asic/scripts/cadence.procedures.tcl -quiet
+source ../../deepsocflow/tcl/asic/cadence/scripts/cadence.procedures.tcl -quiet
 
 uom_start_stage "loading_basic_settings"
 
 # Load the specific definitions for this project
-source ../../tcl/asic/inputs/cadence.$design(TOPLEVEL).defines -quiet
+source ../../deepsocflow/tcl/asic/inputs/cadence.$design(TOPLEVEL).defines -quiet
 
 # Load general settings
-source ../../tcl/asic/scripts/cadence.settings.tcl -quiet
+source ../../deepsocflow/tcl/asic/scripts/cadence.settings.tcl -quiet
 
 # Load the library paths and definitions for this technology
-source ../../tcl/asic/libraries/cadence.libraries.$TECHNOLOGY.tcl -quiet
-source ../../tcl/asic/libraries/cadence.libraries.$SC_TECHNOLOGY.tcl -quiet
-source ../../tcl/asic/libraries/cadence.srams.$TECHNOLOGY.tcl -quiet
-source ../../tcl/asic/libraries/cadence.srams.$SC_TECHNOLOGY.tcl -quiet
+source ../../deepsocflow/tcl/asic/libraries/cadence.libraries.$TECHNOLOGY.tcl -quiet
+source ../../deepsocflow/tcl/asic/libraries/cadence.libraries.$SC_TECHNOLOGY.tcl -quiet
+source ../../deepsocflow/tcl/asic/libraries/cadence.srams.$TECHNOLOGY.tcl -quiet
+source ../../deepsocflow/tcl/asic/libraries/cadence.srams.$SC_TECHNOLOGY.tcl -quiet
 if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
-    source ../../tcl/asic/libraries/cadence.libraries.$IO_TECHNOLOGY.tcl -quiet
+    source ../../deepsocflow/tcl/asic/libraries/cadence.libraries.$IO_TECHNOLOGY.tcl -quiet
 }
 
 uom_message "Suppressing the following messages that are design specific"
