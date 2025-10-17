@@ -66,9 +66,9 @@ proc uom_message {msg {importance low}} {
 proc uom_reload_scripts {} {
     global design env
     # Load general procedures
-    source ../../tcl/asic/scripts/procedures.tcl -quiet
+    source ../../deepsocflow/tcl/asic/cadence/scripts/procedures.tcl -quiet
     # Load the specific definitions for this project
-    source ../../tcl/asic/inputs/$design(TOPLEVEL).defines -quiet
+    source ../../deepsocflow/tcl/asic/cadence/inputs/$design(TOPLEVEL).defines -quiet
 }
 
 ###################################################
@@ -181,7 +181,7 @@ proc uom_start_stage {stage} {
 #   Reports timing and saves it in the 
 #       appropriate directory
 ###################################################
-proc uom_report_timing {{reports_path "../../tcl/asic/reports/cadence"}} {
+proc uom_report_timing {{reports_path "../../deepsocflow/tcl/asic/cadence/reports/"}} {
     global design runtype this_run
     mkdir -pv ${reports_path}/$this_run(stage)/
     set_db timing_report_fields \
@@ -205,7 +205,7 @@ proc uom_report_timing {{reports_path "../../tcl/asic/reports/cadence"}} {
 #   Reports hold timing and saves it in the 
 #       appropriate directory
 ###################################################
-proc uom_report_hold_timing {{reports_path "../../tcl/asic/reports/cadence"}} {
+proc uom_report_hold_timing {{reports_path "../../deepsocflow/tcl/asic/cadence/reports/"}} {
     global design runtype this_run
     mkdir -pv ${reports_path}/$this_run(stage)/
     set_db timing_report_fields \
