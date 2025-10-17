@@ -3,7 +3,7 @@ source config_hw.tcl
 set EDGE_BITS [expr $X_BITS * ($KH_MAX/2) ]
 set WEIGHT_BITS [expr $COLS * $K_BITS ]
 
-set SRAM_EDGE_MUX   4
+set SRAM_EDGE_MUX   16
 set SRAM_WEIGHT_MUX 2
 
 set SRAM_EDGES_EST_DEPTH   4096 
