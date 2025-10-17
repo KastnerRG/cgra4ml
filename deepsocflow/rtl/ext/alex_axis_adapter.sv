@@ -26,8 +26,8 @@ THE SOFTWARE.
 
 `resetall
 `timescale 1ns / 1ps
-
-`include "../defines.svh"
+`default_nettype none
+`include "defines.svh"
 
 /*
  * AXI4-Stream bus width adapter

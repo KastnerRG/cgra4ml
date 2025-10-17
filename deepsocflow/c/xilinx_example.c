@@ -1,24 +1,21 @@
-//#define XDEBUG
+#define NDEBUG
 #include "platform.h"
 #include "deepsocflow_xilinx.h"
 
-int main()
-{
-    hardware_setup();
+int main() {
 
-    // For baremetal, give physical address
-    Memory_st *p_mem = (Memory_st *)MEM_BASEADDR;
-    void *p_config = (void *)CONFIG_BASEADDR;
-    // For linux, give virtual address
-    // Memory_st *p_mem = (Memory_st *)mmap(NULL, sizeof(Memory_st), PROT_READ | PROT_WRITE, MAP_SHARED, dh, MEM_BASEADDR);
-    // void *p_config = mmap(NULL, 4*16+N_BUNDLES*32, PROT_READ | PROT_WRITE, MAP_SHARED, dh, CONFIG_BASEADDR);
+  hardware_setup();
+  xil_printf("Welcome to DeepSoCFlow!\n Store wbx at: %p; y:%p; buffers {0:%p,1:%p}; debug_nhwc:%p; debug_tiled:%p \n", &mem.w, &mem.y, &mem.out_buffers[0], &mem.out_buffers[1], &mem.debug_nhwc, &mem.debug_tiled);
 
-    xil_printf("Welcome to DeepSoCFlow!\n Store wbx at: %p; y:%p; buffers {0:%p,1:%p};\n", &p_mem->w, &p_mem->y, &p_mem->out_buffers[0], &p_mem->out_buffers[1]);
+  model_setup();
+  model_run();    // run model and measure time
 
-    model_setup(p_mem, p_config);
-    model_run_timed(p_mem, p_config, 20);    // run model and measure time
-    print_output(p_mem);
+  // Print: outputs & measured time
+  Xil_DCacheFlushRange((INTPTR)&mem.y, sizeof(mem.y));  // force transfer to DDR, starting addr & length
+  for (int i=0; i<O_WORDS; i++)
+    printf("y[%d]: %f \n", i, (float)mem.y[i]);
+  printf("Done inference! time taken: %.5f ms \n", 1000.0*(float)(time_end-time_start)/COUNTS_PER_SECOND);
 
-    hardware_cleanup();
-    return 0;
+  hardware_cleanup();
+  return 0;
 }
