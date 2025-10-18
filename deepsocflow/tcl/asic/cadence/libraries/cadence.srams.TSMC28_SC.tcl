@@ -5,11 +5,11 @@ set paths(SRAM_LIB_EDGES_Paths)      "$paths(PDK_ROOT)/SRAM_Inst_old_cgra4ml/sra
 # SRAM Libs - SRAM Weights
 
 set tech_files(SRAM_WEIGHTS_LVT_BC_LIB) "$paths(SRAM_LIB_WEIGHTS_Paths)/sram_weights_ffg_cbestt_0p88v_0p99v_m40c.lib"
-    set tech_files(ALL_BC_LIBS) $tech_files(SRAM_WEIGHTS_LVT_BC_LIB)
+    lappend tech_files(ALL_BC_LIBS) $tech_files(SRAM_WEIGHTS_LVT_BC_LIB)
 set tech_files(SRAM_WEIGHTS_LVT_WC_LIB) "$paths(SRAM_LIB_WEIGHTS_Paths)/sram_weights_ssg_cworstt_0p72v_0p81v_125c.lib"
-    set tech_files(ALL_WC_LIBS) $tech_files(SRAM_WEIGHTS_LVT_WC_LIB)
+    lappend tech_files(ALL_WC_LIBS) $tech_files(SRAM_WEIGHTS_LVT_WC_LIB)
 set tech_files(SRAM_WEIGHTS_LVT_TC_LIB) "$paths(SRAM_LIB_WEIGHTS_Paths)/sram_weights_tt_ctypical_0p80v_0p90v_85c.lib"
-    set tech_files(ALL_TC_LIBS) $tech_files(SRAM_WEIGHTS_LVT_TC_LIB)
+    lappend tech_files(ALL_TC_LIBS) $tech_files(SRAM_WEIGHTS_LVT_TC_LIB)
 
 set tech_files(SRAM_WEIGHTS_RVT_BC_LIB) "$paths(SRAM_LIB_WEIGHTS_Paths)/sram_weights_ffg_cbestt_0p99v_0p99v_m40c.lib"
     lappend tech_files(ALL_BC_LIBS) $tech_files(SRAM_WEIGHTS_RVT_BC_LIB)
@@ -28,11 +28,11 @@ set tech_files(SRAM_WEIGHTS_HVT_TC_LIB) "$paths(SRAM_LIB_WEIGHTS_Paths)/sram_wei
 # SRAM Libs - SRAM Edges
 
 set tech_files(SRAM_EDGES_LVT_BC_LIB) "$paths(SRAM_LIB_EDGES_Paths)/sram_edges_ffg_cbestt_0p88v_0p99v_m40c.lib"
-    set tech_files(ALL_BC_LIBS) $tech_files(SRAM_EDGES_LVT_BC_LIB)
+    lappend tech_files(ALL_BC_LIBS) $tech_files(SRAM_EDGES_LVT_BC_LIB)
 set tech_files(SRAM_EDGES_LVT_WC_LIB) "$paths(SRAM_LIB_EDGES_Paths)/sram_edges_ssg_cworstt_0p72v_0p81v_125c.lib"
-    set tech_files(ALL_WC_LIBS) $tech_files(SRAM_EDGES_LVT_WC_LIB)
+    lappend tech_files(ALL_WC_LIBS) $tech_files(SRAM_EDGES_LVT_WC_LIB)
 set tech_files(SRAM_EDGES_LVT_TC_LIB) "$paths(SRAM_LIB_EDGES_Paths)/sram_edges_tt_ctypical_0p80v_0p90v_85c.lib"
-    set tech_files(ALL_TC_LIBS) $tech_files(SRAM_EDGES_LVT_TC_LIB)
+    lappend tech_files(ALL_TC_LIBS) $tech_files(SRAM_EDGES_LVT_TC_LIB)
 
 set tech_files(SRAM_EDGES_RVT_BC_LIB) "$paths(SRAM_LIB_EDGES_Paths)/sram_edges_ffg_cbestt_0p99v_0p99v_m40c.lib"
     lappend tech_files(ALL_BC_LIBS) $tech_files(SRAM_EDGES_RVT_BC_LIB)
