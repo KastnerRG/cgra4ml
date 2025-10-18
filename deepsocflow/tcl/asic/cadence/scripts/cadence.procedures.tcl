@@ -329,7 +329,7 @@ proc uom_create_sdc_file {} {
     puts $df "#       IO Constraints          #"
     puts $df "#################################"
     puts $df "set_input_delay -clock \$design(CLK_NAME) \$design(INPUT_DELAY) \\"
-    puts $df "        \[remove_from_collection \[all_inputs] \$design(CLK_PORT) \$design(RST_PORT)]"
+    puts $df "        \[remove_from_collection \[all_inputs] \[list \$design(CLK_PORT) \$design(RST_PORT)]]"
     puts $df "set_output_delay -clock \$design(CLK_NAME) \$design(OUTPUT_DELAY) \[all_outputs]"
     #puts $df "set_max_delay [expr $design(CLK_PERIOD)/2 + $design(INPUT_DELAY) + $design(OUTPUT_DELAY)] \\"
     #puts $df "        -from \[all_inputs] \\"
