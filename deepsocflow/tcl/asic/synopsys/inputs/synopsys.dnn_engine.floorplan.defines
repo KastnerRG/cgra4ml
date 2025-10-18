@@ -44,7 +44,7 @@ proc uom_add_m2_stripe_blockage {} {
 ####################################
 ##        Pin Definition          ##
 ####################################
-set design(CLOCK_PIN) {aclk} 
-set design(TOP_INPUT_PINS) {aresetn s_axis_pixels_t* }
-set design(LEFT_INPUT_PINS) {m_axis_t* }
-set design(RIGHT_OUTPUT_PINS) {s_axis_weights_t* }  
+set design(CLOCK_PIN) {clk} 
+set design(TOP_INPUT_PINS) {rstn \sx_data* s_valid s_last }
+set design(LEFT_INPUT_PINS) {\sk_data* s_ready}
+set design(RIGHT_OUTPUT_PINS) {\m_data* m_ready m_valid m_last }  

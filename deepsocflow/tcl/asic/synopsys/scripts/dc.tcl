@@ -235,7 +235,7 @@ if {$phys_synth_type == "floorplan"} {
     # Write out a netlist for simulation or Innovus
     # ---------------------------------------------
     uom_message "Writing the post synthesis netlist to $design(postsyn_netlist_ispatial)"
-    write_netlist $design(TOPLEVEL) -depth 1 > $design(postsyn_netlist_ispatial)
+    write_netlist $design(TOPLEVEL) -depth 0 > $design(postsyn_netlist_ispatial)
 
     # Write out SDF for backannotation simulation
     # -------------------------------------------
@@ -252,7 +252,7 @@ if {$phys_synth_type == "floorplan"} {
     # Write out a netlist for simulation or Innovus
     # ---------------------------------------------
     uom_message "Writing the post synthesis netlist to $design(postsyn_netlist_rtl_flow)"
-    write_netlist $design(TOPLEVEL) -depth 1 > $design(postsyn_netlist_rtl_flow)
+    write_netlist $design(TOPLEVEL) -depth 0 > $design(postsyn_netlist_rtl_flow)
 
     # Write out SDF for backannotation simulation
     # -------------------------------------------
