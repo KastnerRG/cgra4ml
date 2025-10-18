@@ -42,11 +42,6 @@ if {$design(HAS_SCAN) == "no"} {
     set design(SCAN_MODE_PORT) ""
 }
 
-######  Hard Macros
-set design(SRAM_WEIGHTS_0)  "WEIGHTS_ROTATOR_genblk1_0__BRAM__RAMW"
-set design(SRAM_WEIGHTS_1)  "WEIGHTS_ROTATOR_genblk1_1__BRAM__RAMW"
-set design(SRAM_EDGES_0)    "PIXELS_RAM_genblk1_0__RAME"
-
 ################################################
 #               SDC Settings
 ################################################
@@ -75,7 +70,7 @@ set design(MAX_ROUTE_LAYER) M8
 ################################################
 set design(workdir)                              $env(PWD)
 set design(project_root)                         "$env(PWD)/../../deepsocflow"
-set design(asic_root)                            "$design(project_root)/tcl/asic/cadence"
+set design(asic_root)                            "$design(project_root)/tcl/asic/synopsys"
 set design(inputs_dir)                           "$design(asic_root)/inputs"
 set design(libraries_dir)                        "$design(asic_root)/libraries"
 set design(sourcecode_dir)                       "$design(asic_root)/sourcecode"
@@ -90,23 +85,23 @@ set design(reports_dir)                          "$design(asic_root)/reports"
 set design(dbs_dir)                              "$design(asic_root)/dbs"
 set design(synthesis_reports)                    "$design(reports_dir)/synthesis"
 set design(pnr_reports)                          "$design(reports_dir)/pnr"
-set design(functional_sdc)                       "$design(inputs_dir)/cadence.$design(TOPLEVEL).sdc"
+set design(functional_sdc)                       "$design(inputs_dir)/synopsys.$design(TOPLEVEL).sdc"
 
-set design(postsyn_netlist_ispatial)             "$design(export_dir)/$design(TOPLEVEL)_ispatial.postsyn.v"
-set design(postsyn_db_base_name_ispatial)        "$design(dbs_dir)/synthesis/2_post_synth_ispatial/$design(TOPLEVEL)"
-set design(postsyn_db_ispatial)                  "$design(postsyn_db_base_name_ispatial)_ispatial.stylus.enc"
-set design(postsyn_sdf_ispatial)                 "$design(export_dir)/$design(TOPLEVEL)_ispatial.postsyn.sdf"
-set design(postsyn_netlist_rtl_flow)             "$design(export_dir)/$design(TOPLEVEL)_rtl_flow.postsyn.v"
-set design(postsyn_db_base_name_rtl_flow)        "$design(dbs_dir)/synthesis/2_post_synth_rtl_flow/$design(TOPLEVEL)"
-set design(postsyn_db_rtl_flow)                  "$design(postsyn_db_base_name_rtl_flow)_rtl_flow.stylus.enc"
-set design(postsyn_sdf_rtl_flow)                 "$design(export_dir)/$design(TOPLEVEL)_rtl_flow.postsyn.sdf"
+set design(postsyn_netlist_topo)                 "$design(export_dir)/$design(TOPLEVEL)_topo.postsyn.v"
+set design(postsyn_db_base_name_topo)            "$design(dbs_dir)/synthesis/2_post_synth_topo/$design(TOPLEVEL)"
+set design(postsyn_db_topo)                      "$design(postsyn_db_base_name_topo)_topo.stylus.enc" //////////////////////////////////////////
+set design(postsyn_sdf_topo)                     "$design(export_dir)/$design(TOPLEVEL)_topo.postsyn.sdf"
+set design(postsyn_netlist_wireload)             "$design(export_dir)/$design(TOPLEVEL)_wireload.postsyn.v"
+set design(postsyn_db_base_name_wireload)        "$design(dbs_dir)/synthesis/2_post_synth_wireload/$design(TOPLEVEL)"
+set design(postsyn_db_wireload)                  "$design(postsyn_db_base_name_wireload)_wireload.stylus.enc" //////////////////////////////////////////
+set design(postsyn_sdf_wireload)                 "$design(export_dir)/$design(TOPLEVEL)_wireload.postsyn.sdf"
 
 set design(floorplan_def)                        "$design(export_dir)/$design(TOPLEVEL).floorplan.def"
 set design(postroute_netlist)                    "$design(export_dir)/$design(TOPLEVEL).final.v"
 set design(postroute_sdf)                        "$design(export_dir)/$design(TOPLEVEL).final.sdf"
-set design(mmmc_nldm_view_file)                  "$design(inputs_dir)/cadence.$design(TOPLEVEL).nldm.mmmc"
-set design(mmmc_ocv_view_file)                   "$design(inputs_dir)/cadence.$design(TOPLEVEL).ocv.mmmc"
-set design(clock_tree_spec)                      "$design(inputs_dir)/cadence.$design(TOPLEVEL).ccopt"
+set design(mmmc_nldm_view_file)                  "$design(inputs_dir)/synopsys.$design(TOPLEVEL).nldm.mmmc"
+set design(mmmc_ocv_view_file)                   "$design(inputs_dir)/synopsys.$design(TOPLEVEL).ocv.mmmc"
+set design(clock_tree_spec)                      "$design(inputs_dir)/synopsys.$design(TOPLEVEL).ccopt"
 # set design(io_file)                            "$design(inputs_dir)/$design(TOPLEVEL).io"
 # set design(UPF_file)                           "$design(inputs_dir)/$design(TOPLEVEL).upf"
 # set design(CPF_file)                           "$design(inputs_dir)/$design(TOPLEVEL).cpf"
@@ -155,8 +150,8 @@ set design(dut_name) "DUT"
 
 # For Backannotation and Power Reporting
 set design(backannotation_script) "$design(inputs_dir)/$design(TOPLEVEL).backannotation.tcl"
-set design(tcf_file)              "$design(export_dir)/cadence/$design(tb_name).tcf"
-set design(vcd_file)              "$design(export_dir)/cadence/$design(tb_name).vcd"
+set design(tcf_file)              "$design(export_dir)/synopsys/$design(tb_name).tcf"
+set design(vcd_file)              "$design(export_dir)/synopsys/$design(tb_name).vcd"
 set design(power_report_flow)     "vcd" ; # "vcd" or "tcf"
 set design(power_report_period)     2
 set design(power_report_start_time) 0
