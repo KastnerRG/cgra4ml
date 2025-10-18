@@ -8,3 +8,4 @@ counter.sv
 cyclic_bram.sv
 n_delay.sv
 proc_engine.sv
+ram_asic.sv
