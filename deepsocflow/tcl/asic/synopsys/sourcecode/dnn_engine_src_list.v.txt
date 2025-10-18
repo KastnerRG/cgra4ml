@@ -1,4 +1,0 @@
-// List your RTL files here
-alex_axis_pipeline_register.v
-alex_axis_register.v
-dnn_engine.v

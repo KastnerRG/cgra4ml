@@ -1,0 +1,116 @@
+#--------- Set TCL parameters
+source config_hw.tcl
+
+#--------- Set PATH parameters
+set rtlPath "../../deepsocflow/rtl"
+set reportPath "../asic/reports"
+set outputPath "../asic/outputs"
+set libraryPath "../asic/pdk/tsmc28/db"
+set sramLibPath "../asic/srams"
+set search_path [concat $search_path $libraryPath $sramLibPath/sram_weights $sramLibPath/sram_edges] 
+set search_path [concat $search_path $rtlPath]
+
+#--------- Set Timing and Other Parameters
+set top_module dnn_engine
+set clock_cycle [expr 1000/$FREQ]
+set io_delay 0.1
+set clock_uncertainty 0.35
+
+#--------- Set Configurations
+set_host_options -max_cores 8
+
+#--------- Set Libraries
+set target_library "sc12mcpp140z_cln28ht_base_svt_c35_ssg_cworstt_max_0p81v_125c.db sram_edges_ffg_cbestt_1p05v_1p05v_125c.db sram_weights_ffg_cbestt_1p05v_1p05v_125c.db"
+set link_library [concat "* $target_library"]
+set min_library "sc12mcpp140z_cln28ht_base_svt_c35_ssg_cworstt_max_0p81v_125c.db" -min_version "sc12mcpp140z_cln28ht_base_svt_c35_ffg_cbestt_min_0p99v_m40c.db"
+
+set mw_library ${top_module}_milkyway28
+create_mw_lib -technology "../asic/pdk/tsmc28/tf/sc12mcpp140z_tech.tf" -mw_reference_library "../asic/pdk/tsmc28/milkyway/" $mw_library
+open_mw_lib $mw_library
+check_library
+
+set min_tlu_file "../asic/pdk/tsmc28/tluplus/rcbest.tluplus" 
+set max_tlu_file "../asic/pdk/tsmc28/tluplus/rcworst.tluplus"
+set prs_map_file "../asic/pdk/tsmc28/tluplus/tluplus.map"
+set_tlu_plus_files -max_tluplus $max_tlu_file -min_tluplus $min_tlu_file -tech2itf_map $prs_map_file
+
+set enable_phys_lib_during_elab true
+
+#Compiler directives Analysis
+set compile_no_new_cells_at_top_level false
+set hdlin_auto_save_templates false
+set wire_load_mode enclosed
+set timing_use_enhanced_capacitance_modeling true
+set verilogout_single_bit false
+
+define_design_lib WORK -path .template
+
+# read RTL
+analyze -format sverilog -lib WORK [glob ../../deepsocflow/rtl/defines.svh]
+analyze -format sverilog -lib WORK [glob ../asic/srams/ram_asic.sv]
+
+analyze -format verilog -lib WORK [glob ../../deepsocflow/rtl/ext/*.v]
+analyze -format sverilog -lib WORK [glob ../../deepsocflow/rtl/ext/*.sv]
+analyze -format sverilog -lib WORK [glob ../../deepsocflow/rtl/*.sv]
+analyze -format verilog -lib WORK [glob ../../deepsocflow/rtl/*.v]
+
+elaborate $top_module > ../asic/log/1.${top_module}_${FREQ}MHz_elaborate.log
+current_design $top_module
+check_design > ../asic/log/2.${top_module}_${FREQ}MHz_check_design.rpt
+
+# Link Design
+link
+uniquify
+
+# SDC Constraints
+create_clock -name aclk -period $clock_cycle [get_ports aclk]
+set_clock_uncertainty $clock_uncertainty [get_clocks aclk]
+set_false_path -from [get_ports "aresetn"]
+set_input_delay -clock [get_clocks aclk] -add_delay $io_delay [all_inputs]
+set_output_delay -clock [get_clocks aclk] -add_delay $io_delay [all_outputs]
+
+#Compiler directives Synthesis
+set compile_effort   "high"
+set_app_var ungroup_keep_original_design true
+set_register_merging [get_designs $top_module] false
+set compile_seqmap_propagate_constants false
+set compile_seqmap_propagate_high_effort false
+
+
+current_design $top_module
+
+# Compile
+
+compile_ultra -retime
+compile_ultra -no_seq_output_inversion
+
+ungroup -all -flatten
+
+current_design $top_module
+check_design > ../asic/log/3.${top_module}_${FREQ}MHz_check_design.rpt
+report_constraint -all_violators > ../asic/reports/${top_module}_${FREQ}MHz_constraints_violations.rpt
+
+# Write Out Design and Constraints - Hierarchical
+current_design $top_module
+change_names -rules verilog -hierarchy
+write -format verilog -hier -output [format "../asic/outputs/%s%s" $top_module .out.v]
+write_sdc ../asic/outputs/${top_module}.out.sdc
+write_sdf ../asic/outputs/${top_module}.out.sdf
+
+# Write Reports
+redirect [format "%s%s%s%s%s" ../asic/reports/ $top_module _$FREQ MHz _ports.rpt] { report_port }
+redirect [format "%s%s%s%s%s" ../asic/reports/ $top_module _$FREQ MHz _cells.rpt] { report_cell }
+redirect [format "%s%s%s%s%s" ../asic/reports/ $top_module _$FREQ MHz _area.rpt] { report_area }
+redirect -append [format "%s%s%s%s%s" ../asic/reports/ $top_module _$FREQ MHz _area_reference.rpt] { report_reference }
+redirect [format "%s%s%s%s%s" ../asic/reports/ $top_module _$FREQ MHz _power.rpt] { report_power }
+redirect [format "%s%s%s%s%s" ../asic/reports/ $top_module _$FREQ MHz _timing.rpt] \
+  { report_timing -path full -max_paths 100 -nets -transition_time -capacitance -significant_digits 3 -nosplit}
+
+
+set unmapped_designs [get_designs -filter "is_unmapped == true" $top_module]
+if {  [sizeof_collection $unmapped_designs] != 0 } {
+	echo "****************************************************"
+	echo "* ERROR!!!! Compile finished with unmapped logic.  *"
+	echo "****************************************************"
+}
+
