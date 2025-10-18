@@ -43,9 +43,9 @@ if {$design(HAS_SCAN) == "no"} {
 }
 
 ######  Hard Macros
-set design(SRAM_WEIGHTS_0)  "WEIGHTS_ROTATOR_genblk1_0__BRAM__RAMW"
-set design(SRAM_WEIGHTS_1)  "WEIGHTS_ROTATOR_genblk1_1__BRAM__RAMW"
-set design(SRAM_EDGES_0)    "PIXELS_RAM_genblk1_0__RAME"
+set design(SRAM_WEIGHTS_0)  "WEIGHTS_ROTATOR/genblk1[0].BRAM_BRAM_RAMW"
+set design(SRAM_WEIGHTS_1)  "WEIGHTS_ROTATOR/genblk1[1].BRAM_BRAM_RAMW"
+set design(SRAM_EDGES_0)    "PIXELS/RAM_RAME"
 
 ################################################
 #               SDC Settings
@@ -67,8 +67,9 @@ set design(CLOCK_MAX_CAPACITANCE) 0.100 ; # In pF for SDC (will appear in fF for
 # set design(MAX_CAPACITANCE) ; # In pF for SDC (will appear in fF for get_db)
 
 # Routing Constraints
-set design(MIN_ROUTE_LAYER) M1
-set design(MAX_ROUTE_LAYER) M8
+set design(MIN_ROUTE_LAYER)      M1
+set design(MAX_ROUTE_LAYER_SRAM) M4
+set design(MAX_ROUTE_LAYER)      M8
 
 ################################################
 #               Files and Paths
