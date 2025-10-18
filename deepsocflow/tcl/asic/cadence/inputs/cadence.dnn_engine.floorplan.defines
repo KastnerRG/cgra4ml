@@ -13,10 +13,14 @@ set design(core_ring_width)   [expr 10*[get_db $M8_db .min_width]];
 set design(core_ring_spacing) [expr  5*[get_db $M8_db .min_spacing]];
 set design(core_ring_layers)  "bottom [get_db $M8_db .name] top [get_db $M8_db .name] right [get_db $M7_db .name] left [get_db $M7_db .name]"
 
+set design(M7_sram_stripes_width) [expr 5*$tech(SRAM_MIN_WIDTH) ]
+set design(M7_sram_stripes_spacing) [expr $tech(SRAM_MAX_SPACING)]
+set design(M7_sram_stripes_interval) [expr $tech(SRAM_MIN_INTERVAL)]
+set design(M7_sram_stripes_nets) "$design(digital_gnd) $design(digital_vdd)"
+
 set design(M7_stripes_width) [expr 10*[get_db $M8_db .min_width]]
 set design(M7_stripes_spacing) [expr 5*[get_db $M8_db .min_spacing]]
-set design(M7_stripes_interval) [expr 150*[get_db $M8_db .min_spacing]]
-set design(M7_stripes_from_left) [expr 20*[get_db $M8_db .min_spacing]]
+set design(M7_stripes_interval) [expr 2*$tech(SRAM_MIN_INTERVAL)]
 set design(M7_stripes_nets) "$design(digital_gnd) $design(digital_vdd)"
 
 ####################################

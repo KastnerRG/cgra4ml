@@ -184,7 +184,7 @@ if {$phys_synth_type == "floorplan"} {
     # NOTE: snap_to_site flag is important here. otherwise there will be a potential follow pins discontinuity
     create_place_halo -halo_deltas {2.4 2.4 2.4 2.4} -all_macros -snap_to_site
     create_route_halo -bottom_layer $design(MIN_ROUTE_LAYER) -space 2.4 -top_layer $design(MAX_ROUTE_LAYER_SRAM) -insts [list $design(SRAM_WEIGHTS_0) $design(SRAM_WEIGHTS_1) $design(SRAM_EDGES_0)]
-    
+
     ####################################################
     # Connect Power
     ####################################################
@@ -208,10 +208,24 @@ if {$phys_synth_type == "floorplan"} {
             -cell_interval [expr 2 * $design(WELLTAP_RULE)]
     check_well_taps -max_distance $design(WELLTAP_RULE)
 
-    # Add Stripes
+    # Add Stripes - SRAM Edges
+    add_stripes -layer [lindex [get_db layers .name] 7] -direction vertical -nets $design(M7_stripes_nets) \
+                -width $design(M7_sram_stripes_width) -spacing $design(M7_sram_stripes_spacing) \
+                -start_from left -start_offset 4 -stop_offset 410 \
+                -set_to_set_distance $design(M7_sram_stripes_interval) -create_pins true \
+                -max_same_layer_jog_length 10.0
+
+    # Add Stripes - SRAM Weights
+    add_stripes -layer [lindex [get_db layers .name] 7] -direction vertical -nets $design(M7_stripes_nets) \
+                -width $design(M7_sram_stripes_width) -spacing $design(M7_sram_stripes_spacing) \
+                -start_from left -start_offset 420 \
+                -set_to_set_distance $design(M7_sram_stripes_interval) -create_pins true \
+                -max_same_layer_jog_length 10.0
+
+    # Add Stripes - Other
     add_stripes -layer [lindex [get_db layers .name] 7] -direction vertical -nets $design(M7_stripes_nets) \
                 -width $design(M7_stripes_width) -spacing $design(M7_stripes_spacing) \
-                -start_from left -start_offset $design(M7_stripes_from_left) \
+                -start_from left -start_offset 145 -stop_offset 135 \
                 -set_to_set_distance $design(M7_stripes_interval) -create_pins true \
                 -max_same_layer_jog_length 10.0
 
