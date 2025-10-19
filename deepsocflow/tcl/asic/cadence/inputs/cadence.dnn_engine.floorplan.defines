@@ -17,6 +17,7 @@ set design(M5_sram_stripes_width) [expr 5*$tech(SRAM_MIN_WIDTH) ]
 set design(M5_sram_stripes_spacing) [expr $tech(SRAM_MAX_SPACING)]
 set design(M5_sram_stripes_interval) [expr $tech(SRAM_MIN_INTERVAL)]
 set design(M5_sram_stripes_nets) "$design(digital_gnd) $design(digital_vdd)"
+set design(sram_ring_layers)  {bottom [get_db $M8_db .name] top [get_db $M8_db .name] right [get_db $M7_db .name] left [get_db $M7_db .name]}
 
 set design(M7_stripes_width) [expr 10*[get_db $M8_db .min_width]]
 set design(M7_stripes_spacing) [expr 5*[get_db $M8_db .min_spacing]]
