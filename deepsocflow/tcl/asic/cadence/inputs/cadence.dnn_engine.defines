@@ -68,7 +68,7 @@ set design(CLOCK_MAX_CAPACITANCE) 0.100 ; # In pF for SDC (will appear in fF for
 
 # Routing Constraints
 set design(MIN_ROUTE_LAYER)      M1
-set design(MAX_ROUTE_LAYER_SRAM) M4
+set design(MAX_ROUTE_LAYER_SRAM) VIA4
 set design(MAX_ROUTE_LAYER)      M8
 
 ################################################
