@@ -205,9 +205,9 @@ if {$phys_synth_type == "floorplan"} {
     # Connect Power Pins of SRAMs
     route_special -connect {block_pin} -nets "$design(digital_gnd) $design(digital_vdd)" \
             -block_pin_layer_range {1 4} \
-            -block_pin on_boundary \
+            -block_pin use_lef \
             -detailed_log
-    ///das
+
     ####################################################
     # Connect Power
     ####################################################
@@ -231,20 +231,57 @@ if {$phys_synth_type == "floorplan"} {
             -cell_interval [expr 2 * $design(WELLTAP_RULE)]
     check_well_taps -max_distance $design(WELLTAP_RULE)
 
-    # Add Stripes - SRAM Edges
-    add_stripes -layer [lindex [get_db layers .name] 5] -direction horizontal -nets $design(M5_sram_stripes_nets) \
-                -width $design(M5_sram_stripes_width) -spacing $design(M5_sram_stripes_spacing) \
-                -start_from left -start_offset 2 -stop_offset 2 \
-                -set_to_set_distance $design(M5_sram_stripes_interval) -create_pins true \
-                -max_same_layer_jog_length 10.0
+    # Add Stripes
+    set_db add_stripes_ignore_block_check true
+    set_db add_stripes_break_at none
+    set_db add_stripes_route_over_rows_only false
+    set_db add_stripes_rows_without_stripes_only false
+    set_db add_stripes_extend_to_closest_target none
+    set_db add_stripes_stop_at_last_wire_for_area false
+    set_db add_stripes_ignore_non_default_domains true
+    set_db add_stripes_trim_antenna_back_to_shape none
+    set_db add_stripes_spacing_type edge_to_edge
+    set_db add_stripes_spacing_from_block 0
+    set_db add_stripes_stripe_min_length stripe_width
+    set_db add_stripes_stacked_via_top_layer AP
+    set_db add_stripes_stacked_via_bottom_layer M1
+    set_db add_stripes_via_using_exact_crossover_size false
+    set_db add_stripes_split_vias false
+    set_db add_stripes_orthogonal_only true
+    set_db add_stripes_allow_jog { block_ring }
+    set_db add_stripes_skip_via_on_pin {  standardcell }
+    set_db add_stripes_skip_via_on_wire_shape {  noshape   }
+    add_stripes -nets {VDD GND} -layer M7 -direction vertical -width 1 -spacing 1 \
+    -set_to_set_distance 30 -start_from left -start_offset 5.5 -stop_offset 0 \
+    -switch_layer_over_obs false -max_same_layer_jog_length 2 -pad_core_ring_top_layer_limit AP \
+    -pad_core_ring_bottom_layer_limit M1 -block_ring_top_layer_limit AP -block_ring_bottom_layer_limit M1 \
+    -use_wire_group 0 -snap_wire_center_to_grid none
 
-
-    # Add Stripes - Other
-    add_stripes -layer [lindex [get_db layers .name] 7] -direction vertical -nets $design(M7_stripes_nets) \
-                -width $design(M7_stripes_width) -spacing $design(M7_stripes_spacing) \
-                -start_from left -start_offset 2 -stop_offset 2 \
-                -set_to_set_distance $design(M7_stripes_interval) -create_pins true \
-                -max_same_layer_jog_length 10.0
+    set_db add_stripes_ignore_block_check true
+    set_db add_stripes_break_at none
+    set_db add_stripes_route_over_rows_only false
+    set_db add_stripes_rows_without_stripes_only false
+    set_db add_stripes_extend_to_closest_target {ring stripe}
+    set_db add_stripes_stop_at_last_wire_for_area false
+    set_db add_stripes_partial_set_through_domain true
+    set_db add_stripes_ignore_non_default_domains false
+    set_db add_stripes_trim_antenna_back_to_shape none
+    set_db add_stripes_spacing_type edge_to_edge
+    set_db add_stripes_spacing_from_block 0
+    set_db add_stripes_stripe_min_length stripe_width
+    set_db add_stripes_stacked_via_top_layer M9
+    set_db add_stripes_stacked_via_bottom_layer M4
+    set_db add_stripes_via_using_exact_crossover_size false
+    set_db add_stripes_split_vias false
+    set_db add_stripes_orthogonal_only true
+    set_db add_stripes_allow_jog { block_ring }
+    set_db add_stripes_skip_via_on_pin {  standardcell }
+    set_db add_stripes_skip_via_on_wire_shape {  noshape   }
+    add_stripes -nets {VDD GND} -layer M8 -direction horizontal -width 1 -spacing 1 \
+    -set_to_set_distance 30 -over_power_domain 0 -start_from bottom -start_offset 5.5 \
+    -stop_offset 0 -switch_layer_over_obs false -max_same_layer_jog_length 2 \
+    -pad_core_ring_top_layer_limit M9 -pad_core_ring_bottom_layer_limit M1 -block_ring_top_layer_limit M9 \
+    -block_ring_bottom_layer_limit M1 -use_wire_group 0 -snap_wire_center_to_grid none
 
     # Export floorplan DEF
     # This can be used for loading the floorplan in subsequent runs
