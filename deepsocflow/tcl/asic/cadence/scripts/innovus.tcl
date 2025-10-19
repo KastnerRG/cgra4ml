@@ -424,7 +424,10 @@ if {$timing_lib_type == "ccs_ocv"} {
     set_db delaycal_enable_si                           true
 }
 
-///das
+# Screenshot of the floorplan
+gui_fit
+write_to_gif $design(pnr_reports)/screenshots/4_Post_Route_Pre_Fill.gif
+
 # Add Filler Cells with DRC errors
 add_fillers -base_cells $tech(FILL_CELLS) -prefix $tech(FILL_CELL_PREFIX) \
             -check_different_cells true -check_drc -check_min_hole true \
@@ -439,14 +442,14 @@ route_eco -fix_drc
 if {$timing_lib_type == "ccs_ocv"} {
     set_db timing_analysis_engine             statistical
 }
-uom_create_stage_reports -write_db yes -check_drc yes -report_timing yes -check_connectivity yes -report_hold yes
+uom_create_stage_reports -write_db yes -check_drc yes -report_timing yes -check_connectivity yes -report_hold yes -report_area yes -report_power yes
 if {$timing_lib_type == "ccs_ocv"} {
     set_db timing_analysis_engine             static
 }
 
 # Screenshot of the floorplan
 gui_fit
-write_to_gif $design(pnr_reports)/screenshots/4_Post_Route.gif
+write_to_gif $design(pnr_reports)/screenshots/4_Post_Route_Post_Fill.gif
 
 ####################################################
 # Export & SignOff
@@ -469,7 +472,7 @@ write_sdf -version 3.0 -min_view bc_analysis_view -typical_view tc_analysis_view
 ####################################################
 # Metal & Via Fill
 ####################################################
-///// das
+
 # Add Via Fill
 add_via_fill
 
@@ -478,4 +481,4 @@ add_metal_fill
 
 # Screenshot of the floorplan
 gui_fit
-write_to_gif $design(pnr_reports)/screenshots/5_Final_Layout.gif
+write_to_gif $design(pnr_reports)/screenshots/5_Final_Layout_Via_Fill_Metal_Fill.gif

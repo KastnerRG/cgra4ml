@@ -1,12 +1,102 @@
 
-set design_name dnn_engine
+#--------- Set Configurations
+set_host_options -max_cores 8
+	
+set metal_stack 1p13m_1x1xa1ya5y2yy2z
+set ndm_design_library tsmc_7_cgra4ml.dlib
 
-set_app_var link_library [list ../asic/pdk/tsmc28/db/sc12mcpp140z_cln28ht_base_svt_c35_ffg_cbestt_min_0p99v_m40c.db ../asic/pdk/tsmc28/db/sc12mcpp140z_cln28ht_base_svt_c35_ssg_cworstt_max_0p81v_125c.db ../asic/srams/sram_weights/sram_weights_ffg_cbestt_1p05v_1p05v_125c.db ../asic/srams/sram_edges/sram_edges_ffg_cbestt_1p05v_1p05v_125c.db]
-create_lib tsmc65lp -technology ../asic/pdk/tsmc28/tf/sc12mcpp140z_tech.tf -ref_libs [list ../asic/pdk/tsmc28/lef/sc12mcpp140z_cln28ht_base_svt_c35.lef ../asic/srams/sram_weights/sram_weights.lef ../asic/srams/sram_edges/sram_edges.lef]
+#--------- Set PATH parameters
+set rtlPath 	"../../deepsocflow/rtl"
+set reportPath 	"../asic/reports"
+set outputPath 	"../asic/outputs"
+set libraryPath "../asic/pdk/tsmc7/db"
+set ndmrefPath 	"../asic/pdk/tsmc7/ndm"
+set ndmtfPath 	"../asic/pdk/tsmc7/ndm/$metal_stack"
+set tlupath		"../asic/pdk/tsmc7/synopsys_tluplus/$metal_stack"
+set sramLibPath "../asic/srams"
+set search_path [concat $search_path $libraryPath $sramLibPath/sram_weights $sramLibPath/sram_edges] 
+set search_path [concat $search_path $rtlPath]
 
-read_parasitic_tech -name typical -tlup ../asic/pdk/tsmc28/tluplus/typical.tluplus -layermap ../asic/pdk/tsmc28/tluplus/tluplus.map
-read_parasitic_tech -name rcbest -tlup ../asic/pdk/tsmc28/tluplus/rcbest.tluplus -layermap ../asic/pdk/tsmc28/tluplus/tluplus.map
-read_parasitic_tech -name rcworst -tlup ../asic/pdk/tsmc28/tluplus/rcworst.tluplus -layermap ../asic/pdk/tsmc28/tluplus/tluplus.map
+#--------- Set Timing and Other Parameters
+set top_module dnn_engine
+
+# Set Input and Output Capacitance Values from Std Cells
+set tech(SDC_LOAD_PIN)      BUF_X0P5B_A9PP140ZTUL_C35/A
+set tech(SDC_DRIVING_CELL)  BUF_X0P5B_A9PP140ZTUL_C35
+
+# Set Tie High and Tie Low cells
+set tech(TIE_PREFIX)        TIEOFF_
+set tech(TIE_HIGH_CELL)     TIEHI_X1M_A9PP140ZTUL_C35
+set tech(TIE_LOW_CELL)      TIELO_X1M_A9PP140ZTUL_C35
+
+# Set End Cap Cells, Fill Tie Cells
+set tech(END_CAP_PREFIX)    ENDCAP_
+set tech(END_CAP_CELL)      ENDCAPTIE3_A9PP140ZTUL_C35 
+set tech(FILL_TIE_PREFIX)   FILLTIE 
+set tech(FILL_TIE_CELL)     FILLTIE5_A9PP140ZTUL_C35
+
+# Set Fill Cells
+set tech(FILL_CELL_PREFIX) FILLER_CELL_
+set tech(FILL_CELLS)       "FILLSGCAP2_A9PP140ZTUL_C35 FILLSGCAP3_A9PP140ZTUL_C35 FILLSGCAP4_A9PP140ZTUL_C35 FILLSGCAP8_A9PP140ZTUL_C35 FILLSGCAP16_A9PP140ZTUL_C35 FILLSGCAP32_A9PP140ZTUL_C35 FILLSGCAP64_A9PP140ZTUL_C35 FILLSGCAP128_A9PP140ZTUL_C35"
+
+# Set Antenna Cell
+set tech(ANTENNA_CELL)      ANTENNA2_A9PP140ZTUL_C35
+
+# Set Clock Tree Specs 
+set tech(CCOPT_DRIVING_PIN) {BUF_X0P5B_A9PP140ZTUL_C35/A BUF_X0P5B_A9PP140ZTUL_C35/Y}
+# set tech(CLOCK_BUFFERS)     BUF_X0P5B_A9PP140ZTUL_C35
+# set tech(CLOKC_GATES)       
+# set tech(CLOCK_INVERTERS)   
+# set tech(CLOCK_LOGIC)       MXGL2
+# set tech(CLOCK_DELAYS)      DLYCLK8
+
+# Set Slew Rates from Documentation
+set tech(CLOCK_SLEW)        0.00108
+set tech(DATA_SLEW)         0.00108
+set tech(INPUT_SLEW)        0.00108
+
+######  Clocks
+set design(MULTI_CLOCK_DESIGN) "no"
+
+set design(CLK_NAME)    "CLK"
+    set design(clock_list)  [list $design(CLK_NAME)]
+set design(CLK_PORT)    "aclk"
+    set design(clock_port_list) [list $design(CLK_PORT)]
+set design(CLK_PERIOD)  2.0
+    set design(clock_period_list) [list $design(CLK_PERIOD)]
+
+######  Reset
+set design(RST_PORT)    "aresetn"
+
+# IO Constraints
+set design(INPUT_DELAY)     [expr $design(CLK_PERIOD)/4.0]
+set design(OUTPUT_DELAY)     [expr $design(CLK_PERIOD)/4.0]
+set design(INPUT_TRANSITION)     [expr $design(CLK_PERIOD)/5.0] ; # Maximum Transition Time according Liberty Data sheet = min(20% of Clock, Max transition characterized on Table)
+
+# Clock Constraints
+set design(CLOCK_UNCERTAINTY)     0.125 ; # In ns for SDC (will appear in ps for get_db)
+set design(CLOCK_MAX_TRANSITION)  0.250 ; # In ns for SDC (will appear in ps for get_db)
+set design(CLOCK_MAX_FANOUT)      20
+set design(CLOCK_MAX_CAPACITANCE) 0.100 ; # In pF for SDC (will appear in fF for get_db)
+
+#--------- Set Libraries
+set target_library "sch240mc_cln07ff41001_base_svt_c11_ssgnp_cworstccworstt_max_1p00v_125c.db"
+set link_library "* $target_library  sram_edges_ssgnp_cworstccworstt_0p90v_0p90v_125c.db sram_weights_ssgnp_cworstccworstt_0p90v_0p90v_125c.db"
+
+if {![file isdirectory $ndm_design_library]} {
+	create_lib -ref_libs [list $ndmrefPath/sch240mc_cln07ff41001_base_svt_c11.ndm sram_weights.lef sram_edges.lef] -technology $ndmtfPath/sch240mc_tech.tf $ndm_design_library
+} else {
+	open_lib $ndm_design_library
+}
+
+set min_tlu_file "$tlupath/rcbest.tluplus" 
+set max_tlu_file "$tlupath/rcworst.tluplus"
+set typ_tlu_file "$tlupath/typical.tluplus"
+set prs_map_file "$tlupath/tluplus.map"
+
+read_parasitic_tech -name typical -tlup $typ_tlu_file -layermap $prs_map_file
+read_parasitic_tech -name rcbest  -tlup $min_tlu_file -layermap $prs_map_file
+read_parasitic_tech -name rcworst -tlup $max_tlu_file -layermap $prs_map_file
 
 read_verilog -library tsmc65lp -design dnn_engine -top dnn_engine ../asic/outputs/$design_name.out.v
 link_block
