@@ -109,6 +109,7 @@ uom_create_stage_reports -write_db yes
 
 # Show Unplaced Macros
 set_preference ShowUnplacedInst 1
+
 ####################################################
 # Floorplan
 ####################################################
@@ -192,6 +193,12 @@ if {$phys_synth_type == "floorplan"} {
     add_rings -type core_rings -nets $design(core_ring_nets) -center 1 -follow core \
             -layer $design(core_ring_layers) -width $design(core_ring_width) -spacing $design(core_ring_spacing)
 
+    # Connect Power Pins of SRAMs
+    route_special -connect {block_pin} -nets "$design(digital_gnd) $design(digital_vdd)" \
+            -block_pin_layer_range {1 4} \
+            -block_pin on_boundary \
+            -detailed_log
+    ///das
     # Connect Follow Pins
     route_special -connect {core_pin} -nets $design(core_ring_nets) -pad_pin_port_connect all_geom -detailed_log
 
@@ -209,35 +216,17 @@ if {$phys_synth_type == "floorplan"} {
     check_well_taps -max_distance $design(WELLTAP_RULE)
 
     # Add Stripes - SRAM Edges
-    add_stripes -layer [lindex [get_db layers .name] 7] -direction vertical -nets VDD \
-                -width $design(M7_sram_stripes_width) -spacing 20 \
-                -start_from left -start_offset 1 -stop_offset 390 \
-                -set_to_set_distance 20 -create_pins true \
+    add_stripes -layer [lindex [get_db layers .name] 5] -direction horizontal -nets $design(M5_sram_stripes_nets) \
+                -width $design(M5_sram_stripes_width) -spacing $design(M5_sram_stripes_spacing) \
+                -start_from left -start_offset 2 -stop_offset 2 \
+                -set_to_set_distance $design(M5_sram_stripes_interval) -create_pins true \
                 -max_same_layer_jog_length 10.0
 
-    add_stripes -layer [lindex [get_db layers .name] 7] -direction vertical -nets GND \
-                -width $design(M7_sram_stripes_width) -spacing 10 \
-                -start_from left -start_offset 1 -stop_offset 400 \
-                -set_to_set_distance 10 -create_pins true \
-                -max_same_layer_jog_length 10.0
-
-    # Add Stripes - SRAM Weights
-    add_stripes -layer [lindex [get_db layers .name] 7] -direction vertical -nets VDD \
-                -width $design(M7_sram_stripes_width) -spacing 20 \
-                -start_from left -start_offset 403 \
-                -set_to_set_distance 20 -create_pins true \
-                -max_same_layer_jog_length 10.0
-
-    add_stripes -layer [lindex [get_db layers .name] 7] -direction vertical -nets GND \
-                -width $design(M7_sram_stripes_width) -spacing 10 \
-                -start_from left -start_offset 403 \
-                -set_to_set_distance 10 -create_pins true \
-                -max_same_layer_jog_length 10.0
 
     # Add Stripes - Other
     add_stripes -layer [lindex [get_db layers .name] 7] -direction vertical -nets $design(M7_stripes_nets) \
                 -width $design(M7_stripes_width) -spacing $design(M7_stripes_spacing) \
-                -start_from left -start_offset 95 -stop_offset 105 \
+                -start_from left -start_offset 2 -stop_offset 2 \
                 -set_to_set_distance $design(M7_stripes_interval) -create_pins true \
                 -max_same_layer_jog_length 10.0
 
