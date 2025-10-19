@@ -183,24 +183,24 @@ if {$phys_synth_type == "floorplan"} {
 
     # Add halos around macros
     # NOTE: snap_to_site flag is important here. otherwise there will be a potential follow pins discontinuity
-    create_place_halo -halo_deltas {2 2 2 2} -all_macros -snap_to_site
-    create_route_halo -bottom_layer $design(MIN_ROUTE_LAYER) -space 2 -top_layer $design(MAX_ROUTE_LAYER_SRAM) -insts [list $design(SRAM_WEIGHTS_0) $design(SRAM_WEIGHTS_1) $design(SRAM_EDGES_0)]
+    create_place_halo -halo_deltas {4 4 4 4} -all_macros -snap_to_site
+    create_route_halo -bottom_layer $design(MIN_ROUTE_LAYER) -space 4 -top_layer $design(MAX_ROUTE_LAYER_SRAM) -insts [list $design(SRAM_WEIGHTS_0) $design(SRAM_WEIGHTS_1) $design(SRAM_EDGES_0)]
 
     # Add Power Rings around Macros
     deselect_obj -all
     select_obj $design(SRAM_WEIGHTS_0)
     add_rings -around selected -type block_rings -nets "$design(digital_gnd) $design(digital_vdd)" \
-            -layer design(core_ring_layers)  -width 1 -spacing 0.5
+            -layer $design(sram_ring_layers)  -width 1 -spacing 1
 
     deselect_obj -all
     select_obj $design(SRAM_WEIGHTS_1)
     add_rings -around selected -type block_rings -nets "$design(digital_gnd) $design(digital_vdd)" \
-            -layer design(core_ring_layers)  -width 1 -spacing 0.5
+            -layer $design(sram_ring_layers)  -width 1 -spacing 1
 
     deselect_obj -all
     select_obj $design(SRAM_EDGES_0)
     add_rings -around selected -type block_rings -nets "$design(digital_gnd) $design(digital_vdd)" \
-            -layer design(core_ring_layers)  -width 1 -spacing 0.5
+            -layer $design(sram_ring_layers)  -width 1 -spacing 1
             
     # Connect Power Pins of SRAMs
     route_special -connect {block_pin} -nets "$design(digital_gnd) $design(digital_vdd)" \
@@ -214,7 +214,6 @@ if {$phys_synth_type == "floorplan"} {
     # Create Core Ring
     add_rings -type core_rings -nets $design(core_ring_nets) -center 1 -follow core \
             -layer $design(core_ring_layers) -width $design(core_ring_width) -spacing $design(core_ring_spacing)
-
 
     # Connect Follow Pins
     route_special -connect {core_pin} -nets $design(core_ring_nets) -pad_pin_port_connect all_geom -detailed_log
