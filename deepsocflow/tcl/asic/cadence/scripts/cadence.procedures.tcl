@@ -237,6 +237,8 @@ proc uom_create_stage_reports {{args ""}} {
         -report_hold        no
         -check_drc          no 
         -check_connectivity no  
+        -report_area        no
+        -report_power       no
         -help               0   }
 
     while {[llength $args]} {
