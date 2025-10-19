@@ -186,6 +186,28 @@ if {$phys_synth_type == "floorplan"} {
     create_place_halo -halo_deltas {2 2 2 2} -all_macros -snap_to_site
     create_route_halo -bottom_layer $design(MIN_ROUTE_LAYER) -space 2 -top_layer $design(MAX_ROUTE_LAYER_SRAM) -insts [list $design(SRAM_WEIGHTS_0) $design(SRAM_WEIGHTS_1) $design(SRAM_EDGES_0)]
 
+    # Add Power Rings around Macros
+    deselect_obj -all
+    select_obj $design(SRAM_WEIGHTS_0)
+    add_rings -around selected -type block_rings -nets "$design(digital_gnd) $design(digital_vdd)" \
+            -layer design(core_ring_layers)  -width 1 -spacing 0.5
+
+    deselect_obj -all
+    select_obj $design(SRAM_WEIGHTS_1)
+    add_rings -around selected -type block_rings -nets "$design(digital_gnd) $design(digital_vdd)" \
+            -layer design(core_ring_layers)  -width 1 -spacing 0.5
+
+    deselect_obj -all
+    select_obj $design(SRAM_EDGES_0)
+    add_rings -around selected -type block_rings -nets "$design(digital_gnd) $design(digital_vdd)" \
+            -layer design(core_ring_layers)  -width 1 -spacing 0.5
+            
+    # Connect Power Pins of SRAMs
+    route_special -connect {block_pin} -nets "$design(digital_gnd) $design(digital_vdd)" \
+            -block_pin_layer_range {1 4} \
+            -block_pin on_boundary \
+            -detailed_log
+    ///das
     ####################################################
     # Connect Power
     ####################################################
@@ -193,12 +215,7 @@ if {$phys_synth_type == "floorplan"} {
     add_rings -type core_rings -nets $design(core_ring_nets) -center 1 -follow core \
             -layer $design(core_ring_layers) -width $design(core_ring_width) -spacing $design(core_ring_spacing)
 
-    # Connect Power Pins of SRAMs
-    route_special -connect {block_pin} -nets "$design(digital_gnd) $design(digital_vdd)" \
-            -block_pin_layer_range {1 4} \
-            -block_pin on_boundary \
-            -detailed_log
-    ///das
+
     # Connect Follow Pins
     route_special -connect {core_pin} -nets $design(core_ring_nets) -pad_pin_port_connect all_geom -detailed_log
 
