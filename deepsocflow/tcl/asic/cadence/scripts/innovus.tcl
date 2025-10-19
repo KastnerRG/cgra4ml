@@ -170,20 +170,20 @@ if {$phys_synth_type == "floorplan"} {
 
     # Place the SRAM WEIGHTS 0 macro 35u from the bottom and 25u from the left of the core boundry
     create_relative_floorplan -ref_type core_boundary -ref $design(TOPLEVEL) -place $design(SRAM_WEIGHTS_0) \
-            -horizontal_edge_separate { 1 0 1 } -vertical_edge_separate { 3 0 3 } -orient R270
+            -horizontal_edge_separate { 1 0 1 } -vertical_edge_separate { 3 0 3 } -orient R0
 
     # Place the SRAM WEIGHTS 1 macro 35u from the bottom and 25u from the left of the core boundry
     create_relative_floorplan -ref_type core_boundary -ref $design(TOPLEVEL) -place $design(SRAM_WEIGHTS_1) \
-            -horizontal_edge_separate { 0 0 0 } -vertical_edge_separate { 3 0 3 } -orient R270
+            -horizontal_edge_separate { 0 0 0 } -vertical_edge_separate { 3 0 3 } -orient R0
 
     # Place the SRAM EDGES macro 35u from the bottom and 25u from the left of the core boundry
     create_relative_floorplan -ref_type core_boundary -ref $design(TOPLEVEL) -place $design(SRAM_EDGES_0) \
-            -horizontal_edge_separate { 1 0 1 } -vertical_edge_separate { 1 0 1 } -orient R90
+            -horizontal_edge_separate { 1 0 1 } -vertical_edge_separate { 1 0 1 } -orient R180
 
     # Add halos around macros
     # NOTE: snap_to_site flag is important here. otherwise there will be a potential follow pins discontinuity
-    create_place_halo -halo_deltas {2.4 2.4 2.4 2.4} -all_macros -snap_to_site
-    create_route_halo -bottom_layer $design(MIN_ROUTE_LAYER) -space 2.4 -top_layer $design(MAX_ROUTE_LAYER_SRAM) -insts [list $design(SRAM_WEIGHTS_0) $design(SRAM_WEIGHTS_1) $design(SRAM_EDGES_0)]
+    create_place_halo -halo_deltas {2 2 2 2} -all_macros -snap_to_site
+    create_route_halo -bottom_layer $design(MIN_ROUTE_LAYER) -space 2 -top_layer $design(MAX_ROUTE_LAYER_SRAM) -insts [list $design(SRAM_WEIGHTS_0) $design(SRAM_WEIGHTS_1) $design(SRAM_EDGES_0)]
 
     ####################################################
     # Connect Power

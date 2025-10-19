@@ -1,53 +1,111 @@
+
+#--------- Set Configurations
+set_host_options -max_cores 8
+
 #--------- Set TCL parameters
 source config_hw.tcl
+	
+set metal_stack 1p13m_1x1xa1ya5y2yy2z
+set ndm_design_library tsmc_7_cgra4ml.dlib
 
 #--------- Set PATH parameters
-set rtlPath "../../deepsocflow/rtl"
-set reportPath "../asic/reports"
-set outputPath "../asic/outputs"
-set libraryPath "../asic/pdk/tsmc28/db"
+set rtlPath 	"../../deepsocflow/rtl"
+set reportPath 	"../asic/reports"
+set outputPath 	"../asic/outputs"
+set libraryPath "../asic/pdk/tsmc7/db"
+set ndmrefPath 	"../asic/pdk/tsmc7/ndm"
+set ndmtfPath 	"../asic/pdk/tsmc7/ndm/$metal_stack"
+set tlupath		"../asic/pdk/tsmc7/synopsys_tluplus/$metal_stack"
 set sramLibPath "../asic/srams"
 set search_path [concat $search_path $libraryPath $sramLibPath/sram_weights $sramLibPath/sram_edges] 
 set search_path [concat $search_path $rtlPath]
 
 #--------- Set Timing and Other Parameters
 set top_module dnn_engine
-set clock_cycle [expr 1000/$FREQ]
-set io_delay 0.1
-set clock_uncertainty 0.35
 
-#--------- Set Configurations
-set_host_options -max_cores 8
+# Set Input and Output Capacitance Values from Std Cells
+set tech(SDC_LOAD_PIN)      BUF_X0P5B_A9PP140ZTUL_C35/A
+set tech(SDC_DRIVING_CELL)  BUF_X0P5B_A9PP140ZTUL_C35
+
+# Set Tie High and Tie Low cells
+set tech(TIE_PREFIX)        TIEOFF_
+set tech(TIE_HIGH_CELL)     TIEHI_X1M_A9PP140ZTUL_C35
+set tech(TIE_LOW_CELL)      TIELO_X1M_A9PP140ZTUL_C35
+
+# Set End Cap Cells, Fill Tie Cells
+set tech(END_CAP_PREFIX)    ENDCAP_
+set tech(END_CAP_CELL)      ENDCAPTIE3_A9PP140ZTUL_C35 
+set tech(FILL_TIE_PREFIX)   FILLTIE 
+set tech(FILL_TIE_CELL)     FILLTIE5_A9PP140ZTUL_C35
+
+# Set Fill Cells
+set tech(FILL_CELL_PREFIX) FILLER_CELL_
+set tech(FILL_CELLS)       "FILLSGCAP2_A9PP140ZTUL_C35 FILLSGCAP3_A9PP140ZTUL_C35 FILLSGCAP4_A9PP140ZTUL_C35 FILLSGCAP8_A9PP140ZTUL_C35 FILLSGCAP16_A9PP140ZTUL_C35 FILLSGCAP32_A9PP140ZTUL_C35 FILLSGCAP64_A9PP140ZTUL_C35 FILLSGCAP128_A9PP140ZTUL_C35"
+
+# Set Antenna Cell
+set tech(ANTENNA_CELL)      ANTENNA2_A9PP140ZTUL_C35
+
+# Set Clock Tree Specs 
+set tech(CCOPT_DRIVING_PIN) {BUF_X0P5B_A9PP140ZTUL_C35/A BUF_X0P5B_A9PP140ZTUL_C35/Y}
+# set tech(CLOCK_BUFFERS)     BUF_X0P5B_A9PP140ZTUL_C35
+# set tech(CLOKC_GATES)       
+# set tech(CLOCK_INVERTERS)   
+# set tech(CLOCK_LOGIC)       MXGL2
+# set tech(CLOCK_DELAYS)      DLYCLK8
+
+# Set Slew Rates from Documentation
+set tech(CLOCK_SLEW)        0.00108
+set tech(DATA_SLEW)         0.00108
+set tech(INPUT_SLEW)        0.00108
+
+######  Clocks
+set design(MULTI_CLOCK_DESIGN) "no"
+
+set design(CLK_NAME)    "CLK"
+    set design(clock_list)  [list $design(CLK_NAME)]
+set design(CLK_PORT)    "aclk"
+    set design(clock_port_list) [list $design(CLK_PORT)]
+set design(CLK_PERIOD)  2.0
+    set design(clock_period_list) [list $design(CLK_PERIOD)]
+
+######  Reset
+set design(RST_PORT)    "aresetn"
+
+# IO Constraints
+set design(INPUT_DELAY)     [expr $design(CLK_PERIOD)/4.0]
+set design(OUTPUT_DELAY)     [expr $design(CLK_PERIOD)/4.0]
+set design(INPUT_TRANSITION)     [expr $design(CLK_PERIOD)/5.0] ; # Maximum Transition Time according Liberty Data sheet = min(20% of Clock, Max transition characterized on Table)
+
+# Clock Constraints
+set design(CLOCK_UNCERTAINTY)     0.125 ; # In ns for SDC (will appear in ps for get_db)
+set design(CLOCK_MAX_TRANSITION)  0.250 ; # In ns for SDC (will appear in ps for get_db)
+set design(CLOCK_MAX_FANOUT)      20
+set design(CLOCK_MAX_CAPACITANCE) 0.100 ; # In pF for SDC (will appear in fF for get_db)
 
 #--------- Set Libraries
-set target_library "sc12mcpp140z_cln28ht_base_svt_c35_ssg_cworstt_max_0p81v_125c.db sram_edges_ffg_cbestt_1p05v_1p05v_125c.db sram_weights_ffg_cbestt_1p05v_1p05v_125c.db"
-set link_library [concat "* $target_library"]
-set min_library "sc12mcpp140z_cln28ht_base_svt_c35_ssg_cworstt_max_0p81v_125c.db" -min_version "sc12mcpp140z_cln28ht_base_svt_c35_ffg_cbestt_min_0p99v_m40c.db"
+set target_library "sch240mc_cln07ff41001_base_svt_c11_ssgnp_cworstccworstt_max_1p00v_125c.db"
+set link_library "* $target_library  sram_edges_ssgnp_cworstccworstt_0p90v_0p90v_125c.db sram_weights_ssgnp_cworstccworstt_0p90v_0p90v_125c.db"
 
-set mw_library ${top_module}_milkyway28
-create_mw_lib -technology "../asic/pdk/tsmc28/tf/sc12mcpp140z_tech.tf" -mw_reference_library "../asic/pdk/tsmc28/milkyway/" $mw_library
-open_mw_lib $mw_library
-check_library
+if {![file isdirectory $ndm_design_library]} {
+	create_lib -ref_libs [list $ndmrefPath/sch240mc_cln07ff41001_base_svt_c11.ndm sram_weights.lef sram_edges.lef] -technology $ndmtfPath/sch240mc_tech.tf $ndm_design_library
+} else {
+	open_lib $ndm_design_library
+}
 
-set min_tlu_file "../asic/pdk/tsmc28/tluplus/rcbest.tluplus" 
-set max_tlu_file "../asic/pdk/tsmc28/tluplus/rcworst.tluplus"
-set prs_map_file "../asic/pdk/tsmc28/tluplus/tluplus.map"
+set min_tlu_file "$tlupath/rcbest.tluplus" 
+set max_tlu_file "$tlupath/rcworst.tluplus"
+set prs_map_file "$tlupath/tluplus.map"
 set_tlu_plus_files -max_tluplus $max_tlu_file -min_tluplus $min_tlu_file -tech2itf_map $prs_map_file
 
 set enable_phys_lib_during_elab true
 
-#Compiler directives Analysis
-set compile_no_new_cells_at_top_level false
-set hdlin_auto_save_templates false
-set wire_load_mode enclosed
-set timing_use_enhanced_capacitance_modeling true
-set verilogout_single_bit false
-
 define_design_lib WORK -path .template
+
+set_aspect_ratio 0.75
+set_utilization 0.5
 
 # read RTL
 analyze -format sverilog -lib WORK [glob ../../deepsocflow/rtl/defines.svh]
-analyze -format sverilog -lib WORK [glob ../asic/srams/ram_asic.sv]
 
 analyze -format verilog -lib WORK [glob ../../deepsocflow/rtl/ext/*.v]
 analyze -format sverilog -lib WORK [glob ../../deepsocflow/rtl/ext/*.sv]
@@ -62,27 +120,44 @@ check_design > ../asic/log/2.${top_module}_${FREQ}MHz_check_design.rpt
 link
 uniquify
 
-# SDC Constraints
-create_clock -name aclk -period $clock_cycle [get_ports aclk]
-set_clock_uncertainty $clock_uncertainty [get_clocks aclk]
-set_false_path -from [get_ports "aresetn"]
-set_input_delay -clock [get_clocks aclk] -add_delay $io_delay [all_inputs]
-set_output_delay -clock [get_clocks aclk] -add_delay $io_delay [all_outputs]
+#################################
+#       Clock Constraints       #
+#################################
+# Create Clocks
+create_clock -period $design(clock_period_list) -name $design(clock_list) [get_ports $design(clock_port_list)]
+set_clock_uncertainty $design(CLOCK_UNCERTAINTY) $design(clock_list)
+
+#################################
+#       IO Constraints          #
+#################################
+set_input_delay -clock $design(CLK_NAME) $design(INPUT_DELAY) \
+        [remove_from_collection [all_inputs] [list $design(CLK_PORT) $design(RST_PORT)]]
+set_output_delay -clock $design(CLK_NAME) $design(OUTPUT_DELAY) [all_outputs]
+set tech(SDC_LOAD_VALUE) [load_of $tech(SDC_LOAD_PIN)]
+set_load                $tech(SDC_LOAD_VALUE)                      [all_outputs]
+set_input_transition    $design(INPUT_TRANSITION)                  [all_inputs]
+set_driving_cell        -lib_cell $tech(SDC_DRIVING_CELL)          [all_inputs]
 
 #Compiler directives Synthesis
 set compile_effort   "high"
 set_app_var ungroup_keep_original_design true
-set_register_merging [get_designs $top_module] false
-set compile_seqmap_propagate_constants false
-set compile_seqmap_propagate_high_effort false
+set_app_var compile_enhanced_tns_optimization true
+set_app_var compile_enhanced_tns_optimization_effort_level "high"
+set_app_var compile_prefer_mux true
 
+# Paths Groups
+group_path -name INPUTS -from [all_inputs]
+group_path -name OUTPUTS -to [all_outputs]
+group_path -name COMBO -from [all_inputs] -to [all_outputs]
 
 current_design $top_module
 
 # Compile
 
-compile_ultra -retime
-compile_ultra -no_seq_output_inversion
+compile_ultra -retime -spg -no_seq_output_inversion
+compile_ultra -incremental
+
+optimize_netlist -area 
 
 ungroup -all -flatten
 
@@ -92,12 +167,15 @@ report_constraint -all_violators > ../asic/reports/${top_module}_${FREQ}MHz_cons
 
 # Write Out Design and Constraints - Hierarchical
 current_design $top_module
+define_name_rules verilog -preserve_struct_ports
 change_names -rules verilog -hierarchy
 write -format verilog -hier -output [format "../asic/outputs/%s%s" $top_module .out.v]
 write_sdc ../asic/outputs/${top_module}.out.sdc
 write_sdf ../asic/outputs/${top_module}.out.sdf
+write_icc2_files -out cgra4ml_icc2_start
 
 # Write Reports
+update_timing
 redirect [format "%s%s%s%s%s" ../asic/reports/ $top_module _$FREQ MHz _ports.rpt] { report_port }
 redirect [format "%s%s%s%s%s" ../asic/reports/ $top_module _$FREQ MHz _cells.rpt] { report_cell }
 redirect [format "%s%s%s%s%s" ../asic/reports/ $top_module _$FREQ MHz _area.rpt] { report_area }

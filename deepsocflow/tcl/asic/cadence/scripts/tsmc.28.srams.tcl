@@ -1,13 +1,13 @@
 # Import Parameters
 source config_hw.tcl
-set EDGE_BITS [expr $X_BITS * ($KH_MAX/2) ]
+
 set WEIGHT_BITS [expr $COLS * $K_BITS ]
-
-set SRAM_EDGE_MUX   16
-set SRAM_WEIGHT_MUX 2
-
 set SRAM_EDGES_EST_DEPTH   4096 
+set SRAM_EDGE_MUX   16
+
+set EDGE_BITS [expr $X_BITS * ($KH_MAX/2) ]
 set SRAM_WEIGHTS_EST_DEPTH $RAM_WEIGHTS_DEPTH
+set SRAM_WEIGHT_MUX 2
 
 set CORNERS "ffg_cbestt_1p05v_1p05v_m40c,ffg_cbestt_0p88v_0p99v_m40c,ssg_cworstt_0p81v_0p81v_125c,tt_ctypical_0p80v_0p90v_85c,ssg_cworstt_0p72v_0p81v_125c,tt_ctypical_0p90v_0p90v_85c,ssg_cworstt_0p90v_0p90v_125c,tt_ctypical_1p00v_1p00v_85c,ffg_cbestt_0p99v_0p99v_m40c"
 
