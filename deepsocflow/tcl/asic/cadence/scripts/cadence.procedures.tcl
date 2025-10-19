@@ -296,7 +296,7 @@ proc uom_create_stage_reports {{args ""}} {
         report_area -detail -include_physical > $rpt_proc_dir/area.rpt
     }
 
-    if { $options(-report_area) eq "yes" } {
+    if { $options(-report_power) eq "yes" } {
         mkdir -pv $design(reports_dir)/pnr/$this_run(stage)
         set rpt_proc_dir $design(reports_dir)/pnr/$this_run(stage)
         uom_message "Reports directory is : $rpt_proc_dir" 
