@@ -87,7 +87,8 @@ read_physical -lef $tech_files(ALL_LEFS)
 #################################################################
 uom_start_stage "read_rtl"
 
-set_db init_hdl_search_path $design(hdl_search_paths)
+set_db   hdl_define           $SRAM_TECHNOLOGY
+set_db   init_hdl_search_path $design(hdl_search_paths)
 read_hdl -language sv    -f $design(read_svh_hdl_list)
 read_hdl -language sv    -f $design(read_sv_hdl_list)
 read_hdl -language v2001 -f $design(read_v_hdl_list)

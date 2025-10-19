@@ -17,6 +17,7 @@ module ram_weights #(
   output logic [WIDTH        -1:0] douta
 );
 
+  `ifdef TSMC28_SRAM
   sram_weights RAMW (
     .Q(douta),
     .CLK(clka),
@@ -30,7 +31,25 @@ module ram_weights #(
     .WABL(1'b1),
     .WABLM(2'b00)
     );
+  `endif TSMC28_SRAM
 
+  `ifdef TSMC7_SRAM
+  sram_weights RAMW (
+    .Q(douta),
+    .CLK(clka),
+    .CEN(~ena),
+    .GWEN(~wea),
+    .A(addra),
+    .D(dina),
+    .STOV(1'b0),
+    .EMA(3'b010),
+    .EMAW(2'b00),
+    .EMAS(1'b0),
+    .RET(1'b1),
+    .QNAP(1'b0)
+    );
+  `endif TSMC7_SRAM
+  
 endmodule
 
 module ram_edges #(
@@ -45,6 +64,7 @@ module ram_edges #(
   output logic [WIDTH        -1:0] douta
 );
 
+  `ifdef TSMC28_SRAM
   sram_edges RAME (
     .Q(douta),
     .CLK(clka),
@@ -58,5 +78,22 @@ module ram_edges #(
     .WABL(1'b1),
     .WABLM(2'b00)
   );
+  `endif TSMC28_SRAM
 
+  `ifdef TSMC7_SRAM
+  sram_edges RAME (
+    .Q(douta),
+    .CLK(clka),
+    .CEN(~ena),
+    .GWEN(~wea),
+    .A(addra),
+    .D(dina),
+    .STOV(1'b0),
+    .EMA(3'b010),
+    .EMAW(2'b00),
+    .EMAS(1'b0),
+    .RET(1'b1),
+    .QNAP(1'b0)
+  );
+  `endif TSMC7_SRAM
 endmodule
