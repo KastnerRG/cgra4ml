@@ -249,7 +249,7 @@ write_to_gif $design(pnr_reports)/screenshots/1_Floorplan.gif
 uom_start_stage "3_placement"
 
 # Add M2 routing blockages around vertical power stripes to prevent M2 routing DRCs near them
-uom_add_m2_stripe_blockage
+#uom_add_m2_stripe_blockage
 
 set_db place_global_cong_effort auto
 set_db opt_new_inst_prefix "place_opt_inst_"
@@ -322,7 +322,7 @@ write_to_gif $design(pnr_reports)/screenshots/3_CTS.gif
 uom_start_stage "6_pre_route"
 
 # Get rid of the M2 stripe blockages that are no longer needed and cause annoying DRC violations
-delete_route_blockages -type routes
+#delete_route_blockages -type routes
 
 
 set_db route_design_with_timing_driven                  true
