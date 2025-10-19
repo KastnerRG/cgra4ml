@@ -27,36 +27,6 @@ set top_module dnn_engine
 set tech(SDC_LOAD_PIN)      BUF_X1N_AH240TS_C11/A
 set tech(SDC_DRIVING_CELL)  BUF_X1N_AH240TS_C11
 
-# Set Tie High and Tie Low cells
-set tech(TIE_PREFIX)        TIEOFF_
-set tech(TIE_HIGH_CELL)     TIEHI_X1N_AH240TS_C11
-set tech(TIE_LOW_CELL)      TIELO_X1N_AH240TS_C11
-
-# Set End Cap Cells, Fill Tie Cells
-set tech(END_CAP_PREFIX)    ENDCAP_
-set tech(END_CAP_CELL)      ENDCAPA5_AH240TS_C11 
-set tech(FILL_TIE_PREFIX)   FILLTIE_ 
-set tech(FILL_TIE_CELL)     ""
-
-# Set Fill Cells
-set tech(FILL_CELL_PREFIX)  FILLER_CELL_
-set tech(FILL_CELLS)       "FILLSGCAP3_AH240TS_C11 FILLSGCAP4_AH240TS_C11 FILLSGCAP5_AH240TS_C11 FILLSGCAP6_AH240TS_C11 FILLSGCAP7_AH240TS_C11 FILLSGCAP8_AH240TS_C11 FILLSGCAP16_AH240TS_C11 FILLSGCAP32_AH240TS_C11 FILLSGCAP64_AH240TS_C11 FILLSGCAP128_AH240TS_C11"
-# Set Antenna Cell
-set tech(ANTENNA_CELL)      ANTENNA3_AH240TS_C11
-
-# Set Clock Tree Specs 
-set tech(CCOPT_DRIVING_PIN) {BUF_X1N_AH240TS_C11/A BUF_X1N_AH240TS_C11/Y}
-# set tech(CLOCK_BUFFERS)     BUF_X1N_AH240TS_C11
-# set tech(CLOKC_GATES)       
-# set tech(CLOCK_INVERTERS)   
-# set tech(CLOCK_LOGIC)       MXGL2
-# set tech(CLOCK_DELAYS)      DLYCLK8
-
-# Set Slew Rates from Documentation
-# set tech(CLOCK_SLEW)        0.00108
-# set tech(DATA_SLEW)         0.00108
-# set tech(INPUT_SLEW)        0.00108
-
 ######  Clocks
 set design(MULTI_CLOCK_DESIGN) "no"
 
@@ -77,9 +47,6 @@ set design(INPUT_TRANSITION)     [expr $design(CLK_PERIOD)/5.0] ; # Maximum Tran
 
 # Clock Constraints
 set design(CLOCK_UNCERTAINTY)     0.125 ; # In ns for SDC (will appear in ps for get_db)
-set design(CLOCK_MAX_TRANSITION)  0.250 ; # In ns for SDC (will appear in ps for get_db)
-set design(CLOCK_MAX_FANOUT)      20
-set design(CLOCK_MAX_CAPACITANCE) 0.100 ; # In pF for SDC (will appear in fF for get_db)
 
 #--------- Set Libraries
 set target_library "sch240mc_cln07ff41001_base_svt_c11_ssgnp_cworstccworstt_max_1p00v_125c.db"
