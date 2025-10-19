@@ -18,7 +18,7 @@ set timing_lib_type "nldm";        # "nldm"      - Non Linear Model Libs
 ################################################
 set TECHNOLOGY            "TSMC28"
 set SC_TECHNOLOGY         "TSMC28_SC"
-set SRAM_TECHNOLOGY       "None"
+set SRAM_TECHNOLOGY       "TSMC28_SRAM"
 set IO_TECHNOLOGY         "None"
 
 ################################################
