@@ -209,23 +209,35 @@ if {$phys_synth_type == "floorplan"} {
     check_well_taps -max_distance $design(WELLTAP_RULE)
 
     # Add Stripes - SRAM Edges
-    add_stripes -layer [lindex [get_db layers .name] 7] -direction vertical -nets $design(M7_stripes_nets) \
-                -width $design(M7_sram_stripes_width) -spacing $design(M7_sram_stripes_spacing) \
-                -start_from left -start_offset 4 -stop_offset 410 \
-                -set_to_set_distance $design(M7_sram_stripes_interval) -create_pins true \
+    add_stripes -layer [lindex [get_db layers .name] 7] -direction vertical -nets VDD \
+                -width $design(M7_sram_stripes_width) -spacing 20 \
+                -start_from left -start_offset 1 -stop_offset 390 \
+                -set_to_set_distance 20 -create_pins true \
+                -max_same_layer_jog_length 10.0
+
+    add_stripes -layer [lindex [get_db layers .name] 7] -direction vertical -nets GND \
+                -width $design(M7_sram_stripes_width) -spacing 10 \
+                -start_from left -start_offset 1 -stop_offset 400 \
+                -set_to_set_distance 10 -create_pins true \
                 -max_same_layer_jog_length 10.0
 
     # Add Stripes - SRAM Weights
-    add_stripes -layer [lindex [get_db layers .name] 7] -direction vertical -nets $design(M7_stripes_nets) \
-                -width $design(M7_sram_stripes_width) -spacing $design(M7_sram_stripes_spacing) \
-                -start_from left -start_offset 420 \
-                -set_to_set_distance $design(M7_sram_stripes_interval) -create_pins true \
+    add_stripes -layer [lindex [get_db layers .name] 7] -direction vertical -nets VDD \
+                -width $design(M7_sram_stripes_width) -spacing 20 \
+                -start_from left -start_offset 403 \
+                -set_to_set_distance 20 -create_pins true \
+                -max_same_layer_jog_length 10.0
+
+    add_stripes -layer [lindex [get_db layers .name] 7] -direction vertical -nets GND \
+                -width $design(M7_sram_stripes_width) -spacing 10 \
+                -start_from left -start_offset 403 \
+                -set_to_set_distance 10 -create_pins true \
                 -max_same_layer_jog_length 10.0
 
     # Add Stripes - Other
     add_stripes -layer [lindex [get_db layers .name] 7] -direction vertical -nets $design(M7_stripes_nets) \
                 -width $design(M7_stripes_width) -spacing $design(M7_stripes_spacing) \
-                -start_from left -start_offset 145 -stop_offset 135 \
+                -start_from left -start_offset 95 -stop_offset 105 \
                 -set_to_set_distance $design(M7_stripes_interval) -create_pins true \
                 -max_same_layer_jog_length 10.0
 
@@ -370,6 +382,7 @@ if {$timing_lib_type == "ccs_ocv"} {
     set_db delaycal_enable_si                           true
 }
 
+///das
 # Add Filler Cells with DRC errors
 add_fillers -base_cells $tech(FILL_CELLS) -prefix $tech(FILL_CELL_PREFIX) \
             -check_different_cells true -check_drc -check_min_hole true \
