@@ -4,9 +4,26 @@ connect_pg_net -automatic
 set_attribute [get_lib_cells */*TIE*] dont_touch false
 set_lib_cell_purpose -include optimization [get_lib_cells */*TIE*]
 
+#rings to srams
+#connect power to sram
+
 # Create Outer core ring
 create_pg_ring_pattern ring_pattern -horizontal_layer M8 -horizontal_width {3} -horizontal_spacing {2} -vertical_layer M7 -vertical_width {3} -vertical_spacing {2}
 set_pg_strategy core_ring -pattern {{name:ring_pattern} {nets: {VDD VSS}}{offset: {3 3}}} -core
+#connect follwo pins
+
+
+#add vertical and horizontal strapes
+#add end caps
+#add welltaps
+# Create endcap cells
+create_boundary_cells -left_boundary_cell [get_lib_cells {cln28ht/ENDCAPTIE3_A7PP140ZTS_C30}] -right_boundary_cell [get_lib_cells {cln28ht/ENDCAPTIE3_A7PP140ZTS_C30}]
+
+# Create taps
+create_tap_cells -distance 132.0000 -lib_cell [get_lib_cells {cln28ht/FILLTIE5_A7PP140ZTS_C30}] -voltage_area DEFAULT_VA -offset 33.0000 -pattern stagger
+create_tap_cells -distance 132.0000 -lib_cell [get_lib_cells {cln28ht/FILLTIE5_A7PP140ZTS_C30}] -voltage_area ACCEL -offset 33.0000 -pattern stagger
+
+
 
 # Create vertical straps 
 create_pg_mesh_pattern strap_pattern -layers {{{vertical_layer: M6} {width: 1} {pitch: 50} {spacing: interleaving} {trim: false}}}
