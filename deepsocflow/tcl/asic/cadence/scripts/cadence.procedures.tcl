@@ -246,6 +246,8 @@ proc uom_create_stage_reports {{args ""}} {
             -*hold*      {set args [lassign $args - options(-report_hold)]}
             -*drc*       {set args [lassign $args - options(-check_drc)]}
             -*conn*      {set args [lassign $args - options(-check_connectivity)]}
+            -*area*      {set args [lassign $args - options(-report_area)]}
+            -*power*     {set args [lassign $args - options(-report_power)]}
             -*help*      {set args [lassign $args - options(-help)]; set args [lrange $args 1 end]}
             default break
         }
@@ -285,6 +287,20 @@ proc uom_create_stage_reports {{args ""}} {
         set rpt_proc_dir $design(reports_dir)/pnr/$this_run(stage)
         uom_message "Reports directory is : $rpt_proc_dir" 
         check_connectivity > $rpt_proc_dir/connectivity.rpt
+    }
+
+    if { $options(-report_area) eq "yes" } {
+        mkdir -pv $design(reports_dir)/pnr/$this_run(stage)
+        set rpt_proc_dir $design(reports_dir)/pnr/$this_run(stage)
+        uom_message "Reports directory is : $rpt_proc_dir" 
+        report_area -detail -include_physical > $rpt_proc_dir/area.rpt
+    }
+
+    if { $options(-report_area) eq "yes" } {
+        mkdir -pv $design(reports_dir)/pnr/$this_run(stage)
+        set rpt_proc_dir $design(reports_dir)/pnr/$this_run(stage)
+        uom_message "Reports directory is : $rpt_proc_dir" 
+        report_power > $rpt_proc_dir/power.rpt
     }
 
     if {$options(-help)} {
