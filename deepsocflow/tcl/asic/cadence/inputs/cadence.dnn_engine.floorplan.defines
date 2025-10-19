@@ -2,7 +2,7 @@
 ##      Floorplan Parameters      ##
 ####################################
 set design(floorplan_ratio) 0.95
-set design(floorplan_utilization) 0.75
+set design(floorplan_utilization) 0.60
 set design(floorplan_space_to_core) "20 20 20 20" ; # Note that this should be passed as four arguments and  
                                                 # not as one Therefore, use the expand list {*} operator!
 
