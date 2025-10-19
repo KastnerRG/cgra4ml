@@ -1,5 +1,5 @@
 #--------- Generating SRAMS & Lib files
-source ../../deepsocflow/tcl/asic/genSrams.tcl
+source ../../deepsocflow/tcl/asic/synopsys/genSrams.tcl
 
 #--------- Set PATH parameters
 set SRAM_PATH ../asic/srams

@@ -114,7 +114,7 @@ create_supply_port VSS
 create_supply_net VSS -domain TOP
 connect_supply_net VSS -port VSS
 
-source ../../deepsocflow/tcl/asic/pinPlacement.tcl
+source ../../deepsocflow/tcl/asic/synopsys/pinPlacement.tcl
 
 set_domain_supply_net TOP -primary_power_net VDD -primary_ground_net VSS
 
@@ -143,9 +143,9 @@ set_app_options -name compile.initial_opto.placement_congestion_effort -value hi
 read_sdc ../asic/outputs/$design_name.out.sdc
 update_timing
 
-source ../../deepsocflow/tcl/asic/placeMemories.tcl
+source ../../deepsocflow/tcl/asic/synopsys/placeMemories.tcl
 
-source ../../deepsocflow/tcl/asic/powerPlan.tcl
+source ../../deepsocflow/tcl/asic/synopsys/powerPlan.tcl
 
 ########################################################################
 ## write_floorplan and write_def

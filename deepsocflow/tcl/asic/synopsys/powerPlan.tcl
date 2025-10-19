@@ -37,29 +37,7 @@ set_pg_strategy M5_rails -pattern {{name: rail_pattern}{nets: VDD VSS}} -extensi
 create_pg_macro_conn_pattern sram_pg_mesh -pin_conn_type long_pin -nets {VDD VSS} -direction horizontal -layers M5 -width 0.64 -spacing interleaving -pitch 3 -pin_layers {M4} -via_rule {{intersection : all}}
 set_pg_strategy sram_pg_mesh -macros { PIXELS_RAM_genblk1_0__RAME \
 	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_0__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_1__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_2__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_3__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_4__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_5__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_6__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_7__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_8__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_9__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_10__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_11__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_genblk1_0__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_genblk1_1__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_genblk1_2__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_genblk1_3__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_genblk1_4__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_genblk1_5__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_genblk1_6__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_genblk1_7__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_genblk1_8__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_genblk1_9__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_genblk1_10__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_genblk1_11__RAMW } -pattern {{name : sram_pg_mesh}{nets : {VDD VSS}}}
+	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_1__RAMW } -pattern {{name : sram_pg_mesh}{nets : {VDD VSS}}}
 
 # Create Power Straps
 create_pg_mesh_pattern power_straps_horizon -layers {{vertical_layer : M7} {width : 1} {spacing : interleaving} {pitch : 50} {trim : false}}
