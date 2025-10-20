@@ -53,7 +53,8 @@ set target_library "sch240mc_cln07ff41001_base_svt_c11_ssgnp_cworstccworstt_max_
 set link_library "* $target_library  sram_edges_ssgnp_cworstccworstt_0p90v_0p90v_125c.db sram_weights_ssgnp_cworstccworstt_0p90v_0p90v_125c.db"
 
 if {![file isdirectory $ndm_design_library]} {
-	create_lib -ref_libs [list $ndmrefPath/sch240mc_cln07ff41001_base_svt_c11.ndm CLIBs/SRAM_EDGES_ssgnp_cworstccworstt_0p90v_0p90v_125c.ndm CLIBs/SRAM_WEIGHTS_ssgnp_cworstccworstt_0p90v_0p90v_125c] -technology $ndmtfPath/sch240mc_tech.tf $ndm_design_library
+	create_lib -ref_libs [list $ndmrefPath/sch240mc_cln07ff41001_base_svt_c11.ndm CLIBs/SRAM_EDGES_ssgnp_cworstccworstt_0p90v_0p90v_125c.ndm CLIBs/SRAM_WEIGHTS_ssgnp_cworstccworstt_0p90v_0p90v_125c.ndm] \
+    -technology $ndmtfPath/sch240mc_tech.tf $ndm_design_library
 } else {
 	open_lib $ndm_design_library
 }
