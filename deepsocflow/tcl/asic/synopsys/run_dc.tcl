@@ -80,6 +80,7 @@ analyze -format sverilog -lib WORK -define TSMC7_SRAM [glob ../../deepsocflow/rt
 analyze -format verilog  -lib WORK  [glob ../../deepsocflow/rtl/*.v]
 
 elaborate $top_module > ../asic/log/1.${top_module}_${FREQ}MHz_elaborate.log
+current_design $top_module
 check_design > ../asic/log/2.${top_module}_${FREQ}MHz_check_design.rpt
 
 # Link Design
