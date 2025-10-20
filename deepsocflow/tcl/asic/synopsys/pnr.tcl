@@ -160,6 +160,22 @@ write_floorplan \
   -net_types {power ground} \
   -include_physical_status {fixed locked}
 
+################################################################################
+# Routing directions
+################################################################################
+
+set_attribute -objects [get_layers M1] -name routing_direction -value vertical
+set_attribute -objects [get_layers M2] -name routing_direction -value horizontal
+set_attribute -objects [get_layers M3] -name routing_direction -value vertical
+set_attribute -objects [get_layers M4] -name routing_direction -value horizontal
+set_attribute -objects [get_layers M5] -name routing_direction -value vertical
+set_attribute -objects [get_layers M6] -name routing_direction -value horizontal
+set_attribute -objects [get_layers M7] -name routing_direction -value vertical
+set_attribute -objects [get_layers M8] -name routing_direction -value horizontal
+set_attribute -objects [get_layers M9] -name routing_direction -value vertical
+set_attribute -objects [get_layers AP] -name routing_direction -value horizontal
+
+
 create_placement
 legalize_placement -cells [get_cells *]
 add_tie_cells -tie_high_lib_cells [get_lib_cells {cln28ht/TIEHI_X1M_A7PP140ZTS_C30}] -tie_low_lib_cells [get_lib_cells {cln28ht/TIELO_X1M_A7PP140ZTS_C30}]
@@ -177,6 +193,9 @@ save_lib -all
 update_timing -full
 report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.post_opt_placement.timing.rpt
 
+create_routing_rule {NDR1} -default_reference_rule  -multiplier_width 2 -multiplier_spacing 2
+set_clock_routing_rules -rules NDR1 -clocks {clk swdclk} -min_routing_layer M2 -max_routing_layer M5
+
 check_clock_trees -clocks aclk
 synthesize_clock_trees -clocks aclk
 clock_opt
@@ -192,6 +211,18 @@ optimize_routes -max_detail_route_iterations 200
 route_opt
 route_detail -incremental true -initial_drc_from_input true
 
+create_stdcell_fillers -lib_cells \
+ {FILL128_A7PP140ZTS_C30 \
+ FILL32_A7PP140ZTS_C30 \
+ FILL16_A7PP140ZTS_C30 \
+ FILL4_A7PP140ZTS_C30\
+ FILL3_A7PP140ZTS_C30 \
+ FILL2_A7PP140ZTS_C30 \
+ FILL1_A7PP140ZTS_C30 \
+ }
+
+# drc check and fix
+
 report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.post_route.timing.rpt
 report_utilization > ../asic/reports/${top_module}.post_route.utilization.rpt
 report_power > ../asic/reports/${top_module}.post_route.power.rpt
@@ -205,3 +236,4 @@ write_verilog -include {all} ../asic/outputs/${top_module}.pnr.v
 
 write_sdf ../asic/outputs/${top_module}_typical.sdf
 
+#add metal and via fill
