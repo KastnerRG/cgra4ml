@@ -69,7 +69,7 @@ define_design_lib WORK -path .template
 
 set_aspect_ratio 0.75
 set_utilization 0.5
-
+//das
 # read RTL
 analyze -format sverilog -lib WORK [glob ../../deepsocflow/rtl/defines.svh]
 
