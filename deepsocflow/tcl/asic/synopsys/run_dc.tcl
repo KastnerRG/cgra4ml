@@ -70,14 +70,14 @@ define_design_lib WORK -path .template
 
 set_aspect_ratio 0.75
 set_utilization 0.5
-//das
+
 # read RTL
 analyze -format sverilog -lib WORK [glob ../../deepsocflow/rtl/defines.svh]
 
 analyze -format verilog  -lib WORK [glob ../../deepsocflow/rtl/ext/*.v]
 analyze -format sverilog -lib WORK [glob ../../deepsocflow/rtl/ext/*.sv]
 analyze -format sverilog -lib WORK [glob ../../deepsocflow/rtl/*.sv]
-analyze -format verilog  -lib -define TSMC7_SRAM WORK [glob ../../deepsocflow/rtl/*.v]
+analyze -format verilog  -lib WORK -define TSMC7_SRAM  [glob ../../deepsocflow/rtl/*.v]
 
 elaborate $top_module > ../asic/log/1.${top_module}_${FREQ}MHz_elaborate.log
 current_design $top_module
