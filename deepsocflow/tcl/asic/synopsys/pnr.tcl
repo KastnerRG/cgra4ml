@@ -3,7 +3,7 @@
 set_host_options -max_cores 8
 	
 set metal_stack 1p13m_1x1xa1ya5y2yy2z
-set ndm_design_library tsmc_7_cgra4ml.dlib
+set ndm_design_library tsmc_7_cgra4ml_pnr.dlib
 
 #--------- Set PATH parameters
 set rtlPath 	"../../deepsocflow/rtl"
@@ -83,8 +83,12 @@ set target_library "sch240mc_cln07ff41001_base_svt_c11_ssgnp_cworstccworstt_max_
 set_app_var link_library "* $target_library  sram_edges_ssgnp_cworstccworstt_0p90v_0p90v_125c.db sram_weights_ssgnp_cworstccworstt_0p90v_0p90v_125c.db"
 
 #--------- NDM Libs
-open_lib $ndm_design_library
-
+if {![file isdirectory $ndm_design_library]} {
+	create_lib -ref_libs [list $ndmrefPath/sch240mc_cln07ff41001_base_svt_c11.ndm CLIBs/SRAM_EDGES_ssgnp_cworstccworstt_0p90v_0p90v_125c.ndm CLIBs/SRAM_WEIGHTS_ssgnp_cworstccworstt_0p90v_0p90v_125c.ndm] \
+    -technology $ndmtfPath/sch240mc_tech.tf $ndm_design_library
+} else {
+	open_lib $ndm_design_library
+}
 
 set min_tlu_file "$tlupath/rcbest.tluplus" 
 set max_tlu_file "$tlupath/rcworst.tluplus"
@@ -95,11 +99,9 @@ read_parasitic_tech -name typical -tlup $typ_tlu_file -layermap $prs_map_file
 read_parasitic_tech -name rcbest  -tlup $min_tlu_file -layermap $prs_map_file
 read_parasitic_tech -name rcworst -tlup $max_tlu_file -layermap $prs_map_file
 
-
-set_technology -node 7
-
 read_verilog -library $ndm_design_library -design dnn_engine -top dnn_engine ../asic/outputs/$design_name.out.v
 link_block
+set_technology -node 7
 break
 initialize_floorplan -side_length {1000 600} -core_offset {30}
 
