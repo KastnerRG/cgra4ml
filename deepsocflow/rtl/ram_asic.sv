@@ -31,7 +31,7 @@ module ram_weights #(
     .WABL(1'b1),
     .WABLM(2'b00)
     );
-  `endif TSMC28_SRAM
+  `endif
 
   `ifdef TSMC7_SRAM
   sram_weights RAMW (
@@ -48,7 +48,7 @@ module ram_weights #(
     .RET(1'b1),
     .QNAP(1'b0)
     );
-  `endif TSMC7_SRAM
+  `endif
   
 endmodule
 
@@ -78,7 +78,7 @@ module ram_edges #(
     .WABL(1'b1),
     .WABLM(2'b00)
   );
-  `endif TSMC28_SRAM
+  `endif
 
   `ifdef TSMC7_SRAM
   sram_edges RAME (
@@ -95,5 +95,5 @@ module ram_edges #(
     .RET(1'b1),
     .QNAP(1'b0)
   );
-  `endif TSMC7_SRAM
+  `endif
 endmodule
