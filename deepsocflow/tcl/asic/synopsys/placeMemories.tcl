@@ -18,5 +18,3 @@ create_keepout_margin -type soft -outer {8 8 8 8} [get_attribute [get_cells WEIG
 create_keepout_margin -type hard -outer {5 5 5 5} [get_attribute [get_cells PIXELS_RAM_RAME] ref_block]
 create_keepout_margin -type hard_macro -outer {5 5 5 5} [get_attribute [get_cells PIXELS_RAM_RAME] ref_block]
 create_keepout_margin -type soft -outer {8 8 8 8} [get_attribute [get_cells PIXELS_RAM_RAME] ref_block];
-
-WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_RAMW
