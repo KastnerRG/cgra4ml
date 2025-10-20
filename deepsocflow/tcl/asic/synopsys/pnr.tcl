@@ -103,7 +103,9 @@ read_verilog -library $ndm_design_library -design $top_module -top $top_module .
 link_block
 set_technology -node 7
 
-initialize_floorplan -side_length {1000 600} -core_offset {30}
+initialize_floorplan -core_utilization 0.6 -shape R \
+                -orientation N -side_ratio {0.95 1} -core_offset {25.0} \
+                -flip_first_row true -coincident_boundary true
 
 create_power_domain TOP
 create_supply_port VDD
