@@ -99,7 +99,7 @@ read_parasitic_tech -name typical -tlup $typ_tlu_file -layermap $prs_map_file
 read_parasitic_tech -name rcbest  -tlup $min_tlu_file -layermap $prs_map_file
 read_parasitic_tech -name rcworst -tlup $max_tlu_file -layermap $prs_map_file
 
-read_verilog -library $ndm_design_library -design dnn_engine -top dnn_engine ../asic/outputs/$design_name.out.v
+read_verilog -library $ndm_design_library -design $top_module -top $top_module ../asic/outputs/$top_module.out.v
 link_block
 set_technology -node 7
 break
