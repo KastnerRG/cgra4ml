@@ -5,8 +5,9 @@ set_host_options -max_cores 8
 #--------- Set TCL parameters
 source config_hw.tcl
 	
-set metal_stack 1p13m_1x1xa1ya5y2yy2z
-set ndm_design_library tsmc_7_cgra4ml.dlib
+set metal_stack         1p13m_1x1xa1ya5y2yy2z
+set ndm_design_library  tsmc_7_cgra4ml.dlib
+set ndm_sram_library    tsmc_7_srams.ndm
 
 #--------- Set PATH parameters
 set rtlPath 	"../../deepsocflow/rtl"
@@ -53,7 +54,7 @@ set target_library "sch240mc_cln07ff41001_base_svt_c11_ssgnp_cworstccworstt_max_
 set link_library "* $target_library  sram_edges_ssgnp_cworstccworstt_0p90v_0p90v_125c.db sram_weights_ssgnp_cworstccworstt_0p90v_0p90v_125c.db"
 
 if {![file isdirectory $ndm_design_library]} {
-	create_lib -ref_libs [list $ndmrefPath/sch240mc_cln07ff41001_base_svt_c11.ndm sram_weights.lef sram_edges.lef] -technology $ndmtfPath/sch240mc_tech.tf $ndm_design_library
+	create_lib -ref_libs [list $ndmrefPath/sch240mc_cln07ff41001_base_svt_c11.ndm $sramLibPath/$ndm_sram_library] -technology $ndmtfPath/sch240mc_tech.tf $ndm_design_library
 } else {
 	open_lib $ndm_design_library
 }
