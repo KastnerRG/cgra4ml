@@ -80,7 +80,7 @@ set design(CLOCK_MAX_CAPACITANCE) 0.100 ; # In pF for SDC (will appear in fF for
 
 #--------- Set Libraries
 set target_library "sch240mc_cln07ff41001_base_svt_c11_ssgnp_cworstccworstt_max_1p00v_125c.db"
-set_app_var link_library "* $target_library  sram_edges_ssgnp_cworstccworstt_0p90v_0p90v_125c.db sram_weights_ssgnp_cworstccworstt_0p90v_0p90v_125c.db"
+set_app_var link_library "* $target_library  sch240mc_cln07ff41001_base_svt_c11_ffgnp_cbestccbestt_min_1p05v_m40c.db sram_edges_ssgnp_cworstccworstt_0p90v_0p90v_125c.db sram_weights_ssgnp_cworstccworstt_0p90v_0p90v_125c.db"
 
 #--------- NDM Libs
 if {![file isdirectory $ndm_design_library]} {
@@ -102,7 +102,7 @@ read_parasitic_tech -name rcworst -tlup $max_tlu_file -layermap $prs_map_file
 read_verilog -library $ndm_design_library -design $top_module -top $top_module ../asic/outputs/$top_module.out.v
 link_block
 set_technology -node 7
-break
+
 initialize_floorplan -side_length {1000 600} -core_offset {30}
 
 create_power_domain TOP
@@ -120,7 +120,7 @@ set_domain_supply_net TOP -primary_power_net VDD -primary_ground_net VSS
 
 set_parasitic_parameters -early_spec rcbest -early_temperature -40 -late_spec rcworst -late_temperature 125
 current_corner default
-set_operating_conditions -max_library sc12mcpp140z_cln28ht_base_svt_c35_ffg_cbestt_min_0p99v_m40c -max ffg_cbestt_min_0p99v_m40c -min_library sc12mcpp140z_cln28ht_base_svt_c35_ssg_cworstt_max_0p81v_125c -min ssg_cworstt_max_0p81v_125c
+set_operating_conditions -max_library sch240mc_cln07ff41001_base_svt_c11_ssgnp_cworstccworstt_max_1p00v_125c -max ssgnp_cworstccworstt_max_1p00v_125c -min_library sch240mc_cln07ff41001_base_svt_c11_ffgnp_cbestccbestt_min_1p05v_m40c -min ffgnp_cbestccbestt_min_1p05v_m40c
 current_corner default
 
 set_voltage 1.00 -min 0.90 -corner [current_corner] -object_list [get_supply_nets VDD]
@@ -140,7 +140,7 @@ set_app_options -name compile.final_place.placement_congestion_effort -value hig
 set_app_options -name compile.initial_opto.placement_congestion_effort -value high
 
 
-read_sdc ../asic/outputs/$design_name.out.sdc
+read_sdc ../asic/outputs/$top_module.out.sdc
 update_timing
 
 source ../../deepsocflow/tcl/asic/synopsys/placeMemories.tcl
@@ -154,7 +154,7 @@ write_floorplan \
   -format icc2 \
   -def_version 5.8 \
   -force \
-  -output ${BLOCK_OUTPUT_DIR}/${block_name}_write_floorplan \
+  -output ../asic/outputs/floorplan/${top_module}_write_floorplan \
   -read_def_options {-add_def_only_objects {all} -skip_pg_net_connections} \
   -exclude {scan_chains fills pg_metal_fills routing_rules} \
   -net_types {power ground} \
@@ -166,42 +166,42 @@ add_tie_cells -tie_high_lib_cells [get_lib_cells {cln28ht/TIEHI_X1M_A7PP140ZTS_C
 
 save_lib -all
 
-report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${design_name}.pre_opt_placement.timing.rpt
+report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.pre_opt_placement.timing.rpt
 check_mv_design > ../asic/reports/check_mv_design.log
 
-report_utilization > ../asic/reports/${design_name}.pre_opt_placement.utilization.rpt
+report_utilization > ../asic/reports/${top_module}.pre_opt_placement.utilization.rpt
 
 place_opt
 save_lib -all
 
 update_timing -full
-report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${design_name}.post_opt_placement.timing.rpt
+report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.post_opt_placement.timing.rpt
 
 check_clock_trees -clocks aclk
 synthesize_clock_trees -clocks aclk
 clock_opt
 update_timing -full
-report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${design_name}.post_clock_opt_placement.timing.rpt
+report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.post_clock_opt_placement.timing.rpt
 save_lib -all
 
 route_auto
 add_redundant_vias
 update_timing -full
-report_utilization > ../asic/reports/${design_name}.pre_route.utilization.rpt
+report_utilization > ../asic/reports/${top_module}.pre_route.utilization.rpt
 optimize_routes -max_detail_route_iterations 200
 route_opt
 route_detail -incremental true -initial_drc_from_input true
 
-report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${design_name}.post_route.timing.rpt
-report_utilization > ../asic/reports/${design_name}.post_route.utilization.rpt
-report_power > ../asic/reports/${design_name}.post_route.power.rpt
+report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.post_route.timing.rpt
+report_utilization > ../asic/reports/${top_module}.post_route.utilization.rpt
+report_power > ../asic/reports/${top_module}.post_route.power.rpt
 save_lib -all
 
 check_routes -report_all_open_nets true 
 
 check_design -checks timing > ../asic/reports/check_timing.log
 
-write_verilog -include {all} ../asic/outputs/${design_name}.pnr.v
+write_verilog -include {all} ../asic/outputs/${top_module}.pnr.v
 
-write_sdf ../asic/outputs/${design_name}_typical.sdf
+write_sdf ../asic/outputs/${top_module}_typical.sdf
 
