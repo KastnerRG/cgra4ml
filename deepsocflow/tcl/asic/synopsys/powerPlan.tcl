@@ -61,7 +61,7 @@ check_pg_connectivity
 check_pg_drc -output ../asic/reports/${top_module}.power_drc_violations.rpt
 
 # Create endcap cells
-create_boundary_cells -left_boundary_cell [get_lib_cells {*/*ENDCAP*}] -right_boundary_cell [get_lib_cells{*/*ENDCAP*}] -prefix $tech(END_CAP_PREFIX) -separator "_"
+create_boundary_cells -left_boundary_cell [get_lib_cells {*/*ENDCAP*}] -right_boundary_cell [get_lib_cells {*/*ENDCAP*}] -prefix $tech(END_CAP_PREFIX) -separator "_"
 
 # Create taps
 create_tap_cells -distance 30 -lib_cell [get_lib_cells $tech(FILL_TIE_CELL)] -pattern stagger -prefix $tech(FILL_TIE_PREFIX) -separator "_"
