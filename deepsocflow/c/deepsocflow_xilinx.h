@@ -6,6 +6,7 @@
 #include "xil_io.h"
 #include "xil_sleeptimer.h"
 #include "xil_mmu.h"
+#include "sleep.h"
 
 #include <assert.h>
 #include <limits.h>
@@ -41,6 +42,7 @@ static inline void hardware_cleanup(){
 
 static inline void model_run_timed(void *mp, void *p_config, int n){
   XTime time_start, time_end;
+  model_run(mp, p_config);
   XTime_GetTime(&time_start);
   for (int i=0; i<n; i++)
     model_run(mp, p_config);
