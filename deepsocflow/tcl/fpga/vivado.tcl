@@ -6,16 +6,16 @@ set_property top axi_cgra4ml [current_fileset]
 create_bd_cell -type module -reference axi_cgra4ml axi_cgra4ml_0
 
 # Connect full AXI ports
-connect_bd_intf_net [get_bd_intf_pins axi_cgra4ml_0/m_axi_output] [get_bd_intf_pins zynq_ultra_ps_e_0/S_AXI_HPC0_FPD]
-connect_bd_intf_net [get_bd_intf_pins axi_cgra4ml_0/m_axi_pixel] [get_bd_intf_pins zynq_ultra_ps_e_0/S_AXI_HPC1_FPD]
-connect_bd_intf_net [get_bd_intf_pins axi_cgra4ml_0/m_axi_weights] [get_bd_intf_pins zynq_ultra_ps_e_0/S_AXI_HP0_FPD]
+connect_bd_intf_net [get_bd_intf_pins axi_cgra4ml_0/m_axi_output] [get_bd_intf_pins $PS_S_AXI_OUTPUT]
+connect_bd_intf_net [get_bd_intf_pins axi_cgra4ml_0/m_axi_pixel] [get_bd_intf_pins $PS_S_AXI_PIXELS]
+connect_bd_intf_net [get_bd_intf_pins axi_cgra4ml_0/m_axi_weights] [get_bd_intf_pins $PS_S_AXI_WEIGHTS]
 
 # Connect AXI-lite port with automation
 apply_bd_automation -rule xilinx.com:bd_rule:axi4 -config { Clk_master {Auto} Clk_slave {Auto} Clk_xbar {Auto} Master {/zynq_ultra_ps_e_0/M_AXI_HPM1_FPD} Slave {/axi_cgra4ml_0/s_axil} ddr_seg {Auto} intc_ip {New AXI Interconnect} master_apm {0}}  [get_bd_intf_pins axi_cgra4ml_0/s_axil]
 # Clk automations
-apply_bd_automation -rule xilinx.com:bd_rule:clkrst -config { Clk {/zynq_ultra_ps_e_0/pl_clk0 (250 MHz)} Freq {100} Ref_Clk0 {} Ref_Clk1 {} Ref_Clk2 {}}  [get_bd_pins zynq_ultra_ps_e_0/saxihp0_fpd_aclk]
-apply_bd_automation -rule xilinx.com:bd_rule:clkrst -config { Clk {/zynq_ultra_ps_e_0/pl_clk0 (250 MHz)} Freq {100} Ref_Clk0 {} Ref_Clk1 {} Ref_Clk2 {}}  [get_bd_pins zynq_ultra_ps_e_0/saxihpc0_fpd_aclk]
-apply_bd_automation -rule xilinx.com:bd_rule:clkrst -config { Clk {/zynq_ultra_ps_e_0/pl_clk0 (250 MHz)} Freq {100} Ref_Clk0 {} Ref_Clk1 {} Ref_Clk2 {}}  [get_bd_pins zynq_ultra_ps_e_0/saxihpc1_fpd_aclk]
+apply_bd_automation -rule xilinx.com:bd_rule:clkrst -config { Clk {$PS_CLK (250 MHz)} Freq {100} Ref_Clk0 {} Ref_Clk1 {} Ref_Clk2 {}}  [get_bd_pins zynq_ultra_ps_e_0/saxihp0_fpd_aclk]
+apply_bd_automation -rule xilinx.com:bd_rule:clkrst -config { Clk {$PS_CLK (250 MHz)} Freq {100} Ref_Clk0 {} Ref_Clk1 {} Ref_Clk2 {}}  [get_bd_pins zynq_ultra_ps_e_0/saxihpc0_fpd_aclk]
+apply_bd_automation -rule xilinx.com:bd_rule:clkrst -config { Clk {$PS_CLK (250 MHz)} Freq {100} Ref_Clk0 {} Ref_Clk1 {} Ref_Clk2 {}}  [get_bd_pins zynq_ultra_ps_e_0/saxihpc1_fpd_aclk]
 
 generate_target all [get_files ./${PROJECT_NAME}/${PROJECT_NAME}.srcs/sources_1/bd/design_1/design_1.bd]
 make_wrapper -files [get_files ./${PROJECT_NAME}/${PROJECT_NAME}.srcs/sources_1/bd/design_1/design_1.bd] -top
