@@ -91,6 +91,10 @@ if {![file isdirectory $ndm_design_library]} {
 	open_lib $ndm_design_library
 }
 
+remove_modes -all
+remove_corners -all
+remove_scenarios -all
+
 set min_tlu_file "$tlupath/rcbest.tluplus" 
 set max_tlu_file "$tlupath/rcworst.tluplus"
 set typ_tlu_file "$tlupath/typical.tluplus"
@@ -139,14 +143,6 @@ source ../../deepsocflow/tcl/asic/synopsys/pinPlacement.tcl
 
 set_domain_supply_net TOP -primary_power_net VDD -primary_ground_net VSS
 
-set_parasitic_parameters -early_spec rcbest -early_temperature -40 -late_spec rcworst -late_temperature 125
-current_corner default
-set_operating_conditions -max_library sch240mc_cln07ff41001_base_svt_c11_ssgnp_cworstccworstt_max_1p00v_125c -max ssgnp_cworstccworstt_max_1p00v_125c -min_library sch240mc_cln07ff41001_base_svt_c11_ffgnp_cbestccbestt_min_1p05v_m40c -min ffgnp_cbestccbestt_min_1p05v_m40c
-current_corner default
-
-set_voltage 0.90 -corner [current_corner] -object_list [get_supply_nets VDD]
-set_voltage 0.00 -corner [current_corner] -object_list [get_supply_nets VSS]
-
 set_app_options -list {opt.timing.effort {ultra}}
 set_app_options -list {clock_opt.place.effort {high}}
 set_app_options -list {place_opt.flow.clock_aware_placement {true}}
@@ -160,8 +156,18 @@ set_app_options -name place.coarse.congestion_driven_max_util -value 0.5
 set_app_options -name compile.final_place.placement_congestion_effort -value high
 set_app_options -name compile.initial_opto.placement_congestion_effort -value high
 
+create_mode setup_mode
+create_corner setup_corner
+create_scenario -name setup_scenario -mode setup_mode -corner setup_corner
+set_scenario_status setup_scenario -none -setup true -hold false -leakage_power true -dynamic_power true -max_transition true -max_capacitance true -min_capacitance false -active true
 
+current_corner setup_corner 
 read_sdc ../asic/outputs/$top_module.out.sdc
+set_parasitic_parameters -early_spec rcbest -early_temperature -40 -late_spec rcworst -late_temperature 125
+set_operating_conditions -max_library sch240mc_cln07ff41001_base_svt_c11_ssgnp_cworstccworstt_max_1p00v_125c -max ssgnp_cworstccworstt_max_1p00v_125c
+
+set_voltage 1.00 -corner [current_corner] -object_list [get_supply_nets VDD]
+set_voltage 0.00 -corner [current_corner] -object_list [get_supply_nets VSS]
 update_timing
 
 source ../../deepsocflow/tcl/asic/synopsys/placeMemories.tcl
