@@ -19,7 +19,7 @@ from deepsocflow import *
 
 SIM = 'xsim' if os.name=='nt' else 'verilator'
 
-sys_bits = SYS_BITS(x=4, k=16, b=16)
+sys_bits = SYS_BITS(x=8, k=8, b=16)
 
 N_BATCH = 16
 N_INPUT = 8
@@ -57,14 +57,14 @@ def product_dict(**kwargs):
                                         frequency_mhz        = [ 200        ],
                                         bits_input           = [ sys_bits.x ],
                                         bits_weights         = [ sys_bits.k ],
-                                        bits_sum             = [ 24         ],
+                                        bits_sum             = [ 20         ],
                                         bits_bias            = [ sys_bits.b ],
                                         max_batch_size       = [ N_BATCH    ], 
-                                        max_channels_in      = [ 256     ],
+                                        max_channels_in      = [ 128     ],
                                         max_kernel_size      = [ 3       ],
                                         max_image_size       = [ 512     ],
                                         max_n_bundles        = [ 64      ],
-                                        ram_weights_depth    = [ 256     ],
+                                        ram_weights_depth    = [ 128     ],
                                         ram_edges_depth      = [ 16       ],
                                         axi_width            = [ 128      ],
                                         config_baseaddr      = ["40000000"],
