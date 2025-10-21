@@ -189,7 +189,7 @@ legalize_placement -cells [get_cells *]
 add_tie_cells -tie_high_lib_cells [get_lib_cells {*/*TIEHI*}] -tie_low_lib_cells [get_lib_cells {*/*TIELO*}]
 
 save_lib -all
-report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.pre_opt_placement.timing.rpt
+report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.pre_place_placement.timing.rpt
 check_mv_design > ../asic/reports/check_mv_design.log
 report_utilization > ../asic/reports/${top_module}.pre_opt_placement.utilization.rpt
 # define_qor_data_panel -name "My Image" -type imag
@@ -199,7 +199,7 @@ place_opt
 save_lib -all
 
 update_timing -full
-report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.post_opt_placement.timing.rpt
+report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.post_place_placement.timing.rpt
 # define_qor_data_panel -name "My Image" -type imag
 # capture_qor_data -panel "My Image" -label place_opt -gui_setup { gui_change_highlight -collection [get_cells *ZBUF*] -color yellow } -gui_cleanup { gui_change_highlight -remove -all }
 
