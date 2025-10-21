@@ -36,7 +36,7 @@ compile_pg -strategies {SRAM_Verticl_Straps}
 
 # Create Outer core ring
 create_pg_ring_pattern ring_pattern -horizontal_layer M12 -horizontal_width {5} -horizontal_spacing {2} -vertical_layer M13 -vertical_width {5} -vertical_spacing {2}
-set_pg_strategy core_ring -pattern {{name:ring_pattern} {nets: {VDD VSS}} {offset: {5 5}}} -core
+set_pg_strategy core_ring -pattern {{name:ring_pattern} {nets: {VDD VSS}} {offset: {7 7}}} -core
 compile_pg -strategies {core_ring}
 
 # Create std cell rails 
