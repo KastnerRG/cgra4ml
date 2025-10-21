@@ -1,6 +1,6 @@
-set_macro_relative_location -target_object [get_cell {WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_RAMW}] -target_orientation R180 -target_corner tr -anchor_corner tr -offset {-0.91 -0.14} -offset_type scalable
-set_macro_relative_location -target_object [get_cell {WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_RAMW}] -target_orientation R180 -target_corner tr -anchor_corner tr -offset {-0.63 -0.14} -offset_type scalable
-set_macro_relative_location -target_object [get_cell {PIXELS_RAM_RAME}] -target_orientation R180 -target_corner tr -anchor_corner tr -offset {-0.4 -0.6} -offset_type scalable
+set_macro_relative_location -target_object [get_cell {WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_RAMW}] -target_orientation R0 -target_corner tr -anchor_corner tr -offset {25 25} -offset_type scalable
+set_macro_relative_location -target_object [get_cell {WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_RAMW}] -target_orientation R180 -target_corner br -anchor_corner br -offset {25 25} -offset_type scalable
+set_macro_relative_location -target_object [get_cell {PIXELS_RAM_RAME}] -target_orientation R0 -target_corner tl -anchor_corner tl -offset {25 25} -offset_type scalable
 
 create_macro_relative_location_placement
 
