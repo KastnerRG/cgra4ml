@@ -58,7 +58,7 @@ class Hardware:
         self.params = {k:self.params[k] for k in self.params if not k == 'self'}
         
         # Validation
-        assert bits_input in [1,2,4,8] and bits_weights in [1,2,4,8]
+        assert bits_input in [1,2,4,8] 
         assert bits_bias  in [8,16,32]
         
         self.ROWS, self.COLS = processing_elements
