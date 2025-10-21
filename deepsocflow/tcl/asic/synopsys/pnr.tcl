@@ -144,7 +144,7 @@ current_corner default
 set_operating_conditions -max_library sch240mc_cln07ff41001_base_svt_c11_ssgnp_cworstccworstt_max_1p00v_125c -max ssgnp_cworstccworstt_max_1p00v_125c -min_library sch240mc_cln07ff41001_base_svt_c11_ffgnp_cbestccbestt_min_1p05v_m40c -min ffgnp_cbestccbestt_min_1p05v_m40c
 current_corner default
 
-set_voltage 1.00 -min 0.90 -corner [current_corner] -object_list [get_supply_nets VDD]
+set_voltage 0.90 -corner [current_corner] -object_list [get_supply_nets VDD]
 set_voltage 0.00 -corner [current_corner] -object_list [get_supply_nets VSS]
 
 set_app_options -list {opt.timing.effort {ultra}}
