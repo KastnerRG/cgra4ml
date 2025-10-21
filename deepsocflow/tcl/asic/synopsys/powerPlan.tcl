@@ -7,13 +7,13 @@ connect_pg_net -automatic
 
 # Connect VDD and VSS of Macros
 connect_pg_net -net {VDD} [get_pins -design [current_block] -quiet -physical_context {WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_RAMW/VDD}]
-connect_pg_net -net {VSS} [get_pins -design [current_block] -quiet -physical_context {WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_RAMW/VSSE}]
+connect_pg_net -net {VSS} [get_pins -design [current_block] -quiet -physical_context {WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_RAMW/VSS}]
 
 connect_pg_net -net {VDD} [get_pins -design [current_block] -quiet -physical_context {WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_RAMW/VDD}]
-connect_pg_net -net {VSS} [get_pins -design [current_block] -quiet -physical_context {WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_RAMW/VSSE}]
+connect_pg_net -net {VSS} [get_pins -design [current_block] -quiet -physical_context {WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_RAMW/VSS}]
 
 connect_pg_net -net {VDD} [get_pins -design [current_block] -quiet -physical_context {PIXELS_RAM_RAME/VDD}]
-connect_pg_net -net {VSS} [get_pins -design [current_block] -quiet -physical_context {PIXELS_RAM_RAME/VSSE}]
+connect_pg_net -net {VSS} [get_pins -design [current_block] -quiet -physical_context {PIXELS_RAM_RAME/VSS}]
 
 # Create rails for macros
 create_pg_ring_pattern sram_ring_patt -horizontal_layer M12 -horizontal_width {1} -horizontal_spacing {1} -vertical_layer M13 -vertical_width {1} -vertical_spacing {1}
@@ -21,11 +21,17 @@ set_pg_strategy sram_ring -macros { PIXELS_RAM_RAME \
 	WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_RAMW \
 	WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_RAMW} -pattern {{name : sram_ring_patt} {nets: {VDD VSS}}{offset: {4 4}}}
 
-create_pg_macro_conn_pattern sram_pg_mesh -pin_conn_type long_pin -nets {VDD VSS} -direction horizontal -layers M4 -width 0.5 -spacing interleaving -pitch 5 -pin_layers {M4} -via_rule {{intersection : all}}
+create_pg_macro_conn_pattern sram_pg_mesh -pin_conn_type scattered_pin -nets {VDD VSS} -direction horizontal -layers M4 -width 0.5 -pin_layers {M4} -via_rule {{intersection : all}}
 set_pg_strategy sram_pg_mesh -macros { PIXELS_RAM_RAME \
 	WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_RAMW \
 	WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_RAMW } -pattern {{name : sram_pg_mesh} {nets : {VDD VSS}}}
 compile_pg -strategies {sram_ring sram_pg_mesh}
+
+create_pg_mesh_pattern sram_strapes_verti -layers {{vertical_layer : M5} {width : 1} {spacing : interleaving} {pitch : 5} {offset : 1}}
+set_pg_strategy SRAM_Verticl_Straps -pattern {{name: sram_strapes_verti}{nets: VDD VSS}} -extension {{{stop : first_target}}} -macros { PIXELS_RAM_RAME \
+	WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_RAMW \
+	WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_RAMW } 
+compile_pg -strategies {SRAM_Verticl_Straps}
 
 # Create Outer core ring
 create_pg_ring_pattern ring_pattern -horizontal_layer M12 -horizontal_width {5} -horizontal_spacing {2} -vertical_layer M13 -vertical_width {5} -vertical_spacing {2}
@@ -40,11 +46,11 @@ set_pg_strategy std_pwr_rail -pattern {{name: std_rail_pattern}{nets: VDD VSS}} 
 compile_pg -strategies {std_pwr_rail}
 
 # Create Power Straps
-create_pg_mesh_pattern power_straps_horizon -layers {{vertical_layer : M13} {width : 1} {spacing : interleaving} {pitch : 30} {offset : 5}}
-set_pg_strategy Verticl_Straps -pattern {{name: power_straps_horizon}{nets: VDD VSS}} -core -extension {{{stop : first_target}}}
+create_pg_mesh_pattern power_straps_verti -layers {{vertical_layer : M13} {width : 1} {spacing : interleaving} {pitch : 30} {offset : 5}}
+set_pg_strategy Verticl_Straps -pattern {{name: power_straps_verti}{nets: VDD VSS}} -core -extension {{{stop : first_target}}}
 
-create_pg_mesh_pattern power_straps_verti -layers {{horizontal_layer : M12} {width : 1} {spacing : interleaving} {pitch : 30} {offset : 5}}
-set_pg_strategy Horizon_Straps -pattern {{name: power_straps_verti}{nets: VDD VSS}} -core -extension {{{stop : first_target}}}
+create_pg_mesh_pattern power_straps_horiz -layers {{horizontal_layer : M12} {width : 1} {spacing : interleaving} {pitch : 30} {offset : 5}}
+set_pg_strategy Horizon_Straps -pattern {{name: power_straps_horiz}{nets: VDD VSS}} -core -extension {{{stop : first_target}}}
 
 compile_pg -strategies {Verticl_Straps Horizon_Straps}
 
