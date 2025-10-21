@@ -19,13 +19,14 @@ connect_pg_net -net {VSS} [get_pins -design [current_block] -quiet -physical_con
 create_pg_ring_pattern sram_ring_patt -horizontal_layer M12 -horizontal_width {1} -horizontal_spacing {1} -vertical_layer M13 -vertical_width {1} -vertical_spacing {1}
 set_pg_strategy sram_ring -macros { PIXELS_RAM_RAME \
 	WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_RAMW \
-	WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_RAMW} -pattern {{name : sram_ring_patt} {nets: {VDD VSS}}{offset: {4 4}}}
+	WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_RAMW} -pattern {{name : sram_ring_patt} {nets: {VDD VSS}}{offset: {2 2}}}
+compile_pg -strategies {sram_ring}
 
-create_pg_macro_conn_pattern sram_pg_mesh -pin_conn_type scattered_pin -nets {VDD VSS} -direction horizontal -layers M4 -width 0.5 -pin_layers {M4} -via_rule {{intersection : all}}
-set_pg_strategy sram_pg_mesh -macros { PIXELS_RAM_RAME \
-	WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_RAMW \
-	WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_RAMW } -pattern {{name : sram_pg_mesh} {nets : {VDD VSS}}}
-compile_pg -strategies {sram_ring sram_pg_mesh}
+# create_pg_macro_conn_pattern sram_pg_mesh -pin_conn_type scattered_pin -nets {VDD VSS} -direction horizontal -layers M4 -width 0.5 -pin_layers {M4} -via_rule {{intersection : all}}
+# set_pg_strategy sram_pg_mesh -macros { PIXELS_RAM_RAME \
+# 	WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_RAMW \
+# 	WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_RAMW } -pattern {{name : sram_pg_mesh} {nets : {VDD VSS}}}
+# compile_pg -strategies {sram_pg_mesh}
 
 create_pg_mesh_pattern sram_strapes_verti -layers {{vertical_layer : M5} {width : 1} {spacing : interleaving} {pitch : 5} {offset : 1}}
 set_pg_strategy SRAM_Verticl_Straps -pattern {{name: sram_strapes_verti}{nets: VDD VSS}} -extension {{{stop : first_target}}} -macros { PIXELS_RAM_RAME \
@@ -35,7 +36,7 @@ compile_pg -strategies {SRAM_Verticl_Straps}
 
 # Create Outer core ring
 create_pg_ring_pattern ring_pattern -horizontal_layer M12 -horizontal_width {5} -horizontal_spacing {2} -vertical_layer M13 -vertical_width {5} -vertical_spacing {2}
-set_pg_strategy core_ring -pattern {{name:ring_pattern} {nets: {VDD VSS}} {offset: {3 3}}} -core
+set_pg_strategy core_ring -pattern {{name:ring_pattern} {nets: {VDD VSS}} {offset: {5 5}}} -core
 compile_pg -strategies {core_ring}
 
 # Create std cell rails 
