@@ -33,11 +33,12 @@ set tech(TIE_LOW_CELL)      TIELO_X1N_AH240TS_C11
 set tech(END_CAP_PREFIX)    ENDCAP_
 set tech(END_CAP_CELL)      ENDCAPA5_AH240TS_C11 
 set tech(FILL_TIE_PREFIX)   FILLTIE_ 
-set tech(FILL_TIE_CELL)     ""
+set tech(FILL_TIE_CELL)     FILLTIE12_AH240TS_C11
 
 # Set Fill Cells
 set tech(FILL_CELL_PREFIX)  FILLER_CELL_
-set tech(FILL_CELLS)       "FILLSGCAP3_AH240TS_C11 FILLSGCAP4_AH240TS_C11 FILLSGCAP5_AH240TS_C11 FILLSGCAP6_AH240TS_C11 FILLSGCAP7_AH240TS_C11 FILLSGCAP8_AH240TS_C11 FILLSGCAP16_AH240TS_C11 FILLSGCAP32_AH240TS_C11 FILLSGCAP64_AH240TS_C11 FILLSGCAP128_AH240TS_C11"
+set tech(FILL_CELLS)       "FILLCAP128_AH240TS_C11 FILLCAP64_AH240TS_C11 FILLCAP32_AH240TS_C11 FILLCAP16_AH240TS_C11 FILLCAP8_AH240TS_C11 FILLCAP7_AH240TS_C11 FILLCAP6_AH240TS_C11 FILLCAP5_AH240TS_C11 FILLCAP4_AH240TS_C11 FILLCAP3_AH240TS_C11"
+
 # Set Antenna Cell
 set tech(ANTENNA_CELL)      ANTENNA3_AH240TS_C11
 
@@ -103,7 +104,25 @@ read_verilog -library $ndm_design_library -design $top_module -top $top_module .
 link_block
 set_technology -node 7
 
-initialize_floorplan -core_utilization 0.6 -shape R \
+################################################################################
+# Routing directions
+################################################################################
+set_attribute -objects [get_layers M0]  -name routing_direction -value horizontal
+set_attribute -objects [get_layers M1]  -name routing_direction -value vertical
+set_attribute -objects [get_layers M2]  -name routing_direction -value horizontal
+set_attribute -objects [get_layers M3]  -name routing_direction -value vertical
+set_attribute -objects [get_layers M4]  -name routing_direction -value horizontal
+set_attribute -objects [get_layers M5]  -name routing_direction -value vertical
+set_attribute -objects [get_layers M6]  -name routing_direction -value horizontal
+set_attribute -objects [get_layers M7]  -name routing_direction -value vertical
+set_attribute -objects [get_layers M8]  -name routing_direction -value horizontal
+set_attribute -objects [get_layers M9]  -name routing_direction -value vertical
+set_attribute -objects [get_layers M10] -name routing_direction -value horizontal
+set_attribute -objects [get_layers M11] -name routing_direction -value vertical
+set_attribute -objects [get_layers M12] -name routing_direction -value horizontal
+set_attribute -objects [get_layers M13] -name routing_direction -value vertical
+
+initialize_floorplan -core_utilization 0.55 -shape R \
                 -orientation N -side_ratio {0.95 1} -core_offset {25.0} \
                 -flip_first_row true -coincident_boundary true
 
@@ -162,48 +181,40 @@ write_floorplan \
   -net_types {power ground} \
   -include_physical_status {fixed locked}
 
-################################################################################
-# Routing directions
-################################################################################
-
-set_attribute -objects [get_layers M1] -name routing_direction -value vertical
-set_attribute -objects [get_layers M2] -name routing_direction -value horizontal
-set_attribute -objects [get_layers M3] -name routing_direction -value vertical
-set_attribute -objects [get_layers M4] -name routing_direction -value horizontal
-set_attribute -objects [get_layers M5] -name routing_direction -value vertical
-set_attribute -objects [get_layers M6] -name routing_direction -value horizontal
-set_attribute -objects [get_layers M7] -name routing_direction -value vertical
-set_attribute -objects [get_layers M8] -name routing_direction -value horizontal
-set_attribute -objects [get_layers M9] -name routing_direction -value vertical
-set_attribute -objects [get_layers AP] -name routing_direction -value horizontal
-
+# define_qor_data_panel -name "My Image" -type imag
+# capture_qor_data -panel "My Image" -label place_opt -gui_setup { gui_change_highlight -collection [get_cells *ZBUF*] -color yellow } -gui_cleanup { gui_change_highlight -remove -all }
 
 create_placement
 legalize_placement -cells [get_cells *]
-add_tie_cells -tie_high_lib_cells [get_lib_cells {cln28ht/TIEHI_X1M_A7PP140ZTS_C30}] -tie_low_lib_cells [get_lib_cells {cln28ht/TIELO_X1M_A7PP140ZTS_C30}]
+add_tie_cells -tie_high_lib_cells [get_lib_cells {*/*TIEHI*}] -tie_low_lib_cells [get_lib_cells {*/*TIELO*}]
 
 save_lib -all
-
 report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.pre_opt_placement.timing.rpt
 check_mv_design > ../asic/reports/check_mv_design.log
-
 report_utilization > ../asic/reports/${top_module}.pre_opt_placement.utilization.rpt
+# define_qor_data_panel -name "My Image" -type imag
+# capture_qor_data -panel "My Image" -label place_opt -gui_setup { gui_change_highlight -collection [get_cells *ZBUF*] -color yellow } -gui_cleanup { gui_change_highlight -remove -all }
 
 place_opt
 save_lib -all
 
 update_timing -full
 report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.post_opt_placement.timing.rpt
+# define_qor_data_panel -name "My Image" -type imag
+# capture_qor_data -panel "My Image" -label place_opt -gui_setup { gui_change_highlight -collection [get_cells *ZBUF*] -color yellow } -gui_cleanup { gui_change_highlight -remove -all }
+
 
 create_routing_rule {NDR1} -default_reference_rule  -multiplier_width 2 -multiplier_spacing 2
-set_clock_routing_rules -rules NDR1 -clocks {clk swdclk} -min_routing_layer M2 -max_routing_layer M5
-
-check_clock_trees -clocks aclk
-synthesize_clock_trees -clocks aclk
+set_clock_routing_rules -rules NDR1 -clocks {$design(CLK_PORT)} -min_routing_layer M5 -max_routing_layer M9
+check_clock_trees -clocks $design(CLK_PORT)
+synthesize_clock_trees -clocks $design(CLK_PORT)
 clock_opt
 update_timing -full
 report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.post_clock_opt_placement.timing.rpt
 save_lib -all
+# define_qor_data_panel -name "My Image" -type imag
+# capture_qor_data -panel "My Image" -label place_opt -gui_setup { gui_change_highlight -collection [get_cells *ZBUF*] -color yellow } -gui_cleanup { gui_change_highlight -remove -all }
+
 
 route_auto
 add_redundant_vias
@@ -211,31 +222,30 @@ update_timing -full
 report_utilization > ../asic/reports/${top_module}.pre_route.utilization.rpt
 optimize_routes -max_detail_route_iterations 200
 route_opt
-route_detail -incremental true -initial_drc_from_input true
-
-create_stdcell_fillers -lib_cells \
- {FILL128_A7PP140ZTS_C30 \
- FILL32_A7PP140ZTS_C30 \
- FILL16_A7PP140ZTS_C30 \
- FILL4_A7PP140ZTS_C30\
- FILL3_A7PP140ZTS_C30 \
- FILL2_A7PP140ZTS_C30 \
- FILL1_A7PP140ZTS_C30 \
- }
-
-# drc check and fix
-
-report_timing -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.post_route.timing.rpt
+check_routes -report_all_open_nets true -drc true > ../asic/reports/${top_module}.post_route.drc.rpt
+update_timing -full
+report_timing -delay_type max -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.post_route.setup.timing.rpt
+report_timing -delay_type min -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.post_route.hold.timing.rpt
 report_utilization > ../asic/reports/${top_module}.post_route.utilization.rpt
 report_power > ../asic/reports/${top_module}.post_route.power.rpt
+report_area  > ../asic/reports/${top_module}.post_route.area.rpt
+# define_qor_data_panel -name "My Image" -type imag
+# capture_qor_data -panel "My Image" -label place_opt -gui_setup { gui_change_highlight -collection [get_cells *ZBUF*] -color yellow } -gui_cleanup { gui_change_highlight -remove -all }
+
+create_stdcell_fillers -lib_cells $tech(FILL_CELLS) -prefix $tech(FILL_CELL_PREFIX)
+check_routes -report_all_open_nets true -drc true > ../asic/reports/${top_module}.post_fill.drc.rpt
+route_eco -max_detail_route_iterations 200
+check_routes -report_all_open_nets true -drc true > ../asic/reports/${top_module}.post_eco.drc.rpt
+# define_qor_data_panel -name "My Image" -type imag
+# capture_qor_data -panel "My Image" -label place_opt -gui_setup { gui_change_highlight -collection [get_cells *ZBUF*] -color yellow } -gui_cleanup { gui_change_highlight -remove -all }
+
+report_timing -delay_type max -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.post_fill.setup.timing.rpt
+report_timing -delay_type min -max_path 1000 -nworst 1000 > ../asic/reports/${top_module}.post_fill.hold.timing.rpt
+report_utilization > ../asic/reports/${top_module}.post_fill.utilization.rpt
+report_power > ../asic/reports/${top_module}.post_fill.power.rpt
+report_area  > ../asic/reports/${top_module}.post_fill.area.rpt
 save_lib -all
-
-check_routes -report_all_open_nets true 
-
 check_design -checks timing > ../asic/reports/check_timing.log
 
 write_verilog -include {all} ../asic/outputs/${top_module}.pnr.v
-
-write_sdf ../asic/outputs/${top_module}_typical.sdf
-
-#add metal and via fill
+write_sdf ../asic/outputs/${top_module}.typical.sdf

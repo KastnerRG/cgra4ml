@@ -4,42 +4,44 @@ connect_pg_net -automatic
 set_attribute [get_lib_cells */*TIE*] dont_touch false
 set_lib_cell_purpose -include optimization [get_lib_cells */*TIE*]
 
-#rings to srams
 # Create rails for macros
-create_pg_macro_conn_pattern sram_pg_mesh -pin_conn_type long_pin -nets {VDD VSS} -direction horizontal -layers M5 -width 0.64 -spacing interleaving -pitch 3 -pin_layers {M4} -via_rule {{intersection : all}}
+create_pg_ring_pattern ring_pattern -horizontal_layer M12 -horizontal_width {1} -horizontal_spacing {1} -vertical_layer M13 -vertical_width {1} -vertical_spacing {1}
+set_pg_strategy sram_ring -macros { PIXELS_RAM_genblk1_0__RAME \
+	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_0__RAMW \
+	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_1__RAMW } -pattern {{name : ring_pattern} {nets: {VDD VSS}}{offset: {4 4}}}
+
+create_pg_macro_conn_pattern sram_pg_mesh -pin_conn_type long_pin -nets {VDD VSS} -direction horizontal -layers M4 -width 0.5 -spacing interleaving -pitch 5 -pin_layers {M4} -via_rule {{intersection : all}}
 set_pg_strategy sram_pg_mesh -macros { PIXELS_RAM_genblk1_0__RAME \
 	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_0__RAMW \
-	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_1__RAMW } -pattern {{name : sram_pg_mesh}{nets : {VDD VSS}}}
-
-#connect power to sram
-
+	  WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_genblk1_1__RAMW } -pattern {{name : sram_pg_mesh} {nets : {VDD VSS}}}
+compile_pg -strategies {sram_ring sram_pg_mesh}
 
 # Create Outer core ring
-create_pg_ring_pattern ring_pattern -horizontal_layer M8 -horizontal_width {3} -horizontal_spacing {2} -vertical_layer M7 -vertical_width {3} -vertical_spacing {2}
+create_pg_ring_pattern ring_pattern -horizontal_layer M12 -horizontal_width {5} -horizontal_spacing {2} -vertical_layer M13 -vertical_width {5} -vertical_spacing {2}
 set_pg_strategy core_ring -pattern {{name:ring_pattern} {nets: {VDD VSS}}{offset: {3 3}}} -core
+compile_pg -strategies {core_ring}
 
-#connect follwo pins
 # Create std cell rails 
-create_pg_std_cell_conn_pattern rail_pattern -layers M5 
-set_pg_strategy M5_rails -pattern {{name: rail_pattern}{nets: VDD VSS}} -extension {{{stop : outermost_ring}}} -design_boundary
+create_pg_std_cell_conn_pattern std_rail_pattern -layers M0 -check_std_cell_drc true
+set_pg_strategy std_pwr_rail -pattern {{name: std_rail_pattern}{nets: VDD VSS}} -extension {{{stop : outermost_ring}}} -design_boundary
+compile_pg -strategies {std_pwr_rail}
 
 # Create Power Straps
-create_pg_mesh_pattern power_straps_horizon -layers {{vertical_layer : M7} {width : 1} {spacing : interleaving} {pitch : 50} {trim : false}}
-set_pg_strategy M7_straps -pattern {{name: power_straps_horizon}{nets: VDD VSS}} -extension {{{stop : outermost_ring}}} -design_boundary
+create_pg_mesh_pattern power_straps_horizon -layers {{vertical_layer : M13} {width : 1} {spacing : interleaving} {pitch : 30} {trim : false}}
+set_pg_strategy Verticl_Straps -pattern {{name: power_straps_horizon}{nets: VDD VSS}} -extension {{{stop : outermost_ring}}} -design_boundary
 
-create_pg_mesh_pattern power_straps_verti -layers {{horizontal_layer : M8} {width : 1} {spacing : interleaving} {pitch : 50} {trim : false}}
-set_pg_strategy M8_mesh -pattern {{name: power_straps_verti}{nets: VDD VSS}} -extension {{{stop : outermost_ring}}} -design_boundary
+create_pg_mesh_pattern power_straps_verti -layers {{horizontal_layer : M12} {width : 1} {spacing : interleaving} {pitch : 30} {trim : false}}
+set_pg_strategy Horizon_Straps -pattern {{name: power_straps_verti}{nets: VDD VSS}} -extension {{{stop : outermost_ring}}} -design_boundary
 
+compile_pg -strategies {Verticl_Straps Horizon_Straps}
 
-# Compile all power strategies
-compile_pg -strategies {core_ring M6_straps M5_rails M7_straps M8_mesh sram_pg_mesh}
-create_pg_vias -nets {VDD VSS} -from_layers M1 -to_layers M7 -drc no_check
+# Check Power DRCs
+create_pg_vias -nets {VDD VSS} -from_layers M0 -to_layers M13 -drc no_check
 check_pg_connectivity 
-check_pg_drc -output ../asic/reports/${design_name}.power_drc_violations.rpt
+check_pg_drc -output ../asic/reports/${top_module}.power_drc_violations.rpt
 
 # Create endcap cells
-create_boundary_cells -left_boundary_cell [get_lib_cells {$tech(END_CAP_CELL)}] -right_boundary_cell [get_lib_cells {$tech(END_CAP_CELL)}]
+create_boundary_cells -left_boundary_cell [get_lib_cells {$tech(END_CAP_CELL)}] -right_boundary_cell [get_lib_cells {$tech(END_CAP_CELL)}] -prefix $tech(END_CAP_PREFIX) -separator "_"
 
 # Create taps
-create_tap_cells -distance 132.0000 -lib_cell [get_lib_cells {cln28ht/FILLTIE5_A7PP140ZTS_C30}] -voltage_area DEFAULT_VA -offset 33.0000 -pattern stagger
-create_tap_cells -distance 132.0000 -lib_cell [get_lib_cells {cln28ht/FILLTIE5_A7PP140ZTS_C30}] -voltage_area ACCEL -offset 33.0000 -pattern stagger
+create_tap_cells -distance 30 -lib_cell [get_lib_cells $tech(FILL_TIE_CELL)] -pattern stagger -prefix $tech(FILL_TIE_PREFIX) -separator "_"
