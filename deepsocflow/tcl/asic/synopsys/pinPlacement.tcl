@@ -1,6 +1,7 @@
-set_individual_pin_constraints -nets {aclk aresetn} -pin_spacing_distance 2 -side 2 -offset {250 750}
-set_individual_pin_constraints -nets {s_axis_weights_*} -pin_spacing_distance 2 -side 3 -offset {250 750}
-set_individual_pin_constraints -nets {s_axis_pixels_*} -pin_spacing_distance 2 -side 2 -offset {150 350}
-set_individual_pin_constraints -nets {m_axis_*}  -pin_spacing_distance 2 -side 1 -offset {350 550}
+
+set_individual_pin_constraints -nets {aclk aresetn}     -pin_spacing_distance 0.1 -side 2 -offset {70 170} -allowed_layers M5
+set_individual_pin_constraints -nets {s_axis_weights_*} -pin_spacing_distance 0.1 -side 3 -offset {70 170} -allowed_layers M4
+set_individual_pin_constraints -nets {s_axis_pixels_*}  -pin_spacing_distance 0.1 -side 2 -offset {70 170} -allowed_layers M3
+set_individual_pin_constraints -nets {m_axis_*}         -pin_spacing_distance 0.1 -side 1 -offset {70 170} -allowed_layers M4
 
 place_pins -self
