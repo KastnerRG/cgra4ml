@@ -1,8 +1,19 @@
-connect_pg_net -automatic
-
 # Setup TIE Cells
 set_attribute [get_lib_cells */*TIE*] dont_touch false
 set_lib_cell_purpose -include optimization [get_lib_cells */*TIE*]
+
+# Connect VDD and VSS of Std_cells and Tie Cells
+connect_pg_net -automatic
+
+# Connect VDD and VSS of Macros
+connect_pg_net -net {VDD} [get_pins -design [current_block] -quiet -physical_context {WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_RAMW/VDD}]
+connect_pg_net -net {VSS} [get_pins -design [current_block] -quiet -physical_context {WEIGHTS_ROTATOR_genblk1_0__BRAM_BRAM_RAMW/VSSE}]
+
+connect_pg_net -net {VDD} [get_pins -design [current_block] -quiet -physical_context {WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_RAMW/VDD}]
+connect_pg_net -net {VSS} [get_pins -design [current_block] -quiet -physical_context {WEIGHTS_ROTATOR_genblk1_1__BRAM_BRAM_RAMW/VSSE}]
+
+connect_pg_net -net {VDD} [get_pins -design [current_block] -quiet -physical_context {PIXELS_RAM_RAME/VDD}]
+connect_pg_net -net {VSS} [get_pins -design [current_block] -quiet -physical_context {PIXELS_RAM_RAME/VSSE}]
 
 # Create rails for macros
 create_pg_ring_pattern sram_ring_patt -horizontal_layer M12 -horizontal_width {1} -horizontal_spacing {1} -vertical_layer M13 -vertical_width {1} -vertical_spacing {1}
