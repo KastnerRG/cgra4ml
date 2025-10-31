@@ -332,6 +332,9 @@ skid_buffer #(
   .m_data  ({m_axis_output_skid_tdata, m_axis_output_skid_tkeep, m_bytes_per_transfer_skid,   m_axis_output_skid_tlast})
 );
 
+wire m_axi_mm2s_0_arvalid_masked = m_axi_mm2s_0_arvalid && s_axis_pixels_skid_tready;
+wire m_axi_mm2s_0_arready_masked = m_axi_mm2s_0_arready && s_axis_pixels_skid_tready;
+
 alex_axi_dma_rd #(
     .AXI_DATA_WIDTH(AXI_WIDTH   ),
     .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
@@ -383,7 +386,7 @@ alex_axi_dma_rd #(
     .m_axi_arcache(m_axi_mm2s_0_arcache),
     .m_axi_arprot(m_axi_mm2s_0_arprot),
     .m_axi_arvalid(m_axi_mm2s_0_arvalid),
-    .m_axi_arready(m_axi_mm2s_0_arready),
+    .m_axi_arready(m_axi_mm2s_0_arready_masked),
     .m_axi_rid(m_axi_mm2s_0_rid),
     .m_axi_rdata(m_axi_mm2s_0_rdata),
     .m_axi_rresp(m_axi_mm2s_0_rresp),
@@ -392,6 +395,9 @@ alex_axi_dma_rd #(
     .m_axi_rready(m_axi_mm2s_0_rready),
     .enable(1'b1)
 );
+
+wire m_axi_mm2s_1_arvalid_masked = m_axi_mm2s_1_arvalid && s_axis_weights_skid_tready;
+wire m_axi_mm2s_1_arready_masked = m_axi_mm2s_1_arready && s_axis_weights_skid_tready;
 
 alex_axi_dma_rd #(
     .AXI_DATA_WIDTH(AXI_WIDTH   ),
@@ -444,7 +450,7 @@ alex_axi_dma_rd #(
     .m_axi_arcache(m_axi_mm2s_1_arcache),
     .m_axi_arprot(m_axi_mm2s_1_arprot),
     .m_axi_arvalid(m_axi_mm2s_1_arvalid),
-    .m_axi_arready(m_axi_mm2s_1_arready),
+    .m_axi_arready(m_axi_mm2s_1_arready_masked),
     .m_axi_rid(m_axi_mm2s_1_rid),
     .m_axi_rdata(m_axi_mm2s_1_rdata),
     .m_axi_rresp(m_axi_mm2s_1_rresp),
@@ -520,10 +526,12 @@ alex_axi_dma_wr #(
     .abort(1'b0)
 );
 
+localparam S_COUNT = 3;
+localparam M_COUNT = 1;
 
 axi_crossbar #(
-  .S_COUNT         (3                             ),
-  .M_COUNT         (1                             ),
+  .S_COUNT         (S_COUNT                       ),
+  .M_COUNT         (M_COUNT                       ),
   .DATA_WIDTH      (AXI_WIDTH                     ),
   .ADDR_WIDTH      (AXI_ADDR_WIDTH                ),
   .STRB_WIDTH      (AXI_STRB_WIDTH                ),
@@ -543,21 +551,21 @@ axi_crossbar #(
   // .S_ACCEPT        ({S_COUNT{32'd16}}             ),
   .M_REGIONS       (1                             ),
   .M_BASE_ADDR     (0                             ),
-  .M_ADDR_WIDTH    (AXI_ADDR_WIDTH                )
+  .M_ADDR_WIDTH    (AXI_ADDR_WIDTH                ),
   // .M_CONNECT_READ  ({M_COUNT{{S_COUNT{1'b1}}}}    ),
   // .M_CONNECT_WRITE ({M_COUNT{{S_COUNT{1'b1}}}}    ),
   // .M_ISSUE         ({M_COUNT{32'd4}}              ),
   // .M_SECURE        ({M_COUNT{1'b0}}               ),
-  // .S_AW_REG_TYPE   ({S_COUNT{2'd0}}               ),
-  // .S_W_REG_TYPE    ({S_COUNT{2'd0}}               ),
-  // .S_B_REG_TYPE    ({S_COUNT{2'd1}}               ),
-  // .S_AR_REG_TYPE   ({S_COUNT{2'd0}}               ),
-  // .S_R_REG_TYPE    ({S_COUNT{2'd2}}               ),
-  // .M_AW_REG_TYPE   ({M_COUNT{2'd1}}               ),
-  // .M_W_REG_TYPE    ({M_COUNT{2'd2}}               ),
-  // .M_B_REG_TYPE    ({M_COUNT{2'd0}}               ),
-  // .M_AR_REG_TYPE   ({M_COUNT{2'd1}}               ),
-  // .M_R_REG_TYPE    ({M_COUNT{2'd0}}               )
+  .S_AW_REG_TYPE   ({S_COUNT{2'd2}}               ),
+  .S_W_REG_TYPE    ({S_COUNT{2'd2}}               ),
+  .S_B_REG_TYPE    ({S_COUNT{2'd2}}               ),
+  .S_AR_REG_TYPE   ({S_COUNT{2'd2}}               ),
+  .S_R_REG_TYPE    ({S_COUNT{2'd2}}               ),
+  .M_AW_REG_TYPE   ({M_COUNT{2'd2}}               ),
+  .M_W_REG_TYPE    ({M_COUNT{2'd2}}               ),
+  .M_B_REG_TYPE    ({M_COUNT{2'd2}}               ),
+  .M_AR_REG_TYPE   ({M_COUNT{2'd2}}               ),
+  .M_R_REG_TYPE    ({M_COUNT{2'd2}}               )
 ) AXI_INTC (
   .clk           (clk),
   .rstn          (rstn),
@@ -607,7 +615,7 @@ axi_crossbar #(
   .s_axi_arlock  ({m_axi_s2mm_arlock , m_axi_mm2s_1_arlock , m_axi_mm2s_0_arlock }), // i
   .s_axi_arcache ({m_axi_s2mm_arcache, m_axi_mm2s_1_arcache, m_axi_mm2s_0_arcache}), // i
   .s_axi_arprot  ({m_axi_s2mm_arprot , m_axi_mm2s_1_arprot , m_axi_mm2s_0_arprot }), // i
-  .s_axi_arvalid ({m_axi_s2mm_arvalid, m_axi_mm2s_1_arvalid, m_axi_mm2s_0_arvalid}), // i
+  .s_axi_arvalid ({m_axi_s2mm_arvalid, m_axi_mm2s_1_arvalid_masked, m_axi_mm2s_0_arvalid_masked}), // i
   .s_axi_arready ({m_axi_s2mm_arready, m_axi_mm2s_1_arready, m_axi_mm2s_0_arready}), // o
   .s_axi_rid     ({m_axi_s2mm_rid    , m_axi_mm2s_1_rid    , m_axi_mm2s_0_rid    }), // o
   .s_axi_rdata   ({m_axi_s2mm_rdata  , m_axi_mm2s_1_rdata  , m_axi_mm2s_0_rdata  }), // o

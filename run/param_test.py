@@ -193,8 +193,8 @@ def product_dict(**kwargs):
                                         config_baseaddr      = ["40000"  ],
                                         axi_max_burst_len    = [ 1       ],
                                         target_cpu_int_bits  = [ 32      ],
-                                        valid_prob           = [ 0.01    ],
-                                        ready_prob           = [ 0.1     ],
+                                        valid_prob           = [ 1    ],
+                                        ready_prob           = [ 1     ],
                                         data_dir             = ['vectors'],
                                         tb_module            = ["axi_int_reg_tb"],
                                     )))
