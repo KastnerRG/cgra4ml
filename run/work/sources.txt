@@ -41,6 +41,7 @@
 /mnt/d/dnn-engine/deepsocflow/rtl/ext/xilinx_sdp.sv
 /mnt/d/dnn-engine/deepsocflow/rtl/sys/axi_int_reg_cgra4ml.sv
 /mnt/d/dnn-engine/deepsocflow/rtl/sys/cgra4ml_for_ibex.sv
+/mnt/d/dnn-engine/deepsocflow/rtl/sys/cgra4ml_for_ibex_3.sv
 /mnt/d/dnn-engine/deepsocflow/rtl/sys/dev_to_maxil.sv
 /mnt/d/dnn-engine/deepsocflow/rtl/sys/saxi_to_host.sv
 /mnt/d/dnn-engine/run/work/config_hw.svh
