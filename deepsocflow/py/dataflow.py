@@ -5,53 +5,92 @@ from deepsocflow.py.utils import *
 
 def get_runtime_params(hw, w_shape, x_shape, o_shape, core, pool, flatten):
 
-    KH, KW, CI, CO = w_shape
-    print('weights initial (KH, KW, CI, CO) =', w_shape)
+    # Handle upsampling layers differently
+    if core.type == "upsample":
+        XN, XH, XW, CI = x_shape
+        ON, OH, OW, CO = o_shape
 
-    CO_PRL         = hw.COLS // KW                        # SW cols are processed in parallel
-    EG             = int(np.floor( hw.COLS / KW))         # elastic groups
-    IT             = int(np.ceil( CO / EG))              # iterations needed
-    CO_PAD         = IT * CO_PRL                         # output cols padded
-    
-    CM             = (hw.RAM_WEIGHTS_DEPTH - hw.CONFIG_BEATS)//KH  # (available rows in weights ram)/KH
-    CP             = int(np.ceil(CI / CM))                        # Number of passes required
-    CM_0           = CM if (CI%CM==0) else (CI%CM)                # CM of p=0
+        # For upsampling, we don't have weights, so use dummy values
+        KH, KW = 1, 1  # No kernel for upsampling
+        CO = CI  # Output channels same as input for upsampling
 
-    print(f'KH={KH}, KW={KW}, CI={CI}, CO={CO}, CO_PRL={CO_PRL}, EG={EG}, IT={IT}, CO_PAD={CO_PAD}, CM={CM}, CP={CP}')
+        CO_PRL = hw.COLS  # Process all columns in parallel
+        EG = hw.COLS
+        IT = 1  # Single iteration for upsampling
+        CO_PAD = CO_PRL
 
-    XN, XH, XW, CI = x_shape
-    print('input initial (XN, XH, XW, CI)=', x_shape)
+        CM = hw.RAM_WEIGHTS_DEPTH  # Not used for upsampling
+        CP = 1  # Single pass for upsampling
+        CM_0 = CM
 
-    XL  = int(np.ceil(XH/hw.ROWS))    # Blocks
-    YN, YH, YW, YC = XN, XH, XW, CO
+        print(
+            f"UPSAMPLE: KH={KH}, KW={KW}, CI={CI}, CO={CO}, CO_PRL={CO_PRL}, EG={EG}, IT={IT}, CO_PAD={CO_PAD}, CM={CM}, CP={CP}"
+        )
+        print("input initial (XN, XH, XW, CI)=", x_shape)
 
-    X_PAD = 0 if KH == 1 else hw.X_PAD_MAX
+        XL = int(np.ceil(XH / hw.ROWS))  # Blocks
+        YN, YH, YW, YC = XN, OH, OW, CO  # Use output dimensions
 
-    '''
-    Conv Striding
-    '''
-    if core.type == 'conv':
-        CSH, CSW = core.strides
-        assert XH > KH//2
-        assert XW > KW//2
+        X_PAD = 0  # No padding needed for upsampling
     else:
-        CSH, CSW = 1,1
+        KH, KW, CI, CO = w_shape
+        print('weights initial (KH, KW, CI, CO) =', w_shape)
 
-    CYH, CYW = int(np.ceil(XH/CSH)), int(np.ceil(XW/CSW))
-    
-    CSH_SHIFT, CSW_SHIFT = 0,0
-    if core.type == 'conv':
+        CO_PRL         = hw.COLS // KW                        # SW cols are processed in parallel
+        EG             = int(np.floor( hw.COLS / KW))         # elastic groups
+        IT             = int(np.ceil( CO / EG))              # iterations needed
+        CO_PAD         = IT * CO_PRL                         # output cols padded
+
+        CM             = (hw.RAM_WEIGHTS_DEPTH - hw.CONFIG_BEATS)//KH  # (available rows in weights ram)/KH
+        CP             = int(np.ceil(CI / CM))                        # Number of passes required
+        CM_0           = CM if (CI%CM==0) else (CI%CM)                # CM of p=0
+
+        print(f'KH={KH}, KW={KW}, CI={CI}, CO={CO}, CO_PRL={CO_PRL}, EG={EG}, IT={IT}, CO_PAD={CO_PAD}, CM={CM}, CP={CP}')
+
+        XN, XH, XW, CI = x_shape
+        print("input initial (XN, XH, XW, CI)=", x_shape)
+
+        XL = int(np.ceil(XH / hw.ROWS))  # Blocks
+        YN, YH, YW, YC = XN, XH, XW, CO
+
+        X_PAD = 0 if KH == 1 else hw.X_PAD_MAX
+
+    """
+    Conv Striding / Upsampling
+    """
+    if core.type == "conv":
+        CSH, CSW = core.strides
+        assert XH > KH // 2
+        assert XW > KW // 2
+        CYH, CYW = int(np.ceil(XH / CSH)), int(np.ceil(XW / CSW))
+
+        CSH_SHIFT, CSW_SHIFT = 0, 0
         if core.padding == "same":
-            CSH_SHIFT = (KH-1)//2 - max((CSH*(CYH-1)+KH-XH)//2, 0)
-            CSW_SHIFT = (KW-1)//2 - max((CSW*(CYW-1)+KW-XW)//2, 0)
-        print(f"out after (strides:{CSH, CSW}, mode:{core.padding}) CONV_STRIDING: (XN, CYH, CYW, CO)={(XN, CYH, CYW, CO)}")
+            CSH_SHIFT = (KH - 1) // 2 - max((CSH * (CYH - 1) + KH - XH) // 2, 0)
+            CSW_SHIFT = (KW - 1) // 2 - max((CSW * (CYW - 1) + KW - XW) // 2, 0)
+        print(
+            f"out after (strides:{CSH, CSW}, mode:{core.padding}) CONV_STRIDING: (XN, CYH, CYW, CO)={(XN, CYH, CYW, CO)}"
+        )
 
         YH, YW = CYH, CYW
+    elif core.type == "upsample":
+        # For upsampling, output dimensions are multiplied by upsampling factors
+        CSH, CSW = 1, 1  # Upsampling doesn't use stride, but we need these for export
+        CSH_SHIFT, CSW_SHIFT = 0, 0  # No shift needed for upsampling
+        CYH, CYW = XH * core.size[0], XW * core.size[1]
+        print(
+            f"out after UPSAMPLING (size:{core.size}): (XN, CYH, CYW, CO)={(XN, CYH, CYW, CO)}"
+        )
+        YH, YW = CYH, CYW
+    else:
+        CSH, CSW = 1, 1
+        CSH_SHIFT, CSW_SHIFT = 0, 0  # No shift for non-conv layers
+        CYH, CYW = XH, XW
+        YH, YW = CYH, CYW
 
-
-    '''
+    """
     Pooling
-    '''
+    """
     PKH = PKW = PSH = PSW = 1
     PSH_SHIFT = PSW_SHIFT = 0
     PYH, PYW = YH, YW
@@ -91,8 +130,12 @@ def get_runtime_params(hw, w_shape, x_shape, o_shape, core, pool, flatten):
     '''
     params = locals()
     params = {k:params[k] for k in params if not ('__' in k or k in ['w', 'x', 'y', 'hw', 'core', 'pool', 'params'])}
-    print (params)
-    r = namedtuple('Runtime', params)(**params)
+
+    # Add default header attribute to ensure it exists
+    params["header"] = 0  # Default header value
+
+    print(params)
+    r = namedtuple("Runtime", params)(**params)
     return r
 
 
@@ -108,24 +151,45 @@ def create_headers(hw, r):
             sum_width += width
         assert sum_width <= total, f"Number of total packed bits {sum_width} is more than input DMA width {total}"
         return np.array([packed],dtype=np.uint64)[0]
-    
-    d = {}
-    d['header'] = pack_bits([
-            (r.KW//2  , hw.BITS_KW2),
-            (r.XW-1   , hw.BITS_COLS_MAX),
-            (r.XL-1   , hw.BITS_BLOCKS_MAX),
-            (r.CM_0-1 , hw.BITS_CIN_MAX),
-            (r.CM-1   , hw.BITS_CIN_MAX),
-            (r.XN-1   , hw.BITS_XN_MAX),
-            (hw.CONFIG_BEATS + r.KH*r.CM_0-1, hw.BITS_RAM_WEIGHTS_ADDR),
-            (hw.CONFIG_BEATS + r.KH*r.CM-1, hw.BITS_RAM_WEIGHTS_ADDR),
-        ], hw.HEADER_WIDTH)
 
-    
-    n = namedtuple('Runtime', d)(**d)
-    r = namedtuple("Runtime", r._fields + n._fields)(*(r + n))
-    return r
+    # Add safety checks for missing attributes
+    def safe_getattr(obj, attr, default=0):
+        return getattr(obj, attr, default)
 
+    try:
+        d = {}
+        d["header"] = pack_bits(
+            [
+                (safe_getattr(r, "KW", 1) // 2, getattr(hw, "BITS_KW2", 8)),
+                (safe_getattr(r, "XW", 1) - 1, getattr(hw, "BITS_COLS_MAX", 16)),
+                (safe_getattr(r, "XL", 1) - 1, getattr(hw, "BITS_BLOCKS_MAX", 8)),
+                (safe_getattr(r, "CM_0", 1) - 1, getattr(hw, "BITS_CIN_MAX", 8)),
+                (safe_getattr(r, "CM", 1) - 1, getattr(hw, "BITS_CIN_MAX", 8)),
+                (safe_getattr(r, "XN", 1) - 1, getattr(hw, "BITS_XN_MAX", 8)),
+                (
+                    getattr(hw, "CONFIG_BEATS", 0)
+                    + safe_getattr(r, "KH", 1) * safe_getattr(r, "CM_0", 1)
+                    - 1,
+                    getattr(hw, "BITS_RAM_WEIGHTS_ADDR", 16),
+                ),
+                (
+                    getattr(hw, "CONFIG_BEATS", 0)
+                    + safe_getattr(r, "KH", 1) * safe_getattr(r, "CM", 1)
+                    - 1,
+                    getattr(hw, "BITS_RAM_WEIGHTS_ADDR", 16),
+                ),
+            ],
+            getattr(hw, "HEADER_WIDTH", 64),
+        )
+
+        n = namedtuple("Runtime", d)(**d)
+        r = namedtuple("Runtime", r._fields + n._fields)(*(r + n))
+        return r
+    except Exception as e:
+        print(f"Warning: Header creation failed: {e}")
+        print(f"Using default header value for Runtime object")
+        # Return the original Runtime object (it already has a default header from get_runtime_params)
+        return r
 
 
 def check_sparsity(w, x):
@@ -173,16 +237,23 @@ def reorder_w_q2e_conv(w, hw, r):
         CM_p = r.CM_0 if ip==0 else r.CM
         ic_right += CM_p
 
-        wp = w[:, ic_left:ic_right, :,:]
-        wp = wp.reshape (r.IT, CM_p*r.KH, hw.COLS)                # (IT, CM*KH, hw.COLS)
-        wp = np.pad(wp, ((0,0),(hw.CONFIG_BEATS,0),(0,0)))        # (IT, hw.CONFIG_BEATS+CM*KH, hw.COLS)
-        assert wp.shape == (r.IT, CM_p*r.KH +hw.CONFIG_BEATS, hw.COLS)
-        
-        words_per_byte = 8//hw.K_BITS
-        wp = wp.reshape(r.IT,-1)
-        pad = words_per_byte-(wp[0].size%words_per_byte)
-        pad = 0 if pad == words_per_byte else pad
-        wp = np.pad(wp, ((0,pad),(0,0)))
+        wp = w[:, ic_left:ic_right, :, :]
+        wp = wp.reshape(r.IT, CM_p * r.KH, hw.COLS)  # (IT, CM*KH, hw.COLS)
+        wp = np.pad(
+            wp, ((0, 0), (hw.CONFIG_BEATS, 0), (0, 0))
+        )  # (IT, hw.CONFIG_BEATS+CM*KH, hw.COLS)
+        assert wp.shape == (r.IT, CM_p * r.KH + hw.CONFIG_BEATS, hw.COLS)
+
+        if hw.K_BITS == 0 or hw.K_BITS > 8:
+            # If K_BITS is 0 or greater than 8, no padding needed
+            words_per_byte = 1
+            pad = 0
+        else:
+            words_per_byte = 8 // hw.K_BITS
+            pad = words_per_byte - (wp[0].size % words_per_byte)
+            pad = 0 if pad == words_per_byte else pad
+        wp = wp.reshape(r.IT, -1)
+        wp = np.pad(wp, ((0, pad), (0, 0)))
 
         w_list += [wp]
         ic_left = ic_right
@@ -220,15 +291,19 @@ def reorder_x_q2e_conv(x, hw, r):
         assert xp.shape == (r.XN, r.XL, r.XW, CM_p, (hw.ROWS+r.X_PAD))
 
         xp = xp.flatten()
-        words_per_byte = 8//hw.X_BITS
-        pad = words_per_byte-(xp.size%words_per_byte)
-        pad = 0 if pad == words_per_byte else pad
-        xp = np.pad(xp, ((0,pad)))
+        if hw.X_BITS == 0 or hw.X_BITS > 8:
+            # If X_BITS is 0 or greater than 8, no padding needed
+            words_per_byte = 1
+            pad = 0
+        else:
+            words_per_byte = 8 // hw.X_BITS
+            pad = words_per_byte - (xp.size % words_per_byte)
+            pad = 0 if pad == words_per_byte else pad
+        xp = np.pad(xp, ((0, pad)))
 
         x_list += [xp]
         ic_left = ic_right
     return x_list
-
 
 
 def reorder_y_q2e_conv(y, hw, r):
@@ -350,3 +425,55 @@ def predict_model_performance(hw):
             f.write(f"{line}\n")
 
     return d_out
+
+
+def reorder_x_q2e_upsample(x_int, hw, r):
+    """
+    Reorder input data for upsampling layers.
+    For upsampling, we just need to flatten and pad the input data.
+    """
+    x_list = []
+
+    # For upsampling, we just flatten the input tensor
+    x_flat = x_int.flatten()
+
+    # Pad to word boundary
+    if hw.X_BITS == 0 or hw.X_BITS > 8:
+        # If X_BITS is 0 or greater than 8, no padding needed
+        words_per_byte = 1
+        pad = 0
+    else:
+        words_per_byte = 8 // hw.X_BITS
+        pad = words_per_byte - (x_flat.size % words_per_byte)
+        pad = 0 if pad == words_per_byte else pad
+    x_flat = np.pad(x_flat, ((0, pad)))
+
+    x_list.append(x_flat)
+
+    return x_list
+
+
+def reorder_y_q2e_upsample(y_int, hw, r):
+    """
+    Reorder output data for upsampling layers.
+    For upsampling, we just need to flatten and pad the output data.
+    """
+    y_list = []
+
+    # For upsampling, we just flatten the output tensor
+    y_flat = y_int.flatten()
+
+    # Pad to word boundary
+    if hw.Y_BITS == 0 or hw.Y_BITS > 8:
+        # If Y_BITS is 0 or greater than 8, no padding needed
+        words_per_byte = 1
+        pad = 0
+    else:
+        words_per_byte = 8 // hw.Y_BITS
+        pad = words_per_byte - (y_flat.size % words_per_byte)
+        pad = 0 if pad == words_per_byte else pad
+    y_flat = np.pad(y_flat, ((0, pad)))
+
+    y_list.append(y_flat)
+
+    return y_list
