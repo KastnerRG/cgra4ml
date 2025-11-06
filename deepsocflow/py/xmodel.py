@@ -159,8 +159,14 @@ def export_inference(model, hw, batch_size=1):
         for ib, b in enumerate(BUNDLES):
             assert ib == b.ib
 
-            w_bpt    = (hw.K_BITS*b.we[-1][0].size)//8
-            w_bpt_p0 = (hw.K_BITS*b.we[0][0].size)//8
+            # Handle bundles without weights (upsample, dense, activation layers)
+            if hasattr(b, 'we') and b.we is not None:
+                w_bpt    = (hw.K_BITS*b.we[-1][0].size)//8
+                w_bpt_p0 = (hw.K_BITS*b.we[0][0].size)//8
+            else:
+                w_bpt    = 0
+                w_bpt_p0 = 0
+                
             x_bpt    = (hw.X_BITS*b.xe[-1].size)//8 
             x_bpt_p0 = (hw.X_BITS*b.xe[0].size )//8
             
@@ -200,10 +206,23 @@ def export_inference(model, hw, batch_size=1):
             y_coe_tl = b.r.CO_PRL if (b.r.CO==b.r.IT*b.r.CO_PRL) else b.r.CO%b.r.IT
             y_r_ll = hw.ROWS if b.r.XH==b.r.XL*hw.ROWS else  b.r.XH % hw.ROWS
 
-            ca_nzero, ca_shift, ca_pl_scale = b.core.act.non_zero, b.core.act.shift_bits, b.core.act.plog_slope
+            # Handle cases where core doesn't have act attribute (like XUpSample)
+            if hasattr(b.core, 'act') and b.core.act is not None:
+                ca_nzero, ca_shift, ca_pl_scale = b.core.act.non_zero, b.core.act.shift_bits, b.core.act.plog_slope
+            else:
+                ca_nzero, ca_shift, ca_pl_scale = 0, 0, 0
 
-            (aa_nzero, aa_shift, aa_pl_scale) = (b.add .act.non_zero, b.add .act.shift_bits, b.add .act.plog_slope)if b.add  is not None else (0,0,0)
-            (pa_nzero, pa_shift, pa_pl_scale) = (b.pool.act.non_zero, b.pool.act.shift_bits, b.pool.act.plog_slope)if b.pool is not None else (0,0,0)
+            # Handle add layer attributes safely
+            if b.add is not None and hasattr(b.add, 'act') and b.add.act is not None:
+                (aa_nzero, aa_shift, aa_pl_scale) = (b.add.act.non_zero, b.add.act.shift_bits, b.add.act.plog_slope)
+            else:
+                (aa_nzero, aa_shift, aa_pl_scale) = (0,0,0)
+                
+            # Handle pool layer attributes safely
+            if b.pool is not None and hasattr(b.pool, 'act') and b.pool.act is not None:
+                (pa_nzero, pa_shift, pa_pl_scale) = (b.pool.act.non_zero, b.pool.act.shift_bits, b.pool.act.plog_slope)
+            else:
+                (pa_nzero, pa_shift, pa_pl_scale) = (0,0,0)
 
             add_out_buffer_idx = b.add_out_buffer_idx
             add_in_buffer_idx = BUNDLES[b.add.source_ib].add_out_buffer_idx if b.add is not None else -1
@@ -211,24 +230,33 @@ def export_inference(model, hw, batch_size=1):
 
             if b.pool is None:
                 pool_type = 'POOL_NONE'
-            elif b.pool.type == 'max':
+            elif hasattr(b.pool, 'type') and b.pool.type == 'max':
                 pool_type = 'POOL_MAX'
-            elif b.pool.type == 'avg':
+            elif hasattr(b.pool, 'type') and b.pool.type == 'avg':
                 pool_type = 'POOL_AVG'
+            else:
+                pool_type = 'POOL_NONE'
 
             out_type = 'float' if (ib == len(BUNDLES)-1 and b.softmax) else 'int32_t'
 
             ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<4}, .co={b.r.CO:<4}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, .on={b.r.ON:<3}, .oh={b.r.OH:<3}, .ow={b.r.OW:<3}, .oc={b.r.OC:<4}, .ch={b.r.CYH:<3}, .ph={b.r.PYH:<3}, .cw={b.r.CYW:<3}, .pw={b.r.PYW:<3}, .pkh={b.r.PKH:<3}, .psh={b.r.PSH:<3}, .pkw={b.r.PKW:<3}, .psw={b.r.PSW:<3}, ")
             ch.write(     f".xp_words={xp_words:<6}, .b_offset={b_words:<5}, .w_bpt={w_bpt:<5}, .w_bpt_p0={w_bpt_p0:<5}, .x_bpt={x_bpt:<8}, .x_bpt_p0={x_bpt_p0:<8}, .o_words={o_words_b:<8}, .o_bytes={o_bytes_b:<8}, ")
             ch.write(     f".ib_out={ib_out:<4}, .in_buffer_idx={in_buffer_idx:<3}, .out_buffer_idx={b.out_buffer_idx:<3}, .add_out_buffer_idx={add_out_buffer_idx:<2}, .add_in_buffer_idx={add_in_buffer_idx:<2}, ")
-            ch.write(     f".is_bias={1*(b.core.b is not None):<3}, .is_flatten={1*(b.flatten is not None):<3}, .is_softmax={1*(b.softmax is not None):<3}, ")
-            ch.write(     f".x_pad={b.r.X_PAD:<3}, .b_val_shift={b.core.bias_val_shift:<3}, .b_bias_shift={b.core.bias_b_shift:<3}, .ca_nzero={ca_nzero:<3}, .ca_shift={ca_shift:<3}, .ca_pl_scale={ca_pl_scale:<3}, .aa_nzero={aa_nzero:<3}, .aa_shift={aa_shift:<3}, .aa_pl_scale={aa_pl_scale:<3}, .pa_nzero={pa_nzero:<3}, .pa_shift={pa_shift:<3}, .pa_pl_scale={pa_pl_scale:<3}, .softmax_frac={b.softmax_frac:<3}, ")
+            # Handle cases where core doesn't have b attribute (like XUpSample)
+            is_bias = 1 if (hasattr(b.core, 'b') and b.core.b is not None) else 0
+            bias_val_shift = b.core.bias_val_shift if hasattr(b.core, 'bias_val_shift') else 0
+            bias_b_shift = b.core.bias_b_shift if hasattr(b.core, 'bias_b_shift') else 0
+            
+            ch.write(     f".is_bias={is_bias:<3}, .is_flatten={1*(b.flatten is not None):<3}, .is_softmax={1*(b.softmax is not None):<3}, ")
+            softmax_frac = getattr(b, 'softmax_frac', 0)
+            ch.write(     f".x_pad={b.r.X_PAD:<3}, .b_val_shift={bias_val_shift:<3}, .b_bias_shift={bias_b_shift:<3}, .ca_nzero={ca_nzero:<3}, .ca_shift={ca_shift:<3}, .ca_pl_scale={ca_pl_scale:<3}, .aa_nzero={aa_nzero:<3}, .aa_shift={aa_shift:<3}, .aa_pl_scale={aa_pl_scale:<3}, .pa_nzero={pa_nzero:<3}, .pa_shift={pa_shift:<3}, .pa_pl_scale={pa_pl_scale:<3}, .softmax_frac={softmax_frac:<3}, ")
             ch.write(     f".csh={b.r.CSH:<3}, .csh_shift={b.r.CSH_SHIFT:<3}, .psh_shift={b.r.PSH_SHIFT:<3}, .csw={b.r.CSW:<3}, .csw_shift={b.r.CSW_SHIFT:<3}, .psw_shift={b.r.PSW_SHIFT:<3}, .pool={pool_type:<10}, ")
-            ch.write(     f".softmax_max_f={b.softmax_max_f:<15}, ")
+            softmax_max_f = getattr(b, 'softmax_max_f', 0.0)
+            ch.write(     f".softmax_max_f={softmax_max_f:<15}, ")
             ch.write(     f".header={b.r.header:>23}u, ")
             ch.write(     f".debug_nhwc_words={b.oe_exp_nhwc.size:<9} }}")
             
-            b_words += b.be.size if b.core.b else 0
+            b_words += b.be.size if (hasattr(b.core, 'b') and b.core.b is not None) else 0
             if b.ib != len(BUNDLES)-1:
                 ch.write(',\n')
 
@@ -256,7 +284,7 @@ def export_inference(model, hw, batch_size=1):
         ch.write(f"#define B_WORDS     {b_words}\n")
         ch.write(f"#define AXI_WIDTH   {hw.AXI_WIDTH}\n")
         ch.write(f"#define CONFIG_BASEADDR 0x{hw.CONFIG_BASEADDR}\n")
-        ch.write(f'#define DATA_DIR   "../{hw.DATA_DIR}"\n\n')
+        ch.write(f'#define DATA_DIR   "{hw.DATA_DIR}"\n\n')
 
         mask_nums = [(2**hw.X_BITS-1) << (p*hw.X_BITS)  for p in range(8//hw.X_BITS)]
         mask_nums = ~np.array(mask_nums, dtype=np.uint8)
@@ -275,15 +303,17 @@ def export_inference(model, hw, batch_size=1):
         for ib, b in enumerate(BUNDLES):
             assert ib == b.ib
             x_bitstring_b = b''
-            if b.core.b:
+            if hasattr(b.core, 'b') and b.core.b is not None:
                 b_bitstring += b.be.astype(type_d['np'][hw.B_BITS]).tobytes()
             for ip in range(b.r.CP):
                 xe = pack_words_into_bytes(arr=b.xe[ip].flatten(), bits=hw.X_BITS)
                 x_bitstring_b += xe.tobytes()
                     
-                for it in range(b.r.IT):
-                    we = pack_words_into_bytes(arr=b.we[ip][it].flatten(), bits=hw.K_BITS)
-                    w_bitstring += we.tobytes()
+                # Only process weights if they exist (skip for upsample, dense, activation layers)
+                if hasattr(b, 'we') and b.we is not None:
+                    for it in range(b.r.IT):
+                        we = pack_words_into_bytes(arr=b.we[ip][it].flatten(), bits=hw.K_BITS)
+                        w_bitstring += we.tobytes()
             x_bitstring += x_bitstring_b
             with open(f"{hw.DATA_DIR}/{ib}_x_sim.bin", 'wb') as f: 
                 f.write(x_bitstring_b)
@@ -315,11 +345,13 @@ def export_inference(model, hw, batch_size=1):
                 xp = b.xe[ip].flatten()
                 np.savetxt(f"{hw.DATA_DIR}/{b.ib}_{ip}_x.txt", xp, fmt='%d')
 
-                for it in range(b.r.IT):
-                    wp = b.we[ip][it].flatten()            
-                    assert wp.shape == ((CM_p*b.r.KH+hw.CONFIG_BEATS)*hw.COLS,), f"{wp.shape} != {(CM_p*b.r.KH+hw.CONFIG_BEATS)*hw.COLS}"
-                    np.savetxt(f"{hw.DATA_DIR}/{b.ib}_{ip}_{it}_w.txt", wp, fmt='%d')
-                    np.savetxt(f"{hw.DATA_DIR}/{b.ib}_{ip}_{it}_y_exp.txt", b.ye_exp_p[ip][it].flatten(), fmt='%d')
+                # Only process weights if they exist (skip for upsample, dense, activation layers)
+                if hasattr(b, 'we') and b.we is not None:
+                    for it in range(b.r.IT):
+                        wp = b.we[ip][it].flatten()            
+                        assert wp.shape == ((CM_p*b.r.KH+hw.CONFIG_BEATS)*hw.COLS,), f"{wp.shape} != {(CM_p*b.r.KH+hw.CONFIG_BEATS)*hw.COLS}"
+                        np.savetxt(f"{hw.DATA_DIR}/{b.ib}_{ip}_{it}_w.txt", wp, fmt='%d')
+                        np.savetxt(f"{hw.DATA_DIR}/{b.ib}_{ip}_{it}_y_exp.txt", b.ye_exp_p[ip][it].flatten(), fmt='%d')
         
         y_exp = (b.out.ftensor.numpy() if b.softmax else b.o_int).flatten() 
         np.savetxt(f"{hw.DATA_DIR}/y_exp.txt", y_exp, fmt= '%f' if b.softmax else '%d')
@@ -330,12 +362,12 @@ def export_inference(model, hw, batch_size=1):
         print(f'Weights, inputs, outputs saved to {hw.DATA_DIR}/ib_ip_it_*.txt')
 
 
-def verify_inference(model, hw, SIM, SIM_PATH='', TRACE=False):
+def verify_inference(model, hw, SIM, SIM_PATH):
 
     '''
     RUN SIMULATION
     '''
-    hw.simulate(SIM=SIM, SIM_PATH=SIM_PATH, TRACE=TRACE)
+    hw.simulate(SIM=SIM, SIM_PATH=SIM_PATH)
 
 
     '''
