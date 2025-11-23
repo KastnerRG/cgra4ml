@@ -190,7 +190,7 @@ def product_dict(**kwargs):
                                         ram_weights_depth    = [ 512     ],
                                         ram_edges_depth      = [ 3584    ],
                                         axi_width            = [ 128      ],
-                                        config_baseaddr      = ["B0000000"],
+                                        config_baseaddr      = ["40000000"],
                                         target_cpu_int_bits  = [ 32       ],
                                         valid_prob           = [ 1       ],
                                         ready_prob           = [ 1       ],

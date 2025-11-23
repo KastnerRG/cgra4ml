@@ -9,9 +9,16 @@ create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 processing_sy
 apply_bd_automation -rule xilinx.com:bd_rule:processing_system7 -config {make_external "FIXED_IO, DDR" Master "Disable" Slave "Disable" }  [get_bd_cells processing_system7_0]
 set_property -dict [list CONFIG.PCW_USE_S_AXI_GP0 {0} CONFIG.PCW_USE_S_AXI_HP0 {1} CONFIG.PCW_USE_S_AXI_HP1 {1} CONFIG.PCW_USE_S_AXI_HP2 {1}  CONFIG.PCW_USE_FABRIC_INTERRUPT {1} CONFIG.PCW_IRQ_F2P_INTR {1} CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ $FREQ CONFIG.PCW_UART0_PERIPHERAL_ENABLE {1}] [get_bd_cells processing_system7_0]
 
-set PS_IRQ        "processing_system7_0/IRQ_F2P"
-set PS_M_AXI_LITE "/processing_system7_0/M_AXI_GP0"
-set PS_S_AXI_OUTPUT  "/processing_system7_0/S_AXI_HP0"
-set PS_S_AXI_PIXELS  "/processing_system7_0/S_AXI_HP1"
-set PS_S_AXI_WEIGHTS "/processing_system7_0/S_AXI_HP2"
-set PS_CLK        "/processing_system7_0/FCLK_CLK0"
+
+set ZYNQ_PS       "processing_system7_0"
+set PS_IRQ        "$ZYNQ_PS/IRQ_F2P"
+set PS_CLK        "/$ZYNQ_PS/FCLK_CLK0"
+set PS_M_AXI_LITE "/$ZYNQ_PS/M_AXI_GP0"
+
+set PS_S_AXI_OUTPUT  "/$ZYNQ_PS/S_AXI_HP0"
+set PS_S_AXI_PIXELS  "/$ZYNQ_PS/S_AXI_HP1"
+set PS_S_AXI_WEIGHTS "/$ZYNQ_PS/S_AXI_HP2"
+
+set CLK0 "$ZYNQ_PS/S_AXI_HP0_ACLK"
+set CLK1 "$ZYNQ_PS/S_AXI_HP1_ACLK"
+set CLK2 "$ZYNQ_PS/S_AXI_HP2_ACLK"
