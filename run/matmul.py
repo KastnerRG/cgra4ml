@@ -54,7 +54,7 @@ def product_dict(**kwargs):
 
 @pytest.mark.parametrize("PARAMS", list(product_dict(
                                         processing_elements  = [(N_BATCH, N_OUTPUT)],
-                                        frequency_mhz        = [ 200        ],
+                                        frequency_mhz        = [ 150        ],
                                         bits_input           = [ sys_bits.x ],
                                         bits_weights         = [ sys_bits.k ],
                                         bits_sum             = [ 24         ],
@@ -66,7 +66,7 @@ def product_dict(**kwargs):
                                         max_n_bundles        = [ 64      ],
                                         ram_weights_depth    = [ 256     ],
                                         ram_edges_depth      = [ 16       ],
-                                        axi_width            = [ 128      ],
+                                        axi_width            = [ 64       ],
                                         config_baseaddr      = ["40000000"],
                                         target_cpu_int_bits  = [ 32       ],
                                         valid_prob           = [ 1       ],
