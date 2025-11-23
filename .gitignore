@@ -1,11 +1,11 @@
 # Generated files
-config_fw.h
-config_hw.svh
-config_hw.tcl
-config_tb.svh
-hardware.json
-vivado_flow.tcl
-
+run/work*/config_fw.h
+run/work*/config_hw.svh
+run/work*/config_hw.tcl
+run/work*/config_tb.svh
+run/work*/hardware.json
+run/work*/vivado_flow.tcl
+run/work*/sources.txt
 
 # Other files
 old/
