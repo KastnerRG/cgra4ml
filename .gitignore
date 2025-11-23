@@ -1,3 +1,13 @@
+# Generated files
+config_fw.h
+config_hw.svh
+config_hw.tcl
+config_tb.svh
+hardware.json
+vivado_flow.tcl
+
+
+# Other files
 old/
 __pycache__
 
