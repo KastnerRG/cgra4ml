@@ -1,5 +1,7 @@
 `timescale 1ns/1ps
 
+// to debug: (* mark_debug = "true" *) input  logic reg_wr_en,
+
 module dma_controller #(
   parameter
     SRAM_RD_DATA_WIDTH = 32*8,
@@ -20,14 +22,14 @@ module dma_controller #(
   input  logic rstn,
 
   // SRAM port
-  (* mark_debug = "true" *) input  logic reg_wr_en,
+  input  logic reg_wr_en,
   output logic reg_wr_ack,
-  (* mark_debug = "true" *) input  logic [AXI_ADDR_WIDTH-1:0] reg_wr_addr,
-  (* mark_debug = "true" *) input  logic [AXI_DATA_WIDTH-1:0] reg_wr_data,
-  (* mark_debug = "true" *) input  logic reg_rd_en,
+  input  logic [AXI_ADDR_WIDTH-1:0] reg_wr_addr,
+  input  logic [AXI_DATA_WIDTH-1:0] reg_wr_data,
+  input  logic reg_rd_en,
   output logic reg_rd_ack,
-  (* mark_debug = "true" *) input  logic [AXI_ADDR_WIDTH-1:0] reg_rd_addr, 
-  (* mark_debug = "true" *) output logic [AXI_DATA_WIDTH-1:0] reg_rd_data,
+  input  logic [AXI_ADDR_WIDTH-1:0] reg_rd_addr, 
+  output logic [AXI_DATA_WIDTH-1:0] reg_rd_data,
 
   // AXIS-Out monitoring signals
   input  logic o_ready, 
@@ -47,25 +49,25 @@ module dma_controller #(
   input logic  os_valid,
 
   // DMA output descriptor
-  (* mark_debug = "true" *) output logic [AXI_ADDR_WIDTH-1:0]  m_od_addr ,
-  (* mark_debug = "true" *) output logic [AXI_LEN_WIDTH -1:0]  m_od_len  ,
-  (* mark_debug = "true" *) output logic                       m_od_valid,
-  (* mark_debug = "true" *) output logic [AXI_TAG_WIDTH -1:0]  m_od_tag  ,
-  (* mark_debug = "true" *) input  logic                       m_od_ready,
+  output logic [AXI_ADDR_WIDTH-1:0]  m_od_addr ,
+  output logic [AXI_LEN_WIDTH -1:0]  m_od_len  ,
+  output logic                       m_od_valid,
+  output logic [AXI_TAG_WIDTH -1:0]  m_od_tag  ,
+  input  logic                       m_od_ready,
 
   // DMA pixels descriptor
-  (* mark_debug = "true" *) output logic [AXI_ADDR_WIDTH-1:0]  m_xd_addr ,
-  (* mark_debug = "true" *) output logic [AXIS_USER_WIDTH-1:0] m_xd_user ,
-  (* mark_debug = "true" *) output logic [AXI_LEN_WIDTH -1:0]  m_xd_len  ,
-  (* mark_debug = "true" *) output logic                       m_xd_valid,
-  (* mark_debug = "true" *) input  logic                       m_xd_ready,
+  output logic [AXI_ADDR_WIDTH-1:0]  m_xd_addr ,
+  output logic [AXIS_USER_WIDTH-1:0] m_xd_user ,
+  output logic [AXI_LEN_WIDTH -1:0]  m_xd_len  ,
+  output logic                       m_xd_valid,
+  input  logic                       m_xd_ready,
 
   // DMA weights descriptor
-  (* mark_debug = "true" *) output logic [AXI_ADDR_WIDTH-1:0]  m_wd_addr ,
-  (* mark_debug = "true" *) output logic [AXIS_USER_WIDTH-1:0] m_wd_user ,
-  (* mark_debug = "true" *) output logic [AXI_LEN_WIDTH -1:0]  m_wd_len  ,
-  (* mark_debug = "true" *) output logic                       m_wd_valid,
-  (* mark_debug = "true" *) input  logic                       m_wd_ready
+  output logic [AXI_ADDR_WIDTH-1:0]  m_wd_addr ,
+  output logic [AXIS_USER_WIDTH-1:0] m_wd_user ,
+  output logic [AXI_LEN_WIDTH -1:0]  m_wd_len  ,
+  output logic                       m_wd_valid,
+  input  logic                       m_wd_ready
 );
   localparam // Addresses for local memory 0:15 is registers, rest is SRAM
     A_START        = 'h0,
@@ -79,15 +81,9 @@ module dma_controller #(
     A_X_DONE       = 'hB, 
     A_O_DONE       = 'hC
     ; // Max 16 registers
-  (* mark_debug = "true" *) logic [12:0][AXI_DATA_WIDTH-1:0] cfg ;
+  logic [12:0][AXI_DATA_WIDTH-1:0] cfg ;
 
-  always_ff @(posedge clk)  // PS READ (1 clock latency)
-    if (!rstn)          {reg_rd_data} <= '0;
-    else if (reg_rd_en) begin
-      //reg_rd_ack  <= reg_rd_en;
-      reg_rd_data <= cfg[reg_rd_addr];
-    end
-
+  assign reg_rd_data = cfg[reg_rd_addr];
   assign reg_wr_ack = 1'b1;
   assign reg_rd_ack = 1'b1;
 
@@ -123,15 +119,15 @@ module dma_controller #(
   assign ram_wr_data = reg_wr_data;
 
    // ram_ are combinational from ram
-  (* mark_debug = "true" *) logic [COUNTER_WIDTH-1:0] ram_max_t, ram_max_p;
-  (* mark_debug = "true" *) logic [31:0] ram_w_bpt, ram_w_bpt_p0, ram_x_bpt, ram_x_bpt_p0, w_bpt, w_bpt_p0, x_bpt, x_bpt_p0;
+  logic [COUNTER_WIDTH-1:0] ram_max_t, ram_max_p;
+  logic [31:0] ram_w_bpt, ram_w_bpt_p0, ram_x_bpt, ram_x_bpt_p0, w_bpt, w_bpt_p0, x_bpt, x_bpt_p0;
   logic [AXI_ADDR_WIDTH-1:0] ram_xb_base_addr;
   logic [63:0] ram_header, x_header, w_header;
   assign {ram_header, ram_max_t, ram_max_p, ram_w_bpt, ram_w_bpt_p0, ram_x_bpt, ram_x_bpt_p0, ram_xb_base_addr} = 256'(ram_rd_data);
 
   // SRAM rd_en arbitration
-  (* mark_debug = "true" *) logic w_ram_rd_en, x_ram_rd_en, w_ram_rd_valid, x_ram_rd_valid;
-  (* mark_debug = "true" *) logic [SRAM_RD_ADDR_WIDTH-1:0] w_ram_rd_addr, x_ram_rd_addr;
+  logic w_ram_rd_en, x_ram_rd_en, w_ram_rd_valid, x_ram_rd_valid;
+  logic [SRAM_RD_ADDR_WIDTH-1:0] w_ram_rd_addr, x_ram_rd_addr;
 
   assign ram_rd_addr = x_ram_rd_en ? x_ram_rd_addr : w_ram_rd_addr;
   assign ram_rd_en   = x_ram_rd_en || w_ram_rd_en;
@@ -191,9 +187,9 @@ module dma_controller #(
 
   //------------------- PIXELS DMA CONTROLLER -----------------------------------
 
-  (* mark_debug = "true" *) logic [COUNTER_WIDTH-1:0] count_xb;
-  (* mark_debug = "true" *) logic en_xt, lc_xt, lc_xp, lc_xb, f_xp, set_n_bundles_x;
-  (* mark_debug = "true" *) enum  {X_IDLE, X_WAIT_RAM, X_WAIT_WRITE, X_EXEC} x_state, x_state_next;
+  logic [COUNTER_WIDTH-1:0] count_xb;
+  logic en_xt, lc_xt, lc_xp, lc_xb, f_xp, set_n_bundles_x;
+  enum  {X_IDLE, X_WAIT_RAM, X_WAIT_WRITE, X_EXEC} x_state, x_state_next;
 
   always_comb begin
     x_state_next = x_state;
@@ -227,8 +223,8 @@ module dma_controller #(
     if (!rstn)               {x_header, x_bpt_p0, x_bpt} <= 0;
     else if (x_ram_rd_valid) {x_header, x_bpt_p0, x_bpt} <= {ram_header, ram_x_bpt_p0, ram_x_bpt};
 
-  (* mark_debug = "true" *) logic [COUNTER_WIDTH-1:0] count_xt_monitor;
-  (* mark_debug = "true" *) logic count_xt_last_monitor;
+  logic [COUNTER_WIDTH-1:0] count_xt_monitor;
+  logic count_xt_last_monitor;
 
   counter #(.W(COUNTER_WIDTH)) C_XT (.clk(clk), .rstn_g(rstn), .rst_l(x_ram_rd_valid  ), .en(en_xt), .max_in(COUNTER_WIDTH'(32'(ram_max_t)     - 1)), .last_clk(lc_xt), .last(count_xt_last_monitor), .first(    ), .count(count_xt_monitor));
   counter #(.W(COUNTER_WIDTH)) C_XP (.clk(clk), .rstn_g(rstn), .rst_l(x_ram_rd_valid  ), .en(lc_xt), .max_in(COUNTER_WIDTH'(32'(ram_max_p)     - 1)), .last_clk(lc_xp), .last(),                      .first(f_xp), .count(        ));
