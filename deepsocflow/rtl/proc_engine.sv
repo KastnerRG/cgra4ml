@@ -216,6 +216,7 @@ endgenerate
         wire signed [Y_BITS -1:0] add_in_2 = bypass[c] ? 0                : acc_m_data [c][r];
 
         // Accumulator
+        (* use_dsp = "yes" *)
         always_ff @(posedge clk `OR_NEGEDGE(resetn))
           if (!resetn)           acc_m_data [c][r] <= '0;
           else if (clken_acc[c]) acc_m_data [c][r] <= add_in_1 + add_in_2;
