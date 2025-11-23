@@ -4,6 +4,7 @@ from keras.layers import Layer
 from qkeras import *
 import os
 from copy import deepcopy
+import json
 
 from deepsocflow.py.utils import *
 from deepsocflow.py.xbundle import *
@@ -301,6 +302,112 @@ def export_inference(model, hw, batch_size=1):
         with open(f"{hw.DATA_DIR}/x_all.bin", 'wb') as f: 
             f.write(x_bitstring)
 
+        '''
+        Write JSON Config File for PYNQ
+        '''
+        defines = {
+            "N_BUNDLES": len(BUNDLES),
+            "X_BITS_L2": int(np.log2(hw.X_BITS)),
+            "W_BITS_L2": int(np.log2(hw.K_BITS)),
+            "KH_MAX": hw.KH_MAX,
+            "PE_ROWS": hw.ROWS,
+            "PE_COLS": hw.COLS,
+            "N_OUT_BUF": max(len(out_buffer_map), 1),
+            "N_ADD_BUF": len(add_buffer_map) if len(add_buffer_map) > 0 else 0,
+            "WB_BYTES": w_bytes + (b_words*hw.B_BITS)//8,
+            "W_BYTES": w_bytes,
+            "X_BYTES": x_bytes,
+            "O_WORDS": o_words,
+            "O_WORDS_MAX": o_words_max,
+            "O_BYTES_MAX": o_bytes_max,
+            "X_BYTES_ALL": x_bytes_all,
+            "NHWC_WORDS": nhwc_words_max,
+            "Y_TYPE_str": f"int{hw.Y_OUT_BITS}",
+            "B_TYPE_str": f"int{hw.B_BITS}",
+            "O_TYPE_str": 'float32' if BUNDLES[-1].softmax else 'int32',
+            "B_WORDS": b_words,
+            "AXI_WIDTH": hw.AXI_WIDTH,
+            "CONFIG_BASEADDR": hw.CONFIG_BASEADDR,
+            "DATA_DIR": hw.DATA_DIR
+        }
+
+        bundle_dicts = []
+        temp_b_words = 0
+        for ib, b in enumerate(BUNDLES):
+            # Recalculate values specific to this bundle for the dict
+            w_bpt    = (hw.K_BITS*b.we[-1][0].size)//8
+            w_bpt_p0 = (hw.K_BITS*b.we[0][0].size)//8
+            x_bpt    = (hw.X_BITS*b.xe[-1].size)//8
+            x_bpt_p0 = (hw.X_BITS*b.xe[0].size )//8
+
+            if ib == len(BUNDLES)-1:
+                o_words_b = b.o_int.size
+                o_bytes_b = o_words_b*4
+            else:
+                b_next    = BUNDLES[ib+1]
+                o_wpt     = b_next.xe[-1].size
+                o_wpt_p0  = b_next.xe[0].size
+                o_words_b = o_wpt_p0 + (b_next.r.CP-1)*o_wpt
+                o_bpt = (hw.X_BITS*b_next.xe[-1].size)//8
+                o_bpt_p0 = (hw.X_BITS*b_next.xe[0].size)//8
+                o_bytes_b = o_bpt_p0 + (b_next.r.CP-1)*o_bpt
+            
+            xp_words  = b.r.XN * b.r.XL * b.r.XW * (hw.ROWS+b.r.X_PAD)
+            ib_out = -1 if len(b.next_ibs) == 0 else sorted(b.next_ibs)[0]
+            y_coe = b.r.CO_PRL
+            
+            ca_nzero, ca_shift, ca_pl_scale = b.core.act.non_zero, b.core.act.shift_bits, b.core.act.plog_slope
+            (aa_nzero, aa_shift, aa_pl_scale) = (b.add .act.non_zero, b.add .act.shift_bits, b.add .act.plog_slope)if b.add  is not None else (0,0,0)
+            (pa_nzero, pa_shift, pa_pl_scale) = (b.pool.act.non_zero, b.pool.act.shift_bits, b.pool.act.plog_slope)if b.pool is not None else (0,0,0)
+            
+            add_out_buffer_idx = b.add_out_buffer_idx
+            add_in_buffer_idx = BUNDLES[b.add.source_ib].add_out_buffer_idx if b.add is not None else -1
+            in_buffer_idx = BUNDLES[b.prev_ib].out_buffer_idx if b.prev_ib is not None else -1
+            
+            pool_type = 'POOL_NONE'
+            if b.pool is not None:
+                if b.pool.type == 'max': pool_type = 'POOL_MAX'
+                elif b.pool.type == 'avg': pool_type = 'POOL_AVG'
+
+            bundle_dict = {
+                "n": b.r.XN, "l": b.r.XL, "kw": b.r.KW, "coe": y_coe, "h": b.r.XH, "w": b.r.XW, "ci": b.r.CI, "co": b.r.CO,
+                "w_kw2": b.r.XW-b.r.KW//2, "t": b.r.IT, "p": b.r.CP, "cm": b.r.CM, "cm_p0": b.r.CM_0, "on": b.r.ON,
+                "oh": b.r.OH, "ow": b.r.OW, "oc": b.r.OC, "ch": b.r.CYH, "ph": b.r.PYH, "cw": b.r.CYW, "pw": b.r.PYW,
+                "pkh": b.r.PKH, "psh": b.r.PSH, "pkw": b.r.PKW, "psw": b.r.PSW,
+                "xp_words": xp_words, "b_offset": temp_b_words, "w_bpt": w_bpt, "w_bpt_p0": w_bpt_p0, "x_bpt": x_bpt,
+                "x_bpt_p0": x_bpt_p0, "o_words": o_words_b, "o_bytes": o_bytes_b,
+                "ib_out": ib_out, "in_buffer_idx": in_buffer_idx, "out_buffer_idx": b.out_buffer_idx,
+                "add_out_buffer_idx": add_out_buffer_idx, "add_in_buffer_idx": add_in_buffer_idx,
+                "is_bias": 1*(b.core.b is not None), "is_flatten": 1*(b.flatten is not None),
+                "is_softmax": 1*(b.softmax is not None),
+                "x_pad": b.r.X_PAD, "b_val_shift": b.core.bias_val_shift, "b_bias_shift": b.core.bias_b_shift,
+                "ca_nzero": ca_nzero, "ca_shift": ca_shift, "ca_pl_scale": ca_pl_scale,
+                "aa_nzero": aa_nzero, "aa_shift": aa_shift, "aa_pl_scale": aa_pl_scale,
+                "pa_nzero": pa_nzero, "pa_shift": pa_shift, "pa_pl_scale": pa_pl_scale,
+                "softmax_frac": b.softmax_frac,
+                "csh": b.r.CSH, "csh_shift": b.r.CSH_SHIFT, "psh_shift": b.r.PSH_SHIFT, "csw": b.r.CSW,
+                "csw_shift": b.r.CSW_SHIFT, "psw_shift": b.r.PSW_SHIFT, "pool": pool_type,
+                "softmax_max_f": b.softmax_max_f,
+                "header": b.r.header,
+                "debug_nhwc_words": b.oe_exp_nhwc.size
+            }
+            bundle_dicts.append(bundle_dict)
+            temp_b_words += b.be.size if b.core.b else 0
+        
+        config_data = {"defines": defines, "bundles": bundle_dicts}
+        with open(f"{hw.DATA_DIR}/config.json", 'w') as f:
+            # use a custom encoder to handle numpy types
+            class NpEncoder(json.JSONEncoder):
+                def default(self, obj):
+                    if isinstance(obj, np.integer):
+                        return int(obj)
+                    if isinstance(obj, np.floating):
+                        return float(obj)
+                    if isinstance(obj, np.ndarray):
+                        return obj.tolist()
+                    return super(NpEncoder, self).default(obj)
+            json.dump(config_data, f, indent=4, cls=NpEncoder)
+        print(f"Successfully created JSON config file at: {hw.DATA_DIR}/config.json")
 
         '''
         Write Text files of vectors
