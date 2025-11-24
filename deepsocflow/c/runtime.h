@@ -78,6 +78,17 @@ typedef struct {
 #define A_X_DONE       0xB 
 #define A_O_DONE       0xC
 
+#define WB_A_START       0x0
+#define WB_A_N_BUNDLES_1 0x1
+#define WB_A_EN_COUNT    0x2
+#define WB_A_READY       0x3
+#define WB_A_IB          0x4
+#define WB_A_IP          0x5
+#define WB_A_IN          0x6
+#define WB_A_IL          0x7
+#define WB_A_IWKW2       0x8
+
+
 #ifdef __cplusplus
   #define EXT_C "C"
   #define restrict __restrict__ 
@@ -251,6 +262,7 @@ extern EXT_C u8 model_run(Memory_st *restrict mp, void *p_config) {
   static i32 it_bias=0, w_last, o_bpt;
   static i32 ib=0, ip=0, it=0, in=0, il=0, iw_kw2=0;
   static i8 *restrict p_out_buffer = 0;
+  void *p_writeback = p_config + 256;
 
   i32   iy_nhwc;
   idiv_t div_ch, div_cw, div_ixh, div_ixw;
@@ -292,6 +304,8 @@ extern EXT_C u8 model_run(Memory_st *restrict mp, void *p_config) {
         for (in = 0; in < pb->n; in++) {
           for (il = 0; il < pb->l; il++) {
             for (iw_kw2 = 0; iw_kw2 < pb->w_kw2; iw_kw2++) {
+
+              set_config(p_writeback, WB_A_EN_COUNT, 1);
               
               ocm_bank = !ocm_bank;
               w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
@@ -302,6 +316,9 @@ DMA_WAIT:
               // if sim return, so SV can pass time, and call again, which will jump to DMA_WAIT again
 	            if (!get_config(p_config, A_DONE_WRITE + ocm_bank)) 
 	              return 1; 
+
+	            // if (!get_config(p_writeback, WB_A_READY)) 
+	            //   return 1; 
 
               char f_path_raw [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
               sprintf(f_path_raw, "%s/%0d_%0d_%0d_y_raw_sim.txt", DATA_DIR, ib, ip, it);
@@ -316,6 +333,13 @@ DMA_WAIT:
               usleep(0);
 #endif
               set_config(p_config, A_DONE_WRITE + ocm_bank, 0);
+              set_config(p_writeback, WB_A_READY, 0);
+
+              // assert_printf (ib     , !=, get_config(p_writeback, WB_A_IB    ), "CHECK WRITEBACK", "");
+              // assert_printf (ip     , !=, get_config(p_writeback, WB_A_IP    ), "CHECK WRITEBACK", "");
+              // assert_printf (in     , !=, get_config(p_writeback, WB_A_IN    ), "CHECK WRITEBACK", "");
+              // assert_printf (il     , !=, get_config(p_writeback, WB_A_IL    ), "CHECK WRITEBACK", "");
+              // assert_printf (iw_kw2 , !=, get_config(p_writeback, WB_A_IWKW2), "CHECK WRITEBACK", "");
 
               i32 sram_addr=0;
               for (i32 icoe=0; icoe < pb->coe; icoe++) {
@@ -631,6 +655,24 @@ extern EXT_C void model_setup(Memory_st *restrict mp, void *p_config) {
   for (int var = 0; var < 8*N_BUNDLES; var++){
     set_config(p_config, 16+var, parameters[var]);
   }
+
+  // void *p_writeback = p_config + 256;
+  // set_config(p_writeback, WB_A_N_BUNDLES_1, N_BUNDLES-1);
+  
+  // int num_wb_params = 5;
+  // i32 wb_params[num_wb_params*N_BUNDLES];
+
+  // for (int ib = 0; ib < N_BUNDLES; ib++){
+  //   wb_params[ib*num_wb_params+0] = bundles[ib].p-1;
+  //   wb_params[ib*num_wb_params+1] = bundles[ib].t-1;
+  //   wb_params[ib*num_wb_params+2] = bundles[ib].n-1;
+  //   wb_params[ib*num_wb_params+3] = bundles[ib].l-1;
+  //   wb_params[ib*num_wb_params+4] = bundles[ib].w_kw2-1;
+  // }
+  // for (int var = 0; var < num_wb_params*N_BUNDLES; var++){
+  //   set_config(p_writeback, 32+var, wb_params[var]);
+  // }
+  // set_config(p_writeback, WB_A_START, 1);
 }
 
 extern EXT_C void print_output (Memory_st *restrict mp) {

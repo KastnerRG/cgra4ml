@@ -83,9 +83,13 @@ module dma_controller #(
     ; // Max 16 registers
   logic [12:0][AXI_DATA_WIDTH-1:0] cfg ;
 
-  assign reg_rd_data = cfg[reg_rd_addr];
-  assign reg_wr_ack = 1'b1;
-  assign reg_rd_ack = 1'b1;
+  logic [AXI_ADDR_WIDTH-1:0] reg_rd_addr_valid;
+  always_ff @(posedge clk) begin
+    reg_wr_ack <= reg_wr_en;
+    reg_rd_ack <= reg_rd_en;
+    reg_rd_addr_valid <= reg_rd_addr;
+  end
+
 
   //------------------- BUNDLES SRAM  ---------------------------------------
 
@@ -113,6 +117,33 @@ module dma_controller #(
     .addrB (ram_rd_addr), 
     .doB   (ram_rd_data)
   );
+
+  logic wb_reg_wr_en, wb_reg_rd_en;
+  logic [AXI_ADDR_WIDTH-1:0] wb_reg_wr_addr, wb_reg_rd_addr;
+  logic [AXI_DATA_WIDTH-1:0] wb_reg_wr_data, wb_reg_rd_data;
+
+  writeback #(
+    .SRAM_RD_DEPTH  (SRAM_RD_DEPTH  ),
+    .AXI_ADDR_WIDTH (AXI_ADDR_WIDTH ),
+    .AXI_DATA_WIDTH (AXI_DATA_WIDTH )
+  ) WB (
+    .clk        (clk           ),
+    .rstn       (rstn          ),
+    .reg_wr_en  (wb_reg_wr_en  ),
+    .reg_wr_addr(wb_reg_wr_addr),
+    .reg_wr_data(wb_reg_wr_data),
+    .reg_rd_en  (wb_reg_rd_en  ),
+    .reg_rd_addr(wb_reg_rd_addr),
+    .reg_rd_data(wb_reg_rd_data)
+  );
+  always_comb begin
+    wb_reg_wr_en   = reg_wr_en && (reg_wr_addr >= 256);
+    wb_reg_wr_addr = reg_wr_addr - 256;
+    wb_reg_wr_data = reg_wr_data;
+    wb_reg_rd_en   = reg_rd_en && (reg_rd_addr >= 256);
+    wb_reg_rd_addr = reg_rd_addr - 256;
+    reg_rd_data    = reg_rd_addr_valid < 256 ? cfg[reg_rd_addr_valid] : wb_reg_rd_data;
+  end
 
   assign ram_wr_en   = reg_wr_en && (reg_wr_addr >= 16);
   assign ram_wr_addr = SRAM_WR_ADDR_WIDTH'(reg_wr_addr - 16);
