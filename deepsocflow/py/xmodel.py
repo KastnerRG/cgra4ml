@@ -338,6 +338,14 @@ def verify_inference(model, hw, SIM, SIM_PATH='', TRACE=False):
     hw.simulate(SIM=SIM, SIM_PATH=SIM_PATH, TRACE=TRACE)
 
 
+    assert os.path.exists(f"{hw.DATA_DIR}/0_0_0_y_raw_sim.txt"), f'''
+
+Simulation completed, but files were not generated. Either 
+    (1) Simulation got stuck and timed out (MOST LIKELY)
+    (2) Debug mode not enabled for the C firmware.
+    (3) Files are generated elsewhere...etc.
+'''
+
     '''
     CHECK ERROR
     '''

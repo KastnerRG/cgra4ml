@@ -212,7 +212,7 @@ def test_dnn_engine(PARAMS):
     VERIFY & EXPORT
     '''
     export_inference(loaded_model, hw, batch_size=1)
-    verify_inference(loaded_model, hw, SIM=SIM)
+    verify_inference(loaded_model, hw, SIM=SIM, TRACE=True)
 
     d_perf = predict_model_performance(hw)
     pp = pprint.PrettyPrinter(indent=4)
