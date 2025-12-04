@@ -1,8 +1,8 @@
 
 set PROJECT_NAME dsf_zcu104
-set RTL_DIR      /mnt/d/dnn-engine/deepsocflow/rtl
+set RTL_DIR      /home/a.gnaneswaran/cgra4ml-ibex/deepsocflow/rtl
 set CONFIG_DIR   .
 
 source config_hw.tcl
-source /mnt/d/dnn-engine/deepsocflow/tcl/fpga/zcu104.tcl
-source /mnt/d/dnn-engine/deepsocflow/tcl/fpga/vivado.tcl
+source /home/a.gnaneswaran/cgra4ml-ibex/deepsocflow/tcl/fpga/zcu104.tcl
+source /home/a.gnaneswaran/cgra4ml-ibex/deepsocflow/tcl/fpga/vivado.tcl
