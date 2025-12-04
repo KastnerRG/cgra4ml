@@ -225,7 +225,7 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
 
         if SIM == "verilator":
             trace = '--trace' if TRACE else ''
-            cmd = f'{SIM_PATH}verilator --binary -j 0 -O3 {trace} --relative-includes --top {self.TB_MODULE} -I../ -I../../../deepsocflow/rtl/ -F ../sources.txt -CFLAGS -DSIM -CFLAGS -I../ {self.MODULE_DIR}/c/sim.c -CFLAGS -g --Mdir ./'
+            cmd = f'{SIM_PATH}verilator --binary -j 0 -O3 {trace} --relative-includes --top {self.TB_MODULE} -I../ -I../../../deepsocflow/rtl/ -F ../sources.txt -CFLAGS -DSIM -CFLAGS -I../ {self.MODULE_DIR}/c/sim.c -CFLAGS -g --Mdir ./ -Wno-UNOPTFLAT'
             print(cmd)
             assert subprocess.run(cmd.split(' '), cwd='build').returncode == 0
         print("\n\nSIMULATING...\n\n")
