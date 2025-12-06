@@ -83,13 +83,9 @@ module dma_controller #(
     ; // Max 16 registers
   logic [12:0][AXI_DATA_WIDTH-1:0] cfg ;
 
-  logic [AXI_ADDR_WIDTH-1:0] reg_rd_addr_valid;
-  always_ff @(posedge clk) begin
-    reg_wr_ack <= reg_wr_en;
-    reg_rd_ack <= reg_rd_en;
-    reg_rd_addr_valid <= reg_rd_addr;
-  end
-
+  assign reg_wr_ack = 1'b1;
+  assign reg_rd_ack = 1'b1;
+  assign reg_rd_data = cfg[reg_rd_addr];
 
   //------------------- BUNDLES SRAM  ---------------------------------------
 
@@ -337,4 +333,19 @@ module dma_controller #(
       if (reg_wr_en && reg_wr_addr < 16) // PS has priority in writing to registers
         cfg[reg_wr_addr] <= reg_wr_data;
     end
+
+    wire        cfg_A_START        = 1'(cfg[A_START       ]); 
+    wire        cfg_A_DONE_READ_0  = 1'(cfg[A_DONE_READ +0]);  // 2
+    wire        cfg_A_DONE_READ_1  = 1'(cfg[A_DONE_READ +1]);  // 2
+    wire        cfg_A_DONE_WRITE_0 = 1'(cfg[A_DONE_WRITE+0]);  // 2
+    wire        cfg_A_DONE_WRITE_1 = 1'(cfg[A_DONE_WRITE+1]);  // 2
+    wire [31:0] cfg_A_OCM_BASE_0   =    cfg[A_OCM_BASE  +0];   // 2
+    wire [31:0] cfg_A_OCM_BASE_1   =    cfg[A_OCM_BASE  +1];   // 2
+    wire [31:0] cfg_A_WEIGHTS_BASE =    cfg[A_WEIGHTS_BASE]; 
+    wire        cfg_A_BUNDLE_DONE  = 1'(cfg[A_BUNDLE_DONE ]); 
+    wire        cfg_A_N_BUNDLES_1  = 1'(cfg[A_N_BUNDLES_1 ]); 
+    wire        cfg_A_W_DONE       = 1'(cfg[A_W_DONE      ]); 
+    wire        cfg_A_X_DONE       = 1'(cfg[A_X_DONE      ]);  
+    wire        cfg_A_O_DONE       = 1'(cfg[A_O_DONE      ]); 
+
 endmodule
