@@ -108,8 +108,14 @@ class Hardware:
         self.W_BPT                 = 32#clog2(self.ROWS*self.COLS*self.Y_OUT_BITS/8)
 
         self.MODULE_DIR = os.path.normpath(os.path.dirname(deepsocflow.__file__)).replace('\\', '/')
-        self.TB_MODULE = "axi_sys_tb"
-        self.SOURCES = glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + glob.glob(f'{self.MODULE_DIR}/test/sv/**/*.v') + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.v", recursive=True) + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.sv", recursive=True) + glob.glob(f"{os.getcwd()}/*.svh")
+        self.TB_MODULE = "top_tb"
+        self.SOURCES = \
+            glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + \
+            glob.glob(f'{self.MODULE_DIR}/test/sv/**/*.v') + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/**/*.v", recursive=True) + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/**/*.sv", recursive=True) + \
+            glob.glob(f"{os.getcwd()}/*.svh") + \
+            glob.glob(f'{self.MODULE_DIR}/firebridge/*.sv')
         self.DATA_DIR = data_dir
 
     def export_json(self, path='./hardware.json'):
@@ -183,7 +189,7 @@ class Hardware:
 `define AXI_WIDTH           {self.AXI_WIDTH          :<10}
 `define HEADER_WIDTH        {self.HEADER_WIDTH       :<10}
 `define AXI_MAX_BURST_LEN   {self.AXI_MAX_BURST_LEN  :<10}
-`define CONFIG_BASEADDR     40'h{self.CONFIG_BASEADDR:<10}
+`define CONFIG_BASEADDR     32'h{self.CONFIG_BASEADDR:<10}
 ''')
 
 
@@ -213,7 +219,7 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
         print("\n\nCOMPILING...\n\n")
 
         if SIM == 'xsim':
-            assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xsc {self.MODULE_DIR}/c/sim.c --gcc_compile_options -I../ --gcc_compile_options -DSIM').returncode == 0
+            assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xsc {self.MODULE_DIR}/c/sim.c --gcc_compile_options -I../ --gcc_compile_options -I{self.MODULE_DIR}/firebridge/ --gcc_compile_options -DSIM --gcc_compile_options -DFB_MODULE=fb_axi_vip --gcc_compile_options -DTB_MODULE={self.TB_MODULE}').returncode == 0
             assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xvlog -sv -f ../sources.txt -i ../').returncode == 0
             assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xelab {self.TB_MODULE} --snapshot {self.TB_MODULE} -log elaborate.log --debug typical -sv_lib dpi').returncode == 0
 
@@ -224,9 +230,31 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
 
         if SIM == "verilator":
             trace = '--trace' if TRACE else ''
-            cmd = f'{SIM_PATH}verilator --binary -j 0 -O3 {trace} --relative-includes --top {self.TB_MODULE} -I../ -F ../sources.txt -CFLAGS -DSIM -CFLAGS -I../ {self.MODULE_DIR}/c/sim.c -CFLAGS -g --Mdir ./'
+            cmd = [
+                f'{SIM_PATH}verilator',
+                f'--binary -j 0 -O3 {trace} --relative-includes',
+                f'--top {self.TB_MODULE}',
+
+                f'-I../',
+                f'-F ../sources.txt',
+                f'--Mdir ./ ',
+                
+                f'-CFLAGS -DSIM ',
+                f'-CFLAGS -DTB_MODULE={self.TB_MODULE}',
+                f'-CFLAGS -DFB_MODULE=fb_axi_vip',
+                f'-CFLAGS -I../',
+                f'-CFLAGS -I{self.MODULE_DIR}/firebridge/',
+                f'-CFLAGS -g',
+                
+                f'{self.MODULE_DIR}/c/sim.c',
+                f'{self.MODULE_DIR}/firebridge/fb_top_verilator_wrap.cpp',
+                
+                '--Wno-INITIALDLY',
+                '--Wno-BLKANDNBLK',
+            ]
+            cmd = ' '.join(cmd)
             print(cmd)
-            assert subprocess.run(cmd.split(' '), cwd='build').returncode == 0
+            assert subprocess.run(cmd.split(), cwd='build').returncode == 0
         print("\n\nSIMULATING...\n\n")
         start = time.time()
 

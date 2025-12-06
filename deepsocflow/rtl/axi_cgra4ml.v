@@ -39,7 +39,7 @@ module axi_cgra4ml #(
                 AXI_ADDR_WIDTH          = 32,
                 // AXI-Lite
                 AXIL_WIDTH              = 32,
-                AXIL_ADDR_WIDTH              = 40,
+                AXIL_ADDR_WIDTH         = 32,
                 STRB_WIDTH              = 4,
                 W_BPT                   = `W_BPT              
 
