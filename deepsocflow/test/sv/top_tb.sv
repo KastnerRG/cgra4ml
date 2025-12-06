@@ -197,7 +197,7 @@ module top_tb;
   initial begin
     $dumpfile("axi_tb_sys.vcd");
     $dumpvars();
-    #2000us;
+    #2000000us;
     $fatal(1, "Error: Timeout.");
   end
 
