@@ -91,6 +91,7 @@ typedef struct {
   #define EXT_C
 #endif
 int32_t *p_config = (int32_t *)CONFIG_BASEADDR;
+// int32_t *p_writeback = p_config + 256/4;
 
 extern EXT_C void model_setup(Memory_st *restrict mp) {
 
@@ -290,7 +291,6 @@ extern EXT_C void run(Memory_st *restrict mp) {
   static i32 it_bias=0, w_last, o_bpt;
   static i32 ib=0, ip=0, it=0, in=0, il=0, iw_kw2=0;
   static i8 *restrict p_out_buffer = 0;
-  void *p_writeback = p_config + 256;
 
   i32   iy_nhwc;
   idiv_t div_ch, div_cw, div_ixh, div_ixw;
@@ -319,11 +319,19 @@ extern EXT_C void run(Memory_st *restrict mp) {
           for (il = 0; il < pb->l; il++) {
             for (iw_kw2 = 0; iw_kw2 < pb->w_kw2; iw_kw2++) {
 
-              fb_write_reg32(p_writeback + WB_A_EN_COUNT, 1);
+              // fb_write_reg32(p_writeback + WB_A_EN_COUNT, 1);
               
               ocm_bank = !ocm_bank;
               w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
               o_bpt = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
+
+              #ifdef SIM
+                            char f_path_raw [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
+                            sprintf(f_path_raw, "%s/%0d_%0d_%0d_y_raw_sim.txt", DATA_DIR, ib, ip, it);
+                            sprintf(f_path_sum, "%s/%0d_y_sum_sim.txt", DATA_DIR, ib);
+                            FILE *fp_raw = fopen(f_path_raw, "a");
+                            FILE *fp_sum = fopen(f_path_sum, "a");
+              #endif
 
               while (!fb_read_reg32(p_config + A_DONE_WRITE + ocm_bank))
               {
@@ -331,17 +339,8 @@ extern EXT_C void run(Memory_st *restrict mp) {
               }; 
               flush_cache(&(mp->ocm[ocm_bank]), o_bpt);
               usleep(0);
-
-#ifdef SIM
-              char f_path_raw [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
-              sprintf(f_path_raw, "%s/%0d_%0d_%0d_y_raw_sim.txt", DATA_DIR, ib, ip, it);
-              sprintf(f_path_sum, "%s/%0d_y_sum_sim.txt", DATA_DIR, ib);
-              FILE *fp_raw = fopen(f_path_raw, "a");
-              FILE *fp_sum = fopen(f_path_sum, "a");
-#endif
-
               fb_write_reg32(p_config + A_DONE_WRITE + ocm_bank, 0);
-              fb_write_reg32(p_writeback + WB_A_READY, 0);
+              // fb_write_reg32(p_writeback + WB_A_READY, 0);
 
               // assert_printf (ib     , !=, fb_read_reg32(p_writeback + WB_A_IB    ), "CHECK WRITEBACK", "");
               // assert_printf (ip     , !=, fb_read_reg32(p_writeback + WB_A_IP    ), "CHECK WRITEBACK", "");
