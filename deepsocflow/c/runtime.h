@@ -7,15 +7,6 @@
 #include <limits.h>
 #include <stdint.h>
 
-typedef int8_t   i8 ;
-typedef int16_t  i16;
-typedef int32_t  i32;
-typedef int64_t  i64;
-typedef uint8_t  u8 ;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
-
 typedef struct { int quot; int rem; } idiv_t;
 static inline idiv_t idiv(int numer, int denom) {
   idiv_t r; 
@@ -25,47 +16,51 @@ static inline idiv_t idiv(int numer, int denom) {
 }
 
 typedef const struct {
-  const u16  n, l, kw, coe, h, w, ci, co, w_kw2, t, p, cm, cm_p0, on, oh, ow, oc, ch, ph, cw, pw, pkh, psh, pkw, psw;
-  const i32  xp_words, b_offset, w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes;
-  const i8   ib_out, in_buffer_idx, out_buffer_idx, add_out_buffer_idx, add_in_buffer_idx;
-  const i8   is_bias, is_pool, is_flatten, is_softmax;
-  const i8   x_pad, b_val_shift, b_bias_shift, ca_nzero, ca_shift, ca_pl_scale, aa_nzero, aa_shift, aa_pl_scale, pa_nzero, pa_shift, pa_pl_scale, softmax_frac;
-  const i8   csh, csh_shift, psh_shift, csw, csw_shift, psw_shift, pool;
-  const i32  softmax_max_i;
-  const u64  header;
-  const i32  debug_nhwc_words;
+  const uint16_t  n, l, kw, coe, h, w, ci, co, w_kw2, t, p, cm, cm_p0, on, oh, ow, oc, ch, ph, cw, pw, pkh, psh, pkw, psw;
+  const int32_t   xp_words, b_offset, w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes;
+  const int8_t    ib_out, in_buffer_idx, out_buffer_idx, add_out_buffer_idx, add_in_buffer_idx;
+  const int8_t    is_bias, is_pool, is_flatten, is_softmax;
+  const int8_t    x_pad, b_val_shift, b_bias_shift, ca_nzero, ca_shift, ca_pl_scale, aa_nzero, aa_shift, aa_pl_scale, pa_nzero, pa_shift, pa_pl_scale, softmax_frac;
+  const int8_t    csh, csh_shift, psh_shift, csw, csw_shift, psw_shift, pool;
+  const int32_t   softmax_max_i;
+  const uint64_t  header;
+  const int32_t   debug_nhwc_words;
 } Bundle_t;
 
 typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 
 #include "config_fw.h"
 
-#define f32 O_TYPE
+#define f32__ O_TYPE
 #define X_BITS            (1 << X_BITS_L2)
 #define X_WORDS_PER_BYTE  (8 / X_BITS)
 #define X_BITS_MASK       ((1 << X_BITS) -1)
 #ifdef SIM
   #define XDEBUG
+  void usleep(int x) {}
 #endif
 
 typedef struct {
   // These can be kept in DDR
-  i8     w              [W_BYTES     ];
-  B_TYPE b              [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
-  i8     x              [X_BYTES     ]; // keep next to wb. wbx is loaded to w_ptr
-  O_TYPE y              [O_WORDS     ];
+  int8_t  w              [W_BYTES     ];
+  B_TYPE  b              [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
+  int8_t  x              [X_BYTES     ]; // keep next to wb. wbx is loaded to w_ptr
+  O_TYPE  y              [O_WORDS     ];
   
   // These are written often, keep them on OCM
   Y_TYPE ocm            [2][PE_COLS*PE_ROWS];
-  i32    nhwc           [NHWC_WORDS  ];
-  i8     out_buffers    [N_OUT_BUF   ][O_BYTES_MAX ];
+  int32_t nhwc           [NHWC_WORDS  ];
+  int8_t  out_buffers    [N_OUT_BUF   ][O_BYTES_MAX ];
   
 #ifdef XDEBUG
-  i8     debug_tiled    [O_WORDS_MAX ];
-  i32    debug_nhwc     [NHWC_WORDS  ];
+  int8_t  debug_tiled    [O_WORDS_MAX ];
+  int32_t debug_nhwc     [NHWC_WORDS  ];
 #endif
-  i8     add_buffers    [N_ADD_BUF   ][NHWC_WORDS  ]; // should be last, since N_ADD_BUF can be empty
+  int8_t  add_buffers    [N_ADD_BUF   ][NHWC_WORDS  ]; // should be last, since N_ADD_BUF can be empty
 } Memory_st;
+
+#define MEM_BASEADDR 0x20000000
+#include "fb_fw_wrap.h"
 
 #define A_START        0x0
 #define A_DONE_READ    0x1 // 2
@@ -78,48 +73,57 @@ typedef struct {
 #define A_X_DONE       0xB 
 #define A_O_DONE       0xC
 
-#ifdef __cplusplus
-  #define EXT_C "C"
-  #define restrict __restrict__ 
-#else
-  #define EXT_C
-#endif
+int32_t *p_config = (int32_t *)CONFIG_BASEADDR;
+
+extern EXT_C void model_setup(Memory_st *restrict mp) {
 
 #ifdef SIM
-  #define sim_fprintf fprintf
-  #include <stdbool.h>
-
-  Memory_st mem_phy;
-	extern EXT_C u32 get_config(void*, u32);
-	extern EXT_C void set_config(void*, u32, u32);
-  static inline void flush_cache(void *addr, uint32_t bytes) {} // Do nothing
-
-#else
-  #define sim_fprintf(...)
-
-  // #ifdef RISCV
-  //   Memory_st mem_phy;
-  // #else
-    #define mem_phy (*(Memory_st* restrict)MEM_BASEADDR)
-  // #endif
-
-  inline volatile u32 get_config(void *config_base, u32 offset){
-    return *(volatile u32 *)(config_base + offset*4);
-  }
-
-  inline void set_config(void *config_base, u32 offset, u32 data){	
-    *(volatile u32 *restrict)(config_base + offset*4) = data;
-  }
+  FILE *fp;
+  char f_path [1000];
+  sprintf(f_path, "%s/wbx.bin", DATA_DIR);
+  fp = fopen(f_path, "rb");
+  debug_printf("DEBUG: Reading from file %s \n", f_path);
+  if(!fp) debug_printf("ERROR! File not found: %s \n", f_path);
+  int bytes = fread(mp->w, 1, WB_BYTES+X_BYTES, fp);
+  fclose(fp);
 #endif
+  flush_cache(mp->w, WB_BYTES+X_BYTES);  // force transfer to DDR, starting addr & length
 
-#ifdef XDEBUG
-  #define debug_printf printf
-  #define assert_printf(v1, op, v2, optional_debug_info,...) ((v1  op v2) || (debug_printf("ASSERT FAILED: \n CONDITION: "), debug_printf("( " #v1 " " #op " " #v2 " )"), debug_printf(", VALUES: ( %d %s %d ), ", v1, #op, v2), debug_printf("DEBUG_INFO: " optional_debug_info), debug_printf(" " __VA_ARGS__), debug_printf("\n\n"), assert(v1 op v2), 0))
-#else
-  #define assert_printf(...)
-  // #define debug_printf(...)
-#endif
+  // Write registers in controller
+  fb_write_reg32(p_config + A_START       , 0);  // Start
+  fb_write_reg32(p_config + A_DONE_READ +0, 1);  // Done read mp->ocm bank 0
+  fb_write_reg32(p_config + A_DONE_READ +1, 1);  // Done read mp->ocm bank 1
+  fb_write_reg32(p_config + A_DONE_WRITE+0, 0);  // Done write mp->ocm bank 0
+  fb_write_reg32(p_config + A_DONE_WRITE+1, 0);  // Done write mp->ocm bank 1
+  fb_write_reg32(p_config + A_OCM_BASE  +0, fb_addr_64to32(mem_phy.ocm[0]));  // Base addr mp->ocm bank 0
+  fb_write_reg32(p_config + A_OCM_BASE  +1, fb_addr_64to32(mem_phy.ocm[1]));  // Base addr mp->ocm bank 1
+  fb_write_reg32(p_config + A_WEIGHTS_BASE, fb_addr_64to32(mem_phy.w));  // Base adddr weights
+  fb_write_reg32(p_config + A_BUNDLE_DONE , 1);  // Bundle done writing (pixel dma waits for this)
+  fb_write_reg32(p_config + A_N_BUNDLES_1 , N_BUNDLES);  // Number of bundles
+  fb_write_reg32(p_config + A_W_DONE      , 0);  // Weigths done
+  fb_write_reg32(p_config + A_X_DONE      , 0);  // Bundle done
+  fb_write_reg32(p_config + A_O_DONE      , 0);  // Output done
 
+  // Write into BRAM the config for controller
+  i32 parameters[8*N_BUNDLES];
+  for (int var = 0; var < N_BUNDLES; var++){
+    parameters[8*var] = (var == 0) ? fb_addr_64to32(mem_phy.x) : fb_addr_64to32(mem_phy.out_buffers[bundles[var].in_buffer_idx]);       // x_base address
+    parameters[8*var+1] = bundles[var].x_bpt_p0;  // x_bpt0
+    parameters[8*var+2] = bundles[var].x_bpt;     // x_bpt
+    parameters[8*var+3] = bundles[var].w_bpt_p0;  // w_bpt0
+    parameters[8*var+4] = bundles[var].w_bpt;     // w_bpt
+
+    assert_printf(bundles[var].p, <, 1<<16, "", "P should be less than 2**16 for bundle:%x", var);
+    assert_printf(bundles[var].t, <, 1<<16, "", "T should be less than 2**16 for bundle:%x", var);
+    parameters[8*var+5] = (bundles[var].t << 16) + bundles[var].p; // max p
+    uint64_t h = bundles[var].header;
+    parameters[8*var + 6] = (uint32_t)(h & 0xFFFFFFFFu);
+    parameters[8*var + 7] = (uint32_t)(h >> 32);
+  }
+  for (int var = 0; var < 8*N_BUNDLES; var++){
+    fb_write_reg32(p_config + 16+var, parameters[var]);
+  }
+}
 
 // Helper functions
 
@@ -245,7 +249,7 @@ static inline void tile_write( i32 out_val, i8 *restrict p_out_buffer, i32 ib, B
   
 }
 
-extern EXT_C u8 model_run(Memory_st *restrict mp, void *p_config) {
+extern EXT_C void run(Memory_st *restrict mp) {
 
   static Bundle_t *restrict pb = &bundles[0];
   static i32 it_bias=0, w_last, o_bpt;
@@ -259,25 +263,11 @@ extern EXT_C u8 model_run(Memory_st *restrict mp, void *p_config) {
 
   static i8 ocm_bank = 1; // We flip the bank at the beginning of loop. starting from bank 0
 
-  /**
-   * ---------- WAIT FOR S2MM DMA DONE ----------
-   *
-   * When running on hardware, we wait for DMA's interrupt at "DMA_WAIT"
-   * But Verilator cannot pass simulation time when "waiting"
-   * Therefore,
-      * During simulation, this function gets called again and again
-      * On first call, values are set and returned before processing.
-      * On subsequent calls, function skips to DMA_WAIT, and starts processing
-      * This mimics the behavior of waiting for DMA's interrupt
-  */
-#ifdef SIM
-  static char is_first_call = 1;
-  if (is_first_call)  is_first_call = 0;
-  else                goto DMA_WAIT;
-#endif
+  debug_printf("Starting model_setup()\n");
+  model_setup(mp);
 
-  debug_printf("Starting model_run()\n");
-  set_config(p_config, A_START, 1); 
+  debug_printf("model_setup done\n");
+  fb_write_reg32(p_config + A_START, 1); 
 
   for (ib = 0; ib < N_BUNDLES; ib++) {
 
@@ -298,24 +288,20 @@ extern EXT_C u8 model_run(Memory_st *restrict mp, void *p_config) {
               o_bpt = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
 
 #ifdef SIM
-DMA_WAIT:
-              // if sim return, so SV can pass time, and call again, which will jump to DMA_WAIT again
-	            if (!get_config(p_config, A_DONE_WRITE + ocm_bank)) 
-	              return 1; 
-
               char f_path_raw [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
               sprintf(f_path_raw, "%s/%0d_%0d_%0d_y_raw_sim.txt", DATA_DIR, ib, ip, it);
               sprintf(f_path_sum, "%s/%0d_y_sum_sim.txt", DATA_DIR, ib);
               FILE *fp_raw = fopen(f_path_raw, "a");
               FILE *fp_sum = fopen(f_path_sum, "a");
-#else
-		          while (!get_config(p_config, A_DONE_WRITE + ocm_bank)){
-                // in FPGA, wait for write done
+#endif
+
+              while (!fb_read_reg32(p_config + A_DONE_WRITE + ocm_bank))
+              {
+                // wait
               }; 
               flush_cache(&(mp->ocm[ocm_bank]), o_bpt);
               usleep(0);
-#endif
-              set_config(p_config, A_DONE_WRITE + ocm_bank, 0);
+              fb_write_reg32(p_config + A_DONE_WRITE + ocm_bank, 0);
 
               i32 sram_addr=0;
               for (i32 icoe=0; icoe < pb->coe; icoe++) {
@@ -401,14 +387,14 @@ DMA_WAIT:
                     if (pb->is_softmax) {
                       assert_printf (ib , !=, N_BUNDLES, "Softmax is only allowed for the last bundle.", DEBUG_INFO);
 
-                      f32 val = (f32)out_val;
-                      val = val / (f32)(1 << pb->softmax_frac);
-                      val = val - ((f32)pb->softmax_max_i)/(1 << 17);
-                      val = (f32)exp(val);
+                      f32__ val = (f32__)out_val;
+                      val = val / (f32__)(1 << pb->softmax_frac);
+                      val = val - ((f32__)pb->softmax_max_i)/(1 << 17);
+                      val = (f32__)exp(val);
                       mp->y[iy_nhwc] = val;
 
                       if (i_yc == pb->co-1) {
-                        f32 sum = 0;
+                        f32__ sum = 0;
                         i32 iy_nhwc;
                         for (int i=0; i<pb->co; i++){
                           iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i, yn,yh,yw,yc, "Before softmax sum", DEBUG_INFO);
@@ -499,7 +485,7 @@ PROCESS_AND_STORE_DONE:
               fclose(fp_sum);
               fclose(fp_raw);
 #endif
-              set_config(p_config, A_DONE_READ + ocm_bank, 1);
+              fb_write_reg32(p_config + A_DONE_READ + ocm_bank, 1);
               debug_printf("%d-------- iw_kw2 %d done \n", ib, iw_kw2);
             } // iw_kw2
             debug_printf("%d-------- il %d done\n", ib, il);
@@ -537,100 +523,9 @@ PROCESS_AND_STORE_DONE:
     }
 #endif
   flush_cache(p_out_buffer, pb->o_bytes);
-  set_config(p_config, A_BUNDLE_DONE, 1);
+  fb_write_reg32(p_config + A_BUNDLE_DONE, 1);
   } // ib
   debug_printf("done all bundles!!\n");  
-#ifdef SIM
-  is_first_call = 1;
-#endif
-  return 0;
-}
-
-
-// Rest of the helper functions used in simulation.
-#ifdef SIM
-
-extern EXT_C u32 addr_64to32(void* restrict addr){
-  u64 offset = (u64)addr - (u64)&mem_phy;
-  return (u32)offset + 0x20000000;
-  // return (u32)((uintptr_t)addr);
-}
-
-extern EXT_C u64 sim_addr_32to64(u32 addr){
-  return (u64)addr - (u64)0x20000000 + (u64)&mem_phy;
-}
-
-extern EXT_C u8 get_byte_a32 (u32 addr_32){
-  u64 addr = sim_addr_32to64(addr_32);
-  u8 val = *(u8*restrict)addr;
-  //debug_printf("get_byte_a32: addr32:0x%x, addr64:0x%lx, val:0x%x\n", addr_32, addr, val);
-  return val;
-}
-
-extern EXT_C void set_byte_a32 (u32 addr_32, u8 data){
-  u64 addr = sim_addr_32to64(addr_32);
-  *(u8*restrict)addr = data;
-}
-
-extern EXT_C void *get_mp(){
-  return &mem_phy;
-}
-#else
-
-u32 addr_64to32 (void* addr){
-  return (u32)addr;
-}
-
-#endif
-
-extern EXT_C void model_setup(Memory_st *restrict mp, void *p_config) {
-
-#ifdef SIM
-  FILE *fp;
-  char f_path [1000];
-  sprintf(f_path, "%s/wbx.bin", DATA_DIR);
-  fp = fopen(f_path, "rb");
-  debug_printf("DEBUG: Reading from file %s \n", f_path);
-  if(!fp) debug_printf("ERROR! File not found: %s \n", f_path);
-  int bytes = fread(mp->w, 1, WB_BYTES+X_BYTES, fp);
-  fclose(fp);
-#endif
-  flush_cache(mp->w, WB_BYTES+X_BYTES);  // force transfer to DDR, starting addr & length
-
-  // Write registers in controller
-  set_config(p_config, A_START       , 0);  // Start
-  set_config(p_config, A_DONE_READ +0, 1);  // Done read mp->ocm bank 0
-  set_config(p_config, A_DONE_READ +1, 1);  // Done read mp->ocm bank 1
-  set_config(p_config, A_DONE_WRITE+0, 0);  // Done write mp->ocm bank 0
-  set_config(p_config, A_DONE_WRITE+1, 0);  // Done write mp->ocm bank 1
-  set_config(p_config, A_OCM_BASE  +0, addr_64to32(mem_phy.ocm[0]));  // Base addr mp->ocm bank 0
-  set_config(p_config, A_OCM_BASE  +1, addr_64to32(mem_phy.ocm[1]));  // Base addr mp->ocm bank 1
-  set_config(p_config, A_WEIGHTS_BASE, addr_64to32(mem_phy.w));  // Base adddr weights
-  set_config(p_config, A_BUNDLE_DONE , 1);  // Bundle done writing (pixel dma waits for this)
-  set_config(p_config, A_N_BUNDLES_1 , N_BUNDLES);  // Number of bundles
-  set_config(p_config, A_W_DONE      , 0);  // Weigths done
-  set_config(p_config, A_X_DONE      , 0);  // Bundle done
-  set_config(p_config, A_O_DONE      , 0);  // Output done
-
-  // Write into BRAM the config for controller
-  i32 parameters[8*N_BUNDLES];
-  for (int var = 0; var < N_BUNDLES; var++){
-    parameters[8*var] = (var == 0) ? addr_64to32(mem_phy.x) : addr_64to32(mem_phy.out_buffers[bundles[var].in_buffer_idx]);       // x_base address
-    parameters[8*var+1] = bundles[var].x_bpt_p0;  // x_bpt0
-    parameters[8*var+2] = bundles[var].x_bpt;     // x_bpt
-    parameters[8*var+3] = bundles[var].w_bpt_p0;  // w_bpt0
-    parameters[8*var+4] = bundles[var].w_bpt;     // w_bpt
-
-    assert_printf(bundles[var].p, <, 1<<16, "", "P should be less than 2**16 for bundle:%x", var);
-    assert_printf(bundles[var].t, <, 1<<16, "", "T should be less than 2**16 for bundle:%x", var);
-    parameters[8*var+5] = (bundles[var].t << 16) + bundles[var].p; // max p
-    uint64_t h = bundles[var].header;
-    parameters[8*var + 6] = (uint32_t)(h & 0xFFFFFFFFu);
-    parameters[8*var + 7] = (uint32_t)(h >> 32);
-  }
-  for (int var = 0; var < 8*N_BUNDLES; var++){
-    set_config(p_config, 16+var, parameters[var]);
-  }
 }
 
 extern EXT_C void print_output (Memory_st *restrict mp) {
