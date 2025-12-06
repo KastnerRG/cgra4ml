@@ -82,8 +82,13 @@ module dma_controller #(
   (* mark_debug = "true" *) logic [12:0][AXI_DATA_WIDTH-1:0] cfg ;
 
   assign reg_wr_ack = 1'b1;
-  assign reg_rd_ack = 1'b1;
-  assign reg_rd_data = cfg[reg_rd_addr];
+
+  always_ff @(posedge clk)
+    if (!rstn) {reg_rd_ack, reg_rd_data} <= '0;
+    else begin
+      reg_rd_ack <= reg_rd_en;
+      reg_rd_data <= cfg[reg_rd_addr];
+    end
 
   //------------------- BUNDLES SRAM  ---------------------------------------
 
