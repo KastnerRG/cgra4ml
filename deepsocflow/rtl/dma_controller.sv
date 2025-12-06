@@ -85,22 +85,13 @@ module dma_controller #(
 
   assign reg_wr_ack = 1'b1;
 
-  // logic [AXI_ADDR_WIDTH-1:0] reg_rd_addr_valid;
-
-  // always_ff @(posedge clk)
-  //   if (!rstn) {reg_rd_ack, reg_rd_addr_valid} <= '0;
-  //   else begin
-  //     reg_rd_ack <= reg_rd_en;
-  //     reg_rd_addr_valid <= reg_rd_addr;
-  //   end
-
-  // assign reg_rd_data = cfg[reg_rd_addr_valid];
+  logic [AXI_ADDR_WIDTH-1:0] reg_rd_addr_valid;
 
   always_ff @(posedge clk)
-    if (!rstn) {reg_rd_ack, reg_rd_data} <= '0;
+    if (!rstn) {reg_rd_ack, reg_rd_addr_valid} <= '0;
     else begin
       reg_rd_ack <= reg_rd_en;
-      reg_rd_data <= cfg[reg_rd_addr];
+      reg_rd_addr_valid <= reg_rd_addr;
     end
 
   //------------------- BUNDLES SRAM  ---------------------------------------
@@ -154,7 +145,7 @@ module dma_controller #(
     wb_reg_wr_data = reg_wr_data;
     wb_reg_rd_en   = reg_rd_en && (reg_rd_addr >= 256);
     wb_reg_rd_addr = reg_rd_addr - 256;
-    // reg_rd_data    = reg_rd_addr_valid < 256 ? cfg[reg_rd_addr_valid] : wb_reg_rd_data;
+    reg_rd_data    = reg_rd_addr_valid < 256 ? cfg[reg_rd_addr_valid] : wb_reg_rd_data;
   end
 
   assign ram_wr_en   = reg_wr_en && (reg_wr_addr >= 16);
