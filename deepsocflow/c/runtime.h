@@ -62,6 +62,8 @@ typedef struct {
 #define MEM_BASEADDR 0x20000000
 #include "fb_fw_wrap.h"
 
+#define WORDS_IN_CFG  1024/4
+
 #define A_START        0x0
 #define A_DONE_READ    0x1 // 2
 #define A_DONE_WRITE   0x3 // 2
@@ -76,7 +78,7 @@ typedef struct {
 #define WB_A_START       0x0
 #define WB_A_N_BUNDLES_1 0x1
 #define WB_A_EN_COUNT    0x2
-#define WB_A_READY       0x3
+#define WB_A_VALID       0x3
 #define WB_A_IB          0x4
 #define WB_A_IP          0x5
 #define WB_A_IN          0x6
@@ -91,7 +93,7 @@ typedef struct {
   #define EXT_C
 #endif
 int32_t *p_config = (int32_t *)CONFIG_BASEADDR;
-// int32_t *p_writeback = p_config + 256/4;
+int32_t *p_writeback = p_config + WORDS_IN_CFG;
 
 extern EXT_C void model_setup(Memory_st *restrict mp) {
 
@@ -142,23 +144,27 @@ extern EXT_C void model_setup(Memory_st *restrict mp) {
     fb_write_reg32(p_config + 16+var, parameters[var]);
   }
 
-  // void *p_writeback = p_config + 256;
-  // fb_write_reg32(p_writeback + WB_A_N_BUNDLES_1, N_BUNDLES-1);
-  
-  // int num_wb_params = 5;
-  // i32 wb_params[num_wb_params*N_BUNDLES];
+  fb_write_reg32(p_writeback + WB_A_N_BUNDLES_1, N_BUNDLES-1);
+  int val = fb_read_reg32(p_writeback + WB_A_N_BUNDLES_1);
+  printf("Num bundles written to writeback reg: %d \n", val);
 
-  // for (int ib = 0; ib < N_BUNDLES; ib++){
-  //   wb_params[ib*num_wb_params+0] = bundles[ib].p-1;
-  //   wb_params[ib*num_wb_params+1] = bundles[ib].t-1;
-  //   wb_params[ib*num_wb_params+2] = bundles[ib].n-1;
-  //   wb_params[ib*num_wb_params+3] = bundles[ib].l-1;
-  //   wb_params[ib*num_wb_params+4] = bundles[ib].w_kw2-1;
-  // }
-  // for (int var = 0; var < num_wb_params*N_BUNDLES; var++){
-  //   fb_write_reg32(p_writeback + 32+var, wb_params[var]);
-  // }
-  // fb_write_reg32(p_writeback + WB_A_START, 1);
+  int32_t wb_bundles [N_BUNDLES][8]; // Number of variables should be less than 8.
+  
+  for (int ib = 0; ib < N_BUNDLES; ib++){
+    wb_bundles[ib][0]= bundles[ib].p-1;
+    wb_bundles[ib][1]= bundles[ib].t-1;
+    wb_bundles[ib][2]= bundles[ib].n-1;
+    wb_bundles[ib][3]= bundles[ib].l-1;
+    wb_bundles[ib][4]= bundles[ib].w_kw2-1;
+  }
+  
+  int32_t * wb_bundles_p = (p_writeback + 32);
+  
+  for (int i=0; i < sizeof(wb_bundles)/sizeof(i32); i++){
+    fb_write_reg32(wb_bundles_p + i, ((i32*)wb_bundles)[i]);
+  }
+  
+  fb_write_reg32(p_writeback + WB_A_START, 1);
 }
 
 // Helper functions
@@ -340,13 +346,12 @@ extern EXT_C void run(Memory_st *restrict mp) {
               flush_cache(&(mp->ocm[ocm_bank]), o_bpt);
               usleep(0);
               fb_write_reg32(p_config + A_DONE_WRITE + ocm_bank, 0);
-              // fb_write_reg32(p_writeback + WB_A_READY, 0);
 
-              // assert_printf (ib     , !=, fb_read_reg32(p_writeback + WB_A_IB    ), "CHECK WRITEBACK", "");
-              // assert_printf (ip     , !=, fb_read_reg32(p_writeback + WB_A_IP    ), "CHECK WRITEBACK", "");
-              // assert_printf (in     , !=, fb_read_reg32(p_writeback + WB_A_IN    ), "CHECK WRITEBACK", "");
-              // assert_printf (il     , !=, fb_read_reg32(p_writeback + WB_A_IL    ), "CHECK WRITEBACK", "");
-              // assert_printf (iw_kw2 , !=, fb_read_reg32(p_writeback + WB_A_IWKW2 ), "CHECK WRITEBACK", "");
+              assert_printf (ib     , ==, fb_read_reg32(p_writeback + WB_A_IB    ), "CHECK WRITEBACK", "");
+              assert_printf (ip     , ==, fb_read_reg32(p_writeback + WB_A_IP    ), "CHECK WRITEBACK", "");
+              assert_printf (in     , ==, fb_read_reg32(p_writeback + WB_A_IN    ), "CHECK WRITEBACK", "");
+              assert_printf (il     , ==, fb_read_reg32(p_writeback + WB_A_IL    ), "CHECK WRITEBACK", "");
+              assert_printf (iw_kw2 , ==, fb_read_reg32(p_writeback + WB_A_IWKW2 ), "CHECK WRITEBACK", "");
               i32 sram_addr=0;
               for (i32 icoe=0; icoe < pb->coe; icoe++) {
                 i32 i_bias = it_bias + icoe;
@@ -530,6 +535,14 @@ PROCESS_AND_STORE_DONE:
               fclose(fp_raw);
 #endif
               fb_write_reg32(p_config + A_DONE_READ + ocm_bank, 1);
+              
+              fb_write_reg32(p_writeback + WB_A_EN_COUNT, 1);
+              while (!fb_read_reg32(p_writeback + WB_A_VALID))
+              {
+                // wait
+              };
+              fb_write_reg32(p_writeback + WB_A_VALID, 0);
+              
               debug_printf("%d-------- iw_kw2 %d done \n", ib, iw_kw2);
             } // iw_kw2
             debug_printf("%d-------- il %d done\n", ib, il);

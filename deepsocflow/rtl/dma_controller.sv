@@ -69,6 +69,7 @@ module dma_controller #(
   output logic                       m_wd_valid,
   input  logic                       m_wd_ready
 );
+  localparam WORDS_IN_CFG = 1024 / (AXI_DATA_WIDTH/8); // 1024 bytes = 256 words for cfg + SRAM
   localparam // Addresses for local memory 0:15 is registers, rest is SRAM
     A_START        = 'h0,
     A_DONE_READ    = 'h1, // 2
@@ -82,6 +83,7 @@ module dma_controller #(
     A_O_DONE       = 'hC
     ; // Max 16 registers
   logic [12:0][AXI_DATA_WIDTH-1:0] cfg ;
+
 
   assign reg_wr_ack = 1'b1;
 
@@ -140,12 +142,12 @@ module dma_controller #(
     .reg_rd_data(wb_reg_rd_data)
   );
   always_comb begin
-    wb_reg_wr_en   = reg_wr_en && (reg_wr_addr >= 256);
-    wb_reg_wr_addr = reg_wr_addr - 256;
+    wb_reg_wr_en   = reg_wr_en && (reg_wr_addr >= WORDS_IN_CFG);
+    wb_reg_wr_addr = reg_wr_addr - WORDS_IN_CFG;
     wb_reg_wr_data = reg_wr_data;
-    wb_reg_rd_en   = reg_rd_en && (reg_rd_addr >= 256);
-    wb_reg_rd_addr = reg_rd_addr - 256;
-    reg_rd_data    = reg_rd_addr_valid < 256 ? cfg[reg_rd_addr_valid] : wb_reg_rd_data;
+    wb_reg_rd_en   = reg_rd_en && (reg_rd_addr >= WORDS_IN_CFG);
+    wb_reg_rd_addr = reg_rd_addr - WORDS_IN_CFG;
+    reg_rd_data    = reg_rd_addr_valid < WORDS_IN_CFG ? cfg[reg_rd_addr_valid] : wb_reg_rd_data;
   end
 
   assign ram_wr_en   = reg_wr_en && (reg_wr_addr >= 16);
