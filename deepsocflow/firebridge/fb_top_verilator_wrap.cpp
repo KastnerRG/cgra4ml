@@ -3,6 +3,8 @@
 #include <verilated.h>
 #include <verilated_vcd_c.h>
 
+// TB_MODULE and FB_MODULE are defined from outside via -D option
+
 #define STR1(x) #x
 #define STR(x)  STR1(x)
 #define CAT(a,b)  a##b
@@ -42,7 +44,7 @@ VerilatedContext *contextp;
 
 extern "C" unsigned char get_clk();
 
-extern "C" void step_cycle() {
+extern "C" void step_time_veri() {
     top->eval();
     contextp->timeInc(1);
 }
@@ -50,9 +52,9 @@ extern "C" void step_cycle() {
 extern "C" void at_posedge_clk(){
     vluint8_t prev_clk = get_clk();
     while(true){
-        step_cycle();
+        step_time_veri();
         if(prev_clk == 0 && get_clk() == 1){
-            for (int i = 0; i < 10; i++) step_cycle();
+            for (int i = 0; i < 10; i++) step_time_veri();
             break;
         }
         prev_clk = get_clk();
@@ -63,13 +65,12 @@ extern "C" void at_posedge_clk(){
 
 int main(int argc, char** argv){
 
-    // initializations for simualtion
     contextp = new VerilatedContext();
     contextp->commandArgs(argc, argv);
     contextp->traceEverOn(true);
     top = new VCLASS(contextp);
 
-    while(!contextp->gotFinish()) step_cycle();
+    while(!contextp->gotFinish()) step_time_veri();
 
     delete top;
     delete contextp;
