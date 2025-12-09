@@ -110,7 +110,7 @@ module writeback #(
         cfg[A_EN_COUNT] <= WIDTH'(0);
         cfg[A_READY   ] <= WIDTH'(1);
       end
-      if (1'(cfg[A_START])) begin
+      if (cfg[A_START]==1) begin
         cfg[A_START] <= WIDTH'(0);
       end
 
