@@ -193,8 +193,8 @@ def product_dict(**kwargs):
                                         axi_width            = [ 128      ],
                                         config_baseaddr      = ["40000000"],
                                         target_cpu_int_bits  = [ 32       ],
-                                        valid_prob           = [ 0.01   ],
-                                        ready_prob           = [ 0.05    ],
+                                        valid_prob           = [ 0.1   ],
+                                        ready_prob           = [ 0.5    ],
                                         data_dir             = ['vectors'],
                                     )))
 def test_dnn_engine(PARAMS):

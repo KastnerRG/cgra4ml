@@ -75,16 +75,10 @@ typedef struct {
 #define A_X_DONE       0xB 
 #define A_O_DONE       0xC
 
-#define WB_A_START       0x0
-#define WB_A_N_BUNDLES_1 0x1
-#define WB_A_EN_COUNT    0x2
-#define WB_A_VALID       0x3
-#define WB_A_IB          0x4
-#define WB_A_IP          0x5
-#define WB_A_IN          0x6
-#define WB_A_IL          0x7
-#define WB_A_IWKW2       0x8
-
+enum wb_reg {
+#include "config_reg.def"
+  WB_A_NUM_REGS
+};
 
 #ifdef __cplusplus
   #define EXT_C "C"
@@ -93,7 +87,7 @@ typedef struct {
   #define EXT_C
 #endif
 int32_t *p_config = (int32_t *)CONFIG_BASEADDR;
-int32_t *p_writeback = p_config + WORDS_IN_CFG;
+int32_t *p_writeback = (int32_t *)CONFIG_BASEADDR + WORDS_IN_CFG;
 
 extern EXT_C void model_setup(Memory_st *restrict mp) {
 
