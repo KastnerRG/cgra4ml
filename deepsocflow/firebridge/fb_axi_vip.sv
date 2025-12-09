@@ -133,14 +133,14 @@ module fb_axi_vip #(
   import "DPI-C" context function void at_posedge_clk();
   import "DPI-C" context function void step_cycle();
 
-  `define FB_WAIT(expr) while (expr) step_cycle()
+  `define FB_PAUSE_WHILE(expr) while (expr) step_cycle()
 
 `else
   task at_posedge_clk();
     @(posedge clk) #10ps;
   endtask
 
-  `define FB_WAIT(expr) wait (expr)
+  `define FB_PAUSE_WHILE(expr) wait (!(expr))
 `endif
 
   task axi_write(input bit [S_AXI_ADDR_WIDTH-1:0] addr, input bit [S_AXI_DATA_WIDTH-1:0] data);
@@ -159,7 +159,7 @@ module fb_axi_vip #(
     s_axi_awprot [i]  <= 0;
     s_axi_awvalid[i]  <= 1;
 
-    `FB_WAIT(!s_axi_awready[i]);
+    `FB_PAUSE_WHILE(!s_axi_awready[i]);
     at_posedge_clk();
     s_axi_awvalid[i]  <= 0;
     s_axi_wdata  [i]  <= data;
@@ -168,12 +168,12 @@ module fb_axi_vip #(
     s_axi_wvalid [i]  <= 1;
 
 
-    `FB_WAIT(!s_axi_wready[i]);
+    `FB_PAUSE_WHILE(!s_axi_wready[i]);
     at_posedge_clk();
     s_axi_wvalid [i] <= 0;
     s_axi_bready [i] <= 1;
 
-    `FB_WAIT(!s_axi_bvalid[i]);
+    `FB_PAUSE_WHILE(!s_axi_bvalid[i]);
     at_posedge_clk();
     s_axi_bready[i]  <= 0;
   endtask
@@ -183,7 +183,6 @@ module fb_axi_vip #(
 
     automatic int i = get_s_index(addr);
 
-    // @(posedge clk) #10ps;
     at_posedge_clk();
     s_axi_arid   [i]  <= S_AXI_ID_WIDTH'(1);
     s_axi_araddr [i]  <= addr;
@@ -195,12 +194,13 @@ module fb_axi_vip #(
     s_axi_arprot [i]  <= 0;
     s_axi_arvalid[i]  <= 1;
 
-    `FB_WAIT(!s_axi_arready[i]);
+    `FB_PAUSE_WHILE(!s_axi_arready[i]);
     at_posedge_clk();
     s_axi_arvalid[i] <= 0;
     s_axi_rready [i] <= 1;
 
-    `FB_WAIT(!s_axi_rvalid[i]);
+    `FB_PAUSE_WHILE(!s_axi_rvalid[i]);
+    #10ps;
     rdata = s_axi_rdata[i];
 
     at_posedge_clk();
