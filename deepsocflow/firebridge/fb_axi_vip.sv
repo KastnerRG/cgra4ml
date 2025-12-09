@@ -131,15 +131,17 @@ module fb_axi_vip #(
   export "DPI-C" function get_clk;
 
   import "DPI-C" context function void at_posedge_clk();
-  import "DPI-C" context function void step_cycle();
+  import "DPI-C" context function void step_time_veri();
 
-  `define FB_PAUSE_WHILE(expr) while (expr) step_cycle()
+  `define TIMESTEP step_time_veri()
+  `define FB_PAUSE_WHILE(expr) while (expr) step_time_veri()
 
 `else
   task at_posedge_clk();
     @(posedge clk) #10ps;
   endtask
 
+  `define TIMESTEP #10ps
   `define FB_PAUSE_WHILE(expr) wait (!(expr))
 `endif
 
@@ -147,7 +149,6 @@ module fb_axi_vip #(
 
     automatic int i = get_s_index(addr);
 
-    // @(posedge clk) #10ps;
     at_posedge_clk();
     s_axi_awid   [i]  <= S_AXI_ID_WIDTH'(1);
     s_axi_awaddr [i]  <= addr;
@@ -200,7 +201,7 @@ module fb_axi_vip #(
     s_axi_rready [i] <= 1;
 
     `FB_PAUSE_WHILE(!s_axi_rvalid[i]);
-    #10ps;
+    `TIMESTEP;
     rdata = s_axi_rdata[i];
 
     at_posedge_clk();
