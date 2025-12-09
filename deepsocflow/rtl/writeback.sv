@@ -27,20 +27,17 @@ module writeback #(
 );
 
   localparam N_REG = 32;
-  localparam // Addresses for local memory 0:32 is registers, rest is SRAM
-    A_START       = 'h0,
-    A_N_BUNDLES_1 = 'h1,
-    A_EN_COUNT    = 'h2,
-    A_VALID       = 'h3,
-    A_IB          = 'h4,
-    A_IP          = 'h5,
-    A_IN          = 'h6,
-    A_IL          = 'h7,
-    A_IWKW2       = 'h8
-    ; // Max 32 registers
+
+  // Addresses for local memory 0:32 is registers, rest is SRAM
+  typedef enum int {
+  `include "config_reg.def"
+    WB_A_NUM_REGS
+  } wb_reg_e;
+
   logic [WIDTH-1:0] cfg [N_REG-1:0];
-  wire en_count = 1'(cfg[A_EN_COUNT]);
-  wire start    = 1'(cfg[A_START]);
+  wire en_count = 1'(cfg[WB_A_EN_COUNT]);
+  wire start    = 1'(cfg[WB_A_START]);
+  wire [WIDTH-1:0] n_bundles_1 = cfg[WB_A_N_BUNDLES_1];
 
   //------------------- BUNDLES SRAM  ---------------------------------------
 
@@ -68,12 +65,6 @@ module writeback #(
     .addrB (ram_rd_addr), 
     .doB   (ram_rd_data)
   );
-
-  logic [AXI_ADDR_WIDTH-1:0] reg_rd_addr_valid;
-  always_ff @(posedge clk) begin
-    ram_rd_valid <= ram_rd_en;
-    reg_rd_addr_valid <= reg_rd_addr;
-  end
 
   always_comb begin
     ram_wr_en   = reg_wr_en && (reg_wr_addr >= N_REG);
@@ -103,12 +94,12 @@ module writeback #(
       ram_rd_valid <= ram_rd_en;
     end
 
-  up_counter #(.W(WIDTH)) C_B    (.clk(clk), .rstn_g(rstn), .rst_l(start           ), .en(lc_p    ), .max_in(WIDTH'(cfg[A_N_BUNDLES_1])), .last_clk(lc_b   ), .last(l_b   ), .first(), .count(i_b   ));
-  up_counter #(.W(WIDTH)) C_P    (.clk(clk), .rstn_g(rstn), .rst_l(ram_rd_valid    ), .en(lc_t    ), .max_in(WIDTH'(ram_max_p         )), .last_clk(lc_p   ), .last(l_p   ), .first(), .count(i_p   ));
-  up_counter #(.W(WIDTH)) C_T    (.clk(clk), .rstn_g(rstn), .rst_l(ram_rd_valid    ), .en(lc_n    ), .max_in(WIDTH'(ram_max_t         )), .last_clk(lc_t   ), .last(l_t   ), .first(), .count(i_t   ));
-  up_counter #(.W(WIDTH)) C_N    (.clk(clk), .rstn_g(rstn), .rst_l(ram_rd_valid    ), .en(lc_l    ), .max_in(WIDTH'(ram_max_n         )), .last_clk(lc_n   ), .last(l_n   ), .first(), .count(i_n   ));
-  up_counter #(.W(WIDTH)) C_L    (.clk(clk), .rstn_g(rstn), .rst_l(ram_rd_valid    ), .en(lc_wkw2 ), .max_in(WIDTH'(ram_max_l         )), .last_clk(lc_l   ), .last(l_l   ), .first(), .count(i_l   ));
-  up_counter #(.W(WIDTH)) C_WKW2 (.clk(clk), .rstn_g(rstn), .rst_l(ram_rd_valid    ), .en(en_count), .max_in(WIDTH'(ram_max_wkw2      )), .last_clk(lc_wkw2), .last(l_wkw2), .first(), .count(i_wkw2));
+  up_counter #(.W(WIDTH)) C_B    (.clk(clk), .rstn_g(rstn), .rst_l(start           ), .en(lc_p    ), .max_in(n_bundles_1 ), .last_clk(lc_b   ), .last(l_b   ), .first(), .count(i_b   ));
+  up_counter #(.W(WIDTH)) C_P    (.clk(clk), .rstn_g(rstn), .rst_l(ram_rd_valid    ), .en(lc_t    ), .max_in(ram_max_p   ), .last_clk(lc_p   ), .last(l_p   ), .first(), .count(i_p   ));
+  up_counter #(.W(WIDTH)) C_T    (.clk(clk), .rstn_g(rstn), .rst_l(ram_rd_valid    ), .en(lc_n    ), .max_in(ram_max_t   ), .last_clk(lc_t   ), .last(l_t   ), .first(), .count(i_t   ));
+  up_counter #(.W(WIDTH)) C_N    (.clk(clk), .rstn_g(rstn), .rst_l(ram_rd_valid    ), .en(lc_l    ), .max_in(ram_max_n   ), .last_clk(lc_n   ), .last(l_n   ), .first(), .count(i_n   ));
+  up_counter #(.W(WIDTH)) C_L    (.clk(clk), .rstn_g(rstn), .rst_l(ram_rd_valid    ), .en(lc_wkw2 ), .max_in(ram_max_l   ), .last_clk(lc_l   ), .last(l_l   ), .first(), .count(i_l   ));
+  up_counter #(.W(WIDTH)) C_WKW2 (.clk(clk), .rstn_g(rstn), .rst_l(ram_rd_valid    ), .en(en_count), .max_in(ram_max_wkw2), .last_clk(lc_wkw2), .last(l_wkw2), .first(), .count(i_wkw2));
 
   // It takes a few cycles after en_count for the registers to have valid data:
   // 0 - en_count, lc_p
@@ -126,20 +117,19 @@ module writeback #(
     end else begin
 
       if (en_count) 
-        cfg[A_EN_COUNT] <= WIDTH'(0);
+        cfg[WB_A_EN_COUNT] <= WIDTH'(0);
 
       if (start) 
-        cfg[A_START] <= WIDTH'(0);
+        cfg[WB_A_START] <= WIDTH'(0);
 
       if (i_valid_next) 
-        cfg[A_VALID   ] <= WIDTH'(1);
+        cfg[WB_A_VALID   ] <= WIDTH'(1);
 
-      cfg[A_IB     ] <= i_b  ;
-      cfg[A_IP     ] <= i_p  ;
-      cfg[A_IN     ] <= i_n  ;
-      cfg[A_IL     ] <= i_l  ;
-      cfg[A_IWKW2  ] <= i_wkw2;
-
+      cfg[WB_A_IB     ] <= i_b  ;
+      cfg[WB_A_IP     ] <= i_p  ;
+      cfg[WB_A_IN     ] <= i_n  ;
+      cfg[WB_A_IL     ] <= i_l  ;
+      cfg[WB_A_IWKW2  ] <= i_wkw2;
 
       if (reg_wr_en && reg_wr_addr < N_REG) // PS has priority in writing to registers
         cfg[reg_wr_addr] <= WIDTH'(reg_wr_data);

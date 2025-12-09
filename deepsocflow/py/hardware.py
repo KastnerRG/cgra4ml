@@ -192,6 +192,19 @@ class Hardware:
 `define CONFIG_BASEADDR     32'h{self.CONFIG_BASEADDR:<10}
 ''')
 
+        with open('config_reg.def', 'w') as f:
+                f.write(f'''
+WB_A_START       = 0,
+WB_A_DONE        ,
+WB_A_N_BUNDLES_1 ,
+WB_A_EN_COUNT    ,
+WB_A_VALID       ,
+WB_A_IB          ,
+WB_A_IP          ,
+WB_A_IN          ,
+WB_A_IL          ,
+WB_A_IWKW2       ,
+''')
 
         with open('config_hw.tcl', 'w') as f:
             f.write(f'''
