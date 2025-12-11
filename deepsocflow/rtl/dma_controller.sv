@@ -79,7 +79,7 @@ module dma_controller #(
     A_X_DONE       = 'hB, 
     A_O_DONE       = 'hC
     ; // Max 16 registers
-  (* mark_debug = "true" *) logic [12:0][AXI_DATA_WIDTH-1:0] cfg ;
+  (* mark_debug = "true" *) logic [AXI_DATA_WIDTH-1:0] cfg [12:0];
 
   // always_ff @(posedge clk)  // PS READ (1 clock latency)
   //   if (!rstn)          {reg_rd_data} <= '0;
