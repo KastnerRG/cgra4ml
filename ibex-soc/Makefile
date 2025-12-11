@@ -20,7 +20,7 @@ wave:
 
 # INDEX = (0x00104000 - 0x00100000)/4 = 0x1000
 run: sw-simple-hello | $(Vibex_simple_system)
-	srec_cat ../run/work/vectors/wbx.bin -binary -offset 0x1000 -o wbx.vmem -vmem 8
+	srec_cat ../run/work/vectors/wbx.bin -binary -offset 0x4000 -byte-swap 4 -o wbx.vmem -vmem 32
 	build/lowrisc_ibex_ibex_simple_system_0/sim-verilator/Vibex_simple_system -t \
 		--meminit=ram,$(simple-system-program) \
 		--meminit=ram,wbx.vmem

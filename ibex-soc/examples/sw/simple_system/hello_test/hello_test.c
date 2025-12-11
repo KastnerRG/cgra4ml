@@ -22,24 +22,9 @@ int main(int argc, char **argv) {
   puts("\n\nHello from Ibex!\n\n"); 
   printf("Welcome to CGRA4ML!\n Store wbx at: %p; y:%p; buffers {0:%p,1:%p};\n", &p_mem->w, &p_mem->y, &p_mem->out_buffers[0], &p_mem->out_buffers[1]);
 
-  // Test read/write to config regs
-  volatile uint32_t * const p_addr = &p_config[A_WEIGHTS_BASE];
-  puts("Addr:"); puthex((uintptr_t)p_addr); putchar('\n');
-  *p_addr = 123u;
-  puthex(0xDEADBEEF); putchar('\n');
-  uint32_t val = *p_addr;
-  puts("Val:"); puthex(val); putchar('\n');
-
-  int32_t *w = (int32_t *)p_mem;
-  const int n_words = sizeof(*p_mem) / 4;
-
-  puts("Checking if mem_st is read/writable:\n");
-  for (int i = 0; i < 16; ++i) {
-    printf("[%p]:%d \n", (void*)&w[i], w[i]);
-  }
-  for (int i = n_words - 16; i < n_words; ++i) {
-    printf("[%p]:%d -> ", (void*)&w[i], w[i]); w[i] = 1234; printf("%d\n", w[i]);
-  }
+  int8_t *w = (int8_t *)MEM_BASEADDR;
+  debug_printf("sizeof(w[0]): %d bytes\n", sizeof(w[0]));
+  for (int ii=0; ii < 10; ii++) debug_printf("w[%d]: %d \n", ii, w[ii]);
 
   // Run the test
   model_setup((void*)p_mem, (void*)p_config);
