@@ -6,9 +6,38 @@ int  rand(void) {
   return (int)(rng_state >> 1);
 }
 
+/* Minimal signed decimal printer for 32-bit int */
+static void putdec_int(int v) {
+    char buf[12];        /* enough for -2147483648\0 */
+    unsigned int x;
+    int i = 0;
+
+    if (v < 0) {
+        putchar('-');
+        /* handle INT_MIN safely: -(v+1) + 1 avoids overflow */
+        x = (unsigned int)(-(v + 1)) + 1u;
+    } else {
+        x = (unsigned int)v;
+    }
+
+    /* convert to decimal, reversed */
+    do {
+        buf[i++] = (char)('0' + (x % 10u));
+        x /= 10u;
+    } while (x);
+
+    /* output in correct order */
+    while (i--) {
+        putchar(buf[i]);
+    }
+}
+
 static void mini_vprintf(const char *fmt, va_list ap) {
     for (const char *p = fmt; *p; ++p) {
-        if (*p != '%') { putchar(*p); continue; }
+        if (*p != '%') {
+            putchar(*p);
+            continue;
+        }
 
         ++p;                          /* skip '%' */
         if (*p == '\0') break;
@@ -24,8 +53,14 @@ static void mini_vprintf(const char *fmt, va_list ap) {
         switch (*p) {
         case 's': {                   /* string */
             const char *s = va_arg(ap, const char *);
-            if (s) puts(s);
-            else   puts("(null)");
+            if (s) {
+                /* if your puts() appends '\n' and you don't want that,
+                   replace with a loop of putchar(). */
+                while (*s) putchar(*s++);
+            } else {
+                const char *nulls = "(null)";
+                while (*nulls) putchar(*nulls++);
+            }
             break;
         }
         case 'c': {                   /* character */
@@ -38,11 +73,12 @@ static void mini_vprintf(const char *fmt, va_list ap) {
             puthex(v);
             break;
         }
-        default: {                    /* any “number” -> hex */
-            /* Read as uintptr_t to be forgiving; OK for RV32 Ibex.
-               If the caller passed an int/unsigned/etc., the usual
-               default promotions mean we can safely read as unsigned int
-               on RV32. But using uintptr_t keeps it uniform for pointers too. */
+        case 'd': {                   /* signed int -> decimal */
+            int v = va_arg(ap, int);
+            putdec_int(v);
+            break;
+        }
+        default: {                    /* any other “number” -> hex */
 #if UINTPTR_MAX == 0xffffffffu
             /* RV32: pull a 32-bit value */
             unsigned int v = va_arg(ap, unsigned int);
