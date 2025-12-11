@@ -208,7 +208,7 @@ module axi_int_reg_tb;
   initial begin
     $dumpfile("axi_int_reg_tb.vcd");
     $dumpvars();
-    #10000us;
+    #1000000us;
     $finish;
   end
 

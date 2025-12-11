@@ -12,48 +12,48 @@ module saxi_to_host #(
   // ---------------- AXI4-Slave: Read Address ----------------
   input  wire [AXI_ID_WIDTH-1:0]      s_axi_arid,
   input  wire [AXI_ADDR_WIDTH-1:0]    s_axi_araddr,
-  input  wire [7:0]                   s_axi_arlen,   // beats-1
+  input  wire [7:0]                   s_axi_arlen,   // beats-1 (must be 0)
   input  wire [2:0]                   s_axi_arsize,  // must be 3'b010
   input  wire [1:0]                   s_axi_arburst, // INCR only (2'b01)
   input  wire                         s_axi_arvalid,
-  output reg                          s_axi_arready,
+  output logic                        s_axi_arready,
 
   // ---------------- AXI4-Slave: Read Data --------------------
-  output reg  [AXI_ID_WIDTH-1:0]      s_axi_rid,
-  output reg  [AXI_DATA_WIDTH-1:0]    s_axi_rdata,
-  output reg  [1:0]                   s_axi_rresp,   // OKAY=2'b00, SLVERR=2'b10
-  output reg                          s_axi_rlast,
-  output reg                          s_axi_rvalid,
+  output logic [AXI_ID_WIDTH-1:0]     s_axi_rid,
+  output logic [AXI_DATA_WIDTH-1:0]   s_axi_rdata,
+  output logic [1:0]                  s_axi_rresp,   // OKAY=2'b00, SLVERR=2'b10
+  output logic                        s_axi_rlast,
+  output logic                        s_axi_rvalid,
   input  wire                         s_axi_rready,
 
   // ---------------- AXI4-Slave: Write Address ----------------
   input  wire [AXI_ID_WIDTH-1:0]      s_axi_awid,
   input  wire [AXI_ADDR_WIDTH-1:0]    s_axi_awaddr,
-  input  wire [7:0]                   s_axi_awlen,   // beats-1
+  input  wire [7:0]                   s_axi_awlen,   // beats-1 (must be 0)
   input  wire [2:0]                   s_axi_awsize,  // must be 3'b010
   input  wire [1:0]                   s_axi_awburst, // INCR only
   input  wire                         s_axi_awvalid,
-  output reg                          s_axi_awready,
+  output logic                        s_axi_awready,
 
   // ---------------- AXI4-Slave: Write Data -------------------
   input  wire [AXI_DATA_WIDTH-1:0]    s_axi_wdata,
   input  wire [AXI_STRB_WIDTH-1:0]    s_axi_wstrb,
   input  wire                         s_axi_wlast,
   input  wire                         s_axi_wvalid,
-  output reg                          s_axi_wready,
+  output logic                        s_axi_wready,
 
   // ---------------- AXI4-Slave: Write Response ---------------
-  output reg  [AXI_ID_WIDTH-1:0]      s_axi_bid,
-  output reg  [1:0]                   s_axi_bresp,   // OKAY=2'b00, SLVERR=2'b10
-  output reg                          s_axi_bvalid,
+  output logic [AXI_ID_WIDTH-1:0]     s_axi_bid,
+  output logic [1:0]                  s_axi_bresp,   // OKAY=2'b00, SLVERR=2'b10
+  output logic                        s_axi_bvalid,
   input  wire                         s_axi_bready,
 
   // ---------------- Ibex LSU host port -----------------------
-  output reg                          data_req_o,
-  output reg  [31:0]                  data_addr_o,   // byte address, word-aligned
-  output reg                          data_we_o,
-  output reg  [3:0]                   data_be_o,
-  output reg  [31:0]                  data_wdata_o,
+  output logic                        data_req_o,
+  output logic [31:0]                 data_addr_o,   // byte address (unaligned allowed)
+  output logic                        data_we_o,
+  output logic [3:0]                  data_be_o,
+  output logic [31:0]                 data_wdata_o,
   input  wire                         data_gnt_i,
   input  wire                         data_rvalid_i,
   input  wire                         data_err_i,
@@ -75,34 +75,34 @@ module saxi_to_host #(
   eng_e eng_state, eng_state_n;
 
   // Read command regs
-  reg                    rd_cmd_valid;
-  reg [AXI_ID_WIDTH-1:0] rd_id;
-  reg [31:0]             rd_addr;     // word aligned (byte addr with [1:0]==0)
-  reg [7:0]              rd_len;      // beats remaining (inclusive count)
-  reg                    rd_busy;     // burst accepted (address latched)
+  logic                    rd_cmd_valid;
+  logic [AXI_ID_WIDTH-1:0] rd_id;
+  logic [31:0]             rd_addr;     // byte address (unaligned allowed)
+  logic [7:0]              rd_len;      // beats remaining (inclusive count)
+  logic                    rd_busy;     // burst accepted (address latched)
 
   // Write command regs
-  reg                    wr_cmd_valid;
-  reg [AXI_ID_WIDTH-1:0] wr_id;
-  reg [31:0]             wr_addr;
-  reg [7:0]              wr_len;
-  reg                    wr_busy;
+  logic                    wr_cmd_valid;
+  logic [AXI_ID_WIDTH-1:0] wr_id;
+  logic [31:0]             wr_addr;     // byte address (unaligned allowed)
+  logic [7:0]              wr_len;
+  logic                    wr_busy;
 
   // Write data buffer for current beat
-  reg [31:0]             wr_data_q;
-  reg [3:0]              wr_strb_q;
-  reg                    wr_data_valid;
+  logic [31:0]             wr_data_q;
+  logic [3:0]              wr_strb_q;
+  logic                    wr_data_valid;
 
   // Engine bookkeeping
-  reg                    cur_is_write;
-  reg                    have_grant;
-  reg                    error_seen;
+  logic                    cur_is_write;
+  logic                    have_grant;
+  logic                    error_seen;
 
   // R hold buffer (to obey RDATA stability while RVALID && !RREADY)
-  reg                    r_hold_valid;
-  reg [31:0]             r_hold_data;
-  reg [1:0]              r_hold_resp;
-  reg                    r_hold_last;
+  logic                    r_hold_valid;
+  logic [31:0]             r_hold_data;
+  logic [1:0]              r_hold_resp;
+  logic                    r_hold_last;
 
   // Next-beat address increment (32-bit, INCR)
   function automatic [31:0] next_addr(input [31:0] a);
@@ -114,34 +114,34 @@ module saxi_to_host #(
   wire r_resp_pending = s_axi_rvalid | r_hold_valid;
   wire b_resp_pending = s_axi_bvalid;
 
+  // NOTE: alignment no longer checked here. Unaligned accesses are passed through.
   wire ar_ok = s_axi_arvalid &&
                (s_axi_arsize  == 3'b010) &&
                (s_axi_arburst == AXI_BURST_INCR) &&
-               (s_axi_araddr[1:0] == 2'b00) &&
                !rd_busy && !wr_busy &&
                (eng_state == IDLE) &&
-               !r_resp_pending;   // avoid back-to-back piling when master is stalled
+               !r_resp_pending;
 
   wire aw_ok = s_axi_awvalid &&
                (s_axi_awsize  == 3'b010) &&
                (s_axi_awburst == AXI_BURST_INCR) &&
-               (s_axi_awaddr[1:0] == 2'b00) &&
                !rd_busy && !wr_busy &&
                (eng_state == IDLE) &&
-               !b_resp_pending;   // keep one write burst outstanding wrt. B resp
+               !b_resp_pending;
 
-  always @(*) begin
+  always_comb begin
     s_axi_arready = ar_ok;
     s_axi_awready = aw_ok;
   end
 
   // Latch read/write command when accepted
-  always @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       rd_cmd_valid <= 1'b0;
       rd_busy      <= 1'b0;
       wr_cmd_valid <= 1'b0;
       wr_busy      <= 1'b0;
+
       rd_id        <= '0;
       wr_id        <= '0;
       rd_addr      <= '0;
@@ -169,11 +169,11 @@ module saxi_to_host #(
   // ---------------- Write Data Channel Handling ----------------
   wire want_wbeat = (eng_state==W_ACTIVE) && !wr_data_valid;
 
-  always @(*) begin
+  always_comb begin
     s_axi_wready = want_wbeat;
   end
 
-  always @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       wr_data_q     <= '0;
       wr_strb_q     <= '0;
@@ -248,17 +248,17 @@ module saxi_to_host #(
   wire pick_read  = rd_cmd_valid && !wr_cmd_valid;
 
   // issue fields
-  reg [31:0] issue_addr;
-  reg [3:0]  issue_be;
-  reg [31:0] issue_wdata;
+  logic [31:0] issue_addr;
+  logic [3:0]  issue_be;
+  logic [31:0] issue_wdata;
 
   // track grant & error accumulation
-  always @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      eng_state   <= IDLE;
-      cur_is_write<= 1'b0;
-      have_grant  <= 1'b0;
-      error_seen  <= 1'b0;
+      eng_state    <= IDLE;
+      cur_is_write <= 1'b0;
+      have_grant   <= 1'b0;
+      error_seen   <= 1'b0;
     end else begin
       eng_state <= eng_state_n;
 
@@ -278,7 +278,7 @@ module saxi_to_host #(
   end
 
   // Beat counters & address update
-  always @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       // no-op
     end else begin
@@ -315,7 +315,7 @@ module saxi_to_host #(
   end
 
   // Compute current issue fields
-  always @(*) begin
+  always_comb begin
     if (eng_state==W_ACTIVE || (eng_state==ISSUE && cur_is_write)) begin
       issue_addr  = wr_addr;
       issue_be    = wr_strb_q;
@@ -328,7 +328,7 @@ module saxi_to_host #(
   end
 
   // FSM transitions & LSU driving
-  always @(*) begin
+  always_comb begin
     eng_state_n  = eng_state;
     data_req_o   = 1'b0;
     data_addr_o  = 32'd0;
@@ -378,7 +378,7 @@ module saxi_to_host #(
   end
 
   // Set cur_is_write when entering a burst
-  always @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       cur_is_write <= 1'b0;
     end else if (eng_state==IDLE) begin
@@ -389,26 +389,24 @@ module saxi_to_host #(
 
   // ---------------- Optional protocol sanity checks (simulation-only) ----------------
   // synopsys translate_off
-  always @(posedge clk) if (rst_n) begin
+  always_ff @(posedge clk) if (rst_n) begin
     if (s_axi_arvalid && s_axi_arready) begin
-      if (s_axi_arsize  != 3'b010)  $error("arsize != 3'b010");
-      if (s_axi_arburst != AXI_BURST_INCR) $error("arburst != INCR");
-      if (s_axi_araddr[1:0] != 2'b00) $error("araddr not word-aligned");
+      if (s_axi_arsize  != 3'b010)          $error("saxi_to_host: arsize != 3'b010");
+      if (s_axi_arburst != AXI_BURST_INCR)  $error("saxi_to_host: arburst != INCR");
+      if (s_axi_arlen   != 8'd0)            $error("saxi_to_host: only single-beat reads supported (arlen != 0)");
+      // NOTE: unaligned araddr is allowed now
+      // if (s_axi_araddr[1:0] != 2'b00)    $warning("saxi_to_host: unaligned read address %h", s_axi_araddr);
     end
     if (s_axi_awvalid && s_axi_awready) begin
-      if (s_axi_awsize  != 3'b010)  $error("awsize != 3'b010");
-      if (s_axi_awburst != AXI_BURST_INCR) $error("awburst != INCR");
-      if (s_axi_awaddr[1:0] != 2'b00) $error("awaddr not word-aligned");
+      if (s_axi_awsize  != 3'b010)          $error("saxi_to_host: awsize != 3'b010");
+      if (s_axi_awburst != AXI_BURST_INCR)  $error("saxi_to_host: awburst != INCR");
+      if (s_axi_awlen   != 8'd0)            $error("saxi_to_host: only single-beat writes supported (awlen != 0)");
+      // NOTE: unaligned awaddr is allowed now
+      // if (s_axi_awaddr[1:0] != 2'b00)    $warning("saxi_to_host: unaligned write address %h", s_axi_awaddr);
     end
-    // RDATA must be stable while RVALID && !RREADY
-    if (s_axi_rvalid && !s_axi_rready) begin
-      // (cannot easily assert stability here without a shadow; hold buffer enforces it)
-    end
-    // Optional: check WLAST on last write beat (informational)
-    if (eng_state==WAIT_RSP && cur_is_write && data_rvalid_i && (wr_len==8'd1) && !s_axi_wlast) begin
-      // Some masters may not drive WLAST correctly; warn if seen.
-      // $warning("WLAST not observed on final write beat");
-    end
+    // Optional: check WLAST on write beat
+    if (s_axi_wvalid && s_axi_wready && !s_axi_wlast)
+      $warning("saxi_to_host: WLAST not observed on write beat (single-beat expected)");
   end
   // synopsys translate_on
 
