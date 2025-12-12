@@ -1,105 +1,179 @@
-
 name: Verify
 
-on: [push]
+on:
+  push:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  GHCR_IMAGE: ghcr.io/kastnerrg/cgra4ml-ibex
+  IMAGE_TAG: latest
 
 jobs:
-  verify-with-verilator:
-    runs-on: ubuntu-latest
+  build-and-push-image:
+    runs-on: ubuntu-22.04
+
+    outputs:
+      docker_changed: ${{ steps.check-changes.outputs.docker_changed }}
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Cache modules
-      id: cache-verify
-      uses: actions/cache@v3
-      env:
-        cache-name: cache-verify
-      with:
-        path: ~/.verify
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
+      - id: check-changes
+        name: Detect Docker / env changes
+        shell: bash
+        run: |
+          set -e
 
-    - name: Set up Python 3.11.5
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11.5'
+          BEFORE="${{ github.event.before }}"
+          SHA="${{ github.sha }}"
 
-    - name: Install Verilator
-      run: |
-        sudo apt-get install --only-upgrade python3
-        sudo apt-get install git help2man perl python3 make autoconf g++ flex bison ccache libunwind-dev
-        sudo apt-get install libgoogle-perftools-dev numactl #perl-doc
-        sudo apt-get install libfl2  # Ubuntu only (ignore if gives error)
-        sudo apt-get install libfl-dev  # Ubuntu only (ignore if gives error)
-        # sudo apt-get install zlibc zlib1g zlib1g-dev  # Ubuntu only (ignore if gives error)
+          # First push to branch (no "before" commit)? Force rebuild.
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            echo "First push on this branch -> rebuild image"
+            echo "docker_changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
-        git clone https://github.com/abarajithan11/verilator-compiled
-        cd verilator-compiled
-        tar -C ${HOME} -xzf verilator.tar.gz
+          echo "Diffing $BEFORE..$SHA"
 
-    - name: Install DeepSoCFlow
-      run: |
-        python -m pip install --upgrade pip
-        pip install .
+          # If BEFORE commit is not in this clone (rebased branch / force push / shallow mismatch),
+          # just force a rebuild instead of trying to diff.
+          if ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            echo "Base commit $BEFORE not found in local history -> rebuild image"
+            echo "docker_changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
-    - name: Verify Full Design
-      run: |
-        export VERILATOR_ROOT=${HOME}/verilator
-        export PATH=${VERILATOR_ROOT}/bin:${PATH}
-        export PYMTL_VERILATOR_INCLUDE_DIR=${VERILATOR_ROOT}/share/verilator/include
-        verilator --version
+          files="$(git diff --name-only "$BEFORE" "$SHA")"
+          echo "Changed files:"
+          echo "$files"
 
-        mkdir -p run/work
-        cd run/work
-        python -m pytest -s ../param_test.py
+          if echo "$files" | grep -E '^(Dockerfile|Makefile|pyproject.toml|ibex-soc/python-requirements.txt|ibex-soc/vendor/google_riscv-dv/requirements.txt)$' >/dev/null; then
+            echo "Docker / env inputs changed -> rebuild"
+            echo "docker_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No Dockerfile/Makefile/pyproject/req changes -> reuse existing image"
+            echo "docker_changed=false" >> "$GITHUB_OUTPUT"
+          fi
 
+      - name: Log in to GHCR
+        if: steps.check-changes.outputs.docker_changed == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-  # resnet50:
-  #   runs-on: ubuntu-latest
+      - name: Build Docker image via Makefile
+        if: steps.check-changes.outputs.docker_changed == 'true'
+        shell: bash
+        run: |
+          # Build using your top-level Makefile, but tag with GHCR_IMAGE:dev
+          make IMAGE="${GHCR_IMAGE}:dev" image
+          docker tag "${GHCR_IMAGE}:dev" "${GHCR_IMAGE}:${IMAGE_TAG}"
 
-  #   steps:
-  #   - uses: actions/checkout@v2
+      - name: Push image to GHCR
+        if: steps.check-changes.outputs.docker_changed == 'true'
+        shell: bash
+        run: docker push "${GHCR_IMAGE}:${IMAGE_TAG}"
 
-  #   - name: Cache modules
-  #     id: cache-verify
-  #     uses: actions/cache@v3
-  #     env:
-  #       cache-name: cache-verify
-  #     with:
-  #       path: ~/.verify
-  #       key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
-  #       restore-keys: |
-  #         ${{ runner.os }}-build-${{ env.cache-name }}-
-  #         ${{ runner.os }}-build-
-  #         ${{ runner.os }}-
+  riscv:
+    runs-on: ubuntu-22.04
+    needs: build-and-push-image
 
-  #   - name: Install Verilator
-  #     run: |
-  #       sudo apt-get install git help2man perl python3 make autoconf g++ flex bison ccache libunwind-dev
-  #       sudo apt-get install libgoogle-perftools-dev numactl #perl-doc
-  #       sudo apt-get install libfl2  # Ubuntu only (ignore if gives error)
-  #       sudo apt-get install libfl-dev  # Ubuntu only (ignore if gives error)
-  #       # sudo apt-get install zlibc zlib1g zlib1g-dev  # Ubuntu only (ignore if gives error)
+    steps:
+      - name: Check
+        run: |
+          docker run --rm \
+            -v "$PWD":/work \
+            -w /work \
+            "${GHCR_IMAGE}:${IMAGE_TAG}" \
+            bash -lc '
+              echo $PATH
+              which riscv32-unknown-elf-gcc
+              ls /opt/lowrisc-toolchain/bin/
+              riscv32-unknown-elf-gcc --version
+            '
 
-  #       git clone https://github.com/abarajithan11/verilator-compiled
-  #       cd verilator-compiled
-  #       tar -C ${HOME} -xzf verilator.tar.gz
+  smoke-test:
+    runs-on: ubuntu-22.04
+    needs: build-and-push-image
 
-  #   - name: Install DeepSoCFlow
-  #     run: |
-  #       pip install .
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  #   - name: Verify Full Design
-  #     run: |
-  #       export VERILATOR_ROOT=${HOME}/verilator
-  #       export PATH=${VERILATOR_ROOT}/bin:${PATH}
-  #       export PYMTL_VERILATOR_INCLUDE_DIR=${VERILATOR_ROOT}/share/verilator/include
-  #       verilator --version
+      - name: Free disk space on runner
+        run: |
+          echo "Before cleanup:"; df -h
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL || true
+          sudo apt-get clean || true
+          sudo rm -rf /var/lib/apt/lists/* || true
+          docker system prune -af || true
+          echo "After cleanup:"; df -h
 
-  #       mkdir -p run/work_resnet
-  #       cd run/work_resnet
-  #       python ../resnet_50.py
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull CI image
+        run: docker pull "${GHCR_IMAGE}:${IMAGE_TAG}"
+
+      - name: Smoke test (param_test)
+        run: |
+          docker run --rm \
+            -v "$PWD":/work \
+            -w /work \
+            "${GHCR_IMAGE}:${IMAGE_TAG}" \
+            bash -lc '
+              mkdir -p run/work
+              make TEST=param_test smoke_test
+            '
+
+  verify-ibex-soc:
+    runs-on: ubuntu-22.04
+    needs: smoke-test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Free disk space on runner
+        run: |
+          echo "Before cleanup:"; df -h
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL || true
+          sudo apt-get clean || true
+          sudo rm -rf /var/lib/apt/lists/* || true
+          docker system prune -af || true
+          echo "After cleanup:"; df -h
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull CI image
+        run: docker pull "${GHCR_IMAGE}:${IMAGE_TAG}"
+
+      - name: Ibex SoC regression + output check
+        run: |
+          docker run --rm \
+            -v "$PWD":/work \
+            -w /work \
+            "${GHCR_IMAGE}:${IMAGE_TAG}" \
+            bash -lc '
+              fusesoc library add sa_ip "$(pwd -P)" || true
+              mkdir -p run/work
+              make TEST=ibex_test smoke_test iclean ibuild irun verify_ibex
+            '
