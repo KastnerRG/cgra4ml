@@ -1,6 +1,9 @@
 old/
 __pycache__
 
+*.conf
+run/work/*.log
+
 temp/
 
 run/fpga/*
