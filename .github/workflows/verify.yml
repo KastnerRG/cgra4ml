@@ -83,35 +83,6 @@ jobs:
         shell: bash
         run: docker push "${GHCR_IMAGE}:${IMAGE_TAG}"
 
-  riscv:
-    runs-on: ubuntu-22.04
-    needs: build-and-push-image
-
-
-    steps:
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Pull CI image
-        run: docker pull "${GHCR_IMAGE}:${IMAGE_TAG}"
-        
-      - name: Check
-        run: |
-          docker run --rm \
-            -v "$PWD":/work \
-            -w /work \
-            "${GHCR_IMAGE}:${IMAGE_TAG}" \
-            bash -lc '
-              echo $PATH
-              which riscv32-unknown-elf-gcc
-              ls /opt/lowrisc-toolchain/bin/
-              riscv32-unknown-elf-gcc --version
-            '
-
   smoke-test:
     runs-on: ubuntu-22.04
     needs: build-and-push-image
@@ -145,7 +116,7 @@ jobs:
             -v "$PWD":/work \
             -w /work \
             "${GHCR_IMAGE}:${IMAGE_TAG}" \
-            bash -lc '
+            bash -c '
               mkdir -p run/work
               make TEST=param_test smoke_test
             '
@@ -183,7 +154,7 @@ jobs:
             -v "$PWD":/work \
             -w /work \
             "${GHCR_IMAGE}:${IMAGE_TAG}" \
-            bash -lc '
+            bash -c '
               fusesoc library add sa_ip "$(pwd -P)" || true
               mkdir -p run/work
               make TEST=ibex_test smoke_test iclean ibuild irun verify_ibex
