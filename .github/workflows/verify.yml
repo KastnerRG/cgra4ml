@@ -87,7 +87,18 @@ jobs:
     runs-on: ubuntu-22.04
     needs: build-and-push-image
 
+
     steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull CI image
+        run: docker pull "${GHCR_IMAGE}:${IMAGE_TAG}"
+        
       - name: Check
         run: |
           docker run --rm \
