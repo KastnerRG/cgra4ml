@@ -88,7 +88,17 @@ source vivado_flow.tcl
 - Add a breakpoint at `model_setup()`. When breakpoint hits, load `run/work/vectors/wbx.bin` to the address printed.
 - Continue - This will run the model and print outputs & execution time
 
-4. ASIC implementation with Cadence Genus & Innovus:
+4. Ibex SoC Integration
+
+```
+make image start enter     # build, start & enter docker container
+# make kill                # kill and delete the container
+
+# Inside the container
+make smoke_ibex            # build, run ibex SoC simulation, verify outputs
+```
+
+5. ASIC implementation with Cadence Genus & Innovus:
 ```bash
 # First add your PDK to 'asic/pdk', change paths in the scripts and run:
 cd run/work
