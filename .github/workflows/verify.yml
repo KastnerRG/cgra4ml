@@ -9,14 +9,14 @@ permissions:
 
 env:
   GHCR_IMAGE: ghcr.io/kastnerrg/cgra4ml-ibex
-  IMAGE_TAG: latest
 
 jobs:
   build-and-push-image:
     runs-on: ubuntu-22.04
 
     outputs:
-      docker_changed: ${{ steps.check-changes.outputs.docker_changed }}
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+      image_exists: ${{ steps.check.outputs.image_exists }}
 
     steps:
       - name: Checkout code
@@ -24,68 +24,92 @@ jobs:
         with:
           fetch-depth: 0
 
-      - id: check-changes
-        name: Detect Docker / env changes
+      - id: meta
+        name: Compute Docker inputs hash -> image tag
         shell: bash
         run: |
-          set -e
+          set -euo pipefail
 
-          BEFORE="${{ github.event.before }}"
-          SHA="${{ github.sha }}"
+          # Only these files affect the image tag. Add/remove paths as desired.
+          inputs=(
+            Dockerfile
+            Makefile
+            pyproject.toml
+            ibex-soc/python-requirements.txt
+            ibex-soc/vendor/google_riscv-dv/requirements.txt
+          )
 
-          # First push to branch (no "before" commit)? Force rebuild.
-          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-            echo "First push on this branch -> rebuild image"
-            echo "docker_changed=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
+          tmp="$(mktemp)"
+          for f in "${inputs[@]}"; do
+            if [ -f "$f" ]; then
+              {
+                echo ">>>FILE:$f"
+                cat "$f"
+                echo
+              } >> "$tmp"
+            else
+              echo "WARN: missing $f (ignored)"
+            fi
+          done
 
-          echo "Diffing $BEFORE..$SHA"
+          hash="$(sha256sum "$tmp" | awk '{print $1}')"
+          short="${hash:0:16}"
+          tag="ci-${short}"
 
-          # If BEFORE commit is not in this clone (rebased branch / force push / shallow mismatch),
-          # just force a rebuild instead of trying to diff.
-          if ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
-            echo "Base commit $BEFORE not found in local history -> rebuild image"
-            echo "docker_changed=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
+          echo "Computed hash: $hash"
+          echo "Using tag: $tag"
 
-          files="$(git diff --name-only "$BEFORE" "$SHA")"
-          echo "Changed files:"
-          echo "$files"
-
-          if echo "$files" | grep -E '^(Dockerfile|Makefile|pyproject.toml|ibex-soc/python-requirements.txt|ibex-soc/vendor/google_riscv-dv/requirements.txt)$' >/dev/null; then
-            echo "Docker / env inputs changed -> rebuild"
-            echo "docker_changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No Dockerfile/Makefile/pyproject/req changes -> reuse existing image"
-            echo "docker_changed=false" >> "$GITHUB_OUTPUT"
-          fi
+          echo "image_tag=$tag" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GHCR
-        if: steps.check-changes.outputs.docker_changed == 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Docker image via Makefile
-        if: steps.check-changes.outputs.docker_changed == 'true'
+      - id: check
+        name: Check if image tag already exists in GHCR
         shell: bash
         run: |
-          # Build using your top-level Makefile, but tag with GHCR_IMAGE:dev
-          make IMAGE="${GHCR_IMAGE}:dev" image
-          docker tag "${GHCR_IMAGE}:dev" "${GHCR_IMAGE}:${IMAGE_TAG}"
+          set -euo pipefail
+          tag="${{ steps.meta.outputs.image_tag }}"
 
-      - name: Push image to GHCR
-        if: steps.check-changes.outputs.docker_changed == 'true'
+          if docker manifest inspect "${GHCR_IMAGE}:${tag}" >/dev/null 2>&1; then
+            echo "Image exists: ${GHCR_IMAGE}:${tag}"
+            echo "image_exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Image missing: ${GHCR_IMAGE}:${tag}"
+            echo "image_exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build Docker image (only if missing)
+        if: steps.check.outputs.image_exists == 'false'
         shell: bash
-        run: docker push "${GHCR_IMAGE}:${IMAGE_TAG}"
+        run: |
+          set -euo pipefail
+          tag="${{ steps.meta.outputs.image_tag }}"
+
+          # Build using your Makefile; tag directly with the content-hash tag.
+          make IMAGE="${GHCR_IMAGE}:${tag}" image
+
+          # Optional: also tag as "latest" whenever we build a new hash-tag.
+          docker tag "${GHCR_IMAGE}:${tag}" "${GHCR_IMAGE}:latest"
+
+      - name: Push image to GHCR (only if built)
+        if: steps.check.outputs.image_exists == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ steps.meta.outputs.image_tag }}"
+          docker push "${GHCR_IMAGE}:${tag}"
+          docker push "${GHCR_IMAGE}:latest"
 
   smoke-test:
     runs-on: ubuntu-22.04
     needs: build-and-push-image
+    env:
+      IMAGE_TAG: ${{ needs.build-and-push-image.outputs.image_tag }}
 
     steps:
       - name: Checkout code
@@ -123,7 +147,9 @@ jobs:
 
   verify-ibex-soc:
     runs-on: ubuntu-22.04
-    needs: smoke-test
+    needs: [build-and-push-image, smoke-test]
+    env:
+      IMAGE_TAG: ${{ needs.build-and-push-image.outputs.image_tag }}
 
     steps:
       - name: Checkout code
