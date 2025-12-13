@@ -6,13 +6,13 @@
 #include <stdarg.h>
 #include <stdint.h>
 
-#define debug_printf printf
+#define XDEBUG
+
 #define MEM_BASEADDR 0x00104000
 #include "firmware_helpers.h"
 #include "runtime.h"
 
-volatile uint32_t * const p_config = (volatile uint32_t *)CONFIG_BASEADDR;
-Memory_st *p_mem = &mem_phy;
+Memory_st *p_mem = (Memory_st *)MEM_BASEADDR;
 
 int main(int argc, char **argv) {
   pcount_enable(0);
@@ -23,12 +23,10 @@ int main(int argc, char **argv) {
   printf("Welcome to CGRA4ML!\n Store wbx at: %p; y:%p; buffers {0:%p,1:%p};\n", &p_mem->w, &p_mem->y, &p_mem->out_buffers[0], &p_mem->out_buffers[1]);
 
   int8_t *w = (int8_t *)MEM_BASEADDR;
-  debug_printf("sizeof(w[0]): %d bytes\n", sizeof(w[0]));
-  for (int ii=0; ii < 10; ii++) debug_printf("w[%d]: %d \n", ii, w[ii]);
+  printf("sizeof(w[0]): %d bytes\n", sizeof(w[0]));
+  for (int ii=0; ii < 10; ii++) printf("w[%d]: %d \n", ii, w[ii]);
 
-  // Run the test
-  model_setup((void*)p_mem, (void*)p_config);
-  model_run((void*)p_mem, (void*)p_config);    // run model and measure time
+  run((void*)p_mem);
   print_output(p_mem);
 
   pcount_enable(0);

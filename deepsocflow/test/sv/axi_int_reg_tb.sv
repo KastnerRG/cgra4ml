@@ -7,6 +7,7 @@ module axi_int_reg_tb;
   localparam  
 
     AXI_WIDTH               = `AXI_WIDTH   ,
+    CONFIG_BASEADDR         = `CONFIG_BASEADDR,
     AXI_ID_WIDTH            = 6,
     AXI_ADDR_WIDTH          = 32,
     AXI_STRB_WIDTH          = (AXI_WIDTH/8),
@@ -172,44 +173,61 @@ module axi_int_reg_tb;
 
   // Testbench logic
 
-
-
-  export "DPI-C" function get_config;
-  export "DPI-C" function set_config;
-  import "DPI-C" context function byte get_byte_a32 (int unsigned addr);
-  import "DPI-C" context function void set_byte_a32 (int unsigned addr, byte data);
-  import "DPI-C" context function chandle get_mp ();
+  import "DPI-C" context function byte fb_c_read_ddr8_addr32 (int unsigned addr);
+  import "DPI-C" context function void fb_c_write_ddr8_addr32 (int unsigned addr, byte data);
+  import "DPI-C" context function chandle fb_get_mp ();
   import "DPI-C" context function void print_output (chandle mpv);
-  import "DPI-C" context function void model_setup(chandle mpv, chandle p_config);
-  import "DPI-C" context function bit  model_run(chandle mpv, chandle p_config);
+  import "DPI-C" context function void run(chandle mpv);
 
-  function automatic int get_config(chandle config_base, input int offset);
-    if (offset < 16)  return dut.CONTROLLER.cfg        [offset   ];
-    else              return dut.CONTROLLER.sdp_ram.RAM[offset-16];
+  export "DPI-C" task fb_task_read_reg32;
+  export "DPI-C" function fb_fn_read_reg32;
+  export "DPI-C" task fb_task_write_reg32;
+  export "DPI-C" function get_clk;
+
+`ifdef VERILATOR
+  import "DPI-C" context function void at_posedge_clk();
+`endif
+
+  function byte get_clk();
+    get_clk = 8'(clk);
   endfunction
 
+  int tmp_get_data;
+  task automatic fb_task_read_reg32(input longint addr);
+    int offset = 32'(addr - 64'(CONFIG_BASEADDR))/4;
+`ifdef VERILATOR
+    at_posedge_clk();
+`endif
+    if (offset < 16)  tmp_get_data = dut.CONTROLLER.cfg        [offset   ];
+    else              tmp_get_data = dut.CONTROLLER.sdp_ram.RAM[offset-16];
+  endtask
 
-  function automatic set_config(chandle config_base, input int offset, input int data);
+  function automatic int fb_fn_read_reg32();
+    return tmp_get_data;
+  endfunction
+
+  task automatic fb_task_write_reg32(input longint addr, input int data);
+    int offset = 32'(addr - 64'(CONFIG_BASEADDR))/4;
     if (offset < 16) dut.CONTROLLER.cfg        [offset   ] <= data;
     else             dut.CONTROLLER.sdp_ram.RAM[offset-16] <= data;
-  endfunction
+  endtask
 
 
   always_ff @(posedge clk) begin : Axi_rw
     if (o_rd) 
       for (int i = 0; i < AXI_WIDTH/8; i++) 
-        i_rdata[i*8 +: 8] <= get_byte_a32((32'(o_raddr) << LSB) + i);
+        i_rdata[i*8 +: 8] <= fb_c_read_ddr8_addr32((32'(o_raddr) << LSB) + i);
     if (o_we) 
       for (int i = 0; i < AXI_WIDTH/8; i++) 
         if (o_wstrb[i]) 
-          set_byte_a32((32'(o_waddr) << LSB) + i, o_wdata[i*8 +: 8]);
+          fb_c_write_ddr8_addr32((32'(o_waddr) << LSB) + i, o_wdata[i*8 +: 8]);
   end
   
   initial begin
     $dumpfile("axi_int_reg_tb.vcd");
     $dumpvars();
-    #1000000us;
-    $finish;
+    // #1000000us;
+    // $finish;
   end
 
   chandle mpv, cp;
@@ -217,13 +235,8 @@ module axi_int_reg_tb;
     rstn = 0;
     repeat(2) @(posedge clk) #10ps;
     rstn = 1;
-    mpv = get_mp();
-    
-    model_setup(mpv, cp);
-    repeat(2) @(posedge clk) #10ps;
-
-    while (model_run(mpv, cp)) @(posedge clk) #10ps;
-
+    mpv = fb_get_mp();
+    run(mpv);
     print_output(mpv);
     $finish;
   end

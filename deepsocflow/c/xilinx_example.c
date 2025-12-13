@@ -15,8 +15,7 @@ int main()
 
     xil_printf("Welcome to DeepSoCFlow!\n Store wbx at: %p; y:%p; buffers {0:%p,1:%p};\n", &p_mem->w, &p_mem->y, &p_mem->out_buffers[0], &p_mem->out_buffers[1]);
 
-    model_setup(p_mem, p_config);
-    model_run_timed(p_mem, p_config, 20);    // run model and measure time
+    model_run_timed(p_mem, 20);    // run model and measure time
     print_output(p_mem);
 
     hardware_cleanup();
