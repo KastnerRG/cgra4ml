@@ -36,7 +36,6 @@ jobs:
             Makefile
             pyproject.toml
             ibex-soc/python-requirements.txt
-            ibex-soc/vendor/google_riscv-dv/requirements.txt
           )
 
           tmp="$(mktemp)"

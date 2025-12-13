@@ -16,7 +16,6 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY ibex-soc/python-requirements.txt /tmp/python-requirements.txt
-COPY ibex-soc/vendor/google_riscv-dv/requirements.txt /tmp/vendor/google_riscv-dv/requirements.txt
 RUN python3 -m pip install --no-cache-dir -r /tmp/python-requirements.txt \
     && rm -rf /tmp/python-requirements.txt /tmp/vendor
 

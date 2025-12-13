@@ -28,6 +28,3 @@ mistletoe>=0.7.2
 # To relax the constraint we either need to do a runtime detection, or switch all
 # users to a newer version.
 premailer < 3.9.0
-
-# Recurse to get any requirements from riscv-dv
--r vendor/google_riscv-dv/requirements.txt
