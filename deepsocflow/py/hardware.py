@@ -36,7 +36,7 @@ class Hardware:
             valid_prob: float = 0.01,
             ready_prob: float = 0.1,
             data_dir: str = 'vectors/',
-            tb_module: str = 'axi_sys_tb',
+            tb_module: str = 'top_tb',
             ):
         """
         Args:
@@ -110,7 +110,13 @@ class Hardware:
 
         self.MODULE_DIR = os.path.normpath(os.path.dirname(deepsocflow.__file__)).replace('\\', '/')
         self.TB_MODULE = tb_module
-        self.SOURCES = glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + glob.glob(f'{self.MODULE_DIR}/test/sv/**/*.v') + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.v", recursive=True) + glob.glob(f"{self.MODULE_DIR}/rtl/**/*.sv", recursive=True) + glob.glob(f"{os.getcwd()}/*.svh")
+        self.SOURCES = \
+            glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + \
+            glob.glob(f'{self.MODULE_DIR}/test/sv/**/*.v') + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/**/*.v", recursive=True) + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/**/*.sv", recursive=True) + \
+            glob.glob(f"{os.getcwd()}/*.svh") + \
+            glob.glob(f'{self.MODULE_DIR}/firebridge/*.sv')
         self.DATA_DIR = data_dir
 
     def export_json(self, path='./hardware.json'):
@@ -214,8 +220,8 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
         print("\n\nCOMPILING...\n\n")
 
         if SIM == 'xsim':
-            assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xsc {self.MODULE_DIR}/c/sim.c --gcc_compile_options -I../ --gcc_compile_options -DSIM').returncode == 0
-            assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xvlog -sv -f ../sources.txt -i ../ -i {self.MODULE_DIR}/rtl').returncode == 0
+            assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xsc {self.MODULE_DIR}/c/sim.c --gcc_compile_options -I../ --gcc_compile_options -I{self.MODULE_DIR}/firebridge/ --gcc_compile_options -DSIM --gcc_compile_options -DFB_MODULE=fb_axi_vip --gcc_compile_options -DTB_MODULE={self.TB_MODULE}').returncode == 0
+            assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xvlog -sv -f ../sources.txt -i ../  -i {self.MODULE_DIR}/rtl/').returncode == 0
             assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xelab {self.TB_MODULE} --snapshot {self.TB_MODULE} -log elaborate.log --debug typical -sv_lib dpi').returncode == 0
 
         if SIM == 'icarus':
@@ -225,9 +231,33 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
 
         if SIM == "verilator":
             trace = '--trace' if TRACE else ''
-            cmd = f'{SIM_PATH}verilator --binary -j 0 -O3 {trace} --relative-includes --top {self.TB_MODULE} -I../ -I../../../deepsocflow/rtl/ -F ../sources.txt -CFLAGS -DSIM -CFLAGS -I../ {self.MODULE_DIR}/c/sim.c -CFLAGS -g --Mdir ./ -Wno-UNOPTFLAT'
+            cmd = [
+                f'{SIM_PATH}verilator',
+                f'--binary -j 0 -O3 {trace} --relative-includes',
+                f'--top {self.TB_MODULE}',
+
+                f'-I../',
+                f'-I{self.MODULE_DIR}/rtl/',
+                f'-F ../sources.txt',
+                f'--Mdir ./ ',
+                
+                f'-CFLAGS -DSIM ',
+                f'-CFLAGS -DTB_MODULE={self.TB_MODULE}',
+                f'-CFLAGS -DFB_MODULE=fb_axi_vip',
+                f'-CFLAGS -I../',
+                f'-CFLAGS -I{self.MODULE_DIR}/firebridge/',
+                f'-CFLAGS -g',
+                
+                f'{self.MODULE_DIR}/c/sim.c',
+                f'{self.MODULE_DIR}/firebridge/fb_top_verilator_wrap.cpp',
+                
+                '--Wno-INITIALDLY',
+                '--Wno-BLKANDNBLK',
+                '--Wno-UNOPTFLAT'
+            ]
+            cmd = ' '.join(cmd)
             print(cmd)
-            assert subprocess.run(cmd.split(' '), cwd='build').returncode == 0
+            assert subprocess.run(cmd.split(), cwd='build').returncode == 0
         print("\n\nSIMULATING...\n\n")
         start = time.time()
 

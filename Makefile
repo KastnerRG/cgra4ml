@@ -10,6 +10,9 @@ smoke_test:
 verify_ibex:
 	cd ibex-soc && python check_output.py
 
+smoke_ibex:
+	make TEST=ibex_test smoke_test iclean ibuild irun verify_ibex
+
 # Docker
 
 USR       := $(shell id -un)

@@ -15,5 +15,6 @@ EXTRA_SRCS :=
 include ${PROGRAM_DIR}/../common/common.mk
 
 INCS += -I${SA_ROOT}/deepsocflow/c
+INCS += -I${SA_ROOT}/deepsocflow/firebridge
 INCS += -I${SA_ROOT}/run/work
 CFLAGS += -DRISCV

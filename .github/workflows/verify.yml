@@ -148,7 +148,7 @@ jobs:
       - name: Pull CI image
         run: docker pull "${GHCR_IMAGE}:${IMAGE_TAG}"
 
-      - name: Ibex SoC regression + output check
+      - name: Ibex SoC + output check
         run: |
           docker run --rm \
             -v "$PWD":/work \
@@ -157,5 +157,5 @@ jobs:
             bash -c '
               fusesoc library add sa_ip "$(pwd -P)" || true
               mkdir -p run/work
-              make TEST=ibex_test smoke_test iclean ibuild irun verify_ibex
+              make smoke_ibex
             '
