@@ -140,15 +140,36 @@ jobs:
             -w /work \
             "${GHCR_IMAGE}:${IMAGE_TAG}" \
             bash -c '
-              mkdir -p run/work
-              make TEST=param_test smoke_test
+              make smoke_test TEST=param_test 
             '
 
-  verify-ibex-soc:
+  unit-tests:
     runs-on: ubuntu-22.04
     needs: [build-and-push-image, smoke-test]
     env:
       IMAGE_TAG: ${{ needs.build-and-push-image.outputs.image_tag }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: example
+            cmd: |
+              mkdir -p run/work
+              cd run/work
+              python ../example.py
+          - name: pointnet
+            cmd: make clean smoke_test TEST=pointnet
+          # - name: resnet50
+          #   cmd: make clean smoke_test TEST=resnet50
+          # - name: resnet18
+          #   cmd: make clean smoke_test TEST=resnet18
+          # - name: jettagger
+          #   cmd: make clean smoke_test TEST=jettagger
+          - name: verify-ibex-soc
+            cmd: |
+              fusesoc library add sa_ip "$(pwd -P)" || true
+              make smoke_ibex
 
     steps:
       - name: Checkout code
@@ -173,14 +194,10 @@ jobs:
       - name: Pull CI image
         run: docker pull "${GHCR_IMAGE}:${IMAGE_TAG}"
 
-      - name: Ibex SoC + output check
+      - name: Run ${{ matrix.name }}
         run: |
           docker run --rm \
             -v "$PWD":/work \
             -w /work \
             "${GHCR_IMAGE}:${IMAGE_TAG}" \
-            bash -c '
-              fusesoc library add sa_ip "$(pwd -P)" || true
-              mkdir -p run/work
-              make smoke_ibex
-            '
+            bash -c '${{ matrix.cmd }}'

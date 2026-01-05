@@ -3,14 +3,21 @@
 # Testing
 
 TEST := param_test
+WORKDIR := run/work
 
-smoke_test:
-	cd run/work && python -m pytest -s ../$(TEST).py
+clean:
+	rm -rf $(WORKDIR)
 
-verify_ibex:
+$(WORKDIR):
+	mkdir -p $(WORKDIR)
+
+smoke_test: $(WORKDIR)
+	cd $(WORKDIR) && python -m pytest -s ../$(TEST).py
+
+verify_ibex: $(WORKDIR)
 	cd ibex-soc && python check_output.py
 
-smoke_ibex:
+smoke_ibex: $(WORKDIR)
 	make TEST=ibex_test smoke_test iclean ibuild irun verify_ibex
 
 # Docker
