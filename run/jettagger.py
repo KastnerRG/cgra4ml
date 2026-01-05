@@ -20,7 +20,7 @@ import tensorflow as tf
 from deepsocflow import *
 
 
-(SIM, SIM_PATH) = ('xsim', "F:/Xilinx/Vivado/2022.2/bin/") if os.name=='nt' else ('verilator', '')
+SIM = 'xsim' if os.name=='nt' else 'verilator'
 np.random.seed(42)
 
 '''
@@ -123,7 +123,7 @@ class UserModel(XModel):
             core=XDense(
                 k_int_bits=0,
                 b_int_bits=0,
-                units=5,
+                units=8,
                 act=XActivation(sys_bits=sys_bits, o_int_bits=0, type='relu', slope=0.125)),
             softmax=True
         )
@@ -203,7 +203,7 @@ def test_dnn_engine(PARAMS):
     VERIFY & EXPORT
     '''
     export_inference(loaded_model, hw, hw.ROWS)
-    verify_inference(loaded_model, hw, SIM=SIM, SIM_PATH=SIM_PATH)
+    verify_inference(loaded_model, hw, SIM=SIM)
 
     d_perf = predict_model_performance(hw)
     pp = pprint.PrettyPrinter(indent=4)

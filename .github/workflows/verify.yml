@@ -160,12 +160,12 @@ jobs:
               python ../example.py
           - name: pointnet
             cmd: make clean smoke_test TEST=pointnet
-          # - name: resnet50
-          #   cmd: make clean smoke_test TEST=resnet50
+          - name: resnet50
+            cmd: make clean smoke_test TEST=resnet50
           # - name: resnet18
           #   cmd: make clean smoke_test TEST=resnet18
-          # - name: jettagger
-          #   cmd: make clean smoke_test TEST=jettagger
+          - name: jettagger
+            cmd: make clean smoke_test TEST=jettagger
           - name: verify-ibex-soc
             cmd: |
               fusesoc library add sa_ip "$(pwd -P)" || true

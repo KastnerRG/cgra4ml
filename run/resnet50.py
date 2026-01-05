@@ -17,7 +17,7 @@ import pprint
 
 from deepsocflow import *
 
-(SIM, SIM_PATH) = ('xsim', "F:/Xilinx/Vivado/2022.2/bin/") if os.name=='nt' else ('verilator', '')
+SIM = 'xsim' if os.name=='nt' else 'verilator'
 
 '''
 Dataset
@@ -558,7 +558,7 @@ def test_dnn_engine(PARAMS):
     VERIFY & EXPORT
     '''
     export_inference(loaded_model, hw, batch_size=hw.ROWS)
-    verify_inference(loaded_model, hw, SIM=SIM, SIM_PATH=SIM_PATH)
+    verify_inference(loaded_model, hw, SIM=SIM)
 
     d_perf = predict_model_performance(hw)
     pp = pprint.PrettyPrinter(indent=4)
