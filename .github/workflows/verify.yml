@@ -133,7 +133,7 @@ jobs:
       - name: Pull CI image
         run: docker pull "${GHCR_IMAGE}:${IMAGE_TAG}"
 
-      - name: Smoke test (param_test)
+      - name: Smoke test (example.py)
         run: |
           docker run --rm \
             -v "$PWD":/work \
@@ -142,10 +142,12 @@ jobs:
             "${GHCR_IMAGE}:${IMAGE_TAG}" \
             bash -c '
               python -m pip install -e /work --no-deps
-              make smoke_test TEST=param_test 
+              mkdir -p run/work
+              cd run/work
+              python ../example.py
             '
 
-  unit-tests:
+  test:
     runs-on: ubuntu-22.04
     needs: [build-and-push-image, smoke-test]
     env:
@@ -155,19 +157,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: example
-            cmd: |
-              mkdir -p run/work
-              cd run/work
-              python ../example.py
+          - name: param_test
+            cmd: make smoke_test TEST=param_test
           - name: pointnet
-            cmd: make clean smoke_test TEST=pointnet
+            cmd: make smoke_test TEST=pointnet
           - name: resnet50
-            cmd: make clean smoke_test TEST=resnet50
+            cmd: make smoke_test TEST=resnet50
           # - name: resnet18
-          #   cmd: make clean smoke_test TEST=resnet18
+          #   cmd: make smoke_test TEST=resnet18
           - name: jettagger
-            cmd: make clean smoke_test TEST=jettagger
+            cmd: make smoke_test TEST=jettagger
           - name: verify-ibex-soc
             cmd: |
               fusesoc library add sa_ip "$(pwd -P)" || true
