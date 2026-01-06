@@ -137,9 +137,11 @@ jobs:
         run: |
           docker run --rm \
             -v "$PWD":/work \
+            -e PYTHONPATH=/work \
             -w /work \
             "${GHCR_IMAGE}:${IMAGE_TAG}" \
             bash -c '
+              python -m pip install -e /work --no-deps
               make smoke_test TEST=param_test 
             '
 
@@ -197,6 +199,7 @@ jobs:
       - name: Run ${{ matrix.name }}
         run: |
           docker run --rm \
+            -e PYTHONPATH=/work \
             -v "$PWD":/work \
             -w /work \
             "${GHCR_IMAGE}:${IMAGE_TAG}" \
