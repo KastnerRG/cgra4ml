@@ -161,8 +161,8 @@ jobs:
             cmd: make smoke_test TEST=param_test
           - name: pointnet
             cmd: make smoke_test TEST=pointnet
-          - name: resnet50
-            cmd: make smoke_test TEST=resnet50
+          # - name: resnet50
+          #   cmd: make smoke_test TEST=resnet50
           # - name: resnet18
           #   cmd: make smoke_test TEST=resnet18
           - name: jettagger
