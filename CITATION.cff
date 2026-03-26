@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Abarajithan"
+  given-names: "G."
+- family-names: "Ma"
+  given-names: "Zhenghua"
+- family-names: "Munasinghe"
+  given-names: "Ravindu"
+- family-names: "Restuccia"
+  given-names: "Francesco"
+- family-names: "Kastner"
+  given-names: "Ryan"
+title: "CGRA4ML: A Hardware/Software Framework to Implement Neural Networks for Scientific Edge Computing"
+doi: "10.1145/3801097"
+date-released: 2026-03-01
+url: "https://doi.org/10.1145/3801097"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Abarajithan"
+    given-names: "G."
+  - family-names: "Ma"
+    given-names: "Zhenghua"
+  - family-names: "Munasinghe"
+    given-names: "Ravidu"
+  - family-names: "Restuccia"
+    given-names: "Francesco"
+  - family-names: "Kastner"
+    given-names: "Ryan"
+  doi: "10.1145/3801097"
+  journal: "ACM Transactions on Reconfigurable Technology and Systems"
+  title: "CGRA4ML: A Hardware/Software Framework to Implement Neural Networks for Scientific Edge Computing"
+  year: 2026
