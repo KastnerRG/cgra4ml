@@ -112,6 +112,24 @@ source ../../tcl/asic/pnr.tcl
 <p align="center"> <img src="docs/infra.png" width="600"> </p>
 
 
+## Citation
+
+If you use CGRA4ML in your research, please cite our paper:
+
+```bibtex
+@article{10.1145/3801097,
+  author = {Abarajithan, G. and Ma, Zhenghua and Munasinghe, Ravidu and Restuccia, Francesco and Kastner, Ryan},
+  title = {CGRA4ML: A Hardware/Software Framework to Implement Neural Networks for Scientific Edge Computing},
+  year = {2026},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  issn = {1936-7406},
+  url = {https://doi.org/10.1145/3801097},
+  doi = {10.1145/3801097},
+  journal = {ACM Trans. Reconfigurable Technol. Syst.},
+}
+```
+
 ## Team Members
 
 - Aba
