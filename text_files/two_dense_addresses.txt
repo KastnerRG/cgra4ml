@@ -1,0 +1,1514 @@
+cd run/work && python -m pytest -s ../two_dense.py
+============================= test session starts ==============================
+platform linux -- Python 3.11.5, pytest-7.4.0, pluggy-1.6.0
+rootdir: /work/run
+plugins: typeguard-2.13.3
+0 x: (None, 16), prev:None
+1 x: (None, 16), prev:0
+collected 1 item
+
+../two_dense.py make[1]: Entering directory '/work/run/work/build'
+ccache g++  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -Os -c -o sim.o /usr/local/lib/python3.11/site-packages/deepsocflow/c/sim.c
+ccache g++  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -Os -c -o fb_top_verilator_wrap.o /usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/fb_top_verilator_wrap.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -c -o verilated.o /usr/local/share/verilator/include/verilated.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -c -o verilated_dpi.o /usr/local/share/verilator/include/verilated_dpi.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -c -o verilated_timing.o /usr/local/share/verilator/include/verilated_timing.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -c -o verilated_threads.o /usr/local/share/verilator/include/verilated_threads.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -x c++-header Vtop_tb__pch.h -o Vtop_tb__pch.h.fast.gch
+ccache g++   -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -x c++-header Vtop_tb__pch.h -o Vtop_tb__pch.h.slow.gch
+ccache g++   -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.slow -c -o Vtop_tb__ConstPool_0.o Vtop_tb__ConstPool_0.cpp
+ccache g++   -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.slow -c -o Vtop_tb___024root__Slow.o Vtop_tb___024root__Slow.cpp
+ccache g++   -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.slow -c -o Vtop_tb___024root__DepSet_hf8625a3e__0__Slow.o Vtop_tb___024root__DepSet_hf8625a3e__0__Slow.cpp
+ccache g++   -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.slow -c -o Vtop_tb___024root__DepSet_h6b5a2dfc__0__Slow.o Vtop_tb___024root__DepSet_h6b5a2dfc__0__Slow.cpp
+ccache g++   -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.slow -c -o Vtop_tb_top_tb__Slow.o Vtop_tb_top_tb__Slow.cpp
+ccache g++   -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.slow -c -o Vtop_tb_top_tb__DepSet_h13c6320b__0__Slow.o Vtop_tb_top_tb__DepSet_h13c6320b__0__Slow.cpp
+ccache g++   -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.slow -c -o Vtop_tb_top_tb__DepSet_h13c6320b__1__Slow.o Vtop_tb_top_tb__DepSet_h13c6320b__1__Slow.cpp
+ccache g++   -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.slow -c -o Vtop_tb_top_tb__DepSet_h82b6562f__0__Slow.o Vtop_tb_top_tb__DepSet_h82b6562f__0__Slow.cpp
+ccache g++   -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.slow -c -o Vtop_tb___024unit__Slow.o Vtop_tb___024unit__Slow.cpp
+ccache g++   -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.slow -c -o Vtop_tb___024unit__DepSet_hf81b5aed__0__Slow.o Vtop_tb___024unit__DepSet_hf81b5aed__0__Slow.cpp
+ccache g++   -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.slow -c -o Vtop_tb_fb_axi_vip__pi1__Slow.o Vtop_tb_fb_axi_vip__pi1__Slow.cpp
+ccache g++   -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.slow -c -o Vtop_tb_fb_axi_vip__pi1__DepSet_h16807b15__0__Slow.o Vtop_tb_fb_axi_vip__pi1__DepSet_h16807b15__0__Slow.cpp
+ccache g++   -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.slow -c -o Vtop_tb_fb_axi_vip__pi1__DepSet_h7df80d15__0__Slow.o Vtop_tb_fb_axi_vip__pi1__DepSet_h7df80d15__0__Slow.cpp
+ccache g++   -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.slow -c -o Vtop_tb__Syms.o Vtop_tb__Syms.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.fast -c -o Vtop_tb.o Vtop_tb.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.fast -c -o Vtop_tb__Dpi_Export__0.o Vtop_tb__Dpi_Export__0.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.fast -c -o Vtop_tb___024root__DepSet_hf8625a3e__0.o Vtop_tb___024root__DepSet_hf8625a3e__0.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.fast -c -o Vtop_tb___024root__DepSet_h6b5a2dfc__0.o Vtop_tb___024root__DepSet_h6b5a2dfc__0.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.fast -c -o Vtop_tb_top_tb__DepSet_h13c6320b__0.o Vtop_tb_top_tb__DepSet_h13c6320b__0.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.fast -c -o Vtop_tb_top_tb__DepSet_h13c6320b__1.o Vtop_tb_top_tb__DepSet_h13c6320b__1.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.fast -c -o Vtop_tb_top_tb__DepSet_h13c6320b__2.o Vtop_tb_top_tb__DepSet_h13c6320b__2.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.fast -c -o Vtop_tb_top_tb__DepSet_h13c6320b__3.o Vtop_tb_top_tb__DepSet_h13c6320b__3.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.fast -c -o Vtop_tb_top_tb__DepSet_h82b6562f__0.o Vtop_tb_top_tb__DepSet_h82b6562f__0.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.fast -c -o Vtop_tb_top_tb__DepSet_h82b6562f__1.o Vtop_tb_top_tb__DepSet_h82b6562f__1.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.fast -c -o Vtop_tb_fb_axi_vip__pi1__DepSet_h16807b15__0.o Vtop_tb_fb_axi_vip__pi1__DepSet_h16807b15__0.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.fast -c -o Vtop_tb_fb_axi_vip__pi1__DepSet_h7df80d15__0.o Vtop_tb_fb_axi_vip__pi1__DepSet_h7df80d15__0.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.fast -c -o Vtop_tb__main.o Vtop_tb__main.cpp
+ccache g++ -Os  -I.  -MMD -I/usr/local/share/verilator/include -I/usr/local/share/verilator/include/vltstd -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-shadow -Wno-sign-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable    -DSIM -DTB_MODULE=top_tb -DFB_MODULE=fb_axi_vip -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -g -DVL_TIME_CONTEXT   -fcoroutines -include Vtop_tb__pch.h.fast -c -o Vtop_tb__Dpi.o Vtop_tb__Dpi.cpp
+echo "" > Vtop_tb__ALL.verilator_deplist.tmp
+Archive ar -rcs Vtop_tb__ALL.a Vtop_tb.o Vtop_tb__Dpi_Export__0.o Vtop_tb___024root__DepSet_hf8625a3e__0.o Vtop_tb___024root__DepSet_h6b5a2dfc__0.o Vtop_tb_top_tb__DepSet_h13c6320b__0.o Vtop_tb_top_tb__DepSet_h13c6320b__1.o Vtop_tb_top_tb__DepSet_h13c6320b__2.o Vtop_tb_top_tb__DepSet_h13c6320b__3.o Vtop_tb_top_tb__DepSet_h82b6562f__0.o Vtop_tb_top_tb__DepSet_h82b6562f__1.o Vtop_tb_fb_axi_vip__pi1__DepSet_h16807b15__0.o Vtop_tb_fb_axi_vip__pi1__DepSet_h7df80d15__0.o Vtop_tb__main.o Vtop_tb__Dpi.o Vtop_tb__ConstPool_0.o Vtop_tb___024root__Slow.o Vtop_tb___024root__DepSet_hf8625a3e__0__Slow.o Vtop_tb___024root__DepSet_h6b5a2dfc__0__Slow.o Vtop_tb_top_tb__Slow.o Vtop_tb_top_tb__DepSet_h13c6320b__0__Slow.o Vtop_tb_top_tb__DepSet_h13c6320b__1__Slow.o Vtop_tb_top_tb__DepSet_h82b6562f__0__Slow.o Vtop_tb___024unit__Slow.o Vtop_tb___024unit__DepSet_hf81b5aed__0__Slow.o Vtop_tb_fb_axi_vip__pi1__Slow.o Vtop_tb_fb_axi_vip__pi1__DepSet_h16807b15__0__Slow.o Vtop_tb_fb_axi_vip__pi1__DepSet_h7df80d15__0__Slow.o Vtop_tb__Syms.o
+g++    sim.o fb_top_verilator_wrap.o verilated.o verilated_dpi.o verilated_timing.o verilated_threads.o Vtop_tb__ALL.a    -pthread -lpthread -latomic   -o Vtop_tb
+rm Vtop_tb__ALL.verilator_deplist.tmp
+make[1]: Leaving directory '/work/run/work/build'
+- V e r i l a t i o n   R e p o r t: Verilator 5.024 2024-04-05 rev v5.024
+- Verilator: Built from 17.025 MB sources in 53 modules, into 7.811 MB in 28 C++ files needing 0.006 MB
+- Verilator: Walltime 3.237 s (elab=0.143, cvt=1.337, bld=1.545); cpu 0.000 s on 20 threads; alloced 134.520 MB
+TOP.top_tb.TOP.PIXEL_DMA AXI_MAX_BURST_LEN=16
+TOP.top_tb.TOP.WEIGHTS_DMA AXI_MAX_BURST_LEN=16
+-Info: /usr/local/lib/python3.11/site-packages/deepsocflow/test/sv/top_tb.sv:199: $dumpvar ignored, as Verilated without --trace
+Starting model_setup()
+DEBUG: Reading from file ../vectors/wbx.bin 
+[model_setup] bundle 0  weights_base=0x63d74d03e520  w_bpt_p0=256 bytes  w_bpt=256 bytes
+[model_setup] bundle 1  weights_base=0x63d74d03e520  w_bpt_p0=256 bytes  w_bpt=256 bytes
+model_setup done
+
+[BUNDLE 0] in_buf=-1  out_buf=0  add_in=-1  add_out=-1  p=1  t=1  n=1  h=16  w=1  co=16
+  READ  from: 0x63d74d03e720  (mp->x (raw input))
+  WRITE to:   0x63d74d03f7a0  (mp->out_buffers[0])
+  mp->x=0x63d74d03e720  mp->out_buffers[0]=0x63d74d03f7a0  mp->w=0x63d74d03e520  mp->y=0x63d74d03e7a0
+  [b0 ip=0 it=0 in=0 il=0 iw=0] ocm_bank -> 0  o_bpt=1024 bytes  ocm_addr=0x63d74d03eba0
+    [OCM READ] bank=0 sram_addr=0  elem_addr=0x63d74d03eba0  raw_val=413  -> y[0,0,0,0]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,0,0,0]  -> tiled p=0 l=0 cm=0 r=0..0  yr_sweep=1  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=0  byte_offset=0  nibble=0  dest_addr=0x63d74d03f7a0  packed_val=0x03  val=3
+    [OCM READ] bank=0 sram_addr=1  elem_addr=0x63d74d03eba4  raw_val=-541  -> y[0,1,0,0]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,1,0,0]  -> tiled p=0 l=0 cm=0 r=1..1  yr_sweep=2  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=1  byte_offset=0  nibble=1  dest_addr=0x63d74d03f7a0  packed_val=0xc0  val=-4
+    [OCM READ] bank=0 sram_addr=2  elem_addr=0x63d74d03eba8  raw_val=-651  -> y[0,2,0,0]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,2,0,0]  -> tiled p=0 l=0 cm=0 r=2..2  yr_sweep=3  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=2  byte_offset=1  nibble=0  dest_addr=0x63d74d03f7a1  packed_val=0x0b  val=-5
+    [OCM READ] bank=0 sram_addr=3  elem_addr=0x63d74d03ebac  raw_val=-133  -> y[0,3,0,0]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,3,0,0]  -> tiled p=0 l=0 cm=0 r=3..3  yr_sweep=4  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=3  byte_offset=1  nibble=1  dest_addr=0x63d74d03f7a1  packed_val=0xf0  val=-1
+    [OCM READ] bank=0 sram_addr=4  elem_addr=0x63d74d03ebb0  raw_val=592  -> y[0,4,0,0]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,4,0,0]  -> tiled p=0 l=0 cm=0 r=4..4  yr_sweep=5  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=4  byte_offset=2  nibble=0  dest_addr=0x63d74d03f7a2  packed_val=0x05  val=5
+    [OCM READ] bank=0 sram_addr=5  elem_addr=0x63d74d03ebb4  raw_val=333  -> y[0,5,0,0]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,5,0,0]  -> tiled p=0 l=0 cm=0 r=5..5  yr_sweep=6  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=5  byte_offset=2  nibble=1  dest_addr=0x63d74d03f7a2  packed_val=0x30  val=3
+    [OCM READ] bank=0 sram_addr=6  elem_addr=0x63d74d03ebb8  raw_val=-583  -> y[0,6,0,0]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,6,0,0]  -> tiled p=0 l=0 cm=0 r=6..6  yr_sweep=7  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=6  byte_offset=3  nibble=0  dest_addr=0x63d74d03f7a3  packed_val=0x0b  val=-5
+    [OCM READ] bank=0 sram_addr=7  elem_addr=0x63d74d03ebbc  raw_val=-898  -> y[0,7,0,0]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,7,0,0]  -> tiled p=0 l=0 cm=0 r=7..7  yr_sweep=8  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=7  byte_offset=3  nibble=1  dest_addr=0x63d74d03f7a3  packed_val=0x90  val=-7
+    [OCM READ] bank=0 sram_addr=8  elem_addr=0x63d74d03ebc0  raw_val=-133  -> y[0,8,0,0]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,8,0,0]  -> tiled p=0 l=0 cm=0 r=8..8  yr_sweep=9  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=8  byte_offset=4  nibble=0  dest_addr=0x63d74d03f7a4  packed_val=0x0f  val=-1
+    [OCM READ] bank=0 sram_addr=9  elem_addr=0x63d74d03ebc4  raw_val=297  -> y[0,9,0,0]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,9,0,0]  -> tiled p=0 l=0 cm=0 r=9..9  yr_sweep=10  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=9  byte_offset=4  nibble=1  dest_addr=0x63d74d03f7a4  packed_val=0x20  val=2
+    [OCM READ] bank=0 sram_addr=10  elem_addr=0x63d74d03ebc8  raw_val=-440  -> y[0,10,0,0]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,10,0,0]  -> tiled p=0 l=0 cm=0 r=10..10  yr_sweep=11  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=10  byte_offset=5  nibble=0  dest_addr=0x63d74d03f7a5  packed_val=0x0d  val=-3
+    [OCM READ] bank=0 sram_addr=11  elem_addr=0x63d74d03ebcc  raw_val=-679  -> y[0,11,0,0]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,11,0,0]  -> tiled p=0 l=0 cm=0 r=11..11  yr_sweep=12  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=11  byte_offset=5  nibble=1  dest_addr=0x63d74d03f7a5  packed_val=0xb0  val=-5
+    [OCM READ] bank=0 sram_addr=12  elem_addr=0x63d74d03ebd0  raw_val=69  -> y[0,12,0,0]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,12,0,0]  -> tiled p=0 l=0 cm=0 r=12..12  yr_sweep=13  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=12  byte_offset=6  nibble=0  dest_addr=0x63d74d03f7a6  packed_val=0x01  val=1
+    [OCM READ] bank=0 sram_addr=13  elem_addr=0x63d74d03ebd4  raw_val=-233  -> y[0,13,0,0]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,13,0,0]  -> tiled p=0 l=0 cm=0 r=13..13  yr_sweep=14  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=13  byte_offset=6  nibble=1  dest_addr=0x63d74d03f7a6  packed_val=0xe0  val=-2
+    [OCM READ] bank=0 sram_addr=14  elem_addr=0x63d74d03ebd8  raw_val=-939  -> y[0,14,0,0]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,14,0,0]  -> tiled p=0 l=0 cm=0 r=14..14  yr_sweep=15  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=14  byte_offset=7  nibble=0  dest_addr=0x63d74d03f7a7  packed_val=0x09  val=-7
+    [OCM READ] bank=0 sram_addr=15  elem_addr=0x63d74d03ebdc  raw_val=-29  -> y[0,15,0,0]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,15,0,0]  -> tiled p=0 l=0 cm=0 r=15..15  yr_sweep=16  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=15  byte_offset=7  nibble=1  dest_addr=0x63d74d03f7a7  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=16  elem_addr=0x63d74d03ebe0  raw_val=-1043  -> y[0,0,0,1]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,0,0,1]  -> tiled p=0 l=0 cm=1 r=0..0  yr_sweep=1  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=16  byte_offset=8  nibble=0  dest_addr=0x63d74d03f7a8  packed_val=0x08  val=-8
+    [OCM READ] bank=0 sram_addr=17  elem_addr=0x63d74d03ebe4  raw_val=-1900  -> y[0,1,0,1]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,1,0,1]  -> tiled p=0 l=0 cm=1 r=1..1  yr_sweep=2  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=17  byte_offset=8  nibble=1  dest_addr=0x63d74d03f7a8  packed_val=0x80  val=-8
+    [OCM READ] bank=0 sram_addr=18  elem_addr=0x63d74d03ebe8  raw_val=-1530  -> y[0,2,0,1]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,2,0,1]  -> tiled p=0 l=0 cm=1 r=2..2  yr_sweep=3  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=18  byte_offset=9  nibble=0  dest_addr=0x63d74d03f7a9  packed_val=0x08  val=-8
+    [OCM READ] bank=0 sram_addr=19  elem_addr=0x63d74d03ebec  raw_val=-838  -> y[0,3,0,1]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,3,0,1]  -> tiled p=0 l=0 cm=1 r=3..3  yr_sweep=4  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=19  byte_offset=9  nibble=1  dest_addr=0x63d74d03f7a9  packed_val=0x90  val=-7
+    [OCM READ] bank=0 sram_addr=20  elem_addr=0x63d74d03ebf0  raw_val=-726  -> y[0,4,0,1]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,4,0,1]  -> tiled p=0 l=0 cm=1 r=4..4  yr_sweep=5  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=20  byte_offset=10  nibble=0  dest_addr=0x63d74d03f7aa  packed_val=0x0a  val=-6
+    [OCM READ] bank=0 sram_addr=21  elem_addr=0x63d74d03ebf4  raw_val=-1154  -> y[0,5,0,1]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,5,0,1]  -> tiled p=0 l=0 cm=1 r=5..5  yr_sweep=6  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=21  byte_offset=10  nibble=1  dest_addr=0x63d74d03f7aa  packed_val=0x80  val=-8
+    [OCM READ] bank=0 sram_addr=22  elem_addr=0x63d74d03ebf8  raw_val=-698  -> y[0,6,0,1]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,6,0,1]  -> tiled p=0 l=0 cm=1 r=6..6  yr_sweep=7  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=22  byte_offset=11  nibble=0  dest_addr=0x63d74d03f7ab  packed_val=0x0b  val=-5
+    [OCM READ] bank=0 sram_addr=23  elem_addr=0x63d74d03ebfc  raw_val=-880  -> y[0,7,0,1]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,7,0,1]  -> tiled p=0 l=0 cm=1 r=7..7  yr_sweep=8  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=23  byte_offset=11  nibble=1  dest_addr=0x63d74d03f7ab  packed_val=0x90  val=-7
+    [OCM READ] bank=0 sram_addr=24  elem_addr=0x63d74d03ec00  raw_val=-1317  -> y[0,8,0,1]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,8,0,1]  -> tiled p=0 l=0 cm=1 r=8..8  yr_sweep=9  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=24  byte_offset=12  nibble=0  dest_addr=0x63d74d03f7ac  packed_val=0x08  val=-8
+    [OCM READ] bank=0 sram_addr=25  elem_addr=0x63d74d03ec04  raw_val=-56  -> y[0,9,0,1]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,9,0,1]  -> tiled p=0 l=0 cm=1 r=9..9  yr_sweep=10  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=25  byte_offset=12  nibble=1  dest_addr=0x63d74d03f7ac  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=26  elem_addr=0x63d74d03ec08  raw_val=-848  -> y[0,10,0,1]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,10,0,1]  -> tiled p=0 l=0 cm=1 r=10..10  yr_sweep=11  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=26  byte_offset=13  nibble=0  dest_addr=0x63d74d03f7ad  packed_val=0x09  val=-7
+    [OCM READ] bank=0 sram_addr=27  elem_addr=0x63d74d03ec0c  raw_val=-961  -> y[0,11,0,1]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,11,0,1]  -> tiled p=0 l=0 cm=1 r=11..11  yr_sweep=12  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=27  byte_offset=13  nibble=1  dest_addr=0x63d74d03f7ad  packed_val=0x80  val=-8
+    [OCM READ] bank=0 sram_addr=28  elem_addr=0x63d74d03ec10  raw_val=-1236  -> y[0,12,0,1]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,12,0,1]  -> tiled p=0 l=0 cm=1 r=12..12  yr_sweep=13  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=28  byte_offset=14  nibble=0  dest_addr=0x63d74d03f7ae  packed_val=0x08  val=-8
+    [OCM READ] bank=0 sram_addr=29  elem_addr=0x63d74d03ec14  raw_val=-358  -> y[0,13,0,1]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,13,0,1]  -> tiled p=0 l=0 cm=1 r=13..13  yr_sweep=14  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=29  byte_offset=14  nibble=1  dest_addr=0x63d74d03f7ae  packed_val=0xd0  val=-3
+    [OCM READ] bank=0 sram_addr=30  elem_addr=0x63d74d03ec18  raw_val=-801  -> y[0,14,0,1]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,14,0,1]  -> tiled p=0 l=0 cm=1 r=14..14  yr_sweep=15  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=30  byte_offset=15  nibble=0  dest_addr=0x63d74d03f7af  packed_val=0x0a  val=-6
+    [OCM READ] bank=0 sram_addr=31  elem_addr=0x63d74d03ec1c  raw_val=-95  -> y[0,15,0,1]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,15,0,1]  -> tiled p=0 l=0 cm=1 r=15..15  yr_sweep=16  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=31  byte_offset=15  nibble=1  dest_addr=0x63d74d03f7af  packed_val=0xf0  val=-1
+    [OCM READ] bank=0 sram_addr=32  elem_addr=0x63d74d03ec20  raw_val=502  -> y[0,0,0,2]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,0,0,2]  -> tiled p=0 l=0 cm=2 r=0..0  yr_sweep=1  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=32  byte_offset=16  nibble=0  dest_addr=0x63d74d03f7b0  packed_val=0x04  val=4
+    [OCM READ] bank=0 sram_addr=33  elem_addr=0x63d74d03ec24  raw_val=197  -> y[0,1,0,2]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,1,0,2]  -> tiled p=0 l=0 cm=2 r=1..1  yr_sweep=2  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=33  byte_offset=16  nibble=1  dest_addr=0x63d74d03f7b0  packed_val=0x20  val=2
+    [OCM READ] bank=0 sram_addr=34  elem_addr=0x63d74d03ec28  raw_val=68  -> y[0,2,0,2]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,2,0,2]  -> tiled p=0 l=0 cm=2 r=2..2  yr_sweep=3  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=34  byte_offset=17  nibble=0  dest_addr=0x63d74d03f7b1  packed_val=0x01  val=1
+    [OCM READ] bank=0 sram_addr=35  elem_addr=0x63d74d03ec2c  raw_val=51  -> y[0,3,0,2]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,3,0,2]  -> tiled p=0 l=0 cm=2 r=3..3  yr_sweep=4  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=35  byte_offset=17  nibble=1  dest_addr=0x63d74d03f7b1  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=36  elem_addr=0x63d74d03ec30  raw_val=-579  -> y[0,4,0,2]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,4,0,2]  -> tiled p=0 l=0 cm=2 r=4..4  yr_sweep=5  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=36  byte_offset=18  nibble=0  dest_addr=0x63d74d03f7b2  packed_val=0x0b  val=-5
+    [OCM READ] bank=0 sram_addr=37  elem_addr=0x63d74d03ec34  raw_val=-47  -> y[0,5,0,2]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,5,0,2]  -> tiled p=0 l=0 cm=2 r=5..5  yr_sweep=6  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=37  byte_offset=18  nibble=1  dest_addr=0x63d74d03f7b2  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=38  elem_addr=0x63d74d03ec38  raw_val=-572  -> y[0,6,0,2]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,6,0,2]  -> tiled p=0 l=0 cm=2 r=6..6  yr_sweep=7  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=38  byte_offset=19  nibble=0  dest_addr=0x63d74d03f7b3  packed_val=0x0c  val=-4
+    [OCM READ] bank=0 sram_addr=39  elem_addr=0x63d74d03ec3c  raw_val=524  -> y[0,7,0,2]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,7,0,2]  -> tiled p=0 l=0 cm=2 r=7..7  yr_sweep=8  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=39  byte_offset=19  nibble=1  dest_addr=0x63d74d03f7b3  packed_val=0x40  val=4
+    [OCM READ] bank=0 sram_addr=40  elem_addr=0x63d74d03ec40  raw_val=111  -> y[0,8,0,2]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,8,0,2]  -> tiled p=0 l=0 cm=2 r=8..8  yr_sweep=9  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=40  byte_offset=20  nibble=0  dest_addr=0x63d74d03f7b4  packed_val=0x01  val=1
+    [OCM READ] bank=0 sram_addr=41  elem_addr=0x63d74d03ec44  raw_val=-476  -> y[0,9,0,2]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,9,0,2]  -> tiled p=0 l=0 cm=2 r=9..9  yr_sweep=10  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=41  byte_offset=20  nibble=1  dest_addr=0x63d74d03f7b4  packed_val=0xc0  val=-4
+    [OCM READ] bank=0 sram_addr=42  elem_addr=0x63d74d03ec48  raw_val=391  -> y[0,10,0,2]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,10,0,2]  -> tiled p=0 l=0 cm=2 r=10..10  yr_sweep=11  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=42  byte_offset=21  nibble=0  dest_addr=0x63d74d03f7b5  packed_val=0x03  val=3
+    [OCM READ] bank=0 sram_addr=43  elem_addr=0x63d74d03ec4c  raw_val=-604  -> y[0,11,0,2]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,11,0,2]  -> tiled p=0 l=0 cm=2 r=11..11  yr_sweep=12  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=43  byte_offset=21  nibble=1  dest_addr=0x63d74d03f7b5  packed_val=0xb0  val=-5
+    [OCM READ] bank=0 sram_addr=44  elem_addr=0x63d74d03ec50  raw_val=389  -> y[0,12,0,2]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,12,0,2]  -> tiled p=0 l=0 cm=2 r=12..12  yr_sweep=13  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=44  byte_offset=22  nibble=0  dest_addr=0x63d74d03f7b6  packed_val=0x03  val=3
+    [OCM READ] bank=0 sram_addr=45  elem_addr=0x63d74d03ec54  raw_val=832  -> y[0,13,0,2]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,13,0,2]  -> tiled p=0 l=0 cm=2 r=13..13  yr_sweep=14  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=45  byte_offset=22  nibble=1  dest_addr=0x63d74d03f7b6  packed_val=0x60  val=6
+    [OCM READ] bank=0 sram_addr=46  elem_addr=0x63d74d03ec58  raw_val=517  -> y[0,14,0,2]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,14,0,2]  -> tiled p=0 l=0 cm=2 r=14..14  yr_sweep=15  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=46  byte_offset=23  nibble=0  dest_addr=0x63d74d03f7b7  packed_val=0x04  val=4
+    [OCM READ] bank=0 sram_addr=47  elem_addr=0x63d74d03ec5c  raw_val=459  -> y[0,15,0,2]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,15,0,2]  -> tiled p=0 l=0 cm=2 r=15..15  yr_sweep=16  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=47  byte_offset=23  nibble=1  dest_addr=0x63d74d03f7b7  packed_val=0x40  val=4
+    [OCM READ] bank=0 sram_addr=48  elem_addr=0x63d74d03ec60  raw_val=43  -> y[0,0,0,3]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,0,0,3]  -> tiled p=0 l=0 cm=3 r=0..0  yr_sweep=1  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=48  byte_offset=24  nibble=0  dest_addr=0x63d74d03f7b8  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=49  elem_addr=0x63d74d03ec64  raw_val=490  -> y[0,1,0,3]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,1,0,3]  -> tiled p=0 l=0 cm=3 r=1..1  yr_sweep=2  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=49  byte_offset=24  nibble=1  dest_addr=0x63d74d03f7b8  packed_val=0x40  val=4
+    [OCM READ] bank=0 sram_addr=50  elem_addr=0x63d74d03ec68  raw_val=416  -> y[0,2,0,3]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,2,0,3]  -> tiled p=0 l=0 cm=3 r=2..2  yr_sweep=3  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=50  byte_offset=25  nibble=0  dest_addr=0x63d74d03f7b9  packed_val=0x03  val=3
+    [OCM READ] bank=0 sram_addr=51  elem_addr=0x63d74d03ec6c  raw_val=-189  -> y[0,3,0,3]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,3,0,3]  -> tiled p=0 l=0 cm=3 r=3..3  yr_sweep=4  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=51  byte_offset=25  nibble=1  dest_addr=0x63d74d03f7b9  packed_val=0xf0  val=-1
+    [OCM READ] bank=0 sram_addr=52  elem_addr=0x63d74d03ec70  raw_val=-105  -> y[0,4,0,3]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,4,0,3]  -> tiled p=0 l=0 cm=3 r=4..4  yr_sweep=5  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=52  byte_offset=26  nibble=0  dest_addr=0x63d74d03f7ba  packed_val=0x0f  val=-1
+    [OCM READ] bank=0 sram_addr=53  elem_addr=0x63d74d03ec74  raw_val=-22  -> y[0,5,0,3]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,5,0,3]  -> tiled p=0 l=0 cm=3 r=5..5  yr_sweep=6  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=53  byte_offset=26  nibble=1  dest_addr=0x63d74d03f7ba  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=54  elem_addr=0x63d74d03ec78  raw_val=18  -> y[0,6,0,3]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,6,0,3]  -> tiled p=0 l=0 cm=3 r=6..6  yr_sweep=7  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=54  byte_offset=27  nibble=0  dest_addr=0x63d74d03f7bb  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=55  elem_addr=0x63d74d03ec7c  raw_val=570  -> y[0,7,0,3]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,7,0,3]  -> tiled p=0 l=0 cm=3 r=7..7  yr_sweep=8  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=55  byte_offset=27  nibble=1  dest_addr=0x63d74d03f7bb  packed_val=0x40  val=4
+    [OCM READ] bank=0 sram_addr=56  elem_addr=0x63d74d03ec80  raw_val=126  -> y[0,8,0,3]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,8,0,3]  -> tiled p=0 l=0 cm=3 r=8..8  yr_sweep=9  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=56  byte_offset=28  nibble=0  dest_addr=0x63d74d03f7bc  packed_val=0x01  val=1
+    [OCM READ] bank=0 sram_addr=57  elem_addr=0x63d74d03ec84  raw_val=149  -> y[0,9,0,3]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,9,0,3]  -> tiled p=0 l=0 cm=3 r=9..9  yr_sweep=10  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=57  byte_offset=28  nibble=1  dest_addr=0x63d74d03f7bc  packed_val=0x10  val=1
+    [OCM READ] bank=0 sram_addr=58  elem_addr=0x63d74d03ec88  raw_val=313  -> y[0,10,0,3]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,10,0,3]  -> tiled p=0 l=0 cm=3 r=10..10  yr_sweep=11  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=58  byte_offset=29  nibble=0  dest_addr=0x63d74d03f7bd  packed_val=0x02  val=2
+    [OCM READ] bank=0 sram_addr=59  elem_addr=0x63d74d03ec8c  raw_val=418  -> y[0,11,0,3]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,11,0,3]  -> tiled p=0 l=0 cm=3 r=11..11  yr_sweep=12  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=59  byte_offset=29  nibble=1  dest_addr=0x63d74d03f7bd  packed_val=0x30  val=3
+    [OCM READ] bank=0 sram_addr=60  elem_addr=0x63d74d03ec90  raw_val=128  -> y[0,12,0,3]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,12,0,3]  -> tiled p=0 l=0 cm=3 r=12..12  yr_sweep=13  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=60  byte_offset=30  nibble=0  dest_addr=0x63d74d03f7be  packed_val=0x01  val=1
+    [OCM READ] bank=0 sram_addr=61  elem_addr=0x63d74d03ec94  raw_val=514  -> y[0,13,0,3]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,13,0,3]  -> tiled p=0 l=0 cm=3 r=13..13  yr_sweep=14  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=61  byte_offset=30  nibble=1  dest_addr=0x63d74d03f7be  packed_val=0x40  val=4
+    [OCM READ] bank=0 sram_addr=62  elem_addr=0x63d74d03ec98  raw_val=411  -> y[0,14,0,3]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,14,0,3]  -> tiled p=0 l=0 cm=3 r=14..14  yr_sweep=15  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=62  byte_offset=31  nibble=0  dest_addr=0x63d74d03f7bf  packed_val=0x03  val=3
+    [OCM READ] bank=0 sram_addr=63  elem_addr=0x63d74d03ec9c  raw_val=95  -> y[0,15,0,3]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,15,0,3]  -> tiled p=0 l=0 cm=3 r=15..15  yr_sweep=16  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=63  byte_offset=31  nibble=1  dest_addr=0x63d74d03f7bf  packed_val=0x10  val=1
+    [OCM READ] bank=0 sram_addr=64  elem_addr=0x63d74d03eca0  raw_val=-92  -> y[0,0,0,4]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,0,0,4]  -> tiled p=0 l=0 cm=4 r=0..0  yr_sweep=1  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=64  byte_offset=32  nibble=0  dest_addr=0x63d74d03f7c0  packed_val=0x0f  val=-1
+    [OCM READ] bank=0 sram_addr=65  elem_addr=0x63d74d03eca4  raw_val=528  -> y[0,1,0,4]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,1,0,4]  -> tiled p=0 l=0 cm=4 r=1..1  yr_sweep=2  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=65  byte_offset=32  nibble=1  dest_addr=0x63d74d03f7c0  packed_val=0x40  val=4
+    [OCM READ] bank=0 sram_addr=66  elem_addr=0x63d74d03eca8  raw_val=-855  -> y[0,2,0,4]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,2,0,4]  -> tiled p=0 l=0 cm=4 r=2..2  yr_sweep=3  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=66  byte_offset=33  nibble=0  dest_addr=0x63d74d03f7c1  packed_val=0x09  val=-7
+    [OCM READ] bank=0 sram_addr=67  elem_addr=0x63d74d03ecac  raw_val=-219  -> y[0,3,0,4]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,3,0,4]  -> tiled p=0 l=0 cm=4 r=3..3  yr_sweep=4  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=67  byte_offset=33  nibble=1  dest_addr=0x63d74d03f7c1  packed_val=0xe0  val=-2
+    [OCM READ] bank=0 sram_addr=68  elem_addr=0x63d74d03ecb0  raw_val=135  -> y[0,4,0,4]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,4,0,4]  -> tiled p=0 l=0 cm=4 r=4..4  yr_sweep=5  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=68  byte_offset=34  nibble=0  dest_addr=0x63d74d03f7c2  packed_val=0x01  val=1
+    [OCM READ] bank=0 sram_addr=69  elem_addr=0x63d74d03ecb4  raw_val=-661  -> y[0,5,0,4]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,5,0,4]  -> tiled p=0 l=0 cm=4 r=5..5  yr_sweep=6  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=69  byte_offset=34  nibble=1  dest_addr=0x63d74d03f7c2  packed_val=0xb0  val=-5
+    [OCM READ] bank=0 sram_addr=70  elem_addr=0x63d74d03ecb8  raw_val=394  -> y[0,6,0,4]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,6,0,4]  -> tiled p=0 l=0 cm=4 r=6..6  yr_sweep=7  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=70  byte_offset=35  nibble=0  dest_addr=0x63d74d03f7c3  packed_val=0x03  val=3
+    [OCM READ] bank=0 sram_addr=71  elem_addr=0x63d74d03ecbc  raw_val=-548  -> y[0,7,0,4]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,7,0,4]  -> tiled p=0 l=0 cm=4 r=7..7  yr_sweep=8  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=71  byte_offset=35  nibble=1  dest_addr=0x63d74d03f7c3  packed_val=0xc0  val=-4
+    [OCM READ] bank=0 sram_addr=72  elem_addr=0x63d74d03ecc0  raw_val=-930  -> y[0,8,0,4]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,8,0,4]  -> tiled p=0 l=0 cm=4 r=8..8  yr_sweep=9  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=72  byte_offset=36  nibble=0  dest_addr=0x63d74d03f7c4  packed_val=0x09  val=-7
+    [OCM READ] bank=0 sram_addr=73  elem_addr=0x63d74d03ecc4  raw_val=-427  -> y[0,9,0,4]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,9,0,4]  -> tiled p=0 l=0 cm=4 r=9..9  yr_sweep=10  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=73  byte_offset=36  nibble=1  dest_addr=0x63d74d03f7c4  packed_val=0xd0  val=-3
+    [OCM READ] bank=0 sram_addr=74  elem_addr=0x63d74d03ecc8  raw_val=-569  -> y[0,10,0,4]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,10,0,4]  -> tiled p=0 l=0 cm=4 r=10..10  yr_sweep=11  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=74  byte_offset=37  nibble=0  dest_addr=0x63d74d03f7c5  packed_val=0x0c  val=-4
+    [OCM READ] bank=0 sram_addr=75  elem_addr=0x63d74d03eccc  raw_val=196  -> y[0,11,0,4]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,11,0,4]  -> tiled p=0 l=0 cm=4 r=11..11  yr_sweep=12  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=75  byte_offset=37  nibble=1  dest_addr=0x63d74d03f7c5  packed_val=0x20  val=2
+    [OCM READ] bank=0 sram_addr=76  elem_addr=0x63d74d03ecd0  raw_val=-186  -> y[0,12,0,4]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,12,0,4]  -> tiled p=0 l=0 cm=4 r=12..12  yr_sweep=13  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=76  byte_offset=38  nibble=0  dest_addr=0x63d74d03f7c6  packed_val=0x0f  val=-1
+    [OCM READ] bank=0 sram_addr=77  elem_addr=0x63d74d03ecd4  raw_val=-1019  -> y[0,13,0,4]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,13,0,4]  -> tiled p=0 l=0 cm=4 r=13..13  yr_sweep=14  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=77  byte_offset=38  nibble=1  dest_addr=0x63d74d03f7c6  packed_val=0x80  val=-8
+    [OCM READ] bank=0 sram_addr=78  elem_addr=0x63d74d03ecd8  raw_val=-385  -> y[0,14,0,4]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,14,0,4]  -> tiled p=0 l=0 cm=4 r=14..14  yr_sweep=15  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=78  byte_offset=39  nibble=0  dest_addr=0x63d74d03f7c7  packed_val=0x0d  val=-3
+    [OCM READ] bank=0 sram_addr=79  elem_addr=0x63d74d03ecdc  raw_val=-318  -> y[0,15,0,4]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,15,0,4]  -> tiled p=0 l=0 cm=4 r=15..15  yr_sweep=16  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=79  byte_offset=39  nibble=1  dest_addr=0x63d74d03f7c7  packed_val=0xe0  val=-2
+    [OCM READ] bank=0 sram_addr=80  elem_addr=0x63d74d03ece0  raw_val=-386  -> y[0,0,0,5]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,0,0,5]  -> tiled p=0 l=0 cm=5 r=0..0  yr_sweep=1  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=80  byte_offset=40  nibble=0  dest_addr=0x63d74d03f7c8  packed_val=0x0d  val=-3
+    [OCM READ] bank=0 sram_addr=81  elem_addr=0x63d74d03ece4  raw_val=-395  -> y[0,1,0,5]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,1,0,5]  -> tiled p=0 l=0 cm=5 r=1..1  yr_sweep=2  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=81  byte_offset=40  nibble=1  dest_addr=0x63d74d03f7c8  packed_val=0xd0  val=-3
+    [OCM READ] bank=0 sram_addr=82  elem_addr=0x63d74d03ece8  raw_val=-989  -> y[0,2,0,5]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,2,0,5]  -> tiled p=0 l=0 cm=5 r=2..2  yr_sweep=3  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=82  byte_offset=41  nibble=0  dest_addr=0x63d74d03f7c9  packed_val=0x08  val=-8
+    [OCM READ] bank=0 sram_addr=83  elem_addr=0x63d74d03ecec  raw_val=-727  -> y[0,3,0,5]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,3,0,5]  -> tiled p=0 l=0 cm=5 r=3..3  yr_sweep=4  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=83  byte_offset=41  nibble=1  dest_addr=0x63d74d03f7c9  packed_val=0xa0  val=-6
+    [OCM READ] bank=0 sram_addr=84  elem_addr=0x63d74d03ecf0  raw_val=-632  -> y[0,4,0,5]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,4,0,5]  -> tiled p=0 l=0 cm=5 r=4..4  yr_sweep=5  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=84  byte_offset=42  nibble=0  dest_addr=0x63d74d03f7ca  packed_val=0x0b  val=-5
+    [OCM READ] bank=0 sram_addr=85  elem_addr=0x63d74d03ecf4  raw_val=-1038  -> y[0,5,0,5]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,5,0,5]  -> tiled p=0 l=0 cm=5 r=5..5  yr_sweep=6  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=85  byte_offset=42  nibble=1  dest_addr=0x63d74d03f7ca  packed_val=0x80  val=-8
+    [OCM READ] bank=0 sram_addr=86  elem_addr=0x63d74d03ecf8  raw_val=-219  -> y[0,6,0,5]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,6,0,5]  -> tiled p=0 l=0 cm=5 r=6..6  yr_sweep=7  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=86  byte_offset=43  nibble=0  dest_addr=0x63d74d03f7cb  packed_val=0x0e  val=-2
+    [OCM READ] bank=0 sram_addr=87  elem_addr=0x63d74d03ecfc  raw_val=-361  -> y[0,7,0,5]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,7,0,5]  -> tiled p=0 l=0 cm=5 r=7..7  yr_sweep=8  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=87  byte_offset=43  nibble=1  dest_addr=0x63d74d03f7cb  packed_val=0xd0  val=-3
+    [OCM READ] bank=0 sram_addr=88  elem_addr=0x63d74d03ed00  raw_val=-1114  -> y[0,8,0,5]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,8,0,5]  -> tiled p=0 l=0 cm=5 r=8..8  yr_sweep=9  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=88  byte_offset=44  nibble=0  dest_addr=0x63d74d03f7cc  packed_val=0x08  val=-8
+    [OCM READ] bank=0 sram_addr=89  elem_addr=0x63d74d03ed04  raw_val=-960  -> y[0,9,0,5]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,9,0,5]  -> tiled p=0 l=0 cm=5 r=9..9  yr_sweep=10  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=89  byte_offset=44  nibble=1  dest_addr=0x63d74d03f7cc  packed_val=0x80  val=-8
+    [OCM READ] bank=0 sram_addr=90  elem_addr=0x63d74d03ed08  raw_val=-920  -> y[0,10,0,5]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,10,0,5]  -> tiled p=0 l=0 cm=5 r=10..10  yr_sweep=11  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=90  byte_offset=45  nibble=0  dest_addr=0x63d74d03f7cd  packed_val=0x09  val=-7
+    [OCM READ] bank=0 sram_addr=91  elem_addr=0x63d74d03ed0c  raw_val=-705  -> y[0,11,0,5]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,11,0,5]  -> tiled p=0 l=0 cm=5 r=11..11  yr_sweep=12  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=91  byte_offset=45  nibble=1  dest_addr=0x63d74d03f7cd  packed_val=0xa0  val=-6
+    [OCM READ] bank=0 sram_addr=92  elem_addr=0x63d74d03ed10  raw_val=-370  -> y[0,12,0,5]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,12,0,5]  -> tiled p=0 l=0 cm=5 r=12..12  yr_sweep=13  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=92  byte_offset=46  nibble=0  dest_addr=0x63d74d03f7ce  packed_val=0x0d  val=-3
+    [OCM READ] bank=0 sram_addr=93  elem_addr=0x63d74d03ed14  raw_val=-407  -> y[0,13,0,5]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,13,0,5]  -> tiled p=0 l=0 cm=5 r=13..13  yr_sweep=14  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=93  byte_offset=46  nibble=1  dest_addr=0x63d74d03f7ce  packed_val=0xd0  val=-3
+    [OCM READ] bank=0 sram_addr=94  elem_addr=0x63d74d03ed18  raw_val=-639  -> y[0,14,0,5]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,14,0,5]  -> tiled p=0 l=0 cm=5 r=14..14  yr_sweep=15  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=94  byte_offset=47  nibble=0  dest_addr=0x63d74d03f7cf  packed_val=0x0b  val=-5
+    [OCM READ] bank=0 sram_addr=95  elem_addr=0x63d74d03ed1c  raw_val=-557  -> y[0,15,0,5]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,15,0,5]  -> tiled p=0 l=0 cm=5 r=15..15  yr_sweep=16  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=95  byte_offset=47  nibble=1  dest_addr=0x63d74d03f7cf  packed_val=0xc0  val=-4
+    [OCM READ] bank=0 sram_addr=96  elem_addr=0x63d74d03ed20  raw_val=224  -> y[0,0,0,6]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,0,0,6]  -> tiled p=0 l=0 cm=6 r=0..0  yr_sweep=1  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=96  byte_offset=48  nibble=0  dest_addr=0x63d74d03f7d0  packed_val=0x02  val=2
+    [OCM READ] bank=0 sram_addr=97  elem_addr=0x63d74d03ed24  raw_val=-429  -> y[0,1,0,6]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,1,0,6]  -> tiled p=0 l=0 cm=6 r=1..1  yr_sweep=2  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=97  byte_offset=48  nibble=1  dest_addr=0x63d74d03f7d0  packed_val=0xd0  val=-3
+    [OCM READ] bank=0 sram_addr=98  elem_addr=0x63d74d03ed28  raw_val=-667  -> y[0,2,0,6]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,2,0,6]  -> tiled p=0 l=0 cm=6 r=2..2  yr_sweep=3  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=98  byte_offset=49  nibble=0  dest_addr=0x63d74d03f7d1  packed_val=0x0b  val=-5
+    [OCM READ] bank=0 sram_addr=99  elem_addr=0x63d74d03ed2c  raw_val=88  -> y[0,3,0,6]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,3,0,6]  -> tiled p=0 l=0 cm=6 r=3..3  yr_sweep=4  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=99  byte_offset=49  nibble=1  dest_addr=0x63d74d03f7d1  packed_val=0x10  val=1
+    [OCM READ] bank=0 sram_addr=100  elem_addr=0x63d74d03ed30  raw_val=-40  -> y[0,4,0,6]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,4,0,6]  -> tiled p=0 l=0 cm=6 r=4..4  yr_sweep=5  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=100  byte_offset=50  nibble=0  dest_addr=0x63d74d03f7d2  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=101  elem_addr=0x63d74d03ed34  raw_val=-659  -> y[0,5,0,6]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,5,0,6]  -> tiled p=0 l=0 cm=6 r=5..5  yr_sweep=6  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=101  byte_offset=50  nibble=1  dest_addr=0x63d74d03f7d2  packed_val=0xb0  val=-5
+    [OCM READ] bank=0 sram_addr=102  elem_addr=0x63d74d03ed38  raw_val=97  -> y[0,6,0,6]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,6,0,6]  -> tiled p=0 l=0 cm=6 r=6..6  yr_sweep=7  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=102  byte_offset=51  nibble=0  dest_addr=0x63d74d03f7d3  packed_val=0x01  val=1
+    [OCM READ] bank=0 sram_addr=103  elem_addr=0x63d74d03ed3c  raw_val=-404  -> y[0,7,0,6]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,7,0,6]  -> tiled p=0 l=0 cm=6 r=7..7  yr_sweep=8  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=103  byte_offset=51  nibble=1  dest_addr=0x63d74d03f7d3  packed_val=0xd0  val=-3
+    [OCM READ] bank=0 sram_addr=104  elem_addr=0x63d74d03ed40  raw_val=-302  -> y[0,8,0,6]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,8,0,6]  -> tiled p=0 l=0 cm=6 r=8..8  yr_sweep=9  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=104  byte_offset=52  nibble=0  dest_addr=0x63d74d03f7d4  packed_val=0x0e  val=-2
+    [OCM READ] bank=0 sram_addr=105  elem_addr=0x63d74d03ed44  raw_val=-1002  -> y[0,9,0,6]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,9,0,6]  -> tiled p=0 l=0 cm=6 r=9..9  yr_sweep=10  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=105  byte_offset=52  nibble=1  dest_addr=0x63d74d03f7d4  packed_val=0x80  val=-8
+    [OCM READ] bank=0 sram_addr=106  elem_addr=0x63d74d03ed48  raw_val=-845  -> y[0,10,0,6]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,10,0,6]  -> tiled p=0 l=0 cm=6 r=10..10  yr_sweep=11  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=106  byte_offset=53  nibble=0  dest_addr=0x63d74d03f7d5  packed_val=0x09  val=-7
+    [OCM READ] bank=0 sram_addr=107  elem_addr=0x63d74d03ed4c  raw_val=-690  -> y[0,11,0,6]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,11,0,6]  -> tiled p=0 l=0 cm=6 r=11..11  yr_sweep=12  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=107  byte_offset=53  nibble=1  dest_addr=0x63d74d03f7d5  packed_val=0xb0  val=-5
+    [OCM READ] bank=0 sram_addr=108  elem_addr=0x63d74d03ed50  raw_val=86  -> y[0,12,0,6]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,12,0,6]  -> tiled p=0 l=0 cm=6 r=12..12  yr_sweep=13  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=108  byte_offset=54  nibble=0  dest_addr=0x63d74d03f7d6  packed_val=0x01  val=1
+    [OCM READ] bank=0 sram_addr=109  elem_addr=0x63d74d03ed54  raw_val=-161  -> y[0,13,0,6]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,13,0,6]  -> tiled p=0 l=0 cm=6 r=13..13  yr_sweep=14  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=109  byte_offset=54  nibble=1  dest_addr=0x63d74d03f7d6  packed_val=0xf0  val=-1
+    [OCM READ] bank=0 sram_addr=110  elem_addr=0x63d74d03ed58  raw_val=-877  -> y[0,14,0,6]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,14,0,6]  -> tiled p=0 l=0 cm=6 r=14..14  yr_sweep=15  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=110  byte_offset=55  nibble=0  dest_addr=0x63d74d03f7d7  packed_val=0x09  val=-7
+    [OCM READ] bank=0 sram_addr=111  elem_addr=0x63d74d03ed5c  raw_val=-400  -> y[0,15,0,6]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,15,0,6]  -> tiled p=0 l=0 cm=6 r=15..15  yr_sweep=16  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=111  byte_offset=55  nibble=1  dest_addr=0x63d74d03f7d7  packed_val=0xd0  val=-3
+    [OCM READ] bank=0 sram_addr=112  elem_addr=0x63d74d03ed60  raw_val=199  -> y[0,0,0,7]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,0,0,7]  -> tiled p=0 l=0 cm=7 r=0..0  yr_sweep=1  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=112  byte_offset=56  nibble=0  dest_addr=0x63d74d03f7d8  packed_val=0x02  val=2
+    [OCM READ] bank=0 sram_addr=113  elem_addr=0x63d74d03ed64  raw_val=-113  -> y[0,1,0,7]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,1,0,7]  -> tiled p=0 l=0 cm=7 r=1..1  yr_sweep=2  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=113  byte_offset=56  nibble=1  dest_addr=0x63d74d03f7d8  packed_val=0xf0  val=-1
+    [OCM READ] bank=0 sram_addr=114  elem_addr=0x63d74d03ed68  raw_val=387  -> y[0,2,0,7]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,2,0,7]  -> tiled p=0 l=0 cm=7 r=2..2  yr_sweep=3  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=114  byte_offset=57  nibble=0  dest_addr=0x63d74d03f7d9  packed_val=0x03  val=3
+    [OCM READ] bank=0 sram_addr=115  elem_addr=0x63d74d03ed6c  raw_val=841  -> y[0,3,0,7]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,3,0,7]  -> tiled p=0 l=0 cm=7 r=3..3  yr_sweep=4  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=115  byte_offset=57  nibble=1  dest_addr=0x63d74d03f7d9  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=116  elem_addr=0x63d74d03ed70  raw_val=-60  -> y[0,4,0,7]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,4,0,7]  -> tiled p=0 l=0 cm=7 r=4..4  yr_sweep=5  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=116  byte_offset=58  nibble=0  dest_addr=0x63d74d03f7da  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=117  elem_addr=0x63d74d03ed74  raw_val=34  -> y[0,5,0,7]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,5,0,7]  -> tiled p=0 l=0 cm=7 r=5..5  yr_sweep=6  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=117  byte_offset=58  nibble=1  dest_addr=0x63d74d03f7da  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=118  elem_addr=0x63d74d03ed78  raw_val=1108  -> y[0,6,0,7]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,6,0,7]  -> tiled p=0 l=0 cm=7 r=6..6  yr_sweep=7  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=118  byte_offset=59  nibble=0  dest_addr=0x63d74d03f7db  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=119  elem_addr=0x63d74d03ed7c  raw_val=-81  -> y[0,7,0,7]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,7,0,7]  -> tiled p=0 l=0 cm=7 r=7..7  yr_sweep=8  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=119  byte_offset=59  nibble=1  dest_addr=0x63d74d03f7db  packed_val=0xf0  val=-1
+    [OCM READ] bank=0 sram_addr=120  elem_addr=0x63d74d03ed80  raw_val=400  -> y[0,8,0,7]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,8,0,7]  -> tiled p=0 l=0 cm=7 r=8..8  yr_sweep=9  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=120  byte_offset=60  nibble=0  dest_addr=0x63d74d03f7dc  packed_val=0x03  val=3
+    [OCM READ] bank=0 sram_addr=121  elem_addr=0x63d74d03ed84  raw_val=570  -> y[0,9,0,7]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,9,0,7]  -> tiled p=0 l=0 cm=7 r=9..9  yr_sweep=10  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=121  byte_offset=60  nibble=1  dest_addr=0x63d74d03f7dc  packed_val=0x40  val=4
+    [OCM READ] bank=0 sram_addr=122  elem_addr=0x63d74d03ed88  raw_val=292  -> y[0,10,0,7]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,10,0,7]  -> tiled p=0 l=0 cm=7 r=10..10  yr_sweep=11  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=122  byte_offset=61  nibble=0  dest_addr=0x63d74d03f7dd  packed_val=0x02  val=2
+    [OCM READ] bank=0 sram_addr=123  elem_addr=0x63d74d03ed8c  raw_val=374  -> y[0,11,0,7]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,11,0,7]  -> tiled p=0 l=0 cm=7 r=11..11  yr_sweep=12  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=123  byte_offset=61  nibble=1  dest_addr=0x63d74d03f7dd  packed_val=0x30  val=3
+    [OCM READ] bank=0 sram_addr=124  elem_addr=0x63d74d03ed90  raw_val=50  -> y[0,12,0,7]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,12,0,7]  -> tiled p=0 l=0 cm=7 r=12..12  yr_sweep=13  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=124  byte_offset=62  nibble=0  dest_addr=0x63d74d03f7de  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=125  elem_addr=0x63d74d03ed94  raw_val=202  -> y[0,13,0,7]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,13,0,7]  -> tiled p=0 l=0 cm=7 r=13..13  yr_sweep=14  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=125  byte_offset=62  nibble=1  dest_addr=0x63d74d03f7de  packed_val=0x20  val=2
+    [OCM READ] bank=0 sram_addr=126  elem_addr=0x63d74d03ed98  raw_val=-278  -> y[0,14,0,7]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,14,0,7]  -> tiled p=0 l=0 cm=7 r=14..14  yr_sweep=15  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=126  byte_offset=63  nibble=0  dest_addr=0x63d74d03f7df  packed_val=0x0e  val=-2
+    [OCM READ] bank=0 sram_addr=127  elem_addr=0x63d74d03ed9c  raw_val=138  -> y[0,15,0,7]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,15,0,7]  -> tiled p=0 l=0 cm=7 r=15..15  yr_sweep=16  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=127  byte_offset=63  nibble=1  dest_addr=0x63d74d03f7df  packed_val=0x10  val=1
+    [OCM READ] bank=0 sram_addr=128  elem_addr=0x63d74d03eda0  raw_val=1348  -> y[0,0,0,8]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,0,0,8]  -> tiled p=0 l=0 cm=8 r=0..0  yr_sweep=1  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=128  byte_offset=64  nibble=0  dest_addr=0x63d74d03f7e0  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=129  elem_addr=0x63d74d03eda4  raw_val=1165  -> y[0,1,0,8]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,1,0,8]  -> tiled p=0 l=0 cm=8 r=1..1  yr_sweep=2  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=129  byte_offset=64  nibble=1  dest_addr=0x63d74d03f7e0  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=130  elem_addr=0x63d74d03eda8  raw_val=1553  -> y[0,2,0,8]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,2,0,8]  -> tiled p=0 l=0 cm=8 r=2..2  yr_sweep=3  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=130  byte_offset=65  nibble=0  dest_addr=0x63d74d03f7e1  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=131  elem_addr=0x63d74d03edac  raw_val=1686  -> y[0,3,0,8]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,3,0,8]  -> tiled p=0 l=0 cm=8 r=3..3  yr_sweep=4  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=131  byte_offset=65  nibble=1  dest_addr=0x63d74d03f7e1  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=132  elem_addr=0x63d74d03edb0  raw_val=846  -> y[0,4,0,8]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,4,0,8]  -> tiled p=0 l=0 cm=8 r=4..4  yr_sweep=5  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=132  byte_offset=66  nibble=0  dest_addr=0x63d74d03f7e2  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=133  elem_addr=0x63d74d03edb4  raw_val=1827  -> y[0,5,0,8]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,5,0,8]  -> tiled p=0 l=0 cm=8 r=5..5  yr_sweep=6  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=133  byte_offset=66  nibble=1  dest_addr=0x63d74d03f7e2  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=134  elem_addr=0x63d74d03edb8  raw_val=1560  -> y[0,6,0,8]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,6,0,8]  -> tiled p=0 l=0 cm=8 r=6..6  yr_sweep=7  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=134  byte_offset=67  nibble=0  dest_addr=0x63d74d03f7e3  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=135  elem_addr=0x63d74d03edbc  raw_val=1772  -> y[0,7,0,8]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,7,0,8]  -> tiled p=0 l=0 cm=8 r=7..7  yr_sweep=8  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=135  byte_offset=67  nibble=1  dest_addr=0x63d74d03f7e3  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=136  elem_addr=0x63d74d03edc0  raw_val=2172  -> y[0,8,0,8]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,8,0,8]  -> tiled p=0 l=0 cm=8 r=8..8  yr_sweep=9  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=136  byte_offset=68  nibble=0  dest_addr=0x63d74d03f7e4  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=137  elem_addr=0x63d74d03edc4  raw_val=1399  -> y[0,9,0,8]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,9,0,8]  -> tiled p=0 l=0 cm=8 r=9..9  yr_sweep=10  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=137  byte_offset=68  nibble=1  dest_addr=0x63d74d03f7e4  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=138  elem_addr=0x63d74d03edc8  raw_val=1748  -> y[0,10,0,8]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,10,0,8]  -> tiled p=0 l=0 cm=8 r=10..10  yr_sweep=11  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=138  byte_offset=69  nibble=0  dest_addr=0x63d74d03f7e5  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=139  elem_addr=0x63d74d03edcc  raw_val=1544  -> y[0,11,0,8]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,11,0,8]  -> tiled p=0 l=0 cm=8 r=11..11  yr_sweep=12  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=139  byte_offset=69  nibble=1  dest_addr=0x63d74d03f7e5  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=140  elem_addr=0x63d74d03edd0  raw_val=1326  -> y[0,12,0,8]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,12,0,8]  -> tiled p=0 l=0 cm=8 r=12..12  yr_sweep=13  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=140  byte_offset=70  nibble=0  dest_addr=0x63d74d03f7e6  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=141  elem_addr=0x63d74d03edd4  raw_val=2089  -> y[0,13,0,8]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,13,0,8]  -> tiled p=0 l=0 cm=8 r=13..13  yr_sweep=14  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=141  byte_offset=70  nibble=1  dest_addr=0x63d74d03f7e6  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=142  elem_addr=0x63d74d03edd8  raw_val=1070  -> y[0,14,0,8]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,14,0,8]  -> tiled p=0 l=0 cm=8 r=14..14  yr_sweep=15  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=142  byte_offset=71  nibble=0  dest_addr=0x63d74d03f7e7  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=143  elem_addr=0x63d74d03eddc  raw_val=1080  -> y[0,15,0,8]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,15,0,8]  -> tiled p=0 l=0 cm=8 r=15..15  yr_sweep=16  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=143  byte_offset=71  nibble=1  dest_addr=0x63d74d03f7e7  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=144  elem_addr=0x63d74d03ede0  raw_val=-95  -> y[0,0,0,9]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,0,0,9]  -> tiled p=0 l=0 cm=9 r=0..0  yr_sweep=1  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=144  byte_offset=72  nibble=0  dest_addr=0x63d74d03f7e8  packed_val=0x0f  val=-1
+    [OCM READ] bank=0 sram_addr=145  elem_addr=0x63d74d03ede4  raw_val=-293  -> y[0,1,0,9]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,1,0,9]  -> tiled p=0 l=0 cm=9 r=1..1  yr_sweep=2  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=145  byte_offset=72  nibble=1  dest_addr=0x63d74d03f7e8  packed_val=0xe0  val=-2
+    [OCM READ] bank=0 sram_addr=146  elem_addr=0x63d74d03ede8  raw_val=458  -> y[0,2,0,9]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,2,0,9]  -> tiled p=0 l=0 cm=9 r=2..2  yr_sweep=3  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=146  byte_offset=73  nibble=0  dest_addr=0x63d74d03f7e9  packed_val=0x04  val=4
+    [OCM READ] bank=0 sram_addr=147  elem_addr=0x63d74d03edec  raw_val=340  -> y[0,3,0,9]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,3,0,9]  -> tiled p=0 l=0 cm=9 r=3..3  yr_sweep=4  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=147  byte_offset=73  nibble=1  dest_addr=0x63d74d03f7e9  packed_val=0x30  val=3
+    [OCM READ] bank=0 sram_addr=148  elem_addr=0x63d74d03edf0  raw_val=-251  -> y[0,4,0,9]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,4,0,9]  -> tiled p=0 l=0 cm=9 r=4..4  yr_sweep=5  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=148  byte_offset=74  nibble=0  dest_addr=0x63d74d03f7ea  packed_val=0x0e  val=-2
+    [OCM READ] bank=0 sram_addr=149  elem_addr=0x63d74d03edf4  raw_val=279  -> y[0,5,0,9]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,5,0,9]  -> tiled p=0 l=0 cm=9 r=5..5  yr_sweep=6  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=149  byte_offset=74  nibble=1  dest_addr=0x63d74d03f7ea  packed_val=0x20  val=2
+    [OCM READ] bank=0 sram_addr=150  elem_addr=0x63d74d03edf8  raw_val=497  -> y[0,6,0,9]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,6,0,9]  -> tiled p=0 l=0 cm=9 r=6..6  yr_sweep=7  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=150  byte_offset=75  nibble=0  dest_addr=0x63d74d03f7eb  packed_val=0x04  val=4
+    [OCM READ] bank=0 sram_addr=151  elem_addr=0x63d74d03edfc  raw_val=494  -> y[0,7,0,9]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,7,0,9]  -> tiled p=0 l=0 cm=9 r=7..7  yr_sweep=8  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=151  byte_offset=75  nibble=1  dest_addr=0x63d74d03f7eb  packed_val=0x40  val=4
+    [OCM READ] bank=0 sram_addr=152  elem_addr=0x63d74d03ee00  raw_val=271  -> y[0,8,0,9]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,8,0,9]  -> tiled p=0 l=0 cm=9 r=8..8  yr_sweep=9  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=152  byte_offset=76  nibble=0  dest_addr=0x63d74d03f7ec  packed_val=0x02  val=2
+    [OCM READ] bank=0 sram_addr=153  elem_addr=0x63d74d03ee04  raw_val=1320  -> y[0,9,0,9]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,9,0,9]  -> tiled p=0 l=0 cm=9 r=9..9  yr_sweep=10  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=153  byte_offset=76  nibble=1  dest_addr=0x63d74d03f7ec  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=154  elem_addr=0x63d74d03ee08  raw_val=678  -> y[0,10,0,9]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,10,0,9]  -> tiled p=0 l=0 cm=9 r=10..10  yr_sweep=11  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=154  byte_offset=77  nibble=0  dest_addr=0x63d74d03f7ed  packed_val=0x05  val=5
+    [OCM READ] bank=0 sram_addr=155  elem_addr=0x63d74d03ee0c  raw_val=-175  -> y[0,11,0,9]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,11,0,9]  -> tiled p=0 l=0 cm=9 r=11..11  yr_sweep=12  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=155  byte_offset=77  nibble=1  dest_addr=0x63d74d03f7ed  packed_val=0xf0  val=-1
+    [OCM READ] bank=0 sram_addr=156  elem_addr=0x63d74d03ee10  raw_val=99  -> y[0,12,0,9]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,12,0,9]  -> tiled p=0 l=0 cm=9 r=12..12  yr_sweep=13  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=156  byte_offset=78  nibble=0  dest_addr=0x63d74d03f7ee  packed_val=0x01  val=1
+    [OCM READ] bank=0 sram_addr=157  elem_addr=0x63d74d03ee14  raw_val=821  -> y[0,13,0,9]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,13,0,9]  -> tiled p=0 l=0 cm=9 r=13..13  yr_sweep=14  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=157  byte_offset=78  nibble=1  dest_addr=0x63d74d03f7ee  packed_val=0x60  val=6
+    [OCM READ] bank=0 sram_addr=158  elem_addr=0x63d74d03ee18  raw_val=267  -> y[0,14,0,9]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,14,0,9]  -> tiled p=0 l=0 cm=9 r=14..14  yr_sweep=15  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=158  byte_offset=79  nibble=0  dest_addr=0x63d74d03f7ef  packed_val=0x02  val=2
+    [OCM READ] bank=0 sram_addr=159  elem_addr=0x63d74d03ee1c  raw_val=892  -> y[0,15,0,9]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,15,0,9]  -> tiled p=0 l=0 cm=9 r=15..15  yr_sweep=16  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=159  byte_offset=79  nibble=1  dest_addr=0x63d74d03f7ef  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=160  elem_addr=0x63d74d03ee20  raw_val=959  -> y[0,0,0,10]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,0,0,10]  -> tiled p=0 l=0 cm=10 r=0..0  yr_sweep=1  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=160  byte_offset=80  nibble=0  dest_addr=0x63d74d03f7f0  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=161  elem_addr=0x63d74d03ee24  raw_val=1501  -> y[0,1,0,10]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,1,0,10]  -> tiled p=0 l=0 cm=10 r=1..1  yr_sweep=2  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=161  byte_offset=80  nibble=1  dest_addr=0x63d74d03f7f0  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=162  elem_addr=0x63d74d03ee28  raw_val=1244  -> y[0,2,0,10]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,2,0,10]  -> tiled p=0 l=0 cm=10 r=2..2  yr_sweep=3  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=162  byte_offset=81  nibble=0  dest_addr=0x63d74d03f7f1  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=163  elem_addr=0x63d74d03ee2c  raw_val=1621  -> y[0,3,0,10]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,3,0,10]  -> tiled p=0 l=0 cm=10 r=3..3  yr_sweep=4  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=163  byte_offset=81  nibble=1  dest_addr=0x63d74d03f7f1  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=164  elem_addr=0x63d74d03ee30  raw_val=1902  -> y[0,4,0,10]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,4,0,10]  -> tiled p=0 l=0 cm=10 r=4..4  yr_sweep=5  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=164  byte_offset=82  nibble=0  dest_addr=0x63d74d03f7f2  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=165  elem_addr=0x63d74d03ee34  raw_val=1183  -> y[0,5,0,10]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,5,0,10]  -> tiled p=0 l=0 cm=10 r=5..5  yr_sweep=6  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=165  byte_offset=82  nibble=1  dest_addr=0x63d74d03f7f2  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=166  elem_addr=0x63d74d03ee38  raw_val=953  -> y[0,6,0,10]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,6,0,10]  -> tiled p=0 l=0 cm=10 r=6..6  yr_sweep=7  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=166  byte_offset=83  nibble=0  dest_addr=0x63d74d03f7f3  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=167  elem_addr=0x63d74d03ee3c  raw_val=1610  -> y[0,7,0,10]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,7,0,10]  -> tiled p=0 l=0 cm=10 r=7..7  yr_sweep=8  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=167  byte_offset=83  nibble=1  dest_addr=0x63d74d03f7f3  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=168  elem_addr=0x63d74d03ee40  raw_val=1762  -> y[0,8,0,10]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,8,0,10]  -> tiled p=0 l=0 cm=10 r=8..8  yr_sweep=9  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=168  byte_offset=84  nibble=0  dest_addr=0x63d74d03f7f4  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=169  elem_addr=0x63d74d03ee44  raw_val=740  -> y[0,9,0,10]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,9,0,10]  -> tiled p=0 l=0 cm=10 r=9..9  yr_sweep=10  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=169  byte_offset=84  nibble=1  dest_addr=0x63d74d03f7f4  packed_val=0x60  val=6
+    [OCM READ] bank=0 sram_addr=170  elem_addr=0x63d74d03ee48  raw_val=1663  -> y[0,10,0,10]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,10,0,10]  -> tiled p=0 l=0 cm=10 r=10..10  yr_sweep=11  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=170  byte_offset=85  nibble=0  dest_addr=0x63d74d03f7f5  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=171  elem_addr=0x63d74d03ee4c  raw_val=997  -> y[0,11,0,10]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,11,0,10]  -> tiled p=0 l=0 cm=10 r=11..11  yr_sweep=12  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=171  byte_offset=85  nibble=1  dest_addr=0x63d74d03f7f5  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=172  elem_addr=0x63d74d03ee50  raw_val=930  -> y[0,12,0,10]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,12,0,10]  -> tiled p=0 l=0 cm=10 r=12..12  yr_sweep=13  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=172  byte_offset=86  nibble=0  dest_addr=0x63d74d03f7f6  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=173  elem_addr=0x63d74d03ee54  raw_val=813  -> y[0,13,0,10]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,13,0,10]  -> tiled p=0 l=0 cm=10 r=13..13  yr_sweep=14  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=173  byte_offset=86  nibble=1  dest_addr=0x63d74d03f7f6  packed_val=0x60  val=6
+    [OCM READ] bank=0 sram_addr=174  elem_addr=0x63d74d03ee58  raw_val=1423  -> y[0,14,0,10]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,14,0,10]  -> tiled p=0 l=0 cm=10 r=14..14  yr_sweep=15  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=174  byte_offset=87  nibble=0  dest_addr=0x63d74d03f7f7  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=175  elem_addr=0x63d74d03ee5c  raw_val=1284  -> y[0,15,0,10]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,15,0,10]  -> tiled p=0 l=0 cm=10 r=15..15  yr_sweep=16  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=175  byte_offset=87  nibble=1  dest_addr=0x63d74d03f7f7  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=176  elem_addr=0x63d74d03ee60  raw_val=618  -> y[0,0,0,11]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,0,0,11]  -> tiled p=0 l=0 cm=11 r=0..0  yr_sweep=1  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=176  byte_offset=88  nibble=0  dest_addr=0x63d74d03f7f8  packed_val=0x05  val=5
+    [OCM READ] bank=0 sram_addr=177  elem_addr=0x63d74d03ee64  raw_val=767  -> y[0,1,0,11]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,1,0,11]  -> tiled p=0 l=0 cm=11 r=1..1  yr_sweep=2  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=177  byte_offset=88  nibble=1  dest_addr=0x63d74d03f7f8  packed_val=0x60  val=6
+    [OCM READ] bank=0 sram_addr=178  elem_addr=0x63d74d03ee68  raw_val=583  -> y[0,2,0,11]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,2,0,11]  -> tiled p=0 l=0 cm=11 r=2..2  yr_sweep=3  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=178  byte_offset=89  nibble=0  dest_addr=0x63d74d03f7f9  packed_val=0x05  val=5
+    [OCM READ] bank=0 sram_addr=179  elem_addr=0x63d74d03ee6c  raw_val=765  -> y[0,3,0,11]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,3,0,11]  -> tiled p=0 l=0 cm=11 r=3..3  yr_sweep=4  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=179  byte_offset=89  nibble=1  dest_addr=0x63d74d03f7f9  packed_val=0x60  val=6
+    [OCM READ] bank=0 sram_addr=180  elem_addr=0x63d74d03ee70  raw_val=296  -> y[0,4,0,11]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,4,0,11]  -> tiled p=0 l=0 cm=11 r=4..4  yr_sweep=5  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=180  byte_offset=90  nibble=0  dest_addr=0x63d74d03f7fa  packed_val=0x02  val=2
+    [OCM READ] bank=0 sram_addr=181  elem_addr=0x63d74d03ee74  raw_val=1430  -> y[0,5,0,11]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,5,0,11]  -> tiled p=0 l=0 cm=11 r=5..5  yr_sweep=6  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=181  byte_offset=90  nibble=1  dest_addr=0x63d74d03f7fa  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=182  elem_addr=0x63d74d03ee78  raw_val=734  -> y[0,6,0,11]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,6,0,11]  -> tiled p=0 l=0 cm=11 r=6..6  yr_sweep=7  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=182  byte_offset=91  nibble=0  dest_addr=0x63d74d03f7fb  packed_val=0x06  val=6
+    [OCM READ] bank=0 sram_addr=183  elem_addr=0x63d74d03ee7c  raw_val=-59  -> y[0,7,0,11]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,7,0,11]  -> tiled p=0 l=0 cm=11 r=7..7  yr_sweep=8  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=183  byte_offset=91  nibble=1  dest_addr=0x63d74d03f7fb  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=184  elem_addr=0x63d74d03ee80  raw_val=1033  -> y[0,8,0,11]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,8,0,11]  -> tiled p=0 l=0 cm=11 r=8..8  yr_sweep=9  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=184  byte_offset=92  nibble=0  dest_addr=0x63d74d03f7fc  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=185  elem_addr=0x63d74d03ee84  raw_val=1130  -> y[0,9,0,11]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,9,0,11]  -> tiled p=0 l=0 cm=11 r=9..9  yr_sweep=10  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=185  byte_offset=92  nibble=1  dest_addr=0x63d74d03f7fc  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=186  elem_addr=0x63d74d03ee88  raw_val=189  -> y[0,10,0,11]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,10,0,11]  -> tiled p=0 l=0 cm=11 r=10..10  yr_sweep=11  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=186  byte_offset=93  nibble=0  dest_addr=0x63d74d03f7fd  packed_val=0x01  val=1
+    [OCM READ] bank=0 sram_addr=187  elem_addr=0x63d74d03ee8c  raw_val=586  -> y[0,11,0,11]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,11,0,11]  -> tiled p=0 l=0 cm=11 r=11..11  yr_sweep=12  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=187  byte_offset=93  nibble=1  dest_addr=0x63d74d03f7fd  packed_val=0x50  val=5
+    [OCM READ] bank=0 sram_addr=188  elem_addr=0x63d74d03ee90  raw_val=1002  -> y[0,12,0,11]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,12,0,11]  -> tiled p=0 l=0 cm=11 r=12..12  yr_sweep=13  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=188  byte_offset=94  nibble=0  dest_addr=0x63d74d03f7fe  packed_val=0x07  val=7
+    [OCM READ] bank=0 sram_addr=189  elem_addr=0x63d74d03ee94  raw_val=17  -> y[0,13,0,11]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,13,0,11]  -> tiled p=0 l=0 cm=11 r=13..13  yr_sweep=14  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=189  byte_offset=94  nibble=1  dest_addr=0x63d74d03f7fe  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=190  elem_addr=0x63d74d03ee98  raw_val=184  -> y[0,14,0,11]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,14,0,11]  -> tiled p=0 l=0 cm=11 r=14..14  yr_sweep=15  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=190  byte_offset=95  nibble=0  dest_addr=0x63d74d03f7ff  packed_val=0x01  val=1
+    [OCM READ] bank=0 sram_addr=191  elem_addr=0x63d74d03ee9c  raw_val=137  -> y[0,15,0,11]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,15,0,11]  -> tiled p=0 l=0 cm=11 r=15..15  yr_sweep=16  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=191  byte_offset=95  nibble=1  dest_addr=0x63d74d03f7ff  packed_val=0x10  val=1
+    [OCM READ] bank=0 sram_addr=192  elem_addr=0x63d74d03eea0  raw_val=43  -> y[0,0,0,12]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,0,0,12]  -> tiled p=0 l=0 cm=12 r=0..0  yr_sweep=1  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=192  byte_offset=96  nibble=0  dest_addr=0x63d74d03f800  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=193  elem_addr=0x63d74d03eea4  raw_val=498  -> y[0,1,0,12]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,1,0,12]  -> tiled p=0 l=0 cm=12 r=1..1  yr_sweep=2  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=193  byte_offset=96  nibble=1  dest_addr=0x63d74d03f800  packed_val=0x40  val=4
+    [OCM READ] bank=0 sram_addr=194  elem_addr=0x63d74d03eea8  raw_val=431  -> y[0,2,0,12]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,2,0,12]  -> tiled p=0 l=0 cm=12 r=2..2  yr_sweep=3  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=194  byte_offset=97  nibble=0  dest_addr=0x63d74d03f801  packed_val=0x03  val=3
+    [OCM READ] bank=0 sram_addr=195  elem_addr=0x63d74d03eeac  raw_val=685  -> y[0,3,0,12]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,3,0,12]  -> tiled p=0 l=0 cm=12 r=3..3  yr_sweep=4  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=195  byte_offset=97  nibble=1  dest_addr=0x63d74d03f801  packed_val=0x50  val=5
+    [OCM READ] bank=0 sram_addr=196  elem_addr=0x63d74d03eeb0  raw_val=650  -> y[0,4,0,12]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,4,0,12]  -> tiled p=0 l=0 cm=12 r=4..4  yr_sweep=5  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=196  byte_offset=98  nibble=0  dest_addr=0x63d74d03f802  packed_val=0x05  val=5
+    [OCM READ] bank=0 sram_addr=197  elem_addr=0x63d74d03eeb4  raw_val=276  -> y[0,5,0,12]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,5,0,12]  -> tiled p=0 l=0 cm=12 r=5..5  yr_sweep=6  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=197  byte_offset=98  nibble=1  dest_addr=0x63d74d03f802  packed_val=0x20  val=2
+    [OCM READ] bank=0 sram_addr=198  elem_addr=0x63d74d03eeb8  raw_val=-103  -> y[0,6,0,12]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,6,0,12]  -> tiled p=0 l=0 cm=12 r=6..6  yr_sweep=7  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=198  byte_offset=99  nibble=0  dest_addr=0x63d74d03f803  packed_val=0x0f  val=-1
+    [OCM READ] bank=0 sram_addr=199  elem_addr=0x63d74d03eebc  raw_val=802  -> y[0,7,0,12]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,7,0,12]  -> tiled p=0 l=0 cm=12 r=7..7  yr_sweep=8  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=199  byte_offset=99  nibble=1  dest_addr=0x63d74d03f803  packed_val=0x60  val=6
+    [OCM READ] bank=0 sram_addr=200  elem_addr=0x63d74d03eec0  raw_val=817  -> y[0,8,0,12]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,8,0,12]  -> tiled p=0 l=0 cm=12 r=8..8  yr_sweep=9  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=200  byte_offset=100  nibble=0  dest_addr=0x63d74d03f804  packed_val=0x06  val=6
+    [OCM READ] bank=0 sram_addr=201  elem_addr=0x63d74d03eec4  raw_val=492  -> y[0,9,0,12]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,9,0,12]  -> tiled p=0 l=0 cm=12 r=9..9  yr_sweep=10  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=201  byte_offset=100  nibble=1  dest_addr=0x63d74d03f804  packed_val=0x40  val=4
+    [OCM READ] bank=0 sram_addr=202  elem_addr=0x63d74d03eec8  raw_val=679  -> y[0,10,0,12]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,10,0,12]  -> tiled p=0 l=0 cm=12 r=10..10  yr_sweep=11  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=202  byte_offset=101  nibble=0  dest_addr=0x63d74d03f805  packed_val=0x05  val=5
+    [OCM READ] bank=0 sram_addr=203  elem_addr=0x63d74d03eecc  raw_val=-407  -> y[0,11,0,12]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,11,0,12]  -> tiled p=0 l=0 cm=12 r=11..11  yr_sweep=12  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=203  byte_offset=101  nibble=1  dest_addr=0x63d74d03f805  packed_val=0xd0  val=-3
+    [OCM READ] bank=0 sram_addr=204  elem_addr=0x63d74d03eed0  raw_val=325  -> y[0,12,0,12]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,12,0,12]  -> tiled p=0 l=0 cm=12 r=12..12  yr_sweep=13  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=204  byte_offset=102  nibble=0  dest_addr=0x63d74d03f806  packed_val=0x03  val=3
+    [OCM READ] bank=0 sram_addr=205  elem_addr=0x63d74d03eed4  raw_val=1114  -> y[0,13,0,12]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,13,0,12]  -> tiled p=0 l=0 cm=12 r=13..13  yr_sweep=14  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=205  byte_offset=102  nibble=1  dest_addr=0x63d74d03f806  packed_val=0x70  val=7
+    [OCM READ] bank=0 sram_addr=206  elem_addr=0x63d74d03eed8  raw_val=385  -> y[0,14,0,12]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,14,0,12]  -> tiled p=0 l=0 cm=12 r=14..14  yr_sweep=15  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=206  byte_offset=103  nibble=0  dest_addr=0x63d74d03f807  packed_val=0x03  val=3
+    [OCM READ] bank=0 sram_addr=207  elem_addr=0x63d74d03eedc  raw_val=583  -> y[0,15,0,12]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,15,0,12]  -> tiled p=0 l=0 cm=12 r=15..15  yr_sweep=16  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=207  byte_offset=103  nibble=1  dest_addr=0x63d74d03f807  packed_val=0x50  val=5
+    [OCM READ] bank=0 sram_addr=208  elem_addr=0x63d74d03eee0  raw_val=403  -> y[0,0,0,13]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,0,0,13]  -> tiled p=0 l=0 cm=13 r=0..0  yr_sweep=1  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=208  byte_offset=104  nibble=0  dest_addr=0x63d74d03f808  packed_val=0x03  val=3
+    [OCM READ] bank=0 sram_addr=209  elem_addr=0x63d74d03eee4  raw_val=-355  -> y[0,1,0,13]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,1,0,13]  -> tiled p=0 l=0 cm=13 r=1..1  yr_sweep=2  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=209  byte_offset=104  nibble=1  dest_addr=0x63d74d03f808  packed_val=0xd0  val=-3
+    [OCM READ] bank=0 sram_addr=210  elem_addr=0x63d74d03eee8  raw_val=22  -> y[0,2,0,13]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,2,0,13]  -> tiled p=0 l=0 cm=13 r=2..2  yr_sweep=3  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=210  byte_offset=105  nibble=0  dest_addr=0x63d74d03f809  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=211  elem_addr=0x63d74d03eeec  raw_val=-486  -> y[0,3,0,13]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,3,0,13]  -> tiled p=0 l=0 cm=13 r=3..3  yr_sweep=4  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=211  byte_offset=105  nibble=1  dest_addr=0x63d74d03f809  packed_val=0xc0  val=-4
+    [OCM READ] bank=0 sram_addr=212  elem_addr=0x63d74d03eef0  raw_val=-845  -> y[0,4,0,13]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,4,0,13]  -> tiled p=0 l=0 cm=13 r=4..4  yr_sweep=5  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=212  byte_offset=106  nibble=0  dest_addr=0x63d74d03f80a  packed_val=0x09  val=-7
+    [OCM READ] bank=0 sram_addr=213  elem_addr=0x63d74d03eef4  raw_val=265  -> y[0,5,0,13]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,5,0,13]  -> tiled p=0 l=0 cm=13 r=5..5  yr_sweep=6  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=213  byte_offset=106  nibble=1  dest_addr=0x63d74d03f80a  packed_val=0x20  val=2
+    [OCM READ] bank=0 sram_addr=214  elem_addr=0x63d74d03eef8  raw_val=89  -> y[0,6,0,13]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,6,0,13]  -> tiled p=0 l=0 cm=13 r=6..6  yr_sweep=7  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=214  byte_offset=107  nibble=0  dest_addr=0x63d74d03f80b  packed_val=0x01  val=1
+    [OCM READ] bank=0 sram_addr=215  elem_addr=0x63d74d03eefc  raw_val=-152  -> y[0,7,0,13]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,7,0,13]  -> tiled p=0 l=0 cm=13 r=7..7  yr_sweep=8  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=215  byte_offset=107  nibble=1  dest_addr=0x63d74d03f80b  packed_val=0xf0  val=-1
+    [OCM READ] bank=0 sram_addr=216  elem_addr=0x63d74d03ef00  raw_val=-45  -> y[0,8,0,13]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,8,0,13]  -> tiled p=0 l=0 cm=13 r=8..8  yr_sweep=9  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=216  byte_offset=108  nibble=0  dest_addr=0x63d74d03f80c  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=217  elem_addr=0x63d74d03ef04  raw_val=166  -> y[0,9,0,13]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,9,0,13]  -> tiled p=0 l=0 cm=13 r=9..9  yr_sweep=10  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=217  byte_offset=108  nibble=1  dest_addr=0x63d74d03f80c  packed_val=0x10  val=1
+    [OCM READ] bank=0 sram_addr=218  elem_addr=0x63d74d03ef08  raw_val=-254  -> y[0,10,0,13]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,10,0,13]  -> tiled p=0 l=0 cm=13 r=10..10  yr_sweep=11  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=218  byte_offset=109  nibble=0  dest_addr=0x63d74d03f80d  packed_val=0x0e  val=-2
+    [OCM READ] bank=0 sram_addr=219  elem_addr=0x63d74d03ef0c  raw_val=38  -> y[0,11,0,13]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,11,0,13]  -> tiled p=0 l=0 cm=13 r=11..11  yr_sweep=12  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=219  byte_offset=109  nibble=1  dest_addr=0x63d74d03f80d  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=220  elem_addr=0x63d74d03ef10  raw_val=357  -> y[0,12,0,13]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,12,0,13]  -> tiled p=0 l=0 cm=13 r=12..12  yr_sweep=13  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=220  byte_offset=110  nibble=0  dest_addr=0x63d74d03f80e  packed_val=0x03  val=3
+    [OCM READ] bank=0 sram_addr=221  elem_addr=0x63d74d03ef14  raw_val=-618  -> y[0,13,0,13]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,13,0,13]  -> tiled p=0 l=0 cm=13 r=13..13  yr_sweep=14  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=221  byte_offset=110  nibble=1  dest_addr=0x63d74d03f80e  packed_val=0xb0  val=-5
+    [OCM READ] bank=0 sram_addr=222  elem_addr=0x63d74d03ef18  raw_val=375  -> y[0,14,0,13]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,14,0,13]  -> tiled p=0 l=0 cm=13 r=14..14  yr_sweep=15  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=222  byte_offset=111  nibble=0  dest_addr=0x63d74d03f80f  packed_val=0x03  val=3
+    [OCM READ] bank=0 sram_addr=223  elem_addr=0x63d74d03ef1c  raw_val=-87  -> y[0,15,0,13]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,15,0,13]  -> tiled p=0 l=0 cm=13 r=15..15  yr_sweep=16  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=223  byte_offset=111  nibble=1  dest_addr=0x63d74d03f80f  packed_val=0xf0  val=-1
+    [OCM READ] bank=0 sram_addr=224  elem_addr=0x63d74d03ef20  raw_val=-527  -> y[0,0,0,14]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,0,0,14]  -> tiled p=0 l=0 cm=14 r=0..0  yr_sweep=1  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=224  byte_offset=112  nibble=0  dest_addr=0x63d74d03f810  packed_val=0x0c  val=-4
+    [OCM READ] bank=0 sram_addr=225  elem_addr=0x63d74d03ef24  raw_val=248  -> y[0,1,0,14]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,1,0,14]  -> tiled p=0 l=0 cm=14 r=1..1  yr_sweep=2  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=225  byte_offset=112  nibble=1  dest_addr=0x63d74d03f810  packed_val=0x20  val=2
+    [OCM READ] bank=0 sram_addr=226  elem_addr=0x63d74d03ef28  raw_val=-68  -> y[0,2,0,14]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,2,0,14]  -> tiled p=0 l=0 cm=14 r=2..2  yr_sweep=3  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=226  byte_offset=113  nibble=0  dest_addr=0x63d74d03f811  packed_val=0x0f  val=-1
+    [OCM READ] bank=0 sram_addr=227  elem_addr=0x63d74d03ef2c  raw_val=148  -> y[0,3,0,14]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,3,0,14]  -> tiled p=0 l=0 cm=14 r=3..3  yr_sweep=4  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=227  byte_offset=113  nibble=1  dest_addr=0x63d74d03f811  packed_val=0x10  val=1
+    [OCM READ] bank=0 sram_addr=228  elem_addr=0x63d74d03ef30  raw_val=-178  -> y[0,4,0,14]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,4,0,14]  -> tiled p=0 l=0 cm=14 r=4..4  yr_sweep=5  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=228  byte_offset=114  nibble=0  dest_addr=0x63d74d03f812  packed_val=0x0f  val=-1
+    [OCM READ] bank=0 sram_addr=229  elem_addr=0x63d74d03ef34  raw_val=66  -> y[0,5,0,14]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,5,0,14]  -> tiled p=0 l=0 cm=14 r=5..5  yr_sweep=6  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=229  byte_offset=114  nibble=1  dest_addr=0x63d74d03f812  packed_val=0x10  val=1
+    [OCM READ] bank=0 sram_addr=230  elem_addr=0x63d74d03ef38  raw_val=-267  -> y[0,6,0,14]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,6,0,14]  -> tiled p=0 l=0 cm=14 r=6..6  yr_sweep=7  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=230  byte_offset=115  nibble=0  dest_addr=0x63d74d03f813  packed_val=0x0e  val=-2
+    [OCM READ] bank=0 sram_addr=231  elem_addr=0x63d74d03ef3c  raw_val=-482  -> y[0,7,0,14]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,7,0,14]  -> tiled p=0 l=0 cm=14 r=7..7  yr_sweep=8  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=231  byte_offset=115  nibble=1  dest_addr=0x63d74d03f813  packed_val=0xc0  val=-4
+    [OCM READ] bank=0 sram_addr=232  elem_addr=0x63d74d03ef40  raw_val=-169  -> y[0,8,0,14]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,8,0,14]  -> tiled p=0 l=0 cm=14 r=8..8  yr_sweep=9  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=232  byte_offset=116  nibble=0  dest_addr=0x63d74d03f814  packed_val=0x0f  val=-1
+    [OCM READ] bank=0 sram_addr=233  elem_addr=0x63d74d03ef44  raw_val=-661  -> y[0,9,0,14]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,9,0,14]  -> tiled p=0 l=0 cm=14 r=9..9  yr_sweep=10  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=233  byte_offset=116  nibble=1  dest_addr=0x63d74d03f814  packed_val=0xb0  val=-5
+    [OCM READ] bank=0 sram_addr=234  elem_addr=0x63d74d03ef48  raw_val=-546  -> y[0,10,0,14]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,10,0,14]  -> tiled p=0 l=0 cm=14 r=10..10  yr_sweep=11  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=234  byte_offset=117  nibble=0  dest_addr=0x63d74d03f815  packed_val=0x0c  val=-4
+    [OCM READ] bank=0 sram_addr=235  elem_addr=0x63d74d03ef4c  raw_val=-496  -> y[0,11,0,14]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,11,0,14]  -> tiled p=0 l=0 cm=14 r=11..11  yr_sweep=12  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=235  byte_offset=117  nibble=1  dest_addr=0x63d74d03f815  packed_val=0xc0  val=-4
+    [OCM READ] bank=0 sram_addr=236  elem_addr=0x63d74d03ef50  raw_val=3  -> y[0,12,0,14]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,12,0,14]  -> tiled p=0 l=0 cm=14 r=12..12  yr_sweep=13  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=236  byte_offset=118  nibble=0  dest_addr=0x63d74d03f816  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=237  elem_addr=0x63d74d03ef54  raw_val=-915  -> y[0,13,0,14]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,13,0,14]  -> tiled p=0 l=0 cm=14 r=13..13  yr_sweep=14  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=237  byte_offset=118  nibble=1  dest_addr=0x63d74d03f816  packed_val=0x90  val=-7
+    [OCM READ] bank=0 sram_addr=238  elem_addr=0x63d74d03ef58  raw_val=-88  -> y[0,14,0,14]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,14,0,14]  -> tiled p=0 l=0 cm=14 r=14..14  yr_sweep=15  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=238  byte_offset=119  nibble=0  dest_addr=0x63d74d03f817  packed_val=0x0f  val=-1
+    [OCM READ] bank=0 sram_addr=239  elem_addr=0x63d74d03ef5c  raw_val=-391  -> y[0,15,0,14]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,15,0,14]  -> tiled p=0 l=0 cm=14 r=15..15  yr_sweep=16  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=239  byte_offset=119  nibble=1  dest_addr=0x63d74d03f817  packed_val=0xd0  val=-3
+    [OCM READ] bank=0 sram_addr=240  elem_addr=0x63d74d03ef60  raw_val=-1085  -> y[0,0,0,15]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,0,0,15]  -> tiled p=0 l=0 cm=15 r=0..0  yr_sweep=1  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=240  byte_offset=120  nibble=0  dest_addr=0x63d74d03f818  packed_val=0x08  val=-8
+    [OCM READ] bank=0 sram_addr=241  elem_addr=0x63d74d03ef64  raw_val=-438  -> y[0,1,0,15]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,1,0,15]  -> tiled p=0 l=0 cm=15 r=1..1  yr_sweep=2  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=241  byte_offset=120  nibble=1  dest_addr=0x63d74d03f818  packed_val=0xd0  val=-3
+    [OCM READ] bank=0 sram_addr=242  elem_addr=0x63d74d03ef68  raw_val=-617  -> y[0,2,0,15]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,2,0,15]  -> tiled p=0 l=0 cm=15 r=2..2  yr_sweep=3  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=242  byte_offset=121  nibble=0  dest_addr=0x63d74d03f819  packed_val=0x0b  val=-5
+    [OCM READ] bank=0 sram_addr=243  elem_addr=0x63d74d03ef6c  raw_val=-264  -> y[0,3,0,15]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,3,0,15]  -> tiled p=0 l=0 cm=15 r=3..3  yr_sweep=4  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=243  byte_offset=121  nibble=1  dest_addr=0x63d74d03f819  packed_val=0xe0  val=-2
+    [OCM READ] bank=0 sram_addr=244  elem_addr=0x63d74d03ef70  raw_val=-448  -> y[0,4,0,15]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,4,0,15]  -> tiled p=0 l=0 cm=15 r=4..4  yr_sweep=5  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=244  byte_offset=122  nibble=0  dest_addr=0x63d74d03f81a  packed_val=0x0c  val=-4
+    [OCM READ] bank=0 sram_addr=245  elem_addr=0x63d74d03ef74  raw_val=293  -> y[0,5,0,15]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,5,0,15]  -> tiled p=0 l=0 cm=15 r=5..5  yr_sweep=6  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=245  byte_offset=122  nibble=1  dest_addr=0x63d74d03f81a  packed_val=0x20  val=2
+    [OCM READ] bank=0 sram_addr=246  elem_addr=0x63d74d03ef78  raw_val=-505  -> y[0,6,0,15]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,6,0,15]  -> tiled p=0 l=0 cm=15 r=6..6  yr_sweep=7  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=246  byte_offset=123  nibble=0  dest_addr=0x63d74d03f81b  packed_val=0x0c  val=-4
+    [OCM READ] bank=0 sram_addr=247  elem_addr=0x63d74d03ef7c  raw_val=-598  -> y[0,7,0,15]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,7,0,15]  -> tiled p=0 l=0 cm=15 r=7..7  yr_sweep=8  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=247  byte_offset=123  nibble=1  dest_addr=0x63d74d03f81b  packed_val=0xb0  val=-5
+    [OCM READ] bank=0 sram_addr=248  elem_addr=0x63d74d03ef80  raw_val=-853  -> y[0,8,0,15]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,8,0,15]  -> tiled p=0 l=0 cm=15 r=8..8  yr_sweep=9  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=248  byte_offset=124  nibble=0  dest_addr=0x63d74d03f81c  packed_val=0x09  val=-7
+    [OCM READ] bank=0 sram_addr=249  elem_addr=0x63d74d03ef84  raw_val=-419  -> y[0,9,0,15]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,9,0,15]  -> tiled p=0 l=0 cm=15 r=9..9  yr_sweep=10  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=249  byte_offset=124  nibble=1  dest_addr=0x63d74d03f81c  packed_val=0xd0  val=-3
+    [OCM READ] bank=0 sram_addr=250  elem_addr=0x63d74d03ef88  raw_val=-469  -> y[0,10,0,15]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,10,0,15]  -> tiled p=0 l=0 cm=15 r=10..10  yr_sweep=11  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=250  byte_offset=125  nibble=0  dest_addr=0x63d74d03f81d  packed_val=0x0c  val=-4
+    [OCM READ] bank=0 sram_addr=251  elem_addr=0x63d74d03ef8c  raw_val=-24  -> y[0,11,0,15]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,11,0,15]  -> tiled p=0 l=0 cm=15 r=11..11  yr_sweep=12  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=251  byte_offset=125  nibble=1  dest_addr=0x63d74d03f81d  packed_val=0x00  val=0
+    [OCM READ] bank=0 sram_addr=252  elem_addr=0x63d74d03ef90  raw_val=-933  -> y[0,12,0,15]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,12,0,15]  -> tiled p=0 l=0 cm=15 r=12..12  yr_sweep=13  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=252  byte_offset=126  nibble=0  dest_addr=0x63d74d03f81e  packed_val=0x09  val=-7
+    [OCM READ] bank=0 sram_addr=253  elem_addr=0x63d74d03ef94  raw_val=-758  -> y[0,13,0,15]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,13,0,15]  -> tiled p=0 l=0 cm=15 r=13..13  yr_sweep=14  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=253  byte_offset=126  nibble=1  dest_addr=0x63d74d03f81e  packed_val=0xa0  val=-6
+    [OCM READ] bank=0 sram_addr=254  elem_addr=0x63d74d03ef98  raw_val=-465  -> y[0,14,0,15]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,14,0,15]  -> tiled p=0 l=0 cm=15 r=14..14  yr_sweep=15  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=254  byte_offset=127  nibble=0  dest_addr=0x63d74d03f81f  packed_val=0x0c  val=-4
+    [OCM READ] bank=0 sram_addr=255  elem_addr=0x63d74d03ef9c  raw_val=-470  -> y[0,15,0,15]
+  [TILE_WRITE->NEXT_BUNDLE] ib=0 y[0,15,0,15]  -> tiled p=0 l=0 cm=15 r=15..15  yr_sweep=16  out_buf_base=0x63d74d03f7a0
+      [WRITE_X] flat=255  byte_offset=127  nibble=1  dest_addr=0x63d74d03f81f  packed_val=0xc0  val=-4
+0-------- iw_kw2 0 done 
+0-------- il 0 done
+0-------- in 0 done
+0------ it 0 done
+0--- ip 0 done
+0- done bundle!! ib:0
+
+[BUNDLE 1] in_buf=0  out_buf=-1  add_in=-1  add_out=-1  p=1  t=1  n=1  h=16  w=1  co=16
+  READ  from: 0x63d74d03f7a0  (mp->out_buffers[in_buffer_idx])
+  WRITE to:   0x63d74d03f3a0  (mp->out_buffers[-1])
+  mp->x=0x63d74d03e720  mp->out_buffers[0]=0x63d74d03f7a0  mp->w=0x63d74d03e520  mp->y=0x63d74d03e7a0
+  [b1 ip=0 it=0 in=0 il=0 iw=0] ocm_bank -> 1  o_bpt=1024 bytes  ocm_addr=0x63d74d03efa0
+    [OCM READ] bank=1 sram_addr=0  elem_addr=0x63d74d03efa0  raw_val=682  -> y[0,0,0,0]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=0  val=5  -> y_addr=0x63d74d03e7a0
+    [OCM READ] bank=1 sram_addr=1  elem_addr=0x63d74d03efa4  raw_val=-273  -> y[0,1,0,0]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=16  val=-2  -> y_addr=0x63d74d03e7e0
+    [OCM READ] bank=1 sram_addr=2  elem_addr=0x63d74d03efa8  raw_val=-461  -> y[0,2,0,0]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=32  val=-4  -> y_addr=0x63d74d03e820
+    [OCM READ] bank=1 sram_addr=3  elem_addr=0x63d74d03efac  raw_val=-26  -> y[0,3,0,0]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=48  val=0  -> y_addr=0x63d74d03e860
+    [OCM READ] bank=1 sram_addr=4  elem_addr=0x63d74d03efb0  raw_val=496  -> y[0,4,0,0]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=64  val=4  -> y_addr=0x63d74d03e8a0
+    [OCM READ] bank=1 sram_addr=5  elem_addr=0x63d74d03efb4  raw_val=-463  -> y[0,5,0,0]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=80  val=-4  -> y_addr=0x63d74d03e8e0
+    [OCM READ] bank=1 sram_addr=6  elem_addr=0x63d74d03efb8  raw_val=467  -> y[0,6,0,0]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=96  val=4  -> y_addr=0x63d74d03e920
+    [OCM READ] bank=1 sram_addr=7  elem_addr=0x63d74d03efbc  raw_val=-557  -> y[0,7,0,0]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=112  val=-4  -> y_addr=0x63d74d03e960
+    [OCM READ] bank=1 sram_addr=8  elem_addr=0x63d74d03efc0  raw_val=-294  -> y[0,8,0,0]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=128  val=-2  -> y_addr=0x63d74d03e9a0
+    [OCM READ] bank=1 sram_addr=9  elem_addr=0x63d74d03efc4  raw_val=196  -> y[0,9,0,0]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=144  val=2  -> y_addr=0x63d74d03e9e0
+    [OCM READ] bank=1 sram_addr=10  elem_addr=0x63d74d03efc8  raw_val=41  -> y[0,10,0,0]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=160  val=0  -> y_addr=0x63d74d03ea20
+    [OCM READ] bank=1 sram_addr=11  elem_addr=0x63d74d03efcc  raw_val=546  -> y[0,11,0,0]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=176  val=4  -> y_addr=0x63d74d03ea60
+    [OCM READ] bank=1 sram_addr=12  elem_addr=0x63d74d03efd0  raw_val=-151  -> y[0,12,0,0]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=192  val=-1  -> y_addr=0x63d74d03eaa0
+    [OCM READ] bank=1 sram_addr=13  elem_addr=0x63d74d03efd4  raw_val=-278  -> y[0,13,0,0]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=208  val=-2  -> y_addr=0x63d74d03eae0
+    [OCM READ] bank=1 sram_addr=14  elem_addr=0x63d74d03efd8  raw_val=-637  -> y[0,14,0,0]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=224  val=-5  -> y_addr=0x63d74d03eb20
+    [OCM READ] bank=1 sram_addr=15  elem_addr=0x63d74d03efdc  raw_val=-286  -> y[0,15,0,0]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=240  val=-2  -> y_addr=0x63d74d03eb60
+    [OCM READ] bank=1 sram_addr=16  elem_addr=0x63d74d03efe0  raw_val=333  -> y[0,0,0,1]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=1  val=3  -> y_addr=0x63d74d03e7a4
+    [OCM READ] bank=1 sram_addr=17  elem_addr=0x63d74d03efe4  raw_val=-482  -> y[0,1,0,1]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=17  val=-4  -> y_addr=0x63d74d03e7e4
+    [OCM READ] bank=1 sram_addr=18  elem_addr=0x63d74d03efe8  raw_val=-837  -> y[0,2,0,1]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=33  val=-7  -> y_addr=0x63d74d03e824
+    [OCM READ] bank=1 sram_addr=19  elem_addr=0x63d74d03efec  raw_val=-228  -> y[0,3,0,1]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=49  val=-2  -> y_addr=0x63d74d03e864
+    [OCM READ] bank=1 sram_addr=20  elem_addr=0x63d74d03eff0  raw_val=-140  -> y[0,4,0,1]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=65  val=-1  -> y_addr=0x63d74d03e8a4
+    [OCM READ] bank=1 sram_addr=21  elem_addr=0x63d74d03eff4  raw_val=-441  -> y[0,5,0,1]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=81  val=-3  -> y_addr=0x63d74d03e8e4
+    [OCM READ] bank=1 sram_addr=22  elem_addr=0x63d74d03eff8  raw_val=215  -> y[0,6,0,1]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=97  val=2  -> y_addr=0x63d74d03e924
+    [OCM READ] bank=1 sram_addr=23  elem_addr=0x63d74d03effc  raw_val=-902  -> y[0,7,0,1]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=113  val=-7  -> y_addr=0x63d74d03e964
+    [OCM READ] bank=1 sram_addr=24  elem_addr=0x63d74d03f000  raw_val=-730  -> y[0,8,0,1]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=129  val=-6  -> y_addr=0x63d74d03e9a4
+    [OCM READ] bank=1 sram_addr=25  elem_addr=0x63d74d03f004  raw_val=-724  -> y[0,9,0,1]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=145  val=-6  -> y_addr=0x63d74d03e9e4
+    [OCM READ] bank=1 sram_addr=26  elem_addr=0x63d74d03f008  raw_val=-652  -> y[0,10,0,1]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=161  val=-5  -> y_addr=0x63d74d03ea24
+    [OCM READ] bank=1 sram_addr=27  elem_addr=0x63d74d03f00c  raw_val=-541  -> y[0,11,0,1]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=177  val=-4  -> y_addr=0x63d74d03ea64
+    [OCM READ] bank=1 sram_addr=28  elem_addr=0x63d74d03f010  raw_val=70  -> y[0,12,0,1]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=193  val=1  -> y_addr=0x63d74d03eaa4
+    [OCM READ] bank=1 sram_addr=29  elem_addr=0x63d74d03f014  raw_val=-927  -> y[0,13,0,1]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=209  val=-7  -> y_addr=0x63d74d03eae4
+    [OCM READ] bank=1 sram_addr=30  elem_addr=0x63d74d03f018  raw_val=-881  -> y[0,14,0,1]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=225  val=-7  -> y_addr=0x63d74d03eb24
+    [OCM READ] bank=1 sram_addr=31  elem_addr=0x63d74d03f01c  raw_val=-380  -> y[0,15,0,1]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=241  val=-3  -> y_addr=0x63d74d03eb64
+    [OCM READ] bank=1 sram_addr=32  elem_addr=0x63d74d03f020  raw_val=488  -> y[0,0,0,2]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=2  val=4  -> y_addr=0x63d74d03e7a8
+    [OCM READ] bank=1 sram_addr=33  elem_addr=0x63d74d03f024  raw_val=696  -> y[0,1,0,2]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=18  val=5  -> y_addr=0x63d74d03e7e8
+    [OCM READ] bank=1 sram_addr=34  elem_addr=0x63d74d03f028  raw_val=336  -> y[0,2,0,2]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=34  val=3  -> y_addr=0x63d74d03e828
+    [OCM READ] bank=1 sram_addr=35  elem_addr=0x63d74d03f02c  raw_val=854  -> y[0,3,0,2]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=50  val=7  -> y_addr=0x63d74d03e868
+    [OCM READ] bank=1 sram_addr=36  elem_addr=0x63d74d03f030  raw_val=-664  -> y[0,4,0,2]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=66  val=-5  -> y_addr=0x63d74d03e8a8
+    [OCM READ] bank=1 sram_addr=37  elem_addr=0x63d74d03f034  raw_val=157  -> y[0,5,0,2]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=82  val=1  -> y_addr=0x63d74d03e8e8
+    [OCM READ] bank=1 sram_addr=38  elem_addr=0x63d74d03f038  raw_val=1997  -> y[0,6,0,2]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=98  val=7  -> y_addr=0x63d74d03e928
+    [OCM READ] bank=1 sram_addr=39  elem_addr=0x63d74d03f03c  raw_val=407  -> y[0,7,0,2]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=114  val=3  -> y_addr=0x63d74d03e968
+    [OCM READ] bank=1 sram_addr=40  elem_addr=0x63d74d03f040  raw_val=-82  -> y[0,8,0,2]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=130  val=-1  -> y_addr=0x63d74d03e9a8
+    [OCM READ] bank=1 sram_addr=41  elem_addr=0x63d74d03f044  raw_val=141  -> y[0,9,0,2]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=146  val=1  -> y_addr=0x63d74d03e9e8
+    [OCM READ] bank=1 sram_addr=42  elem_addr=0x63d74d03f048  raw_val=352  -> y[0,10,0,2]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=162  val=3  -> y_addr=0x63d74d03ea28
+    [OCM READ] bank=1 sram_addr=43  elem_addr=0x63d74d03f04c  raw_val=1291  -> y[0,11,0,2]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=178  val=7  -> y_addr=0x63d74d03ea68
+    [OCM READ] bank=1 sram_addr=44  elem_addr=0x63d74d03f050  raw_val=500  -> y[0,12,0,2]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=194  val=4  -> y_addr=0x63d74d03eaa8
+    [OCM READ] bank=1 sram_addr=45  elem_addr=0x63d74d03f054  raw_val=-492  -> y[0,13,0,2]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=210  val=-4  -> y_addr=0x63d74d03eae8
+    [OCM READ] bank=1 sram_addr=46  elem_addr=0x63d74d03f058  raw_val=481  -> y[0,14,0,2]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=226  val=4  -> y_addr=0x63d74d03eb28
+    [OCM READ] bank=1 sram_addr=47  elem_addr=0x63d74d03f05c  raw_val=195  -> y[0,15,0,2]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=242  val=2  -> y_addr=0x63d74d03eb68
+    [OCM READ] bank=1 sram_addr=48  elem_addr=0x63d74d03f060  raw_val=-554  -> y[0,0,0,3]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=3  val=-4  -> y_addr=0x63d74d03e7ac
+    [OCM READ] bank=1 sram_addr=49  elem_addr=0x63d74d03f064  raw_val=1142  -> y[0,1,0,3]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=19  val=7  -> y_addr=0x63d74d03e7ec
+    [OCM READ] bank=1 sram_addr=50  elem_addr=0x63d74d03f068  raw_val=-229  -> y[0,2,0,3]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=35  val=-2  -> y_addr=0x63d74d03e82c
+    [OCM READ] bank=1 sram_addr=51  elem_addr=0x63d74d03f06c  raw_val=620  -> y[0,3,0,3]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=51  val=5  -> y_addr=0x63d74d03e86c
+    [OCM READ] bank=1 sram_addr=52  elem_addr=0x63d74d03f070  raw_val=-260  -> y[0,4,0,3]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=67  val=-2  -> y_addr=0x63d74d03e8ac
+    [OCM READ] bank=1 sram_addr=53  elem_addr=0x63d74d03f074  raw_val=-282  -> y[0,5,0,3]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=83  val=-2  -> y_addr=0x63d74d03e8ec
+    [OCM READ] bank=1 sram_addr=54  elem_addr=0x63d74d03f078  raw_val=240  -> y[0,6,0,3]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=99  val=2  -> y_addr=0x63d74d03e92c
+    [OCM READ] bank=1 sram_addr=55  elem_addr=0x63d74d03f07c  raw_val=-124  -> y[0,7,0,3]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=115  val=-1  -> y_addr=0x63d74d03e96c
+    [OCM READ] bank=1 sram_addr=56  elem_addr=0x63d74d03f080  raw_val=-332  -> y[0,8,0,3]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=131  val=-3  -> y_addr=0x63d74d03e9ac
+    [OCM READ] bank=1 sram_addr=57  elem_addr=0x63d74d03f084  raw_val=-382  -> y[0,9,0,3]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=147  val=-3  -> y_addr=0x63d74d03e9ec
+    [OCM READ] bank=1 sram_addr=58  elem_addr=0x63d74d03f088  raw_val=-28  -> y[0,10,0,3]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=163  val=0  -> y_addr=0x63d74d03ea2c
+    [OCM READ] bank=1 sram_addr=59  elem_addr=0x63d74d03f08c  raw_val=-282  -> y[0,11,0,3]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=179  val=-2  -> y_addr=0x63d74d03ea6c
+    [OCM READ] bank=1 sram_addr=60  elem_addr=0x63d74d03f090  raw_val=-77  -> y[0,12,0,3]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=195  val=-1  -> y_addr=0x63d74d03eaac
+    [OCM READ] bank=1 sram_addr=61  elem_addr=0x63d74d03f094  raw_val=-412  -> y[0,13,0,3]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=211  val=-3  -> y_addr=0x63d74d03eaec
+    [OCM READ] bank=1 sram_addr=62  elem_addr=0x63d74d03f098  raw_val=217  -> y[0,14,0,3]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=227  val=2  -> y_addr=0x63d74d03eb2c
+    [OCM READ] bank=1 sram_addr=63  elem_addr=0x63d74d03f09c  raw_val=231  -> y[0,15,0,3]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=243  val=2  -> y_addr=0x63d74d03eb6c
+    [OCM READ] bank=1 sram_addr=64  elem_addr=0x63d74d03f0a0  raw_val=504  -> y[0,0,0,4]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=4  val=4  -> y_addr=0x63d74d03e7b0
+    [OCM READ] bank=1 sram_addr=65  elem_addr=0x63d74d03f0a4  raw_val=-329  -> y[0,1,0,4]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=20  val=-3  -> y_addr=0x63d74d03e7f0
+    [OCM READ] bank=1 sram_addr=66  elem_addr=0x63d74d03f0a8  raw_val=513  -> y[0,2,0,4]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=36  val=4  -> y_addr=0x63d74d03e830
+    [OCM READ] bank=1 sram_addr=67  elem_addr=0x63d74d03f0ac  raw_val=367  -> y[0,3,0,4]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=52  val=3  -> y_addr=0x63d74d03e870
+    [OCM READ] bank=1 sram_addr=68  elem_addr=0x63d74d03f0b0  raw_val=-173  -> y[0,4,0,4]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=68  val=-1  -> y_addr=0x63d74d03e8b0
+    [OCM READ] bank=1 sram_addr=69  elem_addr=0x63d74d03f0b4  raw_val=217  -> y[0,5,0,4]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=84  val=2  -> y_addr=0x63d74d03e8f0
+    [OCM READ] bank=1 sram_addr=70  elem_addr=0x63d74d03f0b8  raw_val=939  -> y[0,6,0,4]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=100  val=7  -> y_addr=0x63d74d03e930
+    [OCM READ] bank=1 sram_addr=71  elem_addr=0x63d74d03f0bc  raw_val=-408  -> y[0,7,0,4]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=116  val=-3  -> y_addr=0x63d74d03e970
+    [OCM READ] bank=1 sram_addr=72  elem_addr=0x63d74d03f0c0  raw_val=746  -> y[0,8,0,4]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=132  val=6  -> y_addr=0x63d74d03e9b0
+    [OCM READ] bank=1 sram_addr=73  elem_addr=0x63d74d03f0c4  raw_val=615  -> y[0,9,0,4]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=148  val=5  -> y_addr=0x63d74d03e9f0
+    [OCM READ] bank=1 sram_addr=74  elem_addr=0x63d74d03f0c8  raw_val=-299  -> y[0,10,0,4]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=164  val=-2  -> y_addr=0x63d74d03ea30
+    [OCM READ] bank=1 sram_addr=75  elem_addr=0x63d74d03f0cc  raw_val=248  -> y[0,11,0,4]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=180  val=2  -> y_addr=0x63d74d03ea70
+    [OCM READ] bank=1 sram_addr=76  elem_addr=0x63d74d03f0d0  raw_val=524  -> y[0,12,0,4]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=196  val=4  -> y_addr=0x63d74d03eab0
+    [OCM READ] bank=1 sram_addr=77  elem_addr=0x63d74d03f0d4  raw_val=-583  -> y[0,13,0,4]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=212  val=-5  -> y_addr=0x63d74d03eaf0
+    [OCM READ] bank=1 sram_addr=78  elem_addr=0x63d74d03f0d8  raw_val=35  -> y[0,14,0,4]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=228  val=0  -> y_addr=0x63d74d03eb30
+    [OCM READ] bank=1 sram_addr=79  elem_addr=0x63d74d03f0dc  raw_val=-124  -> y[0,15,0,4]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=244  val=-1  -> y_addr=0x63d74d03eb70
+    [OCM READ] bank=1 sram_addr=80  elem_addr=0x63d74d03f0e0  raw_val=2061  -> y[0,0,0,5]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=5  val=7  -> y_addr=0x63d74d03e7b4
+    [OCM READ] bank=1 sram_addr=81  elem_addr=0x63d74d03f0e4  raw_val=2509  -> y[0,1,0,5]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=21  val=7  -> y_addr=0x63d74d03e7f4
+    [OCM READ] bank=1 sram_addr=82  elem_addr=0x63d74d03f0e8  raw_val=2246  -> y[0,2,0,5]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=37  val=7  -> y_addr=0x63d74d03e834
+    [OCM READ] bank=1 sram_addr=83  elem_addr=0x63d74d03f0ec  raw_val=2005  -> y[0,3,0,5]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=53  val=7  -> y_addr=0x63d74d03e874
+    [OCM READ] bank=1 sram_addr=84  elem_addr=0x63d74d03f0f0  raw_val=1644  -> y[0,4,0,5]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=69  val=7  -> y_addr=0x63d74d03e8b4
+    [OCM READ] bank=1 sram_addr=85  elem_addr=0x63d74d03f0f4  raw_val=945  -> y[0,5,0,5]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=85  val=7  -> y_addr=0x63d74d03e8f4
+    [OCM READ] bank=1 sram_addr=86  elem_addr=0x63d74d03f0f8  raw_val=1710  -> y[0,6,0,5]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=101  val=7  -> y_addr=0x63d74d03e934
+    [OCM READ] bank=1 sram_addr=87  elem_addr=0x63d74d03f0fc  raw_val=2695  -> y[0,7,0,5]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=117  val=7  -> y_addr=0x63d74d03e974
+    [OCM READ] bank=1 sram_addr=88  elem_addr=0x63d74d03f100  raw_val=2135  -> y[0,8,0,5]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=133  val=7  -> y_addr=0x63d74d03e9b4
+    [OCM READ] bank=1 sram_addr=89  elem_addr=0x63d74d03f104  raw_val=876  -> y[0,9,0,5]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=149  val=7  -> y_addr=0x63d74d03e9f4
+    [OCM READ] bank=1 sram_addr=90  elem_addr=0x63d74d03f108  raw_val=2409  -> y[0,10,0,5]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=165  val=7  -> y_addr=0x63d74d03ea34
+    [OCM READ] bank=1 sram_addr=91  elem_addr=0x63d74d03f10c  raw_val=1909  -> y[0,11,0,5]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=181  val=7  -> y_addr=0x63d74d03ea74
+    [OCM READ] bank=1 sram_addr=92  elem_addr=0x63d74d03f110  raw_val=1868  -> y[0,12,0,5]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=197  val=7  -> y_addr=0x63d74d03eab4
+    [OCM READ] bank=1 sram_addr=93  elem_addr=0x63d74d03f114  raw_val=2636  -> y[0,13,0,5]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=213  val=7  -> y_addr=0x63d74d03eaf4
+    [OCM READ] bank=1 sram_addr=94  elem_addr=0x63d74d03f118  raw_val=2104  -> y[0,14,0,5]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=229  val=7  -> y_addr=0x63d74d03eb34
+    [OCM READ] bank=1 sram_addr=95  elem_addr=0x63d74d03f11c  raw_val=1678  -> y[0,15,0,5]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=245  val=7  -> y_addr=0x63d74d03eb74
+    [OCM READ] bank=1 sram_addr=96  elem_addr=0x63d74d03f120  raw_val=40  -> y[0,0,0,6]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=6  val=0  -> y_addr=0x63d74d03e7b8
+    [OCM READ] bank=1 sram_addr=97  elem_addr=0x63d74d03f124  raw_val=476  -> y[0,1,0,6]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=22  val=4  -> y_addr=0x63d74d03e7f8
+    [OCM READ] bank=1 sram_addr=98  elem_addr=0x63d74d03f128  raw_val=1159  -> y[0,2,0,6]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=38  val=7  -> y_addr=0x63d74d03e838
+    [OCM READ] bank=1 sram_addr=99  elem_addr=0x63d74d03f12c  raw_val=120  -> y[0,3,0,6]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=54  val=1  -> y_addr=0x63d74d03e878
+    [OCM READ] bank=1 sram_addr=100  elem_addr=0x63d74d03f130  raw_val=-658  -> y[0,4,0,6]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=70  val=-5  -> y_addr=0x63d74d03e8b8
+    [OCM READ] bank=1 sram_addr=101  elem_addr=0x63d74d03f134  raw_val=256  -> y[0,5,0,6]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=86  val=2  -> y_addr=0x63d74d03e8f8
+    [OCM READ] bank=1 sram_addr=102  elem_addr=0x63d74d03f138  raw_val=1189  -> y[0,6,0,6]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=102  val=7  -> y_addr=0x63d74d03e938
+    [OCM READ] bank=1 sram_addr=103  elem_addr=0x63d74d03f13c  raw_val=935  -> y[0,7,0,6]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=118  val=7  -> y_addr=0x63d74d03e978
+    [OCM READ] bank=1 sram_addr=104  elem_addr=0x63d74d03f140  raw_val=748  -> y[0,8,0,6]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=134  val=6  -> y_addr=0x63d74d03e9b8
+    [OCM READ] bank=1 sram_addr=105  elem_addr=0x63d74d03f144  raw_val=1685  -> y[0,9,0,6]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=150  val=7  -> y_addr=0x63d74d03e9f8
+    [OCM READ] bank=1 sram_addr=106  elem_addr=0x63d74d03f148  raw_val=847  -> y[0,10,0,6]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=166  val=7  -> y_addr=0x63d74d03ea38
+    [OCM READ] bank=1 sram_addr=107  elem_addr=0x63d74d03f14c  raw_val=778  -> y[0,11,0,6]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=182  val=6  -> y_addr=0x63d74d03ea78
+    [OCM READ] bank=1 sram_addr=108  elem_addr=0x63d74d03f150  raw_val=513  -> y[0,12,0,6]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=198  val=4  -> y_addr=0x63d74d03eab8
+    [OCM READ] bank=1 sram_addr=109  elem_addr=0x63d74d03f154  raw_val=544  -> y[0,13,0,6]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=214  val=4  -> y_addr=0x63d74d03eaf8
+    [OCM READ] bank=1 sram_addr=110  elem_addr=0x63d74d03f158  raw_val=1269  -> y[0,14,0,6]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=230  val=7  -> y_addr=0x63d74d03eb38
+    [OCM READ] bank=1 sram_addr=111  elem_addr=0x63d74d03f15c  raw_val=790  -> y[0,15,0,6]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=246  val=6  -> y_addr=0x63d74d03eb78
+    [OCM READ] bank=1 sram_addr=112  elem_addr=0x63d74d03f160  raw_val=826  -> y[0,0,0,7]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=7  val=6  -> y_addr=0x63d74d03e7bc
+    [OCM READ] bank=1 sram_addr=113  elem_addr=0x63d74d03f164  raw_val=-694  -> y[0,1,0,7]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=23  val=-5  -> y_addr=0x63d74d03e7fc
+    [OCM READ] bank=1 sram_addr=114  elem_addr=0x63d74d03f168  raw_val=408  -> y[0,2,0,7]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=39  val=3  -> y_addr=0x63d74d03e83c
+    [OCM READ] bank=1 sram_addr=115  elem_addr=0x63d74d03f16c  raw_val=111  -> y[0,3,0,7]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=55  val=1  -> y_addr=0x63d74d03e87c
+    [OCM READ] bank=1 sram_addr=116  elem_addr=0x63d74d03f170  raw_val=-98  -> y[0,4,0,7]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=71  val=-1  -> y_addr=0x63d74d03e8bc
+    [OCM READ] bank=1 sram_addr=117  elem_addr=0x63d74d03f174  raw_val=446  -> y[0,5,0,7]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=87  val=3  -> y_addr=0x63d74d03e8fc
+    [OCM READ] bank=1 sram_addr=118  elem_addr=0x63d74d03f178  raw_val=-422  -> y[0,6,0,7]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=103  val=-3  -> y_addr=0x63d74d03e93c
+    [OCM READ] bank=1 sram_addr=119  elem_addr=0x63d74d03f17c  raw_val=507  -> y[0,7,0,7]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=119  val=4  -> y_addr=0x63d74d03e97c
+    [OCM READ] bank=1 sram_addr=120  elem_addr=0x63d74d03f180  raw_val=585  -> y[0,8,0,7]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=135  val=5  -> y_addr=0x63d74d03e9bc
+    [OCM READ] bank=1 sram_addr=121  elem_addr=0x63d74d03f184  raw_val=-255  -> y[0,9,0,7]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=151  val=-2  -> y_addr=0x63d74d03e9fc
+    [OCM READ] bank=1 sram_addr=122  elem_addr=0x63d74d03f188  raw_val=468  -> y[0,10,0,7]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=167  val=4  -> y_addr=0x63d74d03ea3c
+    [OCM READ] bank=1 sram_addr=123  elem_addr=0x63d74d03f18c  raw_val=8  -> y[0,11,0,7]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=183  val=0  -> y_addr=0x63d74d03ea7c
+    [OCM READ] bank=1 sram_addr=124  elem_addr=0x63d74d03f190  raw_val=177  -> y[0,12,0,7]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=199  val=1  -> y_addr=0x63d74d03eabc
+    [OCM READ] bank=1 sram_addr=125  elem_addr=0x63d74d03f194  raw_val=736  -> y[0,13,0,7]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=215  val=6  -> y_addr=0x63d74d03eafc
+    [OCM READ] bank=1 sram_addr=126  elem_addr=0x63d74d03f198  raw_val=414  -> y[0,14,0,7]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=231  val=3  -> y_addr=0x63d74d03eb3c
+    [OCM READ] bank=1 sram_addr=127  elem_addr=0x63d74d03f19c  raw_val=100  -> y[0,15,0,7]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=247  val=1  -> y_addr=0x63d74d03eb7c
+    [OCM READ] bank=1 sram_addr=128  elem_addr=0x63d74d03f1a0  raw_val=100  -> y[0,0,0,8]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=8  val=1  -> y_addr=0x63d74d03e7c0
+    [OCM READ] bank=1 sram_addr=129  elem_addr=0x63d74d03f1a4  raw_val=-1153  -> y[0,1,0,8]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=24  val=-8  -> y_addr=0x63d74d03e800
+    [OCM READ] bank=1 sram_addr=130  elem_addr=0x63d74d03f1a8  raw_val=-578  -> y[0,2,0,8]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=40  val=-5  -> y_addr=0x63d74d03e840
+    [OCM READ] bank=1 sram_addr=131  elem_addr=0x63d74d03f1ac  raw_val=-493  -> y[0,3,0,8]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=56  val=-4  -> y_addr=0x63d74d03e880
+    [OCM READ] bank=1 sram_addr=132  elem_addr=0x63d74d03f1b0  raw_val=-209  -> y[0,4,0,8]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=72  val=-2  -> y_addr=0x63d74d03e8c0
+    [OCM READ] bank=1 sram_addr=133  elem_addr=0x63d74d03f1b4  raw_val=-718  -> y[0,5,0,8]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=88  val=-6  -> y_addr=0x63d74d03e900
+    [OCM READ] bank=1 sram_addr=134  elem_addr=0x63d74d03f1b8  raw_val=-229  -> y[0,6,0,8]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=104  val=-2  -> y_addr=0x63d74d03e940
+    [OCM READ] bank=1 sram_addr=135  elem_addr=0x63d74d03f1bc  raw_val=-648  -> y[0,7,0,8]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=120  val=-5  -> y_addr=0x63d74d03e980
+    [OCM READ] bank=1 sram_addr=136  elem_addr=0x63d74d03f1c0  raw_val=-193  -> y[0,8,0,8]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=136  val=-2  -> y_addr=0x63d74d03e9c0
+    [OCM READ] bank=1 sram_addr=137  elem_addr=0x63d74d03f1c4  raw_val=585  -> y[0,9,0,8]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=152  val=5  -> y_addr=0x63d74d03ea00
+    [OCM READ] bank=1 sram_addr=138  elem_addr=0x63d74d03f1c8  raw_val=-527  -> y[0,10,0,8]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=168  val=-4  -> y_addr=0x63d74d03ea40
+    [OCM READ] bank=1 sram_addr=139  elem_addr=0x63d74d03f1cc  raw_val=-799  -> y[0,11,0,8]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=184  val=-6  -> y_addr=0x63d74d03ea80
+    [OCM READ] bank=1 sram_addr=140  elem_addr=0x63d74d03f1d0  raw_val=-257  -> y[0,12,0,8]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=200  val=-2  -> y_addr=0x63d74d03eac0
+    [OCM READ] bank=1 sram_addr=141  elem_addr=0x63d74d03f1d4  raw_val=446  -> y[0,13,0,8]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=216  val=3  -> y_addr=0x63d74d03eb00
+    [OCM READ] bank=1 sram_addr=142  elem_addr=0x63d74d03f1d8  raw_val=-1113  -> y[0,14,0,8]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=232  val=-8  -> y_addr=0x63d74d03eb40
+    [OCM READ] bank=1 sram_addr=143  elem_addr=0x63d74d03f1dc  raw_val=39  -> y[0,15,0,8]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=248  val=0  -> y_addr=0x63d74d03eb80
+    [OCM READ] bank=1 sram_addr=144  elem_addr=0x63d74d03f1e0  raw_val=-263  -> y[0,0,0,9]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=9  val=-2  -> y_addr=0x63d74d03e7c4
+    [OCM READ] bank=1 sram_addr=145  elem_addr=0x63d74d03f1e4  raw_val=-487  -> y[0,1,0,9]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=25  val=-4  -> y_addr=0x63d74d03e804
+    [OCM READ] bank=1 sram_addr=146  elem_addr=0x63d74d03f1e8  raw_val=-664  -> y[0,2,0,9]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=41  val=-5  -> y_addr=0x63d74d03e844
+    [OCM READ] bank=1 sram_addr=147  elem_addr=0x63d74d03f1ec  raw_val=-182  -> y[0,3,0,9]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=57  val=-1  -> y_addr=0x63d74d03e884
+    [OCM READ] bank=1 sram_addr=148  elem_addr=0x63d74d03f1f0  raw_val=-635  -> y[0,4,0,9]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=73  val=-5  -> y_addr=0x63d74d03e8c4
+    [OCM READ] bank=1 sram_addr=149  elem_addr=0x63d74d03f1f4  raw_val=-680  -> y[0,5,0,9]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=89  val=-5  -> y_addr=0x63d74d03e904
+    [OCM READ] bank=1 sram_addr=150  elem_addr=0x63d74d03f1f8  raw_val=58  -> y[0,6,0,9]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=105  val=0  -> y_addr=0x63d74d03e944
+    [OCM READ] bank=1 sram_addr=151  elem_addr=0x63d74d03f1fc  raw_val=-646  -> y[0,7,0,9]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=121  val=-5  -> y_addr=0x63d74d03e984
+    [OCM READ] bank=1 sram_addr=152  elem_addr=0x63d74d03f200  raw_val=-552  -> y[0,8,0,9]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=137  val=-4  -> y_addr=0x63d74d03e9c4
+    [OCM READ] bank=1 sram_addr=153  elem_addr=0x63d74d03f204  raw_val=-932  -> y[0,9,0,9]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=153  val=-7  -> y_addr=0x63d74d03ea04
+    [OCM READ] bank=1 sram_addr=154  elem_addr=0x63d74d03f208  raw_val=-893  -> y[0,10,0,9]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=169  val=-7  -> y_addr=0x63d74d03ea44
+    [OCM READ] bank=1 sram_addr=155  elem_addr=0x63d74d03f20c  raw_val=-821  -> y[0,11,0,9]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=185  val=-6  -> y_addr=0x63d74d03ea84
+    [OCM READ] bank=1 sram_addr=156  elem_addr=0x63d74d03f210  raw_val=-80  -> y[0,12,0,9]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=201  val=-1  -> y_addr=0x63d74d03eac4
+    [OCM READ] bank=1 sram_addr=157  elem_addr=0x63d74d03f214  raw_val=-871  -> y[0,13,0,9]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=217  val=-7  -> y_addr=0x63d74d03eb04
+    [OCM READ] bank=1 sram_addr=158  elem_addr=0x63d74d03f218  raw_val=-719  -> y[0,14,0,9]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=233  val=-6  -> y_addr=0x63d74d03eb44
+    [OCM READ] bank=1 sram_addr=159  elem_addr=0x63d74d03f21c  raw_val=-447  -> y[0,15,0,9]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=249  val=-3  -> y_addr=0x63d74d03eb84
+    [OCM READ] bank=1 sram_addr=160  elem_addr=0x63d74d03f220  raw_val=-219  -> y[0,0,0,10]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=10  val=-2  -> y_addr=0x63d74d03e7c8
+    [OCM READ] bank=1 sram_addr=161  elem_addr=0x63d74d03f224  raw_val=-612  -> y[0,1,0,10]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=26  val=-5  -> y_addr=0x63d74d03e808
+    [OCM READ] bank=1 sram_addr=162  elem_addr=0x63d74d03f228  raw_val=-153  -> y[0,2,0,10]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=42  val=-1  -> y_addr=0x63d74d03e848
+    [OCM READ] bank=1 sram_addr=163  elem_addr=0x63d74d03f22c  raw_val=436  -> y[0,3,0,10]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=58  val=3  -> y_addr=0x63d74d03e888
+    [OCM READ] bank=1 sram_addr=164  elem_addr=0x63d74d03f230  raw_val=-95  -> y[0,4,0,10]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=74  val=-1  -> y_addr=0x63d74d03e8c8
+    [OCM READ] bank=1 sram_addr=165  elem_addr=0x63d74d03f234  raw_val=334  -> y[0,5,0,10]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=90  val=3  -> y_addr=0x63d74d03e908
+    [OCM READ] bank=1 sram_addr=166  elem_addr=0x63d74d03f238  raw_val=-124  -> y[0,6,0,10]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=106  val=-1  -> y_addr=0x63d74d03e948
+    [OCM READ] bank=1 sram_addr=167  elem_addr=0x63d74d03f23c  raw_val=-732  -> y[0,7,0,10]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=122  val=-6  -> y_addr=0x63d74d03e988
+    [OCM READ] bank=1 sram_addr=168  elem_addr=0x63d74d03f240  raw_val=121  -> y[0,8,0,10]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=138  val=1  -> y_addr=0x63d74d03e9c8
+    [OCM READ] bank=1 sram_addr=169  elem_addr=0x63d74d03f244  raw_val=-73  -> y[0,9,0,10]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=154  val=-1  -> y_addr=0x63d74d03ea08
+    [OCM READ] bank=1 sram_addr=170  elem_addr=0x63d74d03f248  raw_val=-468  -> y[0,10,0,10]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=170  val=-4  -> y_addr=0x63d74d03ea48
+    [OCM READ] bank=1 sram_addr=171  elem_addr=0x63d74d03f24c  raw_val=-568  -> y[0,11,0,10]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=186  val=-4  -> y_addr=0x63d74d03ea88
+    [OCM READ] bank=1 sram_addr=172  elem_addr=0x63d74d03f250  raw_val=-161  -> y[0,12,0,10]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=202  val=-1  -> y_addr=0x63d74d03eac8
+    [OCM READ] bank=1 sram_addr=173  elem_addr=0x63d74d03f254  raw_val=-356  -> y[0,13,0,10]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=218  val=-3  -> y_addr=0x63d74d03eb08
+    [OCM READ] bank=1 sram_addr=174  elem_addr=0x63d74d03f258  raw_val=-727  -> y[0,14,0,10]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=234  val=-6  -> y_addr=0x63d74d03eb48
+    [OCM READ] bank=1 sram_addr=175  elem_addr=0x63d74d03f25c  raw_val=-411  -> y[0,15,0,10]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=250  val=-3  -> y_addr=0x63d74d03eb88
+    [OCM READ] bank=1 sram_addr=176  elem_addr=0x63d74d03f260  raw_val=580  -> y[0,0,0,11]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=11  val=5  -> y_addr=0x63d74d03e7cc
+    [OCM READ] bank=1 sram_addr=177  elem_addr=0x63d74d03f264  raw_val=639  -> y[0,1,0,11]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=27  val=5  -> y_addr=0x63d74d03e80c
+    [OCM READ] bank=1 sram_addr=178  elem_addr=0x63d74d03f268  raw_val=1133  -> y[0,2,0,11]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=43  val=7  -> y_addr=0x63d74d03e84c
+    [OCM READ] bank=1 sram_addr=179  elem_addr=0x63d74d03f26c  raw_val=961  -> y[0,3,0,11]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=59  val=7  -> y_addr=0x63d74d03e88c
+    [OCM READ] bank=1 sram_addr=180  elem_addr=0x63d74d03f270  raw_val=845  -> y[0,4,0,11]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=75  val=7  -> y_addr=0x63d74d03e8cc
+    [OCM READ] bank=1 sram_addr=181  elem_addr=0x63d74d03f274  raw_val=1329  -> y[0,5,0,11]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=91  val=7  -> y_addr=0x63d74d03e90c
+    [OCM READ] bank=1 sram_addr=182  elem_addr=0x63d74d03f278  raw_val=-262  -> y[0,6,0,11]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=107  val=-2  -> y_addr=0x63d74d03e94c
+    [OCM READ] bank=1 sram_addr=183  elem_addr=0x63d74d03f27c  raw_val=1537  -> y[0,7,0,11]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=123  val=7  -> y_addr=0x63d74d03e98c
+    [OCM READ] bank=1 sram_addr=184  elem_addr=0x63d74d03f280  raw_val=965  -> y[0,8,0,11]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=139  val=7  -> y_addr=0x63d74d03e9cc
+    [OCM READ] bank=1 sram_addr=185  elem_addr=0x63d74d03f284  raw_val=282  -> y[0,9,0,11]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=155  val=2  -> y_addr=0x63d74d03ea0c
+    [OCM READ] bank=1 sram_addr=186  elem_addr=0x63d74d03f288  raw_val=1516  -> y[0,10,0,11]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=171  val=7  -> y_addr=0x63d74d03ea4c
+    [OCM READ] bank=1 sram_addr=187  elem_addr=0x63d74d03f28c  raw_val=-140  -> y[0,11,0,11]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=187  val=-1  -> y_addr=0x63d74d03ea8c
+    [OCM READ] bank=1 sram_addr=188  elem_addr=0x63d74d03f290  raw_val=797  -> y[0,12,0,11]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=203  val=6  -> y_addr=0x63d74d03eacc
+    [OCM READ] bank=1 sram_addr=189  elem_addr=0x63d74d03f294  raw_val=1938  -> y[0,13,0,11]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=219  val=7  -> y_addr=0x63d74d03eb0c
+    [OCM READ] bank=1 sram_addr=190  elem_addr=0x63d74d03f298  raw_val=1041  -> y[0,14,0,11]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=235  val=7  -> y_addr=0x63d74d03eb4c
+    [OCM READ] bank=1 sram_addr=191  elem_addr=0x63d74d03f29c  raw_val=1437  -> y[0,15,0,11]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=251  val=7  -> y_addr=0x63d74d03eb8c
+    [OCM READ] bank=1 sram_addr=192  elem_addr=0x63d74d03f2a0  raw_val=-326  -> y[0,0,0,12]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=12  val=-3  -> y_addr=0x63d74d03e7d0
+    [OCM READ] bank=1 sram_addr=193  elem_addr=0x63d74d03f2a4  raw_val=-403  -> y[0,1,0,12]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=28  val=-3  -> y_addr=0x63d74d03e810
+    [OCM READ] bank=1 sram_addr=194  elem_addr=0x63d74d03f2a8  raw_val=510  -> y[0,2,0,12]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=44  val=4  -> y_addr=0x63d74d03e850
+    [OCM READ] bank=1 sram_addr=195  elem_addr=0x63d74d03f2ac  raw_val=433  -> y[0,3,0,12]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=60  val=3  -> y_addr=0x63d74d03e890
+    [OCM READ] bank=1 sram_addr=196  elem_addr=0x63d74d03f2b0  raw_val=-1118  -> y[0,4,0,12]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=76  val=-8  -> y_addr=0x63d74d03e8d0
+    [OCM READ] bank=1 sram_addr=197  elem_addr=0x63d74d03f2b4  raw_val=-496  -> y[0,5,0,12]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=92  val=-4  -> y_addr=0x63d74d03e910
+    [OCM READ] bank=1 sram_addr=198  elem_addr=0x63d74d03f2b8  raw_val=438  -> y[0,6,0,12]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=108  val=3  -> y_addr=0x63d74d03e950
+    [OCM READ] bank=1 sram_addr=199  elem_addr=0x63d74d03f2bc  raw_val=-61  -> y[0,7,0,12]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=124  val=0  -> y_addr=0x63d74d03e990
+    [OCM READ] bank=1 sram_addr=200  elem_addr=0x63d74d03f2c0  raw_val=589  -> y[0,8,0,12]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=140  val=5  -> y_addr=0x63d74d03e9d0
+    [OCM READ] bank=1 sram_addr=201  elem_addr=0x63d74d03f2c4  raw_val=380  -> y[0,9,0,12]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=156  val=3  -> y_addr=0x63d74d03ea10
+    [OCM READ] bank=1 sram_addr=202  elem_addr=0x63d74d03f2c8  raw_val=-4  -> y[0,10,0,12]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=172  val=0  -> y_addr=0x63d74d03ea50
+    [OCM READ] bank=1 sram_addr=203  elem_addr=0x63d74d03f2cc  raw_val=-883  -> y[0,11,0,12]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=188  val=-7  -> y_addr=0x63d74d03ea90
+    [OCM READ] bank=1 sram_addr=204  elem_addr=0x63d74d03f2d0  raw_val=133  -> y[0,12,0,12]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=204  val=1  -> y_addr=0x63d74d03ead0
+    [OCM READ] bank=1 sram_addr=205  elem_addr=0x63d74d03f2d4  raw_val=176  -> y[0,13,0,12]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=220  val=1  -> y_addr=0x63d74d03eb10
+    [OCM READ] bank=1 sram_addr=206  elem_addr=0x63d74d03f2d8  raw_val=-138  -> y[0,14,0,12]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=236  val=-1  -> y_addr=0x63d74d03eb50
+    [OCM READ] bank=1 sram_addr=207  elem_addr=0x63d74d03f2dc  raw_val=60  -> y[0,15,0,12]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=252  val=0  -> y_addr=0x63d74d03eb90
+    [OCM READ] bank=1 sram_addr=208  elem_addr=0x63d74d03f2e0  raw_val=693  -> y[0,0,0,13]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=13  val=5  -> y_addr=0x63d74d03e7d4
+    [OCM READ] bank=1 sram_addr=209  elem_addr=0x63d74d03f2e4  raw_val=1234  -> y[0,1,0,13]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=29  val=7  -> y_addr=0x63d74d03e814
+    [OCM READ] bank=1 sram_addr=210  elem_addr=0x63d74d03f2e8  raw_val=891  -> y[0,2,0,13]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=45  val=7  -> y_addr=0x63d74d03e854
+    [OCM READ] bank=1 sram_addr=211  elem_addr=0x63d74d03f2ec  raw_val=164  -> y[0,3,0,13]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=61  val=1  -> y_addr=0x63d74d03e894
+    [OCM READ] bank=1 sram_addr=212  elem_addr=0x63d74d03f2f0  raw_val=153  -> y[0,4,0,13]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=77  val=1  -> y_addr=0x63d74d03e8d4
+    [OCM READ] bank=1 sram_addr=213  elem_addr=0x63d74d03f2f4  raw_val=336  -> y[0,5,0,13]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=93  val=3  -> y_addr=0x63d74d03e914
+    [OCM READ] bank=1 sram_addr=214  elem_addr=0x63d74d03f2f8  raw_val=584  -> y[0,6,0,13]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=109  val=5  -> y_addr=0x63d74d03e954
+    [OCM READ] bank=1 sram_addr=215  elem_addr=0x63d74d03f2fc  raw_val=619  -> y[0,7,0,13]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=125  val=5  -> y_addr=0x63d74d03e994
+    [OCM READ] bank=1 sram_addr=216  elem_addr=0x63d74d03f300  raw_val=614  -> y[0,8,0,13]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=141  val=5  -> y_addr=0x63d74d03e9d4
+    [OCM READ] bank=1 sram_addr=217  elem_addr=0x63d74d03f304  raw_val=-379  -> y[0,9,0,13]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=157  val=-3  -> y_addr=0x63d74d03ea14
+    [OCM READ] bank=1 sram_addr=218  elem_addr=0x63d74d03f308  raw_val=296  -> y[0,10,0,13]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=173  val=2  -> y_addr=0x63d74d03ea54
+    [OCM READ] bank=1 sram_addr=219  elem_addr=0x63d74d03f30c  raw_val=1363  -> y[0,11,0,13]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=189  val=7  -> y_addr=0x63d74d03ea94
+    [OCM READ] bank=1 sram_addr=220  elem_addr=0x63d74d03f310  raw_val=671  -> y[0,12,0,13]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=205  val=5  -> y_addr=0x63d74d03ead4
+    [OCM READ] bank=1 sram_addr=221  elem_addr=0x63d74d03f314  raw_val=-129  -> y[0,13,0,13]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=221  val=-1  -> y_addr=0x63d74d03eb14
+    [OCM READ] bank=1 sram_addr=222  elem_addr=0x63d74d03f318  raw_val=945  -> y[0,14,0,13]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=237  val=7  -> y_addr=0x63d74d03eb54
+    [OCM READ] bank=1 sram_addr=223  elem_addr=0x63d74d03f31c  raw_val=-384  -> y[0,15,0,13]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=253  val=-3  -> y_addr=0x63d74d03eb94
+    [OCM READ] bank=1 sram_addr=224  elem_addr=0x63d74d03f320  raw_val=29  -> y[0,0,0,14]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=14  val=0  -> y_addr=0x63d74d03e7d8
+    [OCM READ] bank=1 sram_addr=225  elem_addr=0x63d74d03f324  raw_val=346  -> y[0,1,0,14]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=30  val=3  -> y_addr=0x63d74d03e818
+    [OCM READ] bank=1 sram_addr=226  elem_addr=0x63d74d03f328  raw_val=356  -> y[0,2,0,14]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=46  val=3  -> y_addr=0x63d74d03e858
+    [OCM READ] bank=1 sram_addr=227  elem_addr=0x63d74d03f32c  raw_val=540  -> y[0,3,0,14]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=62  val=4  -> y_addr=0x63d74d03e898
+    [OCM READ] bank=1 sram_addr=228  elem_addr=0x63d74d03f330  raw_val=247  -> y[0,4,0,14]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=78  val=2  -> y_addr=0x63d74d03e8d8
+    [OCM READ] bank=1 sram_addr=229  elem_addr=0x63d74d03f334  raw_val=928  -> y[0,5,0,14]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=94  val=7  -> y_addr=0x63d74d03e918
+    [OCM READ] bank=1 sram_addr=230  elem_addr=0x63d74d03f338  raw_val=205  -> y[0,6,0,14]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=110  val=2  -> y_addr=0x63d74d03e958
+    [OCM READ] bank=1 sram_addr=231  elem_addr=0x63d74d03f33c  raw_val=852  -> y[0,7,0,14]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=126  val=7  -> y_addr=0x63d74d03e998
+    [OCM READ] bank=1 sram_addr=232  elem_addr=0x63d74d03f340  raw_val=103  -> y[0,8,0,14]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=142  val=1  -> y_addr=0x63d74d03e9d8
+    [OCM READ] bank=1 sram_addr=233  elem_addr=0x63d74d03f344  raw_val=510  -> y[0,9,0,14]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=158  val=4  -> y_addr=0x63d74d03ea18
+    [OCM READ] bank=1 sram_addr=234  elem_addr=0x63d74d03f348  raw_val=783  -> y[0,10,0,14]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=174  val=6  -> y_addr=0x63d74d03ea58
+    [OCM READ] bank=1 sram_addr=235  elem_addr=0x63d74d03f34c  raw_val=166  -> y[0,11,0,14]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=190  val=1  -> y_addr=0x63d74d03ea98
+    [OCM READ] bank=1 sram_addr=236  elem_addr=0x63d74d03f350  raw_val=258  -> y[0,12,0,14]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=206  val=2  -> y_addr=0x63d74d03ead8
+    [OCM READ] bank=1 sram_addr=237  elem_addr=0x63d74d03f354  raw_val=1048  -> y[0,13,0,14]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=222  val=7  -> y_addr=0x63d74d03eb18
+    [OCM READ] bank=1 sram_addr=238  elem_addr=0x63d74d03f358  raw_val=520  -> y[0,14,0,14]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=238  val=4  -> y_addr=0x63d74d03eb58
+    [OCM READ] bank=1 sram_addr=239  elem_addr=0x63d74d03f35c  raw_val=1071  -> y[0,15,0,14]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=254  val=7  -> y_addr=0x63d74d03eb98
+    [OCM READ] bank=1 sram_addr=240  elem_addr=0x63d74d03f360  raw_val=1104  -> y[0,0,0,15]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=15  val=7  -> y_addr=0x63d74d03e7dc
+    [OCM READ] bank=1 sram_addr=241  elem_addr=0x63d74d03f364  raw_val=1611  -> y[0,1,0,15]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=31  val=7  -> y_addr=0x63d74d03e81c
+    [OCM READ] bank=1 sram_addr=242  elem_addr=0x63d74d03f368  raw_val=1159  -> y[0,2,0,15]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=47  val=7  -> y_addr=0x63d74d03e85c
+    [OCM READ] bank=1 sram_addr=243  elem_addr=0x63d74d03f36c  raw_val=417  -> y[0,3,0,15]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=63  val=3  -> y_addr=0x63d74d03e89c
+    [OCM READ] bank=1 sram_addr=244  elem_addr=0x63d74d03f370  raw_val=-40  -> y[0,4,0,15]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=79  val=0  -> y_addr=0x63d74d03e8dc
+    [OCM READ] bank=1 sram_addr=245  elem_addr=0x63d74d03f374  raw_val=998  -> y[0,5,0,15]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=95  val=7  -> y_addr=0x63d74d03e91c
+    [OCM READ] bank=1 sram_addr=246  elem_addr=0x63d74d03f378  raw_val=541  -> y[0,6,0,15]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=111  val=4  -> y_addr=0x63d74d03e95c
+    [OCM READ] bank=1 sram_addr=247  elem_addr=0x63d74d03f37c  raw_val=1526  -> y[0,7,0,15]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=127  val=7  -> y_addr=0x63d74d03e99c
+    [OCM READ] bank=1 sram_addr=248  elem_addr=0x63d74d03f380  raw_val=805  -> y[0,8,0,15]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=143  val=6  -> y_addr=0x63d74d03e9dc
+    [OCM READ] bank=1 sram_addr=249  elem_addr=0x63d74d03f384  raw_val=-10  -> y[0,9,0,15]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=159  val=0  -> y_addr=0x63d74d03ea1c
+    [OCM READ] bank=1 sram_addr=250  elem_addr=0x63d74d03f388  raw_val=810  -> y[0,10,0,15]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=175  val=6  -> y_addr=0x63d74d03ea5c
+    [OCM READ] bank=1 sram_addr=251  elem_addr=0x63d74d03f38c  raw_val=1020  -> y[0,11,0,15]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=191  val=7  -> y_addr=0x63d74d03ea9c
+    [OCM READ] bank=1 sram_addr=252  elem_addr=0x63d74d03f390  raw_val=1236  -> y[0,12,0,15]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=207  val=7  -> y_addr=0x63d74d03eadc
+    [OCM READ] bank=1 sram_addr=253  elem_addr=0x63d74d03f394  raw_val=1150  -> y[0,13,0,15]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=223  val=7  -> y_addr=0x63d74d03eb1c
+    [OCM READ] bank=1 sram_addr=254  elem_addr=0x63d74d03f398  raw_val=1802  -> y[0,14,0,15]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=239  val=7  -> y_addr=0x63d74d03eb5c
+    [OCM READ] bank=1 sram_addr=255  elem_addr=0x63d74d03f39c  raw_val=929  -> y[0,15,0,15]
+  [TILE_WRITE FINAL] ib=1 iy_nhwc=255  val=7  -> y_addr=0x63d74d03eb9c
+1-------- iw_kw2 0 done 
+1-------- il 0 done
+1-------- in 0 done
+1------ it 0 done
+1--- ip 0 done
+1- done bundle!! ib:1
+done all bundles!!
+- /usr/local/lib/python3.11/site-packages/deepsocflow/test/sv/top_tb.sv:214: Verilog $finish
+0 x: (16, 16), prev:None
+1 x: (16, 16), prev:0
+Bundle 0: <deepsocflow.py.xbundle.XBundle object at 0x7828db8c8110>
+Bundle 1: <deepsocflow.py.xbundle.XBundle object at 0x7828db8cba90>
+
+-----------STARTING EXPORT-----------
+
+-----------------ib:0-----------------------
+Conv -> Dense Reshape
+weights initial (KH, KW, CI, CO) = (1, 1, 16, 16)
+KH=1, KW=1, CI=16, CO=16, CO_PRL=16, EG=16, IT=1, CO_PAD=16, CM=256, CP=1
+input initial (XN, XH, XW, CI)= (1, 16, 1, 16)
+out after (strides:(1, 1), sizes:(1, 1)) POOLING: (XN, PYH, PYW, CO)=(1, 16, 1, 16)
+final output (16, 16)
+{'w_shape': (1, 1, 16, 16), 'x_shape': (1, 16, 1, 16), 'o_shape': (16, 16), 'flatten': None, 'KH': 1, 'KW': 1, 'CI': 16, 'CO': 16, 'CO_PRL': 16, 'EG': 16, 'IT': 1, 'CO_PAD': 16, 'CM': 256, 'CP': 1, 'CM_0': 16, 'XN': 1, 'XH': 16, 'XW': 1, 'XL': 1, 'YN': 1, 'YH': 16, 'YW': 1, 'YC': 16, 'X_PAD': 0, 'CSH': 1, 'CSW': 1, 'CYH': 16, 'CYW': 1, 'CSH_SHIFT': 0, 'CSW_SHIFT': 0, 'PKH': 1, 'PKW': 1, 'PSH': 1, 'PSW': 1, 'PSH_SHIFT': 0, 'PSW_SHIFT': 0, 'PYH': 16, 'PYW': 1, 'YL': 1, 'ON': 1, 'OH': 16, 'OW': 1, 'OC': 16}
+Runtime(w_shape=(1, 1, 16, 16), x_shape=(1, 16, 1, 16), o_shape=(16, 16), flatten=None, KH=1, KW=1, CI=16, CO=16, CO_PRL=16, EG=16, IT=1, CO_PAD=16, CM=256, CP=1, CM_0=16, XN=1, XH=16, XW=1, XL=1, YN=1, YH=16, YW=1, YC=16, X_PAD=0, CSH=1, CSW=1, CYH=16, CYW=1, CSH_SHIFT=0, CSW_SHIFT=0, PKH=1, PKW=1, PSH=1, PSW=1, PSH_SHIFT=0, PSW_SHIFT=0, PYH=16, PYW=1, YL=1, ON=1, OH=16, OW=1, OC=16, header=2243521256325120)
+
+    w_sparsity   : 1.56%
+    x_sparsity   : 5.47%
+
+    both_zero    : 0.09%
+    only_one_zero: 6.86%
+    neither_zero : 93.05%
+    zero_result  : 6.95%
+    
+input initial (XN, XH, XW, CI)= (1, 16, 1, 16)
+x reshape: [int]:(16, 16), int:(1, 16, 1, 16). xe:(256,)
+input_out_map:[]
+out_buffer_idx: 0
+out_buffer_map:[{'in': 0, 'out': [1]}]
+input_add_map:[]
+add_out_buffer_idx: -1
+add_buffer_map:[]
+-----------------ib:1-----------------------
+Conv -> Dense Reshape
+weights initial (KH, KW, CI, CO) = (1, 1, 16, 16)
+KH=1, KW=1, CI=16, CO=16, CO_PRL=16, EG=16, IT=1, CO_PAD=16, CM=256, CP=1
+input initial (XN, XH, XW, CI)= (1, 16, 1, 16)
+out after (strides:(1, 1), sizes:(1, 1)) POOLING: (XN, PYH, PYW, CO)=(1, 16, 1, 16)
+final output (16, 16)
+{'w_shape': (1, 1, 16, 16), 'x_shape': (1, 16, 1, 16), 'o_shape': (16, 16), 'flatten': None, 'KH': 1, 'KW': 1, 'CI': 16, 'CO': 16, 'CO_PRL': 16, 'EG': 16, 'IT': 1, 'CO_PAD': 16, 'CM': 256, 'CP': 1, 'CM_0': 16, 'XN': 1, 'XH': 16, 'XW': 1, 'XL': 1, 'YN': 1, 'YH': 16, 'YW': 1, 'YC': 16, 'X_PAD': 0, 'CSH': 1, 'CSW': 1, 'CYH': 16, 'CYW': 1, 'CSH_SHIFT': 0, 'CSW_SHIFT': 0, 'PKH': 1, 'PKW': 1, 'PSH': 1, 'PSW': 1, 'PSH_SHIFT': 0, 'PSW_SHIFT': 0, 'PYH': 16, 'PYW': 1, 'YL': 1, 'ON': 1, 'OH': 16, 'OW': 1, 'OC': 16}
+Runtime(w_shape=(1, 1, 16, 16), x_shape=(1, 16, 1, 16), o_shape=(16, 16), flatten=None, KH=1, KW=1, CI=16, CO=16, CO_PRL=16, EG=16, IT=1, CO_PAD=16, CM=256, CP=1, CM_0=16, XN=1, XH=16, XW=1, XL=1, YN=1, YH=16, YW=1, YC=16, X_PAD=0, CSH=1, CSW=1, CYH=16, CYW=1, CSH_SHIFT=0, CSW_SHIFT=0, PKH=1, PKW=1, PSH=1, PSW=1, PSH_SHIFT=0, PSW_SHIFT=0, PYH=16, PYW=1, YL=1, ON=1, OH=16, OW=1, OC=16, header=2243521256325120)
+
+    w_sparsity   : 0.78%
+    x_sparsity   : 7.42%
+
+    both_zero    : 0.06%
+    only_one_zero: 8.09%
+    neither_zero : 91.85%
+    zero_result  : 8.15%
+    
+input initial (XN, XH, XW, CI)= (1, 16, 1, 16)
+x reshape: [int]:(16, 16), int:(1, 16, 1, 16). xe:(256,)
+input_out_map:[{'in': 0, 'out': [1]}]
+out_buffer_idx: -1
+out_buffer_map:[None]
+input_add_map:[]
+add_out_buffer_idx: -1
+add_buffer_map:[]
+---0: util:88.89 mem_mb:0.00 b.r.XN=1 b.r.XH=16 b.r.XW=1 b.r.CI=16 b.r.CO=16 b.r.KH=1 b.r.KW=1
+---1: util:88.89 mem_mb:0.00 b.r.XN=1 b.r.XH=16 b.r.XW=1 b.r.CI=16 b.r.CO=16 b.r.KH=1 b.r.KW=1
+Predicted performance: {'operations': [4096, 4096], 'utilization_all': [0.8888888888888888, 0.8888888888888888], 'clocks_all': [18, 18], 'mem_bytes_all': [504.0, 504.0], 'g_ops': 8.192e-06, 'clocks_total': 36, 'mem_bytes_total': 1008.0, 'seconds_per_batch': 2.4e-07, 'frames_per_sec': 66666666.66666667, 'ms_per_frame': 1.4999999999999999e-05}
+y_exp 0: 5.0
+y_exp 1: 3.0
+y_exp 2: 4.0
+y_exp 3: -4.0
+y_exp 4: 4.0
+y_exp 5: 7.0
+y_exp 6: 0.0
+y_exp 7: 6.0
+y_exp 8: 1.0
+y_exp 9: -2.0
+y_exp 10: -2.0
+y_exp 11: 5.0
+y_exp 12: -3.0
+y_exp 13: 5.0
+y_exp 14: 0.0
+y_exp 15: 7.0
+y_exp 16: -2.0
+y_exp 17: -4.0
+y_exp 18: 5.0
+y_exp 19: 7.0
+y_exp 237: 7.0
+y_exp 238: 4.0
+y_exp 239: 7.0
+y_exp 240: -2.0
+y_exp 241: -3.0
+y_exp 242: 2.0
+y_exp 243: 2.0
+y_exp 244: -1.0
+y_exp 245: 7.0
+y_exp 246: 6.0
+y_exp 247: 1.0
+y_exp 248: 0.0
+y_exp 249: -3.0
+y_exp 250: -3.0
+y_exp 251: 7.0
+y_exp 252: 0.0
+y_exp 253: -3.0
+y_exp 254: 7.0
+y_exp 255: 7.0
+Weights, inputs, outputs saved to vectors/ib_ip_it_*.txt
+
+
+COMPILING...
+
+
+verilator --binary -j 0 -O3  --relative-includes --top top_tb -I../ -I/usr/local/lib/python3.11/site-packages/deepsocflow/rtl/ -F ../sources.txt --Mdir ./  -CFLAGS -DSIM  -CFLAGS -DTB_MODULE=top_tb -CFLAGS -DFB_MODULE=fb_axi_vip -CFLAGS -I../ -CFLAGS -I/usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/ -CFLAGS -g /usr/local/lib/python3.11/site-packages/deepsocflow/c/sim.c /usr/local/lib/python3.11/site-packages/deepsocflow/firebridge/fb_top_verilator_wrap.cpp --Wno-INITIALDLY --Wno-BLKANDNBLK --Wno-UNOPTFLAT
+
+
+SIMULATING...
+
+
+
+
+SIMULATION TIME: 0.34 seconds
+
+
+Bundle 0, Error: 0. Passed
+Bundle 1, Error: 0.0. Passed
+---0: util:88.89 mem_mb:0.00 b.r.XN=1 b.r.XH=16 b.r.XW=1 b.r.CI=16 b.r.CO=16 b.r.KH=1 b.r.KW=1
+---1: util:88.89 mem_mb:0.00 b.r.XN=1 b.r.XH=16 b.r.XW=1 b.r.CI=16 b.r.CO=16 b.r.KH=1 b.r.KW=1
+Predicted Performance
+{   'clocks_all': [18, 18],
+    'clocks_total': 36,
+    'frames_per_sec': 66666666.66666667,
+    'g_ops': 8.192e-06,
+    'mem_bytes_all': [504.0, 504.0],
+    'mem_bytes_total': 1008.0,
+    'ms_per_frame': 1.4999999999999999e-05,
+    'operations': [4096, 4096],
+    'seconds_per_batch': 2.4e-07,
+    'utilization_all': [0.8888888888888888, 0.8888888888888888]}
+.
+
+=============================== warnings summary ===============================
+../../../usr/local/lib/python3.11/site-packages/tensorflow_model_optimization/__init__.py:65
+  /usr/local/lib/python3.11/site-packages/tensorflow_model_optimization/__init__.py:65: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if (distutils.version.LooseVersion(tf.version.VERSION) <
+
+../../../usr/local/lib/python3.11/site-packages/tensorflow_model_optimization/__init__.py:66
+  /usr/local/lib/python3.11/site-packages/tensorflow_model_optimization/__init__.py:66: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    distutils.version.LooseVersion(required_tensorflow_version)):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 1 passed, 2 warnings in 10.37s ========================

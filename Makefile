@@ -2,7 +2,8 @@
 
 # Testing
 
-TEST := param_test
+#TEST := param_test
+TEST := two_dense
 WORKDIR := run/work
 
 clean:

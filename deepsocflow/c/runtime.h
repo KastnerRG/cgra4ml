@@ -121,6 +121,20 @@ extern EXT_C void model_setup(Memory_st *restrict mp) {
     parameters[8*var+3] = bundles[var].w_bpt_p0;  // w_bpt0
     parameters[8*var+4] = bundles[var].w_bpt;     // w_bpt
 
+    // ── WEIGHTS DMA CONFIG ────────────────────────────────────────────────
+    // The CPU never reads mp->w directly — the hardware DMA does.
+    // These parameters tell the DMA controller how many bytes of weights
+    // to fetch per iteration. w_bpt_p0 is the first-pass transfer size
+    // (may differ if the first tile has fewer channels), w_bpt is all others.
+    debug_printf("[model_setup] bundle %d  weights_base=%p"
+                 "  w_bpt_p0=%d bytes  w_bpt=%d bytes\n",
+        var,
+        (var == 0)
+            ? (void*)mp->w
+            : (void*)(mp->w + bundles[var].b_offset),
+        bundles[var].w_bpt_p0,
+        bundles[var].w_bpt);
+    // ──────────────────────────────────────────────────────────────────────
     assert_printf(bundles[var].p, <, 1<<16, "", "P should be less than 2**16 for bundle:%x", var);
     assert_printf(bundles[var].t, <, 1<<16, "", "T should be less than 2**16 for bundle:%x", var);
     parameters[8*var+5] = (bundles[var].t << 16) + bundles[var].p; // max p
@@ -183,6 +197,22 @@ static inline void write_x(i8 val, i8 *restrict p_out_buffer, Memory_st *restric
   u8 packed_val      = ((u8)val & X_BITS_MASK) << (packed_idx.rem * X_BITS);
   u8 mem_val         = p_out_buffer[packed_idx.quot];
   u8 mem_val_cleaned = X_POSITION_INVERTED_MASKS[packed_idx.rem] & mem_val;
+
+  // ── GAP 1: write_x byte address and nibble ────────────────────────────
+  // flat_index is the logical element index in the tiled layout.
+  // packed_idx.quot is the byte offset within out_buffers; packed_idx.rem
+  // is which nibble within that byte (0=low, 1=high for 4-bit).
+  // dest_addr is the exact byte being written in out_buffers.
+  debug_printf("      [WRITE_X] flat=%d  byte_offset=%d  nibble=%d"
+               "  dest_addr=%p  packed_val=0x%02x  val=%d\n",
+      flat_index,
+      packed_idx.quot,
+      packed_idx.rem,
+      (void*)(p_out_buffer + packed_idx.quot),
+      packed_val,
+      (int)val);
+  // ──────────────────────────────────────────────────────────────────────
+
   write_flush_u8((u8*)(p_out_buffer + packed_idx.quot), mem_val_cleaned | packed_val);
 }
 
@@ -209,13 +239,30 @@ static inline void tile_write( i32 out_val, i8 *restrict p_out_buffer, i32 ib, B
  // ------ STORE IN NHWC  ------
 
   if (ib == N_BUNDLES-1) {
+    // ── PRINT 4a: final output write ──────────────────────────────────────
+    // Last bundle writes directly into mp->y (the model output array).
+    // This value will be read by print_output() after all bundles complete.
+    debug_printf("  [TILE_WRITE FINAL] ib=%d iy_nhwc=%d  val=%d"
+                 "  -> y_addr=%p\n",
+        ib, iy_nhwc, out_val,
+        (void*)&mp->y[iy_nhwc]);
+    // ──────────────────────────────────────────────────────────────────────
     mp->y[iy_nhwc] = out_val; // Last bundle: save as NHWC
     return;
   }
 
   // Store for residual add
-  if (pb->add_out_buffer_idx != -1)
+  if (pb->add_out_buffer_idx != -1) {
+    // ── PRINT 4b: residual add buffer write ───────────────────────────────
+    // This output value is saved to mp->add_buffers for a later bundle's
+    // skip connection. Only fires when add_out_buffer_idx != -1.
+    debug_printf("  [TILE_WRITE ADD_BUF] ib=%d add_out_buf=%d iy_nhwc=%d"
+                 "  val=%d  add_buf_addr=%p\n",
+        ib, pb->add_out_buffer_idx, iy_nhwc, out_val,
+        (void*)&mp->add_buffers[pb->add_out_buffer_idx][iy_nhwc]);
+    // ──────────────────────────────────────────────────────────────────────
     mp->add_buffers[pb->add_out_buffer_idx][iy_nhwc] = (i8)out_val;
+  }
 
   // If output only goes to residual add, early return
   Bundle_t*restrict pb_out;
@@ -242,6 +289,19 @@ static inline void tile_write( i32 out_val, i8 *restrict p_out_buffer, i32 ib, B
   // ------ STORE FOR NEXT BUNDLE  ------
   // Other bundles: pad & save as tiled
   i32 yr_sweep = i_yh==yh-1 ? PE_ROWS : i_yr + 1;
+
+  // ── PRINT 5: tiled writeback to out_buffer ────────────────────────────
+  // Shows the transformation from NHWC output coordinates to the tiled
+  // [p, n, l, w, cm, r] layout that the next bundle's DMA will stream in.
+  // p_out_buffer points to mp->out_buffers[pb->out_buffer_idx].
+  // yr_sweep > i_yr+1 only on the last row, where padding rows are filled.
+  debug_printf("  [TILE_WRITE->NEXT_BUNDLE] ib=%d y[%d,%d,%d,%d]"
+               "  -> tiled p=%d l=%d cm=%d r=%d..%d  yr_sweep=%d"
+               "  out_buf_base=%p\n",
+      ib, i_yn, i_yh, i_yw, i_yc,
+      i_yp, i_yl, i_ycm, i_yr, yr_sweep-1, yr_sweep,
+      (void*)p_out_buffer);
+  // ──────────────────────────────────────────────────────────────────────
 
   for (i32 i_yr_dest = i_yr; i_yr_dest < yr_sweep; i_yr_dest++) {
     write_x(out_val, p_out_buffer, mp, ib, i_yp, i_yn, i_yl, i_yw, i_ycm, i_yr_dest,   pb_out, ycm);
@@ -282,6 +342,36 @@ extern EXT_C void run(Memory_st *restrict mp) {
     pb = &bundles[ib];
     p_out_buffer = (i8*)&(mp->out_buffers[pb->out_buffer_idx]);
 
+    // ── PRINT 1: bundle header ─────────────────────────────────────────────
+    // Shows the static buffer routing baked into config_fw.h for this bundle.
+    // in_buffer_idx=-1 means bundle reads from mp->x (raw input), not a ping-pong buffer.
+    // out_buffer_idx is which slot in mp->out_buffers this bundle writes into.
+    // add_in/add_out_buffer_idx=-1 means no residual skip connection on this bundle.
+    debug_printf("\n[BUNDLE %d] in_buf=%d  out_buf=%d  add_in=%d  add_out=%d"
+                 "  p=%d  t=%d  n=%d  h=%d  w=%d  co=%d\n",
+        ib,
+        pb->in_buffer_idx,
+        pb->out_buffer_idx,
+        pb->add_in_buffer_idx,
+        pb->add_out_buffer_idx,
+        pb->p, pb->t, pb->n, pb->h, pb->w, pb->co);
+    // Input source address: mp->x for bundle 0, mp->out_buffers[in_buffer_idx] for others
+    void *in_src = (ib == 0)
+        ? (void*)mp->x
+        : (void*)mp->out_buffers[pb->in_buffer_idx];
+    debug_printf("  READ  from: %p  (%s)\n",
+        in_src,
+        (ib == 0) ? "mp->x (raw input)" : "mp->out_buffers[in_buffer_idx]");
+    debug_printf("  WRITE to:   %p  (mp->out_buffers[%d])\n",
+        (void*)p_out_buffer,
+        pb->out_buffer_idx);
+    debug_printf("  mp->x=%p  mp->out_buffers[0]=%p  mp->w=%p  mp->y=%p\n",
+        (void*)mp->x,
+        (void*)mp->out_buffers[0],
+        (void*)mp->w,
+        (void*)mp->y);
+    // ──────────────────────────────────────────────────────────────────────
+
     for (ip = 0; ip < pb->p; ip++) {
       for (it = 0; it < pb->t; it++) {
 
@@ -294,6 +384,17 @@ extern EXT_C void run(Memory_st *restrict mp) {
               ocm_bank = !ocm_bank;
               w_last = iw_kw2 == pb->w_kw2-1 ? pb->kw/2+1 : 1;
               o_bpt = PE_ROWS * pb->coe * w_last * sizeof(Y_TYPE);
+
+              // ── PRINT 2: OCM ping-pong bank flip ──────────────────────────────────
+              // Shows the hardware double-buffer handshake each iteration.
+              // ocm_bank alternates 0/1. CPU waits for DONE_WRITE on this bank,
+              // reads PE outputs out of mp->ocm[ocm_bank], then clears the flag
+              // so the CGRA can refill it while the CPU processes the other bank.
+              debug_printf("  [b%d ip=%d it=%d in=%d il=%d iw=%d] ocm_bank -> %d"
+                           "  o_bpt=%d bytes  ocm_addr=%p\n",
+                  ib, ip, it, in, il, iw_kw2, ocm_bank, o_bpt,
+                  (void*)mp->ocm[ocm_bank]);
+              // ──────────────────────────────────────────────────────────────────────
 
 #ifdef SIM
               char f_path_raw [1000], f_path_sum  [1000]; // make sure full f_path_raw is shorter than 1000
@@ -345,6 +446,19 @@ extern EXT_C void run(Memory_st *restrict mp) {
                     raw_val = mp->ocm[ocm_bank][sram_addr];
                     out_val = raw_val;
 
+                    // ── GAP 2: OCM per-element read address ───────────────────────────
+                    // Connects a specific PE accumulator output at a physical OCM address
+                    // to the output tensor coordinate [n,h,w,c] it represents.
+                    // sram_addr increments linearly through [icoe, iw_last, ir] order.
+                    debug_printf("    [OCM READ] bank=%d sram_addr=%d"
+                                 "  elem_addr=%p  raw_val=%d"
+                                 "  -> y[%d,%d,%d,%d]\n",
+                        ocm_bank, sram_addr,
+                        (void*)&mp->ocm[ocm_bank][sram_addr],
+                        raw_val,
+                        i_yn, i_yh, i_yw, i_yc);
+                    // ──────────────────────────────────────────────────────────────────
+
 //PROCESS_START:
 
                     // ------ ADD P PASSES ------
@@ -353,11 +467,36 @@ extern EXT_C void run(Memory_st *restrict mp) {
                     if (pb->p == 1) {          // only p  : proceed with value
                     } else if (ip == pb->p-1) {// last p  : read, add, proceed
                       out_val += mp->nhwc[iy_nhwc];
+                      // ── PRINT 3a: final p-pass ─────────────────────────────────────
+                      // All partial sums are accumulated. out_val is now the complete
+                      // dot product result before activation. nhwc[] slot is consumed.
+                      debug_printf("    [P-PASS FINAL] ib=%d ip=%d iy_nhwc=%d"
+                                   "  partial_stored=%d  raw_this=%d  total=%d"
+                                   "  nhwc_addr=%p\n",
+                          ib, ip, iy_nhwc,
+                          mp->nhwc[iy_nhwc] - raw_val, raw_val, out_val,
+                          (void*)&mp->nhwc[iy_nhwc]);
+                      // ──────────────────────────────────────────────────────────────
                     } else if (ip == 0) {            // first p : overwrite memory, return
+                      // ── PRINT 3b: first p-pass ─────────────────────────────────────
+                      // First partial sum written to nhwc[]. Execution returns here;
+                      // activation/writeback are skipped until the last pass.
+                      debug_printf("    [P-PASS FIRST] ib=%d ip=%d iy_nhwc=%d"
+                                   "  stored=%d -> nhwc_addr=%p\n",
+                          ib, ip, iy_nhwc, out_val,
+                          (void*)&mp->nhwc[iy_nhwc]);
+                      // ──────────────────────────────────────────────────────────────
                       mp->nhwc[iy_nhwc] = out_val;
                       goto PROCESS_AND_STORE_DONE;
                     } else {                         // middle p: read, add, store, return
                       mp->nhwc[iy_nhwc] += out_val;
+                      // ── PRINT 3c: middle p-pass ────────────────────────────────────
+                      // Accumulating into nhwc[]. Running total shown after addition.
+                      debug_printf("    [P-PASS MID  ] ib=%d ip=%d iy_nhwc=%d"
+                                   "  added=%d  running_total=%d  nhwc_addr=%p\n",
+                          ib, ip, iy_nhwc, out_val, mp->nhwc[iy_nhwc],
+                          (void*)&mp->nhwc[iy_nhwc]);
+                      // ──────────────────────────────────────────────────────────────
                       goto PROCESS_AND_STORE_DONE;
                     }
                     sim_fprintf(fp_sum,"%d\n", out_val); // Save summed output
@@ -375,8 +514,22 @@ extern EXT_C void run(Memory_st *restrict mp) {
                     yw   = pb->cw;
 
                     // ------ ADD BIAS ------
-                    if (pb->is_bias)
+                    if (pb->is_bias) {
+                      // ── GAP 4: bias read from mp->b ───────────────────────────────
+                      // Silent until use_bias=True is set on an XDense layer.
+                      // b_val_shift scales out_val before addition; b_bias_shift scales
+                      // the bias term. Both are fixed-point alignment shifts.
+                      debug_printf("    [BIAS READ] ib=%d i_bias=%d"
+                                   "  b_val=%d  addr=%p"
+                                   "  val_shift=%d  bias_shift=%d  out_before=%d\n",
+                          ib, i_bias,
+                          (int)mp->b[i_bias],
+                          (void*)&mp->b[i_bias],
+                          pb->b_val_shift, pb->b_bias_shift,
+                          out_val);
+                      // ──────────────────────────────────────────────────────────────
                       out_val = (out_val << pb->b_val_shift) + (mp->b[i_bias] << pb->b_bias_shift);
+                    }
 
 
                     // ------ CORE ACT ------
@@ -386,7 +539,18 @@ extern EXT_C void run(Memory_st *restrict mp) {
 
                     if (pb->add_in_buffer_idx != -1) {
                       iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc, "Before add", DEBUG_INFO);// store as nhwc for pooling
-                      out_val += mp->add_buffers[pb->add_in_buffer_idx][iy_nhwc];
+                      // ── GAP 3: add_buffers read ─────────────────────────────────────
+                      // Reads the residual value saved by a previous bundle's
+                      // add_out_buffer_idx write. Silent until a skip connection exists.
+                      i32 add_val = mp->add_buffers[pb->add_in_buffer_idx][iy_nhwc];
+                      debug_printf("    [ADD_BUF READ] ib=%d add_in_buf=%d iy_nhwc=%d"
+                                   "  add_val=%d  addr=%p  out_before=%d\n",
+                          ib, pb->add_in_buffer_idx, iy_nhwc,
+                          add_val,
+                          (void*)&mp->add_buffers[pb->add_in_buffer_idx][iy_nhwc],
+                          out_val);
+                      // ──────────────────────────────────────────────────────────────
+                      out_val += add_val;
                       out_val = quant_lrelu(out_val, pb->aa_nzero, pb->aa_shift, pb->aa_pl_scale);
                     }
 
