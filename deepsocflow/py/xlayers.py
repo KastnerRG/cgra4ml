@@ -347,3 +347,162 @@ class XPool(Layer):
             assert np.allclose(out.ftensor, self.out.ftensor), f"Activation output does not match. \nout:{out.ftensor.numpy().flatten()[:100]}, \nself.out:{self.out.ftensor.numpy().flatten()[:100]}"
         self.out = out
         return out
+
+
+class XAttn(Layer):
+    def __init__(self, k_int_bits, b_int_bits, act, units, attn_bits=None, scale=None, *args, **kwargs):
+        layer_kwargs = {}
+        for key in ["name", "trainable", "dtype", "dynamic"]:
+            if key in kwargs:
+                layer_kwargs[key] = kwargs.pop(key)
+        super().__init__(*args, **layer_kwargs)
+
+        self.type = 'attn'
+        if act is None:
+            raise ValueError("Activation function must be provided. Set type to none if no activation is needed")
+
+        self.act = act
+        self.sys_bits = act.sys_bits
+        self.k_frac = get_frac_bits(self.sys_bits.k, k_int_bits)
+        self.b_frac = get_frac_bits(self.sys_bits.b, b_int_bits)
+        self.out = XTensor(None, None, float_only=True)
+
+        self.units = units
+        self.scale = scale
+        self.attn_bits = self.sys_bits.x if attn_bits is None else attn_bits
+        self.attn_frac = self.attn_bits - 1
+
+        if "kernel_quantizer" in kwargs or "bias_quantizer" in kwargs:
+            raise ValueError("kernel_quantizer and bias_quantizer will be derived from xconfig and k_frac")
+
+        self.kernel_quantizer = f'quantized_bits({self.sys_bits.k},{k_int_bits},False,True,1)'
+        self.bias_quantizer = f'quantized_bits({self.sys_bits.b},{b_int_bits},False,True,1)'
+
+        self.q_proj = QDense(units=self.units, kernel_quantizer=self.kernel_quantizer, bias_quantizer=self.bias_quantizer, **kwargs)
+        self.k_proj = QDense(units=self.units, kernel_quantizer=self.kernel_quantizer, bias_quantizer=self.bias_quantizer, **kwargs)
+        self.v_proj = QDense(units=self.units, kernel_quantizer=self.kernel_quantizer, bias_quantizer=self.bias_quantizer, **kwargs)
+
+        self.q_bias_val_shift = self.q_bias_b_shift = 0
+        self.k_bias_val_shift = self.k_bias_b_shift = 0
+        self.v_bias_val_shift = self.v_bias_b_shift = 0
+
+
+    def _split_inputs(self, input_tensor):
+        if isinstance(input_tensor, (list, tuple)):
+            #general (cross) attention
+            assert len(input_tensor) == 3, "XAttn expects [x_q, x_k, x_v] or [x]"
+            x_q = input_tensor[0]
+            x_k = input_tensor[1]
+            x_v = input_tensor[2]
+        else:
+            #self attention
+            x_q = x_k = x_v = input_tensor
+        return x_q, x_k, x_v
+
+    def call(self, input_tensor):
+        x_q, x_k, x_v = self._split_inputs(input_tensor)
+        q = self.q_proj(x_q)
+        k = self.k_proj(x_k)
+        v = self.v_proj(x_v)
+
+        dot_product = tf.matmul(q, k, transpose_b=True)
+        
+        if self.scale is not None:
+            #scale as 1/sqrt(d)
+            dot_product = dot_product * self.scale
+
+        self.dot_product = XTensor(dot_product, None, float_only=True)
+        self.attn = XTensor(tf.nn.softmax(dot_product, axis=-1), None, float_only=True)
+        self.out.ftensor = tf.matmul(self.attn.ftensor, v)
+        return self.out.ftensor
+
+    def _project_int(self, x, layer, name, hw):
+        w = XTensor(tensor=layer.kernel_quantizer_internal(layer.kernel), bits=self.sys_bits.k, frac=self.k_frac)
+        b = XTensor(tensor=layer.bias_quantizer_internal(layer.bias), bits=self.sys_bits.b, frac=self.b_frac) if layer.use_bias else None
+
+        w.assert_valid()
+        if b is not None:
+            b.assert_valid()
+
+        clog2_add = int(np.ceil(np.log2(np.prod(w.itensor.shape[:-1]))))
+        out = XTensor(
+            tensor=x.itensor @ w.itensor,
+            bits=x.bits + w.bits + clog2_add,
+            frac=x.frac + w.frac,
+            from_int=True
+        )
+
+        if b is not None:
+            out, (val_shift, bias_shift) = out.add_val_shift(b)
+            assert out.bits <= hw.INT_BITS, \
+                f"After {name} bias addition, resulting bits {out.bits} are more than bits for integer in CPU {hw.INT_BITS}. Reduce bits or increase integer bits of bias to continue"
+        else:
+            val_shift, bias_shift = 0, 0
+
+        setattr(self, f"{name}_w", w)
+        setattr(self, f"{name}_b", b)
+        setattr(self, f"{name}_bias_val_shift", val_shift)
+        setattr(self, f"{name}_bias_b_shift", bias_shift)
+        return out
+
+    def call_int(self, x, hw):
+        x_q, x_k, x_v = self._split_inputs(x)
+        self.q = self._project_int(x_q, self.q_proj, "q", hw)
+        self.k = self._project_int(x_k, self.k_proj, "k", hw)
+        self.v = self._project_int(x_v, self.v_proj, "v", hw)
+
+        q_arr = self.q.itensor.numpy().astype(int)
+        k_arr = self.k.itensor.numpy().astype(int)
+        v_arr = self.v.itensor.numpy().astype(int)
+
+        assert q_arr.shape[-1] == k_arr.shape[-1], \
+            f"Q and K projected dimensions must match. q:{q_arr.shape}, k:{k_arr.shape}"
+        assert k_arr.shape[-2] == v_arr.shape[-2], \
+            f"K sequence length must match V sequence length. k:{k_arr.shape}, v:{v_arr.shape}"
+
+        clog2_qk = int(np.ceil(np.log2(q_arr.shape[-1])))
+        dot_product = q_arr @ np.swapaxes(k_arr, -1, -2)
+        if self.scale is not None:
+            raise NotImplementedError("XAttn.call_int currently supports unscaled attention only. Keep scale=None or add fixed-point scale handling.")
+
+        self.dot_product = XTensor(
+            tensor=dot_product,
+            bits=self.q.bits + self.k.bits + clog2_qk,
+            frac=self.q.frac + self.k.frac,
+            from_int=True
+        )
+        assert self.dot_product.bits <= hw.INT_BITS, \
+            f"QK^T score bits {self.dot_product.bits} are more than bits for integer in CPU {hw.INT_BITS}"
+
+        dot_product_float = self.dot_product.ftensor.numpy().astype(np.float32)
+        dot_product_float = dot_product_float - np.max(dot_product_float, axis=-1, keepdims=True)
+        attn_float = np.exp(dot_product_float).astype(np.float32)
+        attn_float = attn_float / np.sum(attn_float, axis=-1, keepdims=True)
+
+        attn_int = np.round(attn_float * (1 << self.attn_frac)).astype(int)
+        attn_int = np.clip(attn_int, 0, (1 << (self.attn_bits - 1)) - 1)
+        self.attn = XTensor(
+            tensor=attn_int,
+            bits=self.attn_bits,
+            frac=self.attn_frac,
+            from_int=True
+        )
+
+        clog2_av = int(np.ceil(np.log2(attn_int.shape[-1])))
+        out = XTensor(
+            tensor=self.attn.itensor @ v_arr,
+            bits=self.attn.bits + self.v.bits + clog2_av,
+            frac=self.attn.frac + self.v.frac,
+            from_int=True
+        )
+        assert out.bits <= hw.INT_BITS, \
+            f"Attention output bits {out.bits} are more than bits for integer in CPU {hw.INT_BITS}"
+
+        v_abs_sum = np.sum(np.abs(self.v.ftensor.numpy()), axis=-2, keepdims=True)
+        softmax_quant_atol = np.max(v_abs_sum) * 2**(-self.attn_frac)
+        assert np.allclose(out.ftensor.numpy(), self.out.ftensor.numpy(), atol=softmax_quant_atol), \
+            f"Attention output does not match. \nout:{out.ftensor.numpy().flatten()[:100]}, \nself.out:{self.out.ftensor.numpy().flatten()[:100]}"
+
+        self.y = self.dot_product
+        self.out = out
+        return out
