@@ -78,10 +78,12 @@ def export_inference(model, hw, batch_size=1):
 
     add_buffer_map = []
     out_buffer_map = []
+    w_buffer_map = []     # populated in w_buffer allocation block below
+    w_buf_bytes_max = 0   # max bytes across all w_buf slots; computed in w_buffer allocation block
 
     for ib, b in enumerate(BUNDLES):
         print(f'-----------------ib:{ib}-----------------------')
-        b.call_int(x if ib==0 else None, hw)
+        b.call_int(x if b.prev_ib is None else None, hw)
         b.export(hw, False)
    
         '''
@@ -141,7 +143,43 @@ def export_inference(model, hw, batch_size=1):
                 if buf['out'][-1] == b.ib:
                     add_buffer_map[im] = None
 
-        print(f'add_buffer_map:{add_buffer_map}')     
+        print(f'add_buffer_map:{add_buffer_map}')
+
+        '''
+        W BUFFER ALLOCATION (dynamic weight buffers)
+        '''
+        if b.next_w_ib is not None:
+            # This bundle's output will be used as weights by BUNDLES[next_w_ib].
+            # Assign a w_buf slot using first-fit; size will be filled in when
+            # we process the consumer bundle (which has b.r by then).
+            for im in range(len(w_buffer_map)):
+                if w_buffer_map[im] is None:
+                    w_buffer_map[im] = {'in': b.ib, 'out': b.next_w_ib, 'bytes': 0}
+                    b.out_w_buffer_idx = im
+                    break
+            else:
+                b.out_w_buffer_idx = len(w_buffer_map)
+                w_buffer_map.append({'in': b.ib, 'out': b.next_w_ib, 'bytes': 0})
+        print('out_w_buffer_idx:', b.out_w_buffer_idx)
+
+        if b.w_src_ib is not None:
+            # This bundle reads its weights from w_bufs[in_w_buffer_idx].
+            b.in_w_buffer_idx = BUNDLES[b.w_src_ib].out_w_buffer_idx
+            # Compute the w_buf size from this consumer bundle's own tiling params.
+            w_bpt_c    = (hw.K_BITS * b.we[-1][0].size) // 8
+            w_bpt_p0_c = (hw.K_BITS * b.we[0][0].size)  // 8
+            w_buf_bytes_b = (w_bpt_p0_c + (b.r.CP - 1) * w_bpt_c) * b.r.IT
+            w_buffer_map[b.in_w_buffer_idx]['bytes'] = w_buf_bytes_b
+            BUNDLES[b.w_src_ib].w_buf_bytes = w_buf_bytes_b  # cache on producer before slot is freed
+            w_buf_bytes_max = max(w_buf_bytes_max, w_buf_bytes_b)
+        print('in_w_buffer_idx:', b.in_w_buffer_idx)
+
+        # Free w_buffer slots whose consumer bundle has been processed
+        for im in range(len(w_buffer_map)):
+            buf = w_buffer_map[im]
+            if buf is not None and buf['out'] == b.ib:
+                w_buffer_map[im] = None
+        print(f'w_buffer_map:{w_buffer_map}')
 
 
     d_perf = predict_model_performance(hw=hw)
@@ -150,7 +188,7 @@ def export_inference(model, hw, batch_size=1):
     '''
     Write Runtime Headers
     '''
-    x_bytes_all = x_bytes = w_bytes = b_words = x_bytes_max = nhwc_words_max = o_bytes_max = o_words_max = 0
+    x_bytes_all = x_bytes = w_bytes = b_words = x_bytes_max = nhwc_words_max = o_bytes_max = o_words_max = o_words = 0
     with open (f'./config_fw.h', 'w') as ch:
 
         ch.write(f"#define N_BUNDLES {len(BUNDLES)}\n")
@@ -168,8 +206,15 @@ def export_inference(model, hw, batch_size=1):
                 o_words_b = b.o_int.size
                 o_bytes_b = o_words_b*4 # int or float
                 o_words = o_words_b
+            elif b.out_w_buffer_idx != -1:
+                # Producer bundle: output goes to w_bufs, not to an activation out_buffer.
+                # o_bytes is the total bytes the CPU will write into the w_buf slot.
+                # Use the cached value — the w_buffer_map slot may have been freed already.
+                o_words_b = b.w_buf_bytes
+                o_bytes_b = b.w_buf_bytes
+                o_words   = max(o_words, o_words_b)
             else:
-                b_next    = BUNDLES[ib+1]
+                b_next    = BUNDLES[sorted(b.next_ibs)[0]]
                 o_wpt     = b_next.xe[-1].size
                 o_wpt_p0  = b_next.xe[0].size
                 o_words_b = o_wpt_p0 + (b_next.r.CP-1)*o_wpt
@@ -188,7 +233,8 @@ def export_inference(model, hw, batch_size=1):
             nhwc_words_max = max(nhwc_words_max, nhwc_words_b)
             o_bytes_max = max(o_bytes_max, o_bytes_b)
             o_words_max = max(o_words_max, o_words_b)
-            w_bytes += w_bytes_b
+            if b.in_w_buffer_idx == -1:  # consumer bundles have no static weights
+                w_bytes += w_bytes_b
             x_bytes_all += x_bytes_b
 
             ib_out = -1 if len(b.next_ibs) == 0 else sorted(b.next_ibs)[0]
@@ -220,7 +266,7 @@ def export_inference(model, hw, batch_size=1):
 
             ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<4}, .co={b.r.CO:<4}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, .on={b.r.ON:<3}, .oh={b.r.OH:<3}, .ow={b.r.OW:<3}, .oc={b.r.OC:<4}, .ch={b.r.CYH:<3}, .ph={b.r.PYH:<3}, .cw={b.r.CYW:<3}, .pw={b.r.PYW:<3}, .pkh={b.r.PKH:<3}, .psh={b.r.PSH:<3}, .pkw={b.r.PKW:<3}, .psw={b.r.PSW:<3}, ")
             ch.write(     f".xp_words={xp_words:<6}, .b_offset={b_words:<5}, .w_bpt={w_bpt:<5}, .w_bpt_p0={w_bpt_p0:<5}, .x_bpt={x_bpt:<8}, .x_bpt_p0={x_bpt_p0:<8}, .o_words={o_words_b:<8}, .o_bytes={o_bytes_b:<8}, ")
-            ch.write(     f".ib_out={ib_out:<4}, .in_buffer_idx={in_buffer_idx:<3}, .out_buffer_idx={b.out_buffer_idx:<3}, .add_out_buffer_idx={add_out_buffer_idx:<2}, .add_in_buffer_idx={add_in_buffer_idx:<2}, ")
+            ch.write(     f".ib_out={ib_out:<4}, .in_buffer_idx={in_buffer_idx:<3}, .out_buffer_idx={b.out_buffer_idx:<3}, .add_out_buffer_idx={add_out_buffer_idx:<2}, .add_in_buffer_idx={add_in_buffer_idx:<2}, .out_w_buffer_idx={b.out_w_buffer_idx:<2}, .in_w_buffer_idx={b.in_w_buffer_idx:<2}, .out_w_consumer_ib={b.out_w_consumer_ib:<2}, ")
             ch.write(     f".is_bias={1*(b.core.b is not None):<3}, .is_flatten={1*(b.flatten is not None):<3}, .is_softmax={1*(b.softmax is not None):<3}, ")
             ch.write(     f".x_pad={b.r.X_PAD:<3}, .b_val_shift={b.core.bias_val_shift:<3}, .b_bias_shift={b.core.bias_b_shift:<3}, .ca_nzero={ca_nzero:<3}, .ca_shift={ca_shift:<3}, .ca_pl_scale={ca_pl_scale:<3}, .aa_nzero={aa_nzero:<3}, .aa_shift={aa_shift:<3}, .aa_pl_scale={aa_pl_scale:<3}, .pa_nzero={pa_nzero:<3}, .pa_shift={pa_shift:<3}, .pa_pl_scale={pa_pl_scale:<3}, .softmax_frac={b.softmax_frac:<3}, ")
             ch.write(     f".csh={b.r.CSH:<3}, .csh_shift={b.r.CSH_SHIFT:<3}, .psh_shift={b.r.PSH_SHIFT:<3}, .csw={b.r.CSW:<3}, .csw_shift={b.r.CSW_SHIFT:<3}, .psw_shift={b.r.PSW_SHIFT:<3}, .pool={pool_type:<10}, ")
@@ -242,7 +288,9 @@ def export_inference(model, hw, batch_size=1):
 
         ch.write(f"#define N_OUT_BUF   {max(len(out_buffer_map),1)}\n")
         ch.write(f"#define N_ADD_BUF   {len(add_buffer_map) if len(add_buffer_map) > 0 else ''}\n")
-        ch.write(f"#define WB_BYTES    {w_bytes + (b_words*hw.B_BITS)//8}\n")
+        ch.write(f"#define N_W_BUF     {len(w_buffer_map)}\n")
+        ch.write(f"#define W_BUF_BYTES_MAX {max(w_buf_bytes_max, 1)}\n")
+        ch.write(f"#define WB_BYTES    {w_bytes + len(w_buffer_map)*w_buf_bytes_max + (b_words*hw.B_BITS)//8}\n")
         ch.write(f"#define W_BYTES     {w_bytes}\n")
         ch.write(f"#define X_BYTES     {x_bytes}\n")
         ch.write(f"#define O_WORDS     {o_words}\n")
@@ -281,9 +329,10 @@ def export_inference(model, hw, batch_size=1):
                 xe = pack_words_into_bytes(arr=b.xe[ip].flatten(), bits=hw.X_BITS)
                 x_bitstring_b += xe.tobytes()
                     
-                for it in range(b.r.IT):
-                    we = pack_words_into_bytes(arr=b.we[ip][it].flatten(), bits=hw.K_BITS)
-                    w_bitstring += we.tobytes()
+                if b.in_w_buffer_idx == -1:  # consumer bundles: weights come from w_bufs at runtime
+                    for it in range(b.r.IT):
+                        we = pack_words_into_bytes(arr=b.we[ip][it].flatten(), bits=hw.K_BITS)
+                        w_bitstring += we.tobytes()
             x_bitstring += x_bitstring_b
             with open(f"{hw.DATA_DIR}/{ib}_x_sim.bin", 'wb') as f: 
                 f.write(x_bitstring_b)
@@ -292,11 +341,16 @@ def export_inference(model, hw, batch_size=1):
         with open(f"{hw.DATA_DIR}/x.bin", 'wb') as f: 
             f.write(x_bitstring_0)
 
-        with open(f"{hw.DATA_DIR}/wb.bin", 'wb') as f: 
-            f.write(w_bitstring + b_bitstring)
+        # Zero-filled placeholder for w_bufs region; tile_write_w() fills it at runtime.
+        # Must sit between w_bitstring and b_bitstring to match Memory_st layout so that
+        # fread(mp->w, WB_BYTES+X_BYTES) in model_setup() loads data into the right fields.
+        w_buf_bitstring = bytes(len(w_buffer_map) * w_buf_bytes_max)
 
-        with open(f"{hw.DATA_DIR}/wbx.bin", 'wb') as f: 
-            f.write(w_bitstring + b_bitstring + x_bitstring_0)
+        with open(f"{hw.DATA_DIR}/wb.bin", 'wb') as f:
+            f.write(w_bitstring + w_buf_bitstring + b_bitstring)
+
+        with open(f"{hw.DATA_DIR}/wbx.bin", 'wb') as f:
+            f.write(w_bitstring + w_buf_bitstring + b_bitstring + x_bitstring_0)
 
         with open(f"{hw.DATA_DIR}/x_all.bin", 'wb') as f: 
             f.write(x_bitstring)
@@ -377,15 +431,33 @@ def verify_inference(model, hw, SIM, SIM_PATH='', TRACE=False):
                 y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.ib}_y_tiled_sim.txt", np.float32).reshape(y_tiled_exp.shape)/2**17
                 error = np.sum(np.abs(y_tiled_sim-y_tiled_exp))
                 assert error == 0, f"Error={error}, for y_tiled_sim at {b.ib=}"
+        elif b.out_w_buffer_idx != -1:
+            # Producer bundle: output written to w_buf in weight-tiled format, not to debug_tiled.
+            # Verify the w_buf bytes via _y_packed_sim.bin written by the C runtime.
+            consumer = BUNDLES[b.next_w_ib]
+            w_buf_exp_bytes = b''
+            for ip in range(consumer.r.CP):
+                for it in range(consumer.r.IT):
+                    from deepsocflow.py.dataflow import pack_words_into_bytes
+                    we = pack_words_into_bytes(arr=consumer.we[ip][it].flatten(), bits=hw.K_BITS)
+                    w_buf_exp_bytes += we.tobytes()
+            with open(f'{hw.DATA_DIR}/{b.ib}_y_packed_sim.bin', 'rb') as f:
+                w_buf_sim_bytes = f.read(len(w_buf_exp_bytes))
+            diff = np.frombuffer(w_buf_sim_bytes, dtype=np.uint8).astype(np.int32) - \
+                   np.frombuffer(w_buf_exp_bytes, dtype=np.uint8).astype(np.int32)
+            error = int(np.sum(np.abs(diff)))
+            assert error == 0, f"W_buf mismatch (error={error}) for producer bundle {b.ib}"
         else:
-            y_tiled_exp = np.concatenate([a.flatten() for a in BUNDLES[ib+1].xe])
+            next_act_ib = sorted(b.next_ibs)[0]
+            y_tiled_exp = np.concatenate([a.flatten() for a in BUNDLES[next_act_ib].xe])
             y_tiled_sim = np.loadtxt(f"{hw.DATA_DIR}/{b.ib}_y_tiled_sim.txt", np.float32).reshape(y_tiled_exp.shape)
             error = np.sum(np.abs(y_tiled_sim-y_tiled_exp))
             assert error == 0, f"Error={error}, for y_tiled_sim at {b.ib=}"
 
         ''' Verify packed output'''
         if ib != len(BUNDLES)-1 and len(b.next_ibs) != 0:
-            with open(f'{hw.DATA_DIR}/{ib}_y_packed_sim.bin', 'rb') as f_sim, open(f'{hw.DATA_DIR}/{ib+1}_x_sim.bin', 'rb') as f_exp:
+            next_act_ib = sorted(b.next_ibs)[0]
+            with open(f'{hw.DATA_DIR}/{ib}_y_packed_sim.bin', 'rb') as f_sim, open(f'{hw.DATA_DIR}/{next_act_ib}_x_sim.bin', 'rb') as f_exp:
                 y_packed_sim = np.frombuffer(f_sim.read(), dtype=np.uint8)
                 y_packed_exp = np.frombuffer(f_exp.read(), dtype=np.uint8)
             diff  = y_packed_sim-y_packed_exp

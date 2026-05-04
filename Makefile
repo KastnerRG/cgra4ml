@@ -3,7 +3,9 @@
 # Testing
 
 #TEST := param_test
-TEST := two_dense
+#TEST := two_dense
+#TEST := chained_matmul
+TEST := multi_chained_matmul
 WORKDIR := run/work
 
 clean:

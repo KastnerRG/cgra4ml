@@ -273,6 +273,19 @@ def reorder_y_e2q_conv(y, hw, r):
     return y
 
 
+def reorder_y_as_w(y_nhwc, hw, r_consumer):
+    """
+    Reorder a producer bundle's output (NHWC format) into the weight-tiled
+    layout used by the consumer bundle's weight DMA.
+    y_nhwc: shape (XN=1, XH, XW=1, CO) — producer's integer output in NHWC
+    r_consumer: runtime params of the bundle that reads this as weights
+    """
+    XN, XH, XW, CO = y_nhwc.shape
+    assert XN == 1 and XW == 1, "Producer must have XN=1, XW=1"
+    w = y_nhwc.reshape(1, 1, XH, CO)  # (KH=1, KW=1, CI=XH, CO=CO)
+    return reorder_w_q2e_conv(w, hw, r_consumer)
+
+
 def pack_words_into_bytes (arr, bits):
     assert 8 % bits == 0, f"Bits {bits} should be factor of 8 for packing"
     w_words_per_byte = 8//bits

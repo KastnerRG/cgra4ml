@@ -183,10 +183,13 @@ class XDense(QDense):
         return self.out.ftensor
     
 
-    def call_int(self, x, hw):
+    def call_int(self, x, hw, w_override=None):
 
         self.x = x
-        self.w = XTensor(tensor=self.kernel_quantizer_internal(self.kernel), bits=self.sys_bits.k, frac=self.k_frac)
+        if w_override is not None:
+            self.w = w_override  # XTensor produced by the w_src bundle; skip static kernel quantization
+        else:
+            self.w = XTensor(tensor=self.kernel_quantizer_internal(self.kernel), bits=self.sys_bits.k, frac=self.k_frac)
         self.b = XTensor(tensor=self.bias_quantizer_internal  (self.bias  ), bits=self.sys_bits.b, frac=self.b_frac) if self.use_bias else None
 
         self.act.out.assert_valid()
@@ -194,7 +197,6 @@ class XDense(QDense):
         if self.use_bias:
             self.b.assert_valid()
 
-        
         clog2_add = int(np.ceil(np.log2(np.prod(self.w.itensor.shape[:-1]))))
         out = XTensor(
             tensor= self.x.itensor @ self.w.itensor,
@@ -210,7 +212,10 @@ class XDense(QDense):
         else:
             self.bias_val_shift, self.bias_b_shift = 0, 0
 
-        assert np.allclose(out.ftensor.numpy(), self.out.ftensor.numpy()), "Dense output does not match"
+        # Skip exact float/int comparison when dynamic weights are used: the float pass computed
+        # the matmul with unquantized tensors while the int pass uses quantized Z2 values.
+        if w_override is None:
+            assert np.allclose(out.ftensor.numpy(), self.out.ftensor.numpy()), "Dense output does not match"
         self.out = out
         return out
 

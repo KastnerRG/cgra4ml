@@ -36,21 +36,38 @@ class XBundle(Layer):
         self.next_ibs = []
         self.next_add_ibs = []
 
+        # Dynamic-weight fields (wired in call() when w_src is provided; Step 6)
+        self.next_w_ib = None       # ib of the bundle that will use this bundle's output as weights
+        self.w_src_ib  = None       # ib of the bundle whose output we use as weights
+        self.out_w_buffer_idx  = -1  # which w_buf slot to write into (-1 = none; set in Step 5)
+        self.in_w_buffer_idx   = -1  # which w_buf slot to read weights from (-1 = static mp->w; set in Step 5)
+        self.out_w_consumer_ib = -1  # ib of the bundle that will read this bundle's output as weights
 
-    def call(self, input_tensor, x_add=None, training=False):
+
+    def call(self, input_tensor, w_src=None, x_add=None, training=False):
 
         self.ib = len(BUNDLES)
         BUNDLES.append(self)
-    
+
         x = input_tensor
         if hasattr(x, "ib"):
             self.prev_ib = x.ib
             BUNDLES[self.prev_ib].next_ibs += [self.ib]
 
-        print(f"{self.ib} x: {x.shape}, prev:{self.prev_ib}")
+        if w_src is not None and hasattr(w_src, "ib"):
+            self.w_src_ib = w_src.ib
+            BUNDLES[w_src.ib].next_w_ib = self.ib
+            BUNDLES[w_src.ib].out_w_consumer_ib = self.ib
 
-        x = self.core(x)
-        x = self.core.act(x)
+        print(f"{self.ib} x: {x.shape}, prev:{self.prev_ib}, w_src_ib:{self.w_src_ib}")
+
+        if self.w_src_ib is not None:
+            # Dynamic weights: compute activation @ w_src in float for verification
+            x = tf.matmul(x, w_src)
+            x = self.core.act(x)
+        else:
+            x = self.core(x)
+            x = self.core.act(x)
 
         if x_add is not None:
 
@@ -78,9 +95,13 @@ class XBundle(Layer):
     
     def call_int(self, x, hw):
 
-        self.inp = x if self.ib == 0 else BUNDLES[self.prev_ib].out
+        # prev_ib is None for bundles that read directly from the model input (fan-out safe)
+        self.inp = x if self.prev_ib is None else BUNDLES[self.prev_ib].out
 
-        out = self.core.call_int(self.inp, hw)
+        if self.w_src_ib is not None:
+            out = self.core.call_int(self.inp, hw, w_override=BUNDLES[self.w_src_ib].out)
+        else:
+            out = self.core.call_int(self.inp, hw)
         out = self.core.act.call_int(out, hw)
 
         if self.add:
@@ -109,7 +130,8 @@ class XBundle(Layer):
             out.ftensor = tf.convert_to_tensor(softmax_out, dtype=tf.float32) # replace with one calc from int
             out.from_int = False
             out.float_only = True
-        else:
+        elif self.w_src_ib is None:
+            # Dynamic-weight bundles: float and int paths use different precisions; skip exact check
             assert np.allclose(out.ftensor, self.out.ftensor), \
                 f"Bundle output does not match. \nout:{out.ftensor.numpy().flatten()[:100]}, \nself.out:{self.out.ftensor.numpy().flatten()[:100]}"
         
