@@ -1,12 +1,12 @@
 `timescale 1ns / 1ps
 
 module asym_ram_sdp_read_wider2 #(
-  parameter int WIDTHA      = 4,
-  parameter int SIZEA       = 1024,
-  parameter int ADDRWIDTHA  = 10,
-  parameter int WIDTHB      = 16,
-  parameter int SIZEB       = 256,
-  parameter int ADDRWIDTHB  = 8
+  parameter int WIDTHA      = 32,
+  parameter int SIZEA       = 64,
+  parameter int ADDRWIDTHA  = 6,
+  parameter int WIDTHB      = 256,
+  parameter int SIZEB       = 8,
+  parameter int ADDRWIDTHB  = 3
 )(
   input  logic                  clkA,
   input  logic                  clkB,   // unused, must be same clk

@@ -119,6 +119,21 @@ class Hardware:
             glob.glob(f'{self.MODULE_DIR}/firebridge/*.sv')
         self.DATA_DIR = data_dir
 
+        '''
+        | ASIC Implementation Variables
+        |     self.ASIC_RTLSOURCES      -> List of source files for RTL simulation scripts.
+        |     self.ASIC_SRAMSOURCES     -> List of source files for ASIC implementation with srams, to be used in simulation,synthesis and PnR scripts.
+        |     self.ASIC_SYN_GLSSOURCES  -> Synthesis Gate Level Netlist for Simulation.
+        |     self.ASIC_PnR_GLSSOURCES  -> Synthesis Gate Level Netlist for Simulation.
+        |     self.ASIC_RTLTB           -> Testbench file for RTL implementation.
+        |     self.ASIC_SRAMTB          -> Testbench file for ASIC implementation with srams.
+        |     self.ASIC_GLSTB           -> Testbench file for Gate Level Simulation.
+        |     self.ASIC_LIBSOURCES      -> List of standard cell library source files for GLS Simulation.
+        |     self.ASIC_SDFSOURCES      -> List of SDF files for GLS Simulation.
+        '''
+        
+
+
     def export_json(self, path='./hardware.json'):
         '''
         Exports the hardware parameters to a JSON file.
