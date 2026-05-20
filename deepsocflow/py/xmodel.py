@@ -170,6 +170,7 @@ def export_inference(model, hw, batch_size=1):
             w_bpt_p0_c = (hw.K_BITS * b.we[0][0].size)  // 8
             w_buf_bytes_b = (w_bpt_p0_c + (b.r.CP - 1) * w_bpt_c) * b.r.IT
             w_buffer_map[b.in_w_buffer_idx]['bytes'] = w_buf_bytes_b
+            b.w_buf_bytes = w_buf_bytes_b                    # save on consumer for sequential offset calc
             BUNDLES[b.w_src_ib].w_buf_bytes = w_buf_bytes_b  # cache on producer before slot is freed
             w_buf_bytes_max = max(w_buf_bytes_max, w_buf_bytes_b)
         print('in_w_buffer_idx:', b.in_w_buffer_idx)
@@ -184,6 +185,24 @@ def export_inference(model, hw, batch_size=1):
 
     d_perf = predict_model_performance(hw=hw)
     print(f"Predicted performance: {d_perf}")
+
+    # Compute sequential weight byte offset per bundle (matches DMA's running address accumulation).
+    # Static weight bundles contribute their own weight bytes; consumer bundles contribute their
+    # w_buf placeholder bytes (zeros in the file, filled at runtime by the producer CPU code).
+    w_seq_offset = 0
+    for b in BUNDLES:
+        b.w_seq_offset = w_seq_offset
+        if b.in_w_buffer_idx == -1:
+            _w_bpt    = (hw.K_BITS * b.we[-1][0].size) // 8
+            _w_bpt_p0 = (hw.K_BITS * b.we[0][0].size)  // 8
+            w_seq_offset += (_w_bpt_p0 + (b.r.CP - 1) * _w_bpt) * b.r.IT
+        else:
+            w_seq_offset += b.w_buf_bytes
+    w_bytes_total = w_seq_offset  # replaces w_bytes + N_W_BUF*w_buf_bytes_max in W_BYTES / WB_BYTES
+
+    # For each producer bundle, record the byte offset in mp->w where it must write its output.
+    for b in BUNDLES:
+        b.w_buf_wr_offset = BUNDLES[b.next_w_ib].w_seq_offset if b.next_w_ib is not None else 0
 
     '''
     Write Runtime Headers
@@ -265,7 +284,7 @@ def export_inference(model, hw, batch_size=1):
             out_type = 'float' if (ib == len(BUNDLES)-1 and b.softmax) else 'int32_t'
 
             ch.write(f"   {{.n={b.r.XN:<3}, .l={b.r.XL:<3}, .kw={b.r.KW:<3}, .coe={y_coe:<3}, .h={b.r.XH:<3}, .w={b.r.XW:<3}, .ci={b.r.CI:<4}, .co={b.r.CO:<4}, .w_kw2={b.r.XW-b.r.KW//2:<3}, .t={b.r.IT:<3}, .p={b.r.CP:<3}, .cm={b.r.CM:<3}, .cm_p0={b.r.CM_0:<3}, .on={b.r.ON:<3}, .oh={b.r.OH:<3}, .ow={b.r.OW:<3}, .oc={b.r.OC:<4}, .ch={b.r.CYH:<3}, .ph={b.r.PYH:<3}, .cw={b.r.CYW:<3}, .pw={b.r.PYW:<3}, .pkh={b.r.PKH:<3}, .psh={b.r.PSH:<3}, .pkw={b.r.PKW:<3}, .psw={b.r.PSW:<3}, ")
-            ch.write(     f".xp_words={xp_words:<6}, .b_offset={b_words:<5}, .w_bpt={w_bpt:<5}, .w_bpt_p0={w_bpt_p0:<5}, .x_bpt={x_bpt:<8}, .x_bpt_p0={x_bpt_p0:<8}, .o_words={o_words_b:<8}, .o_bytes={o_bytes_b:<8}, ")
+            ch.write(     f".xp_words={xp_words:<6}, .b_offset={b_words:<5}, .w_bpt={w_bpt:<5}, .w_bpt_p0={w_bpt_p0:<5}, .x_bpt={x_bpt:<8}, .x_bpt_p0={x_bpt_p0:<8}, .o_words={o_words_b:<8}, .o_bytes={o_bytes_b:<8}, .w_buf_wr_offset={b.w_buf_wr_offset:<8}, ")
             ch.write(     f".ib_out={ib_out:<4}, .in_buffer_idx={in_buffer_idx:<3}, .out_buffer_idx={b.out_buffer_idx:<3}, .add_out_buffer_idx={add_out_buffer_idx:<2}, .add_in_buffer_idx={add_in_buffer_idx:<2}, .out_w_buffer_idx={b.out_w_buffer_idx:<2}, .in_w_buffer_idx={b.in_w_buffer_idx:<2}, .out_w_consumer_ib={b.out_w_consumer_ib:<2}, ")
             ch.write(     f".is_bias={1*(b.core.b is not None):<3}, .is_flatten={1*(b.flatten is not None):<3}, .is_softmax={1*(b.softmax is not None):<3}, ")
             ch.write(     f".x_pad={b.r.X_PAD:<3}, .b_val_shift={b.core.bias_val_shift:<3}, .b_bias_shift={b.core.bias_b_shift:<3}, .ca_nzero={ca_nzero:<3}, .ca_shift={ca_shift:<3}, .ca_pl_scale={ca_pl_scale:<3}, .aa_nzero={aa_nzero:<3}, .aa_shift={aa_shift:<3}, .aa_pl_scale={aa_pl_scale:<3}, .pa_nzero={pa_nzero:<3}, .pa_shift={pa_shift:<3}, .pa_pl_scale={pa_pl_scale:<3}, .softmax_frac={b.softmax_frac:<3}, ")
@@ -286,12 +305,13 @@ def export_inference(model, hw, batch_size=1):
         ch.write(f"#define PE_ROWS     {hw.ROWS}\n")
         ch.write(f"#define PE_COLS     {hw.COLS}\n\n")
 
+        has_dyn = 1 if any(b.out_w_buffer_idx != -1 for b in BUNDLES) else 0
         ch.write(f"#define N_OUT_BUF   {max(len(out_buffer_map),1)}\n")
         ch.write(f"#define N_ADD_BUF   {len(add_buffer_map) if len(add_buffer_map) > 0 else ''}\n")
-        ch.write(f"#define N_W_BUF     {len(w_buffer_map)}\n")
-        ch.write(f"#define W_BUF_BYTES_MAX {max(w_buf_bytes_max, 1)}\n")
-        ch.write(f"#define WB_BYTES    {w_bytes + len(w_buffer_map)*w_buf_bytes_max + (b_words*hw.B_BITS)//8}\n")
-        ch.write(f"#define W_BYTES     {w_bytes}\n")
+        ch.write(f"#define N_W_BUF     0\n")  # w_bufs array removed; dynamic regions embedded in w[]
+        ch.write(f"#define HAS_DYNAMIC_WEIGHTS {has_dyn}\n")
+        ch.write(f"#define WB_BYTES    {w_bytes_total + (b_words*hw.B_BITS)//8}\n")
+        ch.write(f"#define W_BYTES     {w_bytes_total}\n")
         ch.write(f"#define X_BYTES     {x_bytes}\n")
         ch.write(f"#define O_WORDS     {o_words}\n")
         ch.write(f"#define O_WORDS_MAX {o_words_max}\n")
@@ -315,7 +335,20 @@ def export_inference(model, hw, batch_size=1):
         '''
         type_d = { 'np': {8: np.int8, 16: np.int16, 32: np.int32, 64: np.int64} }
 
+        # Write weights in sequential bundle order so the DMA's running address accumulation
+        # lands at the correct region for each bundle. Consumer bundles get zero-filled
+        # placeholders (filled at runtime by the producer via tile_write_w).
         w_bitstring = b''
+        for ib, b in enumerate(BUNDLES):
+            assert ib == b.ib
+            if b.in_w_buffer_idx == -1:
+                for ip in range(b.r.CP):
+                    for it in range(b.r.IT):
+                        we = pack_words_into_bytes(arr=b.we[ip][it].flatten(), bits=hw.K_BITS)
+                        w_bitstring += we.tobytes()
+            else:
+                w_bitstring += bytes(b.w_buf_bytes)
+
         x_bitstring = b''
         b_bitstring = b''
         x_bitstring_0 = b''
@@ -328,29 +361,19 @@ def export_inference(model, hw, batch_size=1):
             for ip in range(b.r.CP):
                 xe = pack_words_into_bytes(arr=b.xe[ip].flatten(), bits=hw.X_BITS)
                 x_bitstring_b += xe.tobytes()
-                    
-                if b.in_w_buffer_idx == -1:  # consumer bundles: weights come from w_bufs at runtime
-                    for it in range(b.r.IT):
-                        we = pack_words_into_bytes(arr=b.we[ip][it].flatten(), bits=hw.K_BITS)
-                        w_bitstring += we.tobytes()
             x_bitstring += x_bitstring_b
-            with open(f"{hw.DATA_DIR}/{ib}_x_sim.bin", 'wb') as f: 
+            with open(f"{hw.DATA_DIR}/{ib}_x_sim.bin", 'wb') as f:
                 f.write(x_bitstring_b)
             if ib==0:
                 x_bitstring_0 = x_bitstring_b
-        with open(f"{hw.DATA_DIR}/x.bin", 'wb') as f: 
+        with open(f"{hw.DATA_DIR}/x.bin", 'wb') as f:
             f.write(x_bitstring_0)
 
-        # Zero-filled placeholder for w_bufs region; tile_write_w() fills it at runtime.
-        # Must sit between w_bitstring and b_bitstring to match Memory_st layout so that
-        # fread(mp->w, WB_BYTES+X_BYTES) in model_setup() loads data into the right fields.
-        w_buf_bitstring = bytes(len(w_buffer_map) * w_buf_bytes_max)
-
         with open(f"{hw.DATA_DIR}/wb.bin", 'wb') as f:
-            f.write(w_bitstring + w_buf_bitstring + b_bitstring)
+            f.write(w_bitstring + b_bitstring)
 
         with open(f"{hw.DATA_DIR}/wbx.bin", 'wb') as f:
-            f.write(w_bitstring + w_buf_bitstring + b_bitstring + x_bitstring_0)
+            f.write(w_bitstring + b_bitstring + x_bitstring_0)
 
         with open(f"{hw.DATA_DIR}/x_all.bin", 'wb') as f: 
             f.write(x_bitstring)

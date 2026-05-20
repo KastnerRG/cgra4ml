@@ -26,7 +26,7 @@ static inline idiv_t idiv(int numer, int denom) {
 
 typedef const struct {
   const u16  n, l, kw, coe, h, w, ci, co, w_kw2, t, p, cm, cm_p0, on, oh, ow, oc, ch, ph, cw, pw, pkh, psh, pkw, psw;
-  const i32  xp_words, b_offset, w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes;
+  const i32  xp_words, b_offset, w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes, w_buf_wr_offset;
   const i8   ib_out, in_buffer_idx, out_buffer_idx, add_out_buffer_idx, add_in_buffer_idx;
   const i8   out_w_buffer_idx, in_w_buffer_idx; // dynamic weight buffers: producer writes w_bufs[out_w_buffer_idx]; consumer reads via b_offset into w_bufs[in_w_buffer_idx]
   const i8   out_w_consumer_ib; // ib of the bundle that reads this bundle's output as weights (-1 = none)
@@ -56,10 +56,7 @@ typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 
 typedef struct {
   // These can be kept in DDR
-  i8     w              [W_BYTES     ];
-#if N_W_BUF > 0
-  i8     w_bufs         [N_W_BUF    ][W_BUF_BYTES_MAX]; // dynamic weight buffers; contiguous after w[] so b_offset reaches them
-#endif
+  i8     w              [W_BYTES     ]; // includes dynamic weight regions at sequential bundle positions
   B_TYPE b              [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
   i8     x              [X_BYTES     ]; // keep next to wb. wbx is loaded to w_ptr
   O_TYPE y              [O_WORDS     ];
@@ -229,10 +226,11 @@ static inline void write_x(i8 val, i8 *restrict p_out_buffer, Memory_st *restric
 // Write one output element from a producer bundle into the weight-tiled w_buf layout.
 // i_ci maps to the CI dimension of the consumer bundle (= i_yh of the producer output).
 // i_co maps to the CO dimension of the consumer bundle (= i_yc of the producer output).
-#if N_W_BUF > 0
+#if HAS_DYNAMIC_WEIGHTS
 static inline void tile_write_w(
     i8 val, i8 *restrict p_w_buf,
     Bundle_t *restrict pb_c,   // consumer bundle whose weight DMA will read this w_buf
+    i32 w_buf_bytes,           // total bytes in the w_buf (= producer's o_bytes)
     i32 i_ci, i32 i_co
 ) {
   // Map CO → (it, col) with reversed column to match reorder_w_q2e_conv's np.flip
@@ -258,7 +256,7 @@ static inline void tile_write_w(
 
   #define TILE_WRITE_W_DBG "--- i_ci:%d i_co:%d it:%d ip:%d col:%d flat:%d byte:%d pos:%d\n", \
       i_ci, i_co, it, ip, col, flat_index, pidx.quot, pidx.rem
-  assert_printf(pidx.quot, <, pb_c->o_bytes, "tile_write_w", TILE_WRITE_W_DBG);
+  assert_printf(pidx.quot, <, w_buf_bytes, "tile_write_w", TILE_WRITE_W_DBG);
 
   u8 mask   = (u8)((u8)W_BITS_MASK << (pidx.rem * W_BITS));
   u8 packed = (u8)(((u8)val & W_BITS_MASK) << (pidx.rem * W_BITS));
@@ -318,9 +316,9 @@ static inline void tile_write( i32 out_val, i8 *restrict p_out_buffer, i32 ib, B
   }
 
   // If this bundle produces dynamic weights, store in w_buf and return
-#if N_W_BUF > 0
+#if HAS_DYNAMIC_WEIGHTS
   if (pb->out_w_buffer_idx != -1) {
-    tile_write_w((i8)out_val, p_out_buffer, &bundles[pb->out_w_consumer_ib], i_yh, i_yc);
+    tile_write_w((i8)out_val, p_out_buffer, &bundles[pb->out_w_consumer_ib], pb->o_bytes, i_yh, i_yc);
     return;
   }
 #endif
@@ -401,9 +399,9 @@ extern EXT_C void run(Memory_st *restrict mp) {
   for (ib = 0; ib < N_BUNDLES; ib++) {
 
     pb = &bundles[ib];
-#if N_W_BUF > 0
+#if HAS_DYNAMIC_WEIGHTS
     p_out_buffer = (pb->out_w_buffer_idx != -1)
-        ? (i8*)(mp->w_bufs[pb->out_w_buffer_idx])
+        ? (i8*)(mp->w) + pb->w_buf_wr_offset
         : (i8*)&(mp->out_buffers[pb->out_buffer_idx]);
 #else
     p_out_buffer = (i8*)&(mp->out_buffers[pb->out_buffer_idx]);
