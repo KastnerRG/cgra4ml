@@ -16,10 +16,11 @@ from deepsocflow.py.dataflow import *
 @keras.saving.register_keras_serializable()
 class XBundle(Layer):
 
-    def __init__(self, core, pool=None, add_act=None, flatten=False, softmax=False, *args, **kwargs):
+    def __init__(self, core, pool=None, add_act=None, flatten=False, softmax=False, transpose_w_src=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.core = core
         self.pool = pool
+        self.transpose_w_src = transpose_w_src
         
         self.add = XAdd(act=add_act, sys_bits=core.sys_bits) if add_act else None
         self.flatten = Flatten() if flatten else None
@@ -63,7 +64,7 @@ class XBundle(Layer):
 
         if self.w_src_ib is not None:
             # Dynamic weights: compute activation @ w_src in float for verification
-            x = tf.matmul(x, w_src)
+            x = tf.matmul(x, w_src, transpose_b=self.transpose_w_src)
             x = self.core.act(x)
         else:
             x = self.core(x)
@@ -99,7 +100,12 @@ class XBundle(Layer):
         self.inp = x if self.prev_ib is None else BUNDLES[self.prev_ib].out
 
         if self.w_src_ib is not None:
-            out = self.core.call_int(self.inp, hw, w_override=BUNDLES[self.w_src_ib].out)
+            w_src_tensor = BUNDLES[self.w_src_ib].out
+            if self.transpose_w_src:
+                w_t = w_src_tensor.itensor.numpy().T
+                w_src_tensor = XTensor(tensor=w_t, bits=w_src_tensor.bits,
+                                       frac=w_src_tensor.frac, from_int=True)
+            out = self.core.call_int(self.inp, hw, w_override=w_src_tensor)
         else:
             out = self.core.call_int(self.inp, hw)
         out = self.core.act.call_int(out, hw)

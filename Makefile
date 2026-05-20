@@ -5,7 +5,8 @@
 #TEST := param_test
 #TEST := two_dense
 #TEST := chained_matmul
-TEST := multi_chained_matmul
+#TEST := multi_chained_matmul
+TEST := attention_no_softmax
 WORKDIR := run/work
 
 clean:

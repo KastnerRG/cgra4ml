@@ -30,7 +30,7 @@ typedef const struct {
   const i8   ib_out, in_buffer_idx, out_buffer_idx, add_out_buffer_idx, add_in_buffer_idx;
   const i8   out_w_buffer_idx, in_w_buffer_idx; // dynamic weight buffers: producer writes w_bufs[out_w_buffer_idx]; consumer reads via b_offset into w_bufs[in_w_buffer_idx]
   const i8   out_w_consumer_ib; // ib of the bundle that reads this bundle's output as weights (-1 = none)
-  const i8   is_bias, is_pool, is_flatten, is_softmax;
+  const i8   is_bias, is_pool, is_flatten, is_softmax, transpose_w_src;
   const i8   x_pad, b_val_shift, b_bias_shift, ca_nzero, ca_shift, ca_pl_scale, aa_nzero, aa_shift, aa_pl_scale, pa_nzero, pa_shift, pa_pl_scale, softmax_frac;
   const i8   csh, csh_shift, psh_shift, csw, csw_shift, psw_shift, pool;
   const i32  softmax_max_i;
@@ -318,7 +318,11 @@ static inline void tile_write( i32 out_val, i8 *restrict p_out_buffer, i32 ib, B
   // If this bundle produces dynamic weights, store in w_buf and return
 #if HAS_DYNAMIC_WEIGHTS
   if (pb->out_w_buffer_idx != -1) {
-    tile_write_w((i8)out_val, p_out_buffer, &bundles[pb->out_w_consumer_ib], pb->o_bytes, i_yh, i_yc);
+    Bundle_t *restrict pb_c = &bundles[pb->out_w_consumer_ib];
+    if (pb_c->transpose_w_src)
+      tile_write_w((i8)out_val, p_out_buffer, pb_c, pb->o_bytes, i_yc, i_yh);
+    else
+      tile_write_w((i8)out_val, p_out_buffer, pb_c, pb->o_bytes, i_yh, i_yc);
     return;
   }
 #endif
