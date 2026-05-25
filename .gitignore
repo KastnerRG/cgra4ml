@@ -94,3 +94,6 @@ docs/source/**
 # VSCode
 settings.json
 .vscode
+
+# Python virtual environment
+.venv/

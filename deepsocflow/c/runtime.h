@@ -64,6 +64,7 @@ typedef struct {
   // These are written often, keep them on OCM
   Y_TYPE ocm            [2][PE_COLS*PE_ROWS];
   i32    nhwc           [NHWC_WORDS  ];
+  float  softmax_tmp    [NHWC_WORDS  ];
   i8     out_buffers    [N_OUT_BUF   ][O_BYTES_MAX ];
   
 #ifdef XDEBUG
@@ -584,6 +585,7 @@ extern EXT_C void run(Memory_st *restrict mp) {
 
                     // ------ ADD BIAS ------
                     if (pb->is_bias) {
+#if B_WORDS > 0
                       // ── GAP 4: bias read from mp->b ───────────────────────────────
                       // Silent until use_bias=True is set on an XDense layer.
                       // b_val_shift scales out_val before addition; b_bias_shift scales
@@ -598,6 +600,7 @@ extern EXT_C void run(Memory_st *restrict mp) {
                           out_val);
                       // ──────────────────────────────────────────────────────────────
                       out_val = (out_val << pb->b_val_shift) + (mp->b[i_bias] << pb->b_bias_shift);
+#endif
                     }
 
 
@@ -626,24 +629,25 @@ extern EXT_C void run(Memory_st *restrict mp) {
                     // ------ SOFTMAX ------
 
                     if (pb->is_softmax) {
-                      assert_printf (ib , !=, N_BUNDLES, "Softmax is only allowed for the last bundle.", DEBUG_INFO);
-
-                      f32__ val = (f32__)out_val;
-                      val = val / (f32__)(1 << pb->softmax_frac);
-                      val = val - ((f32__)pb->softmax_max_i)/(1 << 17);
-                      val = (f32__)exp(val);
-                      mp->y[iy_nhwc] = val;
+                      iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc, "Before softmax store", DEBUG_INFO);
+                      mp->softmax_tmp[iy_nhwc] = expf(  (float)out_val         / (float)(1<<pb->softmax_frac)
+                                                       - (float)pb->softmax_max_i / (float)(1<<17));
 
                       if (i_yc == pb->co-1) {
-                        f32__ sum = 0;
-                        i32 iy_nhwc;
-                        for (int i=0; i<pb->co; i++){
-                          iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i, yn,yh,yw,yc, "Before softmax sum", DEBUG_INFO);
-                          sum += mp->y[iy_nhwc];
-                        }
-                        for (int i=0; i<pb->co; i++){
-                          iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i, yn,yh,yw,yc, "After softmax sum", DEBUG_INFO);
-                          mp->y[iy_nhwc] = mp->y[iy_nhwc] / sum;
+                        i32 base = flatten_nhwc(i_yn,i_yh,i_yw,0, yn,yh,yw,yc, "softmax base", DEBUG_INFO);
+                        float sum = 0;
+                        for (int i=0; i<pb->co; i++)
+                          sum += mp->softmax_tmp[base + i];
+                        float inv_sum = 1.0f / sum;
+                        for (int i=0; i<pb->co; i++) {
+                          float sm = mp->softmax_tmp[base + i] * inv_sum;
+                          if (ib == N_BUNDLES-1) {
+                            mp->y[base + i] = (O_TYPE)sm;
+                          } else {
+                            i32 q = (i32)(sm * (float)(1<<(X_BITS-1)) + 0.5f);
+                            q = clip(q, -(1<<(X_BITS-1)), (1<<(X_BITS-1))-1);
+                            tile_write(q, p_out_buffer, ib, pb, mp, i_yn, i_yh, i_yw, i, yn, yh, yw, yc);
+                          }
                         }
                       }
                       goto PROCESS_AND_STORE_DONE;

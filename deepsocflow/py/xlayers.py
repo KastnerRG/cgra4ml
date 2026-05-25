@@ -43,7 +43,7 @@ class XActivation(QActivation):
         self.out.ftensor = super().call(input_tensor)
         return self.out.ftensor
     
-    def call_int(self, x_tensor, hw):       
+    def call_int(self, x_tensor, hw, validate_against_float=True):       
 
         x = x_tensor.itensor.numpy().astype(int)
         self.shift_bits = self.plog_slope + x_tensor.frac - self.out.frac
@@ -53,8 +53,9 @@ class XActivation(QActivation):
         x = np.clip(x, -2**(self.out.bits - self.plog_slope - 1), 2**(self.out.bits-1)-1).astype(int)
 
         out = XTensor(tensor=x, bits=self.out.bits, frac=self.out.frac, from_int=True)
-        assert np.allclose(out.ftensor, self.out.ftensor), \
-            f"Activation output does not match. {(out.ftensor.shape, self.out.ftensor.shape)} \nout:{out.ftensor.numpy().flatten()}, \nself.out:{self.out.ftensor.numpy().flatten()}, \nsub:{out.ftensor.numpy().flatten()-self.out.ftensor.numpy().flatten()}"
+        if validate_against_float:
+            assert np.allclose(out.ftensor, self.out.ftensor), \
+                f"Activation output does not match. {(out.ftensor.shape, self.out.ftensor.shape)} \nout:{out.ftensor.numpy().flatten()}, \nself.out:{self.out.ftensor.numpy().flatten()}, \nsub:{out.ftensor.numpy().flatten()-self.out.ftensor.numpy().flatten()}"
         self.out = out
         return out
 
@@ -183,7 +184,7 @@ class XDense(QDense):
         return self.out.ftensor
     
 
-    def call_int(self, x, hw, w_override=None):
+    def call_int(self, x, hw, w_override=None, validate_against_float=True):
 
         self.x = x
         if w_override is not None:
@@ -214,7 +215,9 @@ class XDense(QDense):
 
         # Skip exact float/int comparison when dynamic weights are used: the float pass computed
         # the matmul with unquantized tensors while the int pass uses quantized Z2 values.
-        if w_override is None:
+        # Also allow callers to disable this check when the input intentionally came from a
+        # quantized non-linear intermediate (for example, non-terminal softmax in chained matmul).
+        if w_override is None and validate_against_float:
             assert np.allclose(out.ftensor.numpy(), self.out.ftensor.numpy()), "Dense output does not match"
         self.out = out
         return out

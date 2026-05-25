@@ -18,6 +18,9 @@ $(WORKDIR):
 smoke_test: $(WORKDIR)
 	cd $(WORKDIR) && python -m pytest -s ../$(TEST).py
 
+smoke_softmax_chain: $(WORKDIR)
+	cd $(WORKDIR) && python -m pytest -s ../multi_chained_matmul_softmax.py
+
 verify_ibex: $(WORKDIR)
 	cd ibex-soc && python check_output.py
 
