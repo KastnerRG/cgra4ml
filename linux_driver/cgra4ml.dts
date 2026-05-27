@@ -1,0 +1,21 @@
+/*
+ * Example device-tree node for CGRA4ML.
+ *
+ * Put this into your PetaLinux system-user.dtsi or equivalent overlay.
+ * You MUST update reg base/size to match Vivado Address Editor.
+ */
+
+ / {
+    amba_pl: amba_pl {
+        #address-cells = <1>;
+        #size-cells = <1>;
+        compatible = "simple-bus";
+        ranges;
+
+        cgra4ml@b0000000 {
+            compatible = "ucsd,cgra4ml-1.0";
+            reg = <0xB0000000 0x00010000>;
+            dma-coherent;
+        };
+    };
+};
