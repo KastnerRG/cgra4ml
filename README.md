@@ -107,14 +107,7 @@ innovus
 source ../../tcl/asic/pnr.tcl
 ```
 
-6. Linux on FPGA:
-
-6.1. Generate hardware configuration and bitstream:
-```bash
-cd run/work
-python ../example.py
-make vivado TARGET=zcu104
-```
+6. Run in Linux on a ZYNQ FPGA:
 
 6.2. Prepare Linux kernel and build driver:
 ```bash
