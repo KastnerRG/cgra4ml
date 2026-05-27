@@ -194,7 +194,7 @@ err_free_dma:
     return ret;
 }
 
-static int cgra4ml_remove(struct platform_device *pdev)
+static void cgra4ml_remove(struct platform_device *pdev)
 {
     struct cgra4ml_dev *cdev = platform_get_drvdata(pdev);
 
@@ -202,7 +202,6 @@ static int cgra4ml_remove(struct platform_device *pdev)
     cgra4ml_dma_free_all(cdev);
 
     dev_info(&pdev->dev, "CGRA4ML driver removed\n");
-    return 0;
 }
 
 static const struct of_device_id cgra4ml_of_match[] = {
