@@ -21,6 +21,12 @@ smoke_test: $(WORKDIR)
 smoke_softmax_chain: $(WORKDIR)
 	cd $(WORKDIR) && python -m pytest -s ../multi_chained_matmul_softmax.py
 
+smoke_attention_softmax: $(WORKDIR)
+	cd $(WORKDIR) && python -m pytest -s ../attention_with_softmax.py
+
+test_softmax_export: $(WORKDIR)
+	cd $(WORKDIR) && python -m pytest -s ../../tests/test_softmax_export.py
+
 verify_ibex: $(WORKDIR)
 	cd ibex-soc && python check_output.py
 

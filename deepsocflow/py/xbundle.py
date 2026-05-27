@@ -31,6 +31,7 @@ class XBundle(Layer):
         self.out = XTensor(None, None, float_only=True)
         self.softmax_max_i = 0
         self.softmax_frac = 0
+        self.softmax_float_out = None   # set during call_int() when softmax=True
 
         self.ib = None
         self.prev_ib = None
@@ -148,6 +149,7 @@ class XBundle(Layer):
                 out.ftensor       = tf.convert_to_tensor(softmax_out, dtype=tf.float32)
                 out.from_int      = False
                 out.float_only    = True
+                self.softmax_float_out = softmax_out       # float softmax (pre-quant) for tests
             else:
                 out_frac = hw.X_BITS - 1
                 # Use the same rounding as C: (i32)(x + 0.5f) = truncation after +0.5 = round-half-up.
@@ -155,6 +157,7 @@ class XBundle(Layer):
                 q = np.clip((softmax_out * (1 << out_frac) + 0.5).astype(np.int32),
                             -(1 << (hw.X_BITS-1)), (1 << (hw.X_BITS-1))-1)
                 out = XTensor(tensor=q, bits=hw.X_BITS, frac=out_frac, from_int=True)
+                self.softmax_float_out = softmax_out       # float softmax (pre-quant) for tests
                 allow_mismatch = True
         elif self.w_src_ib is None:
             # Dynamic-weight bundles: float and int paths use different precisions; skip exact check
