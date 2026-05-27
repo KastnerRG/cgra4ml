@@ -97,3 +97,6 @@ settings.json
 
 # Python virtual environment
 .venv/
+
+# Generated test logs
+test_output.log
