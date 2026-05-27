@@ -107,6 +107,56 @@ innovus
 source ../../tcl/asic/pnr.tcl
 ```
 
+6. Linux on Zynq UltraScale+ (ZCU104):
+
+6.1. Generate hardware configuration and bitstream:
+```bash
+cd run/work
+python ../example.py
+make vivado TARGET=zcu104
+```
+
+6.2. Prepare Linux kernel and build driver:
+```bash
+make kernel_prepare # required only once
+make driver test_app
+```
+
+6.3. Deploy to ZCU104:
+
+**Copy the firmware bundle to the board:**
+```bash
+# Create and copy the entire firmware directory
+scp -r run/work/cgra4ml-fw <user>@<ip>:
+scp linux_driver/cgra4ml_drv.ko \
+    linux_test/reg_test \
+    linux_test/ioctl_test \
+    linux_test/dma_buf_test \
+    linux_test/run_smoke.sh \
+    <user>@<ip>:
+```
+
+**On the ZCU104:**
+```bash
+# Move firmware bundle to /lib/firmware/xilinx
+sudo mkdir -p /lib/firmware/xilinx
+sudo cp -r cgra4ml-fw /lib/firmware/xilinx/cgra4ml
+
+# Load bitstream via dfx-mgr-client (XRT)
+sudo dfx-mgr-client -load cgra4ml
+
+# Load the kernel module
+sudo insmod cgra4ml_drv.ko
+
+# Verify device was created
+ls -l /dev/cgra4ml
+
+# Run smoke tests
+./run_smoke.sh
+```
+
+See `linux_driver/linux_driver_README.md` and `linux_test/linux_test_README.md` for details.
+
 ## Framework Infrastructure
 
 <p align="center"> <img src="docs/infra.png" width="600"> </p>
