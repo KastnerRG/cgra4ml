@@ -94,15 +94,13 @@ make vivado
 
 3.2.b. Run Linux on a ZYNQ FPGA:
 
-**Step 1: Prepare Linux kernel and build driver**
+- Prepare Linux kernel and build driver
 ```bash
 make kernel_prepare # required only once
 make driver test_app
 ```
 
-**Step 2: Deploy to FPGA**
-
-Copy the firmware bundle to the board:
+- Copy firmware to FPGA:
 ```bash
 # Create and copy the entire firmware directory
 scp -r run/work/cgra4ml-fw <user>@<ip>:
@@ -113,8 +111,7 @@ scp linux_driver/cgra4ml_drv.ko \
     linux_test/run_smoke.sh \
     <user>@<ip>:
 ```
-
-On the FPGA:
+- Load the kernel on the FPGA:
 ```bash
 # Move firmware bundle to /lib/firmware/xilinx
 sudo mkdir -p /lib/firmware/xilinx
