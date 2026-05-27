@@ -1,8 +1,8 @@
 
 set PROJECT_NAME dsf_zcu104
-set RTL_DIR      /home/alla/.local/lib/python3.11/site-packages/deepsocflow/rtl
-set CONFIG_DIR   .
+set RTL_DIR      [file normalize [file join [file dirname [info script]] ".." "deepsocflow" "rtl"]]
+set CONFIG_DIR   [file normalize [file join [file dirname [info script]] "work"]]
 
-source config_hw.tcl
-source /home/alla/.local/lib/python3.11/site-packages/deepsocflow/tcl/fpga/zcu104.tcl
-source /home/alla/.local/lib/python3.11/site-packages/deepsocflow/tcl/fpga/vivado.tcl
+source [file normalize [file join [file dirname [info script]] ".." "config_hw.tcl"]]
+source [file normalize [file join [file dirname [info script]] ".." "deepsocflow" "tcl" "fpga" "zcu104.tcl"]]
+source [file normalize [file join [file dirname [info script]] ".." "deepsocflow" "tcl" "fpga" "vivado.tcl"]]
