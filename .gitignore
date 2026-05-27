@@ -1,4 +1,13 @@
 # Generated files
+config_fw.h
+config_hw.svh
+config_hw.tcl
+config_tb.svh
+hardware.json
+sources.txt
+util.txt
+mem_bytes.txt
+
 run/work*/config_fw.h
 run/work*/config_hw.svh
 run/work*/config_hw.tcl
@@ -58,6 +67,10 @@ run/work/xsim/*
 run/work/verilator-sim/
 run/work/verilator-sim/*
 
+# Xilinx Linux kernel
+linux-xlnx/
+run/XilinxBoardStore/
+
 # Distribution / packaging
 .Python
 build/
@@ -77,6 +90,9 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+venv/
+.venv/
+.python-version
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
