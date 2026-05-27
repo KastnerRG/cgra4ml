@@ -107,7 +107,7 @@ innovus
 source ../../tcl/asic/pnr.tcl
 ```
 
-6. Linux on Zynq UltraScale+ (ZCU104):
+6. Linux on FPGA:
 
 6.1. Generate hardware configuration and bitstream:
 ```bash
@@ -122,7 +122,7 @@ make kernel_prepare # required only once
 make driver test_app
 ```
 
-6.3. Deploy to ZCU104:
+6.3. Deploy to FPGA:
 
 **Copy the firmware bundle to the board:**
 ```bash
@@ -136,7 +136,7 @@ scp linux_driver/cgra4ml_drv.ko \
     <user>@<ip>:
 ```
 
-**On the ZCU104:**
+**On the FPGA:**
 ```bash
 # Move firmware bundle to /lib/firmware/xilinx
 sudo mkdir -p /lib/firmware/xilinx
