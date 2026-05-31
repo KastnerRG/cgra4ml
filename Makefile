@@ -1,4 +1,4 @@
-.PHONY: image start kill enter ibuild irun iclean vivado kernel_prepare driver test_app
+.PHONY: image start kill enter ibuild irun iclean vivado kernel_prepare driver test_app edf_sdt edf_overlay edf hw edf_deploy driver_install test_install
 
 # Default parameters
 FREQ_MHZ ?= 250
@@ -23,6 +23,26 @@ KERNEL_DIR    ?= $(CURDIR)/linux-xlnx
 BOARDSTORE_REPO  := https://github.com/Xilinx/XilinxBoardStore.git
 BOARDSTORE_BRANCH:= 2024.2
 BOARDSTORE       := $(RUN_DIR)/XilinxBoardStore
+
+# FPGA board IP / user
+BOARD_IP   ?= 192.168.2.10
+BOARD_USER ?= amd-edf
+
+# Vivado project name (must match vivado_flow.tcl)
+PROJECT_NAME ?= dsf_zcu104
+
+# EDF tool paths
+SDTGEN = $(XILINX_VIVADO)/bin/sdtgen
+LOPPER = $(XILINX_VIVADO)/bin/lopper
+DTC    = $(XILINX_VIVADO)/bin/dtc
+
+# EDF board configuration
+EDF_BOARD_DTS_zcu104         = zcu104-reva
+EDF_OVERLAY_TARGET_zcu104    = cortexa53_0
+EDF_BOARD_DTS                = $(EDF_BOARD_DTS_zcu104)
+EDF_OVERLAY_TARGET           = $(EDF_OVERLAY_TARGET_zcu104)
+EDF_SDT_DIR                  = hw_project_sdt
+EDF_FW_DIR                   = cgra4ml-fw
 
 clean:
 	rm -rf $(WORKDIR)*
@@ -53,6 +73,46 @@ vivado: $(WORKDIR) $(BOARDSTORE)
 	fi
 	cd $(WORKDIR) && vivado -mode batch -source $(subst \,\\,$(abspath $(RUN_DIR)))/vivado_flow.tcl
 
+#----------------- EDF / DEFERRED PL LOAD ------------------
+
+.PHONY: edf_sdt
+edf_sdt:
+	@if [ ! -f $(WORKDIR)/$(PROJECT_NAME)/design_1_wrapper.xsa ]; then \
+		echo "ERROR: XSA not found. Run 'make vivado' first."; \
+		exit 1; \
+	fi
+	mkdir -p $(WORKDIR)/$(EDF_SDT_DIR)
+	cd $(WORKDIR) && $(SDTGEN) $(abspath $(RUN_DIR))/gen_sdt.tcl \
+		$(PROJECT_NAME)/design_1_wrapper.xsa \
+		$(EDF_SDT_DIR) \
+		$(EDF_BOARD_DTS)
+
+.PHONY: edf_overlay
+edf_overlay:
+	@if [ ! -d $(WORKDIR)/$(EDF_SDT_DIR) ]; then \
+		echo "ERROR: SDT directory not found. Run 'make edf_sdt' first."; \
+		exit 1; \
+	fi
+	mkdir -p $(WORKDIR)/$(EDF_FW_DIR)
+	cd $(WORKDIR) && LOPPER_DTC_FLAGS="-b 0 -@" $(LOPPER) --enhanced \
+		-O $(EDF_FW_DIR) -f $(EDF_SDT_DIR)/system-top.dts \
+		-- xlnx_overlay_dt $(EDF_OVERLAY_TARGET) full
+	sed -i 's/\&fpga{/\&fpga_full{/' $(WORKDIR)/$(EDF_FW_DIR)/pl.dtsi
+	sed -i 's/firmware-name = ".*"/firmware-name = "sa_accel.bit"/' $(WORKDIR)/$(EDF_FW_DIR)/pl.dtsi
+	sed -i '/zyxclmm_drm/,/^	};/d' $(WORKDIR)/$(EDF_FW_DIR)/pl.dtsi
+	printf '\t\tassigned-clocks = <&zynqmp_clk 0x47>;\n\t\tassigned-clock-rates = <100000000>;\n' > /tmp/ac.tmp && \
+	sed -i '/xlnx,name = "top_0";/r /tmp/ac.tmp' $(WORKDIR)/$(EDF_FW_DIR)/pl.dtsi && \
+	rm -f /tmp/ac.tmp
+	$(DTC) -I dts -O dtb -o $(WORKDIR)/$(EDF_FW_DIR)/pl.dtbo $(WORKDIR)/$(EDF_FW_DIR)/pl.dtsi
+	cp $(WORKDIR)/$(EDF_SDT_DIR)/design_1_wrapper.bit $(WORKDIR)/$(EDF_FW_DIR)/sa_accel.bit
+	cp $(RUN_DIR)/shell.json $(WORKDIR)/$(EDF_FW_DIR)/
+
+.PHONY: edf
+edf: edf_sdt edf_overlay
+
+.PHONY: hw
+hw: vivado edf
+
 smoke_test: $(WORKDIR)
 	cd $(WORKDIR) && python -m pytest -s ../$(TEST).py
 
@@ -80,7 +140,12 @@ driver: linux_driver/cgra4ml_main.c linux_driver/Makefile
 
 .PHONY: test_app
 test_app:
-	$(MAKE) -C linux_test
+	$(MAKE) -C linux_test CC=$(CROSS_COMPILE)gcc
+
+.PHONY: driver_install
+driver_install: linux_driver/cgra4ml_drv.ko
+	scp $< $(BOARD_USER)@$(BOARD_IP):/tmp/
+
 
 # Docker
 
