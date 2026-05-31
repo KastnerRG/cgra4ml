@@ -1,19 +1,27 @@
 CC ?= gcc
 
-CFLAGS += -Wall -Wextra -O2 -I../linux_driver
+CFLAGS += -Wall -Wextra -O2 \
+	  -I../linux_driver \
+	  -I../deepsocflow/c \
+	  -I../deepsocflow/firebridge \
+	  -I..
+LDFLAGS += -lm
 
-TARGETS := reg_test ioctl_test dma_buf_test
+TARGETS := reg_test ioctl_test dma_buf_test inference
 
 all: $(TARGETS)
 
 reg_test: reg_test.c
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
 ioctl_test: ioctl_test.c
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
 dma_buf_test: dma_buf_test.c
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+
+inference: inference.c
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
 clean:
 	rm -f $(TARGETS)

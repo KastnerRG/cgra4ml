@@ -48,15 +48,18 @@ typedef double   f64;
 
 #else
   #define sim_fprintf(...)
-  #define mem_phy (*(Memory_st* restrict)MEM_BASEADDR)
 
-  volatile u32 fb_read_reg32(void *addr){
-    return *(volatile u32 *)addr;
-  }
+  #ifndef DEEPSOCFLOW_LINUX_OVERRIDE
+    #define mem_phy (*(Memory_st* restrict)MEM_BASEADDR)
 
-  void fb_write_reg32(void *addr, u32 data){	
-    *(volatile u32 *restrict)addr = data;
-  }
+    volatile u32 fb_read_reg32(void *addr){
+      return *(volatile u32 *)addr;
+    }
+
+    void fb_write_reg32(void *addr, u32 data){	
+      *(volatile u32 *restrict)addr = data;
+    }
+  #endif
 #endif
 
 #ifdef XDEBUG
@@ -95,7 +98,9 @@ extern EXT_C void *fb_get_mp(){
 }
 #else
 
+#ifndef DEEPSOCFLOW_LINUX_OVERRIDE
 u32 fb_addr_64to32 (void* addr){
   return (u32)((uintptr_t)addr);
 }
+#endif
 #endif
