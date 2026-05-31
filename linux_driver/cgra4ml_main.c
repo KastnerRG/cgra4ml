@@ -205,6 +205,7 @@ static void cgra4ml_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id cgra4ml_of_match[] = {
+    { .compatible = "xlnx,axi-cgra4ml-1.0" },
     { .compatible = "ucsd,cgra4ml-1.0" },
     { .compatible = "kastner,cgra4ml-1.0" },
     { }
