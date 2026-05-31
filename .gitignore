@@ -70,6 +70,12 @@ run/work/verilator-sim/*
 # Xilinx Linux kernel
 linux-xlnx/
 
+# Userspace test binaries
+linux_test/reg_test
+linux_test/ioctl_test
+linux_test/dma_buf_test
+linux_test/inference
+
 # Kernel module build artifacts
 linux_driver/*.o
 linux_driver/*.ko
