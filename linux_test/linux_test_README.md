@@ -8,11 +8,12 @@ This folder contains three standalone C test programs and a shell script for smo
 
 ```
 linux_test/
-├── Makefile          # Builds all three test binaries
-├── run_smoke.sh      # Runs all tests in sequence (end-to-end smoke test)
+├── Makefile          # Builds all test binaries
+├── run_smoke.sh      # Runs register/DMA smoke tests in sequence
 ├── ioctl_test.c      # Queries buffer info and hardware status via IOCTL
 ├── reg_test.c        # Register-level read/write smoke test
-└── dma_buf_test.c    # Maps DMA buffers and verifies read/write access
+├── dma_buf_test.c    # Maps DMA buffers and verifies read/write access
+└── inference.c       # Full model inference (loads wbx.bin, runs bundle loop)
 ```
 
 ---
@@ -38,7 +39,7 @@ cd linux_test
 make
 ```
 
-This produces three executables: `ioctl_test`, `reg_test`, `dma_buf_test`.
+This produces four executables: `ioctl_test`, `reg_test`, `dma_buf_test`, `inference`.
 
 To clean:
 ```bash
@@ -131,6 +132,70 @@ input[0..15]:   10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
 
 ---
 
+### `inference.c` — Full Model Inference
+
+**What it does:**
+1. Opens `/dev/cgra4ml`.
+2. Issues `CGRA4ML_IOC_GET_BUFS` to get the weights buffer physical address and size.
+3. `mmap`s the weights DMA buffer (index 0) into userspace — this buffer holds the entire `Memory_st` struct (~58 KB).
+4. Loads `wbx.bin` (weights + bias + input pixels) into `Memory_st->w` via `fread`.
+5. Calls `run(linux_mp)` — the same bundle loop from `deepsocflow/c/runtime.h`:
+   - `model_setup()` writes AXI-Lite registers via IOCTL (OCM base, weights base, bundle parameters)
+   - The bundle loop iterates all 7 bundles, coordinating with hardware via register handshake
+   - CPU post-processes engine output (bias, activation, pooling, softmax, tiling)
+6. Calls `print_output()` to print the final 10 class probabilities as `y[i]: val/1000`.
+7. Cleans up and exits.
+
+**Implementation strategy:**
+
+The C preprocessor macros in `deepsocflow/c/deepsocflow_linux.h` intercept every hardware access from `runtime.h`:
+
+| Baremetal operation | Linux replacement |
+|---|---|
+| `fb_write_reg32(addr, val)` | `ioctl(fd, CGRA4ML_IOC_WRITE_REG, ...)` |
+| `fb_read_reg32(addr)` | `ioctl(fd, CGRA4ML_IOC_READ_REG, ...)` |
+| `fb_addr_64to32(ptr)` | `weights_phys + (ptr - mp)` |
+| `flush_cache(...)` | no-op (DMA-coherent memory) |
+| `mem_phy.field` | `mp->field` (function parameter) |
+
+This allows the entire bundle loop (~280 lines of complex nested loops with pooling, softmax, tiling) to run unmodified on Linux.
+
+**Usage:**
+
+```bash
+./inference [wbx_path]
+```
+
+Default `wbx_path` is `./wbx.bin` if not specified.
+
+**Example output:**
+```
+CGRA4ML Linux inference
+  Memory_st      : 0xffff9e200000  (virtual)
+  weights phys   : 0x69100000
+  weights size   : 16777216
+  sizeof(Memory_st): 58552
+  loading wbx    : wbx.bin
+  running inference...
+--- output ---
+y[0]: 105/1000
+y[1]: 56/1000
+y[2]: 56/1000
+y[3]: 56/1000
+y[4]: 56/1000
+y[5]: 366/1000
+y[6]: 56/1000
+y[7]: 56/1000
+y[8]: 134/1000
+y[9]: 56/1000
+```
+
+The highest value (`y[5]: 366/1000`) is the predicted class. Compare against the Python golden reference: `int(1000 * y_exp.txt_value)`.
+
+**Purpose:** Demonstrates the full inference pipeline working end-to-end on Linux — the same C firmware that runs in Verilator simulation and Xilinx baremetal now runs unmodified on a Linux-driven FPGA.
+
+---
+
 ## Smoke Test Script — `run_smoke.sh`
 
 Runs all three tests in sequence with status checks:
@@ -156,9 +221,10 @@ The script uses `set -e`, so it stops immediately on any failure. A clean run en
 ## Test Flow Diagram
 
 ```
-run_smoke.sh
-    │
-    ├─[1]─ make ──────────────────────────────── builds ioctl_test, reg_test, dma_buf_test
+run_smoke.sh                          inference (standalone)
+    │                                       │
+    ├─[1]─ make ──────────────────────── builds ioctl_test, reg_test,
+    │                                       dma_buf_test, inference
     │
     ├─[2]─ ls /dev/cgra4ml ───────────────────── confirms driver is loaded
     │
