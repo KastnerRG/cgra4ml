@@ -8,7 +8,7 @@ CFLAGS += -Wall -Wextra -O2 \
 	  -I../../../run/work
 LDFLAGS += -lm
 
-TARGETS := reg_test ioctl_test dma_buf_test inference
+TARGETS := reg_test ioctl_test dma_buf_test
 LIBS    := libinference.so
 
 all: $(TARGETS)
@@ -21,9 +21,6 @@ ioctl_test: ioctl_test.c
 
 dma_buf_test: dma_buf_test.c
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
-
-inference: inference.c libinference.so
-	$(CC) $(CFLAGS) -o $@ $< -L. -linference -Wl,-rpath,'$$ORIGIN' $(LDFLAGS)
 
 libinference.so: ../host.c
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ $< $(LDFLAGS)

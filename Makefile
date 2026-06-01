@@ -1,4 +1,4 @@
-.PHONY: image start kill enter ibuild irun iclean vivado kernel_prepare driver test_app bundle linux edf_sdt edf_overlay edf hw edf_deploy test_install
+.PHONY: image start kill enter ibuild irun iclean vivado kernel_prepare driver test_app lib linux_example bundle linux edf_sdt edf_overlay edf hw edf_deploy test_install
 
 # Default parameters
 FREQ_MHZ ?= 250
@@ -147,14 +147,25 @@ lib: $(WORKDIR)
 	$(MAKE) -C deepsocflow/linux/test CC=$(CROSS_COMPILE)gcc libinference.so
 	cp deepsocflow/linux/test/libinference.so $(WORKDIR)/
 
+.PHONY: linux_example
+linux_example: lib
+	$(CROSS_COMPILE)gcc -Wall -Wextra -O2 \
+		-Ideepsocflow/c \
+		-Ideepsocflow/linux/driver \
+		-Irun/work \
+		-o deepsocflow/linux/linux_example \
+		deepsocflow/linux/linux_example.c \
+		-Ldeepsocflow/linux/test -linference \
+		-Wl,-rpath,'$$ORIGIN' -lm
+
 .PHONY: bundle
 BUNDLE_DIR := deploy
-bundle: lib test_app
+bundle: lib test_app linux_example
 	@mkdir -p $(BUNDLE_DIR)
 	@for f in \
 		deepsocflow/linux/test/libinference.so \
-		deepsocflow/linux/test/inference \
-		deepsocflow/linux/runner.py \
+		deepsocflow/linux/linux_example \
+		deepsocflow/linux/linux_example.py \
 		deepsocflow/linux/driver/cgra4ml_drv.ko \
 		run/work/vectors/wbx.bin \
 		run/work/cgra4ml-fw; do \

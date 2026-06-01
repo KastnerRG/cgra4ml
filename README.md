@@ -131,7 +131,7 @@ Adjust `<user>` and `<board-ip>` to match your board's credentials.
 scp deepsocflow/linux/driver/cgra4ml_drv.ko <user>@<board-ip>:/tmp/
 
 # Test applications
-scp deepsocflow/linux/test/inference deepsocflow/linux/test/reg_test \
+scp deepsocflow/linux/linux_example deepsocflow/linux/test/reg_test \
     deepsocflow/linux/test/ioctl_test deepsocflow/linux/test/dma_buf_test \
     <user>@<board-ip>:/tmp/
 
@@ -157,7 +157,7 @@ sudo insmod /tmp/cgra4ml_drv.ko
 ls -l /dev/cgra4ml
 
 # 4. Run inference
-sudo ./inference
+sudo ./linux_example
 
 # Expected output:
 # CGRA4ML Linux inference

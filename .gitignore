@@ -77,7 +77,7 @@ deploy/
 deepsocflow/linux/test/reg_test
 deepsocflow/linux/test/ioctl_test
 deepsocflow/linux/test/dma_buf_test
-deepsocflow/linux/test/inference
+deepsocflow/linux/linux_example
 deepsocflow/linux/test/libinference.so
 
 # Kernel module build artifacts
