@@ -70,11 +70,15 @@ run/work/verilator-sim/*
 # Xilinx Linux kernel
 linux-xlnx/
 
+# FPGA deployment bundle
+deploy/
+
 # Userspace test binaries
 linux_test/reg_test
 linux_test/ioctl_test
 linux_test/dma_buf_test
 linux_test/inference
+linux_test/libinference.so
 
 # Kernel module build artifacts
 linux_driver/*.o

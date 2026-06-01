@@ -1,4 +1,4 @@
-.PHONY: image start kill enter ibuild irun iclean vivado kernel_prepare driver test_app edf_sdt edf_overlay edf hw edf_deploy driver_install test_install
+.PHONY: image start kill enter ibuild irun iclean vivado kernel_prepare driver test_app bundle edf_sdt edf_overlay edf hw edf_deploy driver_install test_install
 
 # Default parameters
 FREQ_MHZ ?= 250
@@ -141,6 +141,30 @@ driver: linux_driver/cgra4ml_main.c linux_driver/Makefile
 .PHONY: test_app
 test_app:
 	$(MAKE) -C linux_test CC=$(CROSS_COMPILE)gcc
+
+.PHONY: lib
+lib: $(WORKDIR)
+	$(MAKE) -C linux_test CC=$(CROSS_COMPILE)gcc libinference.so
+	cp linux_test/libinference.so $(WORKDIR)/
+
+.PHONY: bundle
+BUNDLE_DIR := deploy
+bundle: lib test_app
+	@mkdir -p $(BUNDLE_DIR)
+	@for f in \
+		linux_test/libinference.so \
+		linux_test/inference \
+		python/run_inference.py \
+		linux_driver/cgra4ml_drv.ko \
+		run/work/wbx.bin; do \
+		if [ -f $$f ]; then \
+			cp $$f $(BUNDLE_DIR)/ && echo "  ✓ $$f"; \
+		else \
+			echo "  - $$f (not found, skipped)"; \
+		fi; \
+	done
+	@echo "\n--- deploy/ ready ---"
+	@echo "To deploy:  scp -r $(BUNDLE_DIR) $(BOARD_USER)@$(BOARD_IP):/home/$(BOARD_USER)/"
 
 .PHONY: driver_install
 driver_install: linux_driver/cgra4ml_drv.ko
