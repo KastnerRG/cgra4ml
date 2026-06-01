@@ -1,4 +1,4 @@
-# `linux_test/` — CGRA4ML Userspace Test Programs
+# `deepsocflow/linux/test/` — CGRA4ML Userspace Test Programs
 
 This folder contains three standalone C test programs and a shell script for smoke-testing the CGRA4ML kernel driver from userspace. All programs talk to the driver through `/dev/cgra4ml` using the IOCTL and `mmap` interface defined in `cgra4ml_ioctl.h`.
 
@@ -7,7 +7,7 @@ This folder contains three standalone C test programs and a shell script for smo
 ## File Overview
 
 ```
-linux_test/
+deepsocflow/linux/test/
 ├── Makefile          # Builds all test binaries
 ├── run_smoke.sh      # Runs register/DMA smoke tests in sequence
 ├── ioctl_test.c      # Queries buffer info and hardware status via IOCTL
@@ -23,7 +23,7 @@ linux_test/
 The test programs include headers from the driver folder. Ensure the path is accessible:
 
 ```
-linux_test/
+deepsocflow/linux/test/
     └── ioctl_test.c  → #include "cgra4ml_ioctl.h"  (from ../linux_driver)
     └── reg_test.c    → #include "cgra4ml_regs.h"   (from ../linux_driver)
 ```

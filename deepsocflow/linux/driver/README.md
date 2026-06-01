@@ -1,4 +1,4 @@
-# `linux_driver/` — CGRA4ML Linux Kernel Driver
+# `deepsocflow/linux/driver/` — CGRA4ML Linux Kernel Driver
 
 This folder contains a **Linux platform driver** for the CGRA4ML hardware accelerator.
 It exposes the accelerator to userspace via `/dev/cgra4ml`, giving applications the ability to control the hardware registers and access DMA-coherent memory buffers.
@@ -8,7 +8,7 @@ It exposes the accelerator to userspace via `/dev/cgra4ml`, giving applications 
 ## File Overview
 
 ```
-linux_driver/
+deepsocflow/linux/driver/
 ├── Makefile          # Kernel module build system
 ├── cgra4ml.dts       # Example device-tree snippet (FPGA board integration)
 ├── cgra4ml_priv.h    # Internal shared structs (cgra4ml_dev, cgra4ml_dma_buf)
