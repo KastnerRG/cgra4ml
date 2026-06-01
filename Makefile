@@ -27,6 +27,9 @@ smoke_attention_softmax: $(WORKDIR)
 smoke_mha: $(WORKDIR)
 	cd $(WORKDIR) && python -m pytest -s ../multi_head_attention.py
 
+smoke_mha4: $(WORKDIR)
+	cd $(WORKDIR) && python -m pytest -s ../multi_head_attention_4h.py
+
 test_softmax_export: $(WORKDIR)
 	cd $(WORKDIR) && python -m pytest -s ../../tests/test_softmax_export.py
 
