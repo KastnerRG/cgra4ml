@@ -22,10 +22,10 @@ ioctl_test: ioctl_test.c
 dma_buf_test: dma_buf_test.c
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
-inference: inference.c
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+inference: inference.c libinference.so
+	$(CC) $(CFLAGS) -o $@ $< -L. -linference -Wl,-rpath,'$$ORIGIN' $(LDFLAGS)
 
-libinference.so: ../deepsocflow/c/inference_runner.c
+libinference.so: ../deepsocflow/c/host.c
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ $< $(LDFLAGS)
 
 clean:
