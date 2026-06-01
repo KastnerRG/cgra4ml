@@ -1,11 +1,11 @@
 CC ?= gcc
 
 CFLAGS += -Wall -Wextra -O2 \
-	  -I../linux_driver \
-	  -I../deepsocflow/c \
-	  -I../deepsocflow/firebridge \
-	  -I.. \
-	  -I../run/work
+	  -I../driver \
+	  -I../../c \
+	  -I../../firebridge \
+	  -I../../.. \
+	  -I../../../run/work
 LDFLAGS += -lm
 
 TARGETS := reg_test ioctl_test dma_buf_test inference
@@ -25,7 +25,7 @@ dma_buf_test: dma_buf_test.c
 inference: inference.c libinference.so
 	$(CC) $(CFLAGS) -o $@ $< -L. -linference -Wl,-rpath,'$$ORIGIN' $(LDFLAGS)
 
-libinference.so: ../deepsocflow/c/host.c
+libinference.so: ../../c/host.c
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ $< $(LDFLAGS)
 
 clean:

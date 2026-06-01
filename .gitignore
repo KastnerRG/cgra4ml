@@ -74,11 +74,11 @@ linux-xlnx/
 deploy/
 
 # Userspace test binaries
-linux_test/reg_test
-linux_test/ioctl_test
-linux_test/dma_buf_test
-linux_test/inference
-linux_test/libinference.so
+deepsocflow/linux/test/reg_test
+deepsocflow/linux/test/ioctl_test
+deepsocflow/linux/test/dma_buf_test
+deepsocflow/linux/test/inference
+deepsocflow/linux/test/libinference.so
 
 # Kernel module build artifacts
 deepsocflow/linux/driver/*.o

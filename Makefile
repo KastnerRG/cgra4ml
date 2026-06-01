@@ -140,20 +140,20 @@ driver: deepsocflow/linux/driver/cgra4ml_main.c deepsocflow/linux/driver/Makefil
 
 .PHONY: test_app
 test_app:
-	$(MAKE) -C linux_test CC=$(CROSS_COMPILE)gcc
+	$(MAKE) -C deepsocflow/linux/test CC=$(CROSS_COMPILE)gcc
 
 .PHONY: lib
 lib: $(WORKDIR)
-	$(MAKE) -C linux_test CC=$(CROSS_COMPILE)gcc libinference.so
-	cp linux_test/libinference.so $(WORKDIR)/
+	$(MAKE) -C deepsocflow/linux/test CC=$(CROSS_COMPILE)gcc libinference.so
+	cp deepsocflow/linux/test/libinference.so $(WORKDIR)/
 
 .PHONY: bundle
 BUNDLE_DIR := deploy
 bundle: lib test_app
 	@mkdir -p $(BUNDLE_DIR)
 	@for f in \
-		linux_test/libinference.so \
-		linux_test/inference \
+		deepsocflow/linux/test/libinference.so \
+		deepsocflow/linux/test/inference \
 		python/run_inference.py \
 		deepsocflow/linux/driver/cgra4ml_drv.ko \
 		run/work/wbx.bin; do \
