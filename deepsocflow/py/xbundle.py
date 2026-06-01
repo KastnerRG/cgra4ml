@@ -124,7 +124,7 @@ class XBundle(Layer):
         if self.add:
             print(f"Bundle {self.ib} source_ib: {self.add.source_ib}")
             out = self.add.call_int(out, hw)
-            out = self.add.act.call_int(out, hw)
+            out = self.add.act.call_int(out, hw, validate_against_float=not allow_mismatch)
 
         if self.pool:
             out = self.pool.call_int(out, hw)

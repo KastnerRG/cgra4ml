@@ -232,6 +232,13 @@ def export_inference(model, hw, batch_size=1):
                 o_words_b = b.w_buf_bytes
                 o_bytes_b = b.w_buf_bytes
                 o_words   = max(o_words, o_words_b)
+            elif len(b.next_ibs) == 0 and b.add_out_buffer_idx != -1:
+                # Add-buffer-only bundle: output goes exclusively to the add buffer (x_add).
+                # Use this bundle's own output dimensions — the add consumer's xe has a
+                # different shape (its primary input), so b_next.xe would give the wrong size.
+                o_words_b = b.oe_exp_nhwc.size
+                o_bytes_b = (hw.X_BITS * o_words_b) // 8
+                o_words   = max(o_words, o_words_b)
             else:
                 b_next    = BUNDLES[sorted(b.next_ibs)[0]]
                 o_wpt     = b_next.xe[-1].size
@@ -470,6 +477,8 @@ def verify_inference(model, hw, SIM, SIM_PATH='', TRACE=False):
                    np.frombuffer(w_buf_exp_bytes, dtype=np.uint8).astype(np.int32)
             error = int(np.sum(np.abs(diff)))
             assert error == 0, f"W_buf mismatch (error={error}) for producer bundle {b.ib}"
+        elif len(b.next_ibs) == 0 and b.add_out_buffer_idx != -1:
+            error = 0  # add-buffer-only bundle; tiled format check N/A; NHWC check above suffices
         else:
             next_act_ib = sorted(b.next_ibs)[0]
             y_tiled_exp = np.concatenate([a.flatten() for a in BUNDLES[next_act_ib].xe])

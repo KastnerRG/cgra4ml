@@ -6,7 +6,7 @@
 #TEST := two_dense
 #TEST := chained_matmul
 #TEST := multi_chained_matmul
-TEST := attention_no_softmax
+TEST := attention_with_softmax
 WORKDIR := run/work
 
 clean:
@@ -23,6 +23,9 @@ smoke_softmax_chain: $(WORKDIR)
 
 smoke_attention_softmax: $(WORKDIR)
 	cd $(WORKDIR) && python -m pytest -s ../attention_with_softmax.py
+
+smoke_mha: $(WORKDIR)
+	cd $(WORKDIR) && python -m pytest -s ../multi_head_attention.py
 
 test_softmax_export: $(WORKDIR)
 	cd $(WORKDIR) && python -m pytest -s ../../tests/test_softmax_export.py
