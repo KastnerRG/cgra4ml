@@ -154,7 +154,7 @@ bundle: lib test_app
 	@for f in \
 		deepsocflow/linux/test/libinference.so \
 		deepsocflow/linux/test/inference \
-		python/run_inference.py \
+		deepsocflow/linux/runner.py \
 		deepsocflow/linux/driver/cgra4ml_drv.ko \
 		run/work/wbx.bin; do \
 		if [ -f $$f ]; then \
