@@ -1,4 +1,4 @@
-.PHONY: image start kill enter ibuild irun iclean vivado kernel_prepare driver test_app lib linux_example bundle linux edf_sdt edf_overlay edf hw edf_deploy test_install
+.PHONY: image start kill enter ibuild irun iclean vivado kernel_prepare driver lib linux_example bundle linux edf_sdt edf_overlay edf hw edf_deploy test_install
 
 # Default parameters
 FREQ_MHZ ?= 250
@@ -138,10 +138,6 @@ driver: deepsocflow/linux/driver/cgra4ml_main.c deepsocflow/linux/driver/Makefil
 	$(MAKE) -C $(KERNEL_DIR) ARCH=arm64 CROSS_COMPILE=$(CROSS_COMPILE) \
 		KBUILD_MODPOST_WARN=1 M=$(CURDIR)/deepsocflow/linux/driver modules
 
-.PHONY: test_app
-test_app:
-	$(MAKE) -C deepsocflow/linux/test CC=$(CROSS_COMPILE)gcc
-
 .PHONY: lib
 lib: $(WORKDIR)
 	$(MAKE) -C deepsocflow/linux/test CC=$(CROSS_COMPILE)gcc libinference.so
@@ -160,7 +156,7 @@ linux_example: lib
 
 .PHONY: bundle
 BUNDLE_DIR := deploy
-bundle: lib test_app linux_example
+bundle: lib linux_example
 	@mkdir -p $(BUNDLE_DIR)
 	@for f in \
 		deepsocflow/linux/test/libinference.so \
