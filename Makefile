@@ -1,4 +1,4 @@
-.PHONY: image start kill enter ibuild irun iclean vivado kernel_prepare driver test_app bundle edf_sdt edf_overlay edf hw edf_deploy driver_install test_install
+.PHONY: image start kill enter ibuild irun iclean vivado kernel_prepare driver test_app bundle linux edf_sdt edf_overlay edf hw edf_deploy test_install
 
 # Default parameters
 FREQ_MHZ ?= 250
@@ -166,9 +166,12 @@ bundle: lib test_app
 	@echo "\n--- deploy/ ready ---"
 	@echo "To deploy:  scp -r $(BUNDLE_DIR) $(BOARD_USER)@$(BOARD_IP):/home/$(BOARD_USER)/"
 
-.PHONY: driver_install
-driver_install: deepsocflow/linux/driver/cgra4ml_drv.ko
-	scp $< $(BOARD_USER)@$(BOARD_IP):/tmp/
+.PHONY: linux
+linux: driver bundle
+	@echo "\n✓ All Linux artifacts built and ready in deploy/"
+	@echo "To deploy to board:"
+	@echo "  scp deepsocflow/linux/driver/cgra4ml_drv.ko $(BOARD_USER)@$(BOARD_IP):/tmp/"
+	@echo "  scp -r deploy $(BOARD_USER)@$(BOARD_IP):/home/$(BOARD_USER)/"
 
 
 # Docker
