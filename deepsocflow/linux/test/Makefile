@@ -25,7 +25,7 @@ dma_buf_test: dma_buf_test.c
 inference: inference.c libinference.so
 	$(CC) $(CFLAGS) -o $@ $< -L. -linference -Wl,-rpath,'$$ORIGIN' $(LDFLAGS)
 
-libinference.so: ../../c/host.c
+libinference.so: ../host.c
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ $< $(LDFLAGS)
 
 clean:
