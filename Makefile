@@ -134,9 +134,9 @@ kernel_prepare:
 	$(MAKE) -C $(KERNEL_DIR) ARCH=arm64 CROSS_COMPILE=$(CROSS_COMPILE) modules_prepare
 
 .PHONY: driver
-driver: linux_driver/cgra4ml_main.c linux_driver/Makefile
+driver: deepsocflow/linux/driver/cgra4ml_main.c deepsocflow/linux/driver/Makefile
 	$(MAKE) -C $(KERNEL_DIR) ARCH=arm64 CROSS_COMPILE=$(CROSS_COMPILE) \
-		KBUILD_MODPOST_WARN=1 M=$(CURDIR)/linux_driver modules
+		KBUILD_MODPOST_WARN=1 M=$(CURDIR)/deepsocflow/linux/driver modules
 
 .PHONY: test_app
 test_app:
@@ -155,7 +155,7 @@ bundle: lib test_app
 		linux_test/libinference.so \
 		linux_test/inference \
 		python/run_inference.py \
-		linux_driver/cgra4ml_drv.ko \
+		deepsocflow/linux/driver/cgra4ml_drv.ko \
 		run/work/wbx.bin; do \
 		if [ -f $$f ]; then \
 			cp $$f $(BUNDLE_DIR)/ && echo "  ✓ $$f"; \
@@ -167,7 +167,7 @@ bundle: lib test_app
 	@echo "To deploy:  scp -r $(BUNDLE_DIR) $(BOARD_USER)@$(BOARD_IP):/home/$(BOARD_USER)/"
 
 .PHONY: driver_install
-driver_install: linux_driver/cgra4ml_drv.ko
+driver_install: deepsocflow/linux/driver/cgra4ml_drv.ko
 	scp $< $(BOARD_USER)@$(BOARD_IP):/tmp/
 
 

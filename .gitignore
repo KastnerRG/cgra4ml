@@ -81,16 +81,16 @@ linux_test/inference
 linux_test/libinference.so
 
 # Kernel module build artifacts
-linux_driver/*.o
-linux_driver/*.ko
-linux_driver/*.mod
-linux_driver/*.mod.c
-linux_driver/*.order
-linux_driver/*.symvers
-linux_driver/.*.cmd
-linux_driver/.module-common.o
-linux_driver/modules.order
-linux_driver/Module.symvers
+deepsocflow/linux/driver/*.o
+deepsocflow/linux/driver/*.ko
+deepsocflow/linux/driver/*.mod
+deepsocflow/linux/driver/*.mod.c
+deepsocflow/linux/driver/*.order
+deepsocflow/linux/driver/*.symvers
+deepsocflow/linux/driver/.*.cmd
+deepsocflow/linux/driver/.module-common.o
+deepsocflow/linux/driver/modules.order
+deepsocflow/linux/driver/Module.symvers
 run/XilinxBoardStore/
 
 # Distribution / packaging
