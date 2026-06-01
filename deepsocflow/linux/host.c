@@ -1,3 +1,16 @@
+/*
+ * host.c - CGRA4ML Linux host-side platform initialization
+ *
+ * Provides host_setup() and host_cleanup() functions that:
+ * - Open /dev/cgra4ml device
+ * - Query buffer physical addresses via GET_BUFS ioctl
+ * - mmap DMA-coherent buffer into userspace
+ * - Load wbx.bin (weights + bias + input) into the buffer
+ *
+ * These functions are exported from libinference.so and called by both
+ * inference.c (C) and runner.py (Python via ctypes).
+ */
+
 #define DEEPSOCFLOW_LINUX_OVERRIDE
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,12 +21,18 @@
 
 #include "deepsocflow_linux.h"
 
+/* ---- Global state (declared extern in deepsocflow_linux.h) ---- */
+
 int        linux_fd;
 Memory_st *linux_mp;
 u32        linux_weights_phys;
 static size_t linux_map_size;
 
+/* ---- Forward declarations ---- */
+
 void host_cleanup(void *mp);
+
+/* ---- host_setup ---- */
 
 void *host_setup(const char *dev, const char *wbx_path)
 {
@@ -51,6 +70,8 @@ void *host_setup(const char *dev, const char *wbx_path)
 
     return map;
 }
+
+/* ---- host_cleanup ---- */
 
 void host_cleanup(void *mp)
 {
