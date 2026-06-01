@@ -156,9 +156,10 @@ bundle: lib test_app
 		deepsocflow/linux/test/inference \
 		deepsocflow/linux/runner.py \
 		deepsocflow/linux/driver/cgra4ml_drv.ko \
-		run/work/vectors/wbx.bin; do \
-		if [ -f $$f ]; then \
-			cp $$f $(BUNDLE_DIR)/ && echo "  ✓ $$f"; \
+		run/work/vectors/wbx.bin \
+		run/work/cgra4ml-fw; do \
+		if [ -e $$f ]; then \
+			cp -r $$f $(BUNDLE_DIR)/ && echo "  ✓ $$f"; \
 		else \
 			echo "  - $$f (not found, skipped)"; \
 		fi; \
