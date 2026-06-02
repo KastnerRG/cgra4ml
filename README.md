@@ -219,6 +219,9 @@ If you use CGRA4ML in your research, please cite our paper:
 - Aba
 - Zhenghua
 
-## Contributors
+## Contributors (Transformer Support)
 
-- Kavon Naziri — transformer support (dynamic-weight matmul, single/multi-head attention, softmax pipeline)
+- Kavon Naziri
+- Jasper Huang
+- Hao Luu
+- Karim Barajas
