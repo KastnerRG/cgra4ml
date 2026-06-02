@@ -49,6 +49,7 @@ clean:
 	$(MAKE) -C ibex-soc clean 2>/dev/null || true
 	rm -rf build *.vstf *.log *.ses .qverify .visualizer
 	rm -rf $(KERNEL_DIR)
+	rm -rf deploy
 
 $(WORKDIR):
 	mkdir -p $(WORKDIR)
