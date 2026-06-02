@@ -112,6 +112,90 @@ source ../../tcl/asic/pnr.tcl
 <p align="center"> <img src="docs/infra.png" width="600"> </p>
 
 
+## Transformer Support
+
+This branch extends CGRA4ML toward transformer inference through four incremental milestones, each building on the last. All models are verified end-to-end with Verilator RTL simulation via `verify_inference()`.
+
+### Milestone 1 — Dynamic-Weight Matrix Multiplication
+
+Introduced `w_src` — a mechanism for one bundle's output to serve as the weight matrix for a downstream matmul at runtime. Validated with a simple two-bundle chained matmul and a multi-level fan-out variant where an intermediate result feeds two independent downstream branches.
+
+```
+# chained_matmul:
+#   A ──┬── B0(A@B) ──> Z1 ──┐
+#       └── B1(A@C) ──> Z2 ──┤w_src  B2(Z1@Z2) ──> output
+
+# multi_chained_matmul:
+#   A ──┬── B0(A@B) ──> Z1 ──┐
+#       └── B1(A@C) ──> Z2 ──┤w_src  B2(Z1@Z2) ──> P ──┬── B3(P@D) ──> Z3 ──┐
+#                                                         └── B4(P@E) ──> Z4 ──┤w_src  B5(Z3@Z4) ──> Q
+```
+
+```bash
+make smoke_test TEST=chained_matmul
+make smoke_test TEST=multi_chained_matmul
+```
+
+### Milestone 2 — Single Attention Head (no softmax)
+
+Implemented a single self-attention head using dynamic weights and the `transpose_w_src` flag, which allows K to be stored as a transposed weight matrix so the hardware computes Q @ K^T without an explicit transpose operation.
+
+```
+#   X ──┬── B0(X@W_Q) ──> Q ──────────────────> B3(Q@K^T) ──> S ──> B4(S@V) ──> output
+#       ├── B1(X@W_K) ──> K ──(w_src, T)──────>  ↑
+#       └── B2(X@W_V) ──> V ──(w_src)────────────────────────────────────────>  ↑
+```
+
+```bash
+make smoke_test TEST=attention_no_softmax
+```
+
+### Milestone 3 — Single Attention Head with Softmax
+
+Extended the attention head with non-terminal softmax: the score bundle's output is requantized to fixed-point (rather than remaining float-only) so it can be consumed by the downstream V matmul in the same integer pipeline.
+
+```
+#   X ──┬── B0(X@W_Q) ──> Q ────────────────────────────> B3(softmax(Q@K^T)) ──> P ──> B4(P@V) ──> output
+#       ├── B1(X@W_K) ──> K ──(w_src, transpose)────────>  ↑
+#       └── B2(X@W_V) ──> V ──(w_src)──────────────────────────────────────────────────────────>  ↑
+```
+
+```bash
+make smoke_attention_softmax
+```
+
+### Milestone 4 — Multi-Head Attention
+
+Extended to H attention heads without concatenation by exploiting the identity `Concat(heads) @ W_O = Σ_h (head_h @ W_O_h)`. Each head's output projection is accumulated via `x_add`, eliminating the need for a concat operation or new hardware support. The model is parameterized over H — both H=2 and H=4 variants pass full Verilator RTL simulation.
+
+```
+#   X ──┬── B0(X@W_Q0) → Q0 ──> B6(softmax(Q0@K0ᵀ)) → P0 → B7(P0@V0) → head0 → B8(head0@W_O0)          → proj0 ─┐
+#       ├── B1(X@W_K0) → K0 ─(w_src,T)──> ↑                                                                         │ x_add
+#       ├── B2(X@W_V0) → V0 ─(w_src)──────────────────────────────────────> ↑                                       ↓
+#       ├── B3(X@W_Q1) → Q1 ──> B9(softmax(Q1@K1ᵀ)) → P1 → B10(P1@V1) → head1 → B11(head1@W_O1+proj0)   → output
+#       ├── B4(X@W_K1) → K1 ─(w_src,T)──> ↑
+#       └── B5(X@W_V1) → V1 ─(w_src)──────────────────────────────────────> ↑
+```
+
+```bash
+make smoke_mha       # H=2 (12 bundles)
+make smoke_mha4      # H=4 (24 bundles)
+```
+
+### Running the Multi-Head Attention Demo
+
+1. Download and start [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+
+2. In a Linux terminal, build, start, and enter the Docker container:
+   ```bash
+   make image start enter
+   ```
+
+3. Inside the container shell, run the multi-head attention test:
+   ```bash
+   make smoke_mha
+   ```
+
 ## Citation
 
 If you use CGRA4ML in your research, please cite our paper:
@@ -134,3 +218,7 @@ If you use CGRA4ML in your research, please cite our paper:
 
 - Aba
 - Zhenghua
+
+## Contributors
+
+- Kavon Naziri — transformer support (dynamic-weight matmul, single/multi-head attention, softmax pipeline)
