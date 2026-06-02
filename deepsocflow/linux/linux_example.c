@@ -1,20 +1,18 @@
-/*
- * inference.c - CGRA4ML Linux inference entry point
- *
- * Loads wbx.bin (weights + input), runs inference on the CGRA accelerator,
- * and prints the output class probabilities.
- */
+// inference.c - CGRA4ML Linux inference entry point
+//
+// Loads wbx.bin (weights + input), runs inference on the CGRA accelerator,
+// and prints the output class probabilities.
 
 #include <stdio.h>
 
-/* ---- libinference.so API ---- */
+// --- libinference.so API ---
 
 void *host_setup(const char *dev, const char *wbx_path);
 void  host_cleanup(void *mp);
 void  run(void *mp);
 void  print_output(void *mp);
 
-/* ---- main ---- */
+// --- main ---
 
 int main(int argc, char **argv)
 {

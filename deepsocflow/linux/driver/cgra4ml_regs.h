@@ -1,18 +1,16 @@
 #ifndef CGRA4ML_REGS_H
 #define CGRA4ML_REGS_H
 
-/*
- * CGRA4ML AXI-Lite register map.
- *
- * These offsets follow deepsocflow/c/runtime.h.
- * The runtime treats p_config as int32_t*, so A_* values are word offsets.
- * This file exposes byte offsets for Linux ioread32/iowrite32.
- */
+// CGRA4ML AXI-Lite register map.
+//
+// These offsets follow deepsocflow/c/runtime.h.
+// The runtime treats p_config as int32_t*, so A_* values are word offsets.
+// This file exposes byte offsets for Linux ioread32/iowrite32.
 
 #define CGRA4ML_REG_WORD_BYTES      4U
 #define CGRA4ML_WORD_OFFSET(x)      ((x) * CGRA4ML_REG_WORD_BYTES)
 
-/* Runtime register word offsets */
+// Runtime register word offsets
 #define CGRA4ML_A_START             0x0
 #define CGRA4ML_A_DONE_READ         0x1
 #define CGRA4ML_A_DONE_WRITE        0x3
@@ -26,7 +24,7 @@
 
 #define CGRA4ML_A_PARAM_BASE        0x10
 
-/* Byte offsets */
+// Byte offsets
 #define CGRA4ML_REG_START           CGRA4ML_WORD_OFFSET(CGRA4ML_A_START)
 #define CGRA4ML_REG_DONE_READ0      CGRA4ML_WORD_OFFSET(CGRA4ML_A_DONE_READ + 0)
 #define CGRA4ML_REG_DONE_READ1      CGRA4ML_WORD_OFFSET(CGRA4ML_A_DONE_READ + 1)

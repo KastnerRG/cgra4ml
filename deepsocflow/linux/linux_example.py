@@ -1,31 +1,29 @@
 #!/usr/bin/env python3
-"""
-runner.py - CGRA4ML Linux inference runner (Python version)
-
-Loads wbx.bin (weights + input), runs inference on the CGRA accelerator,
-and prints the output class probabilities.
-
-Usage:
-    python3 runner.py [--wbx wbx.bin] [--dev /dev/cgra4ml]
-"""
+# runner.py - CGRA4ML Linux inference runner (Python version)
+#
+# Loads wbx.bin (weights + input), runs inference on the CGRA accelerator,
+# and prints the output class probabilities.
+#
+# Usage:
+#     python3 runner.py [--wbx wbx.bin] [--dev /dev/cgra4ml]
 
 import ctypes
 import os
 import sys
 import argparse
 
-# ---- Parse command line arguments ----
+# --- Parse command line arguments ---
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--wbx", default="wbx.bin")
 ap.add_argument("--dev", default="/dev/cgra4ml")
 args = ap.parse_args()
 
-# ---- Load libinference.so ----
+# --- Load libinference.so ---
 
 lib = ctypes.CDLL(os.path.join(os.getcwd(), "libinference.so"))
 
-# ---- Configure function signatures ----
+# --- Configure function signatures ---
 
 lib.host_setup.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
 lib.host_setup.restype = ctypes.c_void_p
@@ -36,7 +34,7 @@ lib.print_output.restype = None
 lib.host_cleanup.argtypes = [ctypes.c_void_p]
 lib.host_cleanup.restype = None
 
-# ---- Run inference ----
+# --- Run inference ---
 
 print("CGRA4ML Linux inference")
 print("  running inference...")
