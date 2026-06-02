@@ -43,7 +43,7 @@ class XActivation(QActivation):
         self.out.ftensor = super().call(input_tensor)
         return self.out.ftensor
     
-    def call_int(self, x_tensor, hw):       
+    def call_int(self, x_tensor, hw, validate_against_float=True):       
 
         x = x_tensor.itensor.numpy().astype(int)
         self.shift_bits = self.plog_slope + x_tensor.frac - self.out.frac
@@ -53,8 +53,9 @@ class XActivation(QActivation):
         x = np.clip(x, -2**(self.out.bits - self.plog_slope - 1), 2**(self.out.bits-1)-1).astype(int)
 
         out = XTensor(tensor=x, bits=self.out.bits, frac=self.out.frac, from_int=True)
-        assert np.allclose(out.ftensor, self.out.ftensor), \
-            f"Activation output does not match. {(out.ftensor.shape, self.out.ftensor.shape)} \nout:{out.ftensor.numpy().flatten()}, \nself.out:{self.out.ftensor.numpy().flatten()}, \nsub:{out.ftensor.numpy().flatten()-self.out.ftensor.numpy().flatten()}"
+        if validate_against_float:
+            assert np.allclose(out.ftensor, self.out.ftensor), \
+                f"Activation output does not match. {(out.ftensor.shape, self.out.ftensor.shape)} \nout:{out.ftensor.numpy().flatten()}, \nself.out:{self.out.ftensor.numpy().flatten()}, \nsub:{out.ftensor.numpy().flatten()-self.out.ftensor.numpy().flatten()}"
         self.out = out
         return out
 
@@ -183,10 +184,13 @@ class XDense(QDense):
         return self.out.ftensor
     
 
-    def call_int(self, x, hw):
+    def call_int(self, x, hw, w_override=None, validate_against_float=True):
 
         self.x = x
-        self.w = XTensor(tensor=self.kernel_quantizer_internal(self.kernel), bits=self.sys_bits.k, frac=self.k_frac)
+        if w_override is not None:
+            self.w = w_override  # XTensor produced by the w_src bundle; skip static kernel quantization
+        else:
+            self.w = XTensor(tensor=self.kernel_quantizer_internal(self.kernel), bits=self.sys_bits.k, frac=self.k_frac)
         self.b = XTensor(tensor=self.bias_quantizer_internal  (self.bias  ), bits=self.sys_bits.b, frac=self.b_frac) if self.use_bias else None
 
         self.act.out.assert_valid()
@@ -194,7 +198,6 @@ class XDense(QDense):
         if self.use_bias:
             self.b.assert_valid()
 
-        
         clog2_add = int(np.ceil(np.log2(np.prod(self.w.itensor.shape[:-1]))))
         out = XTensor(
             tensor= self.x.itensor @ self.w.itensor,
@@ -210,7 +213,12 @@ class XDense(QDense):
         else:
             self.bias_val_shift, self.bias_b_shift = 0, 0
 
-        assert np.allclose(out.ftensor.numpy(), self.out.ftensor.numpy()), "Dense output does not match"
+        # Skip exact float/int comparison when dynamic weights are used: the float pass computed
+        # the matmul with unquantized tensors while the int pass uses quantized Z2 values.
+        # Also allow callers to disable this check when the input intentionally came from a
+        # quantized non-linear intermediate (for example, non-terminal softmax in chained matmul).
+        if w_override is None and validate_against_float:
+            assert np.allclose(out.ftensor.numpy(), self.out.ftensor.numpy()), "Dense output does not match"
         self.out = out
         return out
 

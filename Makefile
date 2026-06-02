@@ -2,7 +2,11 @@
 
 # Testing
 
-TEST := param_test
+#TEST := param_test
+#TEST := two_dense
+#TEST := chained_matmul
+#TEST := multi_chained_matmul
+TEST := attention_with_softmax
 WORKDIR := run/work
 
 clean:
@@ -13,6 +17,21 @@ $(WORKDIR):
 
 smoke_test: $(WORKDIR)
 	cd $(WORKDIR) && python -m pytest -s ../$(TEST).py
+
+smoke_softmax_chain: $(WORKDIR)
+	cd $(WORKDIR) && python -m pytest -s ../multi_chained_matmul_softmax.py
+
+smoke_attention_softmax: $(WORKDIR)
+	cd $(WORKDIR) && python -m pytest -s ../attention_with_softmax.py
+
+smoke_mha: $(WORKDIR)
+	cd $(WORKDIR) && python -m pytest -s ../multi_head_attention.py
+
+smoke_mha4: $(WORKDIR)
+	cd $(WORKDIR) && python -m pytest -s ../multi_head_attention_4h.py
+
+test_softmax_export: $(WORKDIR)
+	cd $(WORKDIR) && python -m pytest -s ../../tests/test_softmax_export.py
 
 verify_ibex: $(WORKDIR)
 	cd ibex-soc && python check_output.py

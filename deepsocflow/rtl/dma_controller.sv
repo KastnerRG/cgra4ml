@@ -149,7 +149,7 @@ module dma_controller #(
 
   logic en_wt, lc_wt, lc_wp, lc_wb, f_wp, set_n_bundles_w;
   logic [COUNTER_WIDTH-1:0] count_wb;
-  enum  {W_IDLE, W_WAIT_RAM, W_EXEC} w_state, w_state_next;
+  enum  {W_IDLE, W_WAIT_RAM, W_WAIT_DONE, W_EXEC} w_state, w_state_next;
 
   // Increment m_wd_addr
   always_ff @(posedge clk)
@@ -164,7 +164,8 @@ module dma_controller #(
       W_IDLE    : if ((cfg[A_START][0]))  w_state_next = W_WAIT_RAM;
       W_WAIT_RAM: if (w_ram_rd_valid)    w_state_next = W_EXEC;
       W_EXEC    : if (lc_wb)             w_state_next = W_IDLE; // all bundles done, idle
-                  else if (lc_wp)        w_state_next = W_WAIT_RAM; // this bundle done, request next bundle params
+                  else if (lc_wp)        w_state_next = W_WAIT_DONE; // this bundle done, wait for CPU ack before reading next weights
+      W_WAIT_DONE: if (cfg[A_BUNDLE_DONE][0]) w_state_next = W_WAIT_RAM; // CPU has written dynamic weights, safe to DMA next bundle
     endcase
   end
   always_ff @(posedge clk)
