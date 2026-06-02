@@ -116,7 +116,7 @@ python ../example.py
 >3.3. Deploy to Board: 
 >Adjust `<user>` and `<board-ip>` to match your board's credentials.
 >```bash
->scp deploy/ <user>@<board-ip>:/tmp/
+>scp deploy/ <user>@<board-ip>:
 >```
 >
 >3.4. Run on the Board:
