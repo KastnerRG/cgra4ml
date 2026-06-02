@@ -1,4 +1,7 @@
-.PHONY: image start kill enter ibuild irun iclean vivado kernel_prepare driver lib linux_example bundle linux edf_sdt edf_overlay edf hw edf_deploy test_install
+.PHONY: clean vivado edf_sdt edf_overlay edf hw \
+	smoke_test verify_ibex smoke_ibex \
+	kernel_prepare driver lib linux_example bundle bootgen linux \
+	image start kill enter ibuild irun iclean iprint
 
 # Default parameters
 FREQ_MHZ ?= 250
@@ -24,29 +27,25 @@ BOARDSTORE_REPO  := https://github.com/Xilinx/XilinxBoardStore.git
 BOARDSTORE_BRANCH:= 2024.2
 BOARDSTORE       := $(RUN_DIR)/XilinxBoardStore
 
-# FPGA board IP / user
-BOARD_IP   ?= 192.168.2.10
-BOARD_USER ?= amd-edf
-
 # Vivado project name (must match vivado_flow.tcl)
 PROJECT_NAME ?= dsf_zcu104
 
 # EDF tool paths
 SDTGEN = $(XILINX_VIVADO)/bin/sdtgen
 LOPPER = $(XILINX_VIVADO)/bin/lopper
-DTC    = $(XILINX_VIVADO)/bin/dtc
+DTC      = $(XILINX_VIVADO)/bin/dtc
+BOOTGEN  = $(XILINX_VIVADO)/bin/bootgen
 
-# EDF board configuration
-EDF_BOARD_DTS_zcu104         = zcu104-reva
-EDF_OVERLAY_TARGET_zcu104    = cortexa53_0
-EDF_BOARD_DTS                = $(EDF_BOARD_DTS_zcu104)
-EDF_OVERLAY_TARGET           = $(EDF_OVERLAY_TARGET_zcu104)
-EDF_SDT_DIR                  = hw_project_sdt
-EDF_FW_DIR                   = cgra4ml-fw
+# EDF board configuration (derived from PROJECT_NAME)
+BOARD_NAME        = $(subst dsf_,,$(PROJECT_NAME))
+EDF_OVERLAY_TARGET = cortexa53-zynqmp
+EDF_BOARD_DTS      = $(BOARD_NAME)-reva
+EDF_SDT_DIR        = hw_project_sdt
+EDF_FW_DIR         = cgra4ml-fw
 
 clean:
-	rm -rf $(WORKDIR)*
-	$(MAKE) -C ibex-soc clean 2>/dev/null || true
+	rm -rf $(WORKDIR)
+	$(MAKE) -C ibex-soc clean || true
 	rm -rf build *.vstf *.log *.ses .qverify .visualizer
 	rm -rf $(KERNEL_DIR)
 	rm -rf deploy
@@ -61,11 +60,7 @@ $(DATA_DIR): | $(WORKDIR)
 
 $(BOARDSTORE):
 	@if [ ! -d "$(BOARDSTORE)" ]; then \
-		echo "Cloning Xilinx BoardStore..."; \
-		git clone --branch $(BOARDSTORE_BRANCH) --depth 1 "$(BOARDSTORE_REPO)" "$(BOARDSTORE)"; \
-	else \
-		echo "BoardStore already exists at $(BOARDSTORE)"; \
-	fi
+		@git clone --branch $(BOARDSTORE_BRANCH) --depth 1 "$(BOARDSTORE_REPO)" "$(BOARDSTORE)"; \
 
 vivado: $(WORKDIR) $(BOARDSTORE)
 	@if [ ! -f $(WORKDIR)/config_hw.tcl ]; then \
@@ -76,7 +71,6 @@ vivado: $(WORKDIR) $(BOARDSTORE)
 
 #----------------- EDF / DEFERRED PL LOAD ------------------
 
-.PHONY: edf_sdt
 edf_sdt:
 	@if [ ! -f $(WORKDIR)/$(PROJECT_NAME)/design_1_wrapper.xsa ]; then \
 		echo "ERROR: XSA not found. Run 'make vivado' first."; \
@@ -88,7 +82,6 @@ edf_sdt:
 		$(EDF_SDT_DIR) \
 		$(EDF_BOARD_DTS)
 
-.PHONY: edf_overlay
 edf_overlay:
 	@if [ ! -d $(WORKDIR)/$(EDF_SDT_DIR) ]; then \
 		echo "ERROR: SDT directory not found. Run 'make edf_sdt' first."; \
@@ -98,21 +91,12 @@ edf_overlay:
 	cd $(WORKDIR) && LOPPER_DTC_FLAGS="-b 0 -@" $(LOPPER) --enhanced \
 		-O $(EDF_FW_DIR) -f $(EDF_SDT_DIR)/system-top.dts \
 		-- xlnx_overlay_dt $(EDF_OVERLAY_TARGET) full
-	sed -i 's/\&fpga{/\&fpga_full{/' $(WORKDIR)/$(EDF_FW_DIR)/pl.dtsi
-	sed -i 's/firmware-name = ".*"/firmware-name = "sa_accel.bit"/' $(WORKDIR)/$(EDF_FW_DIR)/pl.dtsi
-	sed -i '/zyxclmm_drm/,/^	};/d' $(WORKDIR)/$(EDF_FW_DIR)/pl.dtsi
-	printf '\t\tassigned-clocks = <&zynqmp_clk 0x47>;\n\t\tassigned-clock-rates = <100000000>;\n' > /tmp/ac.tmp && \
-	sed -i '/xlnx,name = "top_0";/r /tmp/ac.tmp' $(WORKDIR)/$(EDF_FW_DIR)/pl.dtsi && \
-	rm -f /tmp/ac.tmp
 	$(DTC) -I dts -O dtb -o $(WORKDIR)/$(EDF_FW_DIR)/pl.dtbo $(WORKDIR)/$(EDF_FW_DIR)/pl.dtsi
-	cp $(WORKDIR)/$(EDF_SDT_DIR)/design_1_wrapper.bit $(WORKDIR)/$(EDF_FW_DIR)/sa_accel.bit
 	cp $(RUN_DIR)/shell.json $(WORKDIR)/$(EDF_FW_DIR)/
 
-.PHONY: edf
 edf: edf_sdt edf_overlay
 
-.PHONY: hw
-hw: vivado edf
+hw: vivado edf bootgen
 
 smoke_test: $(WORKDIR)
 	cd $(WORKDIR) && python -m pytest -s ../$(TEST).py
@@ -121,69 +105,26 @@ verify_ibex: $(WORKDIR)
 	cd ibex-soc && python check_output.py
 
 smoke_ibex: $(WORKDIR)
-	make TEST=ibex_test smoke_test iclean ibuild irun verify_ibex
+	$(MAKE) TEST=ibex_test smoke_test iclean ibuild irun verify_ibex
 
-#----------------- KERNEL DRIVER & TEST APP ------------------
+#----------------- LINUX ------------------
 
-.PHONY: kernel_prepare
-kernel_prepare:
-	git clone --depth 1 -b xlnx_rebase_v6.12_LTS_2025.1 \
-		https://github.com/Xilinx/linux-xlnx.git $(KERNEL_DIR)
-	$(MAKE) -C $(KERNEL_DIR) ARCH=arm64 CROSS_COMPILE=$(CROSS_COMPILE) xilinx_defconfig
-	$(MAKE) -C $(KERNEL_DIR) ARCH=arm64 CROSS_COMPILE=$(CROSS_COMPILE) modules_prepare
-	cd $(KERNEL_DIR) && scripts/config --set-str CONFIG_LOCALVERSION "-xilinx"
-	$(MAKE) -C $(KERNEL_DIR) ARCH=arm64 CROSS_COMPILE=$(CROSS_COMPILE) modules_prepare
+LINUX_VARS = PROJECT_ROOT=$(CURDIR) \
+	KERNEL_DIR=$(KERNEL_DIR) \
+	CROSS_COMPILE=$(CROSS_COMPILE) \
+	WORKDIR=$(WORKDIR) \
+	BOOTGEN=$(BOOTGEN) \
+	EDF_SDT_DIR=$(EDF_SDT_DIR) \
+	EDF_FW_DIR=$(EDF_FW_DIR)
 
-.PHONY: driver
-driver: deepsocflow/linux/driver/cgra4ml_main.c deepsocflow/linux/driver/Makefile
-	$(MAKE) -C $(KERNEL_DIR) ARCH=arm64 CROSS_COMPILE=$(CROSS_COMPILE) \
-		KBUILD_MODPOST_WARN=1 M=$(CURDIR)/deepsocflow/linux/driver modules
+kernel_prepare driver lib linux_example bundle bootgen:
+	$(MAKE) -C deepsocflow/linux $(LINUX_VARS) $@
 
-.PHONY: lib
-lib: $(WORKDIR)
-	$(MAKE) -C deepsocflow/linux/test CC=$(CROSS_COMPILE)gcc libinference.so
-	cp deepsocflow/linux/test/libinference.so $(WORKDIR)/
-
-.PHONY: linux_example
-linux_example: lib
-	$(CROSS_COMPILE)gcc -Wall -Wextra -O2 \
-		-Ideepsocflow/c \
-		-Ideepsocflow/linux/driver \
-		-Irun/work \
-		-o deepsocflow/linux/linux_example \
-		deepsocflow/linux/linux_example.c \
-		-Ldeepsocflow/linux/test -linference \
-		-Wl,-rpath,'$$ORIGIN' -lm
-
-.PHONY: bundle
-BUNDLE_DIR := deploy
-bundle: lib linux_example
-	@mkdir -p $(BUNDLE_DIR)
-	@for f in \
-		deepsocflow/linux/test/libinference.so \
-		deepsocflow/linux/linux_example \
-		deepsocflow/linux/linux_example.py \
-		deepsocflow/linux/driver/cgra4ml_drv.ko \
-		run/work/vectors/wbx.bin \
-		run/work/cgra4ml-fw; do \
-		if [ -e $$f ]; then \
-			cp -r $$f $(BUNDLE_DIR)/ && echo "  ✓ $$f"; \
-		else \
-			echo "  - $$f (not found, skipped)"; \
-		fi; \
-	done
-	@echo "\n--- deploy/ ready ---"
-	@echo "To deploy:  scp -r $(BUNDLE_DIR) $(BOARD_USER)@$(BOARD_IP):/home/$(BOARD_USER)/"
-
-.PHONY: linux
-linux: driver bundle
-	@echo "\n✓ All Linux artifacts built and ready in deploy/"
-	@echo "To deploy to board:"
-	@echo "  scp deepsocflow/linux/driver/cgra4ml_drv.ko $(BOARD_USER)@$(BOARD_IP):/tmp/"
-	@echo "  scp -r deploy $(BOARD_USER)@$(BOARD_IP):/home/$(BOARD_USER)/"
+linux:
+	$(MAKE) -C deepsocflow/linux $(LINUX_VARS) linux
 
 
-# Docker
+#----------------- DOCKER ------------------
 
 USR       := $(shell id -un)
 UID       := $(shell id -u)
