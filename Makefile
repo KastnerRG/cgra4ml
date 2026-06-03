@@ -30,6 +30,15 @@ smoke_mha: $(WORKDIR)
 smoke_mha4: $(WORKDIR)
 	cd $(WORKDIR) && python -m pytest -s ../multi_head_attention_4h.py
 
+train_sorting:
+	cd run && python sorting_transformer_train.py
+
+smoke_sorting: $(WORKDIR)
+	cd $(WORKDIR) && python -m pytest -s ../sorting_transformer.py
+
+eval_sorting:
+	cd run && python sorting_transformer_eval.py
+
 test_softmax_export: $(WORKDIR)
 	cd $(WORKDIR) && python -m pytest -s ../../tests/test_softmax_export.py
 
