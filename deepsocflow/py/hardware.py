@@ -149,40 +149,42 @@ class Hardware:
             glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axilite_wr.sv") + \
             glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_adapter_any.sv") + \
             glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_adapter.sv") + \
-            glob.glob(f"{self.MODULE_DIR}/rtl/ext/counter.sv") + \
-            glob.glob(f"{self.MODULE_DIR}/rtl/ext/n_delay.sv") + \
-            glob.glob(f"{self.MODULE_DIR}/rtl/ext/axis_pixels.sv") + \
-            glob.glob(f"{self.MODULE_DIR}/rtl/ext/proc_engine.sv") + \
-            glob.glob(f"{self.MODULE_DIR}/rtl/ext/skid_buffer.sv") + \
-            glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axilite_ram.sv") + \
-            glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axilite_rd.sv") + \
-            glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axilite_wr.sv")
+            glob.glob(f"{self.MODULE_DIR}/rtl/counter.sv") + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/n_delay.sv") + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/axis_pixels.sv") + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/proc_engine.sv") + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/skid_buffer.sv") + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/dma_controller.sv") + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/axis_weight_rotator.sv") + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/cyclic_bram.sv")
         
         self.FPGA_V_RTL = glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_pipeline_register.v") + \
             glob.glob(f"{self.MODULE_DIR}/rtl/ext/alex_axis_register.v") + \
-            glob.glob(f"{self.MODULE_DIR}/rtl/ext/dnn_engine.v") + \
-            glob.glob(f"{self.MODULE_DIR}/rtl/ext/axi_cgra4ml.v") 
+            glob.glob(f"{self.MODULE_DIR}/rtl/dnn_engine.v") + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/axi_cgra4ml.v") 
             
         # Dual Port RAM with Same Widths
-        self.FPGA_RTLSOURCES_SAME += self.FPGA_SVH_RTL + self.FPGA_SV_RTL + self.FPGA_V_RTL + \
+        self.FPGA_RTLSOURCES_SAME = self.FPGA_SVH_RTL + self.FPGA_SV_RTL + self.FPGA_V_RTL + \
             glob.glob(f"{self.MODULE_DIR}/rtl/ext/xilinx_spwf.v") + \
             glob.glob(f"{self.MODULE_DIR}/rtl/ext/dual_port_sram.sv") + \
             glob.glob(f"{self.MODULE_DIR}/rtl/ext/ram_read_wider.sv") + \
-            glob.glob(f"{self.MODULE_DIR}/rtl/ext/ram.sv")
+            glob.glob(f"{self.MODULE_DIR}/rtl/ram.sv")
         
-        self.FPGA_RTLTB_SAMEWIDTH += self.FPGA_RTLSOURCES_SAME + \
-            glob.glob(f'{self.MODULE_DIR}/fpga/rtl/tb/ext/*.v', recursive=True) + \
-            glob.glob(f'{self.MODULE_DIR}/fpga/rtl/tb/top_tb.sv')
+        self.FPGA_RTLTB_SAMEWIDTH = self.FPGA_RTLSOURCES_SAME + \
+            glob.glob(f'{self.MODULE_DIR}/firebridge/fb_axi_vip.sv') + \
+            glob.glob(f'{self.MODULE_DIR}/test/sv/ext/*.v', recursive=True) + \
+            glob.glob(f'{self.MODULE_DIR}/test/sv/top_tb.sv')
 
         # Dual Port RAM with Different Widths
         self.FPGA_RTLSOURCES_DIFF = self.FPGA_SVH_RTL + self.FPGA_SV_RTL + self.FPGA_V_RTL + \
             glob.glob(f"{self.MODULE_DIR}/rtl/ext/xilinx_spwf.v") + \
             glob.glob(f"{self.MODULE_DIR}/rtl/ext/xilinx_sdp.sv") + \
-            glob.glob(f"{self.MODULE_DIR}/rtl/ext/ram.sv") + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/ram.sv")
 
-        self.FPGA_RTLTB_DIFFWIDTH += self.FPGA_RTLSOURCES_DIFF + \
-            glob.glob(f'{self.MODULE_DIR}/fpga/rtl/tb/ext/*.v', recursive=True) + \
-            glob.glob(f'{self.MODULE_DIR}/fpga/rtl/tb/top_tb.sv')
+        self.FPGA_RTLTB_DIFFWIDTH = self.FPGA_RTLSOURCES_DIFF + \
+            glob.glob(f'{self.MODULE_DIR}/firebridge/fb_axi_vip.sv') + \
+            glob.glob(f'{self.MODULE_DIR}/test/sv/ext/*.v', recursive=True) + \
+            glob.glob(f'{self.MODULE_DIR}/test/sv/top_tb.sv')
         
         # self.PDK_DIR = os.path.normpath(os.path.dirname(deepsocflow.__file__)).replace('\\', '/')
 
@@ -201,8 +203,7 @@ class Hardware:
         #     glob.glob(f'{self.MODULE_DIR}/fpga/rtl/tb/ext/*.v', recursive=True) + \
         #     glob.glob(f'{self.MODULE_DIR}/fpga/rtl/tb/top_tb.sv')
 
-        self.DPIVIP_SOURCES = glob.glob(f"{self.MODULE_DIR}/firebridge/fb_top_verilator_wrap.cpp") + \
-            glob.glob(f"{self.MODULE_DIR}/c/sim.c")
+        self.DPIVIP_SOURCES = glob.glob(f"{self.MODULE_DIR}/c/sim.c")
         
     def export_json(self, path='./hardware.json'):
         '''
@@ -244,14 +245,14 @@ class Hardware:
         with open('sources.txt', 'w') as f:
             f.write("\n".join([os.path.normpath(s) for s in self.SOURCES]))
 
-        with open('axi_cgra4ml_src_list.sv.txt', 'w') as f:
-            f.write("\n".join([os.path.normpath(s) for s in self.ASIC_SV_SRAMS]))
+        # with open('axi_cgra4ml_src_list.sv.txt', 'w') as f:
+        #     f.write("\n".join([os.path.normpath(s) for s in self.ASIC_SV_SRAMS]))
 
-        with open('axi_cgra4ml_src_list.svh.txt', 'w') as f:
-            f.write("\n".join([os.path.normpath(s) for s in self.FPGA_SVH_RTL]))
+        # with open('axi_cgra4ml_src_list.svh.txt', 'w') as f:
+        #     f.write("\n".join([os.path.normpath(s) for s in self.FPGA_SVH_RTL]))
 
-        with open('axi_cgra4ml_src_list.v.txt', 'w') as f:
-            f.write("\n".join([os.path.normpath(s) for s in self.FPGA_V_RTL]))
+        # with open('axi_cgra4ml_src_list.v.txt', 'w') as f:
+        #     f.write("\n".join([os.path.normpath(s) for s in self.FPGA_V_RTL]))
 
         with open('config_hw.svh', 'w') as f:
             f.write(f'''
@@ -356,9 +357,9 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
         if SIM == 'xrun':
             # DPI-C and VIP C++ Model Compilation for xrun GLS Simulation
             cmd = ["gcc", "-std=c99", "-shared", "-fPIC", "-DSIM"] + \
-                  ["-I ../"] + \
-                  ["-I"  + f"{self.MODULE_DIR}/c/"] + \
-                  ["-I"  + f"{self.MODULE_DIR}/firebridge/"] + \
+                  ["-I", "../"] + \
+                  ["-I", f"{self.MODULE_DIR}/c/"] + \
+                  ["-I", f"{self.MODULE_DIR}/firebridge/"] + \
                   ["-o", "cgra4ml_firebridge_dpic.so"] + self.DPIVIP_SOURCES
             print(" ".join(cmd))
             assert subprocess.run(cmd, cwd="build").returncode == 0
@@ -378,8 +379,9 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
 
         if SIM == 'xrun':
             # Compilation  and Simulation with Cadence Xcelium
-            cmd = [ "xrun", "-sv", "-64bits", "-access +rwc", "-warn_multiple_driver"] + \
+            cmd = [ "xrun", "-sv", "-64bit", "-access +rwc", "-define XCELIUM", "-warn_multiple_driver"] + \
                   ["+incdir+../"] + \
+                  ["+incdir+" + f"{self.MODULE_DIR}/rtl/"] + \
                   ["-top", self.TB_MODULE] + self.FPGA_RTLTB_DIFFWIDTH + \
                   ["-sv_lib", "cgra4ml_firebridge_dpic.so"] + \
                   ["-l", "XRUN_COMP_SIM.log"] # FPGA RTL Simulation with Different Width SRAMs

@@ -257,7 +257,7 @@ static inline void tile_write( i32 out_val, i8 *restrict p_out_buffer, i32 ib, B
   
 }
 
-extern EXT_C void run(Memory_st *restrict mp) {
+extern EXT_C int run(Memory_st *restrict mp) {
 
   static Bundle_t *restrict pb = &bundles[0];
   static i32 it_bias=0, w_last, o_bpt;
@@ -534,6 +534,7 @@ PROCESS_AND_STORE_DONE:
   fb_write_reg32(p_config + A_BUNDLE_DONE, 1);
   } // ib
   debug_printf("done all bundles!!\n");
+  return 0;
 }
 
 

@@ -17,7 +17,7 @@ import pprint
 
 from deepsocflow import *
 
-SIM = 'xsim' if os.name=='nt' else 'verilator'
+SIM = 'xsim' if os.name=='nt' else 'xrun'
 
 '''
 Dataset
