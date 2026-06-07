@@ -335,7 +335,7 @@ def verify_inference(model, hw, SIM, SIM_PATH='', TRACE=False):
     '''
     RUN SIMULATION
     '''
-    hw.simulate(SIM=SIM, SIM_PATH=SIM_PATH, TRACE=TRACE)
+    hw.simulate(SIM=SIM, SIM_PATH=SIM_PATH, TRACE=TRACE, SIM_TYPE='asic')
 
 
     '''

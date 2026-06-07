@@ -37,6 +37,7 @@ class Hardware:
             ready_prob: float = 0.1,
             data_dir: str = 'vectors/',
             tb_module: str = 'top_tb',
+            pdk_dir: str = "/work/PDK/SAMSUNGLN05LPE"
             ):
         """
         Args:
@@ -126,8 +127,7 @@ class Hardware:
         |     self.FPGA_V_RTL           -> List of verilog files for FPGA Implementation.
         |     self.FPGA_RTLSOURCES_SAME -> List of source files for FPGA Implementation + Same Width RAMs.
         |     self.FPGA_RTLSOURCES_DIFF -> List of source files for FPGA Implementation + Different Width RAMs.
-        |     self.ASIC_SV_SRAMS        -> List of systemverilog files with SRAMs for RTL Synthesis scripts.
-        |     self.ASIC_RTL_SRAMS       -> List of source files with SRAMs for RTL Simulation scripts.(Support only Same Width Dual Port SRAMs)
+        |     self.ASIC_SV_SRAMS        -> List of systemverilog files with SRAMs for RTL Synthesis scripts.(Support only Same Width Dual Port SRAMs)
         |     self.ASIC_SYNTB           -> Synthesis Gate Level Netlist for Simulation.
         |     self.ASIC_PNRTB           -> Synthesis Gate Level Netlist for Simulation.
         |     self.FPGA_RTLTB_SAMEWIDTH -> Testbench file for FPGA RTL with same width SRAM Simulation.
@@ -138,7 +138,7 @@ class Hardware:
         |     self.ASIC_SDFSOURCES      -> List of SDF files for GLS Simulation.
         |     self.DPIVIP_SOURCES       -> List of source files for DPI-C and VIP C++ model of the accelerator, used in both FPGA and ASIC simulations.
         '''
-        
+        ################## FPGA RTL Simulation ##################
         self.FPGA_SVH_RTL = glob.glob(f"{os.getcwd()}/config_hw.svh") + \
             glob.glob(f'{self.MODULE_DIR}/rtl/defines.svh')
         
@@ -186,22 +186,22 @@ class Hardware:
             glob.glob(f'{self.MODULE_DIR}/test/sv/ext/*.v', recursive=True) + \
             glob.glob(f'{self.MODULE_DIR}/test/sv/top_tb.sv')
         
-        # self.PDK_DIR = os.path.normpath(os.path.dirname(deepsocflow.__file__)).replace('\\', '/')
+        ################## ASIC RTL Simulation ##################
+        self.PDK_DIR = pdk_dir
 
-        # self.ASIC_SV_SRAMS = self.FPGA_SV_RTL + \
-        #     glob.glob(f"{self.MODULE_DIR}/rtl/ext/xilinx_spwf.v") + \
-        #     glob.glob(f"{self.MODULE_DIR}/rtl/ext/ram.sv") + \
-        #     glob.glob(f"{self.MODULE_DIR}/rtl/ext/dual_port_sram.sv") + \
-        #     glob.glob(f"{self.MODULE_DIR}/rtl/ext/ram_read_wider.sv")
+        self.ASIC_SV_SRAMS = self.FPGA_SV_RTL + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/asic/ram.sv") + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/asic/dual_port_sram.sv") + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/ext/ram_read_wider.sv")
         
-        # self.ASIC_RTL_SRAMS = self.FPGA_SVH_RTL + self.ASIC_SV_SRAMS + self.FPGA_V_RTL
-
-        # self.ASIC_SRAMTB = self.ASIC_RTL_SRAMS + \
-        #     glob.glob(f"{self.PDK_DIR}/rtl/ext/xilinx_spwf.v") + \
-        #     glob.glob(f"{self.PDK_DIR}/rtl/ext/ram.sv") + \
-        #     glob.glob(f"{self.PDK_DIR}/rtl/ext/dual_port_sram.sv") + \
-        #     glob.glob(f'{self.MODULE_DIR}/fpga/rtl/tb/ext/*.v', recursive=True) + \
-        #     glob.glob(f'{self.MODULE_DIR}/fpga/rtl/tb/top_tb.sv')
+        # Add Foundry Behavioural Verilog Models of SRAMS
+        self.ASIC_SRAMTB = self.FPGA_SVH_RTL + self.ASIC_SV_SRAMS + self.FPGA_V_RTL + \
+            glob.glob(f"{self.PDK_DIR}/SRAMs_CGRA4ML/sram_edge/sram_edge.v") + \
+            glob.glob(f"{self.PDK_DIR}/SRAMs_CGRA4ML/sram_weight/sram_weight.v") + \
+            glob.glob(f"{self.PDK_DIR}/SRAMs_CGRA4ML/sram_dma/sram_dma.v") + \
+            glob.glob(f'{self.MODULE_DIR}/firebridge/fb_axi_vip.sv') + \
+            glob.glob(f'{self.MODULE_DIR}/test/sv/ext/*.v', recursive=True) + \
+            glob.glob(f'{self.MODULE_DIR}/test/sv/top_tb.sv')
 
         self.DPIVIP_SOURCES = glob.glob(f"{self.MODULE_DIR}/c/sim.c")
         
@@ -245,14 +245,14 @@ class Hardware:
         with open('sources.txt', 'w') as f:
             f.write("\n".join([os.path.normpath(s) for s in self.SOURCES]))
 
-        # with open('axi_cgra4ml_src_list.sv.txt', 'w') as f:
-        #     f.write("\n".join([os.path.normpath(s) for s in self.ASIC_SV_SRAMS]))
+        with open('axi_cgra4ml_src_list_sv.txt', 'w') as f:
+            f.write("\n".join([os.path.normpath(s) for s in self.ASIC_SV_SRAMS]))
 
-        # with open('axi_cgra4ml_src_list.svh.txt', 'w') as f:
-        #     f.write("\n".join([os.path.normpath(s) for s in self.FPGA_SVH_RTL]))
+        with open('axi_cgra4ml_src_list_svh.txt', 'w') as f:
+            f.write("\n".join([os.path.normpath(s) for s in self.FPGA_SVH_RTL]))
 
-        # with open('axi_cgra4ml_src_list.v.txt', 'w') as f:
-        #     f.write("\n".join([os.path.normpath(s) for s in self.FPGA_V_RTL]))
+        with open('axi_cgra4ml_src_list_v.txt', 'w') as f:
+            f.write("\n".join([os.path.normpath(s) for s in self.FPGA_V_RTL]))
 
         with open('config_hw.svh', 'w') as f:
             f.write(f'''
@@ -281,6 +281,8 @@ class Hardware:
 
 `define DELAY_MUL           3            // constant, for now 
 `define DELAY_W_RAM         1            // constant, for now 
+`define SRAM_RD_DATA_WIDTH  256
+`define AXIL_WIDTH          32
 
 `define AXI_WIDTH           {self.AXI_WIDTH          :<10}
 `define HEADER_WIDTH        {self.HEADER_WIDTH       :<10}
@@ -307,9 +309,59 @@ set AXI_WIDTH          {self.AXI_WIDTH}
 set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
 ''')
 
+    def gen_sram_specs(self):
+        import sys
+        sys.path.insert(0, os.path.join(self.MODULE_DIR, "tcl/asic/cadence/scripts"))
+        from gen_srams_spec import generate_spec
 
+        edge_bits  = self.X_BITS * (self.KH_MAX // 2)
+        axil_width = 32  # fixed in hardware
 
-    def simulate(self, SIM='verilator', SIM_PATH='', TRACE=False): #, SIM_TYPE='fpga', SIM_SRAM='same'):
+        sram_root   = os.path.join(self.PDK_DIR, "SRAMs_CGRA4ML")
+        dir_edge    = os.path.join(sram_root, "sram_edge")
+        dir_weight  = os.path.join(sram_root, "sram_weight")
+        dir_dma     = os.path.join(sram_root, "sram_dma")
+
+        os.makedirs(dir_edge,   exist_ok=True)
+        os.makedirs(dir_weight, exist_ok=True)
+        os.makedirs(dir_dma,    exist_ok=True)
+
+        generate_spec(
+            instname    = "sram_edges",
+            libname     = "SRAM_EDGES",
+            bits        = edge_bits,
+            words       = self.RAM_EDGES_DEPTH,
+            mux         = 8,
+            sram_type   = "sp",
+            compiler    = "rf_sp_hde_hvt_mvt",
+            frequency   = self.FREQ / 1000,
+            output_file = os.path.join(dir_edge, "sram_edge.spec"),
+        )
+        generate_spec(
+            instname    = "sram_weights",
+            libname     = "SRAM_WEIGHTS",
+            bits        = self.K_BITS,
+            words       = self.RAM_WEIGHTS_DEPTH,
+            mux         = 4,
+            sram_type   = "sp",
+            compiler    = "rf_sp_hde_hvt_mvt",
+            frequency   = self.FREQ / 1000,
+            output_file = os.path.join(dir_weight, "sram_weight.spec"),
+        )
+        generate_spec(
+            instname    = "sram_dma",
+            libname     = "SRAM_DMA",
+            bits        = axil_width,
+            words       = self.MAX_N_BUNDLES,
+            mux         = 1,
+            sram_type   = "2p",
+            compiler    = "rf_2p_hde_svt_mvt",
+            frequency   = self.FREQ / 1000,
+            write_mask  = "on",
+            output_file = os.path.join(dir_dma, "sram_dma.spec"),
+        )
+
+    def simulate(self, SIM='verilator', SIM_PATH='', TRACE=False, SIM_TYPE='fpga'):
 
         os.makedirs('build', exist_ok=True)
         print("\n\nCOMPILING...\n\n")
@@ -355,6 +407,9 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             assert subprocess.run(cmd.split(), cwd='build').returncode == 0
 
         if SIM == 'xrun':
+            if SIM_TYPE == 'asic':
+                print("\n\nGENERATING SRAM SPECS...\n\n")
+                self.gen_sram_specs()
             # DPI-C and VIP C++ Model Compilation for xrun GLS Simulation
             cmd = ["gcc", "-std=c99", "-shared", "-fPIC", "-DSIM"] + \
                   ["-I", "../"] + \
@@ -382,7 +437,7 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             cmd = [ "xrun", "-sv", "-64bit", "-access +rwc", "-define XCELIUM", "-warn_multiple_driver"] + \
                   ["+incdir+../"] + \
                   ["+incdir+" + f"{self.MODULE_DIR}/rtl/"] + \
-                  ["-top", self.TB_MODULE] + self.FPGA_RTLTB_DIFFWIDTH + \
+                  ["-top", self.TB_MODULE] + self.FPGA_RTLTB_SAMEWIDTH + \
                   ["-sv_lib", "cgra4ml_firebridge_dpic.so"] + \
                   ["-l", "XRUN_COMP_SIM.log"] # FPGA RTL Simulation with Different Width SRAMs
             print(" ".join(cmd))
@@ -413,3 +468,4 @@ source config_hw.tcl
 source {board_tcl_abspath}
 source {scripts_dir_abspath}/vivado.tcl
 ''')
+

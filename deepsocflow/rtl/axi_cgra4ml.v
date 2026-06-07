@@ -38,7 +38,7 @@ module axi_cgra4ml #(
                 AXI_MAX_BURST_LEN       = `AXI_MAX_BURST_LEN,
                 AXI_ADDR_WIDTH          = 32,
                 // AXI-Lite
-                AXIL_WIDTH              = 32,
+                AXIL_WIDTH              = `AXIL_WIDTH,
                 AXIL_ADDR_WIDTH         = 32,
                 STRB_WIDTH              = 4,
                 W_BPT                   = `W_BPT              
@@ -133,7 +133,7 @@ module axi_cgra4ml #(
 localparam      OUT_ADDR_WIDTH          = 10,
                 OUT_BITS                = 32,
     // Parameters for controller
-                SRAM_RD_DATA_WIDTH      = 256,
+                SRAM_RD_DATA_WIDTH      = `SRAM_RD_DATA_WIDTH,
                 SRAM_RD_DEPTH           = `MAX_N_BUNDLES,
                 COUNTER_WIDTH           = 16,
                 AXI_LEN_WIDTH           = 32,
