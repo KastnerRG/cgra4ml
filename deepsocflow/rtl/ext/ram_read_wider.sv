@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module asym_ram_sdp_read_wider2 #(
+module asym_ram_sdp_read_wider #(
   parameter int WIDTHA      = 32,
   parameter int SIZEA       = 64,
   parameter int ADDRWIDTHA  = 6,
