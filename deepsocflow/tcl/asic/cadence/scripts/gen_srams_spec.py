@@ -14,7 +14,8 @@ Usage:
 
 import argparse
 
-CORNERS = (
+# 36 corners — used when dual_rail = on
+_CORNERS_DUAL_RAIL_ON = (
     "ffpg_sigcmin_0p605v_0p825v_125c,ffpg_sigcmin_0p605v_0p825v_m40c,"
     "ffpg_sigcmin_0p715v_0p825v_125c,ffpg_sigcmin_0p715v_0p825v_m40c,"
     "ffpg_sigcmin_0p825v_0p825v_125c,ffpg_sigcmin_0p825v_0p825v_m40c,"
@@ -36,6 +37,22 @@ CORNERS = (
     "tt_nominal_0p95v_0p95v_125c,tt_nominal_0p95v_0p95v_85c"
 )
 
+# 23 corners — used when dual_rail = off
+_CORNERS_DUAL_RAIL_OFF = (
+    "ffpg_sigcmin_0p825v_0p825v_125c,ffpg_sigcmin_0p825v_0p825v_m40c,"
+    "ffpg_sigcmin_0p90v_0p90v_125c,ffpg_sigcmin_0p90v_0p90v_m40c,"
+    "ffpg_sigcmin_1p00v_1p00v_125c,ffpg_sigcmin_1p00v_1p00v_m40c,"
+    "fsg_sigrcmax_0p675v_0p675v_m40c,fsg_sigrcmax_0p765v_0p765v_m40c,"
+    "sfg_sigrcmax_0p675v_0p675v_m40c,sfg_sigrcmax_0p765v_0p765v_m40c,"
+    "sspg_sigrcmax_0p675v_0p675v_125c,sspg_sigrcmax_0p675v_0p675v_m40c,"
+    "sspg_sigrcmax_0p765v_0p765v_125c,sspg_sigrcmax_0p765v_0p765v_m40c,"
+    "sspg_sigrcmax_0p855v_0p855v_125c,sspg_sigrcmax_0p855v_0p855v_m40c,"
+    "tt_nominal_0p75v_0p75v_125c,tt_nominal_0p75v_0p75v_25c,"
+    "tt_nominal_0p75v_0p75v_85c,tt_nominal_0p85v_0p85v_125c,"
+    "tt_nominal_0p85v_0p85v_85c,tt_nominal_0p95v_0p95v_125c,"
+    "tt_nominal_0p95v_0p95v_85c"
+)
+
 # Fields present in both 2p and sp specs with the same fixed values
 _COMMON = {
     "EOL_guardband":      "0",
@@ -49,7 +66,7 @@ _COMMON = {
     "bmux":               "off",
     "bus_notation":       "on",
     "check_instname":     "on",
-    "corners":            CORNERS,
+    "corners":            _CORNERS_DUAL_RAIL_OFF,
     "cpf_rtl_gen":        "0",
     "credundancy":        "off",
     "credundancy_enable": "off",
@@ -57,10 +74,8 @@ _COMMON = {
     "cust_comment":       "",
     "diodes":             "on",
     "drive":              "6",
-    "dual_rail":          "on",
     "ema":                "on",
     "fci_type":           "not_fci",
-    "flexible_banking":   "1",
     "fra_enable":         "off",
     "full_pg":            "on",
     "left_bus_delim":     "[",
@@ -75,7 +90,7 @@ _COMMON = {
     "power_gating":       "off",
     "power_type":         "otc",
     "prefix":             "",
-    "pwr_gnd_rename":     "vddpe:VDDSOCE,vddce:VDDCE,vsse:VSSE",
+    "pwr_gnd_rename":     "vddpe:VDD,vddce:VDD,vsse:VSS",
     "ra":                 "on",
     "rcols":              "2",
     "redundancy":         "off",
@@ -136,6 +151,8 @@ def generate_spec(
     compiler=None,
     frequency=1.0,
     write_mask="off",
+    flexible_banking=1,
+    dual_rail="off",
     output_file=None,
 ):
     if sram_type not in ("2p", "sp"):
@@ -152,15 +169,20 @@ def generate_spec(
         params.update(_SP_ONLY)
         params["dest_lib_name"] = f"{compiler}_mpa"
 
+    if dual_rail == "on":
+        params["corners"] = _CORNERS_DUAL_RAIL_ON
+
     # Apply parameterized values (override defaults)
     params.update({
-        "bits":       str(bits),
-        "frequency":  str(frequency),
-        "instname":   instname,
-        "libname":    libname,
-        "mux":        str(mux),
-        "words":      str(words),
-        "write_mask": write_mask,
+        "bits":             str(bits),
+        "dual_rail":        dual_rail,
+        "flexible_banking": str(flexible_banking),
+        "frequency":        str(frequency),
+        "instname":         instname,
+        "libname":          libname,
+        "mux":              str(mux),
+        "words":            str(words),
+        "write_mask":       write_mask,
     })
 
     lines = [f"# user spec file, compiler {compiler}", ""]
@@ -197,7 +219,7 @@ def main():
     parser.add_argument("--compiler",   default=None,
                         help="Compiler name for header comment (auto-derived if omitted)")
     parser.add_argument("--frequency",  default=1.0, type=float,
-                        help="Target frequency in GHz (default: 1.0)")
+                        help="Target frequency in MHz (default: 1.0)")
     parser.add_argument("--write_mask", default="off", choices=["on", "off"],
                         help="Write mask enable (default: off)")
     parser.add_argument("--output",     required=True,

@@ -183,7 +183,7 @@ hw.export_vivado_tcl(board='zcu104')
 VERIFY & EXPORT
 '''
 export_inference(loaded_model, hw, batch_size=1)
-verify_inference(loaded_model, hw, SIM=SIM)
+verify_inference(loaded_model, hw, SIM=SIM, SIM_TYPE='asic_srams_rtl')
 
 d_perf = predict_model_performance(hw)
 pp = pprint.PrettyPrinter(indent=4)
