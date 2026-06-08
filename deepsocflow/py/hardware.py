@@ -329,25 +329,25 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
         os.makedirs(dir_dma,    exist_ok=True)
 
         generate_spec(
-            instname         = "sram_edges",
-            libname          = "SRAM_EDGES",
+            instname         = "sram_edge",
+            libname          = "SRAM_EDGE",
             bits             = edge_bits,
             words            = self.RAM_EDGES_DEPTH,
             mux              = 8,
             sram_type        = "sp",
-            compiler         = "rf_sp_hde_hvt_mvt",
+            compiler         = "rf_sp_hse_svt_mvt",
             frequency        = self.FREQ,
             flexible_banking = 2,
             output_file      = os.path.join(dir_edge, "sram_edge.spec"),
         )
         generate_spec(
-            instname         = "sram_weights",
-            libname          = "SRAM_WEIGHTS",
+            instname         = "sram_weight",
+            libname          = "SRAM_WEIGHT",
             bits             = self.K_BITS,
             words            = self.RAM_WEIGHTS_DEPTH,
             mux              = 4,
             sram_type        = "sp",
-            compiler         = "rf_sp_hde_hvt_mvt",
+            compiler         = "rf_sp_hse_svt_mvt",
             frequency        = self.FREQ,
             flexible_banking = 1,
             output_file      = os.path.join(dir_weight, "sram_weight.spec"),
@@ -359,9 +359,9 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             words            = self.MAX_N_BUNDLES,
             mux              = 1,
             sram_type        = "2p",
-            compiler         = "rf_2p_hde_svt_mvt",
+            compiler         = "rf_2p_hsc_svt_mvt",
             frequency        = self.FREQ,
-            write_mask       = "on",
+            write_mask       = "off",
             flexible_banking = 1,
             output_file = os.path.join(dir_dma, "sram_dma.spec"),
         )
@@ -447,37 +447,40 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             assert subprocess.run([f"./V{self.TB_MODULE}"], cwd="build").returncode == 0
 
         if SIM == 'xrun':
+            # Compilation  and Simulation with Cadence Xcelium
             if SIM_TYPE == 'fpga':
-                # Compilation  and Simulation with Cadence Xcelium
+                # FPGA RTL Simulation with Same Width SRAMs
                 cmd = [ "xrun"] + \
                     ["-sv", "-64bit", "-access +rwc", "-define XCELIUM", "-warn_multiple_driver"] + \
                     ["+incdir+../"] + \
                     ["+incdir+" + f"{self.MODULE_DIR}/rtl/"] + \
                     ["-top", self.TB_MODULE] + self.FPGA_RTLTB_SAMEWIDTH + \
                     ["-sv_lib", "cgra4ml_firebridge_dpic.so"] + \
-                    ["-l", "XRUN_COMP_SIM.log"] # FPGA RTL Simulation with Different Width SRAMs 
+                    ["-l", "XRUN_COMP_SIM.log"] 
             if SIM_TYPE == 'asic_srams':
-                # Compilation  and Simulation with Cadence Xcelium
+                # ASIC RTL Simulation with Same Width SRAMs Generation
                 cmd = [ "xrun"] + \
                     ["-sv", "-64bit", "-access +rwc"] + \
                     ["-define XCELIUM", "-define INITIALIZE_MEMORY", "-define ARM_UD_MODEL"] + \
+                    ["-define ARM_DISABLE_EMA_CHECK"] + \
                     ["-warn_multiple_driver"] + \
                     ["+incdir+../"] + \
                     ["+incdir+" + f"{self.MODULE_DIR}/rtl/"] + \
-                    ["-top", self.TB_MODULE] + self.FPGA_RTLTB_SAMEWIDTH + \
+                    ["-top", self.TB_MODULE] + self.ASIC_SRAMTB + \
                     ["-sv_lib", "cgra4ml_firebridge_dpic.so"] + \
-                    ["-l", "XRUN_COMP_SIM.log"] # ASIC RTL Simulation with Different Width SRAMs Generation
+                    ["-l", "XRUN_COMP_SIM.log"] 
             if SIM_TYPE == 'asic_srams_rtl':
-                # Compilation  and Simulation with Cadence Xcelium
+                # ASIC RTL Simulation with Same Width SRAMs No Generation
                 cmd = [ "xrun"] + \
                     ["-sv", "-64bit", "-access +rwc"] + \
                     ["-define XCELIUM", "-define INITIALIZE_MEMORY", "-define ARM_UD_MODEL"] + \
+                    ["-define ARM_DISABLE_EMA_CHECK"] + \
                     ["-warn_multiple_driver"] + \
                     ["+incdir+../"] + \
                     ["+incdir+" + f"{self.MODULE_DIR}/rtl/"] + \
-                    ["-top", self.TB_MODULE] + self.FPGA_RTLTB_SAMEWIDTH + \
+                    ["-top", self.TB_MODULE] + self.ASIC_SRAMTB + \
                     ["-sv_lib", "cgra4ml_firebridge_dpic.so"] + \
-                    ["-l", "XRUN_COMP_SIM.log"] # ASIC RTL Simulation with Different Width SRAMs No Generation
+                    ["-l", "XRUN_COMP_SIM.log"] 
             print(" ".join(cmd))
             assert subprocess.run(cmd, cwd="build").returncode == 0
 
