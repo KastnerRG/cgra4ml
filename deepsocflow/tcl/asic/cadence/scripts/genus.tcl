@@ -1,7 +1,14 @@
+##################################################################
+#  Run genus -lic_startup Genus_Synthesis                        #
+#  -lic_startup_options "Genus_Low_Power_Opt Genus_Physical_Opt" #
+#  -abort_on_error -files genus.tcl                              #
+##################################################################
+
 #################################################################
-#           DEFINE THE NAME OF THE TOPLEVEL DESIGN              #
+#           Define the names of the top level design            #
 #              and variables specific to this run               #
 #################################################################
+
 set design(TOPLEVEL) "axi_cgra4ml"
 set runtype "synthesis"
 set debug_file "debug.genus.txt"
@@ -16,6 +23,7 @@ source ../../tcl/asic/scripts/cadence.procedures.tcl -quiet
 uom_start_stage "loading_basic_settings"
 
 # Load the specific definitions for this project
+source config_hw.tcl -quiet
 source ../../tcl/asic/inputs/cadence.$design(TOPLEVEL).defines -quiet
 
 # Load general settings
@@ -122,6 +130,31 @@ check_timing_intent > $design(synthesis_reports)/1_post_elaboration/check_timing
 # ----------------------
 write_design -base_name $design(dbs_dir)/synthesis/1_post_elaboration/$design(TOPLEVEL)
 
+#####################################################################################
+#### Retime
+#####################################################################################
+
+# set rt_modules {module:<design_name>/<module name1> module:<design_name>/<module name2> module:<design_name>/<module name3>}
+# foreach mod $rt_modules {
+#   set_db $mod .retime true 
+#   ####Uncomment to prevent registers from being moved across the module boundaries (also best for LEC)
+#   ##set_db $mod .retime_hard_region true
+#   ####Uncomment to minimize issues with Conformal LEC
+#   ##set_db $mod .boundary_opto false
+# }
+# ####Setting 'retime' attribute on the top-level as shown below 
+# ####is not recommended due to possible verification/ECO issues unless for very small designs
+# ##set_db "design:$DESIGN" .retime true   
+
+# ####set dont_retime on registers which should not be retimed
+# set dont_rt_flops "inst:<path_to_myflop1> inst:<path_to_myflop2> inst:<path_to_myflop3> ..."
+# foreach rtf $rt_flops {
+#   set_db $rtf .dont_retime true
+# }
+# # Enable verification flow 
+# set_db / .retime_verification_flow true 
+
+
 #################################################################
 #                    For iSpatial Flow	                        #
 #################################################################
@@ -159,13 +192,17 @@ set_db number_of_routing_layers $METAL_LAYERS
 
 if {$phys_synth_type == "floorplan"} {
     # Set Synthesis Efforts
-    set_db syn_generic_effort           high    ; # low|medium|high
-    set_db syn_map_effort               high    ; # low|medium|high
-    set_db syn_opt_effort               extreme ; # low|medium|high|extreme
+    set_db syn_generic_effort           $syn_generic_effort 
+    set_db syn_map_effort               $syn_mapping_effort    
+    set_db syn_opt_effort               $syn_optimize_effort 
 
-    set_db opt_spatial_effort           extreme ; # legacy|standard|extreme
-    set_db opt_leakage_to_dynamic_ratio 1.0
-    set_db design_power_effort          high    ; # none|low|high
+    set_db opt_spatial_effort           $opt_spatial_effort 
+    set_db congestion_effort            $congestion_effort 
+
+    if {$low_power_enabled == "yes"} {
+        set_db opt_leakage_to_dynamic_ratio $opt_leak_to_dyn_ratio
+        set_db design_power_effort          $design_power_effort
+    }
 
     # Synthesize to generics and place generics in floorplan
     uom_start_stage "syn_generic_ispatial_flow"
@@ -189,15 +226,29 @@ if {$phys_synth_type == "floorplan"} {
     # Synthesize to generics and place generics in floorplan
     uom_start_stage "syn_generic_rtl_flow"
     syn_generic 
+time_info GENERIC
+write_snapshot -outdir $_REPORTS_PATH -tag generic
+report_summary -directory $_REPORTS_PATH
+report_dp > $_REPORTS_PATH/generic/${DESIGN}_datapath.rpt
 
     # Map technology
     uom_start_stage "3_technology_mapping_rtl_flow"
     syn_map 
     uom_report_timing $design(synthesis_reports)
+write_snapshot -outdir $_REPORTS_PATH -tag map
+report_summary -directory $_REPORTS_PATH
+time_info MAPPED
+report_dp > $_REPORTS_PATH/map/${DESIGN}_datapath.rpt
+    write_do_lec -revised_design fv_map -cpf_revised $cpf_file  -logfile ${_LOG_PATH}/rtl2intermediate.lec.log > ${_OUTPUTS_PATH}/rtl2intermediate.lec.do
 
     # Post synthesis optimization
     uom_start_stage "4_post_syn_opt_rtl_flow"
-    syn_opt
+    
+# set_db / .invs_temp_dir ${_OUTPUTS_PATH}/genus_invs_pred 
+# syn_opt -spatial
+# ## generate reports to save the encounter stats
+# write_snapshot -innovus -outdir $_REPORTS_PATH -tag syn_opt_physical 
+# report_summary -outdir $_REPORTS_PATH
 }
 
 #################################################################
@@ -218,6 +269,9 @@ foreach rpt $post_synth_reports {
     $rpt > "$design(synthesis_reports)/$this_run(stage)/${rpt}.rpt"
 }
 
+report_dp > $_REPORTS_PATH/${DESIGN}_datapath_incr.rpt
+report messages > $_REPORTS_PATH/${DESIGN}_messages.rpt
+report_gates -yield > $_REPORTS_PATH/${DESIGN}_gates_yeild.rpt
 #################################################################
 #                     Exporting the Design                      #
 #################################################################
@@ -256,4 +310,17 @@ if {$phys_synth_type == "floorplan"} {
     uom_message "Writing the post synthesis SDF"
     write_sdf > $design(postsyn_sdf_rtl_flow)
 }
+
+
+######################################################################################################
+## Final: write Innovus file set (verilog, SDC, config, etc.)
+######################################################################################################
+
+# write_snapshot -innovus -outdir $_REPORTS_PATH -tag final_physical 
+# report_summary -directory $_REPORTS_PATH
+
+## write_hdl  > ${_OUTPUTS_PATH}/${DESIGN}_m.v
+## write_script > ${_OUTPUTS_PATH}/${DESIGN}_m.script
+## write_sdc > ${_OUTPUTS_PATH}/${DESIGN}_m.sdc
+
 uom_message "!!!!!!!!!!!!!!!!!!! Genus Synthesis Successful !!!!!!!!!!!!!!!!!!!!!"

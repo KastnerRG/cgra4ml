@@ -366,21 +366,40 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             output_file = os.path.join(dir_dma, "sram_dma.spec"),
         )
 
-    def simulate(self, SIM='verilator', SIM_PATH='', TRACE=False, SIM_TYPE='fpga'):
+    def simulate(self, SIM='verilator', SIM_PATH='', TRACE=False, SIM_TYPE='fpga', SRAM_GEN=False):
 
         os.makedirs('build', exist_ok=True)
         print("\n\nCOMPILING...\n\n")
 
+        # SRAM Generation for ASIC RTL & GLS Simulation with SRAMs
+        # !!!!!!!!!!!!! Very first SRAM generation and ASIC rtl simulation can lead to errors in the simulation. 
+        # In that case, try running the ASIC RTL Simulation with SRAM_GEN=False !!!!!!!!!!!!!
+
+        if SRAM_GEN == True:
+            print("\n\nGENERATING SRAMs.....\n\n")
+            self.gen_sram_specs()
+            start = time.time()
+            cmd = ["chmod", "+x", self.SRAMGEN_BASH]
+            print(" ".join(cmd))
+            assert subprocess.run(cmd, cwd="build").returncode == 0
+            cmd = [self.SRAMGEN_BASH]
+            print(" ".join(cmd))
+            assert subprocess.run(cmd, cwd="build").returncode == 0
+            print(f"\n\nSRAMS GENERATION TIME: {time.time()-start:.2f} seconds\n\n")
+
+        ####### Vivado Simulator ########
         if SIM == 'xsim':
             assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xsc {self.MODULE_DIR}/c/sim.c --gcc_compile_options -I../ --gcc_compile_options -I{self.MODULE_DIR}/firebridge/ --gcc_compile_options -DSIM --gcc_compile_options -DFB_MODULE=fb_axi_vip --gcc_compile_options -DTB_MODULE={self.TB_MODULE}').returncode == 0
             assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xvlog -sv -f ../sources.txt -i ../  -i {self.MODULE_DIR}/rtl/').returncode == 0
             assert subprocess.run(cwd="build", shell=True, args=fr'{SIM_PATH}xelab {self.TB_MODULE} --snapshot {self.TB_MODULE} -log elaborate.log --debug typical -sv_lib dpi').returncode == 0
 
+        ####### ICARUS Simulator ########  
         if SIM == 'icarus':
             cmd = [ "iverilog", "-v", "-g2012", "-o", "build/a.out", "-I", "sv", "-s", self.TB_MODULE] + self.SOURCES
             print(" ".join(cmd))
             assert subprocess.run(cmd).returncode == 0
 
+        ####### Verilator Simulator ########  
         if SIM == "verilator":
             trace = '--trace' if TRACE else ''
             cmd = [
@@ -412,18 +431,6 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             assert subprocess.run(cmd.split(), cwd='build').returncode == 0
 
         if SIM == 'xrun':
-            # SRAM Generation for ASIC RTL & GLS Simulation with SRAMs
-            if SIM_TYPE == 'asic_srams':
-                print("\n\nGENERATING SRAMs.....\n\n")
-                self.gen_sram_specs()
-                start = time.time()
-                cmd = ["chmod", "+x", self.SRAMGEN_BASH]
-                print(" ".join(cmd))
-                assert subprocess.run(cmd, cwd="build").returncode == 0
-                cmd = [self.SRAMGEN_BASH]
-                print(" ".join(cmd))
-                assert subprocess.run(cmd, cwd="build").returncode == 0
-                print(f"\n\nSRAMS GENERATION TIME: {time.time()-start:.2f} seconds\n\n")
             # DPI-C and VIP C++ Model Compilation for xrun RTL & GLS Simulation
             cmd = ["gcc", "-std=c99", "-shared", "-fPIC", "-DSIM"] + \
                   ["-I", "../"] + \
@@ -457,19 +464,8 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
                     ["-top", self.TB_MODULE] + self.FPGA_RTLTB_SAMEWIDTH + \
                     ["-sv_lib", "cgra4ml_firebridge_dpic.so"] + \
                     ["-l", "XRUN_COMP_SIM.log"] 
-            if SIM_TYPE == 'asic_srams':
-                # ASIC RTL Simulation with Same Width SRAMs Generation
-                cmd = [ "xrun"] + \
-                    ["-sv", "-64bit", "-access +rwc"] + \
-                    ["-define XCELIUM", "-define INITIALIZE_MEMORY", "-define ARM_UD_MODEL"] + \
-                    ["-define ARM_DISABLE_EMA_CHECK"] + \
-                    ["-warn_multiple_driver"] + \
-                    ["+incdir+../"] + \
-                    ["+incdir+" + f"{self.MODULE_DIR}/rtl/"] + \
-                    ["-top", self.TB_MODULE] + self.ASIC_SRAMTB + \
-                    ["-sv_lib", "cgra4ml_firebridge_dpic.so"] + \
-                    ["-l", "XRUN_COMP_SIM.log"] 
-            if SIM_TYPE == 'asic_srams_rtl':
+
+            if SIM_TYPE == 'asic_rtl':
                 # ASIC RTL Simulation with Same Width SRAMs No Generation
                 cmd = [ "xrun"] + \
                     ["-sv", "-64bit", "-access +rwc"] + \

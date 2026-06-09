@@ -115,3 +115,6 @@ set tech(INPUT_SLEW)        0.00108
 #     lappend tech_files(ALL_WC_AOCV_LIBS) $tech_files(AOCV_STD_CELL_HVT_WC_LIB)
 # set tech_files(AOCV_STD_CELL_HVT_TC_LIB) "$paths(AOCV_Paths)/sc9mcpp140z_cln28ht_base_ulvt_c35_tt_ctypical_max_1p05v_85c_7pct.aocv3"
 #     lappend tech_files(ALL_TC_AOCV_LIBS) $tech_files(AOCV_STD_CELL_HVT_TC_LIB)
+
+# Low Power
+# set_db "design:$DESIGN" .lp_clock_gating_cell [vfind /lib* -lib_cell <cg_libcell_name>]

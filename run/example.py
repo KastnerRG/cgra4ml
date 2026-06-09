@@ -153,7 +153,7 @@ Specify Hardware
 '''
 hw = Hardware (                          # Alternatively: hw = Hardware.from_json('hardware.json')
         processing_elements = (8, 24)  , # (rows, columns) of multiply-add units
-        frequency_mhz       = 250      , #  
+        frequency_mhz       = 1000     , #  
         bits_input          = 4        , # bit width of input pixels and activations
         bits_weights        = 4        , # bit width of weights
         bits_sum            = 20       , # bit width of accumulator
@@ -183,7 +183,7 @@ hw.export_vivado_tcl(board='zcu104')
 VERIFY & EXPORT
 '''
 export_inference(loaded_model, hw, batch_size=1)
-verify_inference(loaded_model, hw, SIM=SIM, SIM_TYPE='asic_srams_rtl')
+verify_inference(loaded_model, hw, SIM=SIM, SIM_TYPE='asic_rtl', SRAM_GEN=False)
 
 d_perf = predict_model_performance(hw)
 pp = pprint.PrettyPrinter(indent=4)

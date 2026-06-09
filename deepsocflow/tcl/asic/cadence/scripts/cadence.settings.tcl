@@ -5,16 +5,58 @@ set_db source_verbose true ; #Sourcing files will be re.
 
 # Attributes that only Genus understands...
 if {$runtype == "synthesis"} {
-    set_db information_level        9 ; # The log file will rep.
-    set_db hdl_max_loop_limit       100000
-    set_db max_cpus_per_server      50
-    set_db retime_async_reset       true
-    set_db hdl_language v2001       -quiet
-    set_db lp_insert_clock_gating   false
-    set_db detailed_sdc_messages    true ; # helps read_sdc
+    # Genus Settings
+    set_db information_level             9 ; # The log file will rep.
+    set_db hdl_max_loop_limit            100000
+    set_db max_cpus_per_server           8
+
+    # HDL & SDC debug Settings
+    set_db hdl_language v2001            -quiet
+    set_db detailed_sdc_messages         true ; # helps read_sdc
+
+    # Retime Settings
+    set_db retime_reg_naming_suffix      __retimed_reg
+    set_db retime_async_reset            true
+
+    # Innovus Executable Settings
+    set_db innovus_executable            $env(INNOVUS)   ; # Set path to innovus executable to used by syn_opt -spatial
+
+    # Conformal Lint Settings
+    set_db  hdl_array_naming_style %s\[%d\] ; # generates <signal>_reg[<bit_width>] format
+
+    # Low Power Settings
+    if {$low_power_enabled == "yes"} {
+        set opt_leak_to_dyn_ratio        0.5  ; # 0.0 to 1.0
+        set design_power_effort          high ; # low|medium|high  
+
+        set_db qos_report_power true 
+        set_db time_recovery_arcs true
+        set_db timing_use_ecsm_pin_capacitance true
+        set_db dp_area_mode true 
+
+        #set_db  lp_clock_gating_prefix <string>
+        set_db lp_insert_clock_gating    true
+        #set_db  lp_power_unit mW 
+        #set_db  lp_toggle_rate_unit /ns 
+        set_db   hdl_track_filename_row_col true
+
+    }
+    
+    # DFM & DFT settings
     if {$design(HAS_SCAN) == "no"} {
         set_db use_scan_seqs_for_non_dft false
+        #set_db "design:$DESIGN" .lp_clock_gating_test_signal <test_signal_object> 
+        set_db / .optimize_yield true 
+        read_dfm <yeild coefficient file.>
     }
+
+    # Synthesis and ispatial settings
+    set syn_generic_effort            high    ; # low|medium|high
+    set syn_mapping_effort            high    ; # low|medium|high
+    set syn_optimize_effort           extreme ; # low|medium|high|extreme
+    set opt_spatial_effort            extreme ; # legacy|standard|extreme 
+    set congestion_effort             medium  ; # low|medium|high
+
 }
 
 ###################################
