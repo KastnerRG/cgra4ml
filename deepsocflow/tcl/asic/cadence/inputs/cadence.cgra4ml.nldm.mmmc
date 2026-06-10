@@ -10,11 +10,20 @@
 #                                                                 | --> RC Corner --> Captbl File
 #########################################################################################################################
 
-# Constraint Modes #
-# ---------------- #
-create_constraint_mode \
-    -name functional_mode \
-    -sdc_files $design(functional_sdc)
+# Operating Conditions Sets #
+# ------------------------- #
+create_opcond \
+    -name opcond_bc \
+    -process 1 -voltage $tech(VOLTAGE_BC) -temperature $tech(TEMPERATURE_BC)
+
+create_opcond \
+    -name opcond_tc \
+    -process 1 -voltage $tech(VOLTAGE_TC) -temperature $tech(TEMPERATURE_TC)
+
+create_opcond \
+    -name opcond_wc \
+    -process 1 -voltage $tech(VOLTAGE_WC) -temperature $tech(TEMPERATURE_WC) 
+
 
 # Library Sets #
 # ------------ #
@@ -34,32 +43,35 @@ create_library_set \
 # ----------------- #
 create_timing_condition \
     -name        bc_timing_condition \
+    -opcond      opcond_bc \
     -library_sets bc_libset
 
 create_timing_condition \
     -name        tc_timing_condition \
+    -opcond      opcond_tc \
     -library_sets tc_libset
 
 create_timing_condition \
     -name        wc_timing_condition \
+    -opcond      opcond_wc \
     -library_sets wc_libset
 
-# RC Corners #
+# RC Corner #
 # ---------- #
 create_rc_corner \
     -name bc_rc_corner \
     -temperature $tech(TEMPERATURE_BC) \
-    -cap_table $tech_files(CAPTABLE_BC)
+    -qrc_tech $tech_files(QRC_NOMINAL)
 
 create_rc_corner \
     -name tc_rc_corner \
     -temperature $tech(TEMPERATURE_TC) \
-    -cap_table $tech_files(CAPTABLE_TC)
+    -qrc_tech $tech_files(QRC_NOMINAL)
 
 create_rc_corner \
     -name wc_rc_corner \
     -temperature $tech(TEMPERATURE_WC) \
-    -cap_table $tech_files(CAPTABLE_WC)
+    -qrc_tech $tech_files(QRC_NOMINAL)
 
 # Delay Corners #
 # ------------- #
@@ -77,6 +89,12 @@ create_delay_corner \
     -name wc_dly_corner \
     -timing_condition wc_timing_condition \
     -rc_corner wc_rc_corner
+
+# Constraint Modes #
+# ---------------- #
+create_constraint_mode \
+    -name functional_mode \
+    -sdc_files $design(functional_sdc)
 
 # Analysis Views #
 # -------------- #

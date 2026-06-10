@@ -9,8 +9,13 @@ if {$runtype == "synthesis"} {
     set_db information_level             9 ; # The log file will rep.
     set_db hdl_max_loop_limit            100000
     set_db max_cpus_per_server           8
+    set_db lp_power_unit mW 
+
+    # Library and Lef Settings
+    set_db error_on_lib_lef_pin_inconsistency true
 
     # HDL & SDC debug Settings
+    set_db gen_module_prefix             GEN_MOD_
     set_db hdl_language v2001            -quiet
     set_db detailed_sdc_messages         true ; # helps read_sdc
 
@@ -20,25 +25,33 @@ if {$runtype == "synthesis"} {
 
     # Innovus Executable Settings
     set_db innovus_executable            $env(INNOVUS)   ; # Set path to innovus executable to used by syn_opt -spatial
+    set_db invs_temp_dir                 $design(innovus_dir)
+    set_db invs_postexport_report_script "design(workdir)/invs_postexport_report_script.tcl"
 
+    # Floorplan debug settings
+    set_db message:PHYS-171 .severity Error; # Components not present in netlist
+    set_db message:PHYS-197 .severity Error; # Large instance in netlist with no placement
+    set_db fail_on_error_mesg         true
+    set_db find_fuzzy_match           true
+    
     # Conformal Lint Settings
-    set_db  hdl_array_naming_style %s\[%d\] ; # generates <signal>_reg[<bit_width>] format
+    set_db verification_directory_naming_style conformal_lec_dir/%s
 
     # Low Power Settings
+    set opt_leak_to_dyn_ratio  0.5  ; # 0.0 to 1.0
+
     if {$low_power_enabled == "yes"} {
-        set opt_leak_to_dyn_ratio        0.5  ; # 0.0 to 1.0
-        set design_power_effort          high ; # low|medium|high  
+        set design_power_effort                high ; # low|medium|high  
 
-        set_db qos_report_power true 
-        set_db time_recovery_arcs true
+        set_db qos_report_power                true 
+        set_db time_recovery_arcs              true
         set_db timing_use_ecsm_pin_capacitance true
-        set_db dp_area_mode true 
+        set_db dp_area_mode                    true 
 
-        #set_db  lp_clock_gating_prefix <string>
-        set_db lp_insert_clock_gating    true
-        #set_db  lp_power_unit mW 
-        #set_db  lp_toggle_rate_unit /ns 
-        set_db   hdl_track_filename_row_col true
+        set_db lp_clock_gating_prefix          lp_clk_gate
+        set_db lp_insert_clock_gating          true
+        set_db lp_toggle_rate_unit             /ns 
+        set_db hdl_track_filename_row_col      true ; # This will impact runtime and memory
 
     }
     
@@ -50,12 +63,22 @@ if {$runtype == "synthesis"} {
         read_dfm <yeild coefficient file.>
     }
 
+    
+    # Remove multibit if timing is critical. This reduces power and area.
+    set_db use_multibit_cells         true
+    set_db multibit_aware_seq_mapping true
+
+    # To use timing recovery arc for async reset
+    set_db time_recovery_arcs true
+
     # Synthesis and ispatial settings
     set syn_generic_effort            high    ; # low|medium|high
     set syn_mapping_effort            high    ; # low|medium|high
     set syn_optimize_effort           extreme ; # low|medium|high|extreme
     set opt_spatial_effort            extreme ; # legacy|standard|extreme 
     set congestion_effort             medium  ; # low|medium|high
+    set opt_spatial_merge_flops         
+    set opt_spatial_restructuring 
 
 }
 

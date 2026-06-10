@@ -193,6 +193,7 @@ proc krg_report_setup_timing {{reports_path "../asic/reports/cadence/"}} {
 
     foreach cg $design(cost_groups) {
         if {$runtype == "synthesis"} {
+            # Add report_timing -fields column_list
             report_timing -max_paths 100 -group [get_db cost_groups -match $cg] \
                 > "${reports_path}/$this_run(stage)/${cg}.setup.timing.rpt"
         } elseif {$runtype == "pnr"} {
@@ -245,6 +246,7 @@ proc krg_create_stage_reports {{args ""}} {
         -report_gates       no
         -report_area        no
         -check_design_rules no
+        -report_memory      no
         -help               0   }
 
     while {[llength $args]} {
@@ -260,6 +262,7 @@ proc krg_create_stage_reports {{args ""}} {
             -*gates*        {set args [lassign $args - options(-report_gates)]}
             -*area*         {set args [lassign $args - options(-report_area)]}
             -*design_rule*  {set args [lassign $args - options(-check_design_rules)]}
+            -*memory*       {set args [lassign $args - options(-report_memory)]}
             -*help*         {set args [lassign $args - options(-help)]; set args [lrange $args 1 end]}
             default break
         }
@@ -357,6 +360,15 @@ proc krg_create_stage_reports {{args ""}} {
         krg_message "Completed design rules reports for stage: $this_run(stage)" low
     }
 
+    if { $options(-report_memory) eq "yes" } {
+        krg_message "Starting to create design rules reports for stage: $this_run(stage)" low
+        mkdir -pv $design(reports_dir)/$runtype
+        set rpt_proc_dir $design(reports_dir)/$runtype
+        report_memory > $rpt_proc_dir/${stage_prefix}_memory_utilization.rpt
+        krg_message "Completed design rules reports for stage: $this_run(stage)" low
+    }
+    write_report is needed before report_summary
+    run_parallel_commands -queue...... not working for write_snapshot write_reports reprot_runtime
     if {$options(-help)} {
         help
     }
@@ -386,12 +398,11 @@ proc krg_create_sdc_file {} {
         puts $df {create_clock -period $design(clock_period_list) -name $design(clock_list) [get_ports $design(clock_port_list)]}
         puts $df {set_clock_uncertainty $design(CLOCK_UNCERTAINTY) $design(clock_list)}
     }
-    
+    puts $df {set_false_path    [get_ports $design(RST_PORT)]}
     puts $df "\n"
 
     if {$runtype == "synthesis"} {
         puts $df {set_ideal_network [get_ports $design(clock_port_list)]}
-        puts $df {set_ideal_network [get_ports $design(RST_PORT)]}
         puts $df "\n"
     }
 
@@ -399,7 +410,7 @@ proc krg_create_sdc_file {} {
     puts $df "#################################"
     puts $df "#       IO Constraints          #"
     puts $df "#################################"
-    puts $df {set_input_delay -clock $design(CLK_NAME) $design(INPUT_DELAY) \}
+    puts $df {set_input_delay -clock $design(CLK_NAME) $design(INPUT_DELAY) \ }
     puts $df {       [remove_from_collection [all_inputs] $design(CLK_PORT) $design(RST_PORT)]}
     puts $df {set_output_delay -clock $design(CLK_NAME) $design(OUTPUT_DELAY) [all_outputs]}
 
@@ -419,13 +430,17 @@ proc krg_create_sdc_file {} {
     puts $df "#################################"
     puts $df "#       DRV Constraints         #"
     puts $df "#################################"
-    puts $df {set_max_fanout         $design(MAX_FANOUT)                   [current_design]}
+    # puts $df {set_max_fanout         $design(MAX_FANOUT)                   [current_design]}
     puts $df {set_max_transition     $design(MAX_TRANSITION)               [current_design]}
-    puts $df {set_max_capacitance    $design(MAX_CAPACITANCE)              [current_design]}
-    puts $df {set_max_transition     $clk_leaf_skew            -clock_path [all_clocks]}
-    puts $df {set_max_capacitance    $clk_cap                  -clock_path [all_clocks]}"
+    # puts $df {set_max_capacitance    $design(MAX_CAPACITANCE)              [current_design]}
 
     puts $df "\n"
-addd disablljgugiugigig
+
+    puts $df "#################################"
+    puts $df "#      Design Constraints       #"
+    puts $df "#################################"
+    puts $df "foreach srams \$design(SRAM_LIST_FULL) \{  "
+    puts $df {    set_disable_timing $srams -from [get_db $srams .pins -if {.base_name == CLKA}] -to [get_db $srams .pins -if {.base_name == CLKB}] }
+    puts $df "    set_disable_timing \$srams -from [get_db \$srams .pins -if {.base_name == CLKA}] -to [get_db \$srams .pins -if {.base_name == CLKB}] \} "
     close $df
 }

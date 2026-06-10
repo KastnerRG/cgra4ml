@@ -47,17 +47,15 @@ if {$design(HAS_SCAN) == "no"} {
 #               SDC Settings
 ################################################
 # IO Constraints
-set design(INPUT_DELAY)      [expr $design(CLK_PERIOD)/4.0]
-set design(OUTPUT_DELAY)     [expr $design(CLK_PERIOD)/4.0]
-set design(INPUT_TRANSITION) [expr $design(CLK_PERIOD)/5.0] ; # Maximum Transition Time according Liberty Data sheet = min(20% of Clock, Max transition characterized on Table)
+set design(INPUT_DELAY)       [expr $design(CLK_PERIOD)/4.0]
+set design(OUTPUT_DELAY)      [expr $design(CLK_PERIOD)/4.0]
+set design(INPUT_TRANSITION)  [expr $design(CLK_PERIOD)/5.0] ; # Maximum Transition Time according Liberty Data sheet = min(20% of Clock, Max transition characterized on Table)
 
 # Clock Constraints
-set design(CLOCK_UNCERTAINTY)     0.125 ; # In ns for SDC (will appear in ps for get_db)
+set design(CLOCK_UNCERTAINTY)  0.125 ; # In ns for SDC (will appear in ps for get_db)
 
 # DRV Constraints
-# set design(MAX_FANOUT)     16
-# set design(MAX_TRANSITION) 0.35 ; # In ns for SDC (will appear in ps for get_db)
-# set design(MAX_CAPACITANCE) ; # In pF for SDC (will appear in fF for get_db)
+# set design(MAX_TRANSITION)   [expr $design(CLK_PERIOD)/5.0] ; # Maximum Transition Time according Liberty Data sheet = min(20% of Clock, Max transition characterized on Table)
 
 # Routing Constraints
 set design(MIN_ROUTE_LAYER) M1
@@ -66,25 +64,26 @@ set design(MAX_ROUTE_LAYER) M8
 ################################################
 #               Files and Paths
 ################################################
-set env(INNOVUS)                                 "/tools/cadence/DDI231/bin"                           
+set env(INNOVUS)                                 "/tools/cadence/DDI231/bin"   
+set design(innovus_dir)                          "$env(PWD)/innovus_start_dir"                        
 
 set design(workdir)                              $env(PWD)
-set design(project_root)                         "$env(PWD)/../../deepsocflow"
+set design(project_root)                         "$env(PWD)/../../../deepsocflow"
 set design(asic_root)                            "$design(project_root)/tcl/asic"
 set design(inputs_dir)                           "$design(asic_root)/inputs"
 set design(libraries_dir)                        "$design(asic_root)/libraries"
 
 set design(hdl_search_paths)                     [list $env(PWD) "$design(project_root)/rtl" "$design(project_root)/rtl/ext"]
-set design(read_svh_hdl_list)                    "$design(workdir)/$design(TOPLEVEL)_src_list.svh.txt"
-set design(read_sv_hdl_list)                     "$design(workdir)/$design(TOPLEVEL)_src_list.sv.txt"
-set design(read_v_hdl_list)                      "$design(workdir)/$design(TOPLEVEL)_src_list.v.txt"
-set design(testbench_dir)                        "$design(project_root)/tb"
+set design(read_svh_hdl_list)                    "$design(workdir)/$design(TOPLEVEL)_src_list_svh.txt"
+set design(read_sv_hdl_list)                     "$design(workdir)/$design(TOPLEVEL)_src_list_sv.txt"
+set design(read_v_hdl_list)                      "$design(workdir)/$design(TOPLEVEL)_src_list_v.txt"
+
 set design(scripts_dir)                          "$design(asic_root)/scripts"
 set design(reports_dir)                          "$design(asic_root)/reports/cadence"
+
 set design(export_dir)                           "$design(workdir)/cadence/exports"
 set design(dbs_dir)                              "$design(workdir)/cadence/dbs"
-set design(synthesis_reports)                    "$design(reports_dir)/synthesis"
-set design(pnr_reports)                          "$design(reports_dir)/pnr"
+
 set design(functional_sdc)                       "$design(inputs_dir)/cadence.$design(TOPLEVEL).sdc"
 
 set design(postsyn_netlist_ispatial)             "$design(export_dir)/cadence/$design(TOPLEVEL)_ispatial.postsyn.v"
@@ -112,14 +111,16 @@ set design(clock_tree_spec)                      "$design(inputs_dir)/cadence.$d
 #               MMMC
 ################################################
 if { $runtype == "synthesis" } {
-    set design(selected_setup_analysis_views) wc_analysis_view
-    set design(selected_hold_analysis_views)  bc_analysis_view
+    set design(selected_setup_analysis_views)      wc_analysis_view
+    set design(selected_hold_analysis_views)       bc_analysis_view
 } elseif { $runtype == "pnr" } {
-    set design(selected_setup_analysis_views) "wc_analysis_view tc_analysis_view"
-    set design(selected_hold_analysis_views)  "bc_analysis_view tc_analysis_view"
+    set design(selected_setup_analysis_views)      "wc_analysis_view tc_analysis_view"
+    set design(selected_hold_analysis_views)       "bc_analysis_view tc_analysis_view"
 }
 
-set design(selected_power_analysis_views) "wc_analysis_view"
+#set design(selected_power_analysis_views)         "wc_analysis_view"
+#set design(selected_leakage_analysis_views)       "wc_analysis_view"
+#set design(selected_dynamic_power_analysis_views) "wc_analysis_view"
 
 ################################################
 #               Global Nets
