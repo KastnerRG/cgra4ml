@@ -9,7 +9,7 @@ set low_power_enabled       "no"
 set mmmc_or_simple          "mmmc";         # "simple"    - using "read_lib"
                                             # "mmmc"      - using "read_mmmc"
 set phys_synth_type         "lef" ;         # "none"      - don't read any tech files
-                                            # "lef"       - only read lef - RTL Floorplaning Flow
+                                            # "lef"       - only read lef - RTL Floorplaning Flow with iSpatial
                                             # "floorplan" - read in DEF - iSpatial Flow
 set timing_lib_type         "nldm";         # "nldm"      - Non Linear Model Libs 
                                             # "ccs_ocv"   - CCS, LVF and AOCV libs
@@ -65,7 +65,8 @@ set design(MAX_ROUTE_LAYER) M8
 #               Files and Paths
 ################################################
 set env(INNOVUS)                                 "/tools/cadence/DDI231/bin"   
-set design(innovus_dir)                          "$env(PWD)/innovus_start_dir"                        
+set design(innovus_dir)                          "$env(PWD)/innovus_dir"  
+set design(conformal_dir)                        "$env(PWD)/conformal_dir"                   
 
 set design(workdir)                              $env(PWD)
 set design(project_root)                         "$env(PWD)/../../../deepsocflow"
@@ -86,13 +87,13 @@ set design(dbs_dir)                              "$design(workdir)/cadence/dbs"
 
 set design(functional_sdc)                       "$design(inputs_dir)/cadence.$design(TOPLEVEL).sdc"
 
+set design(postsyn_lec_netlist_ispatial)         "$design(export_dir)/cadence/$design(TOPLEVEL)_ispatial.postsyn.lec.v"
 set design(postsyn_netlist_ispatial)             "$design(export_dir)/cadence/$design(TOPLEVEL)_ispatial.postsyn.v"
-set design(postsyn_db_base_name_ispatial)        "$design(dbs_dir)/synthesis/2_post_synth_ispatial/$design(TOPLEVEL)"
-set design(postsyn_db_ispatial)                  "$design(postsyn_db_base_name_ispatial)_ispatial.stylus.enc"
+set design(postsyn_sdc_ispatial)                 "$design(export_dir)/cadence/$design(TOPLEVEL)_ispatial.postsyn.sdc"
 set design(postsyn_sdf_ispatial)                 "$design(export_dir)/cadence/$design(TOPLEVEL)_ispatial.postsyn.sdf"
+
 set design(postsyn_netlist_rtl_flow)             "$design(export_dir)/cadence/$design(TOPLEVEL)_rtl_flow.postsyn.v"
-set design(postsyn_db_base_name_rtl_flow)        "$design(dbs_dir)/synthesis/2_post_synth_rtl_flow/$design(TOPLEVEL)"
-set design(postsyn_db_rtl_flow)                  "$design(postsyn_db_base_name_rtl_flow)_rtl_flow.stylus.enc"
+set design(postsyn_sdc_rtl_flow)                 "$design(export_dir)/cadence/$design(TOPLEVEL)_rtl_flow.postsyn.sdc"
 set design(postsyn_sdf_rtl_flow)                 "$design(export_dir)/cadence/$design(TOPLEVEL)_rtl_flow.postsyn.sdf"
 
 set design(floorplan_def)                        "$design(export_dir)/cadence/$design(TOPLEVEL).floorplan.def"
@@ -101,6 +102,7 @@ set design(postroute_sdf)                        "$design(export_dir)/cadence/$d
 set design(mmmc_nldm_view_file)                  "$design(inputs_dir)/cadence.$design(TOPLEVEL).nldm.mmmc"
 set design(mmmc_ocv_view_file)                   "$design(inputs_dir)/cadence.$design(TOPLEVEL).ocv.mmmc"
 set design(clock_tree_spec)                      "$design(inputs_dir)/cadence.$design(TOPLEVEL).ccopt"
+
 # set design(io_file)                            "$design(inputs_dir)/$design(TOPLEVEL).io"
 # set design(UPF_file)                           "$design(inputs_dir)/$design(TOPLEVEL).upf"
 # set design(CPF_file)                           "$design(inputs_dir)/$design(TOPLEVEL).cpf"
