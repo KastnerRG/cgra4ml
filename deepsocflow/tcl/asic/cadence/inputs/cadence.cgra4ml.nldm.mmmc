@@ -1,14 +1,14 @@
 # Version:1.0 MMMC View Definition File
 # Do Not Remove Above Line
 
-######################## MMMC Hierarchy #################################################################################
+######################## MMMC Hierarchy ###################################################################################
 #
 #   Setup Analysis View |                    | --> Constraint Corner --> SDC File
 #                       | --> Analysis View  |
-#   Hold Analysis View  |                    |                    | --> Timing Condition --> Library Set --> LIB File
+#   Hold Analysis View  |                    |                    | --> Timing Condition --> Library Set --> Op Conditions
 #                                            | --> Delay Corners  |
-#                                                                 | --> RC Corner --> Captbl File
-#########################################################################################################################
+#                                                                 | --> RC Corner --> qrc tech files/ Captbl files
+###########################################################################################################################
 
 # Operating Conditions Sets #
 # ------------------------- #

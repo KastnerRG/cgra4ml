@@ -330,12 +330,12 @@ def export_inference(model, hw, batch_size=1):
         print(f'Weights, inputs, outputs saved to {hw.DATA_DIR}/ib_ip_it_*.txt')
 
 
-def verify_inference(model, hw, SIM, SIM_PATH='', TRACE=False, SIM_TYPE='fpga', SRAM_GEN=False):
+def verify_inference(model, hw, SIM, SIM_PATH='', TRACE=False, SIM_TYPE='fpga', SRAM_GEN=False, RUN=1, RUNTYPE='rtl'):
 
     '''
     RUN SIMULATION
     '''
-    hw.simulate(SIM=SIM, SIM_PATH=SIM_PATH, TRACE=TRACE, SIM_TYPE=SIM_TYPE)
+    hw.simulate(SIM=SIM, SIM_PATH=SIM_PATH, TRACE=TRACE, SIM_TYPE=SIM_TYPE, SRAM_GEN=SRAM_GEN, RUN=RUN, RUNTYPE=RUNTYPE)
 
 
     '''

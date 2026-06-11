@@ -366,8 +366,9 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             output_file = os.path.join(dir_dma, "sram_dma.spec"),
         )
 
-    def simulate(self, SIM='verilator', SIM_PATH='', TRACE=False, SIM_TYPE='fpga', SRAM_GEN=False):
+    def simulate(self, SIM='verilator', SIM_PATH='', TRACE=False, SIM_TYPE='fpga', SRAM_GEN=False, RUN=1, RUNTYPE='rtl'):
 
+        print(f"\n\nSIMULATION CONFIG: SIM={SIM}  SIM_TYPE={SIM_TYPE}  SRAM_GEN={SRAM_GEN}  RUNTYPE={RUNTYPE}  RUN={RUN}\n\n")
         os.makedirs('build', exist_ok=True)
         print("\n\nCOMPILING...\n\n")
 
@@ -430,8 +431,8 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             print(cmd)
             assert subprocess.run(cmd.split(), cwd='build').returncode == 0
 
-        if SIM == 'xrun':
-            # DPI-C and VIP C++ Model Compilation for xrun RTL & GLS Simulation
+        # DPI-C and VIP C++ Model Compilation for xrun/vcs RTL & GLS Simulation
+        if (SIM == 'xrun' or SIM == 'vcs'):
             cmd = ["gcc", "-std=c99", "-shared", "-fPIC", "-DSIM"] + \
                   ["-I", "../"] + \
                   ["-I", f"{self.MODULE_DIR}/c/"] + \
@@ -465,18 +466,19 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
                     ["-sv_lib", "cgra4ml_firebridge_dpic.so"] + \
                     ["-l", "XRUN_COMP_SIM.log"] 
 
-            if SIM_TYPE == 'asic_rtl':
-                # ASIC RTL Simulation with Same Width SRAMs No Generation
-                cmd = [ "xrun"] + \
-                    ["-sv", "-64bit", "-access +rwc"] + \
-                    ["-define XCELIUM", "-define INITIALIZE_MEMORY", "-define ARM_UD_MODEL"] + \
-                    ["-define ARM_DISABLE_EMA_CHECK"] + \
-                    ["-warn_multiple_driver"] + \
-                    ["+incdir+../"] + \
-                    ["+incdir+" + f"{self.MODULE_DIR}/rtl/"] + \
-                    ["-top", self.TB_MODULE] + self.ASIC_SRAMTB + \
-                    ["-sv_lib", "cgra4ml_firebridge_dpic.so"] + \
-                    ["-l", "XRUN_COMP_SIM.log"] 
+            if SIM_TYPE == 'asic':
+                if RUNTYPE == 'rtl':
+                    # ASIC RTL Simulation with Same Width SRAMs
+                    cmd = [ "xrun"] + \
+                        ["-sv", "-64bit", "-access +rwc"] + \
+                        ["-define XCELIUM", "-define INITIALIZE_MEMORY", "-define ARM_UD_MODEL"] + \
+                        ["-define ARM_DISABLE_EMA_CHECK"] + \
+                        ["-warn_multiple_driver"] + \
+                        ["+incdir+../"] + \
+                        ["+incdir+" + f"{self.MODULE_DIR}/rtl/"] + \
+                        ["-top", self.TB_MODULE] + self.ASIC_SRAMTB + \
+                        ["-sv_lib", "cgra4ml_firebridge_dpic.so"] + \
+                        ["-l", "XRUN_COMP_SIM.log"] 
             print(" ".join(cmd))
             assert subprocess.run(cmd, cwd="build").returncode == 0
 

@@ -2,6 +2,7 @@ import os
 import pytest
 import itertools
 import sys
+import argparse
 sys.path.append("../../")
 from tensorflow import keras
 from keras.layers import Input
@@ -17,7 +18,21 @@ import pprint
 
 from deepsocflow import *
 
-SIM = 'xsim' if os.name=='nt' else 'xrun'
+parser = argparse.ArgumentParser()
+parser.add_argument('--sim',      default='verilator', help='Simulator: verilator | xrun (xcelium) | vcs (synopsys)')
+parser.add_argument('--sim-type', default='fpga',      help='Sim type: fpga | asic')
+parser.add_argument('--sram-gen', default='False',     help='SRAM generation: True | False')
+parser.add_argument('--freq',     default=250,         help='Target frequency in MHz', type=int)
+parser.add_argument('--run',      default=1,           help='Run counter — selects which EDA run outputs to simulate', type=int)
+parser.add_argument('--runtype',  default='rtl',       help='Run type: rtl | synthesis | pnr  (default: rtl)')
+args = parser.parse_args()
+
+SIM      = args.sim
+SIM_TYPE = args.sim_type
+SRAM_GEN = args.sram_gen.lower() == 'true'
+FREQ_MHZ = args.freq
+RUN      = args.run
+RUNTYPE  = args.runtype
 
 '''
 Dataset
@@ -153,7 +168,7 @@ Specify Hardware
 '''
 hw = Hardware (                          # Alternatively: hw = Hardware.from_json('hardware.json')
         processing_elements = (8, 24)  , # (rows, columns) of multiply-add units
-        frequency_mhz       = 1000     , #  
+        frequency_mhz       = FREQ_MHZ , #
         bits_input          = 4        , # bit width of input pixels and activations
         bits_weights        = 4        , # bit width of weights
         bits_sum            = 20       , # bit width of accumulator
@@ -183,7 +198,7 @@ hw.export_vivado_tcl(board='zcu104')
 VERIFY & EXPORT
 '''
 export_inference(loaded_model, hw, batch_size=1)
-verify_inference(loaded_model, hw, SIM=SIM, SIM_TYPE='asic_rtl', SRAM_GEN=False)
+verify_inference(loaded_model, hw, SIM=SIM, SIM_TYPE=SIM_TYPE, SRAM_GEN=SRAM_GEN, RUN=RUN, RUNTYPE=RUNTYPE)
 
 d_perf = predict_model_performance(hw)
 pp = pprint.PrettyPrinter(indent=4)

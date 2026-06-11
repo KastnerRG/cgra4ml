@@ -1,7 +1,8 @@
 # Set Paths for Timing Libs
-set paths(SRAM_LIB_WEIGHTS_Paths)    "$paths(PDK_ROOT)/SRAM_Inst/sram_weights"
-set paths(SRAM_LIB_EDGES_Paths)      "$paths(PDK_ROOT)/SRAM_Inst/sram_edges"
-set paths(SRAM_LIB_DMA_Paths)        "$paths(PDK_ROOT)/SRAM_Inst/sram_dma"
+set paths(SRAM_FILES)                "$paths(PDK_AIM)/SRAMs_${design(TOPLEVEL)}"
+set paths(SRAM_LIB_WEIGHTS_Paths)    "$paths(SRAM_FILES)/sram_weight"
+set paths(SRAM_LIB_EDGES_Paths)      "$paths(SRAM_FILES)/sram_edge"
+set paths(SRAM_LIB_DMA_Paths)        "$paths(SRAM_FILES)/sram_dma"
 
 # SRAM Libs - SRAM Weights
 

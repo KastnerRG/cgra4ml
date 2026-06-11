@@ -6,13 +6,11 @@ set PROCESS_NODE    5
 set TECH_NODE       S5
 
 # Technology
-set HOME "../../.."
-set paths(PDK_ROOT)                  "$HOME/PDK/$TECHNOLOGY_NODE"
-set paths(TECHNOLOGY_FILES)          "$paths(PDK_ROOT)/TECH_Libs"
-set paths(STANDARD_CELLS_TECH_FILES) "$paths(PDK_ROOT)/STD_Libs/lef"
-set paths(SRAM_TECH_FILES)           "$paths(PDK_ROOT)/SRAM_INST"
+set paths(PDK_AIM)                   "$paths(PDK_ROOT)/$TECHNOLOGY_NODE"
+set paths(TECHNOLOGY_FILES)          "$paths(PDK_AIM)/TECH_Libs"
+set paths(STANDARD_CELLS_TECH_FILES) "$paths(PDK_AIM)/STD_Libs/lef"
 
-# LEFS
+# Supress lef unwanted messages
 lappend tech(LEF_SUPPRESS_MESSAGES_GENUS)   {*} "PHYS-279"
 lappend tech(LEF_SUPPRESS_MESSAGES_INNOVUS) {*} "IMPLF_20"
 

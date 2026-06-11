@@ -8,15 +8,15 @@
 # Created   : 2026-05-14
 # Modified  : 2026-06-11
 ##############################################################################
-# Version   : 1.0
+# Version   : 1.1
 # Status    : In Progress
 ##############################################################################
 #
 # Description:
 #   Reusable TCL procedure library sourced by Genus (synthesis), Innovus
 #   (P&R), and other Cadence EDA flows. Provides logging, debug data
-#   dumps, stage tracking, and cost group utilities under the `krg_`
-#   namespace prefix.
+#   dumps, stage tracking, cost group definitions, parallel report queuing,
+#   and SDC generation under the `krg_` namespace prefix.
 #
 ##############################################################################
 # Procedures defined in this file:
@@ -26,11 +26,15 @@
 #   krg_reload_sdc            - Reload SDC constraint files    [DISABLED]
 #   krg_default_cost_groups   - Define reg2reg/in2reg/reg2out/in2out cost groups
 #   krg_start_stage           - Mark a new flow stage and log elapsed time
-#   krg_report_setup_timing   - Write per-cost-group setup timing reports
-#   krg_report_hold_timing    - Write per-cost-group hold timing reports
-#   krg_create_stage_reports  - Orchestrate all reports/DBs for a given stage
-#                               (db, snapshot, setup, hold, drc, connectivity,
-#                                datapath, qor, gates, area, design_rules, memory)
+#   krg_report_setup_timing   - Return report_timing cmd string for setup (not executed)
+#   krg_report_hold_timing    - Return report_timing cmd string for hold  (not executed)
+#   krg_create_stage_reports  - Queue and execute all reports/DBs for a given stage
+#                               Options: -write_db, -write_snapshot, -report_setup,
+#                               -report_hold, -check_drc, -check_connectivity,
+#                               -report_datapath, -report_qor, -report_gates,
+#                               -report_area, -check_design_rules, -report_multibit,
+#                               -report_ple, -report_summary, -help
+#                               NOTE: snapshot skipped automatically for elaborate stage
 #   krg_create_sdc_file       - Generate SDC file (clocks, IO, DRV constraints)
 ##############################################################################
 # TODO:
@@ -325,12 +329,19 @@ proc krg_create_stage_reports {{args ""}} {
 
     krg_message "Starting to create reports for stage: $stage_prefix" medium
 
-    mkdir -pv $design(dbs_dir)/$runtype
-    mkdir -pv $design(reports_dir)/$runtype
+    if { $runtype eq "synthesis" } {
+        set active_dbs_dir $design(dbs_syn_dir)
+        set active_rpt_dir $design(reports_dir)
+    } else {
+        set active_dbs_dir $design(dbs_pnr_dir)
+        set active_rpt_dir $design(reports_dir)
+    }
+    mkdir -pv $active_dbs_dir
+    mkdir -pv $active_rpt_dir
 
     if { $options(-write_db) eq "yes" } {
         krg_message "Starting to create genus databases for stage: $this_run(stage)" low
-        set dbs_proc_dir $design(dbs_dir)/$runtype/$this_run(stage).stylus.enc
+        set dbs_proc_dir $active_dbs_dir/$this_run(stage).stylus.enc
         run_parallel_commands -queue {write_db -common $dbs_proc_dir} -priority 5
         krg_message "Added to parallel commands queue, genus databases for stage: $this_run(stage)" low
     }
@@ -339,61 +350,61 @@ proc krg_create_stage_reports {{args ""}} {
         krg_message "Skipping snapshot for elaborate stage: $this_run(stage)" low
     } elseif { $options(-write_snapshot) eq "yes" && $options(-write_db) eq "yes" } {
         krg_message "Starting to create innovus snapshot for stage: $this_run(stage)" low
-        set dbs_proc_dir $design(dbs_dir)/$runtype
+        set dbs_proc_dir $active_dbs_dir
         write_snapshot -innovus -outdir $dbs_proc_dir -tag $this_run(stage)
         krg_message "Completed innovus snapshot for stage: $this_run(stage)" low
     } else {
         krg_message "Starting to create genus snapshot for stage: $this_run(stage)" low
-        set dbs_proc_dir $design(dbs_dir)/$runtype
+        set dbs_proc_dir $active_dbs_dir
         write_snapshot -outdir $dbs_proc_dir -tag $this_run(stage)
         krg_message "Completed genus snapshot for stage: $this_run(stage)" low
     }
 
     if { $options(-report_setup) eq "yes" } {
         krg_message "Starting to create setup timing reports for stage: $this_run(stage)" low
-        set rpt_proc_dir $design(reports_dir)/$runtype
+        set rpt_proc_dir $active_rpt_dir
         run_parallel_commands -queue [krg_report_setup_timing $rpt_proc_dir] -priority 4
         krg_message "Added to parallel commands queue, setup timing reports for stage: $this_run(stage)" low
     }
 
     if { $options(-report_hold) eq "yes" } {
         krg_message "Starting to create hold timing reports for stage: $this_run(stage)" low
-        set rpt_proc_dir $design(reports_dir)/$runtype
+        set rpt_proc_dir $active_rpt_dir
         run_parallel_commands -queue [krg_report_hold_timing $rpt_proc_dir] -priority 4
         krg_message "Added to parallel commands queue, hold timing reports for stage: $this_run(stage)" low
     }
 
     if { $options(-check_drc) eq "yes" } {
         krg_message "Starting to create DRC reports for stage: $this_run(stage)" low
-        set rpt_proc_dir $design(reports_dir)/$runtype
+        set rpt_proc_dir $active_rpt_dir
         run_parallel_commands -queue {check_drc -out_file $rpt_proc_dir/${stage_prefix}_drc_report.rpt} -priority 3
         krg_message "Added to parallel commands queue, DRC reports for stage: $this_run(stage)" low
     }
 
     if { $options(-check_connectivity) eq "yes" } {
         krg_message "Starting to create connectivity reports for stage: $this_run(stage)" low
-        set rpt_proc_dir $design(reports_dir)/$runtype
+        set rpt_proc_dir $active_rpt_dir
         run_parallel_commands -queue {check_connectivity > $rpt_proc_dir/${stage_prefix}_connectivity.rpt} -priority 2
         krg_message "Added to parallel commands queue, connectivity reports for stage: $this_run(stage)" low
     }
 
     if { $options(-report_datapath) eq "yes" } {
         krg_message "Starting to create datapath reports for stage: $this_run(stage)" low
-        set rpt_proc_dir $design(reports_dir)/$runtype
+        set rpt_proc_dir $active_rpt_dir
         run_parallel_commands -queue {report_dp > $rpt_proc_dir/${stage_prefix}_datapath.rpt} -priority 1
         krg_message "Added to parallel commands queue, datapath reports for stage: $this_run(stage)" low
     }
 
     if { $options(-report_qor) eq "yes" } {
         krg_message "Starting to create QoR reports for stage: $this_run(stage)" low
-        set rpt_proc_dir $design(reports_dir)/$runtype
+        set rpt_proc_dir $active_rpt_dir
         run_parallel_commands -queue {report_qor > $rpt_proc_dir/${stage_prefix}_qor.rpt} -priority 1
         krg_message "Added to parallel commands queue, QoR reports for stage: $this_run(stage)" low
     }
 
     if { $options(-report_gates) eq "yes" } {
         krg_message "Starting to create gates reports for stage: $this_run(stage)" low
-        set rpt_proc_dir $design(reports_dir)/$runtype
+        set rpt_proc_dir $active_rpt_dir
         run_parallel_commands -queue {report_gates > $rpt_proc_dir/${stage_prefix}_gates.rpt} -priority 1
         run_parallel_commands -queue {report_gates -yield > $rpt_proc_dir/${stage_prefix}_gates_yield.rpt} -priority 1
         krg_message "Added to parallel commands queue, gates reports for stage: $this_run(stage)" low
@@ -401,35 +412,35 @@ proc krg_create_stage_reports {{args ""}} {
 
     if { $options(-report_area) eq "yes" } {
         krg_message "Starting to create area reports for stage: $this_run(stage)" low
-        set rpt_proc_dir $design(reports_dir)/$runtype
+        set rpt_proc_dir $active_rpt_dir
         run_parallel_commands -queue {report_area > $rpt_proc_dir/${stage_prefix}_area.rpt} -priority 1
         krg_message "Added to parallel commands queue, area reports for stage: $this_run(stage)" low
     }
 
     if { $options(-check_design_rules) eq "yes" } {
         krg_message "Starting to create design rules reports for stage: $this_run(stage)" low
-        set rpt_proc_dir $design(reports_dir)/$runtype
+        set rpt_proc_dir $active_rpt_dir
         run_parallel_commands -queue {report_design_rules > $rpt_proc_dir/${stage_prefix}_design_rules.rpt} -priority 1
         krg_message "Added to parallel commands queue, design rules reports for stage: $this_run(stage)" low
     }
 
     if { $options(-report_multibit) eq "yes" } {
         krg_message "Starting to create multibit inferencing reports for stage: $this_run(stage)" low
-        set rpt_proc_dir $design(reports_dir)/$runtype
+        set rpt_proc_dir $active_rpt_dir
         run_parallel_commands -queue {report_multibit_inferencing -reason_not_merged all > $rpt_proc_dir/${stage_prefix}_multibit.rpt} -priority 1
         krg_message "Added to parallel commands queue, multibit inferencing reports for stage: $this_run(stage)" low
     }
 
     if { $options(-report_ple) eq "yes" } {
         krg_message "Starting to create PLE reports for stage: $this_run(stage)" low
-        set rpt_proc_dir $design(reports_dir)/$runtype
+        set rpt_proc_dir $active_rpt_dir
         run_parallel_commands -queue {report_ple > $rpt_proc_dir/${stage_prefix}_ple.rpt} -priority 1
         krg_message "Added to parallel commands queue, PLE reports for stage: $this_run(stage)" low
     }
 
     if { $options(-report_summary) eq "yes" && $options(-write_snapshot) eq "yes" } {
         krg_message "Starting to create QoR summary reports for stage: $this_run(stage)" low
-        set rpt_proc_dir $design(reports_dir)/$runtype
+        set rpt_proc_dir $active_rpt_dir
         run_parallel_commands -queue {report_summary > $rpt_proc_dir/${stage_prefix}_summary.rpt} -priority 1
         krg_message "Added to parallel commands queue, QoR summary reports for stage: $this_run(stage)" low
     } else {

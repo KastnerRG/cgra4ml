@@ -87,6 +87,8 @@
 # If you need external metric to add to unified metric
 # use define_metric and set_metric. Use furthur information from userguide
 
+# Low Power
+# set_db "design:$DESIGN" .lp_clock_gating_cell [vfind /lib* -lib_cell <cg_libcell_name>]
 ##############################################################################
 # Usage: 
 #   genus -lic_startup Genus_Synthesis \
@@ -100,7 +102,7 @@
 #              and variables specific to this run               #
 #################################################################
 
-set genus_run_counter   0                ; # This variable used only to create folders for reports.
+set genus_run_counter   [expr {[info exists env(GENUS_RUN_COUNTER)] ? $env(GENUS_RUN_COUNTER) : 0}]
 set design(TOPLEVEL)    "axi_cgra4ml"
 set runtype             "synthesis"
 set debug_file          "debug.genus.txt"
@@ -109,12 +111,12 @@ set debug_file          "debug.genus.txt"
 #                     Load Basic Settings                       #
 #################################################################
 # Load General Procedures
-source work/cgra4ml/deepsocflow/tcl/asic/scripts/cadence.procedures.tcl -quiet
+source /work/cgra4ml/deepsocflow/tcl/asic/scripts/cadence.procedures.tcl -quiet
 krg_start_stage "Loading_basic_settings" no
 
 # Load the specific definitions for this project
-source work/cgra4ml/deepsocflow/run/work/config_hw.tcl -quiet
-source work/cgra4ml/deepsocflow/tcl/asic/inputs/cadence.$design(TOPLEVEL).defines -quiet
+source /work/cgra4ml/deepsocflow/run/work/config_hw.tcl -quiet
+source /work/cgra4ml/deepsocflow/tcl/asic/inputs/cadence.$design(TOPLEVEL).defines -quiet
 
 # Load general settings
 source $design(scripts_dir)/cadence.settings.tcl -quiet
@@ -214,7 +216,7 @@ uniquify  $design(TOPLEVEL)
 
 # Check Design
 # ------------
-check_design -all > $design(synthesis_reports)/[format "%02d" $this_run(stage_count)]_check_design_post_elab.rpt
+check_design -all > $design(reports_dir)/[format "%02d" $this_run(stage_count)]_check_design_post_elab.rpt
 if {[check_design -status]} {
     puts "krgINFO: ############### There is an issure with check design. You better look at it! ###############"
 }
@@ -230,7 +232,7 @@ init_design
 # Check Timing
 # ------------
 krg_message "Checking timing intent (lint) after init_design"
-check_timing_intent > $design(synthesis_reports)/[format "%02d" $this_run(stage_count)]_check_sdc_post_elab.rpt
+check_timing_intent > $design(reports_dir)/[format "%02d" $this_run(stage_count)]_check_sdc_post_elab.rpt
 
 # Save elaborated design
 # ----------------------
@@ -476,5 +478,5 @@ report_messages -errors             > design(workdir)/$design(TOPLEVEL)_messages
 report_messages -warnings           > design(workdir)/$design(TOPLEVEL)_messages_warnings.rpt
 report_messages -info               > design(workdir)/$design(TOPLEVEL)_messages_info.rpt
 
-write_metric -format jason -out_file 
+write_metric -format jason -out_file $design(compare_dir)/$design(TOPLEVEL)_genus_run_[format "%02d" $genus_run_counter]
 krg_message "!!!!!!!!!!!!!!!!!!! Genus Synthesis Successful !!!!!!!!!!!!!!!!!!!!!" medium

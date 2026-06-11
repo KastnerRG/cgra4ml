@@ -8,7 +8,7 @@
 # Created   : 2026-05-14
 # Modified  : 2026-06-11
 ##############################################################################
-# Version   : 1.0
+# Version   : 1.1
 # Status    : In Progress
 ##############################################################################
 #
@@ -22,23 +22,31 @@
 ##############################################################################
 # Sections:
 #   [synthesis] General Genus settings
-#               krg_set_low_power_settings  - Low power flow attributes
-#               krg_set_dft_dfm_settings    - DFT/DFM scan and yield settings
-#               krg_set_multibit_settings   - Multibit cell mapping settings
-#               krg_set_synthesis_efforts   - Synthesis/iSpatial effort levels
+#               (HDL, retime, Innovus exec, floorplan debug, conformal lint)
+#               krg_set_predict_floorplan_settings - iSpatial floorplan prediction
+#               krg_set_low_power_settings         - Low power flow attributes
+#               krg_set_dft_dfm_settings           - DFT/DFM scan and yield settings
+#               krg_set_multibit_settings          - Multibit cell mapping settings
+#               krg_set_synthesis_efforts          - syn/map/opt + iSpatial effort levels
+#                                                    (generic, map, opt, spatial, congestion,
+#                                                     leakage ratio, merge_flops, restructuring)
 #   [pnr]       General Innovus settings
-#               OCV timing analysis, floorplan, placement, routing
-#   [power]     General Voltus settings (placeholder)
+#               OCV timing analysis (ccs_ocv), floorplan, global placement, routing
+#   [power]     General Voltus settings  [PLACEHOLDER - empty]
 ##############################################################################
 # TODO:
-#   [ ] Complete Voltus power settings
-#   [ ] Add low-power enabled check before sourcing krg_set_low_power_settings
-#   [ ] Add HAS_SCAN conditional call for krg_set_dft_dfm_settings
+# [ ] Add low-power enabled check before sourcing krg_set_low_power_settings
+# [ ] Add HAS_SCAN conditional call for krg_set_dft_dfm_settings
+# [ ] Complete Innovus settings
+# [ ] Complete Voltus power settings
 # Suggestions:
 # Remove multibits flops if timing is critical.
+
+# Apply this if you want best QoR but runtime will be affected
+# set_db iopt_ultra_optimization true
 ##############################################################################
 # Usage:
-#   source cadence.settings.tcl -quiet
+#   source cadence.settings.tcl -quiet in genus.tcl
 #   Requires $runtype, $design, $tech, $env(INNOVUS) to be set beforehand
 ##############################################################################
 
@@ -137,9 +145,6 @@ if {$runtype == "synthesis"} {
         set_db opt_leakage_to_dynamic_ratio 0.5
         set_db opt_spatial_merge_flops      true
         set_db opt_spatial_restructuring    true
-
-        # Apply this if you want best QoR but runtime will be affected
-        # set_db iopt_ultra_optimization true
     }
 }
 

@@ -1,3 +1,57 @@
+##############################################################################
+# Project   : DeepSoCFlow CGRA4ML
+# Script    : cadence.cgra4ml.defines
+# Purpose   : Project-specific variable definitions for all Cadence EDA flows
+##############################################################################
+# Author    : Ravidu Munasinghe <raviduhm@gmail.com>
+# Org       : Kastner Research Group | ENTC UoM
+# Created   : 2026-05-14
+# Modified  : 2026-06-11
+##############################################################################
+# Version   : 1.0
+# Status    : In Progress
+##############################################################################
+#
+# Description:
+#   Defines all design()/tech() variables consumed by genus.tcl, innovus.tcl,
+#   and cadence.settings.tcl. Covers flow config, technology, clocks, SDC
+#   constraints, file paths, MMMC views, power nets, PnR rules, simulation
+#   backannotation settings, and suppressed messages.
+#
+##############################################################################
+# Sections:
+#   Initial settings   - Flow type flags (mmmc, phys_synth, timing_lib, lp)
+#   Technology         - Technology node identifiers
+#   Port definitions   - Clock, reset, scan port names from RTL
+#   SDC settings       - IO delays, clock uncertainty, DRV, routing layers
+#   Files and paths    - All input/output directory and file path variables
+#   Global nets        - Power/ground net names
+#   PnR rules          - Well-tap rule
+#   Simulation         - VCD and power report backannotation settings
+#   Message suppression - Genus/Innovus warning filters
+##############################################################################
+# TODO:
+#   Major Revisions
+#   [ ] Add multi-clock support (MULTI_CLOCK_DESIGN currently hardcoded "no")
+#   [ ] Add SRAM technology definitions when SRAM_TECHNOLOGY != "None"
+#   [ ] Add IO technology definitions when IO_TECHNOLOGY != "None"
+#   Minor Revisions
+#   [ ] Add UPF/CPF power intent file paths when low_power_enabled = "yes"
+##############################################################################
+# WARNING:
+#   Before running any flow, verify ALL file paths in this file are correct
+#   for your environment. Key paths to check:
+#     - paths(PDK_ROOT)     : path to pdks
+#     - env(INNOVUS)        : path to Cadence Innovus binary
+#     - design(project_root): resolves relative to $env(PWD) — run from the
+#                             correct working directory (run/work/genus_runs)
+#     - design(libraries_dir): technology library files must exist here
+##############################################################################
+# Usage:
+#   source cadence.cgra4ml.defines -quiet in genus.tcl
+#   Requires $runtype, $design(TOPLEVEL), $FREQ, $debug_file to be set first
+##############################################################################
+
 ################################################
 #               Initial Tcl Settings
 ################################################
@@ -6,8 +60,6 @@ set design(FULLCHIP_OR_MACRO) "MACRO";
 set design(HAS_SCAN)          "no";
 
 set low_power_enabled       "no"
-set mmmc_or_simple          "mmmc";         # "simple"    - using "read_lib"
-                                            # "mmmc"      - using "read_mmmc"
 set phys_synth_type         "lef" ;         # "none"      - don't read any tech files
                                             # "lef"       - only read lef - RTL Floorplaning Flow with iSpatial
                                             # "floorplan" - read in DEF - iSpatial Flow
@@ -55,7 +107,7 @@ set design(INPUT_TRANSITION)  [expr $design(CLK_PERIOD)/5.0] ; # Maximum Transit
 set design(CLOCK_UNCERTAINTY)  0.125 ; # In ns for SDC (will appear in ps for get_db)
 
 # DRV Constraints
-# set design(MAX_TRANSITION)   [expr $design(CLK_PERIOD)/5.0] ; # Maximum Transition Time according Liberty Data sheet = min(20% of Clock, Max transition characterized on Table)
+set design(MAX_TRANSITION)   [expr $design(CLK_PERIOD)/5.0] ; # Maximum Transition Time according Liberty Data sheet = min(20% of Clock, Max transition characterized on Table)
 
 # Routing Constraints
 set design(MIN_ROUTE_LAYER) M1
@@ -64,12 +116,14 @@ set design(MAX_ROUTE_LAYER) M8
 ################################################
 #               Files and Paths
 ################################################
+set design(workdir)                              $env(PWD)
+
 set env(INNOVUS)                                 "/tools/cadence/DDI231/bin"   
 set design(innovus_dir)                          "$env(PWD)/innovus_dir"  
 set design(conformal_dir)                        "$env(PWD)/conformal_dir"                   
 
-set design(workdir)                              $env(PWD)
-set design(project_root)                         "$env(PWD)/../../../deepsocflow"
+set paths(PDK_ROOT)                              "$env(PWD)/../../../../../../PDK"
+set design(project_root)                         "$env(PWD)/../../../../../deepsocflow"
 set design(asic_root)                            "$design(project_root)/tcl/asic"
 set design(inputs_dir)                           "$design(asic_root)/inputs"
 set design(libraries_dir)                        "$design(asic_root)/libraries"
@@ -80,25 +134,31 @@ set design(read_sv_hdl_list)                     "$design(workdir)/$design(TOPLE
 set design(read_v_hdl_list)                      "$design(workdir)/$design(TOPLEVEL)_src_list_v.txt"
 
 set design(scripts_dir)                          "$design(asic_root)/scripts"
-set design(reports_dir)                          "$design(asic_root)/reports/cadence"
+set design(compare_dir)                          "$design(project_root)/run/asic/cadence/compare"
+set design(reports_dir)                          "$design(project_root)/run/asic/cadence/reports/genus_run_$genus_run_counter"
 
-set design(export_dir)                           "$design(workdir)/cadence/exports"
-set design(dbs_dir)                              "$design(workdir)/cadence/dbs"
+set design(export_syn_dir)                       "$design(workdir)/exports/genus_run_$genus_run_counter"
+set design(dbs_syn_dir)                          "$design(workdir)/dbs/genus_run_$genus_run_counter"
 
+set design(postsyn_lec_netlist_ispatial)         "$design(export_syn_dir)/$design(TOPLEVEL)_ispatial.postsyn.lec.v"
+set design(postsyn_netlist_ispatial)             "$design(export_syn_dir)/$design(TOPLEVEL)_ispatial.postsyn.v"
+set design(postsyn_sdc_ispatial)                 "$design(export_syn_dir)/$design(TOPLEVEL)_ispatial.postsyn.sdc"
+set design(postsyn_sdf_ispatial)                 "$design(export_syn_dir)/$design(TOPLEVEL)_ispatial.postsyn.sdf"
+
+set design(postsyn_netlist_rtl_flow)             "$design(export_syn_dir)/$design(TOPLEVEL)_rtl_flow.postsyn.v"
+set design(postsyn_sdc_rtl_flow)                 "$design(export_syn_dir)/$design(TOPLEVEL)_rtl_flow.postsyn.sdc"
+set design(postsyn_sdf_rtl_flow)                 "$design(export_syn_dir)/$design(TOPLEVEL)_rtl_flow.postsyn.sdf"
+
+if { $runtype == "pnr" } {
+    set design(export_pnr_dir)                   "$design(workdir)/exports/innovus_run_$innovus_run_counter"
+    set design(dbs_pnr_dir)                      "$design(workdir)/dbs/innovus_run_$innovus_run_counter"
+    set design(postroute_netlist)                "$design(export_pnr_dir)/$design(TOPLEVEL).pnr.v"
+    set design(postroute_sdf)                    "$design(export_pnr_dir)/$design(TOPLEVEL).pnr.sdf"
+}
+
+# Save floorplan from innovus to parallel genus run
+set design(floorplan_def)                        "$design(export_syn_dir)/$design(TOPLEVEL).floorplan.def"
 set design(functional_sdc)                       "$design(inputs_dir)/cadence.$design(TOPLEVEL).sdc"
-
-set design(postsyn_lec_netlist_ispatial)         "$design(export_dir)/cadence/$design(TOPLEVEL)_ispatial.postsyn.lec.v"
-set design(postsyn_netlist_ispatial)             "$design(export_dir)/cadence/$design(TOPLEVEL)_ispatial.postsyn.v"
-set design(postsyn_sdc_ispatial)                 "$design(export_dir)/cadence/$design(TOPLEVEL)_ispatial.postsyn.sdc"
-set design(postsyn_sdf_ispatial)                 "$design(export_dir)/cadence/$design(TOPLEVEL)_ispatial.postsyn.sdf"
-
-set design(postsyn_netlist_rtl_flow)             "$design(export_dir)/cadence/$design(TOPLEVEL)_rtl_flow.postsyn.v"
-set design(postsyn_sdc_rtl_flow)                 "$design(export_dir)/cadence/$design(TOPLEVEL)_rtl_flow.postsyn.sdc"
-set design(postsyn_sdf_rtl_flow)                 "$design(export_dir)/cadence/$design(TOPLEVEL)_rtl_flow.postsyn.sdf"
-
-set design(floorplan_def)                        "$design(export_dir)/cadence/$design(TOPLEVEL).floorplan.def"
-set design(postroute_netlist)                    "$design(export_dir)/cadence/$design(TOPLEVEL).final.v"
-set design(postroute_sdf)                        "$design(export_dir)/cadence/$design(TOPLEVEL).final.sdf"
 set design(mmmc_nldm_view_file)                  "$design(inputs_dir)/cadence.$design(TOPLEVEL).nldm.mmmc"
 set design(mmmc_ocv_view_file)                   "$design(inputs_dir)/cadence.$design(TOPLEVEL).ocv.mmmc"
 set design(clock_tree_spec)                      "$design(inputs_dir)/cadence.$design(TOPLEVEL).ccopt"
@@ -148,7 +208,7 @@ set design(WELLTAP_RULE) 15
 #               Simulation and Backannotation
 ################################################
 # For Backannotation and Power Reporting
-set design(vcd_file)              "$design(export_dir)/cadence/$design(tb_name).vcd"
+set design(vcd_file)              "$design(export_syn_dir)/cadence/$design(tb_name).vcd"
 set design(power_report_flow)     "vcd" ; # "vcd"
 set design(power_report_period)     2
 set design(power_report_start_time) 0
