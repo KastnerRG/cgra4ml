@@ -13,7 +13,12 @@
 #                 (default: 0)
 #
 # Example:
-#   bash genus.sh --run 3 --no-abort
+#   for initial runs with debug
+#   bash ./genus.sh --run 1 --no-abort
+#   for full physical run
+#   bash ./genus.sh --run 1
+#   for full physical+low power run
+#   bash ./genus.sh --run 1 --low-power Genus_Low_Power_Opt
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -31,7 +36,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-RUN_DIR="$(realpath "$SCRIPT_DIR/../../../../../run/work/genus/genus_run_${GENUS_RUN_COUNTER}")"
+RUN_DIR="$SCRIPT_DIR/../../../../../run/work/genus/genus_run_${GENUS_RUN_COUNTER}"
 mkdir -p "$RUN_DIR"
 cd "$RUN_DIR"
 

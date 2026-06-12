@@ -42,24 +42,24 @@ done
 
 # Genrating SRAM EDGES
 cd "/work/PDK/${FOUNDARY}${TECHNOLOGY}/SRAMs_${DESIGN}/sram_edge"
-# ${SP_COMPILER} all     -spec sram_edge.spec
+${SP_COMPILER} all     -spec sram_edge.spec
 ${SP_COMPILER} liberty -spec sram_edge.spec     -libertyviewstyle nldm
-# ${SP_COMPILER} liberty -spec sram_edge.spec     -libertyviewstyle ccs_tn
-# ${SP_COMPILER} liberty -spec sram_edge.spec     -libertyviewstyle ccs_tnv
+${SP_COMPILER} liberty -spec sram_edge.spec     -libertyviewstyle ccs_tn
+${SP_COMPILER} liberty -spec sram_edge.spec     -libertyviewstyle ccs_tnv
 cd "/work/cgra4ml/run/work/build"
 
 # Genrating SRAM WEIGHTS
 cd "/work/PDK/${FOUNDARY}${TECHNOLOGY}/SRAMs_${DESIGN}/sram_weight"
-# ${SP_COMPILER} all     -spec sram_weight.spec
+${SP_COMPILER} all     -spec sram_weight.spec
 ${SP_COMPILER} liberty -spec sram_weight.spec   -libertyviewstyle nldm
-# ${SP_COMPILER} liberty -spec sram_weight.spec   -libertyviewstyle ccs_tn
-# ${SP_COMPILER} liberty -spec sram_weight.spec   -libertyviewstyle ccs_tnv
+${SP_COMPILER} liberty -spec sram_weight.spec   -libertyviewstyle ccs_tn
+${SP_COMPILER} liberty -spec sram_weight.spec   -libertyviewstyle ccs_tnv
 cd "/work/cgra4ml/run/work/build"
 
 # Genrating SRAM DMA
 cd "/work/PDK/${FOUNDARY}${TECHNOLOGY}/SRAMs_${DESIGN}/sram_dma"
-# ${P2_COMPILER} all     -spec sram_dma.spec
+${P2_COMPILER} all     -spec sram_dma.spec
 ${P2_COMPILER} liberty -spec sram_dma.spec      -libertyviewstyle nldm
-# ${P2_COMPILER} liberty -spec sram_dma.spec      -libertyviewstyle ccs_tn
-# ${P2_COMPILER} liberty -spec sram_dma.spec      -libertyviewstyle ccs_tnv
+${P2_COMPILER} liberty -spec sram_dma.spec      -libertyviewstyle ccs_tn
+${P2_COMPILER} liberty -spec sram_dma.spec      -libertyviewstyle ccs_tnv
 cd "/work/cgra4ml/run/work/build"

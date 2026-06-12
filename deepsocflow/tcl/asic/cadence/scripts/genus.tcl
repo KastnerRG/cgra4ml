@@ -111,12 +111,12 @@ set debug_file          "debug.genus.txt"
 #                     Load Basic Settings                       #
 #################################################################
 # Load General Procedures
-source /work/cgra4ml/deepsocflow/tcl/asic/scripts/cadence.procedures.tcl -quiet
+source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/cadence.procedures.tcl -quiet
 krg_start_stage "Loading_basic_settings" no
 
 # Load the specific definitions for this project
-source /work/cgra4ml/deepsocflow/run/work/config_hw.tcl -quiet
-source /work/cgra4ml/deepsocflow/tcl/asic/inputs/cadence.$design(TOPLEVEL).defines -quiet
+source /work/cgra4ml/run/work/config_hw.tcl -quiet
+source /work/cgra4ml/deepsocflow/tcl/asic/cadence/inputs/cadence.$design(TOPLEVEL).defines -quiet
 
 # Load general settings
 source $design(scripts_dir)/cadence.settings.tcl -quiet
@@ -172,9 +172,9 @@ krg_create_sdc_file
 #                      Read LEF files                           #
 #################################################################
 # Suppress messages
-krg_message      "Suppressing the following messages that are reported due to the LEF definitions"
-krg_message      "$tech(LEF_SUPPRESS_MESSAGES_GENUS)"
-suppress_messages $tech(LEF_SUPPRESS_MESSAGES_GENUS)
+# krg_message      "Suppressing the following messages that are reported due to the LEF definitions"
+# krg_message      "$tech(LEF_SUPPRESS_MESSAGES_GENUS)"
+# suppress_messages $tech(LEF_SUPPRESS_MESSAGES_GENUS)
 
 # Read LEFs
 # ---------
@@ -184,19 +184,15 @@ read_physical -lef  $tech_files(ALL_LEFS)
 # Stamp the stage for runtime and memory information
 time_info -table $runtype -stamp $this_run(stage)
 
-#################################################################
-#                      Read RTL files                           #
-#################################################################
+# #################################################################
+# #                      Read RTL files                           #
+# #################################################################
 krg_start_stage "read_rtl" no
 
 set_db init_hdl_search_path $design(hdl_search_paths)
 read_hdl -language sv    -f $design(read_svh_hdl_list)
 read_hdl -language sv    -f $design(read_sv_hdl_list)
 read_hdl -language v2001 -f $design(read_v_hdl_list)
-
-# Get SRAMs instances
-# -------------------
-set design(SRAM_LIST_FULL) [get_db insts -if {.cell.base_name =~ *sram*}]
 
 # Stamp the stage for runtime and memory information
 time_info -table $runtype -stamp $this_run(stage)
@@ -216,7 +212,7 @@ uniquify  $design(TOPLEVEL)
 
 # Check Design
 # ------------
-check_design -all > $design(reports_dir)/[format "%02d" $this_run(stage_count)]_check_design_post_elab.rpt
+check_design -all > $design(reports_syn_dir)/[format "%02d" $this_run(stage_count)]_check_design_post_elab.rpt
 if {[check_design -status]} {
     puts "krgINFO: ############### There is an issure with check design. You better look at it! ###############"
 }
@@ -224,35 +220,39 @@ if {[check_design -status]} {
 # Stamp the stage for runtime and memory information
 time_info -table $runtype -stamp $this_run(stage)
 
+# Get SRAMs instances for SDC 
+# ---------------------------
+set design(DMA_SRAM_LIST) [get_db insts -if {.base_name =~ *sram_dma*}]
+
 # Init Design
 # -----------
 krg_message "Running init_design in an MMMC flow"
 init_design
 
-# Check Timing
-# ------------
+# # Check Timing
+# # ------------
 krg_message "Checking timing intent (lint) after init_design"
-check_timing_intent > $design(reports_dir)/[format "%02d" $this_run(stage_count)]_check_sdc_post_elab.rpt
+check_timing_intent -verbose > $design(reports_syn_dir)/[format "%02d" $this_run(stage_count)]_check_sdc_post_elab.rpt
 
-# Save elaborated design
-# ----------------------
-krg_create_stage_reports -report_datapath yes
+# # Save elaborated design
+# # ----------------------
+krg_create_stage_reports -write_design yes -report_datapath yes
 # Stamp the stage for runtime and memory information
 time_info -table $runtype -stamp "init_design"
 
 #################################################################
 #                          Synthesize                           #
 #################################################################
-krg_start_stage "pre_synthesis"
+krg_start_stage "pre_synthesis" yes
 
 # Loading Innovus Golden Floorplan
 # --------------------------------
 if {$phys_synth_type == "floorplan"} {
     krg_message "Loading the Golden floorplan DEF from innovus" medium
 
-    redirect $design(reports_dir)/read_def.floorplan.rpt -tee -msg {read_def $design(floorplan_def)} 
+    redirect $design(reports_syn_dir)/read_def.floorplan.rpt -tee -msg {read_def $design(floorplan_def)} 
 
-    check_floorplan -spatial > $design(reports_dir)/check_floorplan.rpt
+    check_floorplan -spatial > $design(reports_syn_dir)/check_floorplan.rpt
 
     # Stamp the stage for runtime and memory information
     time_info -table $runtype -stamp "$this_run(stage)_load_floorplan"
@@ -266,8 +266,8 @@ if {$phys_synth_type == "floorplan"} {
 
 # Define cost groups (reg2reg, in2reg, reg2out, in2out)
 # -----------------------------------------------------
-krg_default_cost_groups
-krg_report_timing $design(synthesis_reports)
+krg_default_cost_groups 
+krg_create_stage_reports -report_setup yes 
 
 
 # Set Retime
@@ -295,48 +295,48 @@ if {$phys_synth_type == "floorplan"} {
     time_info -table $runtype -stamp "$this_run(stage)_settings"
 
     # Synthesize to generics gates
-    krg_start_stage "syn_generic_ispatial_flow"
+    krg_start_stage "syn_generic_ispatial_flow" yes
     push_snapshot_stack
     syn_generic -physical
     pop_snapshot_stack
     create_snapshot -categories all -label $this_run(stage) 
     # Stamp the stage for runtime and memory information
-    time_info -table $runtype -stamp "$this_run(stage)_syn_generic"
+    time_info -table $runtype -stamp "ispatial_flow_syn_generic"
 
     # Create Reports and Snapshot
     krg_create_stage_reports -report_datapath yes -report_summary yes
     # Stamp the stage for runtime and memory information
-    time_info -table $runtype -stamp "$this_run(stage)_syn_generic_reports"
+    time_info -table $runtype -stamp "ispatial_flow_syn_generic_reports"
 
     # Map technology
-    krg_start_stage "syn_mapping_ispatial_flow"
+    krg_start_stage "syn_mapping_ispatial_flow" yes
     push_snapshot_stack
     syn_map -physical
     pop_snapshot_stack
     create_snapshot -categories all -label $this_run(stage) 
     # Stamp the stage for runtime and memory information
-    time_info -table $runtype -stamp "$this_run(stage)_syn_map"
+    time_info -table $runtype -stamp "ispatial_flow_syn_map"
 
     # Create Reports and Snapshot
     krg_create_stage_reports -report_datapath yes -report_summary yes
     # Stamp the stage for runtime and memory information
-    time_info -table $runtype -stamp "$this_run(stage)_syn_map_reports"
+    time_info -table $runtype -stamp "ispatial_flow_syn_map_reports"
 
     # Conformal LEC verification
     write_do_lec -golden_design rtl -revised_design fv_map \
     -logfile design(conformal_dir)/rtl2fvmap.lec.log > design(conformal_dir)/rtl2fvmap.lec.tcl
 
     # Stamp the stage for runtime and memory information
-    time_info -table $runtype -stamp "$this_run(stage)_conformal_map"
+    time_info -table $runtype -stamp "ispatial_flow_conformal_map"
 
     # Post synthesis optimization
-    krg_start_stage "syn_opt_ispatial_flow"
+    krg_start_stage "syn_opt_ispatial_flow" no
     push_snapshot_stack
     syn_opt -spatial
     pop_snapshot_stack
     create_snapshot -categories all -label $this_run(stage) 
     # Stamp the stage for runtime and memory information
-    time_info -table $runtype -stamp "$this_run(stage)_syn_opt"
+    time_info -table $runtype -stamp "ispatial_flow_syn_opt"
 
 } else {
     # Set Synthesis Efforts and Other Settings
@@ -351,67 +351,77 @@ if {$phys_synth_type == "floorplan"} {
     # Stamp the stage for runtime and memory information
     time_info -table $runtype -stamp "$this_run(stage)_settings"
 
+    # Predict Floorplan
+    krg_set_predict_floorplan_settings
+    predict_floorplan
+
     # Synthesize to generics gates
-    krg_start_stage "syn_generic_ispatial_flow"
+    krg_start_stage "syn_generic_rtl_floorplanning_flow" yes
     push_snapshot_stack
     syn_generic -physical
     pop_snapshot_stack
     create_snapshot -categories all -label $this_run(stage) 
     # Stamp the stage for runtime and memory information
-    time_info -table $runtype -stamp "$this_run(stage)_syn_generic"
+    time_info -table $runtype -stamp "rtl_floorplanning_syn_generic"
 
     # Create Reports and Snapshot
     krg_create_stage_reports -report_datapath yes -report_summary yes
     # Stamp the stage for runtime and memory information
-    time_info -table $runtype -stamp "$this_run(stage)_syn_generic_reports"
+    time_info -table $runtype -stamp "rtl_floorplanning_syn_generic_reports"
 
     # Map technology
-    krg_start_stage "syn_mapping_ispatial_flow"
+    krg_start_stage "syn_mapping_rtl_floorplanning_flow" yes
     push_snapshot_stack
     syn_map -physical
     pop_snapshot_stack
     create_snapshot -categories all -label $this_run(stage) 
     # Stamp the stage for runtime and memory information
-    time_info -table $runtype -stamp "$this_run(stage)_syn_map"
+    time_info -table $runtype -stamp "rtl_floorplanning_syn_map"
 
     # Create Reports and Snapshot
     krg_create_stage_reports -report_datapath yes -report_summary yes
     # Stamp the stage for runtime and memory information
-    time_info -table $runtype -stamp "$this_run(stage)_syn_map_reports"
+    time_info -table $runtype -stamp "rtl_floorplanning_syn_map_reports"
+
+    # Conformal LEC verification
+    write_do_lec -golden_design rtl -revised_design fv_map \
+    -logfile design(conformal_dir)/rtl2fvmap.lec.log > design(conformal_dir)/rtl2fvmap.lec.tcl
 
     # Stamp the stage for runtime and memory information
-    time_info -table $runtype -stamp "$this_run(stage)_conformal_map"
+    time_info -table $runtype -stamp "rtl_floorplanning_conformal_map"
 
-    # Predict Floorplan
-    krg_set_predict_floorplan_settings
-    predict_floorplan
+    # Need to disable this option if you enable before generic synthesis
+    set_db predict_floorplan_enable_during_generic  false
 
     # Post synthesis optimization
-    krg_start_stage "syn_opt_ispatial_flow" no
+    krg_start_stage "syn_opt_rtl_floorplanning_flow" no
     push_snapshot_stack
     syn_opt -spatial
     pop_snapshot_stack
     create_snapshot -categories all -label $this_run(stage) 
     # Stamp the stage for runtime and memory information
-    time_info -table $runtype -stamp "$this_run(stage)_syn_opt"
+    time_info -table $runtype -stamp "rtl_floorplanning_syn_opt"
 
 }
 
 #################################################################
-#                     Post Synthesis Reports                    #
+#                     Post Optimization Reports                    #
 #################################################################
+# Post optimization
+krg_start_stage "post_optimization" yes
+
 # Create Reports and Snapshot
 krg_create_stage_reports \
-    -write_db           yes \
-    -write_snapshot     yes \
-    -report_setup       yes \
-    -report_hold        yes \
-    -check_drc          yes \
-    -check_connectivity yes \
-    -report_datapath    yes \
-    -report_qor         yes \
-    -report_gates       yes \
-    -report_area        yes \
+    -write_db              yes \
+    -write_snapshot        yes \
+    -report_setup          yes \
+    -report_hold           yes \
+    -check_drc             yes \
+    -check_connectivity    yes \
+    -report_datapath       yes \
+    -report_qor            yes \
+    -report_gates          yes \
+    -report_area           yes \
     -check_design_rules    yes \
     -report_summary        yes \
     -report_multibit       yes \
@@ -424,7 +434,7 @@ time_info -table $runtype -stamp "$this_run(stage)_syn_opt_reports"
 #                     Exporting the Design                      #
 #################################################################
 if {$phys_synth_type == "floorplan"} {
-    krg_start_stage "export_post_synth_design_ispatial"
+    krg_start_stage "export_post_synth_design_ispatial" no
 
     # Write out Netlist for simulation, lec or pnr
     # --------------------------------------------
@@ -447,7 +457,7 @@ if {$phys_synth_type == "floorplan"} {
     write_sdf > $design(postsyn_sdf_ispatial)
 
 } else {
-    krg_start_stage "export_post_synth_rtl_floorplanning"
+    krg_start_stage "export_post_synth_rtl_floorplanning" no
 
     # Write out a netlist for simulation or Innovus
     # ---------------------------------------------

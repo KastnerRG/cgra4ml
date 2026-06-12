@@ -80,9 +80,12 @@ if {$runtype == "synthesis"} {
     set_db retime_effort_level           high ; # low|medium|high  
 
     # Innovus Executable Settings
-    set_db innovus_executable            $env(INNOVUS) ; # Set path to innovus executable to used by syn_opt -spatial
+    set_db innovus_executable            $env(innovus_exe) ; # Set path to innovus executable to used by syn_opt -spatial
     set_db invs_temp_dir                 $design(innovus_dir)
-    set_db invs_postexport_report_script "design(workdir)/invs_postexport_report_script.tcl"
+    exec bash -c "touch $design(workdir)/invs_postexport_report_script.tcl"
+    exec bash -c "touch $design(workdir)/invs_postload_script.tcl"
+    set_db invs_postexport_report_script "$design(workdir)/invs_postexport_report_script.tcl"
+    set_db invs_postload_script          "$design(workdir)/invs_postload_script.tcl"
 
     # Floorplan debug settings
     set_db message:PHYS-171 .severity    Error; # Components not present in netlist
@@ -94,12 +97,14 @@ if {$runtype == "synthesis"} {
     set_db retime_verification_flow            true 
     set_db verification_directory_naming_style $design(conformal_dir)/%s
 
+    set_db hdl_track_filename_row_col      true ; # impacts runtime and memory
+    
     # krg_set_predict_floorplan_settings
     proc krg_set_predict_floorplan_settings {} {
         set_db predict_floorplan_allow_core_reshape     true
         set_db predict_floorplan_allow_illegal_macro    false
-        set_db predict_floorplan_enable_during_generic  false
-        set_db predict_floorplan_keep_fences            true
+        set_db predict_floorplan_keep_fences            false
+        set_db predict_floorplan_enable_during_generic  true
     }
 
     # krg_set_low_power_settings
@@ -114,7 +119,6 @@ if {$runtype == "synthesis"} {
         set_db lp_clock_gating_prefix          lp_clk_gate
         set_db lp_insert_clock_gating          true
         set_db lp_toggle_rate_unit             /ns
-        set_db hdl_track_filename_row_col      true ; # impacts runtime and memory
     }
     
     # krg_set_dft_settings

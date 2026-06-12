@@ -36,6 +36,7 @@
 #   --top-module      Top-level design name — locates PDK SRAM dir SRAMs_<top_module> (default: axi_cgra4ml)
 #
 # Examples:
+# Use these commands
 #   for verilator
 #   bash ./simulation.sh 
 #   for xcelium - fpga simulation == verilator simulation
@@ -43,11 +44,11 @@
 #   for xcelium - asic rtl simulation with srams generation (It will take approximately 3.5 hours to complete. if you need to reduce runtime reduce corners in gen_srams_spec.py)
 #   bash ./simulation.sh --sim xrun --sim-type asic --sram-gen True  --freq 1000 --runtype rtl --sram-compilers rf_sp_hse_svt_mvt,rf_2p_hsc_svt_mvt --top-module axi_cgra4ml
 #   for xcelium - asic rtl simulation with no srams generation (once srams are generated it will be there forever unless deleted manually)
-#   bash ./simulation.sh --sim xrun --sim-type asic --runtype rtl --top-module axi_cgra4ml
+#   bash ./simulation.sh --sim xrun --sim-type asic --runtype rtl --freq 1000 --top-module axi_cgra4ml
 #   for xcelium - asic synthesis gls simulation with no srams generation
-#   bash ./simulation.sh --sim xrun --sim-type asic --run 1 --runtype synthesis --top-module axi_cgra4ml
+#   bash ./simulation.sh --sim xrun --sim-type asic --freq 1000 --run 1 --runtype synthesis --top-module axi_cgra4ml
 #   for xcelium - asic pnr gls simulation with no srams generation
-#   bash ./simulation.sh --sim xrun --sim-type asic --run 1 --runtype pnr --top-module axi_cgra4ml
+#   bash ./simulation.sh --sim xrun --sim-type asic --freq 1000 --run 1 --runtype pnr --top-module axi_cgra4ml
 #######################################################################################################
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

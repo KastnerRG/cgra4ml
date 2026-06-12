@@ -41,6 +41,7 @@
 # TODO:
 #   Major Revisions
 #   [X] Add CCS/AOCV support
+#   [ ] Add sfg & fsg corner support
 ##############################################################################
 
 # Set Paths for Timing Libs
@@ -59,9 +60,9 @@ set sram_defs {
 # {corner  condition  {periphery_voltages...}  {bitcell_array_voltages...}  {temps...}}
 # volt1 and volt2 are iterated as pairs — add matching entries to extend both voltage lists.
 set sram_corner_defs {
-    {BC  ffpg_sigcmin   {0p90v}   {0p90v}   {m40c}}
-    {WC  sspg_sigrcmax  {0p675v}  {0p675v}  {m40c}}
-    {TC  tt_nominal     {0p75v}   {0p75v}   {85c}}
+    {BC  ffpg_sigcmin   {0p90v 0p825v 1p00v}    {0p90v 0p825v 1p00v}    {m40c}}
+    {WC  sspg_sigrcmax  {0p675v 0p765v 0p855v}  {0p675v 0p765v 0p855v}  {m40c}}
+    {TC  tt_nominal     {0p75v 0p85v 0p95v}     {0p75v 0p85v 0p95v}     {85c}}
 }
 
 # NLDM Liberty Files

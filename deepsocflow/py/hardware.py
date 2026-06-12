@@ -194,15 +194,15 @@ class Hardware:
         self.SRAMGEN_BASH = f"{self.MODULE_DIR}/tcl/asic/cadence/scripts/gen_srams.sh"
 
         self.ASIC_SV_SRAMS = self.FPGA_SV_RTL + \
-            glob.glob(f"{self.MODULE_DIR}/rtl/asic/ram.sv") + \
-            glob.glob(f"{self.MODULE_DIR}/rtl/asic/dual_port_sram.sv") + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/asic/sp_sram.sv") + \
+            glob.glob(f"{self.MODULE_DIR}/rtl/asic/dp_sram.sv") + \
             glob.glob(f"{self.MODULE_DIR}/rtl/ext/ram_read_wider.sv")
         
         # Add Foundry Behavioural Verilog Models of SRAMS
         self.ASIC_SRAMTB = self.FPGA_SVH_RTL + self.ASIC_SV_SRAMS + self.FPGA_V_RTL + \
-            glob.glob(f"{self.PDK_DIR}/SRAMs_CGRA4ML/sram_edge/sram_edge.v") + \
-            glob.glob(f"{self.PDK_DIR}/SRAMs_CGRA4ML/sram_weight/sram_weight.v") + \
-            glob.glob(f"{self.PDK_DIR}/SRAMs_CGRA4ML/sram_dma/sram_dma.v") + \
+            glob.glob(f"{self.PDK_DIR}/SRAMs_{self.TOP_MODULE}/sram_edge/sram_edge.v") + \
+            glob.glob(f"{self.PDK_DIR}/SRAMs_{self.TOP_MODULE}/sram_weight/sram_weight.v") + \
+            glob.glob(f"{self.PDK_DIR}/SRAMs_{self.TOP_MODULE}/sram_dma/sram_dma.v") + \
             glob.glob(f'{self.MODULE_DIR}/firebridge/fb_axi_vip.sv') + \
             glob.glob(f'{self.MODULE_DIR}/test/sv/ext/*.v', recursive=True) + \
             glob.glob(f'{self.MODULE_DIR}/test/sv/top_tb.sv')
@@ -249,15 +249,6 @@ class Hardware:
         with open('sources.txt', 'w') as f:
             f.write("\n".join([os.path.normpath(s) for s in self.SOURCES]))
 
-        with open('axi_cgra4ml_src_list_sv.txt', 'w') as f:
-            f.write("\n".join([os.path.normpath(s) for s in self.ASIC_SV_SRAMS]))
-
-        with open('axi_cgra4ml_src_list_svh.txt', 'w') as f:
-            f.write("\n".join([os.path.normpath(s) for s in self.FPGA_SVH_RTL]))
-
-        with open('axi_cgra4ml_src_list_v.txt', 'w') as f:
-            f.write("\n".join([os.path.normpath(s) for s in self.FPGA_V_RTL]))
-
         with open('config_hw.svh', 'w') as f:
             f.write(f'''
 // Written from Hardware.export()
@@ -294,7 +285,6 @@ class Hardware:
 `define CONFIG_BASEADDR     32'h{self.CONFIG_BASEADDR:<10}
 ''')
 
-
         with open('config_hw.tcl', 'w') as f:
             f.write(f'''
 # Written from Hardware.export()
@@ -312,6 +302,15 @@ set KH_MAX             {self.KH_MAX}
 set AXI_WIDTH          {self.AXI_WIDTH}
 set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
 ''')
+
+        with open(f'{self.TOP_MODULE}_src_list_sv.txt', 'w') as f:
+            f.write("\n".join([os.path.basename(s) for s in self.ASIC_SV_SRAMS]))
+
+        with open(f'{self.TOP_MODULE}_src_list_svh.txt', 'w') as f:
+            f.write("\n".join([os.path.basename(s) for s in self.FPGA_SVH_RTL]))
+
+        with open(f'{self.TOP_MODULE}_src_list_v.txt', 'w') as f:
+            f.write("\n".join([os.path.basename(s) for s in self.FPGA_V_RTL]))
 
     def gen_sram_specs(self, sram_compilers):
         import sys
