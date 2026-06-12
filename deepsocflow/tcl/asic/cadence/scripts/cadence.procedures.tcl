@@ -342,14 +342,16 @@ proc krg_create_stage_reports {{args ""}} {
     if { $options(-write_design) eq "yes" } {
         krg_message "Starting to write genus design for stage: $this_run(stage)" low
         set dbs_proc_dir $active_dbs_dir/$this_run(stage)
-        run_parallel_commands -queue "write_design -basename $dbs_proc_dir" -priority 5
+        mkdir -pv $dbs_proc_dir
+        run_parallel_commands -queue "write_design -basename $dbs_proc_dir/$this_run(stage)" -priority 5
         krg_message "Added to parallel commands queue, write design for stage: $this_run(stage)" low
     }
 
     if { $options(-write_db) eq "yes" } {
         krg_message "Starting to create genus databases for stage: $this_run(stage)" low
-        set dbs_proc_dir $active_dbs_dir/$this_run(stage).stylus.enc
-        run_parallel_commands -queue "write_db -common $dbs_proc_dir" -priority 5
+        set dbs_proc_dir $active_dbs_dir/$this_run(stage)
+        mkdir -pv $dbs_proc_dir
+        run_parallel_commands -queue "write_db -common $dbs_proc_dir/$this_run(stage).stylus.enc" -priority 5
         krg_message "Added to parallel commands queue, genus databases for stage: $this_run(stage)" low
     }
 
@@ -357,12 +359,14 @@ proc krg_create_stage_reports {{args ""}} {
         krg_message "Skipping snapshot for elaborate stage: $this_run(stage)" low
     } elseif { $options(-write_snapshot) eq "yes" && [string match *syn_opt* $this_run(stage)] } {
         krg_message "Starting to create innovus snapshot for stage: $this_run(stage)" low
-        set dbs_proc_dir $active_dbs_dir
+        set dbs_proc_dir $active_dbs_dir/$this_run(stage)
+        mkdir -pv $dbs_proc_dir
         write_snapshot -innovus -outdir $dbs_proc_dir -tag $this_run(stage)
         krg_message "Completed innovus snapshot for stage: $this_run(stage)" low
     } else {
         krg_message "Starting to create genus snapshot for stage: $this_run(stage)" low
-        set dbs_proc_dir $active_dbs_dir
+        set dbs_proc_dir $active_dbs_dir/$this_run(stage)
+        mkdir -pv $dbs_proc_dir
         write_snapshot -outdir $dbs_proc_dir -tag $this_run(stage)
         krg_message "Completed genus snapshot for stage: $this_run(stage)" low
     }
@@ -446,7 +450,7 @@ proc krg_create_stage_reports {{args ""}} {
     if { $options(-report_summary) eq "yes" && $options(-write_snapshot) eq "yes" } {
         krg_message "Starting to create QoR summary reports for stage: $this_run(stage)" low
         set rpt_proc_dir $active_rpt_dir
-        run_parallel_commands -queue "report_summary > $rpt_proc_dir/${stage_prefix}_summary.rpt" -priority 1
+        run_parallel_commands -queue "report_summary -directory $rpt_proc_dir/${stage_prefix}_summary.rpt" -priority 1
         krg_message "Added to parallel commands queue, QoR summary reports for stage: $this_run(stage)" low
     } else {
         krg_message "Cannot generate summary report: both -report_summary and -write_snapshot must be set to yes" medium

@@ -304,7 +304,7 @@ if {$phys_synth_type == "floorplan"} {
     time_info -table $runtype -stamp "ispatial_flow_syn_generic"
 
     # Create Reports and Snapshot
-    krg_create_stage_reports -report_datapath yes -report_summary yes
+    krg_create_stage_reports -write_design yes -write_snapshot yes -report_datapath yes -report_summary yes
     # Stamp the stage for runtime and memory information
     time_info -table $runtype -stamp "ispatial_flow_syn_generic_reports"
 
@@ -318,7 +318,7 @@ if {$phys_synth_type == "floorplan"} {
     time_info -table $runtype -stamp "ispatial_flow_syn_map"
 
     # Create Reports and Snapshot
-    krg_create_stage_reports -report_datapath yes -report_summary yes
+    krg_create_stage_reports -write_design yes -write_snapshot yes -report_datapath yes -report_summary yes
     # Stamp the stage for runtime and memory information
     time_info -table $runtype -stamp "ispatial_flow_syn_map_reports"
 
@@ -365,7 +365,7 @@ if {$phys_synth_type == "floorplan"} {
     time_info -table $runtype -stamp "rtl_floorplanning_syn_generic"
 
     # Create Reports and Snapshot
-    krg_create_stage_reports -report_datapath yes -report_summary yes
+    krg_create_stage_reports -write_design yes -write_snapshot yes -report_datapath yes -report_summary yes
     # Stamp the stage for runtime and memory information
     time_info -table $runtype -stamp "rtl_floorplanning_syn_generic_reports"
 
@@ -379,7 +379,7 @@ if {$phys_synth_type == "floorplan"} {
     time_info -table $runtype -stamp "rtl_floorplanning_syn_map"
 
     # Create Reports and Snapshot
-    krg_create_stage_reports -report_datapath yes -report_summary yes
+    krg_create_stage_reports -write_design yes -write_snapshot yes -report_datapath yes -report_summary yes
     # Stamp the stage for runtime and memory information
     time_info -table $runtype -stamp "rtl_floorplanning_syn_map_reports"
 
