@@ -37,6 +37,7 @@ class Hardware:
             ready_prob: float = 0.1,
             data_dir: str = 'vectors/',
             tb_module: str = 'top_tb',
+            top_module: str = 'axi_cgra4ml',
             pdk_dir: str = "/work/PDK/SAMSUNGLN05LPE"
             ):
         """
@@ -109,8 +110,9 @@ class Hardware:
         self.Y_OUT_BITS            = 2**clog2(self.Y_BITS)
         self.W_BPT                 = 32#clog2(self.ROWS*self.COLS*self.Y_OUT_BITS/8)
 
-        self.MODULE_DIR = os.path.normpath(os.path.dirname(deepsocflow.__file__)).replace('\\', '/')
-        self.TB_MODULE = tb_module
+        self.MODULE_DIR  = os.path.normpath(os.path.dirname(deepsocflow.__file__)).replace('\\', '/')
+        self.TB_MODULE   = tb_module
+        self.TOP_MODULE  = top_module
         self.SOURCES = \
             glob.glob(f'{self.MODULE_DIR}/test/sv/*.sv') + \
             glob.glob(f'{self.MODULE_DIR}/test/sv/**/*.v') + \
@@ -311,15 +313,18 @@ set AXI_WIDTH          {self.AXI_WIDTH}
 set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
 ''')
 
-    def gen_sram_specs(self):
+    def gen_sram_specs(self, sram_compilers):
         import sys
         sys.path.insert(0, os.path.join(self.MODULE_DIR, "tcl/asic/cadence/scripts"))
         from gen_srams_spec import generate_spec
 
+        compiler_sp = sram_compilers[0]
+        compiler_2p = sram_compilers[1]
+
         edge_bits  = self.X_BITS * (self.KH_MAX // 2)
         axil_width = 32  # fixed in hardware
 
-        sram_root   = os.path.join(self.PDK_DIR, "SRAMs_CGRA4ML")
+        sram_root   = os.path.join(self.PDK_DIR, f"SRAMs_{self.TOP_MODULE}")
         dir_edge    = os.path.join(sram_root, "sram_edge")
         dir_weight  = os.path.join(sram_root, "sram_weight")
         dir_dma     = os.path.join(sram_root, "sram_dma")
@@ -335,7 +340,7 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             words            = self.RAM_EDGES_DEPTH,
             mux              = 8,
             sram_type        = "sp",
-            compiler         = "rf_sp_hse_svt_mvt",
+            compiler         = compiler_sp,
             frequency        = self.FREQ,
             flexible_banking = 2,
             output_file      = os.path.join(dir_edge, "sram_edge.spec"),
@@ -347,7 +352,7 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             words            = self.RAM_WEIGHTS_DEPTH,
             mux              = 4,
             sram_type        = "sp",
-            compiler         = "rf_sp_hse_svt_mvt",
+            compiler         = compiler_sp,
             frequency        = self.FREQ,
             flexible_banking = 1,
             output_file      = os.path.join(dir_weight, "sram_weight.spec"),
@@ -359,34 +364,41 @@ set CONFIG_BASEADDR    0x{self.CONFIG_BASEADDR}
             words            = self.MAX_N_BUNDLES,
             mux              = 1,
             sram_type        = "2p",
-            compiler         = "rf_2p_hsc_svt_mvt",
+            compiler         = compiler_2p,
             frequency        = self.FREQ,
             write_mask       = "off",
             flexible_banking = 1,
             output_file = os.path.join(dir_dma, "sram_dma.spec"),
         )
 
-    def simulate(self, SIM='verilator', SIM_PATH='', TRACE=False, SIM_TYPE='fpga', SRAM_GEN=False, RUN=1, RUNTYPE='rtl'):
+    def simulate(self, SIM='verilator', SIM_PATH='', TRACE=False, SIM_TYPE='fpga', SRAM_GEN=False, RUN=1, RUNTYPE='rtl', SRAM_COMPILERS=None):
 
-        print(f"\n\nSIMULATION CONFIG: SIM={SIM}  SIM_TYPE={SIM_TYPE}  SRAM_GEN={SRAM_GEN}  RUNTYPE={RUNTYPE}  RUN={RUN}\n\n")
+        if SRAM_COMPILERS is None:
+            SRAM_COMPILERS = ['rf_sp_hse_svt_mvt', 'rf_2p_hsc_svt_mvt']
+
+        print(f"\n\nSIMULATION CONFIG: SIM={SIM}  SIM_TYPE={SIM_TYPE}  SRAM_GEN={SRAM_GEN}  RUNTYPE={RUNTYPE}  RUN={RUN}  SRAM_COMPILERS={SRAM_COMPILERS}\n\n")
         os.makedirs('build', exist_ok=True)
-        print("\n\nCOMPILING...\n\n")
 
         # SRAM Generation for ASIC RTL & GLS Simulation with SRAMs
-        # !!!!!!!!!!!!! Very first SRAM generation and ASIC rtl simulation can lead to errors in the simulation. 
+        # !!!!!!!!!!!!! Very first SRAM generation and ASIC rtl simulation can lead to errors in the simulation.
         # In that case, try running the ASIC RTL Simulation with SRAM_GEN=False !!!!!!!!!!!!!
 
         if SRAM_GEN == True:
             print("\n\nGENERATING SRAMs.....\n\n")
-            self.gen_sram_specs()
+            self.gen_sram_specs(sram_compilers=SRAM_COMPILERS)
             start = time.time()
             cmd = ["chmod", "+x", self.SRAMGEN_BASH]
             print(" ".join(cmd))
             assert subprocess.run(cmd, cwd="build").returncode == 0
-            cmd = [self.SRAMGEN_BASH]
+            cmd = [self.SRAMGEN_BASH,
+                   "--design",      self.TOP_MODULE,
+                   "--sp-compiler", SRAM_COMPILERS[0],
+                   "--2p-compiler", SRAM_COMPILERS[1]]
             print(" ".join(cmd))
             assert subprocess.run(cmd, cwd="build").returncode == 0
             print(f"\n\nSRAMS GENERATION TIME: {time.time()-start:.2f} seconds\n\n")
+
+        print("\n\nCOMPILING...\n\n")
 
         ####### Vivado Simulator ########
         if SIM == 'xsim':

@@ -24,15 +24,19 @@ parser.add_argument('--sim-type', default='fpga',      help='Sim type: fpga | as
 parser.add_argument('--sram-gen', default='False',     help='SRAM generation: True | False')
 parser.add_argument('--freq',     default=250,         help='Target frequency in MHz', type=int)
 parser.add_argument('--run',      default=1,           help='Run counter — selects which EDA run outputs to simulate', type=int)
-parser.add_argument('--runtype',  default='rtl',       help='Run type: rtl | synthesis | pnr  (default: rtl)')
+parser.add_argument('--runtype',        default='rtl',                                    help='Run type: rtl | synthesis | pnr  (default: rtl)')
+parser.add_argument('--sram-compilers', default='rf_sp_hse_svt_mvt,rf_2p_hsc_svt_mvt',  help='Comma-separated SRAM compiler names: sp,2p  (default: rf_sp_hse_svt_mvt,rf_2p_hsc_svt_mvt)')
+parser.add_argument('--top-module',     default='axi_cgra4ml',                           help='Top-level design name  (default: axi_cgra4ml)')
 args = parser.parse_args()
 
-SIM      = args.sim
-SIM_TYPE = args.sim_type
-SRAM_GEN = args.sram_gen.lower() == 'true'
-FREQ_MHZ = args.freq
-RUN      = args.run
-RUNTYPE  = args.runtype
+SIM            = args.sim
+SIM_TYPE       = args.sim_type
+SRAM_GEN       = args.sram_gen.lower() == 'true'
+FREQ_MHZ       = args.freq
+RUN            = args.run
+RUNTYPE        = args.runtype
+SRAM_COMPILERS = args.sram_compilers.split(',')
+TOP_MODULE     = args.top_module
 
 '''
 Dataset
@@ -186,6 +190,7 @@ hw = Hardware (                          # Alternatively: hw = Hardware.from_jso
         valid_prob          = 1        , # probability in which AXI-Stream s_valid signal should be toggled in simulation
         ready_prob          = 1        , # probability in which AXI-Stream m_ready signal should be toggled in simulation
         data_dir            = 'vectors', # directory to store generated test vectors
+        top_module          = TOP_MODULE, #
      )
 
 hw.export_json()
@@ -198,7 +203,7 @@ hw.export_vivado_tcl(board='zcu104')
 VERIFY & EXPORT
 '''
 export_inference(loaded_model, hw, batch_size=1)
-verify_inference(loaded_model, hw, SIM=SIM, SIM_TYPE=SIM_TYPE, SRAM_GEN=SRAM_GEN, RUN=RUN, RUNTYPE=RUNTYPE)
+verify_inference(loaded_model, hw, SIM=SIM, SIM_TYPE=SIM_TYPE, SRAM_GEN=SRAM_GEN, RUN=RUN, RUNTYPE=RUNTYPE, SRAM_COMPILERS=SRAM_COMPILERS)
 
 d_perf = predict_model_performance(hw)
 pp = pprint.PrettyPrinter(indent=4)

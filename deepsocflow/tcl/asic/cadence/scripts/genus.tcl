@@ -124,8 +124,8 @@ source $design(scripts_dir)/cadence.settings.tcl -quiet
 # Load the library paths and definitions for this technology
 source $design(libraries_dir)/cadence.libraries.$TECHNOLOGY.tcl -quiet
 source $design(libraries_dir)/cadence.libraries.$SC_TECHNOLOGY.tcl -quiet
-source $design(libraries_dir)/cadence.srams.$TECHNOLOGY.tcl -quiet
 source $design(libraries_dir)/cadence.srams.$SC_TECHNOLOGY.tcl -quiet
+source $design(libraries_dir)/cadence.srams.$TECHNOLOGY.tcl -quiet
 if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
     source $design(libraries_dir)/cadence.libraries.$IO_TECHNOLOGY.tcl -quiet
 }

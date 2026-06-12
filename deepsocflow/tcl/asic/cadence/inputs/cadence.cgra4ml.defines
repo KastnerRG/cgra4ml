@@ -32,6 +32,9 @@
 ##############################################################################
 # TODO:
 #   Major Revisions
+#   [ ] Add Genus Suppress Messages
+#   [ ] Add Innovus Suppress Messages
+#   [ ] Add Tempus Suppress Messages
 #   [ ] Add multi-clock support (MULTI_CLOCK_DESIGN currently hardcoded "no")
 #   [ ] Add SRAM technology definitions when SRAM_TECHNOLOGY != "None"
 #   [ ] Add IO technology definitions when IO_TECHNOLOGY != "None"
@@ -217,19 +220,19 @@ set design(power_report_end_time)   1500
 ################################################
 #               Get rid of annoying messages
 ################################################
-set design(DESIGN_SUPPRESS_MESSAGES_GENUS) "ST-110 ST-112 CFM-5 CFM-1"
-# Stop reporting elaboration of multi-dimensional array
-lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-250"
-# Stop reporting implementation inference (chipWare)
-lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) {*} "CWD-19 CWD-36"
-# Stop reporting Replaced logic with a constant value
-lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-771"
-# Stop reporting unreachable case statements
-lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-472"
+# set design(DESIGN_SUPPRESS_MESSAGES_GENUS) "ST-110 ST-112 CFM-5 CFM-1"
+# # Stop reporting elaboration of multi-dimensional array
+# lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-250"
+# # Stop reporting implementation inference (chipWare)
+# lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) {*} "CWD-19 CWD-36"
+# # Stop reporting Replaced logic with a constant value
+# lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-771"
+# # Stop reporting unreachable case statements
+# lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-472"
 
-# set design(DESIGN_SUPPRESS_MESSAGES_INNOVUS) ""
-# Stop reporting mismatch in voltage between IOs and sta...
-# lappend design(DESIGN_SUPPRESS_MESSAGES_INNOVUS) "TMPMSM.."
+# # set design(DESIGN_SUPPRESS_MESSAGES_INNOVUS) ""
+# # Stop reporting mismatch in voltage between IOs and sta...
+# # lappend design(DESIGN_SUPPRESS_MESSAGES_INNOVUS) "TMPMSM.."
 
 ################################################
 #               Print values to debug file
