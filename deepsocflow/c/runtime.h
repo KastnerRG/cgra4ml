@@ -26,9 +26,11 @@ static inline idiv_t idiv(int numer, int denom) {
 
 typedef const struct {
   const u16  n, l, kw, coe, h, w, ci, co, w_kw2, t, p, cm, cm_p0, on, oh, ow, oc, ch, ph, cw, pw, pkh, psh, pkw, psw;
-  const i32  xp_words, b_offset, w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes;
+  const i32  xp_words, b_offset, w_bpt, w_bpt_p0, x_bpt, x_bpt_p0, o_words, o_bytes, w_buf_wr_offset;
   const i8   ib_out, in_buffer_idx, out_buffer_idx, add_out_buffer_idx, add_in_buffer_idx;
-  const i8   is_bias, is_pool, is_flatten, is_softmax;
+  const i8   out_w_buffer_idx, in_w_buffer_idx; // dynamic weight buffers: producer writes w_bufs[out_w_buffer_idx]; consumer reads via b_offset into w_bufs[in_w_buffer_idx]
+  const i8   out_w_consumer_ib; // ib of the bundle that reads this bundle's output as weights (-1 = none)
+  const i8   is_bias, is_pool, is_flatten, is_softmax, transpose_w_src;
   const i8   x_pad, b_val_shift, b_bias_shift, ca_nzero, ca_shift, ca_pl_scale, aa_nzero, aa_shift, aa_pl_scale, pa_nzero, pa_shift, pa_pl_scale, softmax_frac;
   const i8   csh, csh_shift, psh_shift, csw, csw_shift, psw_shift, pool;
   const i32  softmax_max_i;
@@ -44,6 +46,9 @@ typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 #define X_BITS            (1 << X_BITS_L2)
 #define X_WORDS_PER_BYTE  (8 / X_BITS)
 #define X_BITS_MASK       ((1 << X_BITS) -1)
+#define W_BITS            (1 << W_BITS_L2)
+#define W_WORDS_PER_BYTE  (8 / W_BITS)
+#define W_BITS_MASK       ((1 << W_BITS) - 1)
 #ifdef SIM
   #define XDEBUG
   void usleep(int x) {}
@@ -51,7 +56,7 @@ typedef enum {POOL_NONE, POOL_MAX, POOL_AVG} Pool_t;
 
 typedef struct {
   // These can be kept in DDR
-  i8     w              [W_BYTES     ];
+  i8     w              [W_BYTES     ]; // includes dynamic weight regions at sequential bundle positions
   B_TYPE b              [B_WORDS     ]; // keep next to w. weights are loaded to w_ptr
   i8     x              [X_BYTES     ]; // keep next to wb. wbx is loaded to w_ptr
   O_TYPE y              [O_WORDS     ];
@@ -59,6 +64,7 @@ typedef struct {
   // These are written often, keep them on OCM
   Y_TYPE ocm            [2][PE_COLS*PE_ROWS];
   i32    nhwc           [NHWC_WORDS  ];
+  float  softmax_tmp    [NHWC_WORDS  ];
   i8     out_buffers    [N_OUT_BUF   ][O_BYTES_MAX ];
   
 #ifdef XDEBUG
@@ -95,6 +101,7 @@ extern EXT_C void model_setup(Memory_st *restrict mp) {
   fclose(fp);
 #endif
   flush_cache(mp->w, WB_BYTES+X_BYTES);  // force transfer to DDR, starting addr & length
+  //flush_cache(mp->w, WB_BYTES + N_W_BUF * W_BUF_BYTES_MAX + X_BYTES);
 
 
   // Write registers in controller
@@ -115,7 +122,7 @@ extern EXT_C void model_setup(Memory_st *restrict mp) {
   // Write into BRAM the config for controller
   i32 parameters[8*N_BUNDLES];
   for (int var = 0; var < N_BUNDLES; var++){
-    parameters[8*var] = (var == 0) ? fb_addr_64to32(mem_phy.x) : fb_addr_64to32(mem_phy.out_buffers[bundles[var].in_buffer_idx]);       // x_base address
+    parameters[8*var] = (bundles[var].in_buffer_idx == -1) ? fb_addr_64to32(mem_phy.x) : fb_addr_64to32(mem_phy.out_buffers[bundles[var].in_buffer_idx]);       // x_base address
     parameters[8*var+1] = bundles[var].x_bpt_p0;  // x_bpt0
     parameters[8*var+2] = bundles[var].x_bpt;     // x_bpt
     parameters[8*var+3] = bundles[var].w_bpt_p0;  // w_bpt0
@@ -217,6 +224,51 @@ static inline void write_x(i8 val, i8 *restrict p_out_buffer, Memory_st *restric
 }
 
 
+// Write one output element from a producer bundle into the weight-tiled w_buf layout.
+// i_ci maps to the CI dimension of the consumer bundle (= i_yh of the producer output).
+// i_co maps to the CO dimension of the consumer bundle (= i_yc of the producer output).
+#if HAS_DYNAMIC_WEIGHTS
+static inline void tile_write_w(
+    i8 val, i8 *restrict p_w_buf,
+    Bundle_t *restrict pb_c,   // consumer bundle whose weight DMA will read this w_buf
+    i32 w_buf_bytes,           // total bytes in the w_buf (= producer's o_bytes)
+    i32 i_ci, i32 i_co
+) {
+  // Map CO → (it, col) with reversed column to match reorder_w_q2e_conv's np.flip
+  i32 it  = i_co / pb_c->coe;
+  i32 col = pb_c->coe - 1 - (i_co % pb_c->coe);
+
+  // Map CI → (ip, ci_local) across channel passes
+  i8  ci_first = (i_ci < pb_c->cm_p0);
+  idiv_t div_p = ci_first ? (idiv_t){0, i_ci} : idiv(i_ci - pb_c->cm_p0, pb_c->cm);
+  i32 ip       = ci_first ? 0 : div_p.quot + 1;
+  i32 ci_local = div_p.rem;   // for ci_first: {0, i_ci}.rem == i_ci
+  i32 cm_p     = ci_first ? pb_c->cm_p0 : pb_c->cm;
+
+  // Flat element index in the interleaved [ip][it][ci][col] layout written by xmodel.py:
+  //   ip=0 block: t * cm_p0 * PE_COLS elements
+  //   ip>0 block: t * cm    * PE_COLS elements each
+  i32 elems_before = (ip == 0) ? 0
+      : (i32)pb_c->t * pb_c->cm_p0 + (ip - 1) * (i32)pb_c->t * pb_c->cm;
+  i32 flat_index = (elems_before + it * cm_p + ci_local) * PE_COLS + col;
+
+  // Pack W_BITS per byte (mirrors write_x() nibble-packing for X_BITS)
+  idiv_t pidx = idiv(flat_index, W_WORDS_PER_BYTE);
+
+  #define TILE_WRITE_W_DBG "--- i_ci:%d i_co:%d it:%d ip:%d col:%d flat:%d byte:%d pos:%d\n", \
+      i_ci, i_co, it, ip, col, flat_index, pidx.quot, pidx.rem
+  assert_printf(pidx.quot, <, w_buf_bytes, "tile_write_w", TILE_WRITE_W_DBG);
+
+  u8 mask   = (u8)((u8)W_BITS_MASK << (pidx.rem * W_BITS));
+  u8 packed = (u8)(((u8)val & W_BITS_MASK) << (pidx.rem * W_BITS));
+  u8 cur    = p_w_buf[pidx.quot];
+  debug_printf("  [TILE_WRITE_W] i_ci=%d i_co=%d -> byte=%d pos=%d  val=%d\n",
+      i_ci, i_co, pidx.quot, pidx.rem, (int)val);
+  write_flush_u8((u8*)(p_w_buf + pidx.quot), (cur & ~mask) | packed);
+}
+#endif
+
+
 static inline void tile_write( i32 out_val, i8 *restrict p_out_buffer, i32 ib, Bundle_t *restrict pb, Memory_st *restrict mp, i32 i_yn, i32 i_yh, i32 i_yw, i32 i_yc, i32 yn, i32 yh, i32 yw, i32 yc ) {
 
   // ------ FLATTEN ------
@@ -263,6 +315,18 @@ static inline void tile_write( i32 out_val, i8 *restrict p_out_buffer, i32 ib, B
     // ──────────────────────────────────────────────────────────────────────
     mp->add_buffers[pb->add_out_buffer_idx][iy_nhwc] = (i8)out_val;
   }
+
+  // If this bundle produces dynamic weights, store in w_buf and return
+#if HAS_DYNAMIC_WEIGHTS
+  if (pb->out_w_buffer_idx != -1) {
+    Bundle_t *restrict pb_c = &bundles[pb->out_w_consumer_ib];
+    if (pb_c->transpose_w_src)
+      tile_write_w((i8)out_val, p_out_buffer, pb_c, pb->o_bytes, i_yc, i_yh);
+    else
+      tile_write_w((i8)out_val, p_out_buffer, pb_c, pb->o_bytes, i_yh, i_yc);
+    return;
+  }
+#endif
 
   // If output only goes to residual add, early return
   Bundle_t*restrict pb_out;
@@ -340,7 +404,13 @@ extern EXT_C void run(Memory_st *restrict mp) {
   for (ib = 0; ib < N_BUNDLES; ib++) {
 
     pb = &bundles[ib];
+#if HAS_DYNAMIC_WEIGHTS
+    p_out_buffer = (pb->out_w_buffer_idx != -1)
+        ? (i8*)(mp->w) + pb->w_buf_wr_offset
+        : (i8*)&(mp->out_buffers[pb->out_buffer_idx]);
+#else
     p_out_buffer = (i8*)&(mp->out_buffers[pb->out_buffer_idx]);
+#endif
 
     // ── PRINT 1: bundle header ─────────────────────────────────────────────
     // Shows the static buffer routing baked into config_fw.h for this bundle.
@@ -355,13 +425,13 @@ extern EXT_C void run(Memory_st *restrict mp) {
         pb->add_in_buffer_idx,
         pb->add_out_buffer_idx,
         pb->p, pb->t, pb->n, pb->h, pb->w, pb->co);
-    // Input source address: mp->x for bundle 0, mp->out_buffers[in_buffer_idx] for others
-    void *in_src = (ib == 0)
+    // Input source address: mp->x when in_buffer_idx==-1, mp->out_buffers[in_buffer_idx] otherwise
+    void *in_src = (pb->in_buffer_idx == -1)
         ? (void*)mp->x
         : (void*)mp->out_buffers[pb->in_buffer_idx];
     debug_printf("  READ  from: %p  (%s)\n",
         in_src,
-        (ib == 0) ? "mp->x (raw input)" : "mp->out_buffers[in_buffer_idx]");
+        (pb->in_buffer_idx == -1) ? "mp->x (raw input)" : "mp->out_buffers[in_buffer_idx]");
     debug_printf("  WRITE to:   %p  (mp->out_buffers[%d])\n",
         (void*)p_out_buffer,
         pb->out_buffer_idx);
@@ -515,6 +585,7 @@ extern EXT_C void run(Memory_st *restrict mp) {
 
                     // ------ ADD BIAS ------
                     if (pb->is_bias) {
+#if B_WORDS > 0
                       // ── GAP 4: bias read from mp->b ───────────────────────────────
                       // Silent until use_bias=True is set on an XDense layer.
                       // b_val_shift scales out_val before addition; b_bias_shift scales
@@ -529,6 +600,7 @@ extern EXT_C void run(Memory_st *restrict mp) {
                           out_val);
                       // ──────────────────────────────────────────────────────────────
                       out_val = (out_val << pb->b_val_shift) + (mp->b[i_bias] << pb->b_bias_shift);
+#endif
                     }
 
 
@@ -557,24 +629,25 @@ extern EXT_C void run(Memory_st *restrict mp) {
                     // ------ SOFTMAX ------
 
                     if (pb->is_softmax) {
-                      assert_printf (ib , !=, N_BUNDLES, "Softmax is only allowed for the last bundle.", DEBUG_INFO);
-
-                      f32__ val = (f32__)out_val;
-                      val = val / (f32__)(1 << pb->softmax_frac);
-                      val = val - ((f32__)pb->softmax_max_i)/(1 << 17);
-                      val = (f32__)exp(val);
-                      mp->y[iy_nhwc] = val;
+                      iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i_yc, yn,yh,yw,yc, "Before softmax store", DEBUG_INFO);
+                      mp->softmax_tmp[iy_nhwc] = expf(  (float)out_val         / (float)(1<<pb->softmax_frac)
+                                                       - (float)pb->softmax_max_i / (float)(1<<17));
 
                       if (i_yc == pb->co-1) {
-                        f32__ sum = 0;
-                        i32 iy_nhwc;
-                        for (int i=0; i<pb->co; i++){
-                          iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i, yn,yh,yw,yc, "Before softmax sum", DEBUG_INFO);
-                          sum += mp->y[iy_nhwc];
-                        }
-                        for (int i=0; i<pb->co; i++){
-                          iy_nhwc = flatten_nhwc(i_yn,i_yh,i_yw,i, yn,yh,yw,yc, "After softmax sum", DEBUG_INFO);
-                          mp->y[iy_nhwc] = mp->y[iy_nhwc] / sum;
+                        i32 base = flatten_nhwc(i_yn,i_yh,i_yw,0, yn,yh,yw,yc, "softmax base", DEBUG_INFO);
+                        float sum = 0;
+                        for (int i=0; i<pb->co; i++)
+                          sum += mp->softmax_tmp[base + i];
+                        float inv_sum = 1.0f / sum;
+                        for (int i=0; i<pb->co; i++) {
+                          float sm = mp->softmax_tmp[base + i] * inv_sum;
+                          if (ib == N_BUNDLES-1) {
+                            mp->y[base + i] = (O_TYPE)sm;
+                          } else {
+                            i32 q = (i32)(sm * (float)(1<<(X_BITS-1)) + 0.5f);
+                            q = clip(q, -(1<<(X_BITS-1)), (1<<(X_BITS-1))-1);
+                            tile_write(q, p_out_buffer, ib, pb, mp, i_yn, i_yh, i_yw, i, yn, yh, yw, yc);
+                          }
                         }
                       }
                       goto PROCESS_AND_STORE_DONE;

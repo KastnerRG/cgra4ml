@@ -94,3 +94,9 @@ docs/source/**
 # VSCode
 settings.json
 .vscode
+
+# Python virtual environment
+.venv/
+
+# Generated test logs
+test_output.log
