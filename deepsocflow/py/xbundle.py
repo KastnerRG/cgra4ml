@@ -251,3 +251,84 @@ class XBundle(Layer):
             self.ye_exp_p += [reorder_y_q2e_conv(yp, hw, r)]
             ic_left = ic_right
         self.hw, self.r = hw, r
+
+
+class XAttn(Layer):
+    """
+    Hardware-exportable single- or multi-head self/cross-attention.
+
+    n_heads=1 — 5 bundles per call():
+        b_q0, b_k0, b_v0, b_scores0, b_out0
+
+    n_heads>1 — 6*n_heads bundles per call():
+        For each head h: b_qh, b_kh, b_vh, b_scoresh, b_outh, b_projh
+        Heads accumulate via x_add on b_projh:
+            output = Σ_h (head_h @ W_O_h)  ≡  Concat(heads) @ W_O  (no concat needed)
+
+    seq_len — sequence length = input batch size at inference time
+    units   — total model dimension d_model; per-head dim = units // n_heads
+    """
+
+    def __init__(self, k_int_bits, b_int_bits, act, units, seq_len, n_heads=1,
+                 use_bias=False, scale=None, *args, **kwargs):
+        layer_kwargs = {}
+        for key in ["name", "trainable", "dtype", "dynamic"]:
+            if key in kwargs:
+                layer_kwargs[key] = kwargs.pop(key)
+        super().__init__(*args, **layer_kwargs)
+
+        if act is None:
+            raise ValueError("Activation function must be provided. Set type=None for linear.")
+        if scale is not None:
+            raise NotImplementedError("XAttn: scale is not yet supported in hardware export mode.")
+        assert units % n_heads == 0, f"units ({units}) must be divisible by n_heads ({n_heads})"
+
+        self.type    = 'attn'
+        self.units   = units
+        self.seq_len = seq_len
+        self.n_heads = n_heads
+        self.scale   = scale
+
+        d_k = units // n_heads
+
+        def lin():
+            return XActivation(sys_bits=act.sys_bits, o_int_bits=act.o_int_bits, type=None)
+
+        for h in range(n_heads):
+            is_last = (h == n_heads - 1)
+            setattr(self, f'b_q{h}',      XBundle(core=XDense(k_int_bits=k_int_bits, b_int_bits=b_int_bits, units=d_k,    use_bias=use_bias, act=lin())))
+            setattr(self, f'b_k{h}',      XBundle(core=XDense(k_int_bits=k_int_bits, b_int_bits=b_int_bits, units=d_k,    use_bias=use_bias, act=lin())))
+            setattr(self, f'b_v{h}',      XBundle(core=XDense(k_int_bits=k_int_bits, b_int_bits=b_int_bits, units=d_k,    use_bias=use_bias, act=lin())))
+            setattr(self, f'b_scores{h}', XBundle(core=XDense(k_int_bits=k_int_bits, b_int_bits=b_int_bits, units=seq_len, use_bias=False,    act=lin()), softmax=True, transpose_w_src=True))
+            setattr(self, f'b_out{h}',    XBundle(core=XDense(k_int_bits=k_int_bits, b_int_bits=b_int_bits, units=d_k,    use_bias=False,    act=lin() if n_heads > 1 else act)))
+            if n_heads > 1:
+                add_act = None if h == 0 else lin()
+                setattr(self, f'b_proj{h}', XBundle(core=XDense(k_int_bits=k_int_bits, b_int_bits=b_int_bits, units=units, use_bias=False, act=act if is_last else lin()), add_act=add_act))
+
+    def _split_inputs(self, input_tensor):
+        if isinstance(input_tensor, (list, tuple)):
+            assert len(input_tensor) == 3, "XAttn expects [x_q, x_k, x_v] or x"
+            return input_tensor[0], input_tensor[1], input_tensor[2]
+        return input_tensor, input_tensor, input_tensor
+
+    def call(self, input_tensor):
+        x_q, x_k, x_v = self._split_inputs(input_tensor)
+        if self.n_heads == 1:
+            q = self.b_q0(x_q)
+            k = self.b_k0(x_k)
+            v = self.b_v0(x_v)
+            p = self.b_scores0(q, w_src=k)   # softmax(Q @ K^T), requantized for downstream
+            return self.b_out0(p, w_src=v)    # P @ V
+
+        acc = None
+        for h in range(self.n_heads):
+            q    = getattr(self, f'b_q{h}')(x_q)
+            k    = getattr(self, f'b_k{h}')(x_k)
+            v    = getattr(self, f'b_v{h}')(x_v)
+            p    = getattr(self, f'b_scores{h}')(q, w_src=k)
+            head = getattr(self, f'b_out{h}')(p, w_src=v)
+            if acc is None:
+                acc = getattr(self, f'b_proj{h}')(head)
+            else:
+                acc = getattr(self, f'b_proj{h}')(head, x_add=acc)
+        return acc
