@@ -61,7 +61,7 @@ set sram_defs {
 # volt1 and volt2 are iterated as pairs — add matching entries to extend both voltage lists.
 set sram_corner_defs {
     {BC  ffpg_sigcmin   {0p90v 0p825v 1p00v}    {0p90v 0p825v 1p00v}    {m40c}}
-    {WC  sspg_sigrcmax  {0p675v 0p765v 0p855v}  {0p675v 0p765v 0p855v}  {m40c}}
+    {WC  sspg_sigrcmax  {0p675v 0p765v 0p855v}  {0p675v 0p765v 0p855v}  {125c}}
     {TC  tt_nominal     {0p75v 0p85v 0p95v}     {0p75v 0p85v 0p95v}     {85c}}
 }
 

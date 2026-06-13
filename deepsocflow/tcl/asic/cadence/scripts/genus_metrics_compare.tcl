@@ -31,13 +31,13 @@
 ################################################
 #            Parameters
 ################################################
-set design(TOPLEVEL)    "cgra4ml"
+set design(TOPLEVEL)    "axi_cgra4ml"
 set design(compare_dir) "/work/cgra4ml/run/asic/cadence/compare"
 
 set tool        "genus" ;   # genus | innovus | genus_innovus
 set num_runs    7
 set json_dir    $design(compare_dir)
-set json_name   "$design(TOPLEVEL)_${tool}_run_"
+set json_name   "$design(TOPLEVEL)_metrics_${tool}_run_"
 set json_ext    ".json"
 set report_file "$json_dir/compare_${tool}_runs_upto_${num_runs}.html"
 

@@ -13,6 +13,23 @@ set debug_file "debug.innovus.txt"
 ####################################################
 # Load general procedures
 source ../../tcl/asic/scripts/cadence.procedures.tcl -quiet
+  Layer                              / Length         Data source:
+Name        Direction Utilization  (ohm/micron)       qrc_tech_file
+-------------------------------------------------
+M1              H         0.00        65.532151  
+M2              V         1.00        83.192949  
+M3              H         1.00        90.474647  
+M4              V         1.00        85.767857  
+D5              H         1.00        29.163041  
+D6              V         1.00        13.492003  
+D7              H         1.00        13.492003  
+D8              V         1.00        13.492003  
+D9              H         1.00        13.492003  
+D10             V         1.00        13.492003  
+D11             H         1.00        13.492003  
+D12             V         1.00        13.492003  
+IA              H         1.00         0.083037  
+IB              V         1.00         0.083037 
 
 uom_start_stage "loading_basic_settings"
 

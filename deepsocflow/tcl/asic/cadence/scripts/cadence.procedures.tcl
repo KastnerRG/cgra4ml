@@ -24,7 +24,7 @@
 #   krg_message               - Formatted console messages (high/medium/low)
 #   krg_reload_databases      - Reload defines and procedures  [DISABLED]
 #   krg_reload_sdc            - Reload SDC constraint files    [DISABLED]
-#   krg_default_cost_groups   - Define reg2reg/in2reg/reg2out/in2out cost groups
+#   krg_define_cost_groups    - Define reg2reg/in2reg/reg2out/in2out cost groups
 #   krg_start_stage           - Mark a new flow stage and log elapsed time
 #   krg_report_setup_timing   - Return report_timing cmd string for setup (not executed)
 #   krg_report_hold_timing    - Return report_timing cmd string for hold  (not executed)
@@ -36,6 +36,10 @@
 #                               -report_multibit, -report_ple, -report_summary, -help
 #                               NOTE: snapshot skipped for elaborate stage;
 #                                     innovus snapshot only written at *syn_opt* stage
+#   krg_write_stage_outputs   - Write post-synthesis output files for the current stage
+#                               Branches on phys_synth_type: floorplan writes LEC netlist,
+#                               do_lec, netlist, SDC, SDF; else writes netlist, SDC, SDF
+#   krg_report_debug_messages - Report all Genus messages and write unified metrics JSON
 #   krg_create_sdc_file       - Generate SDC file (clocks, IO, DRV constraints)
 ##############################################################################
 # TODO:
@@ -150,8 +154,12 @@ proc krg_message {msg {importance low}} {
 #   Defines default cost groups:
 #     reg2reg, in2reg, reg2out, in2out
 ###################################################
-proc krg_default_cost_groups {} {
+proc krg_define_cost_groups {} {
     global runtype design
+
+    # Remove Default Cost Groups
+    delete_obj [get_db cost_groups *]
+
     if { $runtype == "synthesis" } {
         # reg2reg
         define_cost_group -name reg2reg -design $design(TOPLEVEL)
@@ -237,7 +245,7 @@ proc krg_start_stage {stage {count yes}} {
 ###################################################
 proc krg_report_setup_timing {{reports_path "../asic/reports/cadence/"}} {
     global design runtype this_run
-    mkdir -pv ${reports_path}/$this_run(stage)/
+    mkdir -pv ${reports_path}
     set_db timing_report_fields \
         "timing_point flags arc edge cell fanout transition delay arrival"
 
@@ -261,7 +269,7 @@ proc krg_report_setup_timing {{reports_path "../asic/reports/cadence/"}} {
 ###################################################
 proc krg_report_hold_timing {{reports_path "work/cgra4ml/deepsocflow/run/asic/reports/cadence"}} {
     global design runtype this_run
-    mkdir -pv ${reports_path}/$this_run(stage)/
+    mkdir -pv ${reports_path}
     set_db timing_report_fields \
         "timing_point flags arc edge cell fanout transition delay arrival"
 
@@ -288,6 +296,7 @@ proc krg_create_stage_reports {{args ""}} {
     array set options {
         -write_design          no
         -write_db              no
+        -innovus_option        no
         -write_snapshot        no
         -report_setup          no 
         -report_hold           no
@@ -305,22 +314,23 @@ proc krg_create_stage_reports {{args ""}} {
 
     while {[llength $args]} {
         switch -glob -- [lindex $args 0] {
-            -*write_design* {set args [lassign $args - options(-write_design)]}
-            -*write_db*     {set args [lassign $args - options(-write_db)]}
-            -*snapshot*     {set args [lassign $args - options(-write_snapshot)]}
-            -*setup*        {set args [lassign $args - options(-report_setup)]}
-            -*hold*         {set args [lassign $args - options(-report_hold)]}
-            -*drc*          {set args [lassign $args - options(-check_drc)]}
-            -*conn*         {set args [lassign $args - options(-check_connectivity)]}
-            -*datapath*     {set args [lassign $args - options(-report_datapath)]}
-            -*qor*          {set args [lassign $args - options(-report_qor)]}
-            -*gates*        {set args [lassign $args - options(-report_gates)]}
-            -*area*         {set args [lassign $args - options(-report_area)]}
-            -*design_rule*  {set args [lassign $args - options(-check_design_rules)]}
-            -*summary*      {set args [lassign $args - options(-report_summary)]}
-            -*multibit*     {set args [lassign $args - options(-report_multibit)]}
-            -*ple*          {set args [lassign $args - options(-report_ple)]}
-            -*help*         {set args [lassign $args - options(-help)]; set args [lrange $args 1 end]}
+            -*write_design*    {set args [lassign $args - options(-write_design)]}
+            -*write_db*        {set args [lassign $args - options(-write_db)]}
+            -*innovus_option*  {set args [lassign $args - options(-innovus_option)]}
+            -*snapshot*        {set args [lassign $args - options(-write_snapshot)]}
+            -*setup*           {set args [lassign $args - options(-report_setup)]}
+            -*hold*            {set args [lassign $args - options(-report_hold)]}
+            -*drc*             {set args [lassign $args - options(-check_drc)]}
+            -*conn*            {set args [lassign $args - options(-check_connectivity)]}
+            -*datapath*        {set args [lassign $args - options(-report_datapath)]}
+            -*qor*             {set args [lassign $args - options(-report_qor)]}
+            -*gates*           {set args [lassign $args - options(-report_gates)]}
+            -*area*            {set args [lassign $args - options(-report_area)]}
+            -*design_rule*     {set args [lassign $args - options(-check_design_rules)]}
+            -*summary*         {set args [lassign $args - options(-report_summary)]}
+            -*multibit*        {set args [lassign $args - options(-report_multibit)]}
+            -*ple*             {set args [lassign $args - options(-report_ple)]}
+            -*help*            {set args [lassign $args - options(-help)]; set args [lrange $args 1 end]}
             default break
         }
     }
@@ -341,7 +351,7 @@ proc krg_create_stage_reports {{args ""}} {
 
     if { $options(-write_design) eq "yes" } {
         krg_message "Starting to write genus design for stage: $this_run(stage)" low
-        set dbs_proc_dir $active_dbs_dir/$this_run(stage)
+        set dbs_proc_dir $active_dbs_dir/$this_run(stage)/design
         mkdir -pv $dbs_proc_dir
         run_parallel_commands -queue "write_design -basename $dbs_proc_dir/$this_run(stage)" -priority 5
         krg_message "Added to parallel commands queue, write design for stage: $this_run(stage)" low
@@ -349,37 +359,37 @@ proc krg_create_stage_reports {{args ""}} {
 
     if { $options(-write_db) eq "yes" } {
         krg_message "Starting to create genus databases for stage: $this_run(stage)" low
-        set dbs_proc_dir $active_dbs_dir/$this_run(stage)
+        set dbs_proc_dir $active_dbs_dir/$this_run(stage)/db
         mkdir -pv $dbs_proc_dir
-        run_parallel_commands -queue "write_db -common $dbs_proc_dir/$this_run(stage).stylus.enc" -priority 5
+        run_parallel_commands -queue "write_db -common -all_root_attributes $dbs_proc_dir/$this_run(stage).db" -priority 5
         krg_message "Added to parallel commands queue, genus databases for stage: $this_run(stage)" low
     }
 
-    if { [string match *elaborate* $this_run(stage)] ||  [string match *pre_synthesis* $this_run(stage)]} {
-        krg_message "Skipping snapshot for elaborate stage: $this_run(stage)" low
-    } elseif { $options(-write_snapshot) eq "yes" && [string match *syn_opt* $this_run(stage)] } {
-        krg_message "Starting to create innovus snapshot for stage: $this_run(stage)" low
-        set dbs_proc_dir $active_dbs_dir/$this_run(stage)
-        mkdir -pv $dbs_proc_dir
-        write_snapshot -innovus -outdir $dbs_proc_dir -tag $this_run(stage)
-        krg_message "Completed innovus snapshot for stage: $this_run(stage)" low
-    } else {
-        krg_message "Starting to create genus snapshot for stage: $this_run(stage)" low
-        set dbs_proc_dir $active_dbs_dir/$this_run(stage)
-        mkdir -pv $dbs_proc_dir
-        write_snapshot -outdir $dbs_proc_dir -tag $this_run(stage)
-        krg_message "Completed genus snapshot for stage: $this_run(stage)" low
+    if {  $options(-write_snapshot) eq "yes" } {
+        if { $options(-innovus_option) eq "yes" } {
+            krg_message "Starting to create innovus snapshot for stage: $this_run(stage)" low
+            set dbs_proc_dir $active_dbs_dir/$this_run(stage)/snapshot
+            mkdir -pv $dbs_proc_dir
+            write_snapshot -innovus -outdir $dbs_proc_dir -tag $this_run(stage)
+            krg_message "Completed innovus snapshot for stage: $this_run(stage)" low
+        } else {
+            krg_message "Starting to create genus snapshot for stage: $this_run(stage)" low
+            set dbs_proc_dir $active_dbs_dir/$this_run(stage)/snapshot
+            mkdir -pv $dbs_proc_dir
+            write_snapshot -outdir $dbs_proc_dir -tag $this_run(stage)
+            krg_message "Completed genus snapshot for stage: $this_run(stage)" low
+        }
     }
 
     if { $options(-report_setup) eq "yes" } {
         krg_message "Starting to create setup timing reports for stage: $this_run(stage)" low
-        krg_report_setup_timing $active_rpt_dir
+        krg_report_setup_timing $active_rpt_dir/[format "%02d" $this_run(stage_count)]_$this_run(stage)_timing
         krg_message "Added to parallel commands queue, setup timing reports for stage: $this_run(stage)" low
     }
 
     if { $options(-report_hold) eq "yes" } {
         krg_message "Starting to create hold timing reports for stage: $this_run(stage)" low
-        krg_report_hold_timing $$active_rpt_dir
+        krg_report_hold_timing $$active_rpt_dir/[format "%02d" $this_run(stage_count)]_$this_run(stage)_timing
         krg_message "Added to parallel commands queue, hold timing reports for stage: $this_run(stage)" low
     }
 
@@ -457,7 +467,7 @@ proc krg_create_stage_reports {{args ""}} {
     }
 
     krg_message "Start Executing Commands Queue" medium
-    run_parallel_commands -execut -append_log -prefix "${stage_prefix}_" -log_dir $design(workdir)
+    run_parallel_commands -execute -prefix "${stage_prefix}_" -log_dir $design(workdir)
     krg_message "Completed Executing Commands Queue" medium
 
     if {$options(-help)} {
@@ -491,9 +501,95 @@ proc krg_create_stage_reports {{args ""}} {
 }
 
 ###################################################
+#          krg_write_stage_outputs
+#          -------------
+#   Writes post-synthesis output files for the
+#       current design stage: netlists, SDC, SDF,
+#       and LEC do files
+#   Branches on phys_synth_type:
+#       floorplan - writes LEC netlist, do_lec,
+#                   netlist, SDC, SDF (ispatial)
+#       else      - writes netlist, SDC, SDF
+###################################################
+proc krg_write_stage_outputs {} {
+    global design runtype this_run phys_synth_type
+
+    set stage_prefix [format "%02d" $this_run(stage_count)]_$this_run(stage)
+
+    if { $phys_synth_type eq "floorplan" } {
+        krg_message "Starting to write output files for stage: $this_run(stage)_ispatial" medium
+
+        krg_message "Starting to write LEC netlist for stage: $this_run(stage)" low
+        run_parallel_commands -queue "write_netlist -lec $design(TOPLEVEL) > $design(postsyn_lec_netlist_ispatial)" -priority 5
+        krg_message "Added to parallel commands queue, LEC netlist for stage: $this_run(stage)" low
+
+        krg_message "Starting to write LEC do file for stage: $this_run(stage)" low
+        run_parallel_commands -queue "write_do_lec -golden_design fv_map -revised_design $design(postsyn_lec_netlist_ispatial) -logfile $design(conformal_dir)/fvmap2netlist.lec.log > $design(conformal_dir)/fvmap2netlist.lec.tcl" -priority 4
+        krg_message "Added to parallel commands queue, LEC do file for stage: $this_run(stage)" low
+
+        krg_message "Starting to write netlist for stage: $this_run(stage)" low
+        run_parallel_commands -queue "write_netlist $design(TOPLEVEL) -depth 0 > $design(postsyn_netlist_rtl_flow)" -priority 5
+        krg_message "Added to parallel commands queue, netlist for stage: $this_run(stage)" low
+
+        krg_message "Starting to write SDC for stage: $this_run(stage)" low
+        run_parallel_commands -queue "write_sdc -view wc_analysis_view $design(TOPLEVEL) > $design(postsyn_sdc_ispatial)" -priority 3
+        krg_message "Added to parallel commands queue, SDC for stage: $this_run(stage)" low
+
+        krg_message "Starting to write SDF for stage: $this_run(stage)" low
+        run_parallel_commands -queue "write_sdf > $design(postsyn_sdf_ispatial)" -priority 3
+        krg_message "Added to parallel commands queue, SDF for stage: $this_run(stage)" low
+    } else {
+        krg_message "Starting to write output files for stage: $this_run(stage)_rtl_floorplanning" medium
+ 
+        krg_message "Starting to write netlist for stage: $this_run(stage)" low
+        run_parallel_commands -queue "write_netlist $design(TOPLEVEL) -depth 0 > $design(postsyn_netlist_rtl_flow)" -priority 5
+        krg_message "Added to parallel commands queue, netlist for stage: $this_run(stage)" low
+
+        krg_message "Starting to write SDC for stage: $this_run(stage)" low
+        run_parallel_commands -queue "write_sdc -view wc_analysis_view $design(TOPLEVEL) > $design(postsyn_sdc_rtl_flow)" -priority 3
+        krg_message "Added to parallel commands queue, SDC for stage: $this_run(stage)" low
+
+        krg_message "Starting to write SDF for stage: $this_run(stage)" low
+        run_parallel_commands -queue "write_sdf > $design(postsyn_sdf_rtl_flow)" -priority 3
+        krg_message "Added to parallel commands queue, SDF for stage: $this_run(stage)" low
+    }
+
+    krg_message "Start Executing Commands Queue" medium
+    run_parallel_commands -execute -prefix "${stage_prefix}_" -log_dir $design(workdir)
+    krg_message "Completed Executing Commands Queue" medium
+}
+
+###################################################
+#          krg_report_debug_messages
+#          -------------
+#   Reports all Genus messages to separate files
+#       and writes the unified metrics JSON for
+#       cross-run comparison
+###################################################
+proc krg_report_debug_messages {} {
+    global design this_run genus_run_counter
+
+    set stage_prefix [format "%02d" $this_run(stage_count)]_$this_run(stage)
+    krg_message "Starting to report debug messages for stage: $stage_prefix" medium
+
+    mkdir -pv $design(compare_dir)
+    mkdir -pv $design(messages_dir)
+
+    run_parallel_commands -queue "report_messages -all                > $design(messages_dir)/$design(TOPLEVEL)_genus_run_[format "%02d" $genus_run_counter]_messages_all.rpt"                -priority 1
+    run_parallel_commands -queue "report_messages -include_suppressed > $design(messages_dir)/$design(TOPLEVEL)_genus_run_[format "%02d" $genus_run_counter]_messages_include_suppressed.rpt" -priority 1
+    run_parallel_commands -queue "report_messages -errors             > $design(messages_dir)/$design(TOPLEVEL)_genus_run_[format "%02d" $genus_run_counter]_messages_errors.rpt"             -priority 1
+    run_parallel_commands -queue "report_messages -warnings           > $design(messages_dir)/$design(TOPLEVEL)_genus_run_[format "%02d" $genus_run_counter]_messages_warnings.rpt"           -priority 1
+    run_parallel_commands -queue "report_messages -info               > $design(messages_dir)/$design(TOPLEVEL)_genus_run_[format "%02d" $genus_run_counter]_messages_info.rpt"               -priority 1
+    run_parallel_commands -queue "write_metric    -format json        -out_file $design(compare_dir)/$design(TOPLEVEL)_metrics_genus_run_[format "%02d" $genus_run_counter].json" -priority 1
+    run_parallel_commands -execute -prefix "${stage_prefix}_" -log_dir $design(workdir)
+
+    krg_message "Completed reporting debug messages for stage: $stage_prefix" medium
+}
+
+###################################################
 #          krg_create_sdc_file
 #          -------------
-#   This is a command for create sdc file depends 
+#   This is a command for create sdc file depends
 #       on synthesis or pnr
 ###################################################
 proc krg_create_sdc_file {} {
@@ -524,7 +620,7 @@ proc krg_create_sdc_file {} {
     puts $df "#################################"
     puts $df "#       IO Constraints          #"
     puts $df "#################################"
-    puts $df "set_input_delay -clock $design(CLK_NAME) $design(INPUT_DELAY) \\"
+    puts $df "set_input_delay -clock \$design(CLK_NAME) \$design(INPUT_DELAY) \\"
     puts $df {       [remove_from_collection [all_inputs] [list $design(CLK_PORT) $design(RST_PORT)]]}
     puts $df {set_output_delay -clock $design(CLK_NAME) $design(OUTPUT_DELAY) [all_outputs]}
 

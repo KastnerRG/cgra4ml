@@ -83,9 +83,10 @@ if {$runtype == "synthesis"} {
     set_db innovus_executable            $env(innovus_exe) ; # Set path to innovus executable to used by syn_opt -spatial
     set_db invs_temp_dir                 $design(innovus_dir)
     exec bash -c "touch $design(workdir)/invs_postexport_report_script.tcl"
-    exec bash -c "touch $design(workdir)/invs_postload_script.tcl"
     set_db invs_postexport_report_script "$design(workdir)/invs_postexport_report_script.tcl"
-    set_db invs_postload_script          "$design(workdir)/invs_postload_script.tcl"
+    # This feature is not available for academic uses
+    # exec bash -c "touch $design(workdir)/invs_postload_script.tcl"
+    # set_db invs_postload_script          "$design(workdir)/invs_postload_script.tcl" 
 
     # Floorplan debug settings
     set_db message:PHYS-171 .severity    Error; # Components not present in netlist

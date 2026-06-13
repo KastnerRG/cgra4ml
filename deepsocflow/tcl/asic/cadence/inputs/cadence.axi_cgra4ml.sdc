@@ -11,7 +11,7 @@ set_ideal_network [get_ports $design(clock_port_list)]
 #################################
 #       IO Constraints          #
 #################################
-set_input_delay -clock CLK 0.25 \
+set_input_delay -clock $design(CLK_NAME) $design(INPUT_DELAY) \
        [remove_from_collection [all_inputs] [list $design(CLK_PORT) $design(RST_PORT)]]
 set_output_delay -clock $design(CLK_NAME) $design(OUTPUT_DELAY) [all_outputs]
 

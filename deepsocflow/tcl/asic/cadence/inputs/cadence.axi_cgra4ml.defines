@@ -141,10 +141,11 @@ set design(read_v_hdl_list)                      "$design(workdir)/../../$design
 
 set design(scripts_dir)                          "$design(asic_root)/scripts"
 set design(compare_dir)                          "$design(project_root)/run/asic/cadence/compare"
-set design(reports_syn_dir)                       "$design(project_root)/run/asic/cadence/reports/genus_run_${genus_run_counter}"
+set design(messages_dir)                         "$design(project_root)/run/asic/cadence/messages"
+set design(reports_syn_dir)                       "$design(project_root)/run/asic/cadence/reports"
 
-set design(export_syn_dir)                       "$design(workdir)/exports/genus_run_${genus_run_counter}"
-set design(dbs_syn_dir)                          "$design(workdir)/dbs/genus_run_${genus_run_counter}"
+set design(export_syn_dir)                       "$design(workdir)/exports"
+set design(dbs_syn_dir)                          "$design(workdir)/dbs"
 
 set design(postsyn_lec_netlist_ispatial)         "$design(export_syn_dir)/$design(TOPLEVEL)_ispatial.postsyn.lec.v"
 set design(postsyn_netlist_ispatial)             "$design(export_syn_dir)/$design(TOPLEVEL)_ispatial.postsyn.v"
