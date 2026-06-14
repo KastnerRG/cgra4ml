@@ -6,7 +6,7 @@
 # Author    : Ravidu Munasinghe <raviduhm@gmail.com>
 # Org       : Kastner Research Group | ENTC UoM
 # Created   : 2026-05-14
-# Modified  : 2026-06-11
+# Modified  : 2026-06-14
 ##############################################################################
 # Version   : 1.1
 # Status    : In Progress
@@ -65,6 +65,9 @@ if {$runtype == "synthesis"} {
 
     # Library and Lef Settings
     set_db error_on_lib_lef_pin_inconsistency true
+
+    # Use Non-Scan Flops fro mapping, if you use krg_set_dft_dfm_settings proc then this setting will be true 
+    set_db use_scan_seqs_for_non_dft false
 
     # HDL & SDC debug Settings
     set_db gen_module_prefix             GEN_MOD_
@@ -125,7 +128,7 @@ if {$runtype == "synthesis"} {
     # krg_set_dft_settings
     proc krg_set_dft_dfm_settings {} {
         global design
-        set_db use_scan_seqs_for_non_dft false
+        set_db use_scan_seqs_for_non_dft true
         #set_db "design:$design(TOPLEVEL)" .lp_clock_gating_test_signal <test_signal_object>
         set_db / .optimize_yield true
         read_dfm <yeild coefficient file.>

@@ -1,7 +1,47 @@
-##########################################################
-###     MAKE SURE YOU RAN innovus -stylus !!!!!!!!     ###
-###         get_common_ui_map legacy_command           ###
-##########################################################
+##############################################################################
+# Project   : DeepSoCFlow CGRA4ML
+# Script    : innovus.tcl
+# Purpose   : Cadence Innovus Place-and-Route flow script for Innovus 23.1
+##############################################################################
+# Author    : Ravidu Munasinghe <raviduhm@gmail.com>
+# Org       : Kastner Research Group | ENTC UoM
+# Created   : 2026-05-14
+# Modified  : 2026-06-14
+##############################################################################
+# Version   : 1.2
+# Status    : In Progress
+##############################################################################
+#
+# Description:
+#   Top-level flat P&R script for the axi_cgra4ml design using Cadence
+#   Innovus. Loads project config, runs floorplanning, placement, clock
+#   tree synthesis, routing, and generates timing/area reports.
+#
+#   This script supports two major flows. The first flow is an
+#   rtl_floorplanning flow that uses the post-synthesis netlist to create
+#   a good floorplan and exports a DEF for physically-aware synthesis.
+#   The second flow uses a pre-existing floorplan DEF to run full P&R.
+#
+##############################################################################
+# TODO:
+#   Major Revisions
+#   [ ] Add SOCV libs support
+#   [ ] Add Low power optimization support
+#   [ ] Add DFT support
+#   [ ] Add Conformal Support - Debugging features like non-equivalences
+#   [ ] Add Hierarchical P&R support
+#   [ ] Add Joules integration
+#   [ ] Add Midas safety integration
+#   [ ] Add I/O Pad support for fullchip
+#   Minor Revisions
+#   [ ] Add Unified Metrics
+#   [ ] Add suppress messages feature
+#   [ ] Reload Databases
+##############################################################################
+# Usage:
+#   innovus -stylus -abort_on_error -files innovus.tcl
+##############################################################################
+
 gui_set_ui main -geometry "1920x1020+0+0"
 
 set design(TOPLEVEL) "axis_sa"

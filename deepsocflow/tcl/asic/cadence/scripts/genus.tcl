@@ -6,9 +6,9 @@
 # Author    : Ravidu Munasinghe <raviduhm@gmail.com>
 # Org       : Kastner Research Group | ENTC UoM
 # Created   : 2026-05-14
-# Modified  : 2026-06-11
+# Modified  : 2026-06-14
 ##############################################################################
-# Version   : 1.1
+# Version   : 1.2
 # Status    : In Progress
 ##############################################################################
 #
@@ -36,7 +36,7 @@
 #   [ ] Add Structured Datapath Support
 #   Minor Revisions
 #   [X] Add Unified Metrics
-#   [ ] Add suppress messages feature
+#   [X] Add suppress messages feature
 #   [ ] Reload Databases and SDC procs
 #   [ ] Datapath Optimization settings
 #   [ ] Early Clock flow settings
@@ -94,7 +94,6 @@
 #   genus -lic_startup Genus_Synthesis \
 #         -lic_startup_options "Genus_Low_Power_Opt Genus_Physical_Opt" \
 #         -abort_on_error -files genus.tcl
-#!Also change the genus_run_counter variable each time you run a genus script!
 ##############################################################################
 
 #################################################################
@@ -130,9 +129,9 @@ if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
     source $design(libraries_dir)/cadence.libraries.$IO_TECHNOLOGY.tcl -quiet
 }
 
-# krg_message "Suppressing the following messages that are design specific"
-# krg_message "$design(DESIGN_SUPPRESS_MESSAGES_GENUS)"
-# suppress_messages $design(DESIGN_SUPPRESS_MESSAGES_GENUS)
+krg_message "Suppressing the following messages that are design specific" medium
+krg_message "$design(DESIGN_SUPPRESS_MESSAGES_GENUS)"
+suppress_messages $design(DESIGN_SUPPRESS_MESSAGES_GENUS)
 
 #################################################################
 #                 Print Values to debug file                    #
@@ -149,9 +148,9 @@ time_info -table $runtype -stamp $this_run(stage)
 #################################################################
 krg_start_stage "init_libraries" no
 
-# krg_message      "Suppressing the following messages that are reported due to the library definitions"
-# krg_message      "$tech(LIB_SUPPRESS_MESSAGES_GENUS)"
-# suppress_messages $tech(LIB_SUPPRESS_MESSAGES_GENUS)
+krg_message      "Suppressing the following messages that are reported due to the library definitions" medium
+krg_message      "$tech(LIB_SUPPRESS_MESSAGES_GENUS)"
+suppress_messages $tech(LIB_SUPPRESS_MESSAGES_GENUS)
 
 # Load MMMC File
 # --------------
@@ -171,10 +170,9 @@ krg_create_sdc_file
 #################################################################
 #                      Read LEF files                           #
 #################################################################
-# Suppress messages
-# krg_message      "Suppressing the following messages that are reported due to the LEF definitions"
-# krg_message      "$tech(LEF_SUPPRESS_MESSAGES_GENUS)"
-# suppress_messages $tech(LEF_SUPPRESS_MESSAGES_GENUS)
+krg_message      "Suppressing the following messages that are reported due to the LEF definitions" medium
+krg_message      "$tech(LEF_SUPPRESS_MESSAGES_GENUS)"
+suppress_messages $tech(LEF_SUPPRESS_MESSAGES_GENUS)
 
 # Read LEFs
 # ---------
@@ -230,13 +228,13 @@ set design(DMA_SRAM_LIST) [get_db insts -if {.base_name =~ *sram_dma*}]
 krg_message "Running init_design in an MMMC flow"
 init_design
 
-# # Check Timing
-# # ------------
+# Check Timing
+# ------------
 krg_message "Checking timing intent (lint) after init_design"
 check_timing_intent -verbose > $design(reports_syn_dir)/[format "%02d" $this_run(stage_count)]_post_elaboration_check_sdc.rpt
 
-# # Save elaborated design
-# # ----------------------
+# Save elaborated design
+# ----------------------
 krg_create_stage_reports -write_design yes -report_datapath yes
 # Stamp the stage for runtime and memory information
 time_info -table $runtype -stamp "init_design"
@@ -315,7 +313,7 @@ if {$phys_synth_type == "floorplan"} {
     create_snapshot -categories all -label $this_run(stage) 
 
     # Create Reports and Snapshot
-    krg_create_stage_reports -write_db yes -write_snapshot yes -report_datapath yes -report_summary yes
+    krg_create_stage_reports -write_db yes -write_snapshot yes -report_summary yes
     # Conformal LEC verification
     write_do_lec -golden_design rtl -revised_design fv_map \
     -logfile design(conformal_dir)/rtl2fvmap.lec.log > design(conformal_dir)/rtl2fvmap.lec.tcl
@@ -369,7 +367,7 @@ if {$phys_synth_type == "floorplan"} {
     create_snapshot -categories all -label $this_run(stage) 
 
     # Create Reports and Snapshot
-    krg_create_stage_reports -write_db yes -write_snapshot yes -report_datapath yes -report_summary yes
+    krg_create_stage_reports -write_db yes -write_snapshot yes -report_summary yes
     # Stamp the stage for runtime and memory information
     time_info -table $runtype -stamp "rtl_floorplanning_syn_map"
 
@@ -393,13 +391,20 @@ if {$phys_synth_type == "floorplan"} {
 # Post optimization
 krg_start_stage "post_optimization" yes
 
+# Ispatial flow automatically delete cost_groups 
+# check PHYS-1019 warning messages at the start of syn_opt
+# Define cost groups (reg2reg, in2reg, reg2out, in2out)
+# -----------------------------------------------------
+krg_define_cost_groups 
+krg_create_stage_reports -report_setup yes 
+
+
 # Create Reports and Snapshot
 krg_create_stage_reports \
     -write_db              yes \
     -innovus_option        yes \
     -write_snapshot        yes \
     -report_setup          yes \
-    -report_datapath       yes \
     -report_qor            yes \
     -report_gates          yes \
     -report_area           yes \
@@ -407,7 +412,8 @@ krg_create_stage_reports \
     -report_summary        yes \
     -report_multibit       yes \
     -report_ple            yes \
-    -report_hold           no \
+    -report_datapath       no  \
+    -report_hold           no  \
     -check_drc             no  \
     -check_connectivity    no  
 

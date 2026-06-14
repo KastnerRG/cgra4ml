@@ -8,7 +8,7 @@
 # Created   : 2026-05-14
 # Modified  : 2026-06-12
 ##############################################################################
-# Version   : 1.0
+# Version   : 2.0
 # Status    : In Progress
 ##############################################################################
 #
@@ -33,7 +33,7 @@
 # TODO:
 #   Major Revisions
 #   [ ] Add Low Power Support
-#   [ ] Add Genus Suppress Messages
+#   [] Add Genus Suppress Messages
 #   [ ] Add Innovus Suppress Messages
 #   [ ] Add Tempus Suppress Messages
 #   [ ] Add multi-clock support (MULTI_CLOCK_DESIGN currently hardcoded "no")
@@ -142,7 +142,7 @@ set design(read_v_hdl_list)                      "$design(workdir)/../../$design
 set design(scripts_dir)                          "$design(asic_root)/scripts"
 set design(compare_dir)                          "$design(project_root)/run/asic/cadence/compare"
 set design(messages_dir)                         "$design(project_root)/run/asic/cadence/messages"
-set design(reports_syn_dir)                       "$design(project_root)/run/asic/cadence/reports"
+set design(reports_syn_dir)                       "$design(project_root)/run/asic/cadence/reports/genus_run_[format "%02d" $genus_run_counter]"
 
 set design(export_syn_dir)                       "$design(workdir)/exports"
 set design(dbs_syn_dir)                          "$design(workdir)/dbs"
@@ -157,9 +157,9 @@ set design(postsyn_sdc_rtl_flow)                 "$design(export_syn_dir)/$desig
 set design(postsyn_sdf_rtl_flow)                 "$design(export_syn_dir)/$design(TOPLEVEL)_rtl_flow.postsyn.sdf"
 
 if { $runtype == "pnr" } {
-    set design(export_pnr_dir)                   "$design(workdir)/exports/innovus_run_${innovus_run_counter}"
-    set design(dbs_pnr_dir)                      "$design(workdir)/dbs/innovus_run_${innovus_run_counter}"
-    set design(reports_pnr_dir)                  "$design(project_root)/run/asic/cadence/reports/innovus_run_${innovus_run_counter}"
+    set design(export_pnr_dir)                   "$design(workdir)/exports"
+    set design(dbs_pnr_dir)                      "$design(workdir)/dbs"
+    set design(reports_pnr_dir)                  "$design(project_root)/run/asic/cadence/reports/innovus_run_[format "%02d" $innovus_run_counter]"
     set design(postroute_netlist)                "$design(export_pnr_dir)/$design(TOPLEVEL).pnr.v"
     set design(postroute_sdf)                    "$design(export_pnr_dir)/$design(TOPLEVEL).pnr.sdf"
 }
@@ -225,15 +225,26 @@ set design(WELLTAP_RULE) 15
 ################################################
 #               Get rid of annoying messages
 ################################################
-# set design(DESIGN_SUPPRESS_MESSAGES_GENUS) "ST-110 ST-112 CFM-5 CFM-1"
-# # Stop reporting elaboration of multi-dimensional array
-# lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-250"
-# # Stop reporting implementation inference (chipWare)
-# lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) {*} "CWD-19 CWD-36"
-# # Stop reporting Replaced logic with a constant value
-# lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-771"
-# # Stop reporting unreachable case statements
-# lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-472"
+# Stop reporting messages maximum printed exceeded
+set design(DESIGN_SUPPRESS_MESSAGES_GENUS)     "MESG-6 MESG-11 TUI-82"
+# Stop reporting super-threading and wrote dofile/fv info
+lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "ST-110 ST-112 ST-120 ST-128 CFM-1 CFM-5"
+# Stop reporting run parallel commands and joules info
+lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "RPT-16 RPT-303 RPT-310"
+# Stop reporting elaboration of multi-dimensional array
+lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-250"
+# Stop reporting implementation inference (chipWare)
+lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CWD-19 CWD-21 CWD-36"
+# Stop reporting Replaced logic with a constant value
+lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-771"
+# Stop reporting unreachable case statements
+lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-472"
+# Stop common subexpression info messages
+lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-738 CDFG-739"
+# Stop sum-of-products logic to be optimized during syn_generic info messages
+lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-769"
+# Stop Optimized the MUX created for array read/write or variable shifter
+lappend design(DESIGN_SUPPRESS_MESSAGES_GENUS) "CDFG-893"
 
 # # set design(DESIGN_SUPPRESS_MESSAGES_INNOVUS) ""
 # # Stop reporting mismatch in voltage between IOs and sta...

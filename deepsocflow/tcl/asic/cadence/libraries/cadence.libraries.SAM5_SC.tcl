@@ -16,6 +16,7 @@
 #   tech_files(*)      — per-corner liberty / CCS / AOCV file lists
 #
 # Corner vs Voltage Table:
+# IMPORTANT!!! The first library for wc corner is important.
 # +--------+----------------------+------------------+--------+--------+--------+
 # | Corner | Condition            | Temp             |  LVT   |  RVT   |  HVT   |
 # +--------+----------------------+------------------+--------+--------+--------+
@@ -28,7 +29,7 @@
 #
 # TODO:
 #   Major Revisions
-#   [ ] Add Genus Suppress Messages
+#   [X] Add Genus Suppress Messages
 #   [ ] Add Innovus Suppress Messages
 #   [X] Add CCS/AOCV support
 #   [ ] Add Tempus Suppress Messages
@@ -50,7 +51,9 @@ set tech(SDC_LOAD_PIN)      DFFQ_X3N_A7P5PP60TL_C10/Q
 set tech(SDC_DRIVING_CELL)  DFFQ_X3N_A7P5PP60TL_C10
 
 # Supress Libs unwanted messages
-# lappend tech(LIB_SUPPRESS_MESSAGES_GENUS)   {*}"LBR-9 LBR-76 LBR-40 LBR-436 LBR-170 LBR-415 LBR-162 LBR-155"
+lappend tech(LIB_SUPPRESS_MESSAGES_GENUS)   {*}"LBR-9 LBR-22 LBR-38 LBR-40 LBR-41 LBR-76 \
+                                                LBR-110 LBR-155 LBR-161 LBR-162 LBR-168 \
+                                                LBR-170 LBR-412 LBR-436 LBR-518 LBR-785"
 # lappend tech(LIB_SUPPRESS_MESSAGES_INNOVUS) {*}"LBR-9 LBR-76 LBR-40 LBR-436 LBR-170 LBR-415 LBR-162 LBR-155"
 
 # NLDM Liberty Files Setup
@@ -58,9 +61,9 @@ set LIB_PREFIX "sc7p5mcpp60_ln05lpe_base_lvt_c10"
 
 # {Vt   {BC voltages...}          {WC voltages...}   {TC voltages...}}
 set vt_defs {
-    {LVT  {0p605v}  {0p495v}  {0p55v}}
-    {RVT  {0p715v}  {0p675v}  {0p75v}}
     {HVT  {1p00v}   {0p855v}  {0p95v}}
+    {RVT  {0p715v}  {0p675v}  {0p75v}}
+    {LVT  {0p605v}  {0p495v}  {0p55v}}
 }
 
 # {corner  condition_prefix  {temps...}}

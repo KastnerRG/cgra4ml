@@ -23,7 +23,7 @@
 #
 # TODO:
 #   Major Revisions
-#   [ ] Add Genus Suppress Messages
+#   [X] Add Genus Suppress Messages
 #   [ ] Add Innovus Suppress Messages
 #   [ ] Add Tempus Suppress Messages
 ##############################################################################
@@ -41,8 +41,8 @@ set paths(TECHNOLOGY_FILES)          "$paths(PDK_AIM)/TECH_Libs"
 set paths(STANDARD_CELLS_TECH_FILES) "$paths(PDK_AIM)/STD_Libs/lef"
 
 # Supress lef unwanted messages
-# lappend tech(LEF_SUPPRESS_MESSAGES_GENUS)   {*} "PHYS-279"
-# lappend tech(LEF_SUPPRESS_MESSAGES_INNOVUS) {*} "IMPLF_20"
+lappend tech(LEF_SUPPRESS_MESSAGES_GENUS)   {*}"PHYS-90 PHYS-256 PHYS-262 PHYS-279"
+# lappend tech(LEF_SUPPRESS_MESSAGES_INNOVUS) {*}"IMPLF_20"
 
 set tech_files(TECHNOLOGY_LEF) "$paths(TECHNOLOGY_FILES)/lef/$METAL_STACK/sc7p5mcpp60_tech.lef"
     set tech_files(ALL_LEFS) [list $tech_files(TECHNOLOGY_LEF)]

@@ -6,9 +6,9 @@
 # Author    : Ravidu Munasinghe <raviduhm@gmail.com>
 # Org       : Kastner Research Group | ENTC UoM
 # Created   : 2026-05-14
-# Modified  : 2026-06-12
+# Modified  : 2026-06-14
 ##############################################################################
-# Version   : 1.2
+# Version   : 1.3
 # Status    : In Progress
 ##############################################################################
 #
@@ -46,7 +46,7 @@
 #   Major Revisions
 #   [ ] Add Innovus Support
 #   Minor Revisions
-#   [ ] Add a folder for each genus run and put new reports on it
+#   [X] Add a folder for each genus run and put new reports on it
 #   [ ] Re-enable and test krg_reload_databases
 #   [ ] Re-enable and test krg_reload_sdc
 ##############################################################################
@@ -159,28 +159,41 @@ proc krg_define_cost_groups {} {
 
     # Remove Default Cost Groups
     delete_obj [get_db cost_groups *]
+    set design(cost_groups) ""
 
     if { $runtype == "synthesis" } {
         # reg2reg
         define_cost_group -name reg2reg -design $design(TOPLEVEL)
-        path_group -from [all_registers] -to [all_registers] -group reg2reg -name reg2reg \
-            -view $design(selected_setup_analysis_views)
+        # path_group not compatible with innovus | syn_opt -spatial warning use group_path | PHYS-1019
+        # path_group -from [all_registers] -to [all_registers] -group reg2reg -name reg2reg \
+        #     -view $design(selected_setup_analysis_views)
+        group_path -from [all_registers] -to [all_registers] -name reg2reg
         lappend design(cost_groups) "reg2reg"
+
         # in2reg
         define_cost_group -name in2reg -design $design(TOPLEVEL)
-        path_group -from [all_inputs] -to [all_registers] -group in2reg -name in2reg \
-            -view $design(selected_setup_analysis_views)
+        # path_group not compatible with innovus | syn_opt -spatial warning use group_path | PHYS-1019
+        # path_group -from [all_inputs] -to [all_registers] -group in2reg -name in2reg \
+        #     -view $design(selected_setup_analysis_views)
+        group_path -from [all_inputs] -to [all_registers] -name in2reg 
         lappend design(cost_groups) "in2reg"
+
         # reg2out
         define_cost_group -name reg2out -design $design(TOPLEVEL)
-        path_group -from [all_registers] -to [all_outputs] -group reg2out -name reg2out \
-            -view $design(selected_setup_analysis_views)
+        # path_group not compatible with innovus | syn_opt -spatial warning use group_path | PHYS-1019
+        # path_group -from [all_registers] -to [all_outputs] -group reg2out -name reg2out \
+        #     -view $design(selected_setup_analysis_views)
+        group_path -from [all_registers] -to [all_outputs] -name reg2out 
         lappend design(cost_groups) "reg2out"
+
         # in2out
         define_cost_group -name in2out -design $design(TOPLEVEL)
-        path_group -from [all_inputs] -to [all_outputs] -group in2out -name in2out \
-            -view $design(selected_setup_analysis_views)
+        # path_group not compatible with innovus | syn_opt -spatial warning use group_path | PHYS-1019
+        # path_group -from [all_inputs] -to [all_outputs] -group in2out -name in2out \
+        #     -view $design(selected_setup_analysis_views)
+        group_path -from [all_inputs] -to [all_outputs] -name in2out 
         lappend design(cost_groups) "in2out"
+
     } elseif { $runtype == "pnr" } {
         # create_basic_path_groups -expanded
         # lappend design(cost_groups) "reg2reg"
@@ -253,10 +266,10 @@ proc krg_report_setup_timing {{reports_path "../asic/reports/cadence/"}} {
         if {$runtype == "synthesis"} {
             run_parallel_commands -queue "report_timing -max_paths 100 \
                 -group [get_db cost_groups -match $cg] \
-                > ${reports_path}/$this_run(stage)/${cg}.setup.timing.rpt" -priority 4
+                > ${reports_path}/${cg}.setup.timing.rpt" -priority 4
         } elseif {$runtype == "pnr"} {
             report_timing -max_paths 100 -group $cg \
-                > "${reports_path}/$this_run(stage)/${cg}.setup.timing.rpt"
+                > "${reports_path}/${cg}.setup.timing.rpt"
         }
     }
 }
@@ -277,10 +290,10 @@ proc krg_report_hold_timing {{reports_path "work/cgra4ml/deepsocflow/run/asic/re
         if {$runtype == "synthesis"} {
             run_parallel_commands -queue "report_timing -early -max_paths 100 \
                 -group [get_db cost_groups -match $cg] \
-                > ${reports_path}/$this_run(stage)/${cg}.hold.timing.rpt" -priority 4
+                > ${reports_path}/${cg}.hold.timing.rpt" -priority 4
         } elseif {$runtype == "pnr"} {
             report_timing -early -max_paths 100 -group $cg \
-                > "${reports_path}/$this_run(stage)/${cg}.hold.timing.rpt"
+                > "${reports_path}/${cg}.hold.timing.rpt"
             }
     }
 }
@@ -462,14 +475,10 @@ proc krg_create_stage_reports {{args ""}} {
         set rpt_proc_dir $active_rpt_dir
         run_parallel_commands -queue "report_summary -directory $rpt_proc_dir/${stage_prefix}_summary.rpt" -priority 1
         krg_message "Added to parallel commands queue, QoR summary reports for stage: $this_run(stage)" low
-    } else {
+    } elseif { $options(-report_summary) eq "yes" } {
         krg_message "Cannot generate summary report: both -report_summary and -write_snapshot must be set to yes" medium
     }
-
-    krg_message "Start Executing Commands Queue" medium
-    run_parallel_commands -execute -prefix "${stage_prefix}_" -log_dir $design(workdir)
-    krg_message "Completed Executing Commands Queue" medium
-
+    
     if {$options(-help)} {
         puts ""
         puts "Usage: krg_create_stage_reports \[options\]"
@@ -498,6 +507,10 @@ proc krg_create_stage_reports {{args ""}} {
         puts ""
         return
     }
+    
+    krg_message "Start Executing Commands Queue" medium
+    run_parallel_commands -execute -prefix "${stage_prefix}_" -log_dir $design(workdir)
+    krg_message "Completed Executing Commands Queue" medium
 }
 
 ###################################################

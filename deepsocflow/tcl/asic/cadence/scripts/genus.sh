@@ -36,7 +36,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-RUN_DIR="$SCRIPT_DIR/../../../../../run/work/genus/genus_run_${GENUS_RUN_COUNTER}"
+RUN_DIR="$SCRIPT_DIR/../../../../../run/work/genus/genus_run_$(printf '%02d' "${GENUS_RUN_COUNTER}")"
 mkdir -p "$RUN_DIR"
 cd "$RUN_DIR"
 
