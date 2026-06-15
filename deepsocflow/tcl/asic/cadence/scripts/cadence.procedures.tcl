@@ -41,6 +41,9 @@
 #                               do_lec, netlist, SDC, SDF; else writes netlist, SDC, SDF
 #   krg_report_debug_messages - Report all Genus messages and write unified metrics JSON
 #   krg_create_sdc_file       - Generate SDC file (clocks, IO, DRV constraints)
+#   krg_export_screenshot     - Highlight top-level hinsts with unique colors, build
+#                               a color-keyed legend, and save floorplan + legend PNGs
+#   krg_short_hinst_name      - Extract a short display name from a full hinst path string
 ##############################################################################
 # TODO:
 #   Major Revisions
@@ -623,7 +626,6 @@ proc krg_create_sdc_file {} {
         puts $df {create_clock -period $design(clock_period_list) -name $design(clock_list) [get_ports $design(clock_port_list)]}
         puts $df {set_clock_uncertainty $design(CLOCK_UNCERTAINTY) $design(clock_list)}
     }
-    puts $df {set_false_path -from [get_ports $design(RST_PORT)]}
 
     if {$runtype == "synthesis"} {
         puts $df {set_ideal_network [get_ports $design(clock_port_list)]}
@@ -634,7 +636,7 @@ proc krg_create_sdc_file {} {
     puts $df "#       IO Constraints          #"
     puts $df "#################################"
     puts $df "set_input_delay -clock \$design(CLK_NAME) \$design(INPUT_DELAY) \\"
-    puts $df {       [remove_from_collection [all_inputs] [list $design(CLK_PORT) $design(RST_PORT)]]}
+    puts $df {       [remove_from_collection [all_inputs] [list $design(CLK_PORT)]]}
     puts $df {set_output_delay -clock $design(CLK_NAME) $design(OUTPUT_DELAY) [all_outputs]}
 
     puts $df "\n"
@@ -644,7 +646,7 @@ proc krg_create_sdc_file {} {
     } else {
         puts $df {set tech(SDC_LOAD_VALUE) [lindex [get_db [get_lib_pins $tech(SDC_LOAD_PIN)] .capacitance] 0]}
     }
-    puts $df {set_load                $tech(SDC_LOAD_VALUE)                      [all_outputs]}
+    puts $df "set_load                \[expr \$tech(SDC_LOAD_VALUE)*20\]        \[all_outputs\]"
     puts $df {set_input_transition    $design(INPUT_TRANSITION)                  [all_inputs]}
     puts $df {set_driving_cell        -lib_cell $tech(SDC_DRIVING_CELL)          [all_inputs]}
 
@@ -664,6 +666,70 @@ proc krg_create_sdc_file {} {
     puts $df "#################################"
     puts $df "foreach srams \$design(DMA_SRAM_LIST) \{  "
     puts $df "    set_disable_timing \$srams -from \[get_db \$srams .pins -if \{.base_name == CLKA\}\] -to \[get_db \$srams .pins -if \{.base_name == CLKB\}\]"
-    puts $df "    set_disable_timing \$srams -from \[get_db \$srams .pins -if \{.base_name == CLKA\}\] -to \[get_db \$srams .pins -if \{.base_name == CLKB\}\] \} "
+    puts $df "    set_disable_timing \$srams -from \[get_db \$srams .pins -if \{.base_name == CLKA\}\] -to \[get_db \$srams .pins -if \{.base_name == CLKB\}\]"
+    puts $df "\}"
     close $df
+}
+
+###################################################
+#          krg_export_screenshot
+#          -------------
+#   Highlights all top-level hierarchical instances
+#       in the Genus/Innovus GUI with unique colors,
+#       builds a color-keyed legend, and saves two
+#       snapshots: floorplan view and legend view.
+###################################################
+proc krg_export_screenshot {} {
+    global design
+
+    gui_show
+    gui_zoom_fit_pv
+
+    set list_hier_inst [lsearch -all -inline -not -glob [get_db designs .hinsts] "*/DW_genblk2*"]
+
+    set color_palette {red blue green yellow magenta cyan lightpink purple teal olive plum navy pink lime orange brown lightblue gold chocolate lightgreen maroon}
+    set n_colors [llength $color_palette]
+
+    set color_list {}
+    for {set i 0} {$i < [llength $list_hier_inst]} {incr i} {
+        lappend color_list [lindex $color_palette [expr {$i % $n_colors}]]
+    }
+
+    set legend_list {}
+    set i 0
+    foreach hier_inst $list_hier_inst {
+        gui_highlight_pv -append -color [lindex $color_list $i] $hier_inst
+        lappend legend_list [list [lindex $color_list $i] [krg_short_hinst_name $hier_inst]]
+        incr i
+    }
+
+    gui_legend -physical -title Legend $legend_list
+
+    gui_snapshot_pv -width 1920 -height 1080 \
+        -png $design(compare_dir)/$design(TOPLEVEL)_floorplan_genus_run_[format "%02d" $GENUS_RUN_COUNTER].png
+
+    gui_snapshot_pv -legend -width 1920 -height 1080 \
+        -png $design(compare_dir)/$design(TOPLEVEL)_legend_genus_run_[format "%02d" $GENUS_RUN_COUNTER].png
+}
+
+###################################################
+#          krg_short_hinst_name
+#          -------------
+#   Extracts a short display name from a full
+#       hierarchical instance path string.
+#   Returns "" for sub-instances (skipped).
+###################################################
+proc krg_short_hinst_name {hinst} {
+    set inst [regsub {^hinst:[^/]+/} $hinst ""]
+    if {[string match "*/*" $inst]} { return "" }
+    # string first is more reliable than regsub for _DW_ stripping in Genus Tcl
+    set dw_idx [string first "_DW_" $inst]
+    if {$dw_idx >= 0} {
+        set inst [string range $inst 0 [expr {$dw_idx - 1}]]
+    } else {
+        regsub {\.[^.]+$} $inst inst
+    }
+    set tok [split $inst "_"]
+    set n   [llength $tok]
+    return  [join [lrange $tok [expr {max(0, $n-2)}] end] "_"]
 }

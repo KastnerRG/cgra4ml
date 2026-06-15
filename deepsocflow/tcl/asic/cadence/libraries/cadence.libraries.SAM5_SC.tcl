@@ -16,7 +16,8 @@
 #   tech_files(*)      — per-corner liberty / CCS / AOCV file lists
 #
 # Corner vs Voltage Table:
-# IMPORTANT!!! The first library for wc corner is important.
+# IMPORTANT!!! The first library for wc corner is important. 
+#              It will be the master library.
 # +--------+----------------------+------------------+--------+--------+--------+
 # | Corner | Condition            | Temp             |  LVT   |  RVT   |  HVT   |
 # +--------+----------------------+------------------+--------+--------+--------+
@@ -47,7 +48,7 @@ set tech(STANDARD_CELL_GND)   VSS
 set tech(STANDARD_CELL_SITE)  sc9mcpp140z_cln28ht
 
 # Set Input and Output Capacitance Values from Std Cells. Extract from Lib Databook
-set tech(SDC_LOAD_PIN)      DFFQ_X3N_A7P5PP60TL_C10/Q
+set tech(SDC_LOAD_PIN)      DFFQ_X3N_A7P5PP60TL_C10/D
 set tech(SDC_DRIVING_CELL)  DFFQ_X3N_A7P5PP60TL_C10
 
 # Supress Libs unwanted messages

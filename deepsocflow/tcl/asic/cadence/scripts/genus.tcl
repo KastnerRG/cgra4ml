@@ -435,4 +435,9 @@ krg_report_debug_messages
 time_info -table $runtype -stamp "export messages & metrics" 
 redirect $design(compare_dir)/$design(TOPLEVEL)_runtime_genus_run_[format "%02d" $genus_run_counter].rpt -tee -msg {time_info -table $runtype -report}
 
+#################################################################
+#                     Snapshot Floorplan                        #
+#################################################################
+krg_export_screenshot
+
 krg_message "!!!!!!!!!!!!!!!!!!! Genus Synthesis Successful !!!!!!!!!!!!!!!!!!!!!" medium
