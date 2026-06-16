@@ -1,7 +1,7 @@
 ##############################################################################
 # Project   : DeepSoCFlow CGRA4ML
-# Script    : cadence.procedures.tcl
-# Purpose   : Shared utility procedures for Cadence Stylus Common UI tools
+# Script    : genus.procedures.tcl
+# Purpose   : Utility procedures for Cadence Genus Stylus Common UI tool
 ##############################################################################
 # Author    : Ravidu Munasinghe <raviduhm@gmail.com>
 # Org       : Kastner Research Group | ENTC UoM
@@ -13,10 +13,9 @@
 ##############################################################################
 #
 # Description:
-#   Reusable TCL procedure library sourced by Genus (synthesis), Innovus
-#   (P&R), and other Cadence EDA flows. Provides logging, debug data
-#   dumps, stage tracking, cost group definitions, parallel report queuing,
-#   and SDC generation under the `krg_` namespace prefix.
+#   Reusable TCL procedure library sourced by Genus (synthesis). 
+#   Provides logging, debug data dumps, stage tracking, cost group definitions,
+#   and parallel report queuing under the `krg_` namespace prefix.
 #
 ##############################################################################
 # Procedures defined in this file:
@@ -34,8 +33,8 @@
 #                               -check_connectivity, -report_datapath, -report_qor,
 #                               -report_gates, -report_area, -check_design_rules,
 #                               -report_multibit, -report_ple, -report_summary, -help
-#                               NOTE: snapshot skipped for elaborate stage;
-#                                     innovus snapshot only written at *syn_opt* stage
+#                               -innovus_option (to be used with write_snapshot 
+#                               after syn_opt stage)
 #   krg_write_stage_outputs   - Write post-synthesis output files for the current stage
 #                               Branches on phys_synth_type: floorplan writes LEC netlist,
 #                               do_lec, netlist, SDC, SDF; else writes netlist, SDC, SDF
@@ -46,8 +45,6 @@
 #   krg_short_hinst_name      - Extract a short display name from a full hinst path string
 ##############################################################################
 # TODO:
-#   Major Revisions
-#   [ ] Add Innovus Support
 #   Minor Revisions
 #   [X] Add a folder for each genus run and put new reports on it
 #   [ ] Re-enable and test krg_reload_databases
@@ -140,7 +137,7 @@ proc krg_message {msg {importance low}} {
 #       default is for all constraint modes
 ###################################################
 # proc krg_reload_sdc {{constraint_mode all}} {
-#     global design tech runtype
+#     global design tech
 #     if {$constraint_mode == "all"} {
 #         set constraint_mode_list [get_db constraint_modes]
 #     } else {
@@ -158,52 +155,44 @@ proc krg_message {msg {importance low}} {
 #     reg2reg, in2reg, reg2out, in2out
 ###################################################
 proc krg_define_cost_groups {} {
-    global runtype design
+    global design
 
     # Remove Default Cost Groups
     delete_obj [get_db cost_groups *]
     set design(cost_groups) ""
 
-    if { $runtype == "synthesis" } {
-        # reg2reg
-        define_cost_group -name reg2reg -design $design(TOPLEVEL)
-        # path_group not compatible with innovus | syn_opt -spatial warning use group_path | PHYS-1019
-        # path_group -from [all_registers] -to [all_registers] -group reg2reg -name reg2reg \
-        #     -view $design(selected_setup_analysis_views)
-        group_path -from [all_registers] -to [all_registers] -name reg2reg
-        lappend design(cost_groups) "reg2reg"
+    # reg2reg
+    define_cost_group -name reg2reg -design $design(TOPLEVEL)
+    # path_group not compatible with innovus | syn_opt -spatial warning use group_path | PHYS-1019
+    # path_group -from [all_registers] -to [all_registers] -group reg2reg -name reg2reg \
+    #     -view $design(selected_setup_analysis_views)
+    group_path -from [all_registers] -to [all_registers] -name reg2reg
+    lappend design(cost_groups) "reg2reg"
 
-        # in2reg
-        define_cost_group -name in2reg -design $design(TOPLEVEL)
-        # path_group not compatible with innovus | syn_opt -spatial warning use group_path | PHYS-1019
-        # path_group -from [all_inputs] -to [all_registers] -group in2reg -name in2reg \
-        #     -view $design(selected_setup_analysis_views)
-        group_path -from [all_inputs] -to [all_registers] -name in2reg 
-        lappend design(cost_groups) "in2reg"
+    # in2reg
+    define_cost_group -name in2reg -design $design(TOPLEVEL)
+    # path_group not compatible with innovus | syn_opt -spatial warning use group_path | PHYS-1019
+    # path_group -from [all_inputs] -to [all_registers] -group in2reg -name in2reg \
+    #     -view $design(selected_setup_analysis_views)
+    group_path -from [all_inputs] -to [all_registers] -name in2reg 
+    lappend design(cost_groups) "in2reg"
 
-        # reg2out
-        define_cost_group -name reg2out -design $design(TOPLEVEL)
-        # path_group not compatible with innovus | syn_opt -spatial warning use group_path | PHYS-1019
-        # path_group -from [all_registers] -to [all_outputs] -group reg2out -name reg2out \
-        #     -view $design(selected_setup_analysis_views)
-        group_path -from [all_registers] -to [all_outputs] -name reg2out 
-        lappend design(cost_groups) "reg2out"
+    # reg2out
+    define_cost_group -name reg2out -design $design(TOPLEVEL)
+    # path_group not compatible with innovus | syn_opt -spatial warning use group_path | PHYS-1019
+    # path_group -from [all_registers] -to [all_outputs] -group reg2out -name reg2out \
+    #     -view $design(selected_setup_analysis_views)
+    group_path -from [all_registers] -to [all_outputs] -name reg2out 
+    lappend design(cost_groups) "reg2out"
 
-        # in2out
-        define_cost_group -name in2out -design $design(TOPLEVEL)
-        # path_group not compatible with innovus | syn_opt -spatial warning use group_path | PHYS-1019
-        # path_group -from [all_inputs] -to [all_outputs] -group in2out -name in2out \
-        #     -view $design(selected_setup_analysis_views)
-        group_path -from [all_inputs] -to [all_outputs] -name in2out 
-        lappend design(cost_groups) "in2out"
+    # in2out
+    define_cost_group -name in2out -design $design(TOPLEVEL)
+    # path_group not compatible with innovus | syn_opt -spatial warning use group_path | PHYS-1019
+    # path_group -from [all_inputs] -to [all_outputs] -group in2out -name in2out \
+    #     -view $design(selected_setup_analysis_views)
+    group_path -from [all_inputs] -to [all_outputs] -name in2out 
+    lappend design(cost_groups) "in2out"
 
-    } elseif { $runtype == "pnr" } {
-        # create_basic_path_groups -expanded
-        # lappend design(cost_groups) "reg2reg"
-        # lappend design(cost_groups) "in2reg"
-        # lappend design(cost_groups) "reg2out"
-        # lappend design(cost_groups) "in2out"
-    }
 }
 
 ###################################################
@@ -260,46 +249,18 @@ proc krg_start_stage {stage {count yes}} {
 #       appropriate directory
 ###################################################
 proc krg_report_setup_timing {{reports_path "../asic/reports/cadence/"}} {
-    global design runtype this_run
+    global design this_run
     mkdir -pv ${reports_path}
     set_db timing_report_fields \
         "timing_point flags arc edge cell fanout transition delay arrival"
 
     foreach cg $design(cost_groups) {
-        if {$runtype == "synthesis"} {
-            run_parallel_commands -queue "report_timing -max_paths 100 \
-                -group [get_db cost_groups -match $cg] \
-                > ${reports_path}/${cg}.setup.timing.rpt" -priority 4
-        } elseif {$runtype == "pnr"} {
-            report_timing -max_paths 100 -group $cg \
-                > "${reports_path}/${cg}.setup.timing.rpt"
-        }
+        run_parallel_commands -queue "report_timing -max_paths 100 \
+            -group [get_db cost_groups -match $cg] \
+            > ${reports_path}/${cg}.setup.timing.rpt" -priority 4
     }
 }
 
-###################################################
-#          krg_report_hold_timing
-#          -------------
-#   Reports hold timing and saves it in the 
-#       appropriate directory
-###################################################
-proc krg_report_hold_timing {{reports_path "work/cgra4ml/deepsocflow/run/asic/reports/cadence"}} {
-    global design runtype this_run
-    mkdir -pv ${reports_path}
-    set_db timing_report_fields \
-        "timing_point flags arc edge cell fanout transition delay arrival"
-
-    foreach cg $design(cost_groups) {
-        if {$runtype == "synthesis"} {
-            run_parallel_commands -queue "report_timing -early -max_paths 100 \
-                -group [get_db cost_groups -match $cg] \
-                > ${reports_path}/${cg}.hold.timing.rpt" -priority 4
-        } elseif {$runtype == "pnr"} {
-            report_timing -early -max_paths 100 -group $cg \
-                > "${reports_path}/${cg}.hold.timing.rpt"
-            }
-    }
-}
 
 ###################################################
 #          krg_create_stage_reports
@@ -308,7 +269,7 @@ proc krg_report_hold_timing {{reports_path "work/cgra4ml/deepsocflow/run/asic/re
 #       current design stage
 ###################################################
 proc krg_create_stage_reports {{args ""}} {
-    global design runtype this_run
+    global design this_run
     array set options {
         -write_design          no
         -write_db              no
@@ -355,13 +316,9 @@ proc krg_create_stage_reports {{args ""}} {
 
     krg_message "Starting to create reports for stage: $stage_prefix" medium
 
-    if { $runtype eq "synthesis" } {
-        set active_dbs_dir $design(dbs_syn_dir)
-        set active_rpt_dir $design(reports_syn_dir)
-    } else {
-        set active_dbs_dir $design(dbs_pnr_dir)
-        set active_rpt_dir $design(reports_pnr_dir)
-    }
+    set active_dbs_dir $design(dbs_syn_dir)
+    set active_rpt_dir $design(reports_syn_dir)
+
     mkdir -pv $active_dbs_dir
     mkdir -pv $active_rpt_dir
 
@@ -401,12 +358,6 @@ proc krg_create_stage_reports {{args ""}} {
         krg_message "Starting to create setup timing reports for stage: $this_run(stage)" low
         krg_report_setup_timing $active_rpt_dir/[format "%02d" $this_run(stage_count)]_$this_run(stage)_timing
         krg_message "Added to parallel commands queue, setup timing reports for stage: $this_run(stage)" low
-    }
-
-    if { $options(-report_hold) eq "yes" } {
-        krg_message "Starting to create hold timing reports for stage: $this_run(stage)" low
-        krg_report_hold_timing $$active_rpt_dir/[format "%02d" $this_run(stage_count)]_$this_run(stage)_timing
-        krg_message "Added to parallel commands queue, hold timing reports for stage: $this_run(stage)" low
     }
 
     if { $options(-check_drc) eq "yes" } {
@@ -528,7 +479,7 @@ proc krg_create_stage_reports {{args ""}} {
 #       else      - writes netlist, SDC, SDF
 ###################################################
 proc krg_write_stage_outputs {} {
-    global design runtype this_run phys_synth_type
+    global design this_run phys_synth_type
 
     set stage_prefix [format "%02d" $this_run(stage_count)]_$this_run(stage)
 
@@ -609,7 +560,7 @@ proc krg_report_debug_messages {} {
 #       on synthesis or pnr
 ###################################################
 proc krg_create_sdc_file {} {
-    global design tech runtype
+    global design tech
 
     set df [open $design(functional_sdc) "w"]
 
@@ -627,9 +578,7 @@ proc krg_create_sdc_file {} {
         puts $df {set_clock_uncertainty $design(CLOCK_UNCERTAINTY) $design(clock_list)}
     }
 
-    if {$runtype == "synthesis"} {
-        puts $df {set_ideal_network [get_ports $design(clock_port_list)]}
-    }
+    puts $df {set_ideal_network [get_ports $design(clock_port_list)]}
     puts $df "\n"
 
     puts $df "#################################"
@@ -675,13 +624,14 @@ proc krg_create_sdc_file {} {
 #          krg_export_screenshot
 #          -------------
 #   Highlights all top-level hierarchical instances
-#       in the Genus/Innovus GUI with unique colors,
+#       in the Genus GUI with unique colors,
 #       builds a color-keyed legend, and saves two
 #       snapshots: floorplan view and legend view.
 ###################################################
 proc krg_export_screenshot {} {
-    global design
+    global design genus_run_counter
 
+    krg_message "Opening GUI and Capture a screenshot of floorplan with ispatial placement" medium
     gui_show
     gui_zoom_fit_pv
 
@@ -706,10 +656,12 @@ proc krg_export_screenshot {} {
     gui_legend -physical -title Legend $legend_list
 
     gui_snapshot_pv -width 1920 -height 1080 \
-        -png $design(compare_dir)/$design(TOPLEVEL)_floorplan_genus_run_[format "%02d" $GENUS_RUN_COUNTER].png
+        -png $design(compare_dir)/$design(TOPLEVEL)_floorplan_genus_run_[format "%02d" $genus_run_counter].png
 
     gui_snapshot_pv -legend -width 1920 -height 1080 \
-        -png $design(compare_dir)/$design(TOPLEVEL)_legend_genus_run_[format "%02d" $GENUS_RUN_COUNTER].png
+        -png $design(compare_dir)/$design(TOPLEVEL)_legend_genus_run_[format "%02d" $genus_run_counter].png
+    
+    krg_message "Captured a screenshot of floorplan with ispatial placement" medium
 }
 
 ###################################################

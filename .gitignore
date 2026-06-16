@@ -19,8 +19,7 @@ temp/
 run/fpga/*
 run/work*
 
-run/asic/*
-!deepsocflow/asic/reports
+run/asic/cadence/reports
 
 *.pickle
 *.h5

@@ -110,7 +110,7 @@ set debug_file          "debug.genus.txt"
 #                     Load Basic Settings                       #
 #################################################################
 # Load General Procedures
-source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/cadence.procedures.tcl -quiet
+source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/genus.procedures.tcl -quiet
 krg_start_stage "Loading_basic_settings" no
 
 # Load the specific definitions for this project

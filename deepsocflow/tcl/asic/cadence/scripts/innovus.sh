@@ -17,11 +17,6 @@
 #                      with new outputs.
 #   --metrics-compare  Run genus_metrics_compare.tcl in batch mode instead of the
 #                      normal synthesis flow. --low-power is ignored in this mode.
-#                      Compares runs 1..GENUS_RUN_COUNTER (set via --run).
-#                      Runs inside a scratch folder
-#                      (cgra4ml/run/work/genus/genus_metrics_compare_tmp)
-#                      that is deleted automatically once Genus exits.
-#                      --overwrite is ignored in this mode.
 #
 # Example:
 #   for initial runs with debug
@@ -32,8 +27,8 @@
 #   bash ./genus.sh --run 1 --low-power Genus_Low_Power_Opt
 #   to re-run into the same folder
 #   bash ./genus.sh --run 1 --overwrite
-#   to compare runs 1-4
-#   bash ./genus.sh --run 4 --metrics-compare
+#   to run metrics comparison
+#   bash ./genus.sh --run 1 --overwrite --metrics-compare
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -55,36 +50,25 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-GENUS_WORK_DIR="$SCRIPT_DIR/../../../../../run/work/genus"
+RUN_DIR="$SCRIPT_DIR/../../../../../run/work/genus/genus_run_$(printf '%02d' "${GENUS_RUN_COUNTER}")"
 
-if [[ $METRICS_COMPARE -eq 1 ]]; then
-    # Scratch folder only — wiped on entry and removed again on exit.
-    RUN_DIR="$GENUS_WORK_DIR/genus_metrics_compare_tmp"
-    rm -rf "$RUN_DIR"
-    mkdir -p "$RUN_DIR"
-else
-    RUN_DIR="$GENUS_WORK_DIR/genus_run_$(printf '%02d' "${GENUS_RUN_COUNTER}")"
-
-    if [[ -d "$RUN_DIR" ]]; then
-        if [[ $OVERWRITE -eq 0 ]]; then
-            echo "Error: run directory already exists: $RUN_DIR"
-            echo "       Use --overwrite to reuse it."
-            exit 1
-        fi
-        echo "Warning: reusing existing run directory: $RUN_DIR"
+if [[ -d "$RUN_DIR" ]]; then
+    if [[ $OVERWRITE -eq 0 ]]; then
+        echo "Error: run directory already exists: $RUN_DIR"
+        echo "       Use --overwrite to reuse it."
+        exit 1
     fi
-
-    mkdir -p "$RUN_DIR"
+    echo "Warning: reusing existing run directory: $RUN_DIR"
 fi
 
+mkdir -p "$RUN_DIR"
 cd "$RUN_DIR"
 
-# trap ensures we return to the scripts folder, and remove the metrics-compare
-# scratch folder, even when:
+# trap ensures we return to the scripts folder even when:
 #   - Genus exits normally
 #   - --no-abort drops into interactive prompt and user types exit
 #   - an error causes early termination
-trap "cd \"$SCRIPT_DIR\"; if [[ $METRICS_COMPARE -eq 1 ]]; then rm -rf \"$RUN_DIR\"; fi" EXIT
+trap "cd \"$SCRIPT_DIR\"" EXIT
 
 if [[ $METRICS_COMPARE -eq 1 ]]; then
     genus -batch -lic_startup Genus_Synthesis $ABORT_FLAG \

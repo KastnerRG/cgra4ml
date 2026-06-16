@@ -1,0 +1,30 @@
+  =================
+   Message Summary
+  =================
+---------------------------------------------------------------------------
+|   Id    |  Sev  |Count|                  Message Text                   |
+---------------------------------------------------------------------------
+|PHYS-12  |Warning|    2|The variant range of wire parameters is too      |
+|         |       |     | large. An example of wire parameters are, a     |
+|         |       |     | WIDTH for layer, PITCH for layer, MINSPACING for|
+|         |       |     | layers, etc.                                    |
+|         |       |     |Check the consistency of the parameters, and see |
+|         |       |     | if you can ignore this message or you're using  |
+|         |       |     | different LEF file with wrong parameters.       |
+|PHYS-25  |Warning|    1|Minimum width of layer in LEF does not match     |
+|         |       |     | minimum width of layer in cap table.            |
+|         |       |     |Compare the layer MinWidth of the cap_table_file |
+|         |       |     | with the MinWidth (WIDTH)                       |
+|         |       |     | of the corresponding layer in LEF. Set the      |
+|         |       |     | attribute 'shrink_factor' to adjust the MinWidth|
+|         |       |     | layer value in the captable file                |
+|PHYS-266 |Warning|   10|Cannot find this net.                            |
+|PHYS-1019|Warning|    1|There are settings for use of this physical      |
+|         |       |     | process that should be reviewed as they are     |
+|         |       |     | likely inappropriate.                           |
+|         |       |     |Review associated messages in log file.          |
+|PHYS-1025|Warning|    1|Path-groups have been reset before iSpatial.     |
+|         |       |     |Recreation of path-groups is left to the user    |
+|         |       |     | after iSpatial for reporting.                   |
+|PHYS-2257|Warning|   12|Net specified in pin is undefined in the netlist.|
+---------------------------------------------------------------------------

@@ -1,0 +1,57 @@
+  =================
+   Message Summary
+  =================
+---------------------------------------------------------------------------
+|   Id    |  Sev  |Count|                  Message Text                   |
+---------------------------------------------------------------------------
+|LBR-38   |Warning|   30|Libraries have inconsistent nominal operating    |
+|         |       |     | conditions. In the Liberty library, there are   |
+|         |       |     | attributes called nom_voltage, nom_process and  |
+|         |       |     | nom_temperature. Genus reports the message, if  |
+|         |       |     | the respective values of the 2 given .libs      |
+|         |       |     | differ.                                         |
+|         |       |     |This is a common source of delay calculation     |
+|         |       |     | confusion and should be avoided.                |
+|LBR-168  |Warning|    1|Invalid library establishment.                   |
+|         |       |     |Establish library after setting the default      |
+|         |       |     | library domain.                                 |
+|MESG-6   |Warning|    5|Message truncated because it exceeds the maximum |
+|         |       |     | length of 4096 characters.                      |
+|         |       |     |By default messages are limited to 4096          |
+|         |       |     | characters. All characters after the 4096       |
+|         |       |     | character limit are truncated. To remove this   |
+|         |       |     | limit, set the message attribute 'truncate' to  |
+|         |       |     | 'false'. However, this may dramatically increase|
+|         |       |     | the size of the log file.                       |
+|MESG-11  |Warning|   20|Maximum message print count reached.             |
+|PHYS-12  |Warning|    2|The variant range of wire parameters is too      |
+|         |       |     | large. An example of wire parameters are, a     |
+|         |       |     | WIDTH for layer, PITCH for layer, MINSPACING for|
+|         |       |     | layers, etc.                                    |
+|         |       |     |Check the consistency of the parameters, and see |
+|         |       |     | if you can ignore this message or you're using  |
+|         |       |     | different LEF file with wrong parameters.       |
+|PHYS-25  |Warning|    1|Minimum width of layer in LEF does not match     |
+|         |       |     | minimum width of layer in cap table.            |
+|         |       |     |Compare the layer MinWidth of the cap_table_file |
+|         |       |     | with the MinWidth (WIDTH)                       |
+|         |       |     | of the corresponding layer in LEF. Set the      |
+|         |       |     | attribute 'shrink_factor' to adjust the MinWidth|
+|         |       |     | layer value in the captable file                |
+|PHYS-256 |Warning|    2|Annotated physical data will be ignored for      |
+|         |       |     | timing analysis.                                |
+|PHYS-262 |Warning|    2|Small lumped capacitance will be ignored.        |
+|PHYS-266 |Warning|    6|Cannot find this net.                            |
+|PHYS-279 |Warning|    8|Physical cell not defined in library.            |
+|         |       |     |Ensure that the proper library files are         |
+|         |       |     | available and have been imported.               |
+|PHYS-1019|Warning|    1|There are settings for use of this physical      |
+|         |       |     | process that should be reviewed as they are     |
+|         |       |     | likely inappropriate.                           |
+|         |       |     |Review associated messages in log file.          |
+|PHYS-1025|Warning|    1|Path-groups have been reset before iSpatial.     |
+|         |       |     |Recreation of path-groups is left to the user    |
+|         |       |     | after iSpatial for reporting.                   |
+|PHYS-2257|Warning|   12|Net specified in pin is undefined in the netlist.|
+|TUI-82   |Warning|    1|Enabling message severity downgrade.             |
+---------------------------------------------------------------------------

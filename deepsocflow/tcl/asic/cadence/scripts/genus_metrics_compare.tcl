@@ -35,7 +35,7 @@ set design(TOPLEVEL)    "axi_cgra4ml"
 set design(compare_dir) "/work/cgra4ml/run/asic/cadence/compare"
 
 set tool        "genus" ;   # genus | innovus | genus_innovus
-set num_runs    7
+set num_runs    [expr {[info exists env(GENUS_RUN_COUNTER)] ? $env(GENUS_RUN_COUNTER) : 1}]
 set json_dir    $design(compare_dir)
 set json_name   "$design(TOPLEVEL)_metrics_${tool}_run_"
 set json_ext    ".json"
