@@ -26,9 +26,10 @@
 #   krg_define_cost_groups    - Define reg2reg/in2reg/reg2out/in2out cost groups
 #   krg_start_stage           - Mark a new flow stage and log elapsed time
 #   krg_report_setup_timing   - Return report_timing cmd string for setup (not executed)
+#   krg_report_hold_timing    - Return report_timing cmd string for hold  (not executed)
 #   krg_create_stage_reports  - Queue and execute all reports/DBs for a given stage
 #                               Options: -write_design, -write_db, -write_snapshot,
-#                               -report_setup, -check_drc,
+#                               -report_setup, -report_hold, -check_drc,
 #                               -check_connectivity, -report_datapath, -report_qor,
 #                               -report_gates, -report_area, -check_design_rules,
 #                               -report_multibit, -report_ple, -report_summary, -help
@@ -64,7 +65,7 @@ proc krg_print_debug_data {write_or_append {debug_file "debug.txt"} var_list dic
 
     set df [open $debug_file $write_or_append]
     puts $df "**********************************************************"
-    puts $df "* All the available variables Cadence Tools going to use *"
+    puts $df "*   All the available variables Innovus going to use     *"
     puts $df "**********************************************************"
     foreach var $var_list {
         global $var
@@ -162,33 +163,21 @@ proc krg_define_cost_groups {} {
 
     # reg2reg
     define_cost_group -name reg2reg -design $design(TOPLEVEL)
-    # path_group not compatible with innovus | syn_opt -spatial warning use group_path | PHYS-1019
-    # path_group -from [all_registers] -to [all_registers] -group reg2reg -name reg2reg \
-    #     -view $design(selected_setup_analysis_views)
     group_path -from [all_registers] -to [all_registers] -name reg2reg
     lappend design(cost_groups) "reg2reg"
 
     # in2reg
     define_cost_group -name in2reg -design $design(TOPLEVEL)
-    # path_group not compatible with innovus | syn_opt -spatial warning use group_path | PHYS-1019
-    # path_group -from [all_inputs] -to [all_registers] -group in2reg -name in2reg \
-    #     -view $design(selected_setup_analysis_views)
     group_path -from [all_inputs] -to [all_registers] -name in2reg 
     lappend design(cost_groups) "in2reg"
 
     # reg2out
     define_cost_group -name reg2out -design $design(TOPLEVEL)
-    # path_group not compatible with innovus | syn_opt -spatial warning use group_path | PHYS-1019
-    # path_group -from [all_registers] -to [all_outputs] -group reg2out -name reg2out \
-    #     -view $design(selected_setup_analysis_views)
     group_path -from [all_registers] -to [all_outputs] -name reg2out 
     lappend design(cost_groups) "reg2out"
 
     # in2out
     define_cost_group -name in2out -design $design(TOPLEVEL)
-    # path_group not compatible with innovus | syn_opt -spatial warning use group_path | PHYS-1019
-    # path_group -from [all_inputs] -to [all_outputs] -group in2out -name in2out \
-    #     -view $design(selected_setup_analysis_views)
     group_path -from [all_inputs] -to [all_outputs] -name in2out 
     lappend design(cost_groups) "in2out"
 
@@ -260,6 +249,25 @@ proc krg_report_setup_timing {{reports_path "../asic/reports/cadence/"}} {
     }
 }
 
+###################################################
+#          krg_report_hold_timing
+#          -------------
+#   Reports hold timing and saves it in the 
+#       appropriate directory
+###################################################
+proc krg_report_hold_timing {{reports_path "work/cgra4ml/deepsocflow/run/asic/reports/cadence"}} {
+    global design runtype this_run
+    mkdir -pv ${reports_path}
+    set_db timing_report_fields \
+        "timing_point flags arc edge cell fanout transition delay arrival"
+
+    foreach cg $design(cost_groups) {
+        run_parallel_commands -queue "report_timing -early -max_paths 100 \
+            -group [get_db cost_groups -match $cg] \
+            > ${reports_path}/${cg}.hold.timing.rpt" -priority 4
+
+    }
+}
 
 ###################################################
 #          krg_create_stage_reports
@@ -275,6 +283,7 @@ proc krg_create_stage_reports {{args ""}} {
         -innovus_option        no
         -write_snapshot        no
         -report_setup          no 
+        -report_hold           no
         -check_drc             no 
         -check_connectivity    no  
         -report_datapath       no
@@ -294,6 +303,7 @@ proc krg_create_stage_reports {{args ""}} {
             -*innovus_option*  {set args [lassign $args - options(-innovus_option)]}
             -*snapshot*        {set args [lassign $args - options(-write_snapshot)]}
             -*setup*           {set args [lassign $args - options(-report_setup)]}
+            -*hold*            {set args [lassign $args - options(-report_hold)]}
             -*drc*             {set args [lassign $args - options(-check_drc)]}
             -*conn*            {set args [lassign $args - options(-check_connectivity)]}
             -*datapath*        {set args [lassign $args - options(-report_datapath)]}
@@ -357,6 +367,12 @@ proc krg_create_stage_reports {{args ""}} {
         krg_message "Added to parallel commands queue, setup timing reports for stage: $this_run(stage)" low
     }
 
+    if { $options(-report_hold) eq "yes" } {
+        krg_message "Starting to create hold timing reports for stage: $this_run(stage)" low
+        krg_report_hold_timing $$active_rpt_dir/[format "%02d" $this_run(stage_count)]_$this_run(stage)_timing
+        krg_message "Added to parallel commands queue, hold timing reports for stage: $this_run(stage)" low
+    }
+        
     if { $options(-check_drc) eq "yes" } {
         krg_message "Starting to create DRC reports for stage: $this_run(stage)" low
         set rpt_proc_dir $active_rpt_dir
@@ -439,6 +455,7 @@ proc krg_create_stage_reports {{args ""}} {
         puts "  -write_db           yes|no   Write Stylus DB for current stage        (default: yes)"
         puts "  -write_snapshot     yes|no   Write Innovus snapshot for current stage  (default: yes)"
         puts "  -report_setup       yes|no   Generate per-cost-group setup timing rpt  (default: no)"
+        puts "  -report_hold        yes|no   Generate per-cost-group hold timing rpt   (default: no)"
         puts "  -check_drc          yes|no   Run DRC check and save report             (default: no)"
         puts "  -check_connectivity yes|no   Run connectivity check and save report    (default: no)"
         puts "  -report_datapath    yes|no   Generate datapath report                  (default: no)"
@@ -453,7 +470,7 @@ proc krg_create_stage_reports {{args ""}} {
         puts "  -help               1        Print this help message"
         puts ""
         puts "Example:"
-        puts "  krg_create_stage_reports -report_setup yes -report_qor yes"
+        puts "  krg_create_stage_reports -report_setup yes -report_hold yes -report_qor yes"
         puts ""
         return
     }
@@ -564,7 +581,7 @@ proc krg_create_sdc_file {} {
     puts $df "#################################"
     puts $df "# Create Clocks"
     if {$design(MULTI_CLOCK_DESIGN) == "yes"} {
-        foreach cname $design(clock_list) cport $design(clock_port_list) cperiod $design(clock_period_list) {
+        foreach cname $design(clock_list) cport $design(clock_port_list) cperiod $design(clock_period_list){
             puts $df "create_clock -period $cperiod -name $cname [get_ports $cport]"
             puts $df "set_clock_uncertainty \$design(CLOCK_UNCERTAINTY) $cname"
         }
@@ -573,7 +590,6 @@ proc krg_create_sdc_file {} {
         puts $df {set_clock_uncertainty $design(CLOCK_UNCERTAINTY) $design(clock_list)}
     }
 
-    puts $df {set_ideal_network [get_ports $design(clock_port_list)]}
     puts $df "\n"
 
     puts $df "#################################"

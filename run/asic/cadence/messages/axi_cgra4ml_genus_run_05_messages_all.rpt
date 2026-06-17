@@ -1,0 +1,308 @@
+  =================
+   Message Summary
+  =================
+---------------------------------------------------------------------------
+|    Id     |  Sev  |Count|                 Message Text                  |
+---------------------------------------------------------------------------
+|CDFG-372   |Info   |   20|Bitwidth mismatch in assignment.               |
+|           |       |     |Review and make sure the mismatch is           |
+|           |       |     | intentional. Genus can possibly issue bitwidth|
+|           |       |     | mismatch warning for explicit assignments     |
+|           |       |     | present in RTL as-well-as for implicit        |
+|           |       |     | assignments inferred by the tool. For example,|
+|           |       |     | in case of enum declaration without value, the|
+|           |       |     | tool will implicitly assign value to the enum |
+|           |       |     | variables. It also issues the warning for any |
+|           |       |     | bitwidth mismatch that appears in this        |
+|           |       |     | implicit assignment.                          |
+|CDFG-373   |Info   |   20|Sign mismatch in assignment.                   |
+|CDFG-476   |Warning|   20|Case statement is not full but has the 'full'  |
+|           |       |     | case pragma set.                              |
+|           |       |     |This may cause simulation mismatches between   |
+|           |       |     | the original and synthesized designs.         |
+|CDFG-500   |Info   |   20|Unused module input port.                      |
+|           |       |     |(In port definition within the module, the inpu|
+|           |       |     | t port is not used in any assignment          |
+|           |       |     | statements or conditional expressions for     |
+|           |       |     | decision statements.                          |
+|CDFG-508   |Warning|   20|Removing unused register.                      |
+|           |       |     |Genus removes the flip-flop or latch inferred  |
+|           |       |     | for an unused signal or variable. To preserve |
+|           |       |     | the flip-flop or latch, set the               |
+|           |       |     | hdl_preserve_unused_registers attribute to    |
+|           |       |     | true or use a pragma in the RTL.              |
+|CDFG-567   |Info   |   20|Instantiating Subdesign.                       |
+|CDFG-738   |Info   |   20|Common subexpression eliminated.               |
+|CDFG-739   |Info   |   20|Common subexpression kept.                     |
+|CDFG-773   |Info   |    3|Skip related conditional write and read        |
+|           |       |     | sequence.                                     |
+|CDFG-818   |Warning|    1|Using default parameter value for module       |
+|           |       |     | elaboration.                                  |
+|CDFG-934   |Warning|   20|Unique if or case does not have an explicit    |
+|           |       |     | else or default clause.                       |
+|           |       |     |This can lead to simulation mismatch.          |
+|CFM-1      |Info   |    1|Wrote dofile.                                  |
+|CFM-5      |Info   |    1|Wrote formal verification information.         |
+|CWD-19     |Info   |   20|An implementation was inferred.                |
+|CWD-21     |Info   |    5|Skipping an invalid binding for a subprogram   |
+|           |       |     | call.                                         |
+|CWD-36     |Info   |   20|Sorted the set of valid implementations for    |
+|           |       |     | synthetic operator.                           |
+|DPOPT-1    |Info   |    1|Optimizing datapath logic.                     |
+|DPOPT-2    |Info   |    1|Done optimizing datapath logic.                |
+|DPOPT-3    |Info   |   20|Implementing datapath configurations.          |
+|DPOPT-4    |Info   |   20|Done implementing datapath configurations.     |
+|DPOPT-6    |Info   |    1|Pre-processed datapath logic.                  |
+|DPOPT-10   |Info   |   20|Optimized a mux chain.                         |
+|ELAB-1     |Info   |    1|Elaborating Design.                            |
+|ELAB-2     |Info   |   20|Elaborating Subdesign.                         |
+|ELAB-3     |Info   |    1|Done Elaborating Design.                       |
+|ELABUTL-124|Warning|    3|Unconnected instance input port detected.      |
+|           |       |     |Run check_design to check 'Undriven Port(s)    |
+|           |       |     | /Pin(s)                                       |
+|           |       |     | ' section for all unconnected instance input  |
+|           |       |     | ports. It is better to double confirm with    |
+|           |       |     | designer these unconnected instance input port|
+|           |       |     | are expected. During syn_gen the unconnected  |
+|           |       |     | instance input ports are controlled by        |
+|           |       |     | attribute 'hdl_unconnected_value', the default|
+|           |       |     | value is 0.                                   |
+|ELABUTL-129|Info   |    3|Unconnected instance input port detected.      |
+|           |       |     |The 'hdl_unconnected_value' attribute controls |
+|           |       |     | treatment of unconnected input port.          |
+|ELABUTL-132|Info   |   20|Unused instance port.                          |
+|           |       |     |Please check the reported scenario of          |
+|           |       |     | unconnected instance port to ensure that it   |
+|           |       |     | matches the design intent.                    |
+|GB-6       |Info   |   42|A datapath component has been ungrouped.       |
+|GB-9       |Info   |   60|Limiting optimization for formal verification. |
+|GB-15      |Info   |    6|A datapath component has been retimed.         |
+|GLO-12     |Info   | 1913|Replacing a flip-flop with a logic constant 0. |
+|           |       |     |To prevent this optimization, set the          |
+|           |       |     | 'optimize_constant_0_flops' root attribute to |
+|           |       |     | 'false' or 'optimize_constant_0_seq' instance |
+|           |       |     | attribute to 'false'. You can also see the    |
+|           |       |     | complete list of deleted sequential with      |
+|           |       |     | command 'report sequential -deleted'          |
+|           |       |     | (on Reason 'constant0').                      |
+|GLO-13     |Info   |   65|Replacing a flip-flop with a logic constant 1. |
+|           |       |     |To prevent this optimization, set the          |
+|           |       |     | 'optimize_constant_1_flops' root attribute to |
+|           |       |     | 'false' or 'optimize_constant_1_seq' instance |
+|           |       |     | attribute to 'false'.                         |
+|GLO-32     |Info   |   17|Deleting sequential instances not driving any  |
+|           |       |     | primary outputs.                              |
+|           |       |     |Optimizations such as constant propagation or  |
+|           |       |     | redundancy removal could change the           |
+|           |       |     | connections so an instance does not drive any |
+|           |       |     | primary outputs anymore. To see the list of   |
+|           |       |     | deleted sequential, set the                   |
+|           |       |     | 'information_level' attribute to 2 or above.  |
+|           |       |     | If the message is truncated set the message   |
+|           |       |     | attribute 'truncate' to false to see the      |
+|           |       |     | complete list.                                |
+|GLO-34     |Info   |    5|Deleting instances not driving any primary     |
+|           |       |     | outputs.                                      |
+|           |       |     |Optimizations such as constant propagation or  |
+|           |       |     | redundancy removal could change the           |
+|           |       |     | connections so a hierarchical instance does   |
+|           |       |     | not drive any primary outputs anymore. To see |
+|           |       |     | the list of deleted hierarchical instances,   |
+|           |       |     | set the 'information_level' attribute to 2 or |
+|           |       |     | above. If the message is truncated set the    |
+|           |       |     | message attribute 'truncate' to false to see  |
+|           |       |     | the complete list. To prevent this            |
+|           |       |     | optimization, set the 'delete_unloaded_insts' |
+|           |       |     | root/subdesign attribute to 'false' or        |
+|           |       |     | 'preserve' instance attribute to 'true'.      |
+|GLO-45     |Info   |   60|Replacing the synchronous part of an always    |
+|           |       |     | feeding back flip-flop with a logic constant. |
+|           |       |     |To prevent this optimization, set              |
+|           |       |     | 'optimize_constant_feedback_seqs' root        |
+|           |       |     | attribute to 'false'. The instance attribute  |
+|           |       |     | 'optimize_constant_feedback_seq' controls this|
+|           |       |     | optimization.                                 |
+|GLO-51     |Info   |   40|Hierarchical instance automatically ungrouped. |
+|           |       |     |Hierarchical instances can be automatically    |
+|           |       |     | ungrouped to allow for better area or timing  |
+|           |       |     | optimization. To prevent this ungroup, set the|
+|           |       |     | root-level attribute 'auto_ungroup' to 'none'.|
+|           |       |     | You can also prevent individual ungroup with  |
+|           |       |     | setting the attribute 'ungroup_ok' of         |
+|           |       |     | instances or modules to 'false'.              |
+|INVS-8     |Info   |    3|Innovus executable found.                      |
+|           |       |     |The specified Innovus executable will be used  |
+|           |       |     | for the Innovus batch jobs.                   |
+|INVS-13    |Info   |    1|The design has been changed by Innovus.        |
+|           |       |     |The design was changed during QoS prediction.  |
+|           |       |     | This may include netlist structural changes.  |
+|INVS-18    |Info   |    2|The following executable version was used for  |
+|           |       |     | the Innovus session.                          |
+|           |       |     |The specified Innovus version was used for the |
+|           |       |     | Innovus batch job.                            |
+|LBR-72     |Info   |  112|Detected an unsupported timing arc type.       |
+|           |       |     |Refer to 'Supported Liberty timing_type Values'|
+|           |       |     | in the 'Timing Analysis Guide' for more       |
+|           |       |     | information.                                  |
+|LBR-109    |Info   |    2|Set default library domain.                    |
+|LBR-415    |Info   |   79|Unusable library cells found at the time of    |
+|           |       |     | loading a library.                            |
+|           |       |     |For  more  information, refer to 'Cells        |
+|           |       |     | Identified as Unusable' in the 'User Guide'.  |
+|           |       |     | To know the reason why a cell is considered as|
+|           |       |     | unusable, check 'unusable_reason' libcell     |
+|           |       |     | attribute.                                    |
+|MESG-10    |Warning|    4|Unknown message ID.                            |
+|PHYS-12    |Warning|   14|The variant range of wire parameters is too    |
+|           |       |     | large. An example of wire parameters are, a   |
+|           |       |     | WIDTH for layer, PITCH for layer, MINSPACING  |
+|           |       |     | for layers, etc.                              |
+|           |       |     |Check the consistency of the parameters, and   |
+|           |       |     | see if you can ignore this message or you're  |
+|           |       |     | using different LEF file with wrong           |
+|           |       |     | parameters.                                   |
+|PHYS-13    |Warning|    1|The value of the wire parameter is too big.    |
+|           |       |     |Check the consistency of the specified wire    |
+|           |       |     | parameter.                                    |
+|PHYS-15    |Warning|   20|Missing wire parameter.                        |
+|           |       |     |Check the wire parameter in LEF technology     |
+|           |       |     | files.                                        |
+|PHYS-25    |Warning|    2|Minimum width of layer in LEF does not match   |
+|           |       |     | minimum width of layer in cap table.          |
+|           |       |     |Compare the layer MinWidth of the              |
+|           |       |     | cap_table_file with the MinWidth (WIDTH)      |
+|           |       |     | of the corresponding layer in LEF. Set the    |
+|           |       |     | attribute 'shrink_factor' to adjust the       |
+|           |       |     | MinWidth layer value in the captable file     |
+|PHYS-52    |Info   |    1|Physical information has been annotated.       |
+|           |       |     |The physical information for the design has    |
+|           |       |     | been prepared and annotated.                  |
+|PHYS-58    |Warning|    2|Option ignored.                                |
+|           |       |     |The specified option will be treated as        |
+|           |       |     | indicated above.                              |
+|PHYS-120   |Warning|   20|MASTERSLICE layer found after ROUTING or CUT   |
+|           |       |     | layer.                                        |
+|           |       |     |Masterslice layers are typically polysilicon   |
+|           |       |     | layers. You must define layers in process     |
+|           |       |     | order from bottom to top. Correct the layer   |
+|           |       |     | order in the LEF file.                        |
+|PHYS-129   |Info   |   20|Via with no resistance will have a value of    |
+|           |       |     | '0.0' assigned for resistance value.          |
+|           |       |     |If this is the expected behavior, this message |
+|           |       |     | can be ignored.                               |
+|PHYS-181   |Info   |   20|Full preserve set on instance.                 |
+|           |       |     |This message has a default max print count of  |
+|           |       |     | '10', which can be changed by setting the     |
+|           |       |     | 'max_print' attribute.                        |
+|PHYS-266   |Warning|   10|Cannot find this net.                          |
+|PHYS-752   |Info   |    2|Partition Based Synthesis execution skipped.   |
+|PHYS-1019  |Warning|    1|There are settings for use of this physical    |
+|           |       |     | process that should be reviewed as they are   |
+|           |       |     | likely inappropriate.                         |
+|           |       |     |Review associated messages in log file.        |
+|PHYS-1025  |Warning|    1|Path-groups have been reset before iSpatial.   |
+|           |       |     |Recreation of path-groups is left to the user  |
+|           |       |     | after iSpatial for reporting.                 |
+|PHYS-2257  |Warning|   12|Net specified in pin is undefined in the       |
+|           |       |     | netlist.                                      |
+|POPT-502   |Warning|    2|Total power has skewed contributions from      |
+|           |       |     | leakage and dynamic power.                    |
+|           |       |     |Dynamic power is typically calculated/specified|
+|           |       |     | for some 'active period'. For combination of  |
+|           |       |     | leakage and dynamic power                     |
+|           |       |     | opt_leakage_to_dynamic_ratio must specify the |
+|           |       |     | percentage of overall time for which the      |
+|           |       |     | design is not in the 'active period' but in   |
+|           |       |     | 'idle mode', i.e. no dynamic power but only   |
+|           |       |     | leakage power is consumed. For a reasonable   |
+|           |       |     | optimization across dynamic and leakage power,|
+|           |       |     | leakage contribution is expected to be above  |
+|           |       |     | 5% and below 95%. A contribution of less than |
+|           |       |     | 5% will result in limited leakage optimization|
+|           |       |     | and contribution of more than 95% will result |
+|           |       |     | in limited dynamic optimization. Adjust       |
+|           |       |     | 'opt_leakage_to_dynamic_ratio' so that leakage|
+|           |       |     | contribution comes to an intermediate value if|
+|           |       |     | you intend both optimizations to occur.       |
+|RETIME-113 |Info   |    1|Retimed asynchronous reset behavior could not  |
+|           |       |     | be preserved without negatively impacting     |
+|           |       |     | timing.                                       |
+|           |       |     |Inserting gates for explicit reset and redoing |
+|           |       |     | retiming.  Disable with                       |
+|           |       |     | retime_fallback_to_explicit_reset root-level  |
+|           |       |     | attribute.                                    |
+|RETIME-307 |Warning|    3|The design contains preserved retimeable flops.|
+|           |       |     |The preserved flops cannot be handled in       |
+|           |       |     | retiming. Make sure that the flops you want to|
+|           |       |     | retime are not preserved.                     |
+|RETIME-311 |Warning|    5|The design contains flops that are part of a   |
+|           |       |     | path group.                                   |
+|           |       |     |Retiming cannot maintain the path group on a   |
+|           |       |     | flop. Set the dont_retime attribute on a flop |
+|           |       |     | to keep it in the path group.                 |
+|RETIME-501 |Info   |    1|Categorized flops into classes.                |
+|           |       |     |Only flops in the same class can merge during a|
+|           |       |     | retiming move.                                |
+|RPT-16     |Info   |    1|Joules engine is used.                         |
+|RPT-303    |Info   |    3|All commands in the queue are launched.        |
+|RPT-310    |Info   |    4|No command left in the queue to be launched.   |
+|RTLOPT-30  |Info   |   14|Accepted resource sharing opportunity.         |
+|RTLOPT-40  |Info   |   20|Transformed datapath macro.                    |
+|ST-110     |Info   |   43|Connection established with super-threading    |
+|           |       |     | server.                                       |
+|           |       |     |The tool is entering super-threading mode and  |
+|           |       |     | has established a connection with a CPU server|
+|           |       |     | process.  This is enabled by the root         |
+|           |       |     | attributes 'super_thread_servers' or          |
+|           |       |     | 'auto_super_thread'.                          |
+|ST-112     |Info   |   41|A super-threading server has been shut down    |
+|           |       |     | normally.                                     |
+|           |       |     |A super-threaded optimization is complete and a|
+|           |       |     | CPU server was successfully shut down.        |
+|ST-120     |Info   |    1|Attempting to launch a super-threading server. |
+|           |       |     |The tool is entering super-threading mode and  |
+|           |       |     | is launching a CPU server process.  This is   |
+|           |       |     | enabled by the root attribute                 |
+|           |       |     | 'super_thread_servers' or 'auto_super_thread'.|
+|ST-128     |Info   |    7|Super thread servers are launched successfully.|
+|SYNTH-1    |Info   |    1|Synthesizing.                                  |
+|SYNTH-2    |Info   |    1|Done synthesizing.                             |
+|SYNTH-4    |Info   |    1|Mapping.                                       |
+|SYNTH-5    |Info   |    1|Done mapping.                                  |
+|TIM-45     |Info   |    2|AAE enabled for delay calculation.             |
+|TIM-1000   |Info   |    1|Multimode clock gating check is disabled.      |
+|TUI-32     |Warning|    1|This attribute will be obsolete in a next major|
+|           |       |     | release.                                      |
+|TUI-58     |Info   |    7|Removed object.                                |
+|TUI-79     |Warning|    4|Multiple names specified for 'vfind' command.  |
+|           |       |     |'vfind' no longer allows multiple names by     |
+|           |       |     | default.  To enable this behavior set the     |
+|           |       |     | 'find_takes_multiple_names' root attribute to |
+|           |       |     | true.                                         |
+|TUI-744    |Info   |    1|Timing analysis will be done for this view.    |
+|           |       |     |Worst paths will be shown in this view.        |
+|VLOGPT-37  |Warning|    7|Ignoring unsynthesizable construct.            |
+|           |       |     |For example, the following constructs will be  |
+|           |       |     | ignored:
+    - initial block
+    - final      |
+|           |       |     | block
+    - program block
+    - property      |
+|           |       |     | block
+    - sequence block
+    - covergroup
+  |
+|           |       |     | - checker block
+    - gate drive strength
+    |
+|           |       |     | - system task enable
+    - reg declaration    |
+|           |       |     | with initial value
+    - specify block.       |
+|VLOGPT-506 |Warning|   20|Unused attribute.                              |
+|VLOGPT-692 |Warning|    1|Usage of non-static tasks or functions might   |
+|           |       |     | result in simulation-synthesis mismatch.      |
+|           |       |     |Use the 'automatic' keyword for declaring      |
+|           |       |     | functions and tasks.                          |
+---------------------------------------------------------------------------

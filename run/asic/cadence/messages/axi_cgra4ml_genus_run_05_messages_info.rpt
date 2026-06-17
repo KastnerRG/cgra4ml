@@ -1,0 +1,53 @@
+  =================
+   Message Summary
+  =================
+---------------------------------------------------------------------------
+|  Id   |Sev |Count|                     Message Text                     |
+---------------------------------------------------------------------------
+|CFM-1  |Info|    1|Wrote dofile.                                         |
+|CFM-5  |Info|    1|Wrote formal verification information.                |
+|GLO-32 |Info|    1|Deleting sequential instances not driving any primary |
+|       |    |     | outputs.                                             |
+|       |    |     |Optimizations such as constant propagation or         |
+|       |    |     | redundancy removal could change the connections so an|
+|       |    |     | instance does not drive any primary outputs anymore. |
+|       |    |     | To see the list of deleted sequential, set the       |
+|       |    |     | 'information_level' attribute to 2 or above. If the  |
+|       |    |     | message is truncated set the message attribute       |
+|       |    |     | 'truncate' to false to see the complete list.        |
+|INVS-8 |Info|    1|Innovus executable found.                             |
+|       |    |     |The specified Innovus executable will be used for the |
+|       |    |     | Innovus batch jobs.                                  |
+|INVS-13|Info|    1|The design has been changed by Innovus.               |
+|       |    |     |The design was changed during QoS prediction. This may|
+|       |    |     | include netlist structural changes.                  |
+|INVS-18|Info|    1|The following executable version was used for the     |
+|       |    |     | Innovus session.                                     |
+|       |    |     |The specified Innovus version was used for the Innovus|
+|       |    |     | batch job.                                           |
+|LBR-109|Info|    1|Set default library domain.                           |
+|LBR-415|Info|    5|Unusable library cells found at the time of loading a |
+|       |    |     | library.                                             |
+|       |    |     |For  more  information, refer to 'Cells Identified as |
+|       |    |     | Unusable' in the 'User Guide'. To know the reason why|
+|       |    |     | a cell is considered as unusable, check              |
+|       |    |     | 'unusable_reason' libcell attribute.                 |
+|PHYS-52|Info|    1|Physical information has been annotated.              |
+|       |    |     |The physical information for the design has been      |
+|       |    |     | prepared and annotated.                              |
+|RPT-16 |Info|    1|Joules engine is used.                                |
+|RPT-303|Info|    1|All commands in the queue are launched.               |
+|RPT-310|Info|    3|No command left in the queue to be launched.          |
+|ST-110 |Info|   14|Connection established with super-threading server.   |
+|       |    |     |The tool is entering super-threading mode and has     |
+|       |    |     | established a connection with a CPU server process.  |
+|       |    |     | This is enabled by the root attributes               |
+|       |    |     | 'super_thread_servers' or 'auto_super_thread'.       |
+|ST-112 |Info|   20|A super-threading server has been shut down normally. |
+|       |    |     |A super-threaded optimization is complete and a CPU   |
+|       |    |     | server was successfully shut down.                   |
+|ST-128 |Info|    2|Super thread servers are launched successfully.       |
+|SYNTH-5|Info|    1|Done mapping.                                         |
+|TIM-45 |Info|    2|AAE enabled for delay calculation.                    |
+|TUI-58 |Info|    6|Removed object.                                       |
+---------------------------------------------------------------------------

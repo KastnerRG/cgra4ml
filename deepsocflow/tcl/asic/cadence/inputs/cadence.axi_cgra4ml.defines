@@ -44,6 +44,7 @@
 #   [ ] Add tech(EXTERNAL_SDC_LOAD) for fullchip
 ##############################################################################
 # WARNING:
+#   For Samsung 5nm - Metal Layers {M1, M2, M3, M4, D5, D6, D7, D8, D9, D10, D11, D12, IA, IB}
 #   Before running any flow, verify ALL file paths in this file are correct
 #   for your environment. Key paths to check:
 #     - paths(PDK_ROOT)     : path to pdks
@@ -116,7 +117,7 @@ set design(MAX_TRANSITION)   [expr $design(CLK_PERIOD)/5.0] ; # Maximum Transiti
 
 # Routing Constraints
 set design(MIN_ROUTE_LAYER) M1
-set design(MAX_ROUTE_LAYER) M14
+set design(MAX_ROUTE_LAYER) IB
 
 ################################################
 #               Files and Paths

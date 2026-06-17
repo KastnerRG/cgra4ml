@@ -42,65 +42,63 @@
 #   innovus -stylus -abort_on_error -files innovus.tcl
 ##############################################################################
 
+#################################################################
+#           Define the names of the top level design            #
+#              and variables specific to this run               #
+#################################################################
+
 gui_set_ui main -geometry "1920x1020+0+0"
 
-set design(TOPLEVEL) "axis_sa"
-set runtype "pnr"
-set debug_file "debug.innovus.txt"
+set innovus_run_counter [expr {[info exists env(INNOVUS_RUN_COUNTER)] ? $env(INNOVUS_RUN_COUNTER) : 0}]
+set design(TOPLEVEL)    "axi_cgra4ml"
+set runtype             "pnr"
+set debug_file          "debug.innovus.txt"
 
 ####################################################
 # Starting Stage - Load defines and technology
 ####################################################
 # Load general procedures
-source ../../tcl/asic/scripts/cadence.procedures.tcl -quiet
-  Layer                              / Length         Data source:
-Name        Direction Utilization  (ohm/micron)       qrc_tech_file
--------------------------------------------------
-M1              H         0.00        65.532151  
-M2              V         1.00        83.192949  
-M3              H         1.00        90.474647  
-M4              V         1.00        85.767857  
-D5              H         1.00        29.163041  
-D6              V         1.00        13.492003  
-D7              H         1.00        13.492003  
-D8              V         1.00        13.492003  
-D9              H         1.00        13.492003  
-D10             V         1.00        13.492003  
-D11             H         1.00        13.492003  
-D12             V         1.00        13.492003  
-IA              H         1.00         0.083037  
-IB              V         1.00         0.083037 
-
-uom_start_stage "loading_basic_settings"
+source /work/cgra4ml/deepsocflow/tcl/asic/scripts/innovus.procedures.tcl -quiet
+krg_start_stage "loading_basic_settings" no
 
 # Load the specific definitions for this project
-source ../../tcl/asic/inputs/cadence.$design(TOPLEVEL).defines -quiet
+source /work/cgra4ml/deepsocflow/tcl/asic/cadence/inputs/cadence.$design(TOPLEVEL).defines -quiet
 
-# Load the library paths and definitions for this technology files
-source ../../tcl/asic/libraries/cadence.libraries.$TECHNOLOGY.tcl -quiet
-source ../../tcl/asic/libraries/cadence.libraries.$SC_TECHNOLOGY.tcl -quiet
+# Load general settings
+source $design(scripts_dir)/cadence.settings.tcl -quiet
 
+# Load the library paths and definitions for this technology
+source $design(libraries_dir)/cadence.libraries.$TECHNOLOGY.tcl -quiet
+source $design(libraries_dir)/cadence.libraries.$SC_TECHNOLOGY.tcl -quiet
+source $design(libraries_dir)/cadence.srams.$SC_TECHNOLOGY.tcl -quiet
+source $design(libraries_dir)/cadence.srams.$TECHNOLOGY.tcl -quiet
 if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
-    source $design(libraries_dir)/libraries.$IO_TECHNOLOGY.tcl -quiet
+    source $design(libraries_dir)/cadence.libraries.$IO_TECHNOLOGY.tcl -quiet
 }
 
-####################################################
-# Print values to debug file
-####################################################
-set var_list {runtype}
-set dic_list {paths_tech tech_files design}
-uom_print_debug_data w $debug_file "after everything was loaded" $var_list $dic_list
+# krg_message "Suppressing the following messages that are design specific" medium
+# krg_message "$design(DESIGN_SUPPRESS_MESSAGES_INNOVUS)"
+# suppress_messages $design(DESIGN_SUPPRESS_MESSAGES_INNOVUS)
 
-####################################################
-#               SDC File Generation                
-####################################################
-uom_create_sdc_file
+#################################################################
+#                 Print Values to debug file                    #
+#################################################################
+set var_list {runtype phys_synth_type}
+set dic_list {env tech tech_files design}
+krg_print_debug_data w $debug_file $var_list $dic_list
 
-####################################################
-# Init Design
-####################################################
+#################################################################
+#                    SDC File Generation                        #
+#################################################################
+krg_create_sdc_file
+# Stamp the stage for runtime and memory information
+time_info -table $runtype -stamp $this_run(stage)
+
+#################################################################
+#                        Init Design                            #
+#################################################################
+krg_start_stage "init_design" no
 enable_metrics -on
-uom_start_stage "1_init_design"
 
 # Global Nets
 set_db init_ground_nets $design(all_ground_nets)
@@ -136,6 +134,8 @@ if {$phys_synth_type == "floorplan"} {
 # Import and initialize design
 init_design
 
+# Checkpoint
+write_db routed.inn
 # Load general settings
 source ../../tcl/asic/scripts/cadence.settings.tcl -quiet
 
