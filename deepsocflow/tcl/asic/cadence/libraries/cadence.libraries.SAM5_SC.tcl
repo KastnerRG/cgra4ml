@@ -45,7 +45,7 @@ set paths(AOCV_Paths)   "$paths(PDK_AIM)/STD_Libs/aocv"
 # General
 set tech(STANDARD_CELL_VDD)   VDD
 set tech(STANDARD_CELL_GND)   VSS
-set tech(STANDARD_CELL_SITE)  sc9mcpp140z_cln28ht
+set tech(STANDARD_CELL_ARCH)  sc7p5mcpp60
 
 # Set Input and Output Capacitance Values from Std Cells. Extract from Lib Databook
 set tech(SDC_LOAD_PIN)      DFFQ_X3N_A7P5PP60TL_C10/D

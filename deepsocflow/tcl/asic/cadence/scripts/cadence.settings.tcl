@@ -161,11 +161,43 @@ if {$runtype == "synthesis"} {
 ###################################
 if {$runtype == "pnr"} {
 
-    ## Basic Settings
-    ###########################
-    set_multi_cpu_usage -local_cpu  8
-    set_db design_process_node      28
-    #set_db design_tech_node         N7
+    # Basic Settings
+    set_multi_cpu_usage -local_cpu  max
+    set_db design_process_node      $PROCESS_NODE
+    set_db design_tech_node         $TECH_NODE
+
+    set_db design_bottom_routing_layer  $krg_iu_vars(sam_tech,min_route_layer)
+    set_db design_top_routing_layer     $krg_iu_vars(sam_tech,max_route_layer)
+    
+    # Floorplan Settings
+    proc krg_floorplan_settings {} {
+        if { $krg_iu_vars(krg_tech, sc_arch_name) == "sc6mcz" } {
+            set_db floorplan_row_site_width odd
+        } else {
+            set_db floorplan_row_site_width even
+        }
+
+        set_db floorplan_row_site_height even
+    } 
+    
+    ## Floorplan Settings
+    ###############################
+    set_db add_endcaps_right_edge    $tech(END_CAP_CELL)
+    set_db add_endcaps_left_edge     $tech(END_CAP_CELL)
+    set_db add_tieoffs_cells         "$tech(TIE_HIGH_CELL) $tech(TIE_LOW_CELL) "
+    set_db add_tieoffs_prefix        $tech(TIE_PREFIX)
+    set_db add_tieoffs_max_fanout    20
+    set_db add_tieoffs_max_distance  250
+    set_db add_fillers_cells         $tech(FILL_CELLS)
+    set_db add_fillers_check_drc     true
+    set_db add_fillers_prefix        $tech(FILL_CELL_PREFIX)
+
+        # Routing Settings
+    proc krg_placement_settings {} {
+        set_db place_detail_swap_eeq_cells true
+ 
+
+    } 
 
     ## Timing Analysis OCV Settings
     ###############################
@@ -185,18 +217,6 @@ if {$runtype == "pnr"} {
         set_db timing_aocv_derate_mode            aocv_multiplicative
     }
 
-    ## Floorplan Settings
-    ###############################
-    set_db add_endcaps_right_edge    $tech(END_CAP_CELL)
-    set_db add_endcaps_left_edge     $tech(END_CAP_CELL)
-    set_db add_tieoffs_cells         "$tech(TIE_HIGH_CELL) $tech(TIE_LOW_CELL) "
-    set_db add_tieoffs_prefix        $tech(TIE_PREFIX)
-    set_db add_tieoffs_max_fanout    20
-    set_db add_tieoffs_max_distance  250
-    set_db add_fillers_cells         $tech(FILL_CELLS)
-    set_db add_fillers_check_drc     true
-    set_db add_fillers_prefix        $tech(FILL_CELL_PREFIX)
-    
     ## Global Placement Settings
     ###############################
     set_db opt_fix_fanout_load true; # Force optimization to correct max_fanout violations
@@ -210,6 +230,28 @@ if {$runtype == "pnr"} {
     set_db route_design_allow_pin_as_feedthru                false
     ### don't taper to the output pin causing EM issues
     set_db route_design_detail_no_taper_on_output_pin        true
+
+    # Routing Settings
+    proc krg_routing_settings {} {
+        set_db route_process_node           $PROCESS_NODE
+ 
+        set_db add_route_vias_auto          false
+        set_db add_route_vias_ndr_only      true
+
+        set_db route_via_weight ""
+        set_db route_via_weight "S*BAR* 200"
+        set_db route_via_weight "V*_DFM 150"
+        set_db route_via_weight "MD_*_DFM 150"
+        set_db route_via_weight "S*_DFM 150"
+        set_db route_via_weight "NR_VIA1_VxBAR_VV_* -1"
+
+        set_db route_detail_post_route_spread_wire    false
+        set_db route_detail_use_multi_cut_via_effort  high
+        set_db route_detail_post_route_swap_via       true
+        set_db route_with_si_driven                   true
+        set_db route_allow_pin_as_feedthru            none
+
+    } 
 }
 
 ###################################

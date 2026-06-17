@@ -34,6 +34,7 @@
 #   [ ] Add Midas safety integration
 #   [ ] Add I/O Pad support for fullchip
 #   Minor Revisions
+#   [ ] Add Distributed Processing
 #   [ ] Add Unified Metrics
 #   [ ] Add suppress messages feature
 #   [ ] Reload Databases
@@ -75,6 +76,18 @@ source $design(libraries_dir)/cadence.srams.$TECHNOLOGY.tcl -quiet
 if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
     source $design(libraries_dir)/cadence.libraries.$IO_TECHNOLOGY.tcl -quiet
 }
+
+# Load Innovus Tech Implementation procs from foundary
+# Copyright Restricted. Not available on git repo.
+# Adopted from Cadence Artisan PDKs
+source $paths(PDK_AIM)/TECH_Procs/lef/innovus_implementation_procs.tcl
+source $paths(PDK_AIM)/TECH_Procs/lef/$METAL_STACK/innovus_implemetation_variable_define_procs.tcl
+source $paths(PDK_AIM)/TECH_Procs/lef/$METAL_STACK/${tech(STANDARD_CELL_ARCH)}_innovus_implementation_variable_define_procs.tcl
+
+# Set up tech, metal_stack variables
+krg_iu_tech_define_sc7p5mcpp60_vars
+krg_iu_tech_define_default_vars
+krg_iu_tech_define_user_vars
 
 # krg_message "Suppressing the following messages that are design specific" medium
 # krg_message "$design(DESIGN_SUPPRESS_MESSAGES_INNOVUS)"

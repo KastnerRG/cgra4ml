@@ -42,6 +42,7 @@
 #   [ ] Early Clock flow settings
 #   [ ] Ultra Optimization settings
 #   [ ] PBS MiM flow
+#   [ ] Add Distributed Processing
 ##############################################################################
 # Suggestions: 
 # If you need Best Area results at the expense of timing
