@@ -24,6 +24,8 @@
 # TODO:
 #   Major Revisions
 #   [X] Add Genus Suppress Messages
+#   [ ] Add NDR Lef Files
+#   [ ] Add Via Pillar Lef File
 #   [ ] Add Innovus Suppress Messages
 #   [ ] Add Tempus Suppress Messages
 ##############################################################################

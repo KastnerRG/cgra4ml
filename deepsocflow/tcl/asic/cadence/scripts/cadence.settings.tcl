@@ -182,8 +182,7 @@ if {$runtype == "pnr"} {
     
     ## Floorplan Settings
     ###############################
-    set_db add_endcaps_right_edge    $tech(END_CAP_CELL)
-    set_db add_endcaps_left_edge     $tech(END_CAP_CELL)
+    # Add fill ties checker board
     set_db add_tieoffs_cells         "$tech(TIE_HIGH_CELL) $tech(TIE_LOW_CELL) "
     set_db add_tieoffs_prefix        $tech(TIE_PREFIX)
     set_db add_tieoffs_max_fanout    20
