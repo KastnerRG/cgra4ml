@@ -95,6 +95,21 @@
 #   genus -lic_startup Genus_Synthesis \
 #         -lic_startup_options "Genus_Low_Power_Opt Genus_Physical_Opt" \
 #         -abort_on_error -files genus.tcl
+#
+#   Recommended (via genus.sh):
+#     bash ./genus.sh --run <n> [--innovus-run <n>] [--phys-synth-type <type>]
+#
+#   Run-specific variables (set via environment or genus.sh):
+#     GENUS_RUN_COUNTER    - Synthesis run index; work dir is genus_run_<nn> (default: 0)
+#     INNOVUS_RUN_COUNTER  - Innovus run for floorplan DEF paths (default: 0)
+#     PHYS_SYNTH_TYPE      - Physical synthesis flow mode (default: lef)
+#                           lef             - RTL floorplan flow; read RTL-flow netlist
+#                           floorplan       - iSpatial flow; read DEF-based netlist
+#
+#   Examples:
+#     bash ./genus.sh --run 1
+#     bash ./genus.sh --run 1 --phys-synth-type floorplan
+#     bash ./genus.sh --run 1 --phys-synth-type floorplan --innovus-run 6
 ##############################################################################
 
 #################################################################
@@ -102,7 +117,10 @@
 #              and variables specific to this run               #
 #################################################################
 
-set genus_run_counter   [expr {[info exists env(GENUS_RUN_COUNTER)] ? $env(GENUS_RUN_COUNTER) : 0}]
+set genus_run_counter    [expr {[info exists env(GENUS_RUN_COUNTER)] ? $env(GENUS_RUN_COUNTER) : 0}]
+set innovus_run_counter  [expr {[info exists env(INNOVUS_RUN_COUNTER)] ? $env(INNOVUS_RUN_COUNTER) : 0}]
+set phys_synth_type      [expr {[info exists env(PHYS_SYNTH_TYPE)] ? $env(PHYS_SYNTH_TYPE) : "lef"}] ; # "lef"       - only read lef - RTL Floorplaning Flow with iSpatial
+                                                                                                      # "floorplan" - read in DEF - iSpatial Flow
 set design(TOPLEVEL)    "axi_cgra4ml"
 set runtype             "synthesis"
 set debug_file          "debug.genus.txt"
@@ -137,7 +155,7 @@ suppress_messages $design(DESIGN_SUPPRESS_MESSAGES_GENUS)
 #################################################################
 #                 Print Values to debug file                    #
 #################################################################
-set var_list {runtype phys_synth_type}
+set var_list {runtype phys_synth_type genus_run_counter innovus_run_counter}
 set dic_list {env tech tech_files design}
 krg_print_debug_data w $debug_file $var_list $dic_list
 

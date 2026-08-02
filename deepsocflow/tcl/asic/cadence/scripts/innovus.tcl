@@ -6,9 +6,9 @@
 # Author    : Ravidu Munasinghe <raviduhm@gmail.com>
 # Org       : Kastner Research Group | ENTC UoM
 # Created   : 2026-05-14
-# Modified  : 2026-06-14
+# Modified  : 2026-07-06
 ##############################################################################
-# Version   : 1.2
+# Version   : 1.0
 # Status    : In Progress
 ##############################################################################
 #
@@ -25,6 +25,7 @@
 ##############################################################################
 # TODO:
 #   Major Revisions
+#   [ ] Add Innovus Synthesis support
 #   [ ] Add SOCV libs support
 #   [ ] Add Low power optimization support
 #   [ ] Add DFT support
@@ -35,12 +36,30 @@
 #   [ ] Add I/O Pad support for fullchip
 #   Minor Revisions
 #   [ ] Add Distributed Processing
-#   [ ] Add Unified Metrics
+#   [ ] Add Unified Metrics - Snapshots
 #   [ ] Add suppress messages feature
 #   [ ] Reload Databases
 ##############################################################################
 # Usage:
-#   innovus -stylus -abort_on_error -files innovus.tcl
+#   Direct:
+#     innovus -stylus -abort_on_error -files innovus.tcl
+#
+#   Recommended (via innovus.sh):
+#     bash ./innovus.sh --run <n> [--genus-run <n>] [--phys-synth-type <type>]
+#                         [--no-abort] [--overwrite]
+#
+#   Run-specific variables (set via environment or innovus.sh):
+#     INNOVUS_RUN_COUNTER  - P&R run index; work dir is innovus_run_<nn> (default: 0)
+#     GENUS_RUN_COUNTER    - Genus run for synthesis netlist/DB paths (default: 0)
+#     INNOVUS_STAGE        - Stage entry point for reload/debug (default: full_flow)
+#                            full_flow, post_initial, post_floorplan, post_placement,
+#                            post_cts, post_route, post_signoff
+#     PHYS_SYNTH_TYPE      - lef (RTL floorplan) or floorplan (iSpatial DEF flow)
+#
+#   Examples:
+#     bash ./innovus.sh --run 1
+#     bash ./innovus.sh --run 1 --genus-run 6
+#     bash ./innovus.sh --run 1 --phys-synth-type floorplan --genus-run 6
 ##############################################################################
 
 #################################################################
@@ -49,24 +68,28 @@
 #################################################################
 
 gui_set_ui main -geometry "1920x1020+0+0"
+enable_metrics -on
 
-set innovus_run_counter [expr {[info exists env(INNOVUS_RUN_COUNTER)] ? $env(INNOVUS_RUN_COUNTER) : 0}]
+set innovus_run_counter  [expr {[info exists env(INNOVUS_RUN_COUNTER)] ? $env(INNOVUS_RUN_COUNTER) : 1}]
+# set genus_run_counter    [expr {[info exists env(GENUS_RUN_COUNTER)] ? $env(GENUS_RUN_COUNTER) : 1}]
+set genus_run_counter    6
+set innovus_stage_reload [expr {[info exists env(INNOVUS_STAGE)] ? $env(INNOVUS_STAGE) : "full_flow"}]
+set phys_synth_type      [expr {[info exists env(PHYS_SYNTH_TYPE)] ? $env(PHYS_SYNTH_TYPE) : "lef"}] ; # "lef"       - only read lef - RTL Floorplaning Flow with iSpatial
+                                                                                                      # "floorplan" - read in DEF - iSpatial Flow
 set design(TOPLEVEL)    "axi_cgra4ml"
 set runtype             "pnr"
 set debug_file          "debug.innovus.txt"
 
-####################################################
-# Starting Stage - Load defines and technology
-####################################################
+################################################################
+#            Load Defines and Technology Definitions           #
+################################################################
 # Load general procedures
-source /work/cgra4ml/deepsocflow/tcl/asic/scripts/innovus.procedures.tcl -quiet
+source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/innovus.procedures.tcl -quiet
 krg_start_stage "loading_basic_settings" no
 
 # Load the specific definitions for this project
+source /work/cgra4ml/run/work/config_hw.tcl -quiet
 source /work/cgra4ml/deepsocflow/tcl/asic/cadence/inputs/cadence.$design(TOPLEVEL).defines -quiet
-
-# Load general settings
-source $design(scripts_dir)/cadence.settings.tcl -quiet
 
 # Load the library paths and definitions for this technology
 source $design(libraries_dir)/cadence.libraries.$TECHNOLOGY.tcl -quiet
@@ -79,15 +102,18 @@ if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
 
 # Load Innovus Tech Implementation procs from foundary
 # Copyright Restricted. Not available on git repo.
-# Adopted from Cadence Artisan PDKs
+# Adopted from Cadence Artisan Technology PDKs
 source $paths(PDK_AIM)/TECH_Procs/lef/innovus_implementation_procs.tcl
 source $paths(PDK_AIM)/TECH_Procs/lef/$METAL_STACK/innovus_implemetation_variable_define_procs.tcl
 source $paths(PDK_AIM)/TECH_Procs/lef/$METAL_STACK/${tech(STANDARD_CELL_ARCH)}_innovus_implementation_variable_define_procs.tcl
 
 # Set up tech, metal_stack variables
-krg_iu_tech_define_sc7p5mcpp60_vars
 krg_iu_tech_define_default_vars
 krg_iu_tech_define_user_vars
+krg_iu_tech_define_sc7p5mcpp60_vars
+
+# Load general settings
+source $design(scripts_dir)/cadence.settings.tcl -quiet
 
 # krg_message "Suppressing the following messages that are design specific" medium
 # krg_message "$design(DESIGN_SUPPRESS_MESSAGES_INNOVUS)"
@@ -105,341 +131,95 @@ krg_print_debug_data w $debug_file $var_list $dic_list
 #################################################################
 krg_create_sdc_file
 # Stamp the stage for runtime and memory information
-time_info -table $runtype -stamp $this_run(stage)
+time_info -table $runtype -stamp "loading_basic_settings"
 
 #################################################################
-#                        Init Design                            #
+#                 Initial Design Initialization                 #
 #################################################################
-krg_start_stage "init_design" no
-enable_metrics -on
-
-# Global Nets
-set_db init_ground_nets $design(all_ground_nets)
-set_db init_power_nets  $design(all_power_nets)
-
-# MMMC
-uom_message "Suppressing the following messages that are reported due to the LIB definitions"
-uom_message "$tech(LIB_SUPPRESS_MESSAGES_INNOVUS)"
-set_message -suppress -id $tech(LIB_SUPPRESS_MESSAGES_INNOVUS)
-
-if {$timing_lib_type == "nldm"} {
-    uom_message "Loading MMMC File with NLDM Libs"
-    read_mmmc $design(mmmc_nldm_view_file)
-} else {
-    uom_message "Loading MMMC File with CCS & OCV Libs"
-    read_mmmc $design(mmmc_ocv_view_file)
+if {$innovus_stage_reload == "full_flow"} {
+    source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/innovus.init.tcl -quiet
+} elseif {$innovus_stage_reload == "post_initial"} {
+    # Load the database
+    # -----------------
+    read_db $design(dbs_pnr_dir)/init_design.db
+    # Stamp the stage for runtime and memory information
+    # --------------------------------------------------
+    time_info -table $runtype -stamp "init_design"
 }
 
-# LEFs
-uom_message "Suppressing the following messages that are reported due to the LEF definitions"
-uom_message "$tech(LEF_SUPPRESS_MESSAGES_INNOVUS)"
-set_message -suppress -id $tech(LEF_SUPPRESS_MESSAGES_INNOVUS)
-uom_message "Reading LEF abstracts"
-read_physical -lef $tech_files(ALL_LEFS)
-
-# Post Synthesis Netlist
-if {$phys_synth_type == "floorplan"} {
-	read_netlist $design(postsyn_netlist_ispatial)
-} else {
-	read_netlist $design(postsyn_netlist_rtl_flow)
+#################################################################
+#                       Floorplan Stage                         #
+#################################################################
+if {$innovus_stage_reload == "full_flow"} {
+    source /work/cgra4ml/deepsocflow/tcl/asic/cadence/inputs/cadence.$design(TOPLEVEL).floorplan.defines -quiet
+    source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/innovus.floorplan.tcl -quiet
+} elseif {$innovus_stage_reload == "post_floorplan"} {
+    # Load the database
+    # -----------------
+    read_db $design(dbs_pnr_dir)/floorplan.db
+    # Stamp the stage for runtime and memory information
+    # --------------------------------------------------
+    time_info -table $runtype -stamp "floorplan"
 }
 
-# Import and initialize design
-init_design
+# #################################################################
+# #                       Placement Stage                         #
+# #################################################################
+# if {$innovus_stage_reload == "full_flow"} {
+#     source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/innovus.placement.tcl -quiet
+# } elseif {$innovus_stage_reload == "post_placement"} {
+#     # Load the database
+#     # -----------------
+#     read_db $design(dbs_pnr_dir)/placement.db
+#     # Stamp the stage for runtime and memory information
+#     # --------------------------------------------------
+#     time_info -table $runtype -stamp "placement"
+# }
 
-# Checkpoint
-write_db routed.inn
-# Load general settings
-source ../../tcl/asic/scripts/cadence.settings.tcl -quiet
+# #################################################################
+# #                         CTS Stage                             #
+# #################################################################
+# if {$innovus_stage_reload == "full_flow"} {
+#     source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/innovus.cts.tcl -quiet
+# } elseif {$innovus_stage_reload == "post_cts"} {
+#     # Load the database
+#     # -----------------
+#     read_db $design(dbs_pnr_dir)/cts.db
+#     # Stamp the stage for runtime and memory information
+#     # --------------------------------------------------
+#     time_info -table $runtype -stamp "cts"
+# }
 
-# Create cost groups
-uom_default_cost_groups
+# #################################################################
+# #                        Route Stage                            #
+# #################################################################
+# if {$innovus_stage_reload == "full_flow"} {
+#     source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/innovus.route.tcl -quiet
+# } elseif {$innovus_stage_reload == "post_route"} {
+#     # Load the database
+#     # -----------------
+#     read_db $design(dbs_pnr_dir)/route.db
+#     # Stamp the stage for runtime and memory information
+#     # --------------------------------------------------
+#     time_info -table $runtype -stamp "route"
+# }
 
-# Connect Global Net
-# ------------------
-# Connect standard cells to VDD and GND
-connect_global_net $design(digital_gnd) -pin $tech(STANDARD_CELL_GND) -all -verbose
-connect_global_net $design(digital_vdd) -pin $tech(STANDARD_CELL_VDD) -all -verbose
-# Connect tie cells
-connect_global_net $design(digital_vdd) -type tie_hi -all -verbose
-connect_global_net $design(digital_gnd) -type tie_lo -all -verbose
+# #################################################################
+# #                        SignOff Stage                          #
+# #################################################################
+# if {$innovus_stage_reload == "full_flow"} {
+#     source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/innovus.signoff.tcl -quiet
+# } elseif {$innovus_stage_reload == "post_signoff"} {
+#     # Load the database
+#     # -----------------
+#     read_db $design(dbs_pnr_dir)/signoff.db
+#     # Stamp the stage for runtime and memory information
+#     # --------------------------------------------------
+#     time_info -table $runtype -stamp "signoff"
+# }
 
-if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
-    # Connect pads to IO and CORE voltages
-    #       -netlist_override is needed, since GENUS connects these pins to UNCONNECTED during synthesis
-    connect_global_net $design(io_vdd)      -pin $tech(IO_VDDIO)    -hinst i_${design(IO_MODULE)} -netlist_override
-    connect_global_net $design(io_gnd)      -pin $tech(IO_GNDIO)    -hinst i_${design(IO_MODULE)} -netlist_override
-    connect_global_net $design(digital_vdd) -pin $tech(IO_VDDCORE)  -hinst i_${design(IO_MODULE)} -netlist_override
-    connect_global_net $design(digital_gnd) -pin $tech(IO_GNDCORE)  -hinst i_${design(IO_MODULE)} -netlist_override
-}
+# # Stamp the stage for runtime and memory information
+# # --------------------------------------------------
+# add_functions for time_infos
 
-# Reporting & Save
-uom_create_stage_reports -write_db yes
-
-####################################################
-# Floorplan
-####################################################
-uom_start_stage "2_floorplan"
-source ../../tcl/asic/inputs/cadence.$design(TOPLEVEL).floorplan.defines -quiet
-
-if {$phys_synth_type == "floorplan"} {
-    # You need to read a .def file for the floorplan to enable physical synthesis
-    uom_message "Loading the floorplan DEF"
-    read_def $design(floorplan_def)
-} else {
-    # Specify Floorplan
-    create_floorplan -site $tech(STANDARD_CELL_SITE) -match_to_site \
-        -core_density_size $design(floorplan_ratio) $design(floorplan_utilization) {*}$design(floorplan_space_to_core)
-    gui_fit
-
-    # Set up pads (for fullchip) or pins (for macro)
-    if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
-        # Reload the IO file after resizing the floorplan
-        read_io_file $design(io_file)
-        # Add IO Fillers
-        add_io_fillers -cells $tech(IO_FILLERS) -prefix IOFILLER
-        # Connect Pad Rings
-        route_special -connect {pad_ring} -nets "$design(digital_gnd) $design(digital_vdd) \
-                                $design(io_gnd) $design(io_vdd)"
-    } elseif {$design(FULLCHIP_OR_MACRO) == "MACRO"} {
-        # Spread pins
-        set pins_to_spread [get_db ports .name]
-        edit_pin -spread_direction clockwise -spread_type center \
-                -layer M5 -side Top -fix_overlap 1 -spacing 2 \
-                -pin $design(CLOCK_PIN)
-        edit_pin -spread_direction clockwise -spread_type center \
-                -layer M3 -side Top -fix_overlap 1 -spacing 2 \
-                -pin $design(TOP_INPUT_PINS)
-        edit_pin -spread_direction clockwise -spread_type center \
-                -layer M4 -side Left -fix_overlap 1 -spacing 2 \
-                -pin $design(LEFT_INPUT_PINS)
-        edit_pin -spread_direction clockwise -spread_type center \
-                -layer M4 -side Right -fix_overlap 1 -spacing 2 \
-                -pin $design(RIGHT_OUTPUT_PINS)       
-    }
-    gui_redraw
-
-    ####################################################
-    # Connect Power
-    ####################################################
-    # Create Core Ring
-    add_rings -type core_rings -nets $design(core_ring_nets) -center 1 -follow core \
-            -layer $design(core_ring_layers) -width $design(core_ring_width) -spacing $design(core_ring_spacing)
-
-    # Connect Follow Pins
-    route_special -connect {core_pin} -nets $design(core_ring_nets) -pad_pin_port_connect all_geom -detailed_log
-
-    if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
-        # Connect pads to the rings
-        route_special -connect {pad_pin} -nets $design(core_ring_nets) -pad_pin_port_connect all_geom -detailed_log
-    }
-
-    # Add End Caps
-    add_endcaps -prefix $tech(END_CAP_PREFIX)
-
-    # Add Well Taps
-    add_well_taps -cell $tech(FILL_TIE_CELL) -checker_board -prefix $tech(FILL_TIE_PREFIX) \
-            -cell_interval [expr 2 * $design(WELLTAP_RULE)]
-    check_well_taps -max_distance $design(WELLTAP_RULE)
-
-    # Add Stripes
-    add_stripes -layer [lindex [get_db layers .name] 7] -direction vertical -nets $design(M7_stripes_nets) \
-                -width $design(M7_stripes_width) -spacing $design(M7_stripes_spacing) \
-                -start_from left -start_offset $design(M7_stripes_from_left) \
-                -set_to_set_distance $design(M7_stripes_interval) -create_pins true \
-                -max_same_layer_jog_length 10.0
-
-    # Export floorplan DEF
-    # This can be used for loading the floorplan in subsequent runs
-    #   And also as a basis for physically-aware synthesis
-    write_def -floorplan -no_std_cells "$design(floorplan_def)"
-}
-
-# Reporting & Save
-check_connectivity -type special > $design(pnr_reports)/2_floorplan/power_connectivity.rpt
-uom_create_stage_reports -write_db yes -check_drc yes 
-
-# Screenshot of the floorplan
-gui_fit
-write_to_gif $design(pnr_reports)/screenshots/1_Floorplan.gif
-
-####################################################
-# Placement
-####################################################
-uom_start_stage "3_placement"
-
-# Add M2 routing blockages around vertical power stripes to prevent M2 routing DRCs near them
-uom_add_m2_stripe_blockage
-
-set_db place_global_cong_effort auto
-set_db opt_new_inst_prefix "place_opt_inst_"
-set_db opt_new_net_prefix  "place_opt_net_"
-place_opt_design -report_dir "$design(reports_dir)/pnr/3_placement/place_opt_design"
-
-# Add Tie Cells
-add_tieoffs -lib_cell "$tech(TIE_HIGH_CELL) $tech(TIE_LOW_CELL)" -prefix $tech(TIE_PREFIX)
-
-# Fix DRV
-opt_design -pre_cts -drv 
-
-# Reporting & Save
-check_place > $design(pnr_reports)/3_placement/placement_report.rpt
-uom_create_stage_reports -write_db yes -check_drc yes
-
-# Screenshot of the floorplan
-gui_fit
-write_to_gif $design(pnr_reports)/screenshots/2_Placement.gif
-
-####################################################
-# Clock Tree Synthesis
-####################################################
-uom_start_stage "4_clock_tree_synthesis"
-
-# Load Clock Tree Configuration
-reset_ccopt_config
-source $design(clock_tree_spec)
-
-set_db opt_new_inst_prefix "cts_opt_inst_"
-set_db opt_new_net_prefix  "cts_opt_net_"
-# ccopt_design -report_dir "$design(reports_dir)/pnr/4_clock_tree_synthesis/ccopt_design"
-clock_opt_design -report_dir "$design(reports_dir)/pnr/4_clock_tree_synthesis/ccopt_design"
-
-# Reporting & Save
-if {$timing_lib_type == "ccs_ocv"} {
-    set_db timing_analysis_engine             statistical
-}
-uom_create_stage_reports -write_db yes -check_drc yes -report_timing yes -check_connectivity yes
-if {$timing_lib_type == "ccs_ocv"} {
-    set_db timing_analysis_engine             static
-}
-
-# Open the clock tree debugger and check Clock Tree
-#gui_open_ctd
-
-# Post CTS Hold Fixing
-# --------------------
-uom_start_stage "5_post_cts_hold"
-opt_design -post_cts -hold 
-
-# Reporting & Save
-if {$timing_lib_type == "ccs_ocv"} {
-    set_db timing_analysis_engine             statistical
-}
-uom_create_stage_reports -write_db yes -check_drc yes -report_timing yes -check_connectivity yes
-if {$timing_lib_type == "ccs_ocv"} {
-    set_db timing_analysis_engine             static
-}
-
-# Screenshot of the floorplan
-gui_fit
-write_to_gif $design(pnr_reports)/screenshots/3_CTS.gif
-
-####################################################
-# Route
-####################################################
-# Pre Routing
-# -----------
-uom_start_stage "6_pre_route"
-
-# Get rid of the M2 stripe blockages that are no longer needed and cause annoying DRC violations
-delete_route_blockages -type routes
-
-
-set_db route_design_with_timing_driven                  true
-set_db route_design_detail_use_multi_cut_via_effort     medium
-if {$timing_lib_type == "ccs_ocv"} {
-    set_db route_design_with_si_driven                  true
-    set_db delaycal_enable_si                           true
-} else {
-    set_db route_design_with_si_driven                  false
-    set_db delaycal_enable_si                           false
-}
-
-
-set_db opt_new_inst_prefix "route_opt_inst_"
-set_db opt_new_net_prefix "route_opt_net_"
-route_opt_design
-
-# Reporting & Save
-if {$timing_lib_type == "ccs_ocv"} {
-    set_db timing_analysis_engine             statistical
-}
-uom_create_stage_reports -write_db yes -check_drc yes -report_timing yes -check_connectivity yes -report_hold yes
-if {$timing_lib_type == "ccs_ocv"} {
-    set_db timing_analysis_engine             static
-}
-
-# Post Route Optimization
-# -----------------------
-uom_start_stage "7_post_route_opt"
-opt_design -post_route -setup -hold
-
-set_db route_design_with_timing_driven                  false
-set_db route_design_detail_post_route_spread_wire       true
-set_db route_design_detail_use_multi_cut_via_effort     high
-if {$timing_lib_type == "ccs_ocv"} {
-    set_db route_design_with_si_driven                  false
-    set_db delaycal_enable_si                           false
-}
-route_design -wire_opt
-route_design -via_opt
-set_db route_design_detail_post_route_spread_wire       false
-set_db route_design_with_timing_driven                  true
-if {$timing_lib_type == "ccs_ocv"} {
-    set_db route_design_with_si_driven                  true
-    set_db delaycal_enable_si                           true
-}
-
-# Add Filler Cells with DRC errors
-add_fillers -base_cells $tech(FILL_CELLS) -prefix $tech(FILL_CELL_PREFIX) \
-            -check_different_cells true -check_drc -check_min_hole true \
-            -check_via_enclosure true -fill_gap
-# Clean DRC errors
-add_fillers -base_cells $tech(FILL_CELLS) -prefix $tech(FILL_CELL_PREFIX) \
-            -check_different_cells true -check_drc -check_min_hole true \
-            -check_via_enclosure true -fill_gap -fix_drc
-route_eco -fix_drc
-
-# Reporting & Save
-if {$timing_lib_type == "ccs_ocv"} {
-    set_db timing_analysis_engine             statistical
-}
-uom_create_stage_reports -write_db yes -check_drc yes -report_timing yes -check_connectivity yes -report_hold yes
-if {$timing_lib_type == "ccs_ocv"} {
-    set_db timing_analysis_engine             static
-}
-
-# Screenshot of the floorplan
-gui_fit
-write_to_gif $design(pnr_reports)/screenshots/4_Post_Route.gif
-
-####################################################
-# Export & SignOff
-####################################################
-uom_start_stage "8_signoff"
-
-# Input & Output Port Naming
-bitblast_ports $design(TOPLEVEL)
-
-# Write out a netlist for gls simulation
-# ---------------------------------------------
-uom_message "Writing the post route netlist to $design(postroute_netlist)"
-write_netlist -top_module $design(TOPLEVEL) -top_module_first -flat $design(postroute_netlist)
-
-# Write out SDF for backannotation simulation
-# -------------------------------------------
-uom_message "Writing the post route SDF to $design(postroute_sdf)"
-write_sdf -version 3.0 -min_view bc_analysis_view -typical_view tc_analysis_view -max_view wc_analysis_view $design(postroute_sdf) 
-
-####################################################
-# Metal & Via Fill
-####################################################
-# Add Via Fill
-add_via_fill
-
-# Add Metal Fil
-add_metal_fill
-
-# Screenshot of the floorplan
-gui_fit
-write_to_gif $design(pnr_reports)/screenshots/5_Final_Layout.gif
+# krg_message "!!!!!!!!!!!!!!!!!!! Innovus PnR Successful !!!!!!!!!!!!!!!!!!!!!" medium

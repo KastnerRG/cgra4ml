@@ -66,9 +66,6 @@ set design(FULLCHIP_OR_MACRO) "MACRO";
 set design(HAS_SCAN)          "no";
 
 set low_power_enabled       "no"
-set phys_synth_type         "lef" ;         # "none"      - don't read any tech files
-                                            # "lef"       - only read lef - RTL Floorplaning Flow with iSpatial
-                                            # "floorplan" - read in DEF - iSpatial Flow
 set timing_lib_type         "nldm";         # "nldm"      - Non Linear Model Libs 
                                             # "ccs_ocv"   - CCS, LVF and AOCV libs
 
@@ -157,20 +154,36 @@ set design(postsyn_netlist_rtl_flow)             "$design(export_syn_dir)/$desig
 set design(postsyn_sdc_rtl_flow)                 "$design(export_syn_dir)/$design(TOPLEVEL)_rtl_flow.postsyn.sdc"
 set design(postsyn_sdf_rtl_flow)                 "$design(export_syn_dir)/$design(TOPLEVEL)_rtl_flow.postsyn.sdf"
 
+set design(floorplan_def)                        "$env(PWD)/../../innovus/innovus_run_[format "%02d" $innovus_run_counter]/exports/$design(TOPLEVEL).floorplan.def"
+
 if { $runtype == "pnr" } {
+    set design(prev_genus_run)                   "$env(PWD)/../../genus/genus_run_[format "%02d" $genus_run_counter]"
+    set design(export_syn_dir)                   "$design(prev_genus_run)/exports"
+    set design(dbs_syn_dir)                      "$design(prev_genus_run)/dbs"
+
+    set design(postsyn_netlist_ispatial)         "$design(export_syn_dir)/$design(TOPLEVEL)_ispatial.postsyn.v"
+    set design(postsyn_sdc_ispatial)             "$design(export_syn_dir)/$design(TOPLEVEL)_ispatial.postsyn.sdc"
+    set design(postsyn_sdf_ispatial)             "$design(export_syn_dir)/$design(TOPLEVEL)_ispatial.postsyn.sdf"
+
+    set design(postsyn_netlist_rtl_flow)         "$design(export_syn_dir)/$design(TOPLEVEL)_rtl_flow.postsyn.v"
+    set design(postsyn_sdc_rtl_flow)             "$design(export_syn_dir)/$design(TOPLEVEL)_rtl_flow.postsyn.sdc"
+    set design(postsyn_sdf_rtl_flow)             "$design(export_syn_dir)/$design(TOPLEVEL)_rtl_flow.postsyn.sdf"
+
     set design(export_pnr_dir)                   "$design(workdir)/exports"
     set design(dbs_pnr_dir)                      "$design(workdir)/dbs"
     set design(reports_pnr_dir)                  "$design(project_root)/run/asic/cadence/reports/innovus_run_[format "%02d" $innovus_run_counter]"
     set design(postroute_netlist)                "$design(export_pnr_dir)/$design(TOPLEVEL).pnr.v"
     set design(postroute_sdf)                    "$design(export_pnr_dir)/$design(TOPLEVEL).pnr.sdf"
+
+    # Save floorplan from innovus to parallel genus run 
+    set design(floorplan_check)                      "$design(export_pnr_dir)/$design(TOPLEVEL).floorplan_check.rpt"
+    set design(clock_tree_spec)                      "$design(inputs_dir)/cadence.$design(TOPLEVEL).ccopt"
+    set design(floorplan_def)                        "$design(export_pnr_dir)/$design(TOPLEVEL).floorplan.def"
 }
 
-# Save floorplan from innovus to parallel genus run
-set design(floorplan_def)                        "$design(export_syn_dir)/$design(TOPLEVEL).floorplan.def"
 set design(functional_sdc)                       "$design(inputs_dir)/cadence.$design(TOPLEVEL).sdc"
 set design(mmmc_nldm_view_file)                  "$design(inputs_dir)/cadence.$design(TOPLEVEL).nldm.mmmc"
 set design(mmmc_ocv_view_file)                   "$design(inputs_dir)/cadence.$design(TOPLEVEL).ocv.mmmc"
-set design(clock_tree_spec)                      "$design(inputs_dir)/cadence.$design(TOPLEVEL).ccopt"
 
 # set design(io_file)                            "$design(inputs_dir)/$design(TOPLEVEL).io"
 # set design(UPF_file)                           "$design(inputs_dir)/$design(TOPLEVEL).upf"

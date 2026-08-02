@@ -6,9 +6,9 @@
 # Author    : Ravidu Munasinghe <raviduhm@gmail.com>
 # Org       : Kastner Research Group | ENTC UoM
 # Created   : 2026-05-14
-# Modified  : 2026-06-14
+# Modified  : 2026-06-20
 ##############################################################################
-# Version   : 1.3
+# Version   : 1.0
 # Status    : In Progress
 ##############################################################################
 #
@@ -194,7 +194,7 @@ proc krg_start_stage {stage {count yes}} {
     global design this_run
 
     if {$stage == ""} {
-        krg_message "You have to define a stage for using the krg_start_stage procedure"
+        krg_message "You have to define a stage for using the krg_start_stage procedure" medium
         return
     }
 
@@ -224,10 +224,10 @@ proc krg_start_stage {stage {count yes}} {
     set formattedTime [clock format $systemTime -format %H:%M]
     set formattedDate [clock format $systemTime -format %d/%m/%Y]
     set stageTime "[clock format $systemTime -format %Y%m%d]_[clock format $systemTime -format %H%M%S]"
-    krg_message "Current time is: $formattedDate $formattedTime"
+    krg_message "Current time is: $formattedDate $formattedTime" low
     set this_run($stage) $systemTime
 
-    krg_message "------------------------------------"
+    puts "------------------------------------------"
 }
 
 ###################################################
@@ -696,3 +696,21 @@ proc krg_short_hinst_name {hinst} {
     set n   [llength $tok]
     return  [join [lrange $tok [expr {max(0, $n-2)}] end] "_"]
 }
+
+###################################################
+#          krg_check_drc
+#          -------------
+#   Checks DRC and fails if there are any violations
+###################################################
+proc krg_check_drc {} {
+    global design this_run
+    check_drc -out_file $design(reports_pnr_dir)/[format "%02d" $this_run(stage_count)]_$this_run(stage)_check_drc.rpt 
+    set n [llength [get_db markers -if {.type == drc}]]
+    if {$n == 0} {
+        krg_message "DRC clean - 0 violations found at [format "%02d" $this_run(stage_count)]_$this_run(stage)"
+    } else {
+        krg_message "$n DRC violations founds - see $design(reports_pnr_dir)/[format "%02d" $this_run(stage_count)]_$this_run(stage)_check_drc.rpt"
+        error "$n DRC violations founds at [format "%02d" $this_run(stage_count)]_$this_run(stage)"
+    }
+}
+

@@ -205,7 +205,7 @@ proc krg_start_stage {stage {count yes}} {
     global design this_run
 
     if {$stage == ""} {
-        krg_message "You have to define a stage for using the krg_start_stage procedure"
+        krg_message "You have to define a stage for using the krg_start_stage procedure" medium
         return
     }
 
@@ -235,10 +235,10 @@ proc krg_start_stage {stage {count yes}} {
     set formattedTime [clock format $systemTime -format %H:%M]
     set formattedDate [clock format $systemTime -format %d/%m/%Y]
     set stageTime "[clock format $systemTime -format %Y%m%d]_[clock format $systemTime -format %H%M%S]"
-    krg_message "Current time is: $formattedDate $formattedTime"
+    krg_message "Current time is: $formattedDate $formattedTime" low
     set this_run($stage) $systemTime
 
-    krg_message "------------------------------------"
+    puts "------------------------------------------"
 }
 
 ###################################################
@@ -491,7 +491,7 @@ proc krg_write_stage_outputs {} {
         krg_message "Added to parallel commands queue, LEC do file for stage: $this_run(stage)" low
 
         krg_message "Starting to write netlist for stage: $this_run(stage)" low
-        run_parallel_commands -queue "write_netlist $design(TOPLEVEL) -depth 0 > $design(postsyn_netlist_rtl_flow)" -priority 5
+        run_parallel_commands -queue "write_netlist $design(TOPLEVEL) > $design(postsyn_netlist_rtl_flow)" -priority 5
         krg_message "Added to parallel commands queue, netlist for stage: $this_run(stage)" low
 
         krg_message "Starting to write SDC for stage: $this_run(stage)" low
@@ -505,7 +505,7 @@ proc krg_write_stage_outputs {} {
         krg_message "Starting to write output files for stage: $this_run(stage)_rtl_floorplanning" medium
  
         krg_message "Starting to write netlist for stage: $this_run(stage)" low
-        run_parallel_commands -queue "write_netlist $design(TOPLEVEL) -depth 0 > $design(postsyn_netlist_rtl_flow)" -priority 5
+        run_parallel_commands -queue "write_netlist $design(TOPLEVEL) > $design(postsyn_netlist_rtl_flow)" -priority 5
         krg_message "Added to parallel commands queue, netlist for stage: $this_run(stage)" low
 
         krg_message "Starting to write SDC for stage: $this_run(stage)" low

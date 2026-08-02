@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage:
-#   bash <path_to>/genus.sh [--no-abort] [--low-power] [--run <n>] [--overwrite]
-#                           [--metrics-compare]
+#   bash <path_to>/genus.sh [--no-abort] [--low-power] [--run <n>] [--innovus-run <n>]
+#                          [--phys-synth-type <type>] [--overwrite] [--metrics-compare]
 #
 # Options:
 #   --no-abort         Drop into the Genus interactive prompt on error instead of
@@ -12,6 +12,12 @@
 #                      cgra4ml/run/work/genus/genus_run_<nn>
 #                      Aborts if the folder already exists (use --overwrite to skip).
 #                      (default: 00)
+#   --innovus-run <n>  Set innovus_run_counter to <n>. Pulls floorplan DEF
+#                      from innovus_run_<nn> for iSpatial synthesis (default: 0)
+#   --phys-synth-type <type>
+#                      Set PHYS_SYNTH_TYPE for genus.tcl (default: lef).
+#                      "lef"       - RTL floorplan flow with iSpatial
+#                      "floorplan" - iSpatial flow with DEF input
 #   --overwrite        Allow reuse of an existing genus_run_<nn> folder instead of
 #                      aborting. Use with caution — previous results will be mixed
 #                      with new outputs.
@@ -28,6 +34,12 @@
 #   bash ./genus.sh --run 1 --no-abort
 #   for full physical run
 #   bash ./genus.sh --run 1
+#   for rtl floorplan (no intial DEF) flow
+#   bash ./genus.sh --run 1 --phys-synth-type lef
+#   for iSpatial floorplan (DEF) flow
+#   bash ./genus.sh --run 1 --phys-synth-type floorplan
+#   for iSpatial using Innovus run 6 floorplan DEF
+#   bash ./genus.sh --run 1 --phys-synth-type floorplan --innovus-run 6
 #   for full physical+low power run
 #   bash ./genus.sh --run 1 --low-power Genus_Low_Power_Opt
 #   to re-run into the same folder
@@ -43,12 +55,16 @@ LOW_POWER_OPT=""
 OVERWRITE=0
 METRICS_COMPARE=0
 export GENUS_RUN_COUNTER=0
+export INNOVUS_RUN_COUNTER=0
+export PHYS_SYNTH_TYPE="lef"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
         --no-abort)          ABORT_FLAG="";                        shift ;;
         --low-power)         LOW_POWER_OPT=" Genus_Low_Power_Opt"; shift ;;
         --run)               GENUS_RUN_COUNTER="$2";               shift 2 ;;
+        --innovus-run)       INNOVUS_RUN_COUNTER="$2";             shift 2 ;;
+        --phys-synth-type)   PHYS_SYNTH_TYPE="$2";                 shift 2 ;;
         --overwrite)         OVERWRITE=1;                          shift ;;
         --metrics-compare)   METRICS_COMPARE=1;                    shift ;;
         *) echo "Unknown option: $1"; exit 1 ;;

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Usage:
-#   bash <path_to>/innovus.sh [--no-abort] [--run <n>] [--overwrite]
+#   bash <path_to>/innovus.sh [--no-abort] [--run <n>] [--genus-run <n>]
+#                              [--phys-synth-type <type>] [--overwrite]
 #                              [--metrics-compare]
 #
 # Options:
@@ -11,6 +12,12 @@
 #                      cgra4ml/run/work/innovus/innovus_run_<nn>
 #                      Aborts if the folder already exists (use --overwrite to skip).
 #                      (default: 00)
+#   --genus-run <n>    Set genus_run_counter to <n>. Pulls synthesis netlist/DB
+#                      paths from genus_run_<nn> (default: 0)
+#   --phys-synth-type <type>
+#                      Set PHYS_SYNTH_TYPE for innovus.tcl (default: lef).
+#                      "lef"       - RTL floorplan flow with iSpatial
+#                      "floorplan" - iSpatial flow with DEF input
 #   --overwrite        Allow reuse of an existing innovus_run_<nn> folder instead of
 #                      aborting. Use with caution — previous results will be mixed
 #                      with new outputs.
@@ -71,6 +78,8 @@
 # jls20              JLS20   Joules Implementation Option                     Joules_Implementation_Opt  23.1    
 # genb               GEN100  Genus Synthesis Solution                         Genus_Synthesis            23.1    
 # genphy             GEN40   Genus Physical Option                            Genus_Physical_Opt         23.1    
+# synthesis          INVS500 InnovusPLUS Logical Synthesis                    Innovus_Synthesis          23.1    
+# invs_phy_syn_opt   INVS540 InnovusPLUS Physical Synthesis Option            Innovus_Physical_Syn_Opt   23.1 
 # invs_dfm           INVS50  Innovus DFM Option                               Innovus_DFM                23.1    
 # invs_automotive    INVS56  Innovus Automotive Option                        Innovus_Automotive_Opt     23.1    
 # modus_dft          MOD30   Modus DFT Option                                 Modus_DFT_Opt              23.1    
@@ -89,6 +98,10 @@
 #   bash ./innovus.sh --run 1 --no-abort
 #   for full P&R run
 #   bash ./innovus.sh --run 1
+#   for P&R using Genus run 6 netlist/DB
+#   bash ./innovus.sh --run 1 --genus-run 6
+#   for iSpatial floorplan (DEF) flow
+#   bash ./innovus.sh --run 1 --phys-synth-type floorplan
 #   to re-run into the same folder
 #   bash ./innovus.sh --run 1 --overwrite
 #   to compare runs 1-4
@@ -101,11 +114,15 @@ ABORT_FLAG="-abort_on_error"
 OVERWRITE=0
 METRICS_COMPARE=0
 export INNOVUS_RUN_COUNTER=0
+export GENUS_RUN_COUNTER=0
+export PHYS_SYNTH_TYPE=lef
 
 while [[ $# -gt 0 ]]; do
     case $1 in
         --no-abort)          ABORT_FLAG="";                        shift ;;
         --run)               INNOVUS_RUN_COUNTER="$2";             shift 2 ;;
+        --genus-run)         GENUS_RUN_COUNTER="$2";               shift 2 ;;
+        --phys-synth-type)   PHYS_SYNTH_TYPE="$2";                 shift 2 ;;
         --overwrite)         OVERWRITE=1;                          shift ;;
         --metrics-compare)   METRICS_COMPARE=1;                    shift ;;
         *) echo "Unknown option: $1"; exit 1 ;;

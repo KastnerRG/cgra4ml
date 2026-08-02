@@ -4,7 +4,6 @@
 # Create Clocks
 create_clock -period $design(clock_period_list) -name $design(clock_list) [get_ports $design(clock_port_list)]
 set_clock_uncertainty $design(CLOCK_UNCERTAINTY) $design(clock_list)
-set_ideal_network [get_ports $design(clock_port_list)]
 
 
 #################################
