@@ -704,6 +704,8 @@ proc krg_short_hinst_name {hinst} {
 ###################################################
 proc krg_check_drc {} {
     global design this_run
+
+    mkdir -pv $design(reports_pnr_dir)
     check_drc -out_file $design(reports_pnr_dir)/[format "%02d" $this_run(stage_count)]_$this_run(stage)_check_drc.rpt 
     set n [llength [get_db markers -if {.type == drc}]]
     if {$n == 0} {

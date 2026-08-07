@@ -141,23 +141,35 @@ if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
 # --------------
 gui_redraw
 
-# Power Grid Generation
-# ---------------------
-source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/innovus.power_grid.tcl -quiet
+# Stamp the stage for runtime and memory information
+# --------------------------------------------------
+time_info -table $runtype -stamp "floorplan"
 
-# Add Endcaps
-# -----------
-krg_iu_insert_boundary_cells
+# # Power Grid Generation
+# # ---------------------
+# source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/innovus.power_grid.tcl -quiet
 
-# Add Well Taps
-# -------------
-add_well_taps -cell $tech(FILLTIE_CELL) -checker_board -prefix $krg_iu_vars(sam_tech,filltie_prefix) \
-              -cell_interval [expr 2 * [expr $design(WELLTAP_RULE)]]
-check_well_taps -max_distance $design(WELLTAP_RULE)
+# # Add Endcaps
+# # -----------
+# krg_iu_insert_boundary_cells
 
-# Check Floorplan
-# ---------------
-krg_iu_check_floorplan
+# # Add Well Taps
+# # -------------
+# add_well_taps -cell $tech(FILLTIE_CELL) -checker_board -prefix $krg_iu_vars(sam_tech,filltie_prefix) \
+#               -cell_interval [expr 2 * [expr $design(WELLTAP_RULE)]]
+# check_well_taps -max_distance $design(WELLTAP_RULE)
+
+# # Check Floorplan
+# # ---------------
+# krg_iu_check_floorplan
+
+# # Post Floorplan and Power Grid
+# # -----------------------------
+# krg_start_stage "floorplan" yes
+
+# # Check DRCs
+# # ---------------
+# krg_check_drc
 
 # # Export floorplan DEF
 # # This can be used for loading the floorplan in subsequent runs
@@ -168,7 +180,7 @@ krg_iu_check_floorplan
 # # ---------------
 # write_db $design(dbs_pnr_dir)/floorplan.db -no_wait
 
-# # Screenshot of the floorplan
+# # # Screenshot of the floorplan
 # # ---------------------------
 # gui_fit
 # gui_create_floorplan_snapshot -dir $design(compare_dir)
@@ -176,7 +188,7 @@ krg_iu_check_floorplan
 
 # # Stamp the stage for runtime and memory information
 # # --------------------------------------------------
-# time_info -table $runtype -stamp "init_design"
+# time_info -table $runtype -stamp "post_floorplan_and_power_grid"
 # check_floorplan_space
 # check_design -type place
 # krg_create_stage_reports -write_db yes -check_drc yes 

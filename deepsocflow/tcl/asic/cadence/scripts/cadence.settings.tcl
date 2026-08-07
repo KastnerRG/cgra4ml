@@ -167,9 +167,6 @@ if {$runtype == "pnr"} {
     set_db design_tech_node         $TECH_NODE
     set_db design_flow_effort       extreme
 
-    set_db init_power_nets  VDD
-    set_db init_ground_nets VSS
-
     ## Floorplan Settings
     ###############################
     proc krg_floorplan_settings {} {
@@ -211,7 +208,23 @@ if {$runtype == "pnr"} {
         set_db add_rings_skip_via_on_pin {  standardcell } 
         set_db add_rings_skip_via_on_wire_shape {  noshape }
     }
-    proc krg_power_grid_sram_stripes_settings {} {
+
+    proc krg_power_grid_rings_settings {} {
+        global krg_iu_vars
+
+        set_db add_rings_avoid_short 1 
+        set_db add_rings_target default 
+        set_db add_rings_extend_over_row 1 
+        set_db add_rings_ignore_rows 0 
+        set_db add_rings_skip_shared_inner_ring none 
+        set_db add_rings_stacked_via_top_layer $krg_iu_vars(layer_name,14) 
+        set_db add_rings_stacked_via_bottom_layer $krg_iu_vars(layer_name,1) 
+        set_db add_rings_via_using_exact_crossover_size 1 
+        set_db add_rings_orthogonal_only true 
+        set_db add_rings_skip_via_on_pin {  standardcell } 
+        set_db add_rings_skip_via_on_wire_shape {  noshape }
+    }
+    proc krg_upper_power_grid_stripes_settings {} {
         global krg_iu_vars
 
         set_db add_stripes_ignore_block_check false
@@ -222,7 +235,7 @@ if {$runtype == "pnr"} {
         set_db add_stripes_stop_at_last_wire_for_area false
         set_db add_stripes_partial_set_through_domain false
         set_db add_stripes_ignore_non_default_domains false
-        set_db add_stripes_trim_antenna_back_to_shape none
+        set_db add_stripes_trim_antenna_back_to_shape block_ring
         set_db add_stripes_spacing_type edge_to_edge
         set_db add_stripes_spacing_from_block 0
         set_db add_stripes_stripe_min_length stripe_width
@@ -233,11 +246,53 @@ if {$runtype == "pnr"} {
         set_db add_stripes_orthogonal_only true
         set_db add_stripes_opt_stripe_for_routing_track shift
         set_db add_stripes_allow_jog { padcore_ring  block_ring }
+        set_db add_stripes_skip_via_on_pin {  cover block  standardcell }
+        set_db add_stripes_skip_via_on_wire_shape {  noshape   }
+    }
+
+    proc krg_lower_power_grid_block_rings_settings {} {
+        global krg_iu_vars
+
+        set_db add_rings_avoid_short 1 
+        set_db add_rings_target core_ring 
+        set_db add_rings_extend_over_row 1 
+        set_db add_rings_ignore_rows 1 
+        set_db add_rings_skip_shared_inner_ring none 
+        set_db add_rings_stacked_via_top_layer $krg_iu_vars(layer_name,14) 
+        set_db add_rings_stacked_via_bottom_layer $krg_iu_vars(layer_name,1) 
+        set_db add_rings_via_using_exact_crossover_size 1 
+        set_db add_rings_orthogonal_only true 
+        set_db add_rings_skip_via_on_pin {  standardcell } 
+        set_db add_rings_skip_via_on_wire_shape {  noshape }
+    }
+
+    proc krg_lower_power_grid_sram_stripes_settings {} {
+        global krg_iu_vars
+
+        set_db add_stripes_ignore_block_check false
+        set_db add_stripes_break_at none
+        set_db add_stripes_route_over_rows_only false
+        set_db add_stripes_rows_without_stripes_only false
+        set_db add_stripes_extend_to_closest_target { ring }
+        set_db add_stripes_stop_at_last_wire_for_area false
+        set_db add_stripes_partial_set_through_domain false
+        set_db add_stripes_ignore_non_default_domains false
+        set_db add_stripes_trim_antenna_back_to_shape none
+        set_db add_stripes_spacing_type edge_to_edge
+        set_db add_stripes_spacing_from_block 0
+        set_db add_stripes_stripe_min_length stripe_width
+        set_db add_stripes_stacked_via_top_layer $krg_iu_vars(layer_name,14)
+        set_db add_stripes_stacked_via_bottom_layer $krg_iu_vars(layer_name,5)
+        set_db add_stripes_via_using_exact_crossover_size false
+        set_db add_stripes_split_vias true
+        set_db add_stripes_orthogonal_only true
+        set_db add_stripes_opt_stripe_for_routing_track shift
+        set_db add_stripes_allow_jog { padcore_ring  block_ring }
         set_db add_stripes_skip_via_on_pin {  standardcell }
         set_db add_stripes_skip_via_on_wire_shape {  noshape   }
     }
 
-    proc krg_power_grid_std_cell_stripes_settings {} {
+    proc krg_lower__D5_power_grid_stripes_settings {} {
         global krg_iu_vars
 
         set_db add_stripes_ignore_block_check false
@@ -263,18 +318,35 @@ if {$runtype == "pnr"} {
         set_db add_stripes_skip_via_on_wire_shape {  noshape   }
     }
 
+    proc krg_lower_D6_power_grid_stripes_settings {} {
+        global krg_iu_vars
+
+        set_db add_stripes_ignore_block_check false
+        set_db add_stripes_break_at none
+        set_db add_stripes_route_over_rows_only false
+        set_db add_stripes_rows_without_stripes_only true
+        set_db add_stripes_extend_to_closest_target ring
+        set_db add_stripes_stop_at_last_wire_for_area false
+        set_db add_stripes_partial_set_through_domain false
+        set_db add_stripes_ignore_non_default_domains false
+        set_db add_stripes_trim_antenna_back_to_shape block_ring
+        set_db add_stripes_spacing_type edge_to_edge
+        set_db add_stripes_spacing_from_block 0
+        set_db add_stripes_stripe_min_length stripe_width
+        set_db add_stripes_stacked_via_top_layer $krg_iu_vars(layer_name,14)
+        set_db add_stripes_stacked_via_bottom_layer $krg_iu_vars(layer_name,5)
+        set_db add_stripes_via_using_exact_crossover_size false
+        set_db add_stripes_split_vias true
+        set_db add_stripes_orthogonal_only true
+        set_db add_stripes_opt_stripe_for_routing_track shift
+        set_db add_stripes_allow_jog { padcore_ring  block_ring }
+        set_db add_stripes_skip_via_on_pin {  block  standardcell }
+        set_db add_stripes_skip_via_on_wire_shape {  noshape   }
+    }
+
     proc krg_power_grid_floating_stripe_route_special_settings {} {
-        set_db route_special_allow_non_preferred_direction_route false
-        set_db route_special_via_through_to_closest_ring false
-        set_db route_special_extend_nearest_target true
-        set_db route_special_via_connect_to_shape { padring ring stripe blockring blockpin coverpin noshape blockwire corewire followpin iowire}
-        set_db route_special_block_pin_connect_ring_pin_corners true
-        set_db route_special_block_pin_route_with_pin_width true
-        set_db route_special_pad_ring_use_lef true
-        set_db route_special_signal_pin_as_pg false
-        set_db route_special_core_pin_length_as_inst false
-        set_db route_special_endcap_as_core false
-        set_db route_special_via_connect_to_shape { noshape }
+        reset_db route_special_*
+        set_db route_special_via_connect_to_shape { ring stripe blockring }
     }
     proc krg_power_grid_M1_stripes_settings {} {
         set_db route_special_via_connect_to_shape { noshape }
@@ -289,12 +361,12 @@ if {$runtype == "pnr"} {
         set_db add_stripes_stop_at_last_wire_for_area false
         set_db add_stripes_partial_set_through_domain false
         set_db add_stripes_ignore_non_default_domains false
-        set_db add_stripes_trim_antenna_back_to_shape none
+        set_db add_stripes_trim_antenna_back_to_shape core_ring
         set_db add_stripes_spacing_type edge_to_edge
         set_db add_stripes_spacing_from_block 0
         set_db add_stripes_stripe_min_length stripe_width
-        set_db add_stripes_stacked_via_top_layer M3
-        set_db add_stripes_stacked_via_bottom_layer M1
+        set_db add_stripes_stacked_via_top_layer $krg_iu_vars(layer_name,6)
+        set_db add_stripes_stacked_via_bottom_layer $krg_iu_vars(layer_name,1)
         set_db add_stripes_via_using_exact_crossover_size false
         set_db add_stripes_split_vias true
         set_db add_stripes_orthogonal_only true

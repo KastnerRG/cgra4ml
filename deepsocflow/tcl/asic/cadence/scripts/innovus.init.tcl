@@ -14,6 +14,10 @@ set_db init_power_nets  $design(all_power_nets)
 # krg_message "$tech(LIB_SUPPRESS_MESSAGES_INNOVUS)"
 # set_message -suppress -id $tech(LIB_SUPPRESS_MESSAGES_INNOVUS)
 
+# Get SRAMs instances for SDC 
+# ---------------------------
+set design(DMA_SRAM_LIST) [get_db insts -if {.base_name =~ *sram_dma*}]
+
 # MMMC Loading
 # ------------
 if {$timing_lib_type == "nldm"} {

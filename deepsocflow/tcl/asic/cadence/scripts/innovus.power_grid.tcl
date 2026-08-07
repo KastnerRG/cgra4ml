@@ -13,155 +13,16 @@ connect_global_net $design(digital_gnd) -type tie_lo -all -verbose
 
 # Add Power Grid
 # --------------
-# Set Power Grid Rings Settings
+# Add Uper Power Grid Rings
+# Set Upper Power Grid Rings Settings
 krg_power_grid_rings_settings
-# Add Core Rings
-add_rings -nets $design(core_ring_nets) -type core_rings -follow core -exclude_selected 1 \
-          -layer $design(core_ring_layers) \
-          -width $design(core_ring_width) \
-          -spacing $design(core_ring_spacing) \
-          -offset $design(core_ring_offset) \
+
+add_rings -nets $design(upper_core_ring_nets) -type core_rings -follow core -exclude_selected 1 \
+          -layer $design(upper_core_ring_layers) \
+          -width $design(upper_core_ring_width) \
+          -spacing $design(upper_core_ring_spacing) \
+          -offset $design(upper_core_ring_offset) \
           -center 0 -threshold 0 -jog_distance 0 -snap_wire_center_to_grid grid
-# Add Block Rings
-# Top SRAM Weights Ring
-select_obj "ENGINE_WEIGHTS_ROTATOR/i0[0].col_RAM[0].BRAM_BRAM_sam5_sp_sram_weight \
-            ENGINE_WEIGHTS_ROTATOR/i0[0].col_RAM[4].BRAM_BRAM_sam5_sp_sram_weight \
-            ENGINE_WEIGHTS_ROTATOR/i0[0].col_RAM[8].BRAM_BRAM_sam5_sp_sram_weight \
-            ENGINE_WEIGHTS_ROTATOR/i0[0].col_RAM[12].BRAM_BRAM_sam5_sp_sram_weight \
-            ENGINE_WEIGHTS_ROTATOR/i0[0].col_RAM[16].BRAM_BRAM_sam5_sp_sram_weight \
-            ENGINE_WEIGHTS_ROTATOR/i0[0].col_RAM[20].BRAM_BRAM_sam5_sp_sram_weight"
-add_rings -nets $design(block_ring_nets) -type block_rings -around selected \
-          -layer $design(block_ring_layers) \
-          -width $design(block_ring_width) \
-          -spacing $design(block_ring_spacing) \
-          -offset $design(block_ring_offset) \
-          -center 0 -extend_corners {rt bl } -skip_side {top left } \
-          -threshold 0 -jog_distance 0 -snap_wire_center_to_grid grid
-deselect_obj -all
-# Bottom SRAM Weights Ring
-select_obj "ENGINE_WEIGHTS_ROTATOR/i0[1].col_RAM[0].BRAM_BRAM_sam5_sp_sram_weight \
-            ENGINE_WEIGHTS_ROTATOR/i0[1].col_RAM[4].BRAM_BRAM_sam5_sp_sram_weight \
-            ENGINE_WEIGHTS_ROTATOR/i0[1].col_RAM[8].BRAM_BRAM_sam5_sp_sram_weight \
-            ENGINE_WEIGHTS_ROTATOR/i0[1].col_RAM[12].BRAM_BRAM_sam5_sp_sram_weight \
-            ENGINE_WEIGHTS_ROTATOR/i0[1].col_RAM[16].BRAM_BRAM_sam5_sp_sram_weight \
-            ENGINE_WEIGHTS_ROTATOR/i0[1].col_RAM[20].BRAM_BRAM_sam5_sp_sram_weight"
-add_rings -nets $design(block_ring_nets) -type block_rings -around selected \
-          -layer $design(block_ring_layers) \
-          -width $design(block_ring_width) \
-          -spacing $design(block_ring_spacing) \
-          -offset $design(block_ring_offset) \
-          -center 0 -extend_corners {tl rb } -skip_side {bottom left } \
-          -threshold 0 -jog_distance 0 -snap_wire_center_to_grid grid
-deselect_obj -all
-# SRAM Edge Ring
-select_obj "ENGINE_PIXELS_RAM_sam5_sp_sram_edge"
-add_rings -nets $design(block_ring_nets) -type block_rings -around selected \
-          -layer $design(block_ring_layers) \
-          -width $design(block_ring_width) \
-          -spacing $design(block_ring_spacing) \
-          -offset $design(block_ring_offset) \
-          -center 0 -extend_corners {br lt } -skip_side {top right } \
-          -threshold 0 -jog_distance 0 -snap_wire_center_to_grid grid
-deselect_obj -all
-# SRAM DMA Ring
-select_obj "CONTROLLER_sdp_ram_g[0].ram_i_sam5_2p_sram_dma \
-            CONTROLLER_sdp_ram_g[5].ram_i_sam5_2p_sram_dma \
-            CONTROLLER_sdp_ram_g[7].ram_i_sam5_2p_sram_dma"
-add_rings -nets $design(block_ring_nets) -type block_rings -around selected \
-          -layer $design(block_ring_layers) \
-          -width $design(block_ring_width) \
-          -spacing $design(block_ring_spacing) \
-          -offset $design(block_ring_offset) \
-          -center 0 -extend_corners {tr lb } -skip_side {right bottom } \
-          -threshold 0 -jog_distance 0 -snap_wire_center_to_grid grid
-deselect_obj -all
-
-# Set Power Grid SRAM Stripes Settings
-krg_power_grid_sram_stripes_settings
-
-# Add Stripes for SRAMs
-krg_select_srams_weights 0 0
-krg_add_stripes_to_selected_sram $design(sram_stripes_interval)
-krg_select_srams_weights 0 4
-krg_add_stripes_to_selected_sram $design(sram_stripes_interval)
-krg_select_srams_weights 0 8
-krg_add_stripes_to_selected_sram $design(sram_stripes_interval)
-krg_select_srams_weights 0 12
-krg_add_stripes_to_selected_sram $design(sram_stripes_interval)
-krg_select_srams_weights 0 16
-krg_add_stripes_to_selected_sram $design(sram_stripes_interval)
-krg_select_srams_weights 0 20
-krg_add_stripes_to_selected_sram $design(sram_stripes_interval)
-
-krg_select_srams_weights 1 0
-krg_add_stripes_to_selected_sram $design(sram_stripes_interval)
-krg_select_srams_weights 1 4
-krg_add_stripes_to_selected_sram $design(sram_stripes_interval)
-krg_select_srams_weights 1 8
-krg_add_stripes_to_selected_sram $design(sram_stripes_interval)
-krg_select_srams_weights 1 12
-krg_add_stripes_to_selected_sram $design(sram_stripes_interval)
-krg_select_srams_weights 1 16
-krg_add_stripes_to_selected_sram $design(sram_stripes_interval)
-krg_select_srams_weights 1 20
-krg_add_stripes_to_selected_sram $design(sram_stripes_interval)
-
-krg_select_srams_edge
-krg_add_stripes_to_selected_sram $design(sram_stripes_interval)
-
-krg_select_srams_dma 0
-krg_add_stripes_to_selected_sram $design(sram_stripes_interval_dma)
-krg_select_srams_dma 3
-krg_add_stripes_to_selected_sram $design(sram_stripes_interval_dma)     
-krg_select_srams_dma_last
-krg_add_stripes_to_selected_sram $design(sram_stripes_interval_dma)
-
-# Set Power Grid Standard Cell Stripes Settings
-krg_power_grid_std_cell_stripes_settings
-
-# Add Stripes for Standard Cells
-add_stripes -nets $design(M14_stripes_nets) -layer $krg_iu_vars(layer_name,14) -direction vertical \
-            -width $design(M14_stripes_width) \
-            -spacing $design(M14_stripes_spacing) \
-            -set_to_set_distance $design(M14_stripes_interval) \
-            -area {22.2695 174.0765 365.18475 133.58325} \
-            -start_from left -switch_layer_over_obs false -max_same_layer_jog_length 2 \
-            -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
-            -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
-            -block_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
-            -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
-            -use_wire_group 0 -snap_wire_center_to_grid grid
-
-add_stripes -nets $design(M13_stripes_nets) -layer $krg_iu_vars(layer_name,13) -direction horizontal \
-            -width $design(M13_stripes_width) \
-            -spacing $design(M13_stripes_spacing) \
-            -set_to_set_distance $design(M13_stripes_interval) \
-            -area {206.86025 28.155 292.589 256.15725} \
-            -start_from left -switch_layer_over_obs false -max_same_layer_jog_length 2 \
-            -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,13) \
-            -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
-            -block_ring_top_layer_limit $krg_iu_vars(layer_name,13) \
-            -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
-            -use_wire_group 0 -snap_wire_center_to_grid grid
-
-# Connect Dangling Stripes to the Core Ring
-krg_power_grid_floating_stripe_route_special_settings
-route_special -connect floating_stripe -layer_change_range { [list $krg_iu_vars(layer_name,1)(1) $krg_iu_vars(layer_name,14)(14)] } \
-              -block_pin_target nearest_target \
-              -floating_stripe_target {block_ring ring stripe} \
-              -allow_jogging 1 \
-              -crossover_via_layer_range { [list $krg_iu_vars(layer_name,1)(1) $krg_iu_vars(layer_name,14)(14)] } \
-              -nets $design(core_ring_nets) -allow_layer_change 1 \
-              -target_via_layer_range { [list $krg_iu_vars(layer_name,1)(1) $krg_iu_vars(layer_name,14)(14)] } \
-              -detailed_log
-
-# Connect Follow Pins to the Core Ring
-krg_power_grid_M1_stripes_settings
-route_special -connect core_pin \
-              -core_pin_target none \
-              -core_pin_check_stdcell_geometry \
-              -allow_jogging 0 \
-              -allow_layer_change 0
 
 krg_power_grid_M3_stripes_settings
 add_stripes -nets $design(M3_stripes_nets) \
@@ -174,24 +35,211 @@ add_stripes -nets $design(M3_stripes_nets) \
             -start_offset $design(M3_stripes_start_offset) \
             -stop_offset $design(M3_stripes_stop_offset) \
             -switch_layer_over_obs false -max_same_layer_jog_length 2 \
-            -pad_core_ring_top_layer_limit LB \
-            -pad_core_ring_bottom_layer_limit M1 \
-            -block_ring_top_layer_limit LB \
-            -block_ring_bottom_layer_limit M1 \
+            -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
+            -block_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
+            -use_wire_group 0 -snap_wire_center_to_grid grid
+          
+# Add Block Rings
+# Set Block Rings Settings
+krg_lower_power_grid_block_rings_settings
+
+# Top SRAM Weights Ring
+select_obj "ENGINE_WEIGHTS_ROTATOR/i0[0].col_RAM[0].BRAM_BRAM_sam5_sp_sram_weight \
+            ENGINE_WEIGHTS_ROTATOR/i0[0].col_RAM[4].BRAM_BRAM_sam5_sp_sram_weight \
+            ENGINE_WEIGHTS_ROTATOR/i0[0].col_RAM[8].BRAM_BRAM_sam5_sp_sram_weight \
+            ENGINE_WEIGHTS_ROTATOR/i0[0].col_RAM[12].BRAM_BRAM_sam5_sp_sram_weight \
+            ENGINE_WEIGHTS_ROTATOR/i0[0].col_RAM[16].BRAM_BRAM_sam5_sp_sram_weight \
+            ENGINE_WEIGHTS_ROTATOR/i0[0].col_RAM[20].BRAM_BRAM_sam5_sp_sram_weight"
+add_rings -nets $design(block_ring_nets) -type block_rings -around selected \
+          -layer $design(block_ring_layers) \
+          -width $design(block_ring_width) \
+          -spacing $design(block_ring_spacing) \
+          -offset "top $design(block_ring_tb_offset) bottom $design(block_ring_tb_offset) right $design(block_ring_rl_offset) left $design(block_ring_rl_offset)" \
+          -center 0 -extend_corners {rt lt } -skip_side { top } \
+          -threshold 5 -jog_distance 0 -snap_wire_center_to_grid grid
+deselect_obj -all
+# Bottom SRAM Weights Ring
+select_obj "ENGINE_WEIGHTS_ROTATOR/i0[1].col_RAM[0].BRAM_BRAM_sam5_sp_sram_weight \
+            ENGINE_WEIGHTS_ROTATOR/i0[1].col_RAM[4].BRAM_BRAM_sam5_sp_sram_weight \
+            ENGINE_WEIGHTS_ROTATOR/i0[1].col_RAM[8].BRAM_BRAM_sam5_sp_sram_weight \
+            ENGINE_WEIGHTS_ROTATOR/i0[1].col_RAM[12].BRAM_BRAM_sam5_sp_sram_weight \
+            ENGINE_WEIGHTS_ROTATOR/i0[1].col_RAM[16].BRAM_BRAM_sam5_sp_sram_weight \
+            ENGINE_WEIGHTS_ROTATOR/i0[1].col_RAM[20].BRAM_BRAM_sam5_sp_sram_weight"
+add_rings -nets $design(block_ring_nets) -type block_rings -around selected \
+          -layer $design(block_ring_layers) \
+          -width $design(block_ring_width) \
+          -spacing $design(block_ring_spacing) \
+          -offset "top $design(block_ring_tb_offset) bottom $design(block_ring_tb_offset) right $design(block_ring_rl_offset) left $design(block_ring_rl_offset)" \
+          -center 0 -extend_corners {lb rb } -skip_side { bottom } \
+          -threshold 5 -jog_distance 0 -snap_wire_center_to_grid grid
+deselect_obj -all
+# SRAM Edge Ring
+select_obj "ENGINE_PIXELS_RAM_sam5_sp_sram_edge"
+add_rings -nets $design(block_ring_nets) -type block_rings -around selected \
+          -layer $design(block_ring_layers) \
+          -width $design(block_ring_width) \
+          -spacing $design(block_ring_spacing) \
+          -offset "top $design(block_ring_tb_offset) bottom $design(block_ring_tb_offset) right $design(block_ring_rl_offset) left $design(block_ring_rl_offset)" \
+          -center 0 -extend_corners {br lt } -skip_side {top right } \
+          -threshold 5 -jog_distance 0 -snap_wire_center_to_grid grid
+deselect_obj -all
+# SRAM DMA Ring
+select_obj "CONTROLLER_sdp_ram_g[0].ram_i_sam5_2p_sram_dma \
+            CONTROLLER_sdp_ram_g[5].ram_i_sam5_2p_sram_dma \
+            CONTROLLER_sdp_ram_g[7].ram_i_sam5_2p_sram_dma"
+add_rings -nets $design(block_ring_nets) -type block_rings -around selected \
+          -layer $design(block_ring_layers) \
+          -width $design(block_ring_width) \
+          -spacing $design(block_ring_spacing) \
+          -offset "top $design(block_ring_tb_offset) bottom $design(block_ring_tb_offset) right $design(block_ring_rl_offset) left $design(block_ring_rl_offset)" \
+          -center 0 -extend_corners {rb lb } -skip_side { bottom } \
+          -threshold 5 -jog_distance 0 -snap_wire_center_to_grid grid
+deselect_obj -all
+
+# Add Lower Power Grid Rings
+# Set Lower Power Grid Rings Settings
+krg_power_grid_rings_settings
+add_rings -nets $design(lower_core_ring_nets) -type core_rings -follow core -exclude_selected 1 \
+          -layer $design(lower_core_ring_layers) \
+          -width $design(lower_core_ring_width) \
+          -spacing $design(lower_core_ring_spacing) \
+          -offset $design(lower_core_ring_offset) \
+          -center 0 -threshold 0 -jog_distance 0 -snap_wire_center_to_grid grid
+
+set_db route_special_via_connect_to_shape { ring blockring blockpin blockwire corewire }
+route_special -connect floating_stripe -layer_change_range { M1(1) M4(4) } -block_pin_target nearest_target -floating_stripe_target {block_ring pad_ring ring ring_pin block_pin} -allow_jogging 0 -crossover_via_layer_range { M1(1) M4(4) } -allow_layer_change 1 -target_via_layer_range { M1(1) M4(4) }
+
+# Connect Follow Pins to the Core Ring
+krg_power_grid_M1_stripes_settings
+route_special -connect core_pin \
+              -core_pin_target first_after_row_end \
+              -core_pin_check_stdcell_geometry \
+              -allow_jogging 0 \
+              -allow_layer_change 0
+
+# Set Power Grid SRAM Stripes Settings
+krg_lower_power_grid_sram_stripes_settings
+
+# Add Stripes for SRAMs
+krg_select_srams_weights 0 0
+krg_add_stripes_to_selected_sram $design(sram_stripes_nets) $design(sram_stripes_interval) $design(sram_stripes_start_offset) $design(sram_stripes_stop_offset) 1 right
+krg_select_srams_weights 0 4
+krg_add_stripes_to_selected_sram $design(sram_stripes_nets) $design(sram_stripes_interval) $design(sram_stripes_start_offset) $design(sram_stripes_stop_offset) 1 right
+krg_select_srams_weights 0 8
+krg_add_stripes_to_selected_sram $design(sram_stripes_nets) $design(sram_stripes_interval) $design(sram_stripes_start_offset) $design(sram_stripes_stop_offset) 1 right
+krg_select_srams_weights 0 12
+krg_add_stripes_to_selected_sram $design(sram_stripes_nets) $design(sram_stripes_interval) $design(sram_stripes_start_offset) $design(sram_stripes_stop_offset) 1 right
+krg_select_srams_weights 0 16
+krg_add_stripes_to_selected_sram $design(sram_stripes_nets) $design(sram_stripes_interval) $design(sram_stripes_start_offset) $design(sram_stripes_stop_offset) 1 right
+krg_select_srams_weights 0 20
+krg_add_stripes_to_selected_sram $design(sram_stripes_nets) $design(sram_stripes_interval) $design(sram_stripes_start_offset) $design(sram_stripes_stop_offset) 1 right
+
+krg_select_srams_weights 1 0
+krg_add_stripes_to_selected_sram $design(sram_stripes_nets) $design(sram_stripes_interval) $design(sram_stripes_start_offset) $design(sram_stripes_stop_offset) 1 right
+krg_select_srams_weights 1 4
+krg_add_stripes_to_selected_sram $design(sram_stripes_nets) $design(sram_stripes_interval) $design(sram_stripes_start_offset) $design(sram_stripes_stop_offset) 1 right
+krg_select_srams_weights 1 8
+krg_add_stripes_to_selected_sram $design(sram_stripes_nets) $design(sram_stripes_interval) $design(sram_stripes_start_offset) $design(sram_stripes_stop_offset) 1 right
+krg_select_srams_weights 1 12
+krg_add_stripes_to_selected_sram $design(sram_stripes_nets) $design(sram_stripes_interval) $design(sram_stripes_start_offset) $design(sram_stripes_stop_offset) 1 right
+krg_select_srams_weights 1 16
+krg_add_stripes_to_selected_sram $design(sram_stripes_nets) $design(sram_stripes_interval) $design(sram_stripes_start_offset) $design(sram_stripes_stop_offset) 1 right
+krg_select_srams_weights 1 20
+krg_add_stripes_to_selected_sram $design(sram_stripes_nets) $design(sram_stripes_interval) $design(sram_stripes_start_offset) $design(sram_stripes_stop_offset) 1 right
+
+krg_select_srams_edge
+krg_add_stripes_to_selected_sram $design(sram_stripes_nets) $design(sram_stripes_interval) $design(sram_stripes_start_offset) $design(sram_edge_stripes_stop_offset) 0 right
+
+krg_select_srams_dma 0
+krg_add_stripes_to_selected_sram $design(sram_stripes_flipped_nets) $design(sram_stripes_interval_dma) $design(sram_dma_stripes_start_offset) $design(sram_dma_stripes_stop_offset) 0 left
+krg_select_srams_dma 3
+krg_add_stripes_to_selected_sram $design(sram_stripes_flipped_nets) $design(sram_stripes_interval_dma) $design(sram_dma_stripes_start_offset) $design(sram_dma_stripes_stop_offset) 0 left      
+krg_select_srams_dma_last
+krg_add_stripes_to_selected_sram $design(sram_stripes_flipped_nets) $design(sram_stripes_interval_dma) $design(sram_dma_stripes_start_offset) $design(sram_dma_stripes_stop_offset) 0 left
+
+set_db route_special_via_connect_to_shape { ring blockring blockpin }
+route_special -connect block_pin -layer_change_range { M1(1) D5(5) } -block_pin_target nearest_target -connect_in_area -allow_jogging 0 -crossover_via_layer_range { M1(1) D5(5) } -area { 356.51875 121.0675 300.052 19.96175 } -allow_layer_change 1 -block_pin use_lef -target_via_layer_range { M1(1) D5(5) }
+
+# Set Power Grid Standard Cell Stripes Settings
+krg_lower_D6_power_grid_stripes_settings
+
+# Add Stripes for Standard Cells
+add_stripes -nets $design(D6_stripes_nets) -layer $krg_iu_vars(layer_name,6) -direction vertical \
+            -width $design(D6_stripes_width) \
+            -spacing $design(D6_stripes_spacing) \
+            -set_to_set_distance $design(D6_stripes_interval) \
+            -area {20.40 120.0 360.0 164.0} \
+            -start_from left -switch_layer_over_obs false -max_same_layer_jog_length 2 \
+            -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
+            -block_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
             -use_wire_group 0 -snap_wire_center_to_grid grid
 
-# Connect pads to the Core Ring
-# if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
-#     route_special -connect {pad_pin} \
-#     -layer_change_range { [list $krg_iu_vars(layer_name,1)(1) $krg_iu_vars(layer_name,14)(14)] } \
-#     -block_pin_target {nearest_target} \
-#     -core_pin_target {first_after_row_end} \
-#     -allow_jogging 1 \
-#     -crossover_via_layer_range { [list $krg_iu_vars(layer_name,1)(1) $krg_iu_vars(layer_name,14)(14)] } \
-#     -nets $design(core_ring_nets) \
-#     -allow_layer_change 1\
-#     -target_via_layer_range { [list $krg_iu_vars(layer_name,1)(1) $krg_iu_vars(layer_name,14)(14)] }
-# }
+krg_lower_D5_power_grid_stripes_settings
+add_stripes -nets $design(M5_stripes_nets) -layer $krg_iu_vars(layer_name,5) -direction horizontal \
+            -width $design(M5_stripes_width) \
+            -spacing $design(M5_stripes_spacing) \
+            -set_to_set_distance $design(M5_stripes_interval) \
+            -area {206.86025 20.4 292.589 256.15725} \
+            -start_from bottom -switch_layer_over_obs false -max_same_layer_jog_length 2 \
+            -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
+            -block_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
+            -use_wire_group 0 -snap_wire_center_to_grid grid
+
+# Add Upper Power Grid Stripes
+# Set Upper Power Grid Stripes Settings
+krg_upper_power_grid_stripes_settings
+
+add_stripes -nets $design(M14_stripes_nets) -layer $krg_iu_vars(layer_name,14) -direction vertical \
+            -width $design(M14_stripes_width) \
+            -spacing $design(M14_stripes_spacing) \
+            -set_to_set_distance $design(M14_stripes_interval) \
+            -start_from left -switch_layer_over_obs false -max_same_layer_jog_length 2 \
+            -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,5) \
+            -block_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,5) \
+            -use_wire_group 0 -snap_wire_center_to_grid grid
+
+add_stripes -nets $design(M13_stripes_nets) -layer $krg_iu_vars(layer_name,13) -direction horizontal \
+            -width $design(M13_stripes_width) \
+            -spacing $design(M13_stripes_spacing) \
+            -set_to_set_distance $design(M13_stripes_interval) \
+            -start_from bottom -switch_layer_over_obs false -max_same_layer_jog_length 2 \
+            -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,13) \
+            -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,5) \
+            -block_ring_top_layer_limit $krg_iu_vars(layer_name,13) \
+            -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,5) \
+            -use_wire_group 0 -snap_wire_center_to_grid grid
+ 
+# # Connect Dangling Stripes to the Core Ring
+# krg_power_grid_floating_stripe_route_special_settings
+# route_special -connect floating_stripe -layer_change_range "[list $krg_iu_vars(layer_name,5)(5) $krg_iu_vars(layer_name,14)(14)]" \
+#               -block_pin_target nearest_target \
+#               -floating_stripe_target {block_ring ring stripe ring_pin} \
+#               -allow_jogging 1 \
+#               -crossover_via_layer_range "[list $krg_iu_vars(layer_name,5)(5) $krg_iu_vars(layer_name,14)(14)]" \
+#               -nets $design(upper_core_ring_nets) -allow_layer_change 1 \
+#               -target_via_layer_range "[list $krg_iu_vars(layer_name,5)(5) $krg_iu_vars(layer_name,14)(14)]" \
+#               -detailed_log
+
+# # Connect pads to the Core Ring
+# # if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
+# #     route_special -connect {pad_pin} \
+# #     -layer_change_range { [list $krg_iu_vars(layer_name,1)(1) $krg_iu_vars(layer_name,14)(14)] } \
+# #     -block_pin_target {nearest_target} \
+# #     -core_pin_target {first_after_row_end} \
+# #     -allow_jogging 1 \
+# #     -crossover_via_layer_range { [list $krg_iu_vars(layer_name,1)(1) $krg_iu_vars(layer_name,14)(14)] } \
+# #     -nets $design(core_ring_nets) \
+# #     -allow_layer_change 1\
+# #     -target_via_layer_range { [list $krg_iu_vars(layer_name,1)(1) $krg_iu_vars(layer_name,14)(14)] }
+# # }
 
 # Add Stapling Support for Advanced Nodes
 krg_power_grid_M3_stripes_settings
@@ -203,12 +251,16 @@ add_stripes -nets $design(M2_stapling_nets) \
             -set_to_set_distance $design(M2_stapling_interval) \
             -snap_wire_center_to_grid grid
 
-krg_iu_preplace_power_stitch_insertion
+# krg_iu_preplace_power_stitch_insertion
 
-# Check DRCs for Power Grid
-krg_check_drc
+# # Check DRCs for Power Grid
+# krg_check_drc
 
-# Reporting & Save
-check_connectivity -check_pg_ports -type special -out_file $design(reports_pnr_dir)/[format "%02d" $this_run(stage_count)]_$this_run(stage)_power_connectivity.rpt
+# # Reporting & Save
+# check_connectivity -check_pg_ports -type special -nets $design(upper_core_ring_nets) -out_file $design(reports_pnr_dir)/[format "%02d" $this_run(stage_count)]_$this_run(stage)_power_connectivity.rpt
+
+# # Stamp the stage for runtime and memory information
+# # --------------------------------------------------
+# time_info -table $runtype -stamp "power_grid"
 
 ###### To-Do:Power Analysis and Rail Analysis ######

@@ -42,38 +42,61 @@ regsub {^base_cell:} $tech(FILLTIE_CELL) "" tech(FILLTIE_CELL)
 ####################################
 ##     Power Grid Definitions     ##
 ####################################
-set design(core_ring_nets)        "$design(digital_vdd) $design(digital_gnd)"
-set IB_db                         [lindex [get_db layers] 14]
-set IA_db                         [lindex [get_db layers] 13]
-set design(core_ring_layers)      "bottom [get_db $IA_db .name] top [get_db $IA_db .name] right [get_db $IB_db .name] left [get_db $IB_db .name]"
-set design(core_ring_width)       [expr 6*[get_db $IB_db .min_width]]
-set design(core_ring_spacing)     [expr  3*[get_db $IB_db .min_spacing]]
-set design(core_ring_offset)      [expr 3*[get_db $IB_db .min_spacing]]
+set design(upper_core_ring_nets)        "$design(digital_vdd) $design(digital_gnd)"
+set IB_db                               [lindex [get_db layers] 14]
+set IA_db                               [lindex [get_db layers] 13]
+set design(upper_core_ring_layers)      "bottom [get_db $IA_db .name] top [get_db $IA_db .name] right [get_db $IB_db .name] left [get_db $IB_db .name]"
+set design(upper_core_ring_width)       [expr 6*[get_db $IB_db .min_width]]
+set design(upper_core_ring_spacing)     [expr  3*[get_db $IB_db .min_spacing]]
+set design(upper_core_ring_offset)      5
 
-set design(block_ring_nets)       "$design(digital_vdd) $design(digital_gnd)"
-set design(block_ring_layers)     "bottom [get_db $IA_db .name] top [get_db $IA_db .name] right [get_db $IB_db .name] left [get_db $IB_db .name]"
-set design(block_ring_width)      [expr 3*[get_db $IB_db .min_width]]
-set design(block_ring_spacing)    [expr  2.5*[get_db $IB_db .min_spacing]]
-set design(block_ring_offset)     [expr 2*[get_db $IB_db .min_spacing]]
+set design(lower_core_ring_nets)        "$design(digital_vdd) $design(digital_gnd)"
+set M4_db                               [lindex [get_db layers] 4]
+set M3_db                               [lindex [get_db layers] 3]
+set design(lower_core_ring_layers)      "bottom [get_db $M3_db .name] top [get_db $M3_db .name] right [get_db $M4_db .name] left [get_db $M4_db .name]"
+set design(lower_core_ring_width)       [expr 9*[get_db $M4_db .min_width]]
+set design(lower_core_ring_spacing)     [expr  15*[get_db $M4_db .min_spacing]]
+set design(lower_core_ring_offset)      2
 
-set design(sram_stripes_nets)         "$design(digital_vdd) $design(digital_gnd)"
-set design(sram_stripes_layers)       $krg_iu_vars(layer_name,6)
-set design(sram_stripes_width)        [expr 3*[get_db $IB_db .min_width]]
-set design(sram_stripes_spacing)      [expr  2*[get_db $IB_db .min_spacing]]
-set design(sram_stripes_interval)     10
-set design(sram_stripes_interval_dma) 4
-set design(sram_stripes_start_offset) 5.2
-set design(sram_stripes_stop_offset)  5.2
+set design(M14_stripes_width)     [expr 6*[get_db $IB_db .min_width]]
+set design(M14_stripes_spacing)   [expr 3*[get_db $IB_db .min_spacing]]
+set design(M14_stripes_interval)  32
+set design(M14_stripes_nets)      "$design(digital_vdd) $design(digital_gnd)"
 
-set design(M13_stripes_width)     [expr 3*[get_db $IA_db .min_width]]
-set design(M13_stripes_spacing)   [expr 2.5*[get_db $IA_db .min_spacing]]
+set design(M13_stripes_width)     [expr 6*[get_db $IB_db .min_width]]
+set design(M13_stripes_spacing)   [expr 3*[get_db $IB_db .min_spacing]]
 set design(M13_stripes_interval)  28
 set design(M13_stripes_nets)      "$design(digital_vdd) $design(digital_gnd)"
 
-set design(M14_stripes_width)     [expr 3*[get_db $IB_db .min_width]]
-set design(M14_stripes_spacing)   [expr 2.5*[get_db $IB_db .min_spacing]]
-set design(M14_stripes_interval)  32
-set design(M14_stripes_nets)      "$design(digital_vdd) $design(digital_gnd)"
+set design(block_ring_nets)       "$design(digital_vdd) $design(digital_gnd)"
+set design(block_ring_layers)     "bottom [get_db $M5_db .name] top [get_db $M5_db .name] right [get_db $M4_db .name] left [get_db $M4_db .name]"
+set design(block_ring_width)      [expr 10*[get_db $M4_db .min_width]]
+set design(block_ring_spacing)    [expr 15*[get_db $M4_db .min_spacing]]
+set design(block_ring_tb_offset)  [expr 50*[get_db $M4_db .min_spacing]]
+set design(block_ring_rl_offset)  [expr 70*[get_db $M4_db .min_spacing]]
+
+set design(sram_stripes_nets)         "$design(digital_gnd) $design(digital_vdd)"
+set design(sram_stripes_flipped_nets) "$design(digital_vdd) $design(digital_gnd)"
+set design(sram_stripes_layers)       $krg_iu_vars(layer_name,6)
+set design(sram_stripes_width)        [expr 8*[get_db $D6_db .min_width]]
+set design(sram_stripes_spacing)      [expr  7*[get_db $D6_db .min_spacing]]
+set design(sram_stripes_interval)     7
+set design(sram_stripes_interval_dma) 4.1
+set design(sram_stripes_start_offset) 5.2
+set design(sram_dma_stripes_start_offset) 4.2
+set design(sram_dma_stripes_stop_offset)  5.2
+set design(sram_stripes_stop_offset)      8.2
+set design(sram_edge_stripes_stop_offset) 5.2
+
+set design(D6_stripes_width)     [expr 15*[get_db $D6_db .min_width]]
+set design(D6_stripes_spacing)   [expr 70*[get_db $D6_db .min_spacing]]
+set design(D6_stripes_interval)  32
+set design(D6_stripes_nets)      "$design(digital_vdd) $design(digital_gnd)"
+
+set design(M5_stripes_width)     [expr 15*[get_db $M5_db .min_width]]
+set design(M5_stripes_spacing)   [expr7*[get_db $D6_db .min_spacing]]
+set design(M5_stripes_interval)  28
+set design(M5_stripes_nets)      "$design(digital_vdd) $design(digital_gnd)"
 
 set stdRowHeight                    [get_db designs .core_site.size.y]
 set design(M3_stripes_nets)         "$design(digital_gnd) $design(digital_vdd)"
@@ -124,7 +147,7 @@ proc krg_select_srams_dma_last {} {
                 CONTROLLER_sdp_ram_g[7].ram_i_sam5_2p_sram_dma"
 }
 
-proc krg_add_stripes_to_selected_sram {stripes_spacing_value} {
+proc krg_add_stripes_to_selected_sram {stripes_nets stripes_spacing_value stripe_start_offset_value stripe_stop_offset_value io_stripe_enable io_stripe_side} {
     global design krg_iu_vars
 
     set srams_rects [get_db selected .bbox]
@@ -140,21 +163,34 @@ proc krg_add_stripes_to_selected_sram {stripes_spacing_value} {
         [expr {$urx + $margin}] \
         [expr {$ury + $margin}]]
     
-    add_stripes -nets $design(sram_stripes_nets) -layer $design(sram_stripes_layers) \
+    add_stripes -nets $stripes_nets -layer $design(sram_stripes_layers) \
         -direction vertical \
         -width $design(sram_stripes_width) \
         -spacing $design(sram_stripes_spacing) \
         -set_to_set_distance $stripes_spacing_value \
         -area $expanded_srams_bbox \
         -start_from left \
-        -start_offset $design(sram_stripes_start_offset) \
-        -stop_offset $design(sram_stripes_stop_offset) \
+        -start_offset $stripe_start_offset_value \
+        -stop_offset $stripe_stop_offset_value \
         -switch_layer_over_obs true -max_same_layer_jog_length 2 \
-        -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
-        -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
-        -block_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
-        -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
+        -block_ring_top_layer_limit $krg_iu_vars(layer_name,6) \
+        -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,5) \
         -use_wire_group 0 -snap_wire_center_to_grid grid
     
+    if {$io_stripe_enable} {
+        add_stripes -nets $design(sram_stripes_nets) -layer $design(sram_stripes_layers) \
+            -direction vertical \
+            -width $design(sram_stripes_width) \
+            -spacing $design(sram_stripes_spacing) \
+            -number_of_sets 1 \
+            -area $expanded_srams_bbox \
+            -start_from $io_stripe_side \
+            -start_offset 3.5 \
+            -switch_layer_over_obs true -max_same_layer_jog_length 2 \
+            -block_ring_top_layer_limit $krg_iu_vars(layer_name,6) \
+            -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,5) \
+            -use_wire_group 0 -snap_wire_center_to_grid grid
+    }
     deselect_obj -all
 }
+
