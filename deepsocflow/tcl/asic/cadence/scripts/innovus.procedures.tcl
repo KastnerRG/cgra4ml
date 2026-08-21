@@ -158,27 +158,31 @@ proc krg_define_cost_groups {} {
     global design
 
     # Remove Default Cost Groups
-    delete_obj [get_db cost_groups *]
+    reset_path_group -all
     set design(cost_groups) ""
 
     # reg2reg
-    define_cost_group -name reg2reg -design $design(TOPLEVEL)
+    # define_cost_group -name reg2reg -design $design(TOPLEVEL)
     group_path -from [all_registers] -to [all_registers] -name reg2reg
+    set_path_group_options reg2reg -effort_level high
     lappend design(cost_groups) "reg2reg"
 
     # in2reg
-    define_cost_group -name in2reg -design $design(TOPLEVEL)
+    # define_cost_group -name in2reg -design $design(TOPLEVEL)
     group_path -from [all_inputs] -to [all_registers] -name in2reg 
+    set_path_group_options in2reg -effort_level high
     lappend design(cost_groups) "in2reg"
 
     # reg2out
-    define_cost_group -name reg2out -design $design(TOPLEVEL)
+    # define_cost_group -name reg2out -design $design(TOPLEVEL)
     group_path -from [all_registers] -to [all_outputs] -name reg2out 
+    set_path_group_options reg2out -effort_level low
     lappend design(cost_groups) "reg2out"
 
     # in2out
-    define_cost_group -name in2out -design $design(TOPLEVEL)
+    # define_cost_group -name in2out -design $design(TOPLEVEL)
     group_path -from [all_inputs] -to [all_outputs] -name in2out 
+    set_path_group_options in2out -effort_level low
     lappend design(cost_groups) "in2out"
 
 }

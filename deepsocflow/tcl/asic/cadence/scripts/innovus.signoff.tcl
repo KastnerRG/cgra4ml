@@ -2,6 +2,16 @@
 # -------------
 krg_start_stage "signoff" yes
 
+# Add Filler Cells with DRC errors
+add_fillers -base_cells $tech(FILL_CELLS) -prefix $tech(FILL_CELL_PREFIX) \
+            -check_different_cells true -check_drc -check_min_hole true \
+            -check_via_enclosure true -fill_gap
+# Clean DRC errors
+add_fillers -base_cells $tech(FILL_CELLS) -prefix $tech(FILL_CELL_PREFIX) \
+            -check_different_cells true -check_drc -check_min_hole true \
+            -check_via_enclosure true -fill_gap -fix_drc
+route_eco -fix_drc
+
 # Input & Output Port Naming
 # --------------------------
 bitblast_ports $design(TOPLEVEL)

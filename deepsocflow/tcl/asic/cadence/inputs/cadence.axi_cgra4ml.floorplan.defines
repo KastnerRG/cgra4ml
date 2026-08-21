@@ -25,12 +25,12 @@ set design(LEFT_INPUT_PINS)    {m_axi_weights_* }
 set design(BOTTOM_OUTPUT_PINS) {m_axi_output_* }  
 set design(RIGHT_INPUT_PINS)   {s_axil_*}
 
-set D11_db [lindex [get_db layers] 11]
-set D8_db  [lindex [get_db layers] 8]
-set D9_db  [lindex [get_db layers] 9]
+set D12_db [lindex [get_db layers]  12]
+set D10_db  [lindex [get_db layers] 10]
+set D9_db  [lindex [get_db layers]  9]
 
-set design(pin_width_d11) [expr  2*[get_db $D11_db .min_width]]
-set design(pin_width_d8)  [expr  2*[get_db $D8_db .min_width]]
+set design(pin_width_d12) [expr  2*[get_db $D12_db .min_width]]
+set design(pin_width_d10) [expr  2*[get_db $D10_db .min_width]]
 set design(pin_width_d9)  [expr  2*[get_db $D9_db .min_width]]
 
 ####################################
@@ -54,20 +54,21 @@ set design(lower_core_ring_nets)        "$design(digital_vdd) $design(digital_gn
 set M4_db                               [lindex [get_db layers] 4]
 set M3_db                               [lindex [get_db layers] 3]
 set design(lower_core_ring_layers)      "bottom [get_db $M3_db .name] top [get_db $M3_db .name] right [get_db $M4_db .name] left [get_db $M4_db .name]"
-set design(lower_core_ring_width)       [expr 9*[get_db $M4_db .min_width]]
+set design(lower_core_ring_width)       0.20;#[expr 9*[get_db $M4_db .min_width]]
 set design(lower_core_ring_spacing)     [expr  15*[get_db $M4_db .min_spacing]]
 set design(lower_core_ring_offset)      2
 
 set design(M14_stripes_width)     [expr 6*[get_db $IB_db .min_width]]
 set design(M14_stripes_spacing)   [expr 3*[get_db $IB_db .min_spacing]]
-set design(M14_stripes_interval)  32
+set design(M14_stripes_interval)  30
 set design(M14_stripes_nets)      "$design(digital_vdd) $design(digital_gnd)"
 
 set design(M13_stripes_width)     [expr 6*[get_db $IB_db .min_width]]
 set design(M13_stripes_spacing)   [expr 3*[get_db $IB_db .min_spacing]]
-set design(M13_stripes_interval)  28
+set design(M13_stripes_interval)  43
 set design(M13_stripes_nets)      "$design(digital_vdd) $design(digital_gnd)"
 
+set M5_db                         [lindex [get_db layers] 5]
 set design(block_ring_nets)       "$design(digital_vdd) $design(digital_gnd)"
 set design(block_ring_layers)     "bottom [get_db $M5_db .name] top [get_db $M5_db .name] right [get_db $M4_db .name] left [get_db $M4_db .name]"
 set design(block_ring_width)      [expr 10*[get_db $M4_db .min_width]]
@@ -75,6 +76,7 @@ set design(block_ring_spacing)    [expr 15*[get_db $M4_db .min_spacing]]
 set design(block_ring_tb_offset)  [expr 50*[get_db $M4_db .min_spacing]]
 set design(block_ring_rl_offset)  [expr 70*[get_db $M4_db .min_spacing]]
 
+set D6_db                             [lindex [get_db layers] 6]
 set design(sram_stripes_nets)         "$design(digital_gnd) $design(digital_vdd)"
 set design(sram_stripes_flipped_nets) "$design(digital_vdd) $design(digital_gnd)"
 set design(sram_stripes_layers)       $krg_iu_vars(layer_name,6)
@@ -83,20 +85,21 @@ set design(sram_stripes_spacing)      [expr  7*[get_db $D6_db .min_spacing]]
 set design(sram_stripes_interval)     7
 set design(sram_stripes_interval_dma) 4.1
 set design(sram_stripes_start_offset) 5.2
-set design(sram_dma_stripes_start_offset) 4.2
+set design(sram_dma_stripes_start_offset) 5.2
 set design(sram_dma_stripes_stop_offset)  5.2
 set design(sram_stripes_stop_offset)      8.2
 set design(sram_edge_stripes_stop_offset) 5.2
 
-set design(D6_stripes_width)     [expr 15*[get_db $D6_db .min_width]]
-set design(D6_stripes_spacing)   [expr 70*[get_db $D6_db .min_spacing]]
-set design(D6_stripes_interval)  32
-set design(D6_stripes_nets)      "$design(digital_vdd) $design(digital_gnd)"
+set design(M4_stripes_width)          [expr 13*[get_db $M4_db .min_width]]
+set design(M4_stripes_spacing)        [expr 70*[get_db $M4_db .min_spacing]]
+set design(M4_stripes_interval)       34
+set design(M4_last_stripes_interval)  32
+set design(M4_stripes_nets)           "$design(digital_vdd) $design(digital_gnd)"
 
-set design(M5_stripes_width)     [expr 15*[get_db $M5_db .min_width]]
-set design(M5_stripes_spacing)   [expr7*[get_db $D6_db .min_spacing]]
-set design(M5_stripes_interval)  28
-set design(M5_stripes_nets)      "$design(digital_vdd) $design(digital_gnd)"
+# set design(M5_stripes_width)     [expr 15*[get_db $M5_db .min_width]]
+# set design(M5_stripes_spacing)   [expr7*[get_db $D6_db .min_spacing]]
+# set design(M5_stripes_interval)  28
+# set design(M5_stripes_nets)      "$design(digital_vdd) $design(digital_gnd)"
 
 set stdRowHeight                    [get_db designs .core_site.size.y]
 set design(M3_stripes_nets)         "$design(digital_gnd) $design(digital_vdd)"

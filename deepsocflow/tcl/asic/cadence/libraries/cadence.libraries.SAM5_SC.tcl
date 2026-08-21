@@ -47,9 +47,15 @@ set tech(STANDARD_CELL_VDD)   VDD
 set tech(STANDARD_CELL_GND)   VSS
 set tech(STANDARD_CELL_ARCH)  sc7p5mcpp60
 
+# Set Tie high and low cell. Extract from Lib Databook
+set tech(TIE_HIGH_CELL)     TIEHI_X1N_A7P5PP60TL_C10
+set tech(TIE_LOW_CELL)      TIELO_X1N_A7P5PP60TL_C10
+set tech(TIE_PREFIX)        tie_
+
 # Set Input and Output Capacitance Values from Std Cells. Extract from Lib Databook
 set tech(SDC_LOAD_PIN)      DFFQ_X3N_A7P5PP60TL_C10/D
 set tech(SDC_DRIVING_CELL)  DFFQ_X3N_A7P5PP60TL_C10
+set tech(CCOPT_DRIVING_PIN) INV_X24F_A7P5PP60TL_C10_H15NWOUT/Y
 
 # Supress Libs unwanted messages
 lappend tech(LIB_SUPPRESS_MESSAGES_GENUS)   {*}"LBR-9 LBR-22 LBR-38 LBR-40 LBR-41 LBR-76 \

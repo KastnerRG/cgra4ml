@@ -1,0 +1,1012 @@
+[NR-eGR]  D12  (12V)         6073        0
+[NR-eGR]  IA   (13H)            0        0
+[NR-eGR]  IB   (14V)            0        0
+[NR-eGR]  LB   (15H)            0        0
+[NR-eGR] ----------------------------------
+[NR-eGR]       Total      1209692  1331905
+[NR-eGR] --------------------------------------------------------------------------
+[NR-eGR] Total half perimeter of net bounding box: 968225um
+[NR-eGR] Total length: 1209692um, number of vias: 1331905
+[NR-eGR] --------------------------------------------------------------------------
+[NR-eGR] Running Early Global Route on this S5 design with S5 settings
+Early Global Route wiring runtime: 0.93 seconds, mem = 24301.9M
+0 delay mode for cte disabled.
+
+*** Finished incrementalPlace (cpu=0:04:44, real=0:00:07.0)***
+***** Total cpu  0:37:50
+***** Total real time  0:2:23
+Tdgp not enabled or already been cleared! skip clearing
+**place_design ... cpu = 0:37:50, real = 0: 2:23, mem = 19779.9M **
+AAE DB initialization (MEM=7514.625000 CPU=0:00:00.0 REAL=0:00:00.0)
+      flow.cputime  flow.realtime  timing.setup.tns  timing.setup.wns  snapshot
+UM:*                                                                   final
+UM: Running design category ...
+      flow.cputime  flow.realtime  timing.setup.tns  timing.setup.wns  snapshot
+UM:        2277.21            149                                      place_design
+*** GlobalPlace #1 [finish] (place_opt_design #1) : cpu/real = 0:37:57.2/0:02:29.0 (15.3), totSession cpu/real = 0:45:17.5/0:08:05.5 (5.6), mem = 19864.1M
+Enable CTE adjustment.
+Enable Layer aware incrSKP.
+**opt_design ... cpu = 0:00:00, real = 0:00:00, mem = 7532.0M, totSessionCpu=0:45:18 **
+GigaOpt running with 128 threads.
+*** InitOpt #1 [begin] (place_opt_design #1) : totSession cpu/real = 0:45:17.6/0:08:05.6 (5.6), mem = 19856.1M
+**INFO: set_db design_flow_effort standard -> setting 'set_db opt_all_end_points true' for the duration of this command.
+**Info: No vertical layer needs alignment of cell-pins to tracks.
+Updating RC Grid density data for preRoute extraction ...
+Initializing multi-corner resistance tables ...
+AAE DB initialization (MEM=7556.835938 CPU=0:00:00.0 REAL=0:00:00.0)
+Info: Using SynthesisEngine executable '/tools/cadence/DDI231/INNOVUS231/bin/innovus_'.
+      SynthesisEngine workers will not check out additional licenses.
+**INFO: Using Advanced Metric Collection system.
+**opt_design ... cpu = 0:00:06, real = 0:00:11, mem = 7549.0M, totSessionCpu=0:45:24 **
+#optDebug: { P: 5 W: 4201 FE: standard PE: none LDR: 1}
+*** opt_design -pre_cts ***
+DRC Margin: user margin 0.0; extra margin 0.2
+Setup Target Slack: user slack 0; extra slack 0.0
+Hold Target Slack: user slack 0
+**WARN: (IMPOPT-3195):	Analysis mode has changed.
+Type 'man IMPOPT-3195' for more detail.
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+[NR-eGR] Started Early Global Route ( Curr Mem: 19.24 MB )
+[NR-eGR] Running Early Global Route on this S5 design with S5 settings
+[NR-eGR] Running Early Global Route on this S5 design with S5 settings
+[NR-eGR] Started Early Global Route kernel ( Curr Mem: 19.24 MB )
+[NR-eGR] Read 162551 nets ( ignored 0 )
+[NR-eGR] There are 1 clock nets ( 0 with NDR ).
+[NR-eGR] Layer group 1: route 162551 net(s) in layer range [2, 12]
+[NR-eGR] Early Global Route overflow of layer group 1: 0.00% H + 1.37% V. EstWL: 1.179971e+06um
+[NR-eGR] Overflow after Early Global Route 0.00% H + 0.18% V
+[NR-eGR] Total eGR-routed clock nets wire length: 22302um, number of vias: 32410
+[NR-eGR] --------------------------------------------------------------------------
+[NR-eGR]              Length (um)     Vias
+[NR-eGR] ----------------------------------
+[NR-eGR]  M1   (1H)             0   117640
+[NR-eGR]  M2   (2V)         85584   530147
+[NR-eGR]  M3   (3H)        247972   417895
+[NR-eGR]  M4   (4V)        249288   149992
+[NR-eGR]  D5   (5H)        156829    57041
+[NR-eGR]  D6   (6V)        113360    41347
+[NR-eGR]  D7   (7H)        149795    13013
+[NR-eGR]  D8   (8V)         86056     7958
+[NR-eGR]  D9   (9H)         71261     2377
+[NR-eGR]  D10  (10V)        30295     1215
+[NR-eGR]  D11  (11H)        26303      280
+[NR-eGR]  D12  (12V)         6053        0
+[NR-eGR]  IA   (13H)            0        0
+[NR-eGR]  IB   (14V)            0        0
+[NR-eGR]  LB   (15H)            0        0
+[NR-eGR] ----------------------------------
+[NR-eGR]       Total      1222797  1338905
+[NR-eGR] --------------------------------------------------------------------------
+[NR-eGR] Total half perimeter of net bounding box: 968225um
+[NR-eGR] Total length: 1222797um, number of vias: 1338905
+[NR-eGR] --------------------------------------------------------------------------
+[NR-eGR] Finished Early Global Route kernel ( CPU: 281.86 sec, Real: 7.01 sec, Curr Mem: 20.61 MB )
+[NR-eGR] Finished Early Global Route ( CPU: 281.95 sec, Real: 7.09 sec, Curr Mem: 19.27 MB )
+Extraction called for design 'axi_cgra4ml' of instances=139177 and nets=166675 using extraction engine 'pre_route' .
+pre_route RC Extraction called for design axi_cgra4ml.
+RC Extraction called in multi-corner(3) mode.
+RCMode: PreRoute
+      RC Corner Indexes            0       1       2
+Capacitance Scaling Factor   : 1.00000 1.00000 1.00000
+Resistance Scaling Factor    : 1.00000 1.00000 1.00000
+Clock Cap. Scaling Factor    : 1.00000 1.00000 1.00000
+Clock Res. Scaling Factor    : 1.00000 1.00000 1.00000
+Shrink Factor                : 1.00000
+PreRoute extraction is honoring NDR/Shielding/ExtraSpace for clock nets.
+Using Quantus QRC technology file ...
+Updating RC Grid density data for preRoute extraction ...
+Initializing multi-corner resistance tables ...
+PreRoute RC Extraction DONE (CPU Time: 0:00:02.5  Real Time: 0:00:01.0  MEM: 20024.734M)
+Starting delay calculation for Setup views
+AAE_INFO: opIsDesignInPostRouteState() is 0
+#################################################################################
+# Design Stage: PreRoute
+# Design Name: axi_cgra4ml
+# Design Mode: 5nm
+# Analysis Mode: MMMC Non-OCV
+# Parasitics Mode: No SPEF/RCDB
+# Signoff Settings: SI Off
+#################################################################################
+Calculate delays in BcWc mode...
+Calculate delays in BcWc mode...
+Start delay calculation (fullDC) (128 T). (MEM=9016.12)
+Total number of fetched objects 162689
+AAE_INFO: Total number of nets for which stage creation was skipped for all views 0
+Total number of fetched objects 162689
+AAE_INFO: Total number of nets for which stage creation was skipped for all views 0
+End delay calculation. (MEM=9853.45 CPU=0:01:31 REAL=0:00:01.0)
+End delay calculation (fullDC). (MEM=9605.57 CPU=0:02:00 REAL=0:00:09.0)
+*** Done Building Timing Graph (cpu=0:02:43 real=0:00:12.0 totSessionCpu=0:52:56 mem=31485.0M)
+
+------------------------------------------------------------------
+             Initial Summary
+------------------------------------------------------------------
+
+Setup views included:
+ wc_analysis_view tc_analysis_view
+
++--------------------+---------+
+|     Setup mode     |   all   |
++--------------------+---------+
+|           WNS (ns):| -4.598  |
+|           TNS (ns):|-40393.2 |
+|    Violating Paths:|  34922  |
+|          All Paths:|  58948  |
++--------------------+---------+
+
++----------------+-------------------------------+------------------+
+|                |              Real             |       Total      |
+|    DRVs        +------------------+------------+------------------|
+|                |  Nr nets(terms)  | Worst Vio  |  Nr nets(terms)  |
++----------------+------------------+------------+------------------+
+|   max_cap      |    370 (370)     |  -47.339   |    371 (371)     |
+|   max_tran     |  5818 (100023)   |   -5.562   |  5818 (100194)   |
+|   max_fanout   |      0 (0)       |     0      |      0 (0)       |
+|   max_length   |      0 (0)       |     0      |      0 (0)       |
++----------------+------------------+------------+------------------+
+
+Density: 63.931%
+------------------------------------------------------------------
+**opt_design ... cpu = 0:07:44, real = 0:00:36, mem = 8479.2M, totSessionCpu=0:53:01 **
+*** InitOpt #1 [finish] (place_opt_design #1) : cpu/real = 0:07:44.0/0:00:36.9 (12.6), totSession cpu/real = 0:53:01.5/0:08:42.4 (6.1), mem = 31577.9M
+** INFO : this run is activating medium effort placeOptDesign flow
+*** ExcludedClockNetOpt #1 [begin] (place_opt_design #1) : totSession cpu/real = 0:53:03.4/0:08:43.4 (6.1), mem = 31601.0M
+*** Starting optimizing excluded clock nets MEM= 31601.0M) ***
+*info: No excluded clock nets to be optimized.
+*** Finished optimizing excluded clock nets (CPU Time= 0:00:00.0  MEM= 31601.0M) ***
+*** ExcludedClockNetOpt #1 [finish] (place_opt_design #1) : cpu/real = 0:00:00.0/0:00:00.0 (0.0), totSession cpu/real = 0:53:03.4/0:08:43.4 (6.1), mem = 31601.0M
+The useful skew maximum allowed delay is: 0.2
+*** SimplifyNetlist #1 [begin] (place_opt_design #1) : totSession cpu/real = 0:53:28.5/0:08:47.7 (6.1), mem = 31999.1M
+Info: 1 clock net  excluded from IPO operation.
+
+Footprint cell information for calculating maxBufDist
+*info: There are 29 candidate Buffer cells
+*info: There are 22 candidate Inverter cells
+
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+
+Netlist preparation processing...
+Removed 0 instance
+*info: Marking 0 isolation instances dont touch
+*info: Marking 0 level shifter instances dont touch
+*** SimplifyNetlist #1 [finish] (place_opt_design #1) : cpu/real = 0:00:09.9/0:00:05.4 (1.8), totSession cpu/real = 0:53:38.3/0:08:53.2 (6.0), mem = 33193.6M
+Running new flow changes for HFN
+Begin: GigaOpt high fanout net optimization
+GigaOpt HFN: use maxLocalDensity 1.2
+GigaOpt Checkpoint: Internal optDRV -useLevelizedBufferTreeOnly -auxMaxFanoutCountLimit 500 -largeScaleFixing -maxIter 1 -maxLocalDensity 1.2 -numThreads 128 -preCTS -preRouteDontEndWithRefinePlaceIncrSteinerRouteDC
+*** DrvOpt #1 [begin] (place_opt_design #1) : totSession cpu/real = 0:53:38.7/0:08:53.6 (6.0), mem = 31863.6M
+Info: 1 clock net  excluded from IPO operation.
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+Dumping Information for Job ...
+**WARN: (IMPOPT-7330):	Net FE_DBTN0_rstn has fanout exceed delaycal_use_default_delay_limit 1000, max-tran violations may increase due to buffering.
+
+Dumping Information for Job ...
+**WARN: (IMPOPT-7330):	Net n_254 has fanout exceed delaycal_use_default_delay_limit 1000, max-tran violations may increase due to buffering.
+
+Dumping Information for Job ...
+**WARN: (IMPOPT-7330):	Net n_294 has fanout exceed delaycal_use_default_delay_limit 1000, max-tran violations may increase due to buffering.
+
++---------+---------+--------+----------+------------+--------+
+| Density | Commits |  WNS   |   TNS    |    Real    |  Mem   |
++---------+---------+--------+----------+------------+--------+
+|   63.93%|        -|  -4.598|-40393.192|   0:00:00.0|37901.0M|
+Dumping Information for Job ...
+**WARN: (IMPOPT-7330):	Net FE_DBTN0_rstn has fanout exceed delaycal_use_default_delay_limit 1000, max-tran violations may increase due to buffering.
+
+Dumping Information for Job ...
+**WARN: (IMPOPT-7330):	Net n_254 has fanout exceed delaycal_use_default_delay_limit 1000, max-tran violations may increase due to buffering.
+
+Dumping Information for Job ...
+**WARN: (IMPOPT-7330):	Net n_294 has fanout exceed delaycal_use_default_delay_limit 1000, max-tran violations may increase due to buffering.
+
+|   64.43%|      714|  -4.598|-42444.192|   0:00:02.0|42333.6M|
++---------+---------+--------+----------+------------+--------+
+
+*** Finish pre-CTS High Fanout Net Fixing (cpu=0:00:27.3 real=0:00:02.0 mem=42333.6M) ***
+Bottom Preferred Layer:
+    None
+Via Pillar Rule:
+    None
+
+
+=======================================================================
+                Reasons for remaining drv violations
+=======================================================================
+*info: Total 7 net(s) were new nets created by previous iteration of DRV buffering. Further DRV fixing might remove some violations.
+
+*** DrvOpt #1 [finish] (place_opt_design #1) : cpu/real = 0:00:36.0/0:00:06.4 (5.6), totSession cpu/real = 0:54:14.7/0:09:00.0 (6.0), mem = 36110.6M
+GigaOpt HFN: restore maxLocalDensity to 0.92
+End: GigaOpt high fanout net optimization
+Begin: GigaOpt DRV Optimization
+[GPS-DRV] number of DCLS groups: 0; maxIter: 2
+GigaOpt Checkpoint: Internal optDRV -max_tran -max_cap -maxLocalDensity 1.2 -numThreads 128 -largeScaleFixing -maxIter 2 -preCTS -preRouteDontEndWithRefinePlaceIncrSteinerRouteDC
+*** DrvOpt #2 [begin] (place_opt_design #1) : totSession cpu/real = 0:54:16.8/0:09:01.4 (6.0), mem = 33858.6M
+Info: 1 clock net  excluded from IPO operation.
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
++-------------------------------------------------------------------------------------------------------------------------------------------------------+
+|        max-tran       |        max-cap        |  max-fanout |  max-length |       setup       |        |        |        |       |          |         |
++-------------------------------------------------------------------------------------------------------------------------------------------------------+
+| nets | terms|  wViol  | nets | terms|  wViol  | nets | terms| nets | terms|   WNS   |   TNS   |  #Buf  |  #Inv  | #Resize|Density|   Real   |   Mem   |
++-------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  6709|108861|    -5.60|   404|   806|    -0.52|     0|     0|     0|     0|    -4.60|-42444.19|       0|       0|       0| 64.43%|          |         |
+|    44|  1370|    -0.19|     0|     0|     0.00|     0|     0|     0|     0|    -0.31|  -658.92|    2483|      46|     719| 65.02%| 0:00:07.0| 43957.6M|
+|     0|     0|     0.00|     0|     0|     0.00|     0|     0|     0|     0|    -0.25|  -319.45|       4|       0|      41| 65.02%| 0:00:01.0| 43965.6M|
+|     0|     0|     0.00|     0|     0|     0.00|     0|     0|     0|     0|    -0.25|  -319.45|       0|       0|       0| 65.02%| 0:00:00.0| 43965.6M|
++-------------------------------------------------------------------------------------------------------------------------------------------------------+
+Bottom Preferred Layer:
++-----------+------------+----------+
+|   Layer   |   OPT_LA   |   Rule   |
++-----------+------------+----------+
+| D5 (z=5)  |          3 | default  |
+| D6 (z=6)  |        735 | default  |
++-----------+------------+----------+
+Via Pillar Rule:
+    None
+
+*** Finish DRV Fixing (cpu=0:02:21 real=0:00:09.0 mem=43965.6M) ***
+
+*** DrvOpt #2 [finish] (place_opt_design #1) : cpu/real = 0:02:29.7/0:00:13.7 (10.9), totSession cpu/real = 0:56:46.5/0:09:15.1 (6.1), mem = 37677.6M
+End: GigaOpt DRV Optimization
+**opt_design ... cpu = 0:11:29, real = 0:01:09, mem = 10927.2M, totSessionCpu=0:56:47 **
+
+Optimization is working on the following views:
+  Setup views: tc_analysis_view
+  Hold  views: bc_analysis_view tc_analysis_view
+
+Active setup views:
+ tc_analysis_view
+  Dominating endpoints: 0
+  Dominating TNS: -0.000
+
+Begin: GigaOpt Global Optimization
+*info: use new DP (enabled)
+Global Opt: maxLocalDensity 1.2 (from dbgIPOMaxLocalDensity=0.92, optModeMaxLocDen=0.92)
+GigaOpt Checkpoint: Internal globalOpt -maxLocalDensity 1.2 -numThreads 128 -preCTS -rebufferAll -preRouteDontEndWithRefinePlaceIncrSteinerRouteDC -enableHighLayerOpt -maxIter 50 -maxIterForLEPG 50
+Info: 1 clock net  excluded from IPO operation.
+*** GlobalOpt #1 [begin] (place_opt_design #1) : totSession cpu/real = 0:57:12.8/0:09:19.5 (6.1), mem = 34866.6M
+*info: 1 clock net excluded
+*info: 3329 no-driver nets excluded.
+** GigaOpt Global Opt WNS Slack -0.251  TNS Slack -319.448
++--------+--------+---------+------------+--------+----------------+---------+----------------------------------------------------+
+|  WNS   |  TNS   | Density |    Real    |  Mem   |   Worst View   |Pathgroup|                     End Point                      |
++--------+--------+---------+------------+--------+----------------+---------+----------------------------------------------------+
+|  -0.251|-319.448|   65.02%|   0:00:00.0|41500.0M|tc_analysis_view|  default| CDN_MBIT_retime_s2_875__retimed_reg_MB_retime_s2_8 |
+|        |        |         |            |        |                |         | 76__retimed_reg_MB_retime_s2_877__retimed_reg_MB_r |
+|        |        |         |            |        |                |         | etime_s2_878__retimed_reg/D3                       |
+|  -0.120|  -1.387|   65.14%|   0:00:02.0|45171.2M|tc_analysis_view|  default| CDN_MBIT_retime_s5_996__retimed_reg_MB_retime_s5_9 |
+|        |        |         |            |        |                |         | 98__retimed_reg_MB_retime_s5_999__retimed_reg_MB_r |
+|        |        |         |            |        |                |         | etime_s61_87__retimed_reg/D2                       |
+|  -0.078|  -0.384|   65.15%|   0:00:00.0|45267.3M|tc_analysis_view|  default| CDN_MBIT_retime_s5_996__retimed_reg_MB_retime_s5_9 |
+|        |        |         |            |        |                |         | 98__retimed_reg_MB_retime_s5_999__retimed_reg_MB_r |
+|        |        |         |            |        |                |         | etime_s61_87__retimed_reg/D2                       |
+|  -0.043|  -0.199|   65.15%|   0:00:01.0|45275.3M|tc_analysis_view|  default| CDN_MBIT_retime_s5_996__retimed_reg_MB_retime_s5_9 |
+|        |        |         |            |        |                |         | 98__retimed_reg_MB_retime_s5_999__retimed_reg_MB_r |
+|        |        |         |            |        |                |         | etime_s61_87__retimed_reg/D2                       |
+|   0.000|   0.000|   65.15%|   0:00:00.0|45324.7M|              NA|       NA| NA                                                 |
++--------+--------+---------+------------+--------+----------------+---------+----------------------------------------------------+
+
+*** Finish pre-CTS Global Setup Fixing (cpu=0:00:19.3 real=0:00:03.0 mem=45324.7M) ***
+
+*** Finish pre-CTS Setup Fixing (cpu=0:00:19.3 real=0:00:03.0 mem=45324.7M) ***
+Bottom Preferred Layer:
++-----------+------------+----------+
+|   Layer   |   OPT_LA   |   Rule   |
++-----------+------------+----------+
+| D5 (z=5)  |        236 | default  |
+| D6 (z=6)  |        766 | default  |
++-----------+------------+----------+
+Via Pillar Rule:
+    None
+** GigaOpt Global Opt End WNS Slack 0.000  TNS Slack 0.000
+*** GlobalOpt #1 [finish] (place_opt_design #1) : cpu/real = 0:00:36.5/0:00:12.3 (3.0), totSession cpu/real = 0:57:49.3/0:09:31.8 (6.1), mem = 38440.7M
+Global Opt: restore maxLocalDensity to 0.92
+End: GigaOpt Global Optimization
+*** Timing Is met
+*** Check timing (0:00:00.2)
+GigaOpt Checkpoint: Internal reclaim -numThreads 128 -preCTS -force -doRemoveUselessTerm -tgtSlackMult 3 -routeType -noRouteTypeResizePolish -noViewPrune -weedwhack -nonLegal -nativePathGroupFlow -SimpCCIn -GCompAndPhase
+Info: 1 clock net  excluded from IPO operation.
+Begin: Area Reclaim Optimization
+*** AreaOpt #1 [begin] (place_opt_design #1) : totSession cpu/real = 0:57:55.0/0:09:34.0 (6.1), mem = 41551.7M
+Reclaim Optimization WNS Slack 0.000  TNS Slack 0.000 Density 65.15
++---------+---------+--------+--------+------------+--------+
+| Density | Commits |  WNS   |  TNS   |    Real    |  Mem   |
++---------+---------+--------+--------+------------+--------+
+|   65.15%|        -|   0.000|   0.000|   0:00:00.0|41551.7M|
+|   65.14%|       56|   0.000|   0.000|   0:00:04.0|43998.1M|
+|   65.14%|      841|   0.000|   0.000|   0:00:06.0|43998.1M|
+|   65.12%|       83|   0.000|   0.000|   0:00:02.0|43998.1M|
+|   64.86%|     2006|   0.000|   0.000|   0:00:09.0|44030.1M|
+|   64.81%|      869|   0.000|   0.000|   0:00:05.0|44030.1M|
+|   64.79%|      394|   0.000|   0.000|   0:00:03.0|44030.1M|
+|   64.79%|      109|   0.000|   0.000|   0:00:02.0|44030.1M|
+|   64.79%|        7|   0.000|   0.000|   0:00:00.0|44030.1M|
+|   64.79%|       67|   0.000|   0.000|   0:00:02.0|44030.1M|
++---------+---------+--------+--------+------------+--------+
+Reclaim Optimization End WNS Slack 0.000  TNS Slack 0.000 Density 64.79
+Bottom Preferred Layer:
++-----------+------------+----------+
+|   Layer   |   OPT_LA   |   Rule   |
++-----------+------------+----------+
+| D5 (z=5)  |        398 | default  |
+| D6 (z=6)  |         72 | default  |
++-----------+------------+----------+
+Via Pillar Rule:
+    None
+
+Number of times islegalLocAvaiable called = 10 skipped = 0, called in commitmove = 1, skipped in commitmove = 0
+End: Core Area Reclaim Optimization (cpu = 0:03:00) (real = 0:00:36.0) **
+*** AreaOpt #1 [finish] (place_opt_design #1) : cpu/real = 0:02:59.9/0:00:35.7 (5.0), totSession cpu/real = 1:00:54.9/0:10:09.7 (6.0), mem = 44030.1M
+Executing incremental physical updates
+Executing incremental physical updates
+End: Area Reclaim Optimization (cpu=0:03:00, real=0:00:36, mem=35790.11M, totSessionCpu=1:00:55).
+*** IncrReplace #1 [begin] (place_opt_design #1) : totSession cpu/real = 1:00:55.9/0:10:10.4 (6.0), mem = 35790.1M
+
+*** Start incrementalPlace ***
+Active views:
+  tc_analysis_view
+[NR-eGR] Running Early Global Route on this S5 design with S5 settings
+[NR-eGR] Running Early Global Route on this S5 design with S5 settings
+[NR-eGR] Started Early Global Route kernel ( Curr Mem: 34.07 MB )
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN66458_n_37100
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN66255_n
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN66250_n
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN66249_n
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN66247_n_386
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN66244_n_386
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN66243_n_386
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN66242_n_382
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN66234_n_382
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN66232_n_355
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN66220_n_351
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN65996_rstn
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN65993_rstn
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN65987_n_360
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN65984_n_360
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN65967_n_375
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN65963_n_378
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN65962_n_378
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN65960_n_361
+eGR will use (5:12) as preferred routing layer range
+**WARN: (IMPPSP-1102):	Preferred routing layer range (5:15) is not routable in routing layer range (2:12) for net FE_OFN65959_n_361
+eGR will use (5:12) as preferred routing layer range
+**WARN: (EMS-27):	Message (IMPPSP-1102) has exceeded the current message display limit of 20.
+To increase the message display limit, refer to the product command reference manual.
+**WARN: [NR-eGR] Only the first 100 messages are printed.
+[NR-eGR] Read 166313 nets ( ignored 0 )
+[NR-eGR] There are 1 clock nets ( 0 with NDR ).
+[NR-eGR] Layer group 1: route 470 net(s) in layer range [5, 12]
+[NR-eGR] Early Global Route overflow of layer group 1: 0.00% H + 0.00% V. EstWL: 7.205868e+04um
+[NR-eGR] Layer group 2: route 165843 net(s) in layer range [2, 12]
+[NR-eGR] Early Global Route overflow of layer group 2: 0.00% H + 1.37% V. EstWL: 1.180295e+06um
+[NR-eGR] Overflow after Early Global Route 0.00% H + 0.19% V
+[NR-eGR] Finished Early Global Route kernel ( CPU: 277.57 sec, Real: 6.42 sec, Curr Mem: 34.30 MB )
+Early Global Route congestion estimation runtime: 6.44 seconds, mem = 35985.8M
+Local HotSpot Analysis (3d): normalized congestion max/total hotspot area = 0.35/11.10 (area is in unit of 4 std-cell row bins)
+Collecting slack nets ...
+[spp] 0
+*** Finished SKP initialization (cpu=0:00:16.4, real=0:00:05.0)***
+SKP will use view:
+  tc_analysis_view
+Iteration  9: Total net bbox = 9.873e+05 (5.26e+05 4.61e+05)
+              Est.  stn bbox = 1.185e+06 (6.34e+05 5.51e+05)
+              cpu = 0:05:51 real = 0:00:18.0 mem = 40954.0M
+[NR-eGR] Running Early Global Route on this S5 design with S5 settings
+[NR-eGR] Running Early Global Route on this S5 design with S5 settings
+[NR-eGR] Started Early Global Route kernel ( Curr Mem: 38.82 MB )
+Iteration 10: Total net bbox = 9.948e+05 (5.28e+05 4.67e+05)
+              Est.  stn bbox = 1.192e+06 (6.36e+05 5.56e+05)
+              cpu = 0:02:59 real = 0:00:10.0 mem = 40974.0M
+Iteration 11: Total net bbox = 9.992e+05 (5.31e+05 4.69e+05)
+              Est.  stn bbox = 1.196e+06 (6.38e+05 5.58e+05)
+              cpu = 0:02:37 real = 0:00:09.0 mem = 41085.9M
+Iteration 12: Total net bbox = 1.012e+06 (5.36e+05 4.76e+05)
+              Est.  stn bbox = 1.209e+06 (6.43e+05 5.66e+05)
+              cpu = 0:01:34 real = 0:00:06.0 mem = 41382.1M
+Iteration 13: Total net bbox = 1.005e+06 (5.29e+05 4.76e+05)
+              Est.  stn bbox = 1.201e+06 (6.36e+05 5.65e+05)
+              cpu = 0:00:48.7 real = 0:00:03.0 mem = 41042.1M
+*** Starting place_detail (1:21:32 mem=40024.1M) ***
+Total net bbox length = 1.070e+06 (5.943e+05 4.757e+05) (ext = 3.539e+04)
+Move report: Detail placement moves 123295 insts, mean move: 0.32 um, max move: 25.34 um
+	Max move on inst (CDN_MBIT_CONTROLLER_x_bpt_reg[3]_MB_CONTROLLER_x_bpt_reg[4]_MB_CONTROLLER_x_bpt_reg[5]_MB_CONTROLLER_x_bpt_reg[6]): (321.49, 40.24) --> (296.40, 39.99)
+	Runtime: CPU: 0:00:57.5 REAL: 0:00:05.0 MEM: 39986.1MB
+Summary Report:
+Instances move: 123295 (out of 123307 movable)
+Instances flipped: 9
+Mean displacement: 0.32 um
+Max displacement: 25.34 um (Instance: CDN_MBIT_CONTROLLER_x_bpt_reg[3]_MB_CONTROLLER_x_bpt_reg[4]_MB_CONTROLLER_x_bpt_reg[5]_MB_CONTROLLER_x_bpt_reg[6]) (321.491, 40.2362) -> (296.4, 39.987)
+	Length: 63 sites, height: 1 rows, site name: sc7p5mcpp60_ln05lpe, cell type: DFFQA4W_X1N_A7P5PP60TL_C10
+Physical-only instances move: 0 (out of 0 movable physical-only)
+Total net bbox length = 1.066e+06 (5.850e+05 4.805e+05) (ext = 3.545e+04)
+Runtime: CPU: 0:00:57.6 REAL: 0:00:05.0 MEM: 39986.1MB
+*** Finished place_detail (1:22:30 mem=39986.1M) ***
+**opt_design ... cpu = 0:42:08, real = 0:03:31, mem = 9056.9M, totSessionCpu=1:27:26 **
+Starting delay calculation for Setup views
+Total number of fetched objects 166451
+AAE_INFO: Total number of nets for which stage creation was skipped for all views 0
+End delay calculation. (MEM=10988.9 CPU=0:00:46.5 REAL=0:00:01.0)
+*** IncrReplace #1 [finish] (place_opt_design #1) : cpu/real = 0:27:53.0/0:01:32.4 (18.1), totSession cpu/real = 1:28:48.9/0:11:42.8 (7.6), mem = 34430.2M
+Begin: GigaOpt DRV Optimization
+[GPS-DRV] number of DCLS groups: 0; maxIter: 2
+GigaOpt Checkpoint: Internal optDRV -max_tran -max_cap -maxLocalDensity 0.92 -numThreads 128 -smallScaleFixing -maxIter 3 -setupTNSCostFactor 3.0 -preCTS -preRouteDontEndWithRefinePlaceIncrSteinerRouteDC
+*** DrvOpt #3 [begin] (place_opt_design #1) : totSession cpu/real = 1:28:56.6/0:11:45.0 (7.6), mem = 34464.1M
+Info: 1 clock net  excluded from IPO operation.
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
++-------------------------------------------------------------------------------------------------------------------------------------------------------+
+|        max-tran       |        max-cap        |  max-fanout |  max-length |       setup       |        |        |        |       |          |         |
++-------------------------------------------------------------------------------------------------------------------------------------------------------+
+| nets | terms|  wViol  | nets | terms|  wViol  | nets | terms| nets | terms|   WNS   |   TNS   |  #Buf  |  #Inv  | #Resize|Density|   Real   |   Mem   |
++-------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  1096| 25329|    -0.32|     0|     0|     0.00|     0|     0|     0|     0|    -0.13|   -14.15|       0|       0|       0| 64.79%|          |         |
+|    34|   896|    -0.08|     0|     0|     0.00|     0|     0|     0|     0|    -0.05|    -1.28|     568|       2|     617| 64.86%| 0:00:04.0| 46045.4M|
+|     0|     0|     0.00|     0|     0|     0.00|     0|     0|     0|     0|    -0.01|    -0.03|       5|       0|      30| 64.87%| 0:00:01.0| 46045.4M|
+|     0|     0|     0.00|     0|     0|     0.00|     0|     0|     0|     0|    -0.01|    -0.03|       0|       0|       0| 64.87%| 0:00:00.0| 46045.4M|
++-------------------------------------------------------------------------------------------------------------------------------------------------------+
+Bottom Preferred Layer:
++-----------+------------+----------+
+|   Layer   |   OPT_LA   |   Rule   |
++-----------+------------+----------+
+| D5 (z=5)  |        342 | default  |
+| D6 (z=6)  |        771 | default  |
++-----------+------------+----------+
+Via Pillar Rule:
+    None
+
+*** Finish DRV Fixing (cpu=0:01:20 real=0:00:05.0 mem=46045.4M) ***
+
+*** DrvOpt #3 [finish] (place_opt_design #1) : cpu/real = 0:01:29.5/0:00:10.1 (8.8), totSession cpu/real = 1:30:26.1/0:11:55.1 (7.6), mem = 39545.4M
+End: GigaOpt DRV Optimization
+
+------------------------------------------------------------------
+     Summary (cpu=1.49min real=0.17min mem=37165.4M)
+------------------------------------------------------------------
+
+Setup views included:
+ tc_analysis_view
+
++--------------------+---------+---------+---------+
+|     Setup mode     |   all   | reg2reg | default |
++--------------------+---------+---------+---------+
+|           WNS (ns):| -0.006  | -0.003  | -0.006  |
+|           TNS (ns):| -0.033  | -0.013  | -0.020  |
+|    Violating Paths:|   11    |    6    |    5    |
+|          All Paths:|  58948  |  49975  |  27642  |
++--------------------+---------+---------+---------+
+
++----------------+-------------------------------+------------------+
+|                |              Real             |       Total      |
+|    DRVs        +------------------+------------+------------------|
+|                |  Nr nets(terms)  | Worst Vio  |  Nr nets(terms)  |
++----------------+------------------+------------+------------------+
+|   max_cap      |      0 (0)       |   0.000    |      1 (1)       |
+|   max_tran     |      0 (0)       |   0.000    |      0 (0)       |
+|   max_fanout   |      0 (0)       |     0      |      0 (0)       |
+|   max_length   |      0 (0)       |     0      |      0 (0)       |
++----------------+------------------+------------+------------------+
+
+Density: 64.866%
+Routing Overflow: 0.00% H and 0.13% V
+------------------------------------------------------------------
+**opt_design ... cpu = 0:45:14, real = 0:03:51, mem = 12418.9M, totSessionCpu=1:30:32 **
+*** Timing NOT met, worst failing slack is -0.006
+*** Check timing (0:00:00.0)
+Begin: GigaOpt Optimization in TNS mode
+GigaOpt Checkpoint: Internal optTiming -allEndPoints -maxLocalDensity 0.92 -maxLocalDensityForHardenOpt 0.92 -numThreads 128 -preCTS -lowEffort -pgMode all -nativePathGroupFlow -skipLowEffortCategoryOptimization -qftns -ftns -in
+tegratedAreaOpt -nonLegalPlaceEcoBumpRecoveryInTNSOpt -ipoTgtSlackCoef 0 -effTgtSlackCoef 0
+Info: 1 clock net  excluded from IPO operation.
+*** TnsOpt #1 [begin] (place_opt_design #1) : totSession cpu/real = 1:30:33.1/0:11:58.1 (7.6), mem = 37153.4M
+*info: 1 clock net excluded
+*info: 3329 no-driver nets excluded.
+** GigaOpt Optimizer WNS Slack -0.006 TNS Slack -0.033 Density 64.87
+OptDebug: Start of Optimizer TNS Pass:
++----------+------+------+
+|Path Group|   WNS|   TNS|
++----------+------+------+
+|default   |-0.006|-0.020|
+|reg2reg   |-0.003|-0.013|
+|HEPG      |-0.003|-0.013|
+|All Paths |-0.006|-0.033|
++----------+------+------+
+
+Active Path Group: reg2reg
++--------+---------+--------+---------+---------+------------+--------+----------------+---------+----------------------------------------------------+
+|  WNS   | All WNS |  TNS   | All TNS | Density |    Real    |  Mem   |   Worst View   |Pathgroup|                     End Point                      |
++--------+---------+--------+---------+---------+------------+--------+----------------+---------+----------------------------------------------------+
+|  -0.003|   -0.006|  -0.013|   -0.033|   64.87%|   0:00:00.0|43047.5M|tc_analysis_view|  reg2reg| ENGINE_PIXELS_DW_ROWS_EDGES_genblk2.MASTER_ADAPTER |
+|        |         |        |         |         |            |        |                |         | /CDN_MBIT_retime_s17_358__retimed_reg_MB_retime_s1 |
+|        |         |        |         |         |            |        |                |         | 8_287__retimed_reg_MB_retime_s18_288__retimed_reg_ |
+|        |         |        |         |         |            |        |                |         | MB_retime_s18_292__retimed_reg/D1                  |
+|   0.000|   -0.006|   0.000|   -0.020|   64.87%|   0:00:00.0|44164.7M|tc_analysis_view|       NA| NA                                                 |
++--------+---------+--------+---------+---------+------------+--------+----------------+---------+----------------------------------------------------+
+
+*** Finish Core Optimize Step (cpu=0:00:00.9 real=0:00:00.0 mem=44164.7M) ***
+
+*** Finished Optimize Step Cumulative (cpu=0:00:01.2 real=0:00:00.0 mem=44164.7M) ***
+OptDebug: End of Optimizer TNS Pass:
++----------+------+------+
+|Path Group|   WNS|   TNS|
++----------+------+------+
+|default   |-0.006|-0.020|
+|reg2reg   | 0.006| 0.000|
+|HEPG      | 0.006| 0.000|
+|All Paths |-0.006|-0.020|
++----------+------+------+
+
+*** Finished re-routing un-routed nets (44164.7M) ***
+
+*** Finish Physical Update (cpu=0:00:06.6 real=0:00:03.0 mem=44164.7M) ***
+** GigaOpt Optimizer WNS Slack -0.006 TNS Slack -0.020 Density 64.87
+OptDebug: End of Setup Fixing:
++----------+------+------+
+|Path Group|   WNS|   TNS|
++----------+------+------+
+|default   |-0.006|-0.020|
+|reg2reg   | 0.006| 0.000|
+|HEPG      | 0.006| 0.000|
+|All Paths |-0.006|-0.020|
++----------+------+------+
+
+Bottom Preferred Layer:
++-----------+------------+----------+
+|   Layer   |   OPT_LA   |   Rule   |
++-----------+------------+----------+
+| D5 (z=5)  |        342 | default  |
+| D6 (z=6)  |        772 | default  |
++-----------+------------+----------+
+Via Pillar Rule:
+    None
+
+*** Finish pre-CTS Setup Fixing (cpu=0:00:12.0 real=0:00:05.0 mem=44164.7M) ***
+
+*** TnsOpt #1 [finish] (place_opt_design #1) : cpu/real = 0:00:23.2/0:00:12.2 (1.9), totSession cpu/real = 1:30:56.3/0:12:10.3 (7.5), mem = 37636.7M
+End: GigaOpt Optimization in TNS mode
+*** Timing NOT met, worst failing slack is -0.006
+*** Check timing (0:00:00.0)
+Begin: GigaOpt Optimization in WNS mode
+GigaOpt Checkpoint: Internal optTiming -maxLocalDensity 0.92 -maxLocalDensityForHardenOpt 0.92 -numThreads 128 -preCTS -wtns -integratedAreaOpt -pgMode all -ipoTgtSlackCoef 1.5 -effTgtSlackCoef 1 -nativePathGroupFlow -NDROptEffo
+rtAuto -usefulSkew -nonLegalPlaceEcoBumpRecoveryInWNSOpt
+Info: 1 clock net  excluded from IPO operation.
+*** WnsOpt #1 [begin] (place_opt_design #1) : totSession cpu/real = 1:30:57.8/0:12:11.8 (7.5), mem = 37299.7M
+*info: 1 clock net excluded
+*info: 3329 no-driver nets excluded.
+** GigaOpt Optimizer WNS Slack -0.006 TNS Slack -0.020 Density 64.87
+OptDebug: Start of Optimizer WNS Pass 0:
++----------+------+------+
+|Path Group|   WNS|   TNS|
++----------+------+------+
+|default   |-0.006|-0.020|
+|reg2reg   | 0.006| 0.000|
+|HEPG      | 0.006| 0.000|
+|All Paths |-0.006|-0.020|
++----------+------+------+
+
+Active Path Group: default
++--------+---------+--------+---------+---------+------------+--------+----------------+---------+----------------------------------------------------+
+|  WNS   | All WNS |  TNS   | All TNS | Density |    Real    |  Mem   |   Worst View   |Pathgroup|                     End Point                      |
++--------+---------+--------+---------+---------+------------+--------+----------------+---------+----------------------------------------------------+
+|  -0.006|   -0.006|  -0.020|   -0.020|   64.87%|   0:00:00.0|43107.8M|tc_analysis_view|  default| ENGINE_PROC_OUT_PROC_ENGINE/CDN_MBIT_retime_s19_13 |
+|        |         |        |         |         |            |        |                |         | 5__retimed_reg_MB_retime_s19_136__retimed_reg_MB_r |
+|        |         |        |         |         |            |        |                |         | etime_s19_137__retimed_reg_MB_retime_s19_138__reti |
+|        |         |        |         |         |            |        |                |         | med_reg/R                                          |
+|   0.001|    0.001|   0.000|    0.000|   64.87%|   0:00:01.0|45278.9M|tc_analysis_view|  default| ENGINE_PROC_OUT_PROC_ENGINE/CDN_MBIT_shift_data_ou |
+|        |         |        |         |         |            |        |                |         | t_reg[15][1][6]_MB_shift_data_out_reg[15][1][7]_MB |
+|        |         |        |         |         |            |        |                |         | _shift_data_out_reg[15][1][8]_MB_shift_data_out_re |
+|        |         |        |         |         |            |        |                |         | g[15][1][9]/R                                      |
+|   0.004|    0.004|   0.000|    0.000|   64.87%|   0:00:00.0|45795.2M|tc_analysis_view|  default| ENGINE_PROC_OUT_PROC_ENGINE/CDN_MBIT_shift_data_ou |
+|        |         |        |         |         |            |        |                |         | t_reg[15][1][6]_MB_shift_data_out_reg[15][1][7]_MB |
+|        |         |        |         |         |            |        |                |         | _shift_data_out_reg[15][1][8]_MB_shift_data_out_re |
+|        |         |        |         |         |            |        |                |         | g[15][1][9]/R                                      |
+|   0.006|    0.006|   0.000|    0.000|   64.87%|   0:00:00.0|46074.6M|              NA|       NA| NA                                                 |
+|   0.006|    0.006|   0.000|    0.000|   64.87%|   0:00:00.0|46074.6M|tc_analysis_view|       NA| NA                                                 |
++--------+---------+--------+---------+---------+------------+--------+----------------+---------+----------------------------------------------------+
+
+*** Finish Core Optimize Step (cpu=0:00:03.9 real=0:00:01.0 mem=46074.6M) ***
+
+*** Finished Optimize Step Cumulative (cpu=0:00:04.2 real=0:00:01.0 mem=46074.6M) ***
+OptDebug: End of Optimizer WNS Pass 0:
++----------+-----+-----+
+|Path Group|  WNS|  TNS|
++----------+-----+-----+
+|default   |0.012|0.000|
+|reg2reg   |0.006|0.000|
+|HEPG      |0.006|0.000|
+|All Paths |0.006|0.000|
++----------+-----+-----+
+
+** GigaOpt Optimizer WNS Slack 0.006 TNS Slack 0.000 Density 64.87
+** GigaOpt Optimizer WNS Slack 0.006 TNS Slack 0.000 Density 64.87
+** GigaOpt Optimizer WNS Slack 0.006 TNS Slack 0.000 Density 64.87
+** GigaOpt Optimizer WNS Slack 0.006 TNS Slack 0.000 Density 64.87
+OptDebug: End of Setup Fixing:
++----------+-----+-----+
+|Path Group|  WNS|  TNS|
++----------+-----+-----+
+|default   |0.012|0.000|
+|reg2reg   |0.006|0.000|
+|HEPG      |0.006|0.000|
+|All Paths |0.006|0.000|
++----------+-----+-----+
+
+Bottom Preferred Layer:
++-----------+------------+----------+
+|   Layer   |   OPT_LA   |   Rule   |
++-----------+------------+----------+
+| D5 (z=5)  |        342 | default  |
+| D6 (z=6)  |        774 | default  |
++-----------+------------+----------+
+Via Pillar Rule:
+    None
+
+*** Finish pre-CTS Setup Fixing (cpu=0:00:09.2 real=0:00:04.0 mem=46074.6M) ***
+
+*** WnsOpt #1 [finish] (place_opt_design #1) : cpu/real = 0:00:20.2/0:00:10.6 (1.9), totSession cpu/real = 1:31:18.0/0:12:22.3 (7.4), mem = 39078.6M
+End: GigaOpt Optimization in WNS mode
+*** Timing Is met
+*** Check timing (0:00:00.1)
+GigaOpt Checkpoint: Internal reclaim -noViewPrune -rebufferOnly -costCleanup -preRouteDontEndWithRefinePlaceIncrSteinerRouteDC -force -numThreads 128 -preCTS
+Info: 1 clock net  excluded from IPO operation.
+Begin: Area Reclaim Optimization
+*** AreaOpt #2 [begin] (place_opt_design #1) : totSession cpu/real = 1:31:23.3/0:12:24.5 (7.4), mem = 43405.6M
+Reclaim Optimization WNS Slack 0.000  TNS Slack 0.000 Density 64.87
++---------+---------+--------+--------+------------+--------+
+| Density | Commits |  WNS   |  TNS   |    Real    |  Mem   |
++---------+---------+--------+--------+------------+--------+
+|   64.87%|        -|   0.000|   0.000|   0:00:00.0|43405.6M|
+|   64.65%|     1390|   0.000|   0.000|   0:00:33.0|50735.6M|
++---------+---------+--------+--------+------------+--------+
+Reclaim Optimization End WNS Slack 0.000  TNS Slack 0.000 Density 64.65
+Bottom Preferred Layer:
++-----------+------------+----------+
+|   Layer   |   OPT_LA   |   Rule   |
++-----------+------------+----------+
+| D5 (z=5)  |        461 | default  |
+| D6 (z=6)  |       1788 | default  |
++-----------+------------+----------+
+Via Pillar Rule:
+    None
+
+Number of times islegalLocAvaiable called = 0 skipped = 0, called in commitmove = 0, skipped in commitmove = 0
+End: Core Area Reclaim Optimization (cpu = 0:08:16) (real = 0:00:35.0) **
+*** AreaOpt #2 [finish] (place_opt_design #1) : cpu/real = 0:08:16.4/0:00:35.0 (14.2), totSession cpu/real = 1:39:39.8/0:12:59.5 (7.7), mem = 50735.6M
+End: Area Reclaim Optimization (cpu=0:08:18, real=0:00:35, mem=38387.56M, totSessionCpu=1:39:41).
+GigaOpt Checkpoint: Internal reclaim -numThreads 128 -customPhyUpdate -noGCompAndPhase -ensureOneAreaReclaim -force -svrReclaim -rtrShortNets -allowDegradingShortNetRemoval -extraDelBufIter -preCTS -tgtSlackMult 2 -wtns -noRoute
+TypeResizePolish -noViewPrune -nativePathGroupFlow
+Info: 1 clock net  excluded from IPO operation.
+Begin: Area Reclaim Optimization
+*** AreaOpt #3 [begin] (place_opt_design #1) : totSession cpu/real = 1:39:46.1/0:13:02.2 (7.7), mem = 44186.6M
+Reclaim Optimization WNS Slack 0.000  TNS Slack 0.000 Density 64.65
++---------+---------+--------+--------+------------+--------+
+| Density | Commits |  WNS   |  TNS   |    Real    |  Mem   |
++---------+---------+--------+--------+------------+--------+
+|   64.65%|        -|   0.000|   0.000|   0:00:00.0|44186.6M|
+|   64.65%|     1881|   0.000|   0.000|   0:00:11.0|46628.6M|
+|   64.65%|       25|   0.000|   0.000|   0:00:01.0|46633.0M|
+|   64.63%|      364|   0.000|   0.000|   0:00:05.0|46633.0M|
+|   64.63%|       54|   0.000|   0.000|   0:00:02.0|46633.0M|
+|   64.63%|        2|   0.000|   0.000|   0:00:01.0|46633.0M|
+|   64.63%|        0|   0.000|   0.000|   0:00:00.0|46633.0M|
+|   64.63%|        0|   0.000|   0.000|   0:00:01.0|46633.0M|
+|   64.63%|       42|   0.000|   0.000|   0:00:02.0|46633.0M|
++---------+---------+--------+--------+------------+--------+
+Reclaim Optimization End WNS Slack 0.000  TNS Slack 0.000 Density 64.63
+Bottom Preferred Layer:
++-----------+------------+----------+
+|   Layer   |   OPT_LA   |   Rule   |
++-----------+------------+----------+
+| D5 (z=5)  |       1029 | default  |
+| D6 (z=6)  |        141 | default  |
++-----------+------------+----------+
+Via Pillar Rule:
+    None
+
+Number of times islegalLocAvaiable called = 1 skipped = 0, called in commitmove = 1, skipped in commitmove = 0
+End: Core Area Reclaim Optimization (cpu = 0:02:47) (real = 0:00:25.0) **
+*** Finished re-routing un-routed nets (46633.0M) ***
+
+*** Finish Physical Update (cpu=0:00:06.4 real=0:00:02.0 mem=46633.0M) ***
+*** AreaOpt #3 [finish] (place_opt_design #1) : cpu/real = 0:02:53.4/0:00:27.0 (6.4), totSession cpu/real = 1:42:39.6/0:13:29.1 (7.6), mem = 46633.0M
+End: Area Reclaim Optimization (cpu=0:02:54, real=0:00:28, mem=38291.98M, totSessionCpu=1:42:40).
+-opt_exp_set_preroute_early_power_reclaim_recovery_split_flow false
+                                           # bool, default=false, private
+Begin: GigaOpt postEco DRV Optimization
+GigaOpt Checkpoint: Internal optDRV -inPostEcoStage -smallScaleFixing -maxIter 3 -max_tran -max_cap -maxLocalDensity 0.92 -numThreads 128 -preRouteDontEndWithRefinePlaceIncrSteinerRouteDC -setupTNSCostFactor 1.0 -preCTS
+*** DrvOpt #4 [begin] (place_opt_design #1) : totSession cpu/real = 1:42:41.1/0:13:30.2 (7.6), mem = 38286.0M
+Info: 1 clock net  excluded from IPO operation.
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
+	CornerforLayerOpt timing analysis view wc_analysis_view has been selected for calibration
++-------------------------------------------------------------------------------------------------------------------------------------------------------+
+|        max-tran       |        max-cap        |  max-fanout |  max-length |       setup       |        |        |        |       |          |         |
++-------------------------------------------------------------------------------------------------------------------------------------------------------+
+| nets | terms|  wViol  | nets | terms|  wViol  | nets | terms| nets | terms|   WNS   |   TNS   |  #Buf  |  #Inv  | #Resize|Density|   Real   |   Mem   |
++-------------------------------------------------------------------------------------------------------------------------------------------------------+
+|   340|  6413|    -0.02|     0|     0|     0.00|     0|     0|     0|     0|     0.00|     0.00|       0|       0|       0| 64.63%|          |         |
+|     0|     0|     0.00|     0|     0|     0.00|     0|     0|     0|     0|     0.00|     0.00|     112|       4|     124| 64.65%| 0:00:01.0| 47101.6M|
+|     0|     0|     0.00|     0|     0|     0.00|     0|     0|     0|     0|     0.00|     0.00|       0|       0|       0| 64.65%| 0:00:00.0| 47101.6M|
++-------------------------------------------------------------------------------------------------------------------------------------------------------+
+Bottom Preferred Layer:
++-----------+------------+----------+
+|   Layer   |   OPT_LA   |   Rule   |
++-----------+------------+----------+
+| D5 (z=5)  |        954 | default  |
+| D6 (z=6)  |        400 | default  |
++-----------+------------+----------+
+Via Pillar Rule:
+    None
+
+*** Finish DRV Fixing (cpu=0:00:27.6 real=0:00:02.0 mem=47101.6M) ***
+
+*** DrvOpt #4 [finish] (place_opt_design #1) : cpu/real = 0:00:35.6/0:00:06.4 (5.5), totSession cpu/real = 1:43:16.6/0:13:36.6 (7.6), mem = 40327.6M
+End: GigaOpt postEco DRV Optimization
+**WARN: (IMPOPT-7329):	Skipping place_detail due to user configuration.
+Register exp ratio and priority group on 1354 nets on 165913 nets :
+z=5 : 954 nets
+z=6 : 400 nets
+
+Active setup views:
+ tc_analysis_view
+  Dominating endpoints: 0
+  Dominating TNS: -0.000
+
+*** Enable all active views. ***
+Extraction called for design 'axi_cgra4ml' of instances=142401 and nets=169943 using extraction engine 'pre_route' .
+pre_route RC Extraction called for design axi_cgra4ml.
+RC Extraction called in multi-corner(3) mode.
+RCMode: PreRoute
+      RC Corner Indexes            0       1       2
+Capacitance Scaling Factor   : 1.00000 1.00000 1.00000
+Resistance Scaling Factor    : 1.00000 1.00000 1.00000
+Clock Cap. Scaling Factor    : 1.00000 1.00000 1.00000
+Clock Res. Scaling Factor    : 1.00000 1.00000 1.00000
+Shrink Factor                : 1.00000
+PreRoute extraction is honoring NDR/Shielding/ExtraSpace for clock nets.
+Using Quantus QRC technology file ...
+Grid density data update skipped
+Initializing multi-corner resistance tables ...
+PreRoute RC Extraction DONE (CPU Time: 0:00:02.6  Real Time: 0:00:02.0  MEM: 36601.934M)
+Skewing Data Summary (End_of_FINAL)
+
+Skew summary for view wc_analysis_view:
+* Accumulated skew : count = 0
+
+Skew summary for view tc_analysis_view:
+* Accumulated skew : count = 0
+
+Starting delay calculation for Setup views
+AAE_INFO: opIsDesignInPostRouteState() is 0
+#################################################################################
+# Design Stage: PreRoute
+# Design Name: axi_cgra4ml
+# Design Mode: 5nm
+# Analysis Mode: MMMC Non-OCV
+# Parasitics Mode: No SPEF/RCDB
+# Signoff Settings: SI Off
+#################################################################################
+Calculate delays in BcWc mode...
+Calculate delays in BcWc mode...
+Start delay calculation (fullDC) (128 T). (MEM=11897.2)
+Total number of fetched objects 165913
+AAE_INFO: Total number of nets for which stage creation was skipped for all views 0
+Total number of fetched objects 165913
+AAE_INFO: Total number of nets for which stage creation was skipped for all views 0
+End delay calculation. (MEM=12577.5 CPU=0:01:30 REAL=0:00:01.0)
+End delay calculation (fullDC). (MEM=12577.5 CPU=0:01:48 REAL=0:00:02.0)
+*** Done Building Timing Graph (cpu=0:02:15 real=0:00:05.0 totSessionCpu=1:45:54 mem=36627.2M)
+OPTC: user 20.0
+Reported timing to dir /work/cgra4ml/run/work/innovus/innovus_run_01/../../../..//run/asic/cadence/reports/innovus_run_01
+**opt_design ... cpu = 1:00:37, real = 0:05:42, mem = 11833.3M, totSessionCpu=1:45:54 **
+Generating machine readable timing report  /work/cgra4ml/run/work/innovus/innovus_run_01/../../../..//run/asic/cadence/reports/innovus_run_01/05_placement_.btarpt.gz
+--------------------------------------------------------------------------------
+|NumPaths=100,Time=94334 microseconds                                          |
+--------------------------------------------------------------------------------
+
+------------------------------------------------------------------
+     opt_design Final Summary
+------------------------------------------------------------------
+
+Setup views included:
+ wc_analysis_view tc_analysis_view
+
++--------------------+---------+---------+---------+
+|     Setup mode     |   all   | reg2reg | default |
++--------------------+---------+---------+---------+
+|           WNS (ns):|  0.001  |  0.001  |  0.005  |
+|           TNS (ns):|  0.000  |  0.000  |  0.000  |
+|    Violating Paths:|    0    |    0    |    0    |
+|          All Paths:|  58948  |  49975  |  27642  |
++--------------------+---------+---------+---------+
+|wc_analysis_view    |  0.027  |  0.056  |  0.027  |
+|                    |  0.000  |  0.000  |  0.000  |
+|                    |    0    |    0    |    0    |
+|                    |  58948  |  49975  |  27642  |
++--------------------+---------+---------+---------+
+|tc_analysis_view    |  0.001  |  0.001  |  0.005  |
+|                    |  0.000  |  0.000  |  0.000  |
+|                    |    0    |    0    |    0    |
+|                    |  58948  |  49975  |  27642  |
++--------------------+---------+---------+---------+
+
++----------------+-------------------------------+------------------+
+|                |              Real             |       Total      |
+|    DRVs        +------------------+------------+------------------|
+|                |  Nr nets(terms)  | Worst Vio  |  Nr nets(terms)  |
++----------------+------------------+------------+------------------+
+|   max_cap      |      0 (0)       |   0.000    |      1 (1)       |
+|   max_tran     |      0 (0)       |   0.000    |      0 (0)       |
+|   max_fanout   |      0 (0)       |     0      |      0 (0)       |
+|   max_length   |      0 (0)       |     0      |      0 (0)       |
++----------------+------------------+------------+------------------+
+
+Density: 64.647%
+Routing Overflow: 0.00% H and 0.13% V
+------------------------------------------------------------------
+Begin: Collecting metrics
+ ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Snapshot                | WNS                  | TNS                  | Density (%) | Hotspot                   | Resource               | DRVs       | Layer-OPT   |
+|                         | HEPG (ns) | ALL (ns) | HEPG (ns) | ALL (ns) |             | Max (bins) | Total (bins) | Real (s) | Memory (MB) | Tran | Cap | D5   | D6   |
+|-------------------------+-----------+----------+-----------+----------+-------------+------------+--------------+----------+-------------+------+-----+------+------|
+| initial_summary         |           |   -4.598 |           |   -40393 |       63.93 |            |              | 0:00:15  |       31576 | 5818 | 370 |      |      |
+| simplify_netlist        |           |          |           |          |             |            |              | 0:00:06  |       31864 |      |     |      |      |
+| drv_fixing              |     0.000 |   -4.598 |         0 |   -42444 |       64.43 |            |              | 0:00:07  |       33865 |      |     |      |      |
+| drv_fixing_2            |     0.000 |   -0.251 |         0 |     -319 |       65.02 |            |              | 0:00:15  |       35168 |    0 |   0 |    3 |  735 |
+| global_opt              |           |    0.000 |           |        0 |       65.15 |            |              | 0:00:14  |       35753 |      |     |  236 |  766 |
+| area_reclaiming         |     0.000 |    0.001 |         0 |        0 |       64.79 |            |              | 0:00:37  |       35790 |      |     |  398 |   72 |
+| incremental_replacement |    -0.067 |   -0.131 |           |      -15 |             |       0.35 |         5.38 | 0:01:32  |       36208 |      |     |      |      |
+| drv_fixing_3            |    -0.003 |   -0.006 |        -0 |       -0 |       64.87 |            |              | 0:00:12  |       37153 |    0 |   0 |  342 |  771 |
+| tns_fixing              |     0.006 |   -0.006 |         0 |       -0 |       64.87 |            |              | 0:00:12  |       44165 |      |     |  342 |  772 |
+| wns_fixing              |     0.006 |    0.006 |         0 |        0 |       64.87 |            |              | 0:00:10  |       46075 |      |     |  342 |  774 |
+| area_reclaiming_2       |     0.001 |    0.001 |         0 |        0 |       64.65 |            |              | 0:00:37  |       38388 |      |     |  461 | 1788 |
+| area_reclaiming_3       |     0.001 |    0.001 |         0 |        0 |       64.63 |            |              | 0:00:29  |       38292 |      |     | 1029 |  141 |
+| drv_eco_fixing          |     0.001 |    0.001 |         0 |        0 |       64.65 |            |              | 0:00:07  |       38305 |    0 |   0 |  954 |  400 |
+| final_summary           |     0.001 |    0.001 |           |        0 |       64.65 |            |              | 0:00:09  |       36872 |    0 |   0 |      |      |
+ ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+End: Collecting metrics
+**opt_design ... cpu = 1:01:24, real = 0:05:52, mem = 11966.4M, totSessionCpu=1:46:41 **
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus[0x22e628da]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(syStackTrace+0x9c)[0x22e62d5f]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus[0xe0fcf6b]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN15goSignalHandler13executeActionEiP9siginfo_tPv+0x48)[0x12e31d68]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN15goSignalHandler16executeSigActionEiP9siginfo_tPv+0x100)[0x12e31ef0]
+/lib64/libpthread.so.0(+0xf62f)[0xbab3241c62f]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_Z21cpeCleanupBddManagersi+0x3a)[0x313ab7ca]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_Z20cpeCleanupDataForIPOv+0xe)[0x22b242ce]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN17coePowerInterface7cleanupEbb+0x51)[0x11ea68d1]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus[0xe3e285f]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(TclInvokeStringCommand+0x7a)[0x357c52da]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(TclNRRunCallbacks+0x71)[0x357c9dd1]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus[0x357cbffe]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(Tcl_CDNSEvalEx+0x12)[0x357ccb52]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(Tcl_Eval+0x15)[0x357ccb85]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN5syTcl9CmdInterp6evalOKEPKc+0x53)[0xe4eceb3]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN12goTclManager11catchScriptERN5syTcl9CmdInterpE8oiString+0x54)[0x12e300d4]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZNK14rdaOptDesignCL3runEv+0xe74)[0xe43aec4]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus[0xe515e79]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN5syTcl19LegacyTcmCmdAdapterI15rdaOptDesignCmdE4procEPvP10Tcl_InterpiPPcP6tcmCmd+0x3f)[0xe4a70cf]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN10tcmBaseCmd7executeEP10Tcl_InterpiPPc+0x22f)[0x266e2bff]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN6tcmMgr9cmdParserEPvP10Tcl_InterpiPPc+0x55a)[0x266d251a]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(TclInvokeStringCommand+0x7a)[0x357c52da]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(TclNRRunCallbacks+0x71)[0x357c9dd1]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus[0x357cbffe]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(Tcl_CDNSEvalEx+0x12)[0x357ccb52]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(Tcl_Eval+0x15)[0x357ccb85]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN5syTcl9CmdInterp6evalOKEPKc+0x53)[0xe4eceb3]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN12goTclManager11catchScriptERN5syTcl9CmdInterpE8oiString+0x54)[0x12e300d4]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN5goMgr10OptFlowCmd11CatchScript10executeCmdEP10Tcl_InterpP25goOptFlowManagerInterface+0xdb)[0x1311340b]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN24goManagerInterfaceTclCmdI16goOptFlowManagerE7executeEP10Tcl_Interp+0x42)[0x13117f22]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN5syTcl7CmdExecIN5goMgr10OptFlowCmd11CatchScriptEE14executeCmdMainEPNS_9MasterCmdE+0x24c)[0x1311b99c]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN5syTcl16CmdExecInterface8execMainEPNS_9MasterCmdEiPKP7Tcl_Obj+0x3f)[0x126986af]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN5syTcl10CmdManager9invokeCmdIN5goMgr10OptFlowCmd11CatchScriptEEEiPvP10Tcl_InterpiPKP7Tcl_ObjP9tcmObjCmd+0x54)[0x1310af24]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN10tcmBaseCmd7executeEP10Tcl_InterpiPP7Tcl_Obj+0x1bf)[0x266e308f]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN6tcmMgr12objCmdParserEPvP10Tcl_InterpiPP7Tcl_Obj+0x4eb)[0x266d4c3b]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN5syTcl9MasterCmd4procEPvP10Tcl_InterpiPKP7Tcl_Obj+0x3ae)[0x126951ae]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(TclNRRunCallbacks+0x71)[0x357c9dd1]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus[0x35869a77]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(TclNRRunCallbacks+0x71)[0x357c9dd1]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus[0x357cbffe]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(Tcl_CDNSEvalEx+0x12)[0x357ccb52]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_Z17rdaEditCmdLineEndPc+0x334)[0xe200724]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN9seConsole7sesMode9DoExecuteERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEPv+0xf0)[0x1e5b7610]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN7Redline9EmacsMode10AcceptLineEv+0x3f)[0x20236c8f]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN7Redline11ModeCommandINS_9EmacsModeEE15CommandFnNoKeysERKN5boost8functionIFvRS1_EEERNS_6EditorE+0x60)[0x2023f050]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN5boost6detail8function26void_function_obj_invoker2INS_3_bi6bind_tINS3_11unspecifiedENS_8functionIFvRN7Redline6EditorEEEENS3_5list1INS_3argILi1EEEEEEEvS9_R
+KNS7_14KeyCombinationEE6invokeERNS1_15function_bufferES9_SJ_+0x1a)[0x2024e11a]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZNK7Redline7Command3RunERNS_6EditorERKNS_14KeyCombinationE+0x1b)[0x2024d93b]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_ZN7Redline6Editor9Internals3RunEb+0xc6)[0x20233d26]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus[0x358ce7dd]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(Tcl_ServiceEvent+0x88)[0x3588ebc8]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(Tcl_DoOneEvent+0x148)[0x3588eed8]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/../../../lib/64bit/libtq.so(_ZN17TqEventDispatcher13processEventsE6QFlagsIN10QEventLoop17ProcessEventsFlagEE+0x8e)[0xbab44bc050e]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/Qt/v5//64bit/lib/libcdsQt5Core.so.5(_ZN10QEventLoop4execE6QFlagsINS_17ProcessEventsFlagEE+0x11a)[0xbab4367cf5a]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/Qt/v5//64bit/lib/libcdsQt5Core.so.5(_ZN16QCoreApplication4execEv+0x7b)[0xbab436849ab]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/../../../lib/64bit/libtq.so(_ZN13TqApplication4execEv+0x169)[0xbab44bbfe49]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(_Z12edi_app_initP10Tcl_Interp+0x2eb)[0xe1dfe7b]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(Tcl_MainEx+0x1bb)[0x3588960b]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus(main+0x823)[0x7710e23]
+/lib64/libc.so.6(__libc_start_main+0xf4)[0xbab318c9554]
+/tools/cadence/DDI231/INNOVUS231/tools.lnx86/innovus/bin/64bit/innovus[0xe0f9950]
+*** Stack trace in log file.
+Lic Summary:
+[22:53:18.181608] Cdslmd servers: its-flexlm-lnx4
+[22:53:18.705921] Feature usage summary:
+[22:53:18.705921] Innovus_Impl_System
+[22:53:18.705923] Innovus_CPU_Opt
+[22:53:18.705923] Innovus_3nm_Opt
+
+
+**DIAG[../../include/oiStdUtil.hpp:1569:~oiStackableParameter]: Assert "stackedValues_.size() == 1"
+Segmentation fault (core dumped)
+[cadence@mun innovus_run_01]$

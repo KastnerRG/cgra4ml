@@ -112,6 +112,11 @@ set design(CLOCK_UNCERTAINTY)  0.125 ; # In ns for SDC (will appear in ps for ge
 # DRV Constraints
 set design(MAX_TRANSITION)   [expr $design(CLK_PERIOD)/5.0] ; # Maximum Transition Time according Liberty Data sheet = min(20% of Clock, Max transition characterized on Table)
 
+# CTS Constraints
+set design(CLOCK_MAX_TRANSITION) [expr $design(CLK_PERIOD)/5.0]
+# set design(CLOCK_MAX_FANOUT) 
+# set design(CLOCK_MAX_CAPACITANCE) 
+
 # Routing Constraints
 set design(MIN_ROUTE_LAYER) M1
 set design(MAX_ROUTE_LAYER) IB
@@ -177,7 +182,7 @@ if { $runtype == "pnr" } {
 
     # Save floorplan from innovus to parallel genus run 
     set design(floorplan_check)                      "$design(export_pnr_dir)/$design(TOPLEVEL).floorplan_check.rpt"
-    set design(clock_tree_spec)                      "$design(inputs_dir)/cadence.$design(TOPLEVEL).ccopt"
+    set design(clock_tree_spec)                      "$design(inputs_dir)/cadence.$design(TOPLEVEL).clock_tree.spec"
     set design(floorplan_def)                        "$design(export_pnr_dir)/$design(TOPLEVEL).floorplan.def"
 }
 

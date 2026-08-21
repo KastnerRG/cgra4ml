@@ -114,10 +114,10 @@ route_special -connect floating_stripe -layer_change_range { M1(1) M4(4) } -bloc
 # Connect Follow Pins to the Core Ring
 krg_power_grid_M1_stripes_settings
 route_special -connect core_pin \
-              -core_pin_target first_after_row_end \
+              -core_pin_target {block_ring ring} \
               -core_pin_check_stdcell_geometry \
               -allow_jogging 0 \
-              -allow_layer_change 0
+              -allow_layer_change 1
 
 # Set Power Grid SRAM Stripes Settings
 krg_lower_power_grid_sram_stripes_settings
@@ -153,53 +153,24 @@ krg_select_srams_edge
 krg_add_stripes_to_selected_sram $design(sram_stripes_nets) $design(sram_stripes_interval) $design(sram_stripes_start_offset) $design(sram_edge_stripes_stop_offset) 0 right
 
 krg_select_srams_dma 0
-krg_add_stripes_to_selected_sram $design(sram_stripes_flipped_nets) $design(sram_stripes_interval_dma) $design(sram_dma_stripes_start_offset) $design(sram_dma_stripes_stop_offset) 0 left
+krg_add_stripes_to_selected_sram $design(sram_stripes_flipped_nets) $design(sram_stripes_interval_dma) $design(sram_dma_stripes_start_offset) $design(sram_dma_stripes_stop_offset) 1 right
 krg_select_srams_dma 3
-krg_add_stripes_to_selected_sram $design(sram_stripes_flipped_nets) $design(sram_stripes_interval_dma) $design(sram_dma_stripes_start_offset) $design(sram_dma_stripes_stop_offset) 0 left      
+krg_add_stripes_to_selected_sram $design(sram_stripes_flipped_nets) $design(sram_stripes_interval_dma) $design(sram_dma_stripes_start_offset) $design(sram_dma_stripes_stop_offset) 1 right      
 krg_select_srams_dma_last
-krg_add_stripes_to_selected_sram $design(sram_stripes_flipped_nets) $design(sram_stripes_interval_dma) $design(sram_dma_stripes_start_offset) $design(sram_dma_stripes_stop_offset) 0 left
+krg_add_stripes_to_selected_sram $design(sram_stripes_flipped_nets) $design(sram_stripes_interval_dma) $design(sram_dma_stripes_start_offset) $design(sram_dma_stripes_stop_offset) 1 right
 
-set_db route_special_via_connect_to_shape { ring blockring blockpin }
-route_special -connect block_pin -layer_change_range { M1(1) D5(5) } -block_pin_target nearest_target -connect_in_area -allow_jogging 0 -crossover_via_layer_range { M1(1) D5(5) } -area { 356.51875 121.0675 300.052 19.96175 } -allow_layer_change 1 -block_pin use_lef -target_via_layer_range { M1(1) D5(5) }
-
-# Set Power Grid Standard Cell Stripes Settings
-krg_lower_D6_power_grid_stripes_settings
-
-# Add Stripes for Standard Cells
-add_stripes -nets $design(D6_stripes_nets) -layer $krg_iu_vars(layer_name,6) -direction vertical \
-            -width $design(D6_stripes_width) \
-            -spacing $design(D6_stripes_spacing) \
-            -set_to_set_distance $design(D6_stripes_interval) \
-            -area {20.40 120.0 360.0 164.0} \
-            -start_from left -switch_layer_over_obs false -max_same_layer_jog_length 2 \
-            -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
-            -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
-            -block_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
-            -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
-            -use_wire_group 0 -snap_wire_center_to_grid grid
-
-krg_lower_D5_power_grid_stripes_settings
-add_stripes -nets $design(M5_stripes_nets) -layer $krg_iu_vars(layer_name,5) -direction horizontal \
-            -width $design(M5_stripes_width) \
-            -spacing $design(M5_stripes_spacing) \
-            -set_to_set_distance $design(M5_stripes_interval) \
-            -area {206.86025 20.4 292.589 256.15725} \
-            -start_from bottom -switch_layer_over_obs false -max_same_layer_jog_length 2 \
-            -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
-            -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
-            -block_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
-            -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
-            -use_wire_group 0 -snap_wire_center_to_grid grid
+set_db route_special_via_connect_to_shape { stripe ring blockring blockpin }
+route_special -connect block_pin -layer_change_range { M1(1) D5(5) } -block_pin_target nearest_target -connect_in_area -allow_jogging 1 -crossover_via_layer_range { M1(1) D5(5) } -area { 370.386 15.827 299.80225 122.4655 } -allow_layer_change 1 -block_pin on_boundary -target_via_layer_range { M1(1) D5(5) }
 
 # Add Upper Power Grid Stripes
 # Set Upper Power Grid Stripes Settings
-krg_upper_power_grid_stripes_settings
-
-add_stripes -nets $design(M14_stripes_nets) -layer $krg_iu_vars(layer_name,14) -direction vertical \
-            -width $design(M14_stripes_width) \
-            -spacing $design(M14_stripes_spacing) \
-            -set_to_set_distance $design(M14_stripes_interval) \
-            -start_from left -switch_layer_over_obs false -max_same_layer_jog_length 2 \
+krg_upper_power_grid_M13_stripes_blocks_settings
+add_stripes -nets $design(M13_stripes_nets) -layer $krg_iu_vars(layer_name,13) -direction horizontal \
+            -width $design(M13_stripes_width) \
+            -spacing $design(M13_stripes_spacing) \
+            -set_to_set_distance $design(M13_stripes_interval) \
+            -area {366.5845 261.84275 17.94825 184.73325} \
+            -start_from bottom -switch_layer_over_obs false -max_same_layer_jog_length 2 \
             -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
             -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,5) \
             -block_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
@@ -210,22 +181,107 @@ add_stripes -nets $design(M13_stripes_nets) -layer $krg_iu_vars(layer_name,13) -
             -width $design(M13_stripes_width) \
             -spacing $design(M13_stripes_spacing) \
             -set_to_set_distance $design(M13_stripes_interval) \
+            -area {367.31525 119.31825 20.14075 19.55125} \
             -start_from bottom -switch_layer_over_obs false -max_same_layer_jog_length 2 \
-            -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,13) \
+            -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
             -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,5) \
-            -block_ring_top_layer_limit $krg_iu_vars(layer_name,13) \
+            -block_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,5) \
+            -use_wire_group 0 -snap_wire_center_to_grid grid
+
+krg_upper_power_grid_M13_stripes_settings
+add_stripes -nets $design(M13_stripes_nets) -layer $krg_iu_vars(layer_name,13) -direction horizontal \
+            -width $design(M13_stripes_width) \
+            -spacing $design(M13_stripes_spacing) \
+            -set_to_set_distance $design(M13_stripes_interval) \
+            -area {371.33525 124.06925 15.39 175.23175} \
+            -start_from bottom -switch_layer_over_obs false -max_same_layer_jog_length 2 \
+            -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,5) \
+            -block_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
             -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,5) \
             -use_wire_group 0 -snap_wire_center_to_grid grid
  
+krg_upper_power_grid_M14_stripes_settings
+
+add_stripes -nets $design(M14_stripes_nets) -layer $krg_iu_vars(layer_name,14) -direction vertical \
+            -width $design(M14_stripes_width) \
+            -spacing $design(M14_stripes_spacing) \
+            -set_to_set_distance $design(M14_stripes_interval) \
+            -area {199.203 265.75525 297.7755 15.6075} \
+            -start_from left -switch_layer_over_obs false -max_same_layer_jog_length 2 \
+            -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,5) \
+            -block_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,5) \
+            -use_wire_group 0 -snap_wire_center_to_grid grid
+
+check_drc 
+fix_via -min_step
+
+
+# Set Power Grid Standard Cell Stripes Settings
+krg_lower_M4_power_grid_stripes_settings
+
+# Add Stripes for Standard Cells
+add_stripes -nets $design(M4_stripes_nets) -layer $krg_iu_vars(layer_name,4) -direction vertical \
+            -width $design(M4_stripes_width) \
+            -spacing $design(M4_stripes_spacing) \
+            -set_to_set_distance $design(M4_stripes_interval) \
+            -area {20.40 120.0 197.0 175.0} \
+            -start_from left -switch_layer_over_obs false -max_same_layer_jog_length 2 \
+            -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
+            -block_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
+            -use_wire_group 0 -snap_wire_center_to_grid grid
+
+add_stripes -nets $design(M4_stripes_nets) -layer $krg_iu_vars(layer_name,4) -direction vertical \
+            -width $design(M4_stripes_width) \
+            -spacing $design(M4_stripes_spacing) \
+            -set_to_set_distance $design(M4_stripes_interval) \
+            -area {207.9805 164.63375 285.82075 72.9065} \
+            -start_from left -switch_layer_over_obs false -max_same_layer_jog_length 2 \
+            -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
+            -block_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
+            -use_wire_group 0 -snap_wire_center_to_grid grid
+
+add_stripes -nets $design(M4_stripes_nets) -layer $krg_iu_vars(layer_name,4) -direction vertical \
+            -width $design(M4_stripes_width) \
+            -spacing $design(M4_stripes_spacing) \
+            -set_to_set_distance $design(M4_last_stripes_interval) \
+            -area {305.08975 123.463 362.199 202.64025} \
+            -start_from left -switch_layer_over_obs false -max_same_layer_jog_length 2 \
+            -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
+            -block_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+            -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
+            -use_wire_group 0 -snap_wire_center_to_grid grid
+
+# krg_lower_D5_power_grid_stripes_settings
+# add_stripes -nets $design(M5_stripes_nets) -layer $krg_iu_vars(layer_name,5) -direction horizontal \
+#             -width $design(M5_stripes_width) \
+#             -spacing $design(M5_stripes_spacing) \
+#             -set_to_set_distance $design(M5_stripes_interval) \
+#             -area {206.86025 20.4 292.589 256.15725} \
+#             -start_from bottom -switch_layer_over_obs false -max_same_layer_jog_length 2 \
+#             -pad_core_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+#             -pad_core_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
+#             -block_ring_top_layer_limit $krg_iu_vars(layer_name,14) \
+#             -block_ring_bottom_layer_limit $krg_iu_vars(layer_name,1) \
+#             -use_wire_group 0 -snap_wire_center_to_grid grid
+
 # # Connect Dangling Stripes to the Core Ring
 # krg_power_grid_floating_stripe_route_special_settings
-# route_special -connect floating_stripe -layer_change_range "[list $krg_iu_vars(layer_name,5)(5) $krg_iu_vars(layer_name,14)(14)]" \
+# route_special -connect floating_stripe -layer_change_range "[list $krg_iu_vars(layer_name,1)(1) $krg_iu_vars(layer_name,14)(14)]" \
 #               -block_pin_target nearest_target \
 #               -floating_stripe_target {block_ring ring stripe ring_pin} \
 #               -allow_jogging 1 \
-#               -crossover_via_layer_range "[list $krg_iu_vars(layer_name,5)(5) $krg_iu_vars(layer_name,14)(14)]" \
+#               -crossover_via_layer_range "[list $krg_iu_vars(layer_name,1)(1) $krg_iu_vars(layer_name,14)(14)]" \
 #               -nets $design(upper_core_ring_nets) -allow_layer_change 1 \
-#               -target_via_layer_range "[list $krg_iu_vars(layer_name,5)(5) $krg_iu_vars(layer_name,14)(14)]" \
+#               -target_via_layer_range "[list $krg_iu_vars(layer_name,1)(1) $krg_iu_vars(layer_name,14)(14)]" \
 #               -detailed_log
 
 # # Connect pads to the Core Ring
@@ -242,6 +298,7 @@ add_stripes -nets $design(M13_stripes_nets) -layer $krg_iu_vars(layer_name,13) -
 # # }
 
 # Add Stapling Support for Advanced Nodes
+# add core boundary
 krg_power_grid_M3_stripes_settings
 add_stripes -nets $design(M2_stapling_nets) \
             -stapling $design(M2_stapling_parameters) \
@@ -251,16 +308,16 @@ add_stripes -nets $design(M2_stapling_nets) \
             -set_to_set_distance $design(M2_stapling_interval) \
             -snap_wire_center_to_grid grid
 
-# krg_iu_preplace_power_stitch_insertion
+krg_iu_preplace_power_stitch_insertion
 
 # # Check DRCs for Power Grid
 # krg_check_drc
 
-# # Reporting & Save
-# check_connectivity -check_pg_ports -type special -nets $design(upper_core_ring_nets) -out_file $design(reports_pnr_dir)/[format "%02d" $this_run(stage_count)]_$this_run(stage)_power_connectivity.rpt
-
-# # Stamp the stage for runtime and memory information
-# # --------------------------------------------------
-# time_info -table $runtype -stamp "power_grid"
+# Reporting & Save
+check_connectivity -ignore_opens -ignore_dangling_wires -type special -nets $design(upper_core_ring_nets) -out_file $design(reports_pnr_dir)/[format "%02d" $this_run(stage_count)]_$this_run(stage)_power_connectivity.rpt
+check_drc
+# Stamp the stage for runtime and memory information
+# --------------------------------------------------
+time_info -table $runtype -stamp "power_grid"
 
 ###### To-Do:Power Analysis and Rail Analysis ######

@@ -224,7 +224,7 @@ if {$runtype == "pnr"} {
         set_db add_rings_skip_via_on_pin {  standardcell } 
         set_db add_rings_skip_via_on_wire_shape {  noshape }
     }
-    proc krg_upper_power_grid_stripes_settings {} {
+    proc krg_upper_power_grid_M14_stripes_settings {} {
         global krg_iu_vars
 
         set_db add_stripes_ignore_block_check false
@@ -240,7 +240,7 @@ if {$runtype == "pnr"} {
         set_db add_stripes_spacing_from_block 0
         set_db add_stripes_stripe_min_length stripe_width
         set_db add_stripes_stacked_via_top_layer $krg_iu_vars(layer_name,14)
-        set_db add_stripes_stacked_via_bottom_layer $krg_iu_vars(layer_name,1)
+        set_db add_stripes_stacked_via_bottom_layer $krg_iu_vars(layer_name,3)
         set_db add_stripes_via_using_exact_crossover_size false
         set_db add_stripes_split_vias true
         set_db add_stripes_orthogonal_only true
@@ -250,6 +250,57 @@ if {$runtype == "pnr"} {
         set_db add_stripes_skip_via_on_wire_shape {  noshape   }
     }
 
+    proc krg_upper_power_grid_M13_stripes_blocks_settings {} {
+        global krg_iu_vars
+
+        set_db add_stripes_ignore_block_check false
+        set_db add_stripes_break_at none
+        set_db add_stripes_route_over_rows_only false
+        set_db add_stripes_rows_without_stripes_only false
+        set_db add_stripes_extend_to_closest_target ring
+        set_db add_stripes_stop_at_last_wire_for_area false
+        set_db add_stripes_partial_set_through_domain false
+        set_db add_stripes_ignore_non_default_domains false
+        set_db add_stripes_trim_antenna_back_to_shape block_ring
+        set_db add_stripes_spacing_type edge_to_edge
+        set_db add_stripes_spacing_from_block 0
+        set_db add_stripes_stripe_min_length stripe_width
+        set_db add_stripes_stacked_via_top_layer $krg_iu_vars(layer_name,14)
+        set_db add_stripes_stacked_via_bottom_layer $krg_iu_vars(layer_name,13)
+        set_db add_stripes_via_using_exact_crossover_size false
+        set_db add_stripes_split_vias true
+        set_db add_stripes_orthogonal_only true
+        set_db add_stripes_opt_stripe_for_routing_track shift
+        set_db add_stripes_allow_jog { padcore_ring  block_ring }
+        set_db add_stripes_skip_via_on_pin {  cover block  standardcell }
+        set_db add_stripes_skip_via_on_wire_shape {  noshape   }
+    }
+
+    proc krg_upper_power_grid_M13_stripes_settings {} {
+        global krg_iu_vars
+
+        set_db add_stripes_ignore_block_check false
+        set_db add_stripes_break_at none
+        set_db add_stripes_route_over_rows_only false
+        set_db add_stripes_rows_without_stripes_only false
+        set_db add_stripes_extend_to_closest_target ring
+        set_db add_stripes_stop_at_last_wire_for_area false
+        set_db add_stripes_partial_set_through_domain false
+        set_db add_stripes_ignore_non_default_domains false
+        set_db add_stripes_trim_antenna_back_to_shape block_ring
+        set_db add_stripes_spacing_type edge_to_edge
+        set_db add_stripes_spacing_from_block 0
+        set_db add_stripes_stripe_min_length stripe_width
+        set_db add_stripes_stacked_via_top_layer $krg_iu_vars(layer_name,14)
+        set_db add_stripes_stacked_via_bottom_layer $krg_iu_vars(layer_name,4)
+        set_db add_stripes_via_using_exact_crossover_size false
+        set_db add_stripes_split_vias true
+        set_db add_stripes_orthogonal_only true
+        set_db add_stripes_opt_stripe_for_routing_track shift
+        set_db add_stripes_allow_jog { padcore_ring  block_ring }
+        set_db add_stripes_skip_via_on_pin {  cover block  standardcell }
+        set_db add_stripes_skip_via_on_wire_shape {  noshape   }
+    }
     proc krg_lower_power_grid_block_rings_settings {} {
         global krg_iu_vars
 
@@ -318,7 +369,7 @@ if {$runtype == "pnr"} {
         set_db add_stripes_skip_via_on_wire_shape {  noshape   }
     }
 
-    proc krg_lower_D6_power_grid_stripes_settings {} {
+    proc krg_lower_M4_power_grid_stripes_settings {} {
         global krg_iu_vars
 
         set_db add_stripes_ignore_block_check false
@@ -334,7 +385,7 @@ if {$runtype == "pnr"} {
         set_db add_stripes_spacing_from_block 0
         set_db add_stripes_stripe_min_length stripe_width
         set_db add_stripes_stacked_via_top_layer $krg_iu_vars(layer_name,14)
-        set_db add_stripes_stacked_via_bottom_layer $krg_iu_vars(layer_name,5)
+        set_db add_stripes_stacked_via_bottom_layer $krg_iu_vars(layer_name,3)
         set_db add_stripes_via_using_exact_crossover_size false
         set_db add_stripes_split_vias true
         set_db add_stripes_orthogonal_only true
@@ -353,6 +404,8 @@ if {$runtype == "pnr"} {
     }
 
     proc krg_power_grid_M3_stripes_settings {} {
+        global krg_iu_vars
+        
         set_db add_stripes_ignore_block_check false
         set_db add_stripes_break_at none
         set_db add_stripes_route_over_rows_only true
@@ -374,42 +427,82 @@ if {$runtype == "pnr"} {
         set_db add_stripes_skip_via_on_pin {  block }
         set_db add_stripes_skip_via_on_wire_shape {  noshape   }
     }
+
+    ## Global Placement Settings
+    ###############################
+    proc krg_global_placement_settings {} {
+        set_db place_global_clock_gate_aware false
+        set_db place_global_clock_power_driven true
+        set_db place_global_reorder_scan false 
+        set_db place_global_ignore_scan true
+        set_db place_global_timing_effort high
+        set_db place_global_cong_effort auto
+    }
+    
+    ## Detailed Placement Settings
+    ###############################
+    proc krg_detailed_placement_settings {} {
+        set_db place_detail_activity_power_driven false
+        set_db place_detail_swap_eeq_cells true
+    }
+
+    ## Placement Optimization Settings
+    ###############################
+    proc krg_placement_optimization_settings {} {
+        set_db opt_fix_fanout_load true; # Force optimization to correct max_fanout violations
+        set_db opt_new_inst_prefix "place_opt_inst_"
+        set_db opt_new_net_prefix  "place_opt_net_"
+    }
+
     #     # Add fill ties checker board
     #     set_db add_tieoffs_cells         "$tech(TIE_HIGH_CELL) $tech(TIE_LOW_CELL) "
     #     set_db add_tieoffs_prefix        $tech(TIE_PREFIX)
     #     set_db add_tieoffs_max_fanout    20
     #     set_db add_tieoffs_max_distance  250
-    #     set_db add_fillers_cells         $tech(FILL_CELLS)
-    #     set_db add_fillers_check_drc     true
-    #     set_db add_fillers_prefix        $tech(FILL_CELL_PREFIX)
-    # proc krg_placement_settings {} {
-    #     set_db place_detail_swap_eeq_cells true
- 
 
-    # } 
+    ## Timing Analysis OCV Settings
+    ###############################
 
-    # ## Timing Analysis OCV Settings
-    # ###############################
-    # if {$timing_lib_type == "ccs_ocv"} {
-    #     set_db timing_analysis_type               ocv
-    #     set_db timing_analysis_engine             static
-    #     set_db timing_analysis_cppr               both
-    #     set_db timing_analysis_aocv               true
-    #     set_db timing_enable_aocv_slack_based     true
-    #     set_db timing_aocv_analysis_mode          launch_capture
-    #     set_db timing_extract_model_aocv_mode     path_based
-    #     set_db delaycal_equivalent_waveform_type  moments 
-    #     set_db delaycal_equivalent_waveform_model propagation
-    #     set_db timing_derate_aocv_dynamic_delays  false
-    #     set_db timing_enable_si_cppr              true
-    #     set_db timing_library_read_ccs_noise_data true
-    #     set_db timing_aocv_derate_mode            aocv_multiplicative
-    # }
+    proc krg_timing_analysis_aocv_settings {} {
+        set_db timing_analysis_type               ocv
+        set_db timing_analysis_engine             static
+        set_db timing_analysis_cppr               both
+        set_db timing_analysis_aocv               true
+        set_db timing_enable_aocv_slack_based     true
+        set_db timing_aocv_analysis_mode          launch_capture
+        set_db timing_extract_model_aocv_mode     path_based
+        set_db delaycal_equivalent_waveform_type  moments 
+        set_db delaycal_equivalent_waveform_model propagation
+        set_db timing_derate_aocv_dynamic_delays  false
+        set_db timing_enable_si_cppr              true
+        set_db timing_library_read_ccs_noise_data true
+        set_db timing_aocv_derate_mode            aocv_multiplicative
+    }
 
-    # ## Global Placement Settings
-    # ###############################
-    # set_db opt_fix_fanout_load true; # Force optimization to correct max_fanout violations
+    proc krg_timing_analysis_socv_settings {} {
+        set_db timing_analysis_type               ocv
+        set_db timing_analysis_engine             static
+        set_db timing_analysis_cppr               both
+        set_db timing_analysis_aocv               true
+        set_db timing_enable_aocv_slack_based     true
+        set_db timing_aocv_analysis_mode          launch_capture
+        set_db timing_extract_model_aocv_mode     path_based
+        set_db delaycal_equivalent_waveform_type  moments 
+        set_db delaycal_equivalent_waveform_model propagation
+        set_db timing_derate_aocv_dynamic_delays  false
+        set_db timing_enable_si_cppr              true
+        set_db timing_library_read_ccs_noise_data true
+        set_db timing_aocv_derate_mode            aocv_multiplicative
+    }
 
+    ## Clock Tree Synthesis Settings
+    ###############################
+    proc krg_clock_tree_synthesis_settings {} {
+        set_db opt_new_inst_prefix "cts_opt_inst_"
+        set_db opt_new_net_prefix  "cts_opt_net_"   
+        set_db route_detail_post_route_spread_wire    false
+        set_db opt_skew_ccopt extreme
+    }
     # ## Routing Settings
     # ##################################
     # set_db route_design_concurrent_minimize_via_count_effort high
@@ -420,27 +513,33 @@ if {$runtype == "pnr"} {
     # ### don't taper to the output pin causing EM issues
     # set_db route_design_detail_no_taper_on_output_pin        true
 
-    # # Routing Settings
-    # proc krg_routing_settings {} {
-    #     set_db route_process_node           $PROCESS_NODE
+    proc krg_routing_settings {} {
+        global TECH_NODE
+
+        set_db route_process_node           $TECH_NODE
  
-    #     set_db add_route_vias_auto          false
-    #     set_db add_route_vias_ndr_only      true
+        set_db add_route_vias_auto          false
+        set_db add_route_vias_ndr_only      true
 
-    #     set_db route_via_weight ""
-    #     set_db route_via_weight "S*BAR* 200"
-    #     set_db route_via_weight "V*_DFM 150"
-    #     set_db route_via_weight "MD_*_DFM 150"
-    #     set_db route_via_weight "S*_DFM 150"
-    #     set_db route_via_weight "NR_VIA1_VxBAR_VV_* -1"
+        set_db route_via_weight ""
+        set_db route_via_weight "S*BAR* 200"
+        set_db route_via_weight "V*_DFM 150"
+        set_db route_via_weight "MD_*_DFM 150"
+        set_db route_via_weight "S*_DFM 150"
+        set_db route_via_weight "NR_VIA1_VxBAR_VV_* -1"
 
-    #     set_db route_detail_post_route_spread_wire    false
-    #     set_db route_detail_use_multi_cut_via_effort  high
-    #     set_db route_detail_post_route_swap_via       true
-    #     set_db route_with_si_driven                   true
-    #     set_db route_allow_pin_as_feedthru            none
+        set_db route_detail_post_route_spread_wire    false
+        set_db route_detail_use_multi_cut_via_effort  high
+        set_db route_detail_post_route_swap_via       true
+        set_db route_with_si_driven                   true
+        set_db route_allow_pin_as_feedthru            none
 
-    # } 
+    } 
+
+        #     set_db add_fillers_cells         $tech(FILL_CELLS)
+    #     set_db add_fillers_check_drc     true
+    #     set_db add_fillers_prefix        $tech(FILL_CELL_PREFIX)
+
 }
 
 ###################################

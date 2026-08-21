@@ -162,33 +162,33 @@ if {$innovus_stage_reload == "full_flow"} {
     time_info -table $runtype -stamp "floorplan"
 }
 
-# #################################################################
-# #                       Placement Stage                         #
-# #################################################################
-# if {$innovus_stage_reload == "full_flow"} {
-#     source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/innovus.placement.tcl -quiet
-# } elseif {$innovus_stage_reload == "post_placement"} {
-#     # Load the database
-#     # -----------------
-#     read_db $design(dbs_pnr_dir)/placement.db
-#     # Stamp the stage for runtime and memory information
-#     # --------------------------------------------------
-#     time_info -table $runtype -stamp "placement"
-# }
+#################################################################
+#                       Placement Stage                         #
+#################################################################
+if {$innovus_stage_reload == "full_flow"} {
+    source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/innovus.placement.tcl -quiet
+} elseif {$innovus_stage_reload == "post_placement"} {
+    # Load the database
+    # -----------------
+    read_db $design(dbs_pnr_dir)/placement.db
+    # Stamp the stage for runtime and memory information
+    # --------------------------------------------------
+    time_info -table $runtype -stamp "placement"
+}
 
-# #################################################################
-# #                         CTS Stage                             #
-# #################################################################
-# if {$innovus_stage_reload == "full_flow"} {
-#     source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/innovus.cts.tcl -quiet
-# } elseif {$innovus_stage_reload == "post_cts"} {
-#     # Load the database
-#     # -----------------
-#     read_db $design(dbs_pnr_dir)/cts.db
-#     # Stamp the stage for runtime and memory information
-#     # --------------------------------------------------
-#     time_info -table $runtype -stamp "cts"
-# }
+#################################################################
+#                         CTS Stage                             #
+#################################################################
+if {$innovus_stage_reload == "full_flow"} {
+    source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/innovus.cts.tcl -quiet
+} elseif {$innovus_stage_reload == "post_cts"} {
+    # Load the database
+    # -----------------
+    read_db $design(dbs_pnr_dir)/cts.db
+    # Stamp the stage for runtime and memory information
+    # --------------------------------------------------
+    time_info -table $runtype -stamp "cts"
+}
 
 # #################################################################
 # #                        Route Stage                            #

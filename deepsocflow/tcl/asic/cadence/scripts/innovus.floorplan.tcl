@@ -109,29 +109,29 @@ if {$design(FULLCHIP_OR_MACRO) == "FULLCHIP"} {
         #                         $design(io_gnd) $design(io_vdd)"
 } elseif {$design(FULLCHIP_OR_MACRO) == "MACRO"} {
         set_db assign_pins_edit_in_batch true
-        edit_pin -layer D11 -edge 1 -fix_overlap 1 -spread_type edge \
+        edit_pin -layer D12 -edge 1 -fix_overlap 1 -spread_type edge \
                 -offset_start $design(CLK_PIN_START_OFFSET) \
-                -pin $design(CLOCK_PIN) -pin_width $design(pin_width_d11)
+                -pin $design(CLOCK_PIN) -pin_width $design(pin_width_d12)
         edit_pin -spread_direction clockwise -spread_type edge \
                 -offset_start $design(LEFT_PINS_START_OFFSET) \
                 -offset_end   $design(LEFT_PINS_END_OFFSET) \
-                -layer D8 -edge 0 -fix_overlap 1 -spacing 1 -unit track \
-                -pin $design(LEFT_INPUT_PINS) -pin_width $design(pin_width_d8)
+                -layer D9 -edge 0 -fix_overlap 1 -spacing 1 -unit track \
+                -pin $design(LEFT_INPUT_PINS) -pin_width $design(pin_width_d9)
         edit_pin -spread_direction clockwise -spread_type edge \
                 -offset_start $design(TOP_PINS_START_OFFSET) \
                 -offset_end   $design(TOP_PINS_END_OFFSET) \
-                -layer D9 -edge 1 -fix_overlap 1 -spacing 1 -unit track \
-                -pin $design(TOP_INPUT_PINS) -pin_width $design(pin_width_d9)
+                -layer D10 -edge 1 -fix_overlap 1 -spacing 1 -unit track \
+                -pin $design(TOP_INPUT_PINS) -pin_width $design(pin_width_d10)
         edit_pin -spread_direction clockwise -spread_type edge \
                 -offset_start $design(RIGHT_PINS_START_OFFSET) \
                 -offset_end   $design(RIGHT_PINS_END_OFFSET) \
-                -layer D8 -edge 2 -fix_overlap 1 -spacing 1 -unit track \
-                -pin $design(RIGHT_INPUT_PINS) -pin_width $design(pin_width_d8)
+                -layer D9 -edge 2 -fix_overlap 1 -spacing 1 -unit track \
+                -pin $design(RIGHT_INPUT_PINS) -pin_width $design(pin_width_d9)
         edit_pin -spread_direction clockwise -spread_type edge \
                 -offset_start $design(BOTTOM_PINS_START_OFFSET) \
                 -offset_end   $design(BOTTOM_PINS_END_OFFSET) \
-                -layer D9 -edge 3 -fix_overlap 1 -spacing 1 -unit track \
-                -pin $design(BOTTOM_OUTPUT_PINS) -pin_width $design(pin_width_d9)   
+                -layer D10 -edge 3 -fix_overlap 1 -spacing 1 -unit track \
+                -pin $design(BOTTOM_OUTPUT_PINS) -pin_width $design(pin_width_d10)   
         set_db assign_pins_edit_in_batch false 
 }
 
@@ -145,27 +145,27 @@ gui_redraw
 # --------------------------------------------------
 time_info -table $runtype -stamp "floorplan"
 
-# # Power Grid Generation
-# # ---------------------
-# source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/innovus.power_grid.tcl -quiet
+# Power Grid Generation
+# ---------------------
+source /work/cgra4ml/deepsocflow/tcl/asic/cadence/scripts/innovus.power_grid.tcl -quiet
 
-# # Add Endcaps
-# # -----------
-# krg_iu_insert_boundary_cells
+# Add Endcaps
+# -----------
+krg_iu_insert_boundary_cells
 
-# # Add Well Taps
-# # -------------
-# add_well_taps -cell $tech(FILLTIE_CELL) -checker_board -prefix $krg_iu_vars(sam_tech,filltie_prefix) \
-#               -cell_interval [expr 2 * [expr $design(WELLTAP_RULE)]]
-# check_well_taps -max_distance $design(WELLTAP_RULE)
+# Add Well Taps
+# -------------
+add_well_taps -cell $tech(FILLTIE_CELL) -checker_board -prefix $krg_iu_vars(sam_tech,filltie_prefix) \
+              -cell_interval [expr 2 * [expr $design(WELLTAP_RULE)]]
+check_well_taps -max_distance $design(WELLTAP_RULE)
 
-# # Check Floorplan
-# # ---------------
-# krg_iu_check_floorplan
+# Check Floorplan
+# ---------------
+krg_iu_check_floorplan
 
-# # Post Floorplan and Power Grid
-# # -----------------------------
-# krg_start_stage "floorplan" yes
+# Post Floorplan and Power Grid
+# -----------------------------
+krg_start_stage "floorplan" yes
 
 # # Check DRCs
 # # ---------------
@@ -183,7 +183,7 @@ time_info -table $runtype -stamp "floorplan"
 # # # Screenshot of the floorplan
 # # ---------------------------
 # gui_fit
-# gui_create_floorplan_snapshot -dir $design(compare_dir)
+# gui_create_floorplan_snapshot -dir $design(compare_dir) \
 #                               -name ${design(TOPLEVEL)}_floorplan_stage_innovus_run_[format "%02d" $innovus_run_counter]
 
 # # Stamp the stage for runtime and memory information
