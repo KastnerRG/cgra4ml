@@ -1,4 +1,14 @@
-import os
+import argparse
+
+parser = argparse.ArgumentParser(description="Train and simulate the CGRA4ML MNIST example.")
+parser.add_argument(
+    "--sim",
+    choices=("xsim", "verilator"),
+    default="verilator",
+    help="Simulator to use (default: verilator).",
+)
+args = parser.parse_args()
+
 import pytest
 import itertools
 import sys
@@ -17,7 +27,7 @@ import pprint
 
 from deepsocflow import *
 
-SIM = 'xsim' if os.name=='nt' else 'verilator'
+SIM = args.sim
 
 '''
 Dataset
