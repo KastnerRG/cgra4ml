@@ -1,4 +1,13 @@
 # Generated files
+config_fw.h
+config_hw.svh
+config_hw.tcl
+config_tb.svh
+hardware.json
+sources.txt
+util.txt
+mem_bytes.txt
+
 run/work*/config_fw.h
 run/work*/config_hw.svh
 run/work*/config_hw.tcl
@@ -58,6 +67,32 @@ run/work/xsim/*
 run/work/verilator-sim/
 run/work/verilator-sim/*
 
+# Xilinx Linux kernel
+linux-xlnx/
+
+# FPGA deployment bundle
+deploy/
+
+# Userspace test binaries
+deepsocflow/linux/test/reg_test
+deepsocflow/linux/test/ioctl_test
+deepsocflow/linux/test/dma_buf_test
+deepsocflow/linux/linux_example
+deepsocflow/linux/test/libinference.so
+
+# Kernel module build artifacts
+deepsocflow/linux/driver/*.o
+deepsocflow/linux/driver/*.ko
+deepsocflow/linux/driver/*.mod
+deepsocflow/linux/driver/*.mod.c
+deepsocflow/linux/driver/*.order
+deepsocflow/linux/driver/*.symvers
+deepsocflow/linux/driver/.*.cmd
+deepsocflow/linux/driver/.module-common.o
+deepsocflow/linux/driver/modules.order
+deepsocflow/linux/driver/Module.symvers
+run/XilinxBoardStore/
+
 # Distribution / packaging
 .Python
 build/
@@ -77,6 +112,9 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+venv/
+.venv/
+.python-version
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
